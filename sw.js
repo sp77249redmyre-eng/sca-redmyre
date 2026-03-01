@@ -13,44 +13,42 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("push", (event) => {
   console.log("[SW] push event received");
 
-  const fallback = (obj = {}) => ({
+  const normalize = (obj = {}) => ({
     title: obj.title || "SCA Redmyre",
     body: obj.body || "New update",
     url: obj.url || "/",
   });
 
   event.waitUntil((async () => {
-    let data = {};
-    let text = "";
+    let payload = {};
 
     try {
-      if (event.data) {
-        // 1) try JSON
+      if (!event.data) {
+        console.log("[SW] push event has no data");
+        payload = {};
+      } else {
+        // 1) JSON 먼저 시도
         try {
-          data = event.data.json();
-          console.log("[SW] push payload JSON:", data);
+          payload = event.data.json();
+          console.log("[SW] push payload JSON:", payload);
         } catch (eJson) {
-          // 2) fallback to text
+          // 2) JSON 실패 시 text로 처리
           try {
-            text = await event.data.text();
+            const text = await event.data.text();
             console.log("[SW] push payload is not JSON, treating as plain text:", text);
-            data = fallback({ body: text });
+            payload = { body: text };
           } catch (eText) {
             console.log("[SW] push text read failed, using empty payload", eText);
-            data = fallback({});
+            payload = {};
           }
         }
-      } else {
-        console.log("[SW] push event has no data");
-        data = fallback({});
       }
     } catch (e) {
       console.log("[SW] push handler failed, using empty payload", e);
-      data = fallback({});
+      payload = {};
     }
 
-    // Normalize final payload
-    const p = fallback(data || {});
+    const p = normalize(payload);
     console.log("[SW] normalized payload:", p);
 
     const options = {
@@ -60,7 +58,9 @@ self.addEventListener("push", (event) => {
       data: { url: p.url },
     };
 
-    await self.registration.showNotification(p.title, options);
+    return self.registration.showNotification(p.title, options)
+      .then(() => console.log("[SW] showNotification OK"))
+      .catch((e) => console.error("[SW] showNotification FAIL", e));
   })());
 });
 
@@ -82,7 +82,9 @@ self.addEventListener("notificationclick", (event) => {
           await c.navigate(url);
           return;
         }
-      } catch {}
+      } catch (e) {
+        console.log("[SW] client focus/navigate failed", e);
+      }
     }
 
     await clients.openWindow(url);
