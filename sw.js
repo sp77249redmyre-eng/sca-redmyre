@@ -1,4 +1,4 @@
-/* sw.js - Push Service Worker (with logs) */
+/* sw.js - Push Service Worker (with logs + non-JSON payload support) */
 
 self.addEventListener("install", (event) => {
   console.log("[SW] install");
@@ -13,51 +13,68 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("push", (event) => {
   console.log("[SW] push event received");
 
-  let data = {};
-  let text = "";
+  const fallback = (obj = {}) => ({
+    title: obj.title || "SCA Redmyre",
+    body: obj.body || "New update",
+    url: obj.url || "/",
+  });
 
-  // 1) 먼저 "텍스트"로 안전하게 읽기 (JSON 아니어도 안 터짐)
-  try {
-    text = event.data ? event.data.text() : "";
-  } catch (e) {
-    console.log("[SW] push text read failed", e);
-    text = "";
-  }
+  event.waitUntil((async () => {
+    let data = {};
+    let text = "";
 
-  // 2) 텍스트가 있으면 JSON 파싱 시도, 실패하면 그냥 본문으로 처리
-  if (text) {
     try {
-      data = JSON.parse(text);
+      if (event.data) {
+        // 1) try JSON
+        try {
+          data = event.data.json();
+          console.log("[SW] push payload JSON:", data);
+        } catch (eJson) {
+          // 2) fallback to text
+          try {
+            text = await event.data.text();
+            console.log("[SW] push payload is not JSON, treating as plain text:", text);
+            data = fallback({ body: text });
+          } catch (eText) {
+            console.log("[SW] push text read failed, using empty payload", eText);
+            data = fallback({});
+          }
+        }
+      } else {
+        console.log("[SW] push event has no data");
+        data = fallback({});
+      }
     } catch (e) {
-      console.log("[SW] payload is not JSON, treating as plain text:", text);
-      data = { title: "SCA Redmyre", body: text, url: "/" };
+      console.log("[SW] push handler failed, using empty payload", e);
+      data = fallback({});
     }
-  } else {
-    data = {};
-  }
 
-  console.log("[SW] push payload:", data);
+    // Normalize final payload
+    const p = fallback(data || {});
+    console.log("[SW] normalized payload:", p);
 
-  const title = data.title || "SCA Redmyre";
-  const options = {
-    body: data.body || "New update",
-    icon: "/icon-192-v3.png?v=5",
-    badge: "/icon-192-v3.png?v=5",
-    data: { url: (data.url || "/") }
-  };
+    const options = {
+      body: p.body,
+      icon: "/icon-192-v3.png?v=5",
+      badge: "/icon-192-v3.png?v=5",
+      data: { url: p.url },
+    };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+    await self.registration.showNotification(p.title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   const url =
-    (event.notification?.data && event.notification.data.url)
+    (event.notification && event.notification.data && event.notification.data.url)
       ? event.notification.data.url
       : "/";
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: "window", includeUncontrolled: true });
+
     for (const c of allClients) {
       try {
         if (c.url && c.url.startsWith(self.location.origin)) {
@@ -67,6 +84,7 @@ self.addEventListener("notificationclick", (event) => {
         }
       } catch {}
     }
+
     await clients.openWindow(url);
   })());
 });
