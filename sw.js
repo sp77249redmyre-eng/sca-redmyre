@@ -14,10 +14,25 @@ self.addEventListener("push", (event) => {
   console.log("[SW] push event received");
 
   let data = {};
+  let text = "";
+
+  // 1) 먼저 "텍스트"로 안전하게 읽기 (JSON 아니어도 안 터짐)
   try {
-    data = event.data ? event.data.json() : {};
+    text = event.data ? event.data.text() : "";
   } catch (e) {
-    console.log("[SW] push payload parse failed, using empty payload", e);
+    console.log("[SW] push text read failed", e);
+    text = "";
+  }
+
+  // 2) 텍스트가 있으면 JSON 파싱 시도, 실패하면 그냥 본문으로 처리
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.log("[SW] payload is not JSON, treating as plain text:", text);
+      data = { title: "SCA Redmyre", body: text, url: "/" };
+    }
+  } else {
     data = {};
   }
 
