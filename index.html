@@ -5,27 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Redmyre House – Quote Approval</title>
 
-  
-<!-- ===== PWA FULL SETUP (Android + iPhone) ===== -->
-<link rel="manifest" href="/manifest.webmanifest?v=5">
+  <!-- ===== PWA FULL SETUP (Android + iPhone) ===== -->
+  <link rel="manifest" href="/manifest.webmanifest?v=5">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v3.png?v=5">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
 
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v3.png?v=5">
-
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
-
-<meta name="theme-color" content="#1e4fa3">
-<meta name="application-name" content="SCA Redmyre">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-
-<!-- PWA Manifest (Android용) -->
-
-  <!-- iPhone용 아이콘 -->
-
-  <!-- iPhone 전체화면 설정 -->
+  <meta name="theme-color" content="#1e4fa3">
+  <meta name="application-name" content="SCA Redmyre">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <style>
     :root{
@@ -44,6 +34,7 @@
 
     h2{ font-size:16px; margin:0 0 10px; }
     .muted{ color:var(--muted); font-size:13px; }
+    .mutedLight{ color:#9ca3af; font-size:12px; }
 
     input, textarea, select{
       width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font:inherit; background:#fff;
@@ -67,10 +58,22 @@
     .tag{ font-size:12px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--muted); font-weight:950; }
     .tag.ver{ background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
 
-    .pill{ font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-weight:950; }
+    /* Pills (existing style) */
+    .pill{ font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-weight:950; display:inline-flex; align-items:center; gap:6px; }
     .pill.ok{ background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
-    .pill.warn{ background:#fffbeb; border-color:#fde68a; color:#92400e; }
-    .pill.bad{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d; }
+    .pill.warn{ background:#fffbeb; border-color:#fde68a; color:#92400e; } /* Pending yellow */
+    .pill.bad{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d; }  /* Red */
+    .pill.neutral{ background:#f3f4f6; border-color:#e5e7eb; color:#374151; } /* Grey */
+
+    /* Workflow pills */
+    .pill.wfBlue{ background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+    .pill.wfOrange{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .pill.wfGreen{ background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+
+    /* Priority pills (Voting) */
+    .pill.priUrgent{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d; }
+    .pill.priHigh{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+    .pill.priNormal{ background:#f3f4f6; border-color:#e5e7eb; color:#374151; }
 
     .quote{
       border:1px solid var(--border); border-radius:14px; padding:12px; background:#fff; margin-top:12px;
@@ -132,7 +135,7 @@
     }
     .histRow{
       display:grid;
-      grid-template-columns: 95px minmax(220px, 1fr) 100px 95px 140px 140px;
+      grid-template-columns: 95px 120px minmax(220px, 1fr) 110px 95px 150px 140px;
       gap:10px;
       padding:6px 12px;
       border-top:1px solid var(--border);
@@ -167,10 +170,10 @@
     }
     @media (max-width:820px){
       .histScroll{ max-height: 85vh; }
-      .histRow{ min-width: 720px; }
+      .histRow{ min-width: 860px; }
     }
 
-    /* --- Modal base --- */
+    /* Modal base */
     .modalBack{
       position:fixed; inset:0; background:rgba(17,24,39,.45);
       display:flex; align-items:center; justify-content:center;
@@ -201,7 +204,7 @@
       flex-wrap:wrap;
     }
 
-    /* --- Modal (Image Preview) --- */
+    /* Modal (Image Preview) */
     .imgCard{
       width:min(980px, 96vw);
       background:#fff;
@@ -232,7 +235,7 @@
       background:#f9fafb;
     }
 
-    /* --- Modal (Attachment List) --- */
+    /* Modal (Attachment List) */
     .listCard{
       width:min(820px, 96vw);
       background:#fff;
@@ -270,14 +273,12 @@
     .listMeta{ color:var(--muted); font-size:12px; font-weight:750; white-space:nowrap; }
     .listActions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-    /* --- Quotes controls (Search/Filter) --- */
+    /* History filters */
     .qControls{
       display:flex; gap:10px; flex-wrap:wrap; align-items:center;
       margin-top:8px;
     }
-    .qControls .search{ flex: 1 1 280px; }
     .qControls .status{ width: 220px; }
-    .qHint{ font-size:12px; color:var(--muted); margin-top:8px; }
 
     /* Toast */
     .toast{
@@ -295,28 +296,25 @@
       max-width:min(420px, 92vw);
     }
 
-    /* left column stack for admin */
+    /* Left column stack for admin */
     .colStack{ display:flex; flex-direction:column; gap:16px; }
-</style>
+  </style>
 </head>
 
 <body>
 <div id="app"></div>
 
 <script type="module">
-  const BUILD = "v2026-02-26-5";
+  const BUILD = "v2026-03-06-2";
 
   const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
 
-  // rules: approvals=4, declines=4, expiry=7 days
-  const RULES = { approvalsRequired: 4, declinesToAutoDecline: 4, expiryDays: 7 };
+  // rules: approvals=4, declines=4, expiry=15 days
+  const RULES = { approvalsRequired: 4, declinesToAutoDecline: 4, expiryDays: 15 };
 
-  // attachment policy
-  const ATTACH = {
-    maxFiles: 4,
-    acceptMime: ["application/pdf", "image/jpeg", "image/png"]
-  };
+  // attachment policy (DO NOT CHANGE)
+  const ATTACH = { maxFiles: 4, acceptMime: ["application/pdf", "image/jpeg", "image/png"] };
 
   const ADMIN_EMAIL = "sp77249.redmyre@gmail.com";
   const COMMITTEE_EMAILS = [
@@ -329,16 +327,10 @@
   ];
   const OBSERVER_EMAILS = ["halil@exclusivere.com.au","sca.jacob77@gmail.com","sca.yun82@gmail.com"];
 
-  const LS_KEYS = {
-    histOpen: "rm_hist_open_v6",
-    quoteFilter: "rm_quote_filter_v2"
-  };
+  const LS_KEYS = { histOpen: "rm_hist_open_v7", quoteFilter: "rm_quote_filter_v2" };
 
-  let QUOTE_FILTER = (() => {
-    const v = lsRead(LS_KEYS.quoteFilter, null);
-    if(v && typeof v === "object") return { q: String(v.q||""), status: String(v.status||"all") };
-    return { q: "", status: "all" };
-  })();
+  const CATEGORIES = ["HVAC","Fire","Electrical","Security","Plumbing","General"];
+  const PRIORITIES = ["Urgent","High","Normal"];
 
   const el = (tag, props={}, children=[]) => {
     const n = document.createElement(tag);
@@ -399,7 +391,7 @@
   }
   function lsWrite(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
 
-  // Toast (auto-hide)
+  // Toast
   let _toastTimer = null;
   function showToast(message){
     const existing = document.getElementById("rm_toast");
@@ -407,15 +399,12 @@
     const t = el("div",{class:"toast", id:"rm_toast"},[String(message||"")]);
     document.body.appendChild(t);
     if(_toastTimer) clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(()=>{
-      const n = document.getElementById("rm_toast");
-      if(n) n.remove();
-    }, 2400);
+    _toastTimer = setTimeout(()=>{ const n = document.getElementById("rm_toast"); if(n) n.remove(); }, 2400);
   }
 
   function parseComment(comment){
     try{
-      if(!comment) return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null };
+      if(!comment) return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null, category:null, priority:null };
       const obj = JSON.parse(comment) || {};
       const note = obj?.note || "";
 
@@ -434,10 +423,12 @@
         files,
         resolved_at: obj?.resolved_at || null,
         workflow: obj?.workflow || null,
-        resolved_as: obj?.resolved_as || null
+        resolved_as: obj?.resolved_as || null,
+        category: obj?.category || null,
+        priority: obj?.priority || null
       };
     }catch{
-      return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null };
+      return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null, category:null, priority:null };
     }
   }
 
@@ -459,6 +450,26 @@
     if(kind === "pdf") return "View PDF";
     if(kind === "img") return "View Image";
     return "Open file";
+  }
+
+  function openReadOnlyTextModal({ titleText, bodyText }){
+    const back = el("div",{class:"modalBack"},[]);
+    const card = el("div",{class:"modalCard"},[]);
+    const title = el("div",{class:"modalTitle"},[titleText || "Details"]);
+    const box = el("div",{class:"detailBox", style:"min-height:180px;"},[(bodyText || "-")]);
+    const btnClose = el("button",{ onClick: ()=> back.remove() },["Close"]);
+
+    back.addEventListener("click", ()=> back.remove());
+    card.addEventListener("click", (e)=> e.stopPropagation());
+
+    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
+    window.addEventListener("keydown", onKey);
+
+    card.appendChild(title);
+    card.appendChild(box);
+    card.appendChild(el("div",{class:"modalRow"},[btnClose]));
+    back.appendChild(card);
+    document.body.appendChild(back);
   }
 
   function openEditCommentModal({ titleText, initialText, onSave }){
@@ -483,12 +494,7 @@
     back.addEventListener("click", ()=> back.remove());
     card.addEventListener("click", (e)=> e.stopPropagation());
 
-    const onKey = (e)=>{
-      if(e.key === "Escape"){
-        back.remove();
-        window.removeEventListener("keydown", onKey);
-      }
-    };
+    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
     window.addEventListener("keydown", onKey);
 
     card.appendChild(title);
@@ -508,24 +514,12 @@
       el("div",{class:"imgTitle"},[titleText || "Image preview"]),
       el("button",{class:"imgClose", onClick: ()=> back.remove() },["Close"])
     ]);
-
     const img = el("img",{class:"imgView", src:imageUrl, alt:titleText || "image"},[]);
-
     back.addEventListener("click", ()=> back.remove());
     card.addEventListener("click", (e)=> e.stopPropagation());
-
-    const onKey = (e)=>{
-      if(e.key === "Escape"){
-        back.remove();
-        window.removeEventListener("keydown", onKey);
-      }
-    };
+    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
     window.addEventListener("keydown", onKey);
-
-    card.appendChild(head);
-    card.appendChild(img);
-    back.appendChild(card);
-    document.body.appendChild(back);
+    card.appendChild(head); card.appendChild(img); back.appendChild(card); document.body.appendChild(back);
   }
 
   function openAttachmentListModal({ titleText, items }){
@@ -547,10 +541,7 @@
         ]);
         const actions = el("div",{class:"listActions"},[]);
         if(it.kind === "img"){
-          actions.appendChild(el("button",{ onClick:(e)=>{
-            e.preventDefault();
-            openImageModal({ titleText: it.name || "Image", imageUrl: it.url });
-          }},["Preview"]));
+          actions.appendChild(el("button",{ onClick:(e)=>{ e.preventDefault(); openImageModal({ titleText: it.name || "Image", imageUrl: it.url }); }},["Preview"]));
         }
         actions.appendChild(el("a",{class:"link",href:it.url, target:"_blank", rel:"noopener"},["Open"]));
         body.appendChild(el("div",{class:"listItem"},[left, actions]));
@@ -559,30 +550,17 @@
 
     back.addEventListener("click", ()=> back.remove());
     card.addEventListener("click", (e)=> e.stopPropagation());
-
-    const onKey = (e)=>{
-      if(e.key === "Escape"){
-        back.remove();
-        window.removeEventListener("keydown", onKey);
-      }
-    };
+    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
     window.addEventListener("keydown", onKey);
 
-    card.appendChild(head);
-    card.appendChild(body);
-    back.appendChild(card);
-    document.body.appendChild(back);
+    card.appendChild(head); card.appendChild(body); back.appendChild(card); document.body.appendChild(back);
   }
 
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.supabase = supabase; 
-  
+  window.supabase = supabase;
 
-
-
-
-async function getSession(){ const { data:{session} } = await supabase.auth.getSession(); return session; }
+  async function getSession(){ const { data:{session} } = await supabase.auth.getSession(); return session; }
   async function getUser(){ const { data:{user} } = await supabase.auth.getUser(); return user; }
 
   async function signIn(email, password){
@@ -590,12 +568,10 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     if(error) throw error;
   }
   async function signOut(){ await supabase.auth.signOut(); }
-
   async function changeMyPassword(newPassword){
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if(error) throw error;
   }
-
   async function sendPasswordReset(email){
     const redirectTo = window.location.origin + window.location.pathname + "?reset=1";
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
@@ -627,11 +603,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
   }
 
   async function updateQuoteComment(quoteId, nextNoteText){
-    const { data: q, error: e0 } = await supabase
-      .from("quotes")
-      .select("comment")
-      .eq("id", quoteId)
-      .single();
+    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
     if(e0) throw e0;
 
     const parsed = parseComment(q.comment);
@@ -640,22 +612,17 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       files: parsed.files || [],
       resolved_at: parsed.resolved_at || null,
       workflow: parsed.workflow || null,
-      resolved_as: parsed.resolved_as || null
+      resolved_as: parsed.resolved_as || null,
+      category: parsed.category || null,
+      priority: parsed.priority || null
     });
 
-    const { error } = await supabase
-      .from("quotes")
-      .update({ comment: nextCommentPayload })
-      .eq("id", quoteId);
+    const { error } = await supabase.from("quotes").update({ comment: nextCommentPayload }).eq("id", quoteId);
     if(error) throw error;
   }
 
-  async function setResolvedMetaIfMissing(quoteId, resolvedAs){
-    const { data: q, error: e0 } = await supabase
-      .from("quotes")
-      .select("comment")
-      .eq("id", quoteId)
-      .single();
+  async function setResolvedMetaIfMissing(quoteId, resolvedAs, resolvedAtISO=null){
+    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
     if(e0) throw e0;
 
     const parsed = parseComment(q.comment);
@@ -664,24 +631,19 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     const next = {
       note: parsed.note || "",
       files: parsed.files || [],
-      resolved_at: parsed.resolved_at || new Date().toISOString(),
+      resolved_at: parsed.resolved_at || (resolvedAtISO || new Date().toISOString()),
       workflow: parsed.workflow || null,
       resolved_as: parsed.resolved_as || (resolvedAs || null),
+      category: parsed.category || null,
+      priority: parsed.priority || null
     };
 
-    const { error } = await supabase
-      .from("quotes")
-      .update({ comment: JSON.stringify(next) })
-      .eq("id", quoteId);
+    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
     if(error) throw error;
   }
 
   async function updateWorkflow(quoteId, workflow){
-    const { data: q, error: e0 } = await supabase
-      .from("quotes")
-      .select("comment")
-      .eq("id", quoteId)
-      .single();
+    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
     if(e0) throw e0;
 
     const parsed = parseComment(q.comment);
@@ -691,22 +653,35 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       resolved_at: parsed.resolved_at || null,
       workflow: workflow || null,
       resolved_as: parsed.resolved_as || null,
+      category: parsed.category || null,
+      priority: parsed.priority || null
     };
 
-    const { error } = await supabase
-      .from("quotes")
-      .update({ comment: JSON.stringify(next) })
-      .eq("id", quoteId);
+    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
+    if(error) throw error;
+  }
+
+  async function updateCategory(quoteId, category){
+    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
+    if(e0) throw e0;
+
+    const parsed = parseComment(q.comment);
+    const next = {
+      note: parsed.note || "",
+      files: parsed.files || [],
+      resolved_at: parsed.resolved_at || null,
+      workflow: parsed.workflow || null,
+      resolved_as: parsed.resolved_as || null,
+      category: category || null,
+      priority: parsed.priority || null
+    };
+
+    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
     if(error) throw error;
   }
 
   async function upsertVote(quoteId, myId, vote){
-    const { data: existing, error: e1 } = await supabase
-      .from("votes")
-      .select("id")
-      .eq("quote_id", quoteId)
-      .eq("user_id", myId)
-      .maybeSingle();
+    const { data: existing, error: e1 } = await supabase.from("votes").select("id").eq("quote_id", quoteId).eq("user_id", myId).maybeSingle();
     if(e1) throw e1;
 
     if(existing?.id){
@@ -735,10 +710,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     const safeName = file.name.replace(/[^\w.\- ]+/g,"_");
     const path = `${user.id}/${Date.now()}-${safeName}`;
 
-    const { error } = await supabase.storage
-      .from("quotes")
-      .upload(path, file, { upsert:false, contentType: file.type || "application/octet-stream" });
-
+    const { error } = await supabase.storage.from("quotes").upload(path, file, { upsert:false, contentType: file.type || "application/octet-stream" });
     if(error) throw error;
     return { path, name: safeName, type: file.type || "" };
   }
@@ -749,9 +721,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       throw new Error(`Max ${ATTACH.maxFiles} attachments per quote.`);
     }
     const metas = [];
-    for(const f of files){
-      metas.push(await uploadOne(f));
-    }
+    for(const f of files){ metas.push(await uploadOne(f)); }
     return metas;
   }
 
@@ -761,6 +731,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     return data.signedUrl;
   }
 
+  // Pending-only delete (kept)
   async function deleteQuoteEverywhere(quote){
     await supabase.from("votes").delete().eq("quote_id", quote.id);
 
@@ -775,15 +746,19 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     if(error) throw error;
   }
 
+  // Core rules: expiry=15 days -> expired, approvals=4 -> approved, declines=4 -> declined
   async function ensureExpiryAndAuto(quote, votes){
-    // Expiry (treat as declined, but record as 'expired')
-    if(quote.status === "pending" && quote.expiry_date && new Date() > new Date(quote.expiry_date)){
-      await updateQuoteStatus(quote.id, "declined");
-      await setResolvedMetaIfMissing(quote.id, "expired");
-      quote.status = "declined";
+    const st0 = String(quote.status||"pending").toLowerCase();
+
+    // Expiry -> expired
+    if(st0 === "pending" && quote.expiry_date && new Date() > new Date(quote.expiry_date)){
+      await updateQuoteStatus(quote.id, "expired");
+      await setResolvedMetaIfMissing(quote.id, "expired", quote.expiry_date);
+      quote.status = "expired";
       return quote;
     }
-    if(quote.status !== "pending") return quote;
+
+    if(st0 !== "pending") return quote;
 
     const myVotes = votes.filter(v => v.quote_id === quote.id);
     const approvals = myVotes.filter(v=>v.vote==="approve").length;
@@ -791,11 +766,11 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
 
     if(approvals >= RULES.approvalsRequired){
       await updateQuoteStatus(quote.id, "approved");
-      await setResolvedMetaIfMissing(quote.id, "approved");
+      await setResolvedMetaIfMissing(quote.id, "approved", new Date().toISOString());
       quote.status="approved";
     } else if(declines >= RULES.declinesToAutoDecline){
       await updateQuoteStatus(quote.id, "declined");
-      await setResolvedMetaIfMissing(quote.id, "declined");
+      await setResolvedMetaIfMissing(quote.id, "declined", new Date().toISOString());
       quote.status="declined";
     }
     return quote;
@@ -806,7 +781,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
   async function initRealtime(){
     if(realtimeInit) return;
     realtimeInit = true;
-
     const ch = supabase.channel("rm-live");
     ch.on("postgres_changes", { event:"*", schema:"public", table:"quotes" }, () => renderApp());
     ch.on("postgres_changes", { event:"*", schema:"public", table:"votes"  }, () => renderApp());
@@ -834,10 +808,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
 
     const btnBack = el("button",{ onClick: ()=>{ mount(loginScreen()); }},["Back to login"]);
 
-    // Enter to send
-    emailInput.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter"){ e.preventDefault(); btnSend.click(); }
-    });
+    emailInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); btnSend.click(); } });
 
     return el("div",{class:"wrap"},[
       el("div",{class:"card loginWrap"},[
@@ -869,10 +840,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       }catch(e){ alert(e?.message || String(e)); }
     }},["Update password"]);
 
-    // Enter to submit
-    const onEnter = (e)=>{
-      if(e.key==="Enter"){ e.preventDefault(); btn.click(); }
-    };
+    const onEnter = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); btn.click(); } };
     p1.addEventListener("keydown", onEnter);
     p2.addEventListener("keydown", onEnter);
 
@@ -901,7 +869,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
         const password = pwInput.value;
         if(!email || !password){ alert("Enter email and password."); return; }
         if(!isAllowedEmail(email)){ alert("This email is not authorised for Redmyre House access."); return; }
-
         await signIn(email, password);
         await renderApp();
       }catch(e){ alert(e?.message || String(e)); }
@@ -909,10 +876,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
 
     const btnForgot = el("button",{ onClick: ()=>{ mount(resetPasswordScreen(emailInput.value.trim().toLowerCase())); }},["Forgot password?"]);
 
-    // Enter to login
-    const onEnter = (e)=>{
-      if(e.key==="Enter"){ e.preventDefault(); btnLogin.click(); }
-    };
+    const onEnter = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); btnLogin.click(); } };
     emailInput.addEventListener("keydown", onEnter);
     pwInput.addEventListener("keydown", onEnter);
 
@@ -927,9 +891,9 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
         pwInput,
         el("div",{class:"spacer"},[]),
         el("div",{class:"row",style:"justify-content:space-between;"},[
-        btnForgot,
-        btnLogin
-      ])
+          btnForgot,
+          btnLogin
+        ])
       ])
     ]);
   }
@@ -953,15 +917,16 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
 
     if(!open) return wrap;
 
-    // History-only filters: [Search] [Resolution] [Workflow]
-    const HF_KEY = "rm_hist_filter_v1";
-    let HF = lsRead(HF_KEY, { q:"", res:"all", wf:"all" }) || { q:"", res:"all", wf:"all" };
+    // History-only filters: [Category] [Resolution] [Workflow]
+    const HF_KEY = "rm_hist_filter_v2";
+    let HF = lsRead(HF_KEY, { cat:"all", res:"all", wf:"all" }) || { cat:"all", res:"all", wf:"all" };
 
-    const searchInput = el("input",{
-      class:"search",
-      placeholder:"🔍 Search (Project or Vendor)",
-      value: HF.q || ""
-    },[]);
+    const catSel = el("select",{ class:"status" },[
+      el("option",{value:"all"},["Category: All"]),
+      el("option",{value:"unassigned"},["Unassigned"]),
+      ...CATEGORIES.map(c => el("option",{value:c.toLowerCase()},[c]))
+    ]);
+    catSel.value = HF.cat || "all";
 
     const resSel = el("select",{ class:"status" },[
       el("option",{value:"all"},["Resolution: All"]),
@@ -981,14 +946,15 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     wfSel.value = HF.wf || "all";
 
     function persist(){
-      lsWrite(HF_KEY, { q: searchInput.value||"", res: resSel.value||"all", wf: wfSel.value||"all" });
+      lsWrite(HF_KEY, { cat: catSel.value||"all", res: resSel.value||"all", wf: wfSel.value||"all" });
     }
 
-    wrap.appendChild(el("div",{class:"qControls"},[searchInput, resSel, wfSel]));
+    wrap.appendChild(el("div",{class:"qControls"},[catSel, resSel, wfSel]));
 
     const table = el("div",{class:"histTable"},[]);
     table.appendChild(el("div",{class:"histRow head"},[
       el("div",{class:"cell"},["Created"]),
+      el("div",{class:"cell"},["Category"]),
       el("div",{class:"cell"},["Project"]),
       el("div",{class:"cell"},["Resolution"]),
       el("div",{class:"cell"},["Resolved"]),
@@ -1013,16 +979,16 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       if(st === "pending") continue;
 
       const parsed = parseComment(q.comment);
-      const resolvedAs = (parsed.resolved_as || (st === "declined" ? "declined" : st)).toLowerCase();
+      const resolvedAs = (parsed.resolved_as || st).toLowerCase();
 
       const resolutionLabel =
         resolvedAs === "approved" ? "Approved" :
         resolvedAs === "expired" ? "Expired" :
         "Declined";
 
-      const pillClass =
+      const resolutionPillClass =
         resolvedAs === "approved" ? "ok" :
-        resolvedAs === "expired" ? "warn" :
+        resolvedAs === "expired" ? "neutral" :
         "bad";
 
       const projectName =
@@ -1030,16 +996,28 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
         : (q.vendor && String(q.vendor).trim()) ? `[No project] ${String(q.vendor).trim()}`
         : "(No project)";
 
-      const wfKey = (parsed.workflow || "").toLowerCase();
+      const categoryVal = (parsed.category && String(parsed.category).trim()) ? String(parsed.category).trim() : "";
+      const categoryKey = categoryVal ? categoryVal.toLowerCase() : "unassigned";
+      const categoryLabel = categoryVal ? categoryVal : "Unassigned";
+
+      // Workflow shown ONLY for approved
+      const wfKeyRaw = (parsed.workflow || "").toLowerCase();
+      const wfKey = (resolvedAs === "approved") ? wfKeyRaw : "";
       const wfLabel =
         wfKey === "scheduling" ? "Scheduling" :
         wfKey === "in_progress" ? "In Progress" :
         wfKey === "completed" ? "Completed" :
-        "-";
+        "";
+
+      const wfPill =
+        wfKey === "scheduling" ? el("span",{class:"pill wfBlue"},["Scheduling"]) :
+        wfKey === "in_progress" ? el("span",{class:"pill wfOrange"},["In progress"]) :
+        wfKey === "completed" ? el("span",{class:"pill wfGreen"},["Completed"]) :
+        null;
 
       const files = parsed.files || [];
 
-      // Files cell
+      // Files cell (NO Delete, NO Reopen)
       let fileCell = el("div",{class:"cell"},["-"]);
       if(files?.length){
         const suffix = files.length > 1 ? ` (+${files.length-1})` : "";
@@ -1060,61 +1038,62 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
           openAttachmentListModal({ titleText: `Attachments — ${projectName}`, items });
         }},[`Open${suffix}`]);
 
-        if(profile.role === "admin"){
-          const delBtn = el("button",{class:"danger", style:"padding:6px 10px;border-radius:10px;", onClick: async(e)=>{
-            e.stopPropagation();
-            const ok = confirm("Delete this quote record?\n\nThis cannot be undone.");
-            if(!ok) return;
-            try{ await deleteQuoteEverywhere(q0); showToast("Deleted"); await renderApp(); }
-            catch(err){ alert(err?.message || String(err)); }
-          }},["Delete"]);
-
-          fileCell = el("div",{class:"cell"},[
-            el("div",{class:"row", style:"gap:8px; flex-wrap:nowrap;"},[ openBtn, delBtn ])
-          ]);
-        } else {
-          fileCell = el("div",{class:"cell"},[ openBtn ]);
-        }
-      } else if(profile.role === "admin"){
-        const delBtn = el("button",{class:"danger", style:"padding:6px 10px;border-radius:10px;", onClick: async(e)=>{
-          e.stopPropagation();
-          const ok = confirm("Delete this quote record?\n\nThis cannot be undone.");
-          if(!ok) return;
-          try{ await deleteQuoteEverywhere(q0); showToast("Deleted"); await renderApp(); }
-          catch(err){ alert(err?.message || String(err)); }
-        }},["Delete"]);
         fileCell = el("div",{class:"cell"},[
-          el("div",{class:"row", style:"gap:8px; flex-wrap:nowrap;"},[
-            el("span",{},["-"]),
-            delBtn
-          ])
+          el("div",{class:"row", style:"gap:8px; flex-wrap:nowrap;"}, [openBtn])
         ]);
+      } else {
+        fileCell = el("div",{class:"cell"},["-"]);
       }
 
-      // Workflow cell (admin can edit on APPROVED only)
-      let wfCell = el("div",{class:"cell"},[wfLabel]);
+      // Category cell: Admin can set ONLY when missing (Backfill)
+      let categoryCell = el("div",{class:"cell"},[categoryLabel]);
+      if(profile.role === "admin" && !categoryVal){
+        const sel = el("select",{style:"width:100%; padding:6px 10px; border-radius:10px;"},[
+          el("option",{value:""},["Unassigned"]),
+          ...CATEGORIES.map(c => el("option",{value:c},[c]))
+        ]);
+        sel.value = "";
+        sel.addEventListener("change", async()=>{
+          const next = sel.value || null;
+          if(!next) return;
+          await updateCategory(q.id, next);
+          showToast("Category updated");
+          await renderApp();
+        });
+        categoryCell = el("div",{class:"cell"},[sel]);
+      }
+
+      // Workflow cell (Admin can edit on APPROVED only)
+      let wfCell = el("div",{class:"cell"},[ wfPill ? wfPill : el("span",{},[wfLabel || ""]) ]);
       if(profile.role === "admin" && resolvedAs === "approved"){
         const sel = el("select",{style:"width:100%; padding:6px 10px; border-radius:10px;"},[
           el("option",{value:""},["-"]),
           el("option",{value:"scheduling"},["Scheduling"]),
-          el("option",{value:"in_progress"},["In Progress"]),
+          el("option",{value:"in_progress"},["In progress"]),
           el("option",{value:"completed"},["Completed"]),
         ]);
-        sel.value = wfKey || "";
+        sel.value = wfKeyRaw || "";
         sel.addEventListener("change", async()=>{
           await updateWorkflow(q.id, sel.value || null);
           showToast("Workflow updated");
           await renderApp();
         });
         wfCell = el("div",{class:"cell"},[sel]);
+      } else {
+        wfCell = el("div",{class:"cell"},[ wfPill ? wfPill : (wfLabel ? el("span",{},[wfLabel]) : el("span",{},[""])) ]);
       }
 
-      const hay = `${projectName} ${(q.vendor||"")}`.toLowerCase();
-
-      const row = el("div",{class:"histRow", "data-hist-row":"1", "data-hay":hay, "data-res":resolvedAs, "data-wf":(wfKey||"")},[
+      const row = el("div",{class:"histRow", "data-hist-row":"1", "data-cat":categoryKey, "data-res":resolvedAs, "data-wf":(wfKey||"")},[
         el("div",{class:"cell"},[fmtDate(q.created_at)]),
-        el("div",{class:"cell project"},[projectName]),
-        el("div",{class:"cell"},[ el("span",{class:`pill ${pillClass}`},[resolutionLabel]) ]),
+        categoryCell,
+        el("div",{class:"cell project"},[
+          el("a",{class:"link", href:"#", onClick:(e)=>{
+            e.preventDefault();
+            const noteText = (parsed.note || "").trim() || "-";
+            openReadOnlyTextModal({ titleText: `Comment — ${projectName}`, bodyText: noteText });
+          }},[projectName])
+        ]),
+        el("div",{class:"cell"},[ el("span",{class:`pill ${resolutionPillClass}`},[resolutionLabel]) ]),
         el("div",{class:"cell"},[parsed.resolved_at ? fmtDate(parsed.resolved_at) : "-"]),
         wfCell,
         fileCell,
@@ -1129,28 +1108,28 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     wrap.appendChild(empty);
 
     function apply(){
-      const term = (searchInput.value||"").trim().toLowerCase();
+      const cat = (catSel.value||"all").toLowerCase();
       const res = (resSel.value||"all").toLowerCase();
       const wf = (wfSel.value||"all").toLowerCase();
 
       let shown = 0;
       for(const r of rows){
-        const hay = (r.getAttribute("data-hay")||"").toLowerCase();
+        const rcat = (r.getAttribute("data-cat")||"unassigned").toLowerCase();
         const rres = (r.getAttribute("data-res")||"").toLowerCase();
-        const rwf = (r.getAttribute("data-wf")||"").toLowerCase();
+        const rwf  = (r.getAttribute("data-wf")||"").toLowerCase();
 
-        const okTerm = term ? hay.includes(term) : true;
+        const okCat = (cat==="all") ? true : (cat==="unassigned" ? rcat==="unassigned" : rcat===cat);
         const okRes = (res==="all") ? true : rres === res;
-        const okWf = (wf==="all") ? true : (wf==="none" ? !rwf : rwf === wf);
+        const okWf  = (wf==="all") ? true : (wf==="none" ? !rwf : rwf === wf);
 
-        const show = okTerm && okRes && okWf;
+        const show = okCat && okRes && okWf;
         r.style.display = show ? "" : "none";
         if(show) shown++;
       }
       empty.style.display = shown ? "none" : "";
     }
 
-    searchInput.addEventListener("input", ()=>{ persist(); apply(); });
+    catSel.addEventListener("change", ()=>{ persist(); apply(); });
     resSel.addEventListener("change", ()=>{ persist(); apply(); });
     wfSel.addEventListener("change", ()=>{ persist(); apply(); });
 
@@ -1172,43 +1151,42 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       el("div",{class:"muted"},[roleText]),
       el("div",{class:"hr"},[]),
       el("div",{class:"muted"},[
-        "• If a quote is not decided within ",
+        "A quote expires after ",
         el("b",{},[String(RULES.expiryDays)]),
-        " days, it will be treated as ",
-        el("b",{},["Declined"]),
-        ".",
+        " days if no decision is reached.",
         el("br",{},[]),
-        "• If approvals reach ",
+        "• ",
         el("b",{},[String(RULES.approvalsRequired)]),
-        ", status becomes ",
-        el("b",{},["Approved"]),
-        ".",
+        " approvals are required for approval.",
         el("br",{},[]),
-        "• If declines reach ",
+        "• ",
         el("b",{},[String(RULES.declinesToAutoDecline)]),
-        ", status becomes ",
-        el("b",{},["Declined"]),
-        "."
+        " declines will automatically decline the quote."
       ]),
       await historyNode(quotes, votes, profile),
     ]);
   }
 
   async function adminPanel(){
+    // Priority first, then Project, then Category
+    const priority = el("select",{},[ ...PRIORITIES.map(p => el("option",{value:p},[p])) ]);
+    priority.value = "Normal";
+
     const project = el("input",{placeholder:"Project"},[]);
+    const category = el("select",{},[ ...CATEGORIES.map(c => el("option",{value:c},[c])) ]);
+    category.value = "General";
+
     const vendor  = el("input",{placeholder:"Vendor"},[]);
     const amount  = el("input",{type:"number",placeholder:"Amount (ex GST)"},[]);
     const note    = el("textarea",{placeholder:"Comment"},[]);
 
-    const attach = el("input",{
-      type:"file",
-      multiple:"multiple",
-      accept:"application/pdf,image/jpeg,image/png"
-    },[]);
+    const attach = el("input",{ type:"file", multiple:"multiple", accept:"application/pdf,image/jpeg,image/png" },[]);
 
     const submit = el("button",{class:"primary", onClick: async()=>{
       try{
+        const pr = (priority.value || "Normal").trim();
         const p = project.value.trim();
+        const cat = (category.value || "General").trim();
         const v = vendor.value.trim();
         const a = Number(amount.value);
         if(!p || !v || !a){ alert("Please fill Project, Vendor and Amount."); return; }
@@ -1230,7 +1208,15 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
           filesMeta = await uploadMany(chosen);
         }
 
-        const commentPayload = JSON.stringify({ note: note.value.trim(), files: filesMeta, resolved_at: null, workflow: null, resolved_as: null });
+        const commentPayload = JSON.stringify({
+          note: note.value.trim(),
+          files: filesMeta,
+          resolved_at: null,
+          workflow: null,
+          resolved_as: null,
+          category: cat,
+          priority: pr
+        });
 
         const expiry = addDaysISO(RULES.expiryDays);
         const user = await getUser();
@@ -1254,20 +1240,16 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       }catch(e){ alert(e?.message || String(e)); }
     }},["Submit Quote"]);
 
-    // Enter in inputs submits (except textarea)
-    const onEnterSubmit = (e)=>{
-      if(e.key==="Enter"){
-        e.preventDefault();
-        submit.click();
-      }
-    };
+    const onEnterSubmit = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); submit.click(); } };
     project.addEventListener("keydown", onEnterSubmit);
     vendor.addEventListener("keydown", onEnterSubmit);
     amount.addEventListener("keydown", onEnterSubmit);
 
     return el("div",{class:"card"},[
       el("h2",{},["Admin – Create Quote"]),
+      label("Priority", priority),
       label("Project", project),
+      label("Category", category),
       label("Vendor", vendor),
       label("Amount (ex GST)", amount),
       label("Comment", note),
@@ -1275,36 +1257,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       el("div",{class:"spacer"},[]),
       submit
     ]);
-  }
-
-  // ✅ filtering without re-render (kept from original; no longer used on right)
-  function applyQuoteFilter(){
-    const term = (QUOTE_FILTER.q || "").trim().toLowerCase();
-    const status = (QUOTE_FILTER.status || "all").toLowerCase();
-
-    const nodes = Array.from(document.querySelectorAll("[data-quote-item='1']"));
-    let shown = 0;
-
-    for(const n of nodes){
-      const st = (n.getAttribute("data-status") || "").toLowerCase();
-      const hay = (n.getAttribute("data-hay") || "").toLowerCase();
-
-      const okStatus = (status === "all") ? true : st === status;
-      const okTerm = term ? hay.includes(term) : true;
-
-      const show = okStatus && okTerm;
-      n.style.display = show ? "" : "none";
-      if(show) shown++;
-    }
-
-    const empty = document.getElementById("rm_no_results");
-    if(empty){
-      empty.style.display = shown ? "none" : "";
-    }
-  }
-
-  function persistQuoteFilter(){
-    lsWrite(LS_KEYS.quoteFilter, QUOTE_FILTER);
   }
 
   async function quotesPanel(profile){
@@ -1316,7 +1268,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     const quotes = await listQuotes();
     const votes  = await listVotes();
 
-    // Pending only (after auto/expiry rules)
     const pending = [];
     for(const q0 of quotes){
       const q = await ensureExpiryAndAuto({...q0}, votes);
@@ -1336,9 +1287,8 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       }
 
       const q = q0;
-      const st = "pending";
-
       const parsed = parseComment(q.comment);
+
       const noteText = parsed.note || "";
       const files = parsed.files || [];
 
@@ -1350,27 +1300,41 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       const leftDays = q.expiry_date ? daysUntil(q.expiry_date) : null;
       const leftLabel = (leftDays === null) ? "" : (leftDays <= 0 ? " (due)" : ` (${leftDays} days left)`);
 
-      const hay = `${q.project||""} ${q.vendor||""}`.toLowerCase();
+      // Pending pill: yellow normally, red if 1 day or less
+      const pendingPillClass = (leftDays !== null && leftDays <= 1) ? "bad" : "warn";
 
-      const item = el("div",{class:"quote", "data-quote-item":"1", "data-status":st, "data-hay":hay},[
+      // Priority + Category display
+      const pr = (parsed.priority && String(parsed.priority).trim()) ? String(parsed.priority).trim() : "Normal";
+      const cat = (parsed.category && String(parsed.category).trim()) ? String(parsed.category).trim() : "Unassigned";
+
+      const prUpper = pr.toUpperCase();
+      const prPillClass =
+        pr.toLowerCase() === "urgent" ? "priUrgent" :
+        pr.toLowerCase() === "high" ? "priHigh" :
+        "priNormal";
+
+      const item = el("div",{class:"quote"},[
         el("div",{},[
-          el("strong",{},[q.project || "(No project)"]),
-          el("div",{class:"muted"},[
-            `${q.vendor} • ${fmtMoney(q.amount)} • Created: `,
-            el("b",{},[createdTxt]),
-            ` • Due: `,
-            el("b",{},[dueTxt]),
-            leftLabel,
-            ` • Approvals ${approvals} • Declines ${declines}`
+          el("div",{class:"row", style:"gap:8px; margin-bottom:6px;"},[
+            el("span",{class:`pill ${prPillClass}`},[`[${prUpper}]`]),
+            el("span",{class:"muted", style:"font-weight:850;"},[cat])
           ]),
-          el("div",{style:"margin-top:6px;"},[
+          el("strong",{},[q.project || "(No project)"]),
+          el("div",{class:"mutedLight"},[
+            `Created: ${createdTxt} • Due: ${dueTxt}${leftLabel} • Approvals ${approvals} • Declines ${declines}`
+          ]),
+          el("div",{style:"margin-top:8px;"},[
+            el("div",{class:"muted", style:"font-weight:850;"},[q.vendor || "-"]),
+            el("div",{style:"font-weight:950; margin-top:2px;"},[fmtMoney(q.amount)])
+          ]),
+          el("div",{style:"margin-top:8px;"},[
             el("a",{class:"link",href:"#", onClick:(e)=>{
               e.preventDefault();
               details.style.display = (details.style.display === "none") ? "" : "none";
             }},["View details"])
           ])
         ]),
-        el("div",{},[ el("span",{class:"pill warn"},["Pending"]) ])
+        el("div",{},[ el("span",{class:`pill ${pendingPillClass}`},["Pending"]) ])
       ]);
 
       const details = el("div",{style:"grid-column:1 / -1; display:none;"},[]);
@@ -1461,7 +1425,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
       el("div",{class:"row"},[
         el("span",{class:"tag"},[`${profile.role.toUpperCase()} • ${profile.email}`]),
         el("span",{class:"tag ver"},[BUILD]),
-
         el("button",{onClick: async()=>{
           const p1 = prompt("New password (min 8 chars):","");
           if(p1 === null) return;
@@ -1469,19 +1432,15 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
           const p2 = prompt("Confirm new password:","");
           if(p2 === null) return;
           if(p1 !== p2){ alert("Passwords do not match."); return; }
-          try{
-            await changeMyPassword(p1);
-            alert("Password updated.");
-          }catch(e){ alert(e?.message || String(e)); }
+          try{ await changeMyPassword(p1); alert("Password updated."); }
+          catch(e){ alert(e?.message || String(e)); }
         }},["Change Password"]),
-
         el("button",{onClick: async()=>{ await signOut(); await renderApp(); }},["Log out"])
       ])
     ]);
 
     const grid = el("div",{class:"grid"},[]);
 
-    // admin also sees the history table (same as committee/observer)
     if(profile.role === "admin"){
       const left = el("div",{class:"colStack"},[]);
       left.appendChild(await adminPanel());
@@ -1492,7 +1451,6 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     }
 
     grid.appendChild(await quotesPanel(profile));
-
     return el("div",{class:"wrap"},[ top, grid ]);
   }
 
@@ -1503,10 +1461,7 @@ async function getSession(){ const { data:{session} } = await supabase.auth.getS
     const session = await getSession();
 
     if(wantsResetScreen){
-      if(!session){
-        mount(resetPasswordScreen());
-        return;
-      }
+      if(!session){ mount(resetPasswordScreen()); return; }
       mount(setNewPasswordScreen());
       return;
     }
