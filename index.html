@@ -761,7 +761,8 @@
 
     if(st0 !== "pending") return quote;
 
-    const myVotes = votes.filter(v => v.quote_id === quote.id);
+    const myVote = votes.find(v => v.quote_id === q.id && v.user_id === profile.id);
+    const canVote = (profile.role === "committee" && !myVote);
     const approvals = myVotes.filter(v=>v.vote==="approve").length;
     const declines  = myVotes.filter(v=>v.vote==="decline").length;
 
@@ -1281,12 +1282,6 @@
     }
 
     for(const q0 of pending){
-      // Committee: hide items already voted by me
-      if(profile.role === "committee"){
-        const mine = votes.find(v => v.quote_id === q0.id && v.user_id === profile.id);
-        if(mine) continue;
-      }
-
       const q = q0;
       const parsed = parseComment(q.comment);
 
