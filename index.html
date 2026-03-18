@@ -748,37 +748,40 @@
   }
 
   // Core rules: expiry=15 days -> expired, approvals=4 -> approved, declines=4 -> declined
-  async function ensureExpiryAndAuto(quote, votes){
-    const st0 = String(quote.status||"pending").toLowerCase();
+async function ensureExpiryAndAuto(quote, votes){
+  const st0 = String(quote.status||"pending").toLowerCase();
 
-    // Expiry -> expired
-    if(st0 === "pending" && quote.expiry_date && new Date() > new Date(quote.expiry_date)){
-      await updateQuoteStatus(quote.id, "expired");
-      await setResolvedMetaIfMissing(quote.id, "expired", quote.expiry_date);
-      quote.status = "expired";
-      return quote;
-    }
-
-    if(st0 !== "pending") return quote;
-
-    const myVote = votes.find(v => v.quote_id === q.id && v.user_id === profile.id);
-    const canVote = (profile.role === "committee" && !myVote);
-    const approvals = myVotes.filter(v=>v.vote==="approve").length;
-    const declines  = myVotes.filter(v=>v.vote==="decline").length;
-
-    if(approvals >= RULES.approvalsRequired){
-      await updateQuoteStatus(quote.id, "approved");
-      await setResolvedMetaIfMissing(quote.id, "approved", new Date().toISOString());
-      quote.status="approved";
-    } else if(declines >= RULES.declinesToAutoDecline){
-      await updateQuoteStatus(quote.id, "declined");
-      await setResolvedMetaIfMissing(quote.id, "declined", new Date().toISOString());
-      quote.status="declined";
-    }
+  // Expiry -> expired
+  if(st0 === "pending" && quote.expiry_date && new Date() > new Date(quote.expiry_date)){
+    await updateQuoteStatus(quote.id, "expired");
+    await setResolvedMetaIfMissing(quote.id, "expired", quote.expiry_date);
+    quote.status = "expired";
     return quote;
   }
 
-  // Realtime auto refresh
+  // already resolved → do nothing
+  if(st0 !== "pending") return quote;
+
+  // vote aggregation
+  const qVotes = votes.filter(v => v.quote_id === quote.id);
+  const approvals = qVotes.filter(v => v.vote === "approve").length;
+  const declines  = qVotes.filter(v => v.vote === "decline").length;
+
+  // auto decision
+  if(approvals >= RULES.approvalsRequired){
+    await updateQuoteStatus(quote.id, "approved");
+    await setResolvedMetaIfMissing(quote.id, "approved", new Date().toISOString());
+    quote.status = "approved";
+  } else if(declines >= RULES.declinesToAutoDecline){
+    await updateQuoteStatus(quote.id, "declined");
+    await setResolvedMetaIfMissing(quote.id, "declined", new Date().toISOString());
+    quote.status = "declined";
+  }
+
+  return quote;
+}
+
+// Realtime auto refresh
   let realtimeInit = false;
   async function initRealtime(){
     if(realtimeInit) return;
