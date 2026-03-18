@@ -1366,7 +1366,9 @@ async function ensureExpiryAndAuto(quote, votes){
         details.appendChild(box);
       }
 
-      const canVote = (profile.role === "committee");
+      const qVotes = votes.filter(v => v.quote_id === q.id);
+      const myVote = qVotes.find(v => v.user_id === profile.id);
+      const canVote = (profile.role === "committee" && !myVote);
       if(canVote){
         details.appendChild(el("div",{class:"hr"},[]));
         details.appendChild(el("div",{class:"row"},[
