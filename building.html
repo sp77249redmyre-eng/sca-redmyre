@@ -636,42 +636,12 @@ window.saveCard = async () => {
   try {
     const id = document.getElementById('cardEditId').value;
     if (id && !id.startsWith('d')) {
-      const { error } = await supabase.from('building_cards').update(data).eq('id', id);
-      if (error) throw error;
+      await supabase.from('building_cards').update(data).eq('id', id);
     } else {
-      const { error } = await supabase.from('building_cards').insert(data);
-      if (error) throw error;
+      await supabase.from('building_cards').insert(data);
     }
     closeModal('cardModal'); await loadCards(); showToast('System card saved ✓');
-  } catch(e) {
-    // DB 저장 실패해도 로컬에서 업데이트
-    const id = document.getElementById('cardEditId').value;
-    if (id && editingCardIdx !== null) {
-      cardsData[editingCardIdx] = {...cardsData[editingCardIdx], ...data};
-    } else {
-      cardsData.push({id: 'd'+Date.now(), ...data});
-    }
-    closeModal('cardModal');
-    // 로컬 상태로 렌더링
-    const grid = document.getElementById('systemsGrid');
-    grid.innerHTML = cardsData.map((c,i) => {
-      const st = STATUS_MAP[c.status] || STATUS_MAP.normal;
-      return \`<div class="sys-card" \${role==='admin'?\`onclick="openEditCard(\${i})"\`:'style="cursor:default"'}>
-        <div class="sys-top">
-          <div class="sys-icon" style="background:\${c.icon_bg||'#f1f5f9'}">\${c.icon||'🔧'}</div>
-          <div style="display:flex;align-items:center;gap:5px">
-            <div style="width:8px;height:8px;border-radius:50%;background:\${st.dot}"></div>
-            <span style="font-size:11px;font-weight:600;color:\${st.c}">\${st.label}</span>
-          </div>
-        </div>
-        <div class="sys-name">\${c.name}</div>
-        <div class="sys-status" style="background:\${st.bg};color:\${st.c}">\${st.label}</div>
-        <div class="sys-note">\${c.note||''}</div>
-        \${role==='admin'?'<div style="font-size:10px;color:var(--muted);margin-top:6px">Click to edit</div>':''}
-      </div>\`;
-    }).join('');
-    showToast('Saved locally (DB unavailable)', false);
-  }
+  } catch(e) { showToast(e.message||'Failed to save', true); }
 };
 
 const SYSTEM_ICONS = {
