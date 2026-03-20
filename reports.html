@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --orange:#f97316;--orange-bg:#fff7ed;--orange-text:#9a3412;
+  --sidebar-w:232px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
+.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
+.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
+.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
+.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-building{font-size:17px;font-weight:600;color:#fff}
+.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
+.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
+.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
+.nav-item.active .nav-label{color:#fff}
+.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.page-title{font-size:16px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
+.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:11px;color:var(--muted)}
+.content{padding:24px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block;flex-shrink:0}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;display:inline-block}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-blue{background:var(--blue-50);color:var(--blue-700)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.badge-orange{background:var(--orange-bg);color:var(--orange-text)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text-2)}
+.filter-input{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;width:180px}
+.filter-input:focus{border-color:var(--blue-600)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.table-head{display:grid;gap:10px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
+.th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.sort-th:hover{color:var(--text-2)}
+.sort-arrow{font-size:10px;opacity:0.5;margin-left:2px}
+.sort-arrow.asc{opacity:1;color:var(--blue-600)}
+.sort-arrow.desc{opacity:1;color:var(--blue-600)}
+.table-row{display:grid;gap:10px;padding:13px 20px;border-bottom:1px solid var(--border-light);align-items:center;transition:background 0.12s}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:var(--bg)}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.cat-name{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:4px}
+.cat-amount{font-size:18px;font-weight:600}
+.cat-count{font-size:11px;color:var(--muted);margin-top:3px}
+.cat-bar{height:4px;background:var(--border);border-radius:100px;margin-top:10px;overflow:hidden}
+.cat-fill{height:100%;background:var(--blue-600);border-radius:100px}
+.orange-section{background:var(--orange-bg);border:1px solid #fed7aa;border-radius:14px;padding:20px;margin-bottom:20px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:22px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:block}
+.modal-input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
+.modal-input:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;resize:vertical}
+.modal-textarea:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+@media(max-width:900px){.stats-row,.cat-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sb-header">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
+      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
+      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
+    </a>
+    <div class="sb-building">Redmyre House</div>
+    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-section">Navigation</div>
+    <a href="building.html" class="nav-item"><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item"><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <a href="works.html" class="nav-item"><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="hvac.html" class="nav-item"><div class="nav-icon">❄️</div><span class="nav-label">HVAC / Temperature</span></a>
+    <a href="parking.html" class="nav-item"><div class="nav-icon">🚗</div><span class="nav-label">Parking</span></a>
+    <a href="quotes.html" class="nav-item" id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="history.html" class="nav-item" id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="reports.html" class="nav-item active"><div class="nav-icon">📊</div><span class="nav-label">Reports</span></a>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
+      <div class="sb-logout" onclick="handleLogout()">Log out</div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="main-topbar">
+    <div>
+      <div class="page-title">Reports</div>
+      <div class="breadcrumb">Redmyre House · Building Management System</div>
+    </div>
+    <div class="tb-right">
+      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
+      <div class="user-chip">
+        <div class="u-avatar" id="topAvatar">?</div>
+        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <select class="filter-select" id="filterPeriod" onchange="updateDateRange()">
+        <option value="thismonth">This Month</option>
+        <option value="lastmonth">Last Month</option>
+        <option value="thisquarter">This Quarter</option>
+        <option value="thisyear" selected>This Year</option>
+        <option value="alltime">All Time</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      <input type="date" class="filter-input" id="dateFrom" style="display:none;width:140px">
+      <input type="date" class="filter-input" id="dateTo" style="display:none;width:140px">
+      <select class="filter-select" id="filterCategory" onchange="loadReport()">
+        <option value="all">All Categories</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="General">General</option>
+        <option value="Legal">Legal</option>
+        <option value="Other">Other</option>
+      </select>
+      <button class="btn-secondary" onclick="loadReport()">↻ Refresh</button>
+    </div>
+
+    <!-- SUMMARY STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Spend</div>
+        <div class="stat-num" id="statTotal" style="color:var(--blue-600)">$0</div>
+        <div class="stat-sub" id="statPeriodLabel">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Approved Quotes</div>
+        <div class="stat-num" id="statQuoteTotal" style="color:var(--green)">$0</div>
+        <div class="stat-sub" id="statQuoteCount">0 quotes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">One-off Expenses</div>
+        <div class="stat-num" id="statOneoffTotal" style="color:var(--orange)">$0</div>
+        <div class="stat-sub" id="statOneoffCount">0 items</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Largest Expense</div>
+        <div class="stat-num" id="statLargest" style="color:var(--text)">$0</div>
+        <div class="stat-sub" id="statLargestLabel">—</div>
+      </div>
+    </div>
+
+    <!-- CATEGORY BREAKDOWN -->
+    <div class="section-title">Spend by Category</div>
+    <div class="cat-grid" id="catGrid">
+      <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">Loading…</div>
+    </div>
+
+    <!-- APPROVED QUOTES LIST -->
+    <div class="section-title">Approved Quotes</div>
+    <div class="card">
+      <div class="table-head" style="grid-template-columns:120px 1fr 100px 110px 100px">
+        <div class="th sort-th" onclick="sortQuotes('date')" id="th-date" style="cursor:pointer;user-select:none">Date <span class="sort-arrow" id="arr-date">↕</span></div>
+        <div class="th sort-th" onclick="sortQuotes('project')" id="th-project" style="cursor:pointer;user-select:none">Project <span class="sort-arrow" id="arr-project">↕</span></div>
+        <div class="th sort-th" onclick="sortQuotes('vendor')" id="th-vendor" style="cursor:pointer;user-select:none">Vendor <span class="sort-arrow" id="arr-vendor">↕</span></div>
+        <div class="th sort-th" onclick="sortQuotes('category')" id="th-category" style="cursor:pointer;user-select:none">Category <span class="sort-arrow" id="arr-category">↕</span></div>
+        <div class="th sort-th" onclick="sortQuotes('amount')" id="th-amount" style="cursor:pointer;user-select:none;text-align:right">Amount <span class="sort-arrow" id="arr-amount">↕</span></div>
+      </div>
+      <div id="quotesList">
+        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
+      </div>
+      <div style="padding:12px 20px;background:var(--bg);border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--muted)" id="quotesTotal">—</span>
+        <span style="font-size:14px;font-weight:600" id="quotesTotalAmount">$0.00</span>
+      </div>
+    </div>
+
+    <!-- ONGOING WORKS BY WORKFLOW -->
+    <div class="section-title" style="margin-top:8px">Ongoing Works Status</div>
+    <div id="worksSection" style="margin-bottom:24px">
+      <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+
+    <!-- ONE-OFF EXPENSES -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:0">One-off Emergency Expenses</div>
+      <button class="btn-primary" id="addExpenseBtn" style="display:none" onclick="openAddExpense()">+ Add Expense</button>
+    </div>
+    <div class="orange-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:13px;color:var(--orange-text);font-weight:500">Emergency / unplanned expenses not going through the quote approval process</span>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="table-head" style="grid-template-columns:120px 1fr 100px 100px 90px">
+          <div class="th">Date</div>
+          <div class="th">Description</div>
+          <div class="th">Category</div>
+          <div class="th" style="text-align:right">Amount</div>
+          <div class="th"></div>
+        </div>
+        <div id="expensesList">
+          <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No one-off expenses recorded.</div>
+        </div>
+        <div style="padding:12px 20px;background:var(--bg);border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:var(--muted)" id="expensesTotal">—</span>
+          <span style="font-size:14px;font-weight:600" id="expensesTotalAmount">$0.00</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-backdrop" id="expenseModal">
+  <div class="modal-box">
+    <div class="modal-title" id="expenseModalTitle">Add One-off Expense</div>
+    <input type="hidden" id="expenseEditId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-field">
+        <label class="modal-label">Description</label>
+        <input class="modal-input" id="expenseDesc" placeholder="e.g. Emergency pipe repair">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Amount (AUD)</label>
+        <input class="modal-input" type="number" id="expenseAmount" placeholder="0.00">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Category</label>
+        <select class="modal-select" id="expenseCategory">
+          <option value="HVAC">HVAC</option>
+          <option value="Fire">Fire</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Security">Security</option>
+          <option value="Plumbing">Plumbing</option>
+          <option value="Lift">Lift</option>
+          <option value="General">General</option>
+          <option value="Legal">Legal</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Date</label>
+        <input class="modal-input" type="date" id="expenseDate">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Notes (optional)</label>
+      <textarea class="modal-textarea" id="expenseNotes" placeholder="Additional details…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteExpenseBtn" onclick="deleteExpense()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveExpense()">Save →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const { data:{ session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+const user = session.user;
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const role = profile?.role || 'observer';
+if (!['admin','committee','observer'].includes(role)) { window.location.href = 'building.html'; }
+
+const name = profile?.full_name || user.email.split('@')[0];
+const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
+document.getElementById('sbName').textContent = name;
+document.getElementById('topName').textContent = name;
+const roleLabel = role.charAt(0).toUpperCase()+role.slice(1);
+document.getElementById('sbRole').textContent = roleLabel;
+document.getElementById('topRole').textContent = roleLabel;
+document.getElementById('topbarRole').textContent = roleLabel;
+
+const privileged = ['admin','committee','observer'];
+if (privileged.includes(role)) {
+  document.getElementById('quotesNav').style.display = 'flex';
+  document.getElementById('reportsNav') && (document.getElementById('reportsNav').style.display = 'flex');
+  document.getElementById('historyNav').style.display = 'flex';
+}
+if (role === 'admin') {
+  document.getElementById('usersNav').style.display = 'flex';
+}
+if (role === 'admin') document.getElementById('addExpenseBtn').style.display = 'inline-flex';
+
+window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = isError?'#991b1b':'#0f172a';
+  t.style.display = 'block'; setTimeout(()=>t.style.display='none',3500);
+};
+
+const CAT_LABELS = {
+  // 원래 시스템 (대문자)
+  'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security',
+  'Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other',
+  // 이전 시스템 소문자도 호환
+  'hvac':'HVAC','fire':'Fire','electrical':'Electrical','security':'Security',
+  'plumbing':'Plumbing','structural':'Structural','cleaning':'Cleaning',
+  'lift':'Lift','general':'General','legal':'Legal','other':'Other',
+};
+
+// comment JSON에서 카테고리 추출 (원래 시스템 호환)
+function parseQuoteCategory(q) {
+  // 먼저 comment JSON 시도
+  try {
+    if (q.comment) {
+      const c = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment;
+      if (c?.category) return c.category;
+    }
+  } catch {}
+  // fallback: category 컬럼
+  return q.category || 'Other';
+}
+
+const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+const CAT_COLORS = {
+  'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
+  'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
+  'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
+  'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
+};
+const CAT_BG = {
+  'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
+  'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
+  'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
+  'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
+};
+function catBadge(cat) {
+  const label = CAT_LABELS[cat] || cat || 'Other';
+  const color = CAT_COLORS[cat] || '#94a3b8';
+  const bg    = CAT_BG[cat]    || '#f1f5f9';
+  return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
+}
+
+let dateFrom = null;
+let dateTo = null;
+
+window.updateDateRange = () => {
+  const period = document.getElementById('filterPeriod').value;
+  const now = new Date();
+  const fromEl = document.getElementById('dateFrom');
+  const toEl = document.getElementById('dateTo');
+
+  if (period === 'custom') {
+    fromEl.style.display = 'block';
+    toEl.style.display = 'block';
+    return;
+  }
+  fromEl.style.display = 'none';
+  toEl.style.display = 'none';
+
+  const y = now.getFullYear();
+  const m = now.getMonth();
+
+  if (period === 'thismonth') {
+    dateFrom = new Date(y, m, 1);
+    dateTo = new Date(y, m+1, 0);
+  } else if (period === 'lastmonth') {
+    dateFrom = new Date(y, m-1, 1);
+    dateTo = new Date(y, m, 0);
+  } else if (period === 'thisquarter') {
+    const q = Math.floor(m/3);
+    dateFrom = new Date(y, q*3, 1);
+    dateTo = new Date(y, q*3+3, 0);
+  } else if (period === 'thisyear') {
+    dateFrom = new Date(y, 0, 1);
+    dateTo = new Date(y, 11, 31);
+  } else {
+    dateFrom = null;
+    dateTo = null;
+  }
+  loadReport();
+};
+
+window.loadReport = async function() {
+  const period = document.getElementById('filterPeriod').value;
+  const catFilter = document.getElementById('filterCategory').value;
+
+  if (period === 'custom') {
+    const fromVal = document.getElementById('dateFrom').value;
+    const toVal = document.getElementById('dateTo').value;
+    if (fromVal) dateFrom = new Date(fromVal);
+    if (toVal) dateTo = new Date(toVal);
+  }
+
+  const periodLabel = period === 'alltime' ? 'All time' :
+    period === 'thisyear' ? `Jan–Dec ${new Date().getFullYear()}` :
+    period === 'thismonth' ? new Date().toLocaleString('en-AU',{month:'long',year:'numeric'}) :
+    period === 'custom' && dateFrom ? `${dateFrom.toLocaleDateString('en-AU')} – ${dateTo?.toLocaleDateString('en-AU')||'now'}` :
+    '—';
+
+  document.getElementById('statPeriodLabel').textContent = periodLabel;
+
+  // Load approved quotes
+  // 날짜 필터만 DB에서, 카테고리는 comment JSON에 있으므로 JS에서 필터
+  let qQuery = supabase.from('quotes').select('*').eq('status','approved').order('created_at',{ascending:false});
+  if (dateFrom) qQuery = qQuery.gte('created_at', dateFrom.toISOString());
+  if (dateTo) qQuery = qQuery.lte('created_at', new Date(dateTo.getTime()+86400000).toISOString());
+  const { data: quotesRaw } = await qQuery;
+  // JS에서 카테고리 필터 (comment JSON 파싱)
+  const quotes = (quotesRaw || []).map(q => ({...q, _cat: parseQuoteCategory(q)}))
+    .filter(q => catFilter === 'all' || q._cat === catFilter);
+
+  // Load one-off expenses
+  let eQuery = supabase.from('expenses').select('*').order('expense_date',{ascending:false});
+  if (dateFrom) eQuery = eQuery.gte('expense_date', dateFrom.toISOString().split('T')[0]);
+  if (dateTo) eQuery = eQuery.lte('expense_date', new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+  if (catFilter !== 'all') eQuery = eQuery.eq('category', catFilter);
+  const { data: expenses } = await eQuery;
+
+  const quotesData = quotes || [];
+  const expensesData = expenses || [];
+
+  const quoteTotal = quotesData.reduce((s,q) => s + Number(q.amount||0), 0);
+  const expenseTotal = expensesData.reduce((s,e) => s + Number(e.amount||0), 0);
+  const grandTotal = quoteTotal + expenseTotal;
+
+  // Largest
+  const allItems = [
+    ...quotesData.map(q => ({label:q.project||q.title||'—', amount:Number(q.amount||0)})),
+    ...expensesData.map(e => ({label:e.description||'—', amount:Number(e.amount||0)})),
+  ].sort((a,b) => b.amount - a.amount);
+
+  document.getElementById('statTotal').textContent = fmt(grandTotal);
+  document.getElementById('statQuoteTotal').textContent = fmt(quoteTotal);
+  document.getElementById('statQuoteCount').textContent = `${quotesData.length} quote${quotesData.length!==1?'s':''}`;
+  document.getElementById('statOneoffTotal').textContent = fmt(expenseTotal);
+  document.getElementById('statOneoffCount').textContent = `${expensesData.length} item${expensesData.length!==1?'s':''}`;
+  document.getElementById('statLargest').textContent = allItems.length ? fmt(allItems[0].amount) : '$0';
+  document.getElementById('statLargestLabel').textContent = allItems.length ? allItems[0].label.substring(0,30) : '—';
+
+  // Category breakdown
+  const catTotals = {};
+  quotesData.forEach(q => {
+    const c = q._cat || parseQuoteCategory(q);
+    catTotals[c] = (catTotals[c]||0) + Number(q.amount||0);
+  });
+  expensesData.forEach(e => {
+    const c = e.category || 'Other';
+    catTotals[c] = (catTotals[c]||0) + Number(e.amount||0);
+  });
+
+  const maxCat = Math.max(...Object.values(catTotals), 1);
+  const catGrid = document.getElementById('catGrid');
+  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+
+  if (!sortedCats.length) {
+    catGrid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">No data for this period</div>';
+  } else {
+    catGrid.innerHTML = sortedCats.map(([cat, total]) => {
+      const qCount = quotesData.filter(q=>(q._cat||parseQuoteCategory(q))===cat).length;
+      const eCount = expensesData.filter(e=>(e.category||'Other')===cat).length;
+      const color = CAT_COLORS[cat] || 'var(--blue-600)';
+      const pct = Math.round(total/grandTotal*100);
+      return `
+      <div class="cat-card" style="cursor:pointer;border-top:3px solid ${color}" onclick="filterByCat('${cat}')">
+        <div class="cat-name">${CAT_LABELS[cat]||cat}</div>
+        <div class="cat-amount" style="color:${color}">${fmt(total)}</div>
+        <div class="cat-count">${qCount} quote${qCount!==1?'s':''} · ${eCount} expense${eCount!==1?'s':''} · ${pct}% of total</div>
+        <div class="cat-bar"><div class="cat-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Quotes list
+  currentQuotesData = quotesData;
+  currentSortKey = 'date';
+  currentSortDir = 'desc';
+  renderQuotesList();
+  document.getElementById('quotesTotal').textContent = `${quotesData.length} approved quote${quotesData.length!==1?'s':''}`;
+  document.getElementById('quotesTotalAmount').textContent = fmt(quoteTotal);
+
+  // Works section
+  await renderWorks(catFilter);
+
+  // Expenses list
+  renderExpenses(expensesData);
+};
+
+function renderExpenses(expensesData) {
+  const list = document.getElementById('expensesList');
+  if (!expensesData.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No one-off expenses recorded for this period.</div>';
+  } else {
+    list.innerHTML = expensesData.map(e => `
+      <div class="table-row" style="grid-template-columns:120px 1fr 100px 100px 90px">
+        <div style="font-size:12px;color:var(--text-2)">${new Date(e.expense_date||e.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+        <div>
+          <div style="font-size:13px;font-weight:500">${e.description||'—'}</div>
+          ${e.notes?`<div style="font-size:11px;color:var(--muted)">${e.notes}</div>`:''}
+        </div>
+        <div><span class="badge badge-orange" style="font-size:10px">${CAT_LABELS[e.category]||e.category||'Other'}</span></div>
+        <div style="font-size:13px;font-weight:600;text-align:right">${fmt(e.amount)}</div>
+        <div style="text-align:right">
+          ${role==='admin' ? `<button class="btn-secondary" style="padding:4px 8px;font-size:11px" onclick="editExpense('${e.id}')">Edit</button>` : ''}
+        </div>
+      </div>`).join('');
+  }
+  const total = expensesData.reduce((s,e)=>s+Number(e.amount||0),0);
+  document.getElementById('expensesTotal').textContent = `${expensesData.length} item${expensesData.length!==1?'s':''}`;
+  document.getElementById('expensesTotalAmount').textContent = fmt(total);
+}
+
+let allExpenses = [];
+
+window.openAddExpense = () => {
+  document.getElementById('expenseModalTitle').textContent = 'Add One-off Expense';
+  document.getElementById('expenseEditId').value = '';
+  document.getElementById('expenseDesc').value = '';
+  document.getElementById('expenseAmount').value = '';
+  document.getElementById('expenseCategory').value = 'Other';
+  document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('expenseNotes').value = '';
+  document.getElementById('deleteExpenseBtn').style.display = 'none';
+  document.getElementById('expenseModal').classList.add('open');
+};
+
+window.editExpense = async (id) => {
+  const { data: e } = await supabase.from('expenses').select('*').eq('id', id).single();
+  if (!e) return;
+  document.getElementById('expenseModalTitle').textContent = 'Edit Expense';
+  document.getElementById('expenseEditId').value = e.id;
+  document.getElementById('expenseDesc').value = e.description||'';
+  document.getElementById('expenseAmount').value = e.amount||'';
+  document.getElementById('expenseCategory').value = e.category||'other';
+  document.getElementById('expenseDate').value = e.expense_date||new Date().toISOString().split('T')[0];
+  document.getElementById('expenseNotes').value = e.notes||'';
+  document.getElementById('deleteExpenseBtn').style.display = 'inline-flex';
+  document.getElementById('expenseModal').classList.add('open');
+};
+
+window.saveExpense = async () => {
+  const id = document.getElementById('expenseEditId').value;
+  const data = {
+    description: document.getElementById('expenseDesc').value.trim(),
+    amount: parseFloat(document.getElementById('expenseAmount').value)||0,
+    category: document.getElementById('expenseCategory').value,
+    expense_date: document.getElementById('expenseDate').value,
+    notes: document.getElementById('expenseNotes').value.trim(),
+    created_by: user.id,
+  };
+  if (!data.description) { showToast('Please enter a description', true); return; }
+  try {
+    if (id) { await supabase.from('expenses').update(data).eq('id', id); }
+    else { await supabase.from('expenses').insert(data); }
+    closeModal('expenseModal');
+    await loadReport();
+    showToast('Expense saved ✓');
+  } catch(e) { showToast(e.message||'Failed to save', true); }
+};
+
+window.deleteExpense = async () => {
+  if (!confirm('Delete this expense?')) return;
+  const id = document.getElementById('expenseEditId').value;
+  await supabase.from('expenses').delete().eq('id', id);
+  closeModal('expenseModal');
+  await loadReport();
+  showToast('Expense deleted');
+};
+
+// ── Works 섹션 렌더링 ──
+async function renderWorks(catFilter) {
+  const wrap = document.getElementById('worksSection');
+  if (!wrap) return;
+
+  let query = supabase.from('works').select('*').order('updated_at', {ascending: false});
+  if (dateFrom) query = query.gte('updated_at', dateFrom.toISOString());
+  if (dateTo)   query = query.lte('updated_at', new Date(dateTo.getTime()+86400000).toISOString());
+
+  const { data: works } = await query;
+  const allWorks = works || [];
+
+  // 카테고리 필터
+  const filtered = catFilter === 'all' ? allWorks
+    : allWorks.filter(w => (w.category||'Other') === catFilter);
+
+  if (!filtered.length) {
+    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No works for this period</div>';
+    return;
+  }
+
+  // 상태별 그룹 (works status 기준)
+  const groups = {
+    urgent:    { label:'🔴 Urgent',       color:'var(--red-text)',  bg:'var(--red-bg)',    items:[] },
+    inprog:    { label:'🔵 In Progress',  color:'var(--blue-600)',  bg:'var(--blue-50)',   items:[] },
+    scheduled: { label:'📅 Scheduled',    color:'var(--muted)',     bg:'var(--border-light)', items:[] },
+    done:      { label:'✅ Completed',    color:'var(--green-text)', bg:'var(--green-bg)', items:[] },
+  };
+
+  for (const w of filtered) {
+    const st = w.status || 'scheduled';
+    // 알 수 없는 상태는 scheduled로 처리
+    if (groups[st]) groups[st].items.push(w);
+    else groups.scheduled.items.push(w);
+  }
+
+  const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+const CAT_COLORS = {
+  'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
+  'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
+  'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
+  'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
+};
+const CAT_BG = {
+  'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
+  'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
+  'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
+  'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
+};
+function catBadge(cat) {
+  const label = CAT_LABELS[cat] || cat || 'Other';
+  const color = CAT_COLORS[cat] || '#94a3b8';
+  const bg    = CAT_BG[cat]    || '#f1f5f9';
+  return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
+}
+
+  let html = '<div style="display:flex;flex-direction:column;gap:16px">';
+
+  for (const [key, grp] of Object.entries(groups)) {
+    if (!grp.items.length) continue;
+      html += `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;border-left:4px solid ${grp.color}">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:${grp.bg};border-bottom:1px solid var(--border-light)">
+          <span style="font-size:13px;font-weight:700;color:${grp.color}">${grp.label} <span style="font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:100px;color:var(--text-2);margin-left:6px">${grp.items.length}</span></span>
+
+        </div>
+        <div>
+          ${grp.items.map(w => `
+            <div style="display:grid;grid-template-columns:120px 1fr 120px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border-light);align-items:center" class="table-row">
+              <div style="font-size:12px;color:var(--text-2)">${new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+              <div>
+                <div style="font-size:13px;font-weight:500">${w.title||'—'}${w.quote_id?'<span style="font-size:10px;color:var(--blue-600);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:600">QUOTE</span>':''}</div>
+                <div style="font-size:11px;color:var(--muted)">${w.contractor||'—'}</div>
+              </div>
+              <div>${catBadge(w.category||'Other')}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// ── 정렬 ──
+let currentQuotesData = [];
+let currentSortKey = 'date';
+let currentSortDir = 'desc';
+
+function renderQuotesList() {
+  const list = document.getElementById('quotesList');
+  if (!currentQuotesData.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No approved quotes for this period</div>';
+    return;
+  }
+
+  // 정렬
+  const sorted = [...currentQuotesData].sort((a, b) => {
+    let av, bv;
+    if (currentSortKey === 'date')     { av = new Date(a.created_at); bv = new Date(b.created_at); }
+    if (currentSortKey === 'project')  { av = (a.project||'').toLowerCase(); bv = (b.project||'').toLowerCase(); }
+    if (currentSortKey === 'vendor')   { av = (a.vendor||a.contractor||'').toLowerCase(); bv = (b.vendor||b.contractor||'').toLowerCase(); }
+    if (currentSortKey === 'category') { av = (a._cat||'').toLowerCase(); bv = (b._cat||'').toLowerCase(); }
+    if (currentSortKey === 'amount')   { av = Number(a.amount||0); bv = Number(b.amount||0); }
+    if (av < bv) return currentSortDir === 'asc' ? -1 : 1;
+    if (av > bv) return currentSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // 카테고리/벤더로 정렬 시 그룹 구분선 추가
+  let lastGroup = null;
+  list.innerHTML = sorted.map(q => {
+    const groupKey = currentSortKey === 'category' ? (q._cat||'Other')
+      : currentSortKey === 'vendor' ? (q.vendor||q.contractor||'—')
+      : null;
+
+    let groupHeader = '';
+    if (groupKey && groupKey !== lastGroup) {
+      lastGroup = groupKey;
+      const groupColor = currentSortKey === 'category' ? (CAT_COLORS[groupKey]||'#94a3b8') : 'var(--text-2)';
+      const groupBg = currentSortKey === 'category' ? (CAT_BG[groupKey]||'#f1f5f9') : 'var(--bg)';
+      groupHeader = `<div style="padding:7px 20px;background:${groupBg};border-bottom:1px solid var(--border-light);font-size:11px;font-weight:700;color:${groupColor};text-transform:uppercase;letter-spacing:0.07em">${currentSortKey === 'category' ? (CAT_LABELS[groupKey]||groupKey) : groupKey}</div>`;
+    }
+
+    return groupHeader + `
+      <div class="table-row" style="grid-template-columns:120px 1fr 100px 110px 100px">
+        <div style="font-size:12px;color:var(--text-2)">${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+        <div style="font-size:13px;font-weight:500">${q.project||q.title||'—'}</div>
+        <div style="font-size:12px;color:var(--text-2)">${q.vendor||q.contractor||'—'}</div>
+        <div>${catBadge(q._cat)}</div>
+        <div style="font-size:13px;font-weight:600;text-align:right">${fmt(q.amount)}</div>
+      </div>`;
+  }).join('');
+
+  // 헤더 화살표 업데이트
+  ['date','project','vendor','category','amount'].forEach(k => {
+    const arr = document.getElementById('arr-'+k);
+    if (!arr) return;
+    if (k === currentSortKey) {
+      arr.textContent = currentSortDir === 'asc' ? '↑' : '↓';
+      arr.className = 'sort-arrow ' + currentSortDir;
+    } else {
+      arr.textContent = '↕';
+      arr.className = 'sort-arrow';
+    }
+  });
+}
+
+window.sortQuotes = (key) => {
+  if (currentSortKey === key) {
+    currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortKey = key;
+    // 카테고리/벤더는 asc로, 금액/날짜는 desc로 기본
+    currentSortDir = (key === 'category' || key === 'vendor' || key === 'project') ? 'asc' : 'desc';
+  }
+  renderQuotesList();
+};
+
+// 카테고리 카드 클릭 시 해당 카테고리로 필터
+window.filterByCat = (cat) => {
+  const sel = document.getElementById('filterCategory');
+  sel.value = cat;
+  loadReport();
+  // 화면 스크롤
+  document.getElementById('quotesList').scrollIntoView({behavior:'smooth', block:'start'});
+};
+
+// Init
+updateDateRange();
+</script>
+</body>
+</html>

@@ -1,1495 +1,343 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Redmyre House – Quote Approval</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redmyre House – Building Management</title>
 
   <!-- ===== PWA FULL SETUP (Android + iPhone) ===== -->
   <link rel="manifest" href="/manifest.webmanifest?v=5">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v3.png?v=5">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
-
-  <meta name="theme-color" content="#1e4fa3">
+  <meta name="theme-color" content="#1e3a8a">
   <meta name="application-name" content="SCA Redmyre">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 
-  <style>
-    :root{
-      --bg:#f6f7f9; --card:#ffffff; --border:#e6e8ee; --text:#111827; --muted:#6b7280;
-      --shadow:0 2px 14px rgba(0,0,0,.06);
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
-    .wrap{ max-width:1120px; margin:24px auto; padding:0 16px; }
-    .card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
-    .grid{ display:grid; grid-template-columns: 0.9fr 1.4fr; gap:16px; }
-    @media (max-width:980px){ .grid{ grid-template-columns:1fr; } }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-900: #0f2456;
+    --blue-800: #1e3a8a;
+    --blue-600: #2563eb;
+    --blue-400: #60a5fa;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --bg: #f0f4f8;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --green: #10b981;
+    --red: #ef4444;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--blue-900);
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+  }
+  .login-wrap {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
 
-    .topbar{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
-    .sub{ font-size:13px; color:var(--muted); font-weight:800; margin-top:6px; }
+  /* LEFT */
+  .login-left {
+    width: 48%;
+    background: linear-gradient(160deg, #0f2456 0%, #1e3a8a 50%, #2563eb 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-left::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+    top: -150px; right: -150px;
+  }
+  .login-left::after {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%);
+    bottom: -50px; left: -50px;
+  }
+  .left-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .logo-wrap {
+    width: 110px; height: 110px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .logo-wrap:hover { transform: scale(1.05); opacity: 0.9; }
+  .logo-wrap img { width: 110px; height: 110px; object-fit: contain; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3)); }
+  .logo-fallback {
+    font-size: 30px; font-weight: 700; color: #fff;
+    font-style: italic; letter-spacing: -1px;
+  }
+  .building-name {
+    font-size: 40px; font-weight: 600; color: #fff;
+    letter-spacing: -1px; line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .system-label {
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    letter-spacing: 0.05em; margin-bottom: 40px;
+  }
+  .divider { width: 40px; height: 1px; background: rgba(255,255,255,0.2); margin-bottom: 28px; }
+  .company-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    padding: 7px 16px;
+  }
+  .company-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue-400); }
+  .company-name { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 500; }
+  .left-stats {
+    position: absolute; bottom: 36px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 36px; z-index: 1;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 600; color: #fff; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
-    h2{ font-size:16px; margin:0 0 10px; }
-    .muted{ color:var(--muted); font-size:13px; }
-    .mutedLight{ color:#9ca3af; font-size:12px; }
+  /* RIGHT */
+  .login-right {
+    flex: 1;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 48px;
+  }
+  .form-wrap { width: 100%; max-width: 380px; }
+  .form-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--blue-600); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .form-title { font-size: 30px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .form-sub { font-size: 14px; color: var(--muted); margin-bottom: 36px; line-height: 1.5; }
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.05em;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+  .form-input {
+    width: 100%; height: 48px;
+    padding: 0 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--bg);
+    outline: none; transition: all 0.15s;
+  }
+  .form-input:focus {
+    border-color: var(--blue-600); background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .forgot-link {
+    display: block; text-align: right; margin-top: 6px;
+    font-size: 12px; color: var(--blue-600); text-decoration: none; font-weight: 500;
+  }
+  .error-msg {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #dc2626; margin-bottom: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+  .submit-btn {
+    width: 100%; height: 50px;
+    background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 100%);
+    border: none; border-radius: 10px;
+    color: #fff; font-size: 15px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 14px rgba(30,58,138,0.3);
+    transition: opacity 0.15s, transform 0.12s;
+    margin-top: 8px;
+  }
+  .submit-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .form-footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
+  .roles-section {
+    margin-top: 32px; padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .roles-label { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+  .role-pills { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .role-pill {
+    font-size: 11px; padding: 4px 11px;
+    border-radius: 100px; border: 1px solid transparent;
+    font-weight: 600;
+  }
+  .role-pill.admin    { background:linear-gradient(135deg,#0f2456 0%,#1e3a8a 50%,#2563eb 100%); border-color:transparent; color:#fff; }
+  .role-pill.committee{ background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%); border-color:transparent; color:#fff; opacity:0.9; }
+  .role-pill.observer { background:linear-gradient(135deg,#2563eb 0%,#3b82f6 100%); border-color:transparent; color:#fff; opacity:0.75; }
+  .role-pill.owner    { background:linear-gradient(135deg,#93c5fd 0%,#bfdbfe 100%); border-color:transparent; color:#1e3a8a; opacity:0.85; }
+  .role-pill.tenant   { background:linear-gradient(135deg,#bfdbfe 0%,#dbeafe 100%); border-color:transparent; color:#1e4fa3; opacity:0.7; }
 
-    input, textarea, select{
-      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font:inherit; background:#fff;
-    }
-    textarea{ min-height:120px; resize:vertical; }
-
-    button{
-      padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff;
-      font-weight:900; cursor:pointer;
-    }
-    button:hover{ background:#f3f4f6; }
-    button.primary{ background:#111827; border-color:#111827; color:#fff; }
-    button.primary:hover{ background:#0b1220; }
-    button.danger{ background:#b91c1c; border-color:#b91c1c; color:#fff; }
-    button.danger:hover{ background:#991b1b; }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .spacer{ height:10px; }
-    .hr{ height:1px; background:var(--border); margin:14px 0; }
-
-    .tag{ font-size:12px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--muted); font-weight:950; }
-    .tag.ver{ background:#eef2ff; border-color:#c7d2fe; color:#3730a3; }
-
-    /* Pills (existing style) */
-    .pill{ font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-weight:950; display:inline-flex; align-items:center; gap:6px; }
-    .pill.ok{ background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
-    .pill.warn{ background:#fffbeb; border-color:#fde68a; color:#92400e; } /* Pending yellow */
-    .pill.bad{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d; }  /* Red */
-    .pill.neutral{ background:#f3f4f6; border-color:#e5e7eb; color:#374151; } /* Grey */
-
-    /* Workflow pills */
-    .pill.wfBlue{ background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
-    .pill.wfOrange{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
-    .pill.wfGreen{ background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
-
-    /* Priority pills (Voting) */
-    .pill.priUrgent{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d; }
-    .pill.priHigh{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
-    .pill.priNormal{ background:#f3f4f6; border-color:#e5e7eb; color:#374151; }
-
-    .quote{
-      border:1px solid var(--border); border-radius:14px; padding:12px; background:#fff; margin-top:12px;
-      display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:start;
-    }
-    .quote strong{ display:block; margin-bottom:2px; }
-    .link{ color:#2563eb; font-weight:950; text-decoration:none; }
-
-    .loginWrap{ max-width:560px; margin:70px auto; }
-
-    .detailLabel{
-      font-size:12px; font-weight:950; color:var(--muted);
-      margin-top:10px; margin-bottom:6px;
-      text-transform: uppercase; letter-spacing: .08em;
-    }
-    .detailBox{
-      width:100%; border:1px solid var(--border); border-radius:12px;
-      padding:10px 12px; background:#fff;
-      font-size:14px; font-weight:650; line-height:1.45;
-      white-space:pre-wrap; word-break:break-word;
-    }
-
-    /* Logo */
-    .rm-sign{ display:inline-flex; align-items:stretch; padding:0; font-family:Arial, Helvetica, sans-serif; }
-    .rm-red-box{
-      background:#c8102e; color:#fff; font-weight:950; font-size:44px; line-height:1;
-      padding:10px 20px; border-radius:10px; display:flex; align-items:center; letter-spacing:-1px;
-    }
-    .rm-right{ display:flex; flex-direction:column; justify-content:center; margin-left:8px; }
-    .rm-house{ color:#111827; font-weight:950; font-size:26px; letter-spacing:5px; line-height:1; margin-bottom:-4px; margin-top:2px; }
-    .rm-myre{ color:#c8102e; font-weight:950; font-size:44px; line-height:1; letter-spacing:-1px; }
-
-    /* History */
-    .histWrap{ margin-top:10px; }
-    .histHeader{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff;
-      cursor:pointer; user-select:none;
-    }
-    .histHeaderTitle{
-      font-size:12px; font-weight:950; color:#374151; text-transform:uppercase; letter-spacing:.08em;
-      display:flex; align-items:center; gap:10px;
-    }
-    .histBadge{ font-size:12px; padding:4px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--muted); font-weight:950; }
-    .chev{ font-weight:950; color:#6b7280; }
-
-    .histTable{
-      width:100%;
-      border:1px solid var(--border);
-      border-radius:12px;
-      overflow:hidden;
-      background:#fff;
-      font-size:13px;
-      margin-top:10px;
-    }
-    .histScroll{
-      max-height: 85vh;
-      overflow:auto;
-    }
-    .histRow{
-      display:grid;
-      grid-template-columns: 95px 120px minmax(220px, 1fr) 110px 95px 150px 140px;
-      gap:10px;
-      padding:6px 12px;
-      border-top:1px solid var(--border);
-      align-items:center;
-    }
-    .histRow.head{
-      background:#f9fafb;
-      border-top:none;
-      font-weight:950;
-      color:#374151;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .cell{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-size:12px;
-      line-height:1.25;
-    }
-    .histRow.head .cell{
-      overflow:visible;
-      text-overflow:clip;
-      white-space:nowrap;
-    }
-    .cell.project{
-      white-space:normal;
-      word-break:break-word;
-      max-height:2.6em;
-      overflow:hidden;
-    }
-    @media (max-width:820px){
-      .histScroll{ max-height: 85vh; }
-      .histRow{ min-width: 860px; }
-    }
-
-    /* Modal base */
-    .modalBack{
-      position:fixed; inset:0; background:rgba(17,24,39,.45);
-      display:flex; align-items:center; justify-content:center;
-      padding:16px; z-index:9999;
-    }
-    .modalCard{
-      width:min(860px, 96vw);
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      padding:14px;
-    }
-    .modalTitle{
-      font-weight:950; font-size:14px; margin:0 0 8px;
-    }
-    .modalTextarea{
-      width:100%;
-      min-height:260px;
-      resize:vertical;
-      padding:12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      font:inherit;
-    }
-    .modalRow{
-      display:flex; gap:10px; justify-content:flex-end; margin-top:10px;
-      flex-wrap:wrap;
-    }
-
-    /* Modal (Image Preview) */
-    .imgCard{
-      width:min(980px, 96vw);
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      padding:12px;
-    }
-    .imgHeader{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:10px;
-    }
-    .imgTitle{
-      font-weight:950; font-size:13px; color:#111827;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .imgClose{
-      padding:8px 10px; border-radius:12px;
-      border:1px solid var(--border); background:#fff; font-weight:950; cursor:pointer;
-    }
-    .imgClose:hover{ background:#f3f4f6; }
-    .imgView{
-      width:100%;
-      max-height:72vh;
-      object-fit:contain;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:#f9fafb;
-    }
-
-    /* Modal (Attachment List) */
-    .listCard{
-      width:min(820px, 96vw);
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      padding:12px;
-    }
-    .listHeader{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-bottom:8px;
-    }
-    .listTitle{
-      font-weight:950; font-size:13px; color:#111827;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .listBody{
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:10px;
-      max-height:60vh;
-      overflow:auto;
-      background:#fff;
-    }
-    .listItem{
-      padding:8px 6px;
-      border-top:1px solid var(--border);
-      font-size:13px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:center;
-    }
-    .listItem:first-child{ border-top:none; }
-    .listMeta{ color:var(--muted); font-size:12px; font-weight:750; white-space:nowrap; }
-    .listActions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-
-    /* History filters */
-    .qControls{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      margin-top:8px;
-    }
-    .qControls .status{ width: 220px; }
-
-    /* Toast */
-    .toast{
-      position:fixed;
-      right:14px;
-      top:14px;
-      background:#111827;
-      color:#fff;
-      border-radius:14px;
-      padding:10px 12px;
-      font-weight:950;
-      font-size:13px;
-      box-shadow:0 12px 30px rgba(0,0,0,.20);
-      z-index:10000;
-      max-width:min(420px, 92vw);
-    }
-
-    /* Left column stack for admin */
-    .colStack{ display:flex; flex-direction:column; gap:16px; }
-  </style>
+  @media (max-width: 768px) {
+    .login-left { display: none; }
+    .login-right { padding: 40px 24px; }
+  }
+</style>
 </head>
-
 <body>
-<div id="app"></div>
+<div class="login-wrap">
+  <div class="login-left">
+    <!-- 중앙: Redmyre 로고 -->
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;text-align:center;z-index:1;width:100%">
+      <div style="background:#fff;border-radius:12px;padding:12px 22px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.2)">
+        <svg width="168" height="54" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+          <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+          <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+          <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+        </svg>
+      </div>
+      <div class="system-label">Building Management System</div>
+    </div>
+    <!-- 하단: SCA + Stats -->
+    <!-- SCA 로고 - stats 위에 고정 -->
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener"
+       style="position:absolute;bottom:105px;left:0;right:0;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;transition:opacity 0.2s">
+      <img src="sca-logo.png" alt="SCA"
+           style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3));transition:transform 0.2s,filter 0.2s"
+           onmouseover="this.style.transform='scale(1.12)';this.style.filter='drop-shadow(0 4px 14px rgba(0,0,0,0.5))'"
+           onmouseout="this.style.transform='scale(1)';this.style.filter='drop-shadow(0 2px 8px rgba(0,0,0,0.3))'"
+           onerror="this.style.display='none'">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.9);line-height:1.3">SCA Facility</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5)">Management</div>
+      </div>
+    </a>
+    <!-- Stats - 맨 아래 고정 -->
+    <div class="left-stats">
+      <div class="stat"><div class="stat-num">SP</div><div class="stat-label">77249</div></div>
+      <div class="stat"><div class="stat-num">L6</div><div class="stat-label">Levels</div></div>
+      <div class="stat"><div class="stat-num">8</div><div class="stat-label">Active Works</div></div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="form-wrap">
+      <div class="form-eyebrow">Secure Portal</div>
+      <div class="form-title">Welcome back</div>
+      <div class="form-sub">Sign in to Redmyre House management portal</div>
+
+      <div class="error-msg" id="errorMsg">Invalid email or password. Please try again.</div>
+
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button class="submit-btn" id="signInBtn" onclick="handleLogin()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Sign In →</span>
+      </button>
+
+      <div class="form-footer">
+        Having trouble? Contact your building manager
+      </div>
+
+      <div class="roles-section">
+        <div class="roles-label">Access roles on this system</div>
+        <div class="role-pills">
+          <span class="role-pill admin">Admin</span>
+          <span class="role-pill committee">Committee</span>
+          <span class="role-pill observer">Observer</span>
+          <span class="role-pill owner">Owner</span>
+          <span class="role-pill tenant">Tenant</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="module">
-  const BUILD = "v2026-03-06-2";
-
   const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
-
-  // rules: approvals=4, declines=4, expiry=15 days
-  const RULES = { approvalsRequired: 4, declinesToAutoDecline: 4, expiryDays: 15 };
-
-  // attachment policy (DO NOT CHANGE)
-  const ATTACH = { maxFiles: 4, acceptMime: ["application/pdf", "image/jpeg", "image/png"] };
-
-  const ADMIN_EMAIL = "sp77249.redmyre@gmail.com";
-  const COMMITTEE_EMAILS = [
-    "jimmyg@ignitelearning.com.au",
-    "michael@meditechstaffing.com.au",
-    "niranjan@calculus.net.au",
-    "redmyremedical@gmail.com",
-    "sudesh@taxwealth.com.au",
-    "jskmhc@gmail.com",
-    "laurachoo2@gmail.com",
-  ];
-  const OBSERVER_EMAILS = ["halil@exclusivere.com.au","sca.jacob77@gmail.com","sca.yun82@gmail.com"];
-
-  const LS_KEYS = { histOpen: "rm_hist_open_v7", quoteFilter: "rm_quote_filter_v2" };
-
-  const CATEGORIES = ["HVAC","Fire","Electrical","Security","Plumbing","General"];
-  const PRIORITIES = ["Urgent","High","Normal"];
-
-  const el = (tag, props={}, children=[]) => {
-    const n = document.createElement(tag);
-    for(const [k,v] of Object.entries(props)){
-      if(k==="class") n.className=v;
-      else if(k==="style") n.style.cssText=v;
-      else if(k.startsWith("on") && typeof v==="function") n.addEventListener(k.slice(2).toLowerCase(), v);
-      else n.setAttribute(k,v);
-    }
-    for(const c of children){ n.appendChild(typeof c==="string" ? document.createTextNode(c) : c); }
-    return n;
-  };
-
-  const fmtMoney = (n) => Number(n||0).toLocaleString(undefined,{style:"currency",currency:"AUD"});
-  const addDaysISO = (days, from=new Date()) => { const d=new Date(from); d.setDate(d.getDate()+days); return d.toISOString(); };
-
-  function daysUntil(isoDate){
-    if(!isoDate) return null;
-    const now = new Date();
-    const dt = new Date(isoDate);
-    if(isNaN(dt.getTime())) return null;
-    const ms = dt - now;
-    return Math.ceil(ms / (1000*60*60*24));
-  }
-
-  function fmtDate(d){
-    if(!d) return "-";
-    const dt = new Date(d);
-    if(isNaN(dt.getTime())) return "-";
-    return dt.toLocaleDateString("en-AU", { day:"2-digit", month:"short", year:"numeric" });
-  }
-
-  function mount(node){
-    const root = document.getElementById("app");
-    root.innerHTML="";
-    root.appendChild(node);
-  }
-
-  function logoNode(){
-    return el("div",{class:"rm-sign"},[
-      el("div",{class:"rm-red-box"},["Red"]),
-      el("div",{class:"rm-right"},[
-        el("div",{class:"rm-house"},["HOUSE"]),
-        el("div",{class:"rm-myre"},["myre"]),
-      ])
-    ]);
-  }
-
-  function uuid(){
-    if (crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-    const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-    return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
-  }
-
-  function lsRead(key, fallback){
-    try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-    catch{ return fallback; }
-  }
-  function lsWrite(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
-
-  // Toast
-  let _toastTimer = null;
-  function showToast(message){
-    const existing = document.getElementById("rm_toast");
-    if(existing) existing.remove();
-    const t = el("div",{class:"toast", id:"rm_toast"},[String(message||"")]);
-    document.body.appendChild(t);
-    if(_toastTimer) clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(()=>{ const n = document.getElementById("rm_toast"); if(n) n.remove(); }, 2400);
-  }
-
-  function parseComment(comment){
-    try{
-      if(!comment) return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null, category:null, priority:null };
-      const obj = JSON.parse(comment) || {};
-      const note = obj?.note || "";
-
-      let files = [];
-      if(Array.isArray(obj?.files)) files = obj.files;
-      else if(obj?.pdf) files = [obj.pdf];
-
-      files = (files || []).filter(Boolean).map(f => ({
-        path: f.path || null,
-        name: f.name || "file",
-        type: f.type || (String(f.name||"").toLowerCase().endsWith(".pdf") ? "application/pdf" : "")
-      })).filter(f => !!f.path);
-
-      return {
-        note,
-        files,
-        resolved_at: obj?.resolved_at || null,
-        workflow: obj?.workflow || null,
-        resolved_as: obj?.resolved_as || null,
-        category: obj?.category || null,
-        priority: obj?.priority || null
-      };
-    }catch{
-      return { note:"", files:[], resolved_at:null, workflow:null, resolved_as:null, category:null, priority:null };
-    }
-  }
-
-  function isAllowedEmail(email){
-    const e = (email||"").trim().toLowerCase();
-    return (e === ADMIN_EMAIL) || COMMITTEE_EMAILS.includes(e) || OBSERVER_EMAILS.includes(e);
-  }
-
-  function fileTypeKind(type, name){
-    const t = (type || "").toLowerCase();
-    const n = (name || "").toLowerCase();
-    const isPdf = t === "application/pdf" || n.endsWith(".pdf");
-    const isImg = t.startsWith("image/") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".png");
-    return isPdf ? "pdf" : isImg ? "img" : "other";
-  }
-
-  function fileLabelByType(type, name){
-    const kind = fileTypeKind(type, name);
-    if(kind === "pdf") return "View PDF";
-    if(kind === "img") return "View Image";
-    return "Open file";
-  }
-
-  function openReadOnlyTextModal({ titleText, bodyText }){
-    const back = el("div",{class:"modalBack"},[]);
-    const card = el("div",{class:"modalCard"},[]);
-    const title = el("div",{class:"modalTitle"},[titleText || "Details"]);
-    const box = el("div",{class:"detailBox", style:"min-height:180px;"},[(bodyText || "-")]);
-    const btnClose = el("button",{ onClick: ()=> back.remove() },["Close"]);
-
-    back.addEventListener("click", ()=> back.remove());
-    card.addEventListener("click", (e)=> e.stopPropagation());
-
-    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
-    window.addEventListener("keydown", onKey);
-
-    card.appendChild(title);
-    card.appendChild(box);
-    card.appendChild(el("div",{class:"modalRow"},[btnClose]));
-    back.appendChild(card);
-    document.body.appendChild(back);
-  }
-
-  function openEditCommentModal({ titleText, initialText, onSave }){
-    const back = el("div",{class:"modalBack"},[]);
-    const card = el("div",{class:"modalCard"},[]);
-    const title = el("div",{class:"modalTitle"},[titleText || "Edit Comment"]);
-    const ta = el("textarea",{class:"modalTextarea"},[initialText || ""]);
-
-    const btnCancel = el("button",{ onClick: ()=> back.remove() },["Cancel"]);
-    const btnSave = el("button",{ class:"primary", onClick: async()=>{
-      try{
-        btnSave.disabled = true;
-        await onSave((ta.value || "").trim());
-        back.remove();
-      }catch(e){
-        alert(e?.message || String(e));
-      }finally{
-        btnSave.disabled = false;
-      }
-    }},["Save"]);
-
-    back.addEventListener("click", ()=> back.remove());
-    card.addEventListener("click", (e)=> e.stopPropagation());
-
-    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
-    window.addEventListener("keydown", onKey);
-
-    card.appendChild(title);
-    card.appendChild(ta);
-    card.appendChild(el("div",{class:"modalRow"},[btnCancel, btnSave]));
-    back.appendChild(card);
-    document.body.appendChild(back);
-
-    ta.focus();
-    ta.setSelectionRange(ta.value.length, ta.value.length);
-  }
-
-  function openImageModal({ titleText, imageUrl }){
-    const back = el("div",{class:"modalBack"},[]);
-    const card = el("div",{class:"imgCard"},[]);
-    const head = el("div",{class:"imgHeader"},[
-      el("div",{class:"imgTitle"},[titleText || "Image preview"]),
-      el("button",{class:"imgClose", onClick: ()=> back.remove() },["Close"])
-    ]);
-    const img = el("img",{class:"imgView", src:imageUrl, alt:titleText || "image"},[]);
-    back.addEventListener("click", ()=> back.remove());
-    card.addEventListener("click", (e)=> e.stopPropagation());
-    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
-    window.addEventListener("keydown", onKey);
-    card.appendChild(head); card.appendChild(img); back.appendChild(card); document.body.appendChild(back);
-  }
-
-  function openAttachmentListModal({ titleText, items }){
-    const back = el("div",{class:"modalBack"},[]);
-    const card = el("div",{class:"listCard"},[]);
-    const head = el("div",{class:"listHeader"},[
-      el("div",{class:"listTitle"},[titleText || "Attachments"]),
-      el("button",{class:"imgClose", onClick: ()=> back.remove() },["Close"])
-    ]);
-
-    const body = el("div",{class:"listBody"},[]);
-    if(!items?.length){
-      body.appendChild(el("div",{class:"muted"},["No attachments."]));
-    } else {
-      for(const it of items){
-        const left = el("div",{},[
-          el("a",{class:"link",href:it.url, target:"_blank", rel:"noopener"},[it.label]),
-          el("div",{class:"listMeta"},[it.meta || ""])
-        ]);
-        const actions = el("div",{class:"listActions"},[]);
-        if(it.kind === "img"){
-          actions.appendChild(el("button",{ onClick:(e)=>{ e.preventDefault(); openImageModal({ titleText: it.name || "Image", imageUrl: it.url }); }},["Preview"]));
-        }
-        actions.appendChild(el("a",{class:"link",href:it.url, target:"_blank", rel:"noopener"},["Open"]));
-        body.appendChild(el("div",{class:"listItem"},[left, actions]));
-      }
-    }
-
-    back.addEventListener("click", ()=> back.remove());
-    card.addEventListener("click", (e)=> e.stopPropagation());
-    const onKey = (e)=>{ if(e.key === "Escape"){ back.remove(); window.removeEventListener("keydown", onKey); } };
-    window.addEventListener("keydown", onKey);
-
-    card.appendChild(head); card.appendChild(body); back.appendChild(card); document.body.appendChild(back);
-  }
-
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   window.supabase = supabase;
 
-  async function getSession(){ const { data:{session} } = await supabase.auth.getSession(); return session; }
-  async function getUser(){ const { data:{user} } = await supabase.auth.getUser(); return user; }
-
-  async function signIn(email, password){
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error) throw error;
-  }
-  async function signOut(){ await supabase.auth.signOut(); }
-  async function changeMyPassword(newPassword){
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if(error) throw error;
-  }
-  async function sendPasswordReset(email){
-    const redirectTo = window.location.origin + window.location.pathname + "?reset=1";
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    if(error) throw error;
+  // Check if already logged in
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    window.location.href = 'dashboard.html';
   }
 
-  async function getMyProfile(){
-    const user = await getUser();
-    if(!user) return null;
-    const { data, error } = await supabase.from("profiles").select("id,email,role").eq("id", user.id).single();
-    if(error) throw error;
-    return data;
-  }
-
-  async function listQuotes(){
-    const { data, error } = await supabase.from("quotes").select("*").order("created_at",{ascending:false});
-    if(error) throw error;
-    return data || [];
-  }
-  async function listVotes(){
-    const { data, error } = await supabase.from("votes").select("*");
-    if(error) throw error;
-    return data || [];
-  }
-
-  async function updateQuoteStatus(id, status){
-    const { error } = await supabase.from("quotes").update({ status }).eq("id", id);
-    if(error) throw error;
-  }
-
-  async function updateQuoteComment(quoteId, nextNoteText){
-    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
-    if(e0) throw e0;
-
-    const parsed = parseComment(q.comment);
-    const nextCommentPayload = JSON.stringify({
-      note: (nextNoteText||"").trim(),
-      files: parsed.files || [],
-      resolved_at: parsed.resolved_at || null,
-      workflow: parsed.workflow || null,
-      resolved_as: parsed.resolved_as || null,
-      category: parsed.category || null,
-      priority: parsed.priority || null
-    });
-
-    const { error } = await supabase.from("quotes").update({ comment: nextCommentPayload }).eq("id", quoteId);
-    if(error) throw error;
-  }
-
-  async function setResolvedMetaIfMissing(quoteId, resolvedAs, resolvedAtISO=null){
-    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
-    if(e0) throw e0;
-
-    const parsed = parseComment(q.comment);
-    if(parsed.resolved_at && parsed.resolved_as) return;
-
-    const next = {
-      note: parsed.note || "",
-      files: parsed.files || [],
-      resolved_at: parsed.resolved_at || (resolvedAtISO || new Date().toISOString()),
-      workflow: parsed.workflow || null,
-      resolved_as: parsed.resolved_as || (resolvedAs || null),
-      category: parsed.category || null,
-      priority: parsed.priority || null
-    };
-
-    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
-    if(error) throw error;
-  }
-
-  async function updateWorkflow(quoteId, workflow){
-    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
-    if(e0) throw e0;
-
-    const parsed = parseComment(q.comment);
-    const next = {
-      note: parsed.note || "",
-      files: parsed.files || [],
-      resolved_at: parsed.resolved_at || null,
-      workflow: workflow || null,
-      resolved_as: parsed.resolved_as || null,
-      category: parsed.category || null,
-      priority: parsed.priority || null
-    };
-
-    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
-    if(error) throw error;
-  }
-
-  async function updateCategory(quoteId, category){
-    const { data: q, error: e0 } = await supabase.from("quotes").select("comment").eq("id", quoteId).single();
-    if(e0) throw e0;
-
-    const parsed = parseComment(q.comment);
-    const next = {
-      note: parsed.note || "",
-      files: parsed.files || [],
-      resolved_at: parsed.resolved_at || null,
-      workflow: parsed.workflow || null,
-      resolved_as: parsed.resolved_as || null,
-      category: category || null,
-      priority: parsed.priority || null
-    };
-
-    const { error } = await supabase.from("quotes").update({ comment: JSON.stringify(next) }).eq("id", quoteId);
-    if(error) throw error;
-  }
-
-  async function upsertVote(quoteId, myId, vote){
-    const { data: existing, error: e1 } = await supabase.from("votes").select("id").eq("quote_id", quoteId).eq("user_id", myId).maybeSingle();
-    if(e1) throw e1;
-
-    if(existing?.id){
-      const { error } = await supabase.from("votes").update({ vote }).eq("id", existing.id);
-      if(error) throw error;
-    } else {
-      const { error } = await supabase.from("votes").insert({ quote_id: quoteId, user_id: myId, vote });
-      if(error) throw error;
-    }
-  }
-
-  async function insertQuote(payload){
-    const { error } = await supabase.from("quotes").insert(payload);
-    if(error) throw error;
-  }
-
-  async function uploadOne(file){
-    const user = await getUser();
-    if(!user) throw new Error("Not signed in");
-
-    const mime = (file?.type || "").toLowerCase();
-    if(!ATTACH.acceptMime.includes(mime)){
-      throw new Error("Only PDF, JPG, PNG files are allowed.");
-    }
-
-    const safeName = file.name.replace(/[^\w.\- ]+/g,"_");
-    const path = `${user.id}/${Date.now()}-${safeName}`;
-
-    const { error } = await supabase.storage.from("quotes").upload(path, file, { upsert:false, contentType: file.type || "application/octet-stream" });
-    if(error) throw error;
-    return { path, name: safeName, type: file.type || "" };
-  }
-
-  async function uploadMany(fileList){
-    const files = Array.from(fileList || []);
-    if(files.length > ATTACH.maxFiles){
-      throw new Error(`Max ${ATTACH.maxFiles} attachments per quote.`);
-    }
-    const metas = [];
-    for(const f of files){ metas.push(await uploadOne(f)); }
-    return metas;
-  }
-
-  async function signedUrl(path){
-    const { data, error } = await supabase.storage.from("quotes").createSignedUrl(path, 60*60);
-    if(error) throw error;
-    return data.signedUrl;
-  }
-
-  // Pending-only delete (kept)
-  async function deleteQuoteEverywhere(quote){
-    await supabase.from("votes").delete().eq("quote_id", quote.id);
-
-    const parsed = parseComment(quote.comment);
-    const files = parsed.files || [];
-    if(files?.length){
-      const paths = files.map(f => f.path).filter(Boolean);
-      if(paths.length) await supabase.storage.from("quotes").remove(paths);
-    }
-
-    const { error } = await supabase.from("quotes").delete().eq("id", quote.id);
-    if(error) throw error;
-  }
-
-  // Core rules: expiry=15 days -> expired, approvals=4 -> approved, declines=4 -> declined
-async function ensureExpiryAndAuto(quote, votes){
-  const st0 = String(quote.status||"pending").toLowerCase();
-
-  // Expiry -> expired
-  if(st0 === "pending" && quote.expiry_date && new Date() > new Date(quote.expiry_date)){
-    await updateQuoteStatus(quote.id, "expired");
-    await setResolvedMetaIfMissing(quote.id, "expired", quote.expiry_date);
-    quote.status = "expired";
-    return quote;
-  }
-
-  // already resolved → do nothing
-  if(st0 !== "pending") return quote;
-
-  // vote aggregation
-  const qVotes = votes.filter(v => v.quote_id === quote.id);
-  const approvals = qVotes.filter(v => v.vote === "approve").length;
-  const declines  = qVotes.filter(v => v.vote === "decline").length;
-
-  // auto decision
-  if(approvals >= RULES.approvalsRequired){
-    await updateQuoteStatus(quote.id, "approved");
-    await setResolvedMetaIfMissing(quote.id, "approved", new Date().toISOString());
-    quote.status = "approved";
-  } else if(declines >= RULES.declinesToAutoDecline){
-    await updateQuoteStatus(quote.id, "declined");
-    await setResolvedMetaIfMissing(quote.id, "declined", new Date().toISOString());
-    quote.status = "declined";
-  }
-
-  return quote;
-}
-
-// Realtime auto refresh
-  let realtimeInit = false;
-  async function initRealtime(){
-    if(realtimeInit) return;
-    realtimeInit = true;
-    const ch = supabase.channel("rm-live");
-    ch.on("postgres_changes", { event:"*", schema:"public", table:"quotes" }, () => renderApp());
-    ch.on("postgres_changes", { event:"*", schema:"public", table:"votes"  }, () => renderApp());
-    await ch.subscribe();
-  }
-
-  function label(name, node){
-    return el("div",{style:"margin-top:10px;"},[
-      el("div",{class:"muted",style:"margin-bottom:6px;"},[name]),
-      node
-    ]);
-  }
-
-  function resetPasswordScreen(emailPrefill=""){
-    const emailInput = el("input",{type:"email",placeholder:"Email", value: emailPrefill},[]);
-    const btnSend = el("button",{class:"primary", onClick: async()=>{
-      try{
-        const email = emailInput.value.trim().toLowerCase();
-        if(!email){ alert("Enter your email."); return; }
-        if(!isAllowedEmail(email)){ alert("This email is not authorised for Redmyre House access."); return; }
-        await sendPasswordReset(email);
-        alert("Password reset email sent. Please check your inbox (and spam).");
-      }catch(e){ alert(e?.message || String(e)); }
-    }},["Send reset link"]);
-
-    const btnBack = el("button",{ onClick: ()=>{ mount(loginScreen()); }},["Back to login"]);
-
-    emailInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); btnSend.click(); } });
-
-    return el("div",{class:"wrap"},[
-      el("div",{class:"card loginWrap"},[
-        el("div",{style:"display:flex;justify-content:center;margin-bottom:10px;"},[logoNode()]),
-        el("div",{class:"sub",style:"text-align:center;"},["Strata Plan 77249 • Quote Approval System"]),
-        el("div",{class:"muted",style:"text-align:center;margin-top:6px;"},["Enter your email to receive a password reset link."]),
-        el("div",{class:"spacer"},[]),
-        emailInput,
-        el("div",{class:"spacer"},[]),
-        el("div",{class:"row",style:"justify-content:space-between;"},[btnBack, btnSend]),
-      ])
-    ]);
-  }
-
-  function setNewPasswordScreen(){
-    const p1 = el("input",{type:"password",placeholder:"New password (min 8 characters)"},[]);
-    const p2 = el("input",{type:"password",placeholder:"Confirm new password"},[]);
-
-    const btn = el("button",{class:"primary", onClick: async()=>{
-      try{
-        const a = p1.value || "";
-        const b = p2.value || "";
-        if(a.length < 8){ alert("Password must be at least 8 characters."); return; }
-        if(a !== b){ alert("Passwords do not match."); return; }
-        await changeMyPassword(a);
-        alert("Password updated. Please log in with your new password.");
-        await signOut();
-        mount(loginScreen());
-      }catch(e){ alert(e?.message || String(e)); }
-    }},["Update password"]);
-
-    const onEnter = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); btn.click(); } };
-    p1.addEventListener("keydown", onEnter);
-    p2.addEventListener("keydown", onEnter);
-
-    return el("div",{class:"wrap"},[
-      el("div",{class:"card loginWrap"},[
-        el("div",{style:"display:flex;justify-content:center;margin-bottom:10px;"},[logoNode()]),
-        el("div",{class:"sub",style:"text-align:center;"},["Set a new password"]),
-        el("div",{class:"muted",style:"text-align:center;margin-top:6px;"},["Please set your new password below."]),
-        el("div",{class:"spacer"},[]),
-        p1,
-        el("div",{class:"spacer"},[]),
-        p2,
-        el("div",{class:"spacer"},[]),
-        btn
-      ])
-    ]);
-  }
-
-  function loginScreen(){
-    const emailInput = el("input",{type:"email",placeholder:"Email"},[]);
-    const pwInput = el("input",{type:"password",placeholder:"Password"},[]);
-
-    const btnLogin = el("button",{class:"primary", onClick: async()=>{
-      try{
-        const email = emailInput.value.trim().toLowerCase();
-        const password = pwInput.value;
-        if(!email || !password){ alert("Enter email and password."); return; }
-        if(!isAllowedEmail(email)){ alert("This email is not authorised for Redmyre House access."); return; }
-        await signIn(email, password);
-        await renderApp();
-      }catch(e){ alert(e?.message || String(e)); }
-    }},["Log in"]);
-
-    const btnForgot = el("button",{ onClick: ()=>{ mount(resetPasswordScreen(emailInput.value.trim().toLowerCase())); }},["Forgot password?"]);
-
-    const onEnter = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); btnLogin.click(); } };
-    emailInput.addEventListener("keydown", onEnter);
-    pwInput.addEventListener("keydown", onEnter);
-
-    return el("div",{class:"wrap"},[
-      el("div",{class:"card loginWrap"},[
-        el("div",{style:"display:flex;justify-content:center;margin-bottom:10px;"},[logoNode()]),
-        el("div",{class:"sub",style:"text-align:center;"},["Strata Plan 77249 • Quote Approval System"]),
-        el("div",{class:"muted",style:"text-align:center;margin-top:6px;"},["Login using your email + password."]),
-        el("div",{class:"spacer"},[]),
-        emailInput,
-        el("div",{class:"spacer"},[]),
-        pwInput,
-        el("div",{class:"spacer"},[]),
-        el("div",{class:"row",style:"justify-content:space-between;"},[
-          btnForgot,
-          btnLogin
-        ])
-      ])
-    ]);
-  }
-
-  async function historyNode(quotes, votes, profile){
-    const wrap = el("div",{class:"histWrap"},[]);
-    const open = !!lsRead(LS_KEYS.histOpen, false);
-
-    const resolvedOnly = quotes.filter(q => String(q.status||"pending").toLowerCase() !== "pending");
-
-    wrap.appendChild(el("div",{class:"histHeader", onClick:()=>{
-      lsWrite(LS_KEYS.histOpen, !open);
-      renderApp();
-    }},[
-      el("div",{class:"histHeaderTitle"},[
-        "Quote Record (History)",
-        el("span",{class:"histBadge"},[String(resolvedOnly.length)])
-      ]),
-      el("div",{class:"chev"},[open ? "▲" : "▼"])
-    ]));
-
-    if(!open) return wrap;
-
-    // History-only filters: [Category] [Resolution] [Workflow]
-    const HF_KEY = "rm_hist_filter_v2";
-    let HF = lsRead(HF_KEY, { cat:"all", res:"all", wf:"all" }) || { cat:"all", res:"all", wf:"all" };
-
-    const catSel = el("select",{ class:"status" },[
-      el("option",{value:"all"},["Category: All"]),
-      el("option",{value:"unassigned"},["Unassigned"]),
-      ...CATEGORIES.map(c => el("option",{value:c.toLowerCase()},[c]))
-    ]);
-    catSel.value = HF.cat || "all";
-
-    const resSel = el("select",{ class:"status" },[
-      el("option",{value:"all"},["Resolution: All"]),
-      el("option",{value:"approved"},["Approved"]),
-      el("option",{value:"declined"},["Declined"]),
-      el("option",{value:"expired"},["Expired"]),
-    ]);
-    resSel.value = HF.res || "all";
-
-    const wfSel = el("select",{ class:"status" },[
-      el("option",{value:"all"},["Workflow: All"]),
-      el("option",{value:"scheduling"},["Scheduling"]),
-      el("option",{value:"in_progress"},["In Progress"]),
-      el("option",{value:"completed"},["Completed"]),
-      el("option",{value:"none"},["- (Not set)"]),
-    ]);
-    wfSel.value = HF.wf || "all";
-
-    function persist(){
-      lsWrite(HF_KEY, { cat: catSel.value||"all", res: resSel.value||"all", wf: wfSel.value||"all" });
-    }
-
-    wrap.appendChild(el("div",{class:"qControls"},[catSel, resSel, wfSel]));
-
-    const table = el("div",{class:"histTable"},[]);
-    table.appendChild(el("div",{class:"histRow head"},[
-      el("div",{class:"cell"},["Created"]),
-      el("div",{class:"cell"},["Category"]),
-      el("div",{class:"cell"},["Project"]),
-      el("div",{class:"cell"},["Resolution"]),
-      el("div",{class:"cell"},["Resolved"]),
-      el("div",{class:"cell"},["Workflow"]),
-      el("div",{class:"cell"},["Files"]),
-    ]));
-
-    const rows = [];
-
-    if(!resolvedOnly.length){
-      table.appendChild(el("div",{class:"histRow"},[
-        el("div",{class:"cell",style:"grid-column:1 / -1;color:var(--muted);"},["No resolved quote records yet."])
-      ]));
-      wrap.appendChild(el("div",{class:"histScroll"},[table]));
-      return wrap;
-    }
-
-    for(const q0 of quotes){
-      const q = await ensureExpiryAndAuto({...q0}, votes);
-
-      const st = String(q.status||"pending").toLowerCase();
-      if(st === "pending") continue;
-
-      const parsed = parseComment(q.comment);
-      const resolvedAs = (parsed.resolved_as || st).toLowerCase();
-
-      const resolutionLabel =
-        resolvedAs === "approved" ? "Approved" :
-        resolvedAs === "expired" ? "Expired" :
-        "Declined";
-
-      const resolutionPillClass =
-        resolvedAs === "approved" ? "ok" :
-        resolvedAs === "expired" ? "neutral" :
-        "bad";
-
-      const projectName =
-        (q.project && String(q.project).trim()) ? String(q.project).trim()
-        : (q.vendor && String(q.vendor).trim()) ? `[No project] ${String(q.vendor).trim()}`
-        : "(No project)";
-
-      const categoryVal = (parsed.category && String(parsed.category).trim()) ? String(parsed.category).trim() : "";
-      const categoryKey = categoryVal ? categoryVal.toLowerCase() : "unassigned";
-      const categoryLabel = categoryVal ? categoryVal : "Unassigned";
-
-      // Workflow shown ONLY for approved
-      const wfKeyRaw = (parsed.workflow || "").toLowerCase();
-      const wfKey = (resolvedAs === "approved") ? wfKeyRaw : "";
-      const wfLabel =
-        wfKey === "scheduling" ? "Scheduling" :
-        wfKey === "in_progress" ? "In Progress" :
-        wfKey === "completed" ? "Completed" :
-        "";
-
-      const wfPill =
-        wfKey === "scheduling" ? el("span",{class:"pill wfBlue"},["Scheduling"]) :
-        wfKey === "in_progress" ? el("span",{class:"pill wfOrange"},["In progress"]) :
-        wfKey === "completed" ? el("span",{class:"pill wfGreen"},["Completed"]) :
-        null;
-
-      const files = parsed.files || [];
-
-      // Files cell (NO Delete, NO Reopen)
-      let fileCell = el("div",{class:"cell"},["-"]);
-      if(files?.length){
-        const suffix = files.length > 1 ? ` (+${files.length-1})` : "";
-        const openBtn = el("a",{class:"link",href:"#", onClick: async(e)=>{
-          e.preventDefault();
-          const items = [];
-          for(const f of files){
-            const url = await signedUrl(f.path);
-            const kind = fileTypeKind(f.type, f.name);
-            items.push({
-              url,
-              kind,
-              name: f.name || "file",
-              label: `${fileLabelByType(f.type, f.name)} — ${f.name || "file"}`,
-              meta: kind === "pdf" ? "PDF" : (kind === "img" ? "Image" : "File")
-            });
-          }
-          openAttachmentListModal({ titleText: `Attachments — ${projectName}`, items });
-        }},[`Open${suffix}`]);
-
-        fileCell = el("div",{class:"cell"},[
-          el("div",{class:"row", style:"gap:8px; flex-wrap:nowrap;"}, [openBtn])
-        ]);
-      } else {
-        fileCell = el("div",{class:"cell"},["-"]);
-      }
-
-      // Category cell: Admin can set ONLY when missing (Backfill)
-      let categoryCell = el("div",{class:"cell"},[categoryLabel]);
-      if(profile.role === "admin" && !categoryVal){
-        const sel = el("select",{style:"width:100%; padding:6px 10px; border-radius:10px;"},[
-          el("option",{value:""},["Unassigned"]),
-          ...CATEGORIES.map(c => el("option",{value:c},[c]))
-        ]);
-        sel.value = "";
-        sel.addEventListener("change", async()=>{
-          const next = sel.value || null;
-          if(!next) return;
-          await updateCategory(q.id, next);
-          showToast("Category updated");
-          await renderApp();
-        });
-        categoryCell = el("div",{class:"cell"},[sel]);
-      }
-
-      // Workflow cell (Admin can edit on APPROVED only)
-      let wfCell = el("div",{class:"cell"},[ wfPill ? wfPill : el("span",{},[wfLabel || ""]) ]);
-      if(profile.role === "admin" && resolvedAs === "approved"){
-        const sel = el("select",{style:"width:100%; padding:6px 10px; border-radius:10px;"},[
-          el("option",{value:""},["-"]),
-          el("option",{value:"scheduling"},["Scheduling"]),
-          el("option",{value:"in_progress"},["In progress"]),
-          el("option",{value:"completed"},["Completed"]),
-        ]);
-        sel.value = wfKeyRaw || "";
-        sel.addEventListener("change", async()=>{
-          await updateWorkflow(q.id, sel.value || null);
-          showToast("Workflow updated");
-          await renderApp();
-        });
-        wfCell = el("div",{class:"cell"},[sel]);
-      } else {
-        wfCell = el("div",{class:"cell"},[ wfPill ? wfPill : (wfLabel ? el("span",{},[wfLabel]) : el("span",{},[""])) ]);
-      }
-
-      const row = el("div",{class:"histRow", "data-hist-row":"1", "data-cat":categoryKey, "data-res":resolvedAs, "data-wf":(wfKey||"")},[
-        el("div",{class:"cell"},[fmtDate(q.created_at)]),
-        categoryCell,
-        el("div",{class:"cell project"},[
-          el("a",{class:"link", href:"#", onClick:(e)=>{
-            e.preventDefault();
-            const noteText = (parsed.note || "").trim() || "-";
-            openReadOnlyTextModal({ titleText: `Comment — ${projectName}`, bodyText: noteText });
-          }},[projectName])
-        ]),
-        el("div",{class:"cell"},[ el("span",{class:`pill ${resolutionPillClass}`},[resolutionLabel]) ]),
-        el("div",{class:"cell"},[parsed.resolved_at ? fmtDate(parsed.resolved_at) : "-"]),
-        wfCell,
-        fileCell,
-      ]);
-
-      rows.push(row);
-      table.appendChild(row);
-    }
-
-    wrap.appendChild(el("div",{class:"histScroll"},[table]));
-    const empty = el("div",{class:"muted", id:"rm_hist_empty", style:"margin-top:10px; display:none;"},["No results for current filter."]);
-    wrap.appendChild(empty);
-
-    function apply(){
-      const cat = (catSel.value||"all").toLowerCase();
-      const res = (resSel.value||"all").toLowerCase();
-      const wf = (wfSel.value||"all").toLowerCase();
-
-      let shown = 0;
-      for(const r of rows){
-        const rcat = (r.getAttribute("data-cat")||"unassigned").toLowerCase();
-        const rres = (r.getAttribute("data-res")||"").toLowerCase();
-        const rwf  = (r.getAttribute("data-wf")||"").toLowerCase();
-
-        const okCat = (cat==="all") ? true : (cat==="unassigned" ? rcat==="unassigned" : rcat===cat);
-        const okRes = (res==="all") ? true : rres === res;
-        const okWf  = (wf==="all") ? true : (wf==="none" ? !rwf : rwf === wf);
-
-        const show = okCat && okRes && okWf;
-        r.style.display = show ? "" : "none";
-        if(show) shown++;
-      }
-      empty.style.display = shown ? "none" : "";
-    }
-
-    catSel.addEventListener("change", ()=>{ persist(); apply(); });
-    resSel.addEventListener("change", ()=>{ persist(); apply(); });
-    wfSel.addEventListener("change", ()=>{ persist(); apply(); });
-
-    setTimeout(()=>apply(),0);
-    return wrap;
-  }
-
-  async function accessPanel(profile){
-    const roleText =
-      profile.role === "admin" ? "Admin (can create quotes)" :
-      profile.role === "committee" ? "Committee (can vote)" :
-      "Observer (view only)";
-
-    const quotes = await listQuotes();
-    const votes  = await listVotes();
-
-    return el("div",{class:"card"},[
-      el("h2",{},["Access"]),
-      el("div",{class:"muted"},[roleText]),
-      el("div",{class:"hr"},[]),
-      el("div",{class:"muted"},[
-        "A quote expires after ",
-        el("b",{},[String(RULES.expiryDays)]),
-        " days if no decision is reached.",
-        el("br",{},[]),
-        "• ",
-        el("b",{},[String(RULES.approvalsRequired)]),
-        " approvals are required for approval.",
-        el("br",{},[]),
-        "• ",
-        el("b",{},[String(RULES.declinesToAutoDecline)]),
-        " declines will automatically decline the quote."
-      ]),
-      await historyNode(quotes, votes, profile),
-    ]);
-  }
-
-  async function adminPanel(){
-    // Priority first, then Project, then Category
-    const priority = el("select",{},[ ...PRIORITIES.map(p => el("option",{value:p},[p])) ]);
-    priority.value = "Normal";
-
-    const project = el("input",{placeholder:"Project"},[]);
-    const category = el("select",{},[ ...CATEGORIES.map(c => el("option",{value:c},[c])) ]);
-    category.value = "General";
-
-    const vendor  = el("input",{placeholder:"Vendor"},[]);
-    const amount  = el("input",{type:"number",placeholder:"Amount (ex GST)"},[]);
-    const note    = el("textarea",{placeholder:"Comment"},[]);
-
-    const attach = el("input",{ type:"file", multiple:"multiple", accept:"application/pdf,image/jpeg,image/png" },[]);
-
-    const submit = el("button",{class:"primary", onClick: async()=>{
-      try{
-        const pr = (priority.value || "Normal").trim();
-        const p = project.value.trim();
-        const cat = (category.value || "General").trim();
-        const v = vendor.value.trim();
-        const a = Number(amount.value);
-        if(!p || !v || !a){ alert("Please fill Project, Vendor and Amount."); return; }
-
-        const chosen = attach.files ? Array.from(attach.files) : [];
-        if(chosen.length > ATTACH.maxFiles){
-          alert(`Max ${ATTACH.maxFiles} attachments per quote.`);
-          return;
-        }
-
-        let filesMeta = [];
-        if(chosen.length){
-          for(const f of chosen){
-            if(!ATTACH.acceptMime.includes((f.type||"").toLowerCase())){
-              alert("Only PDF, JPG, PNG files are allowed.");
-              return;
-            }
-          }
-          filesMeta = await uploadMany(chosen);
-        }
-
-        const commentPayload = JSON.stringify({
-          note: note.value.trim(),
-          files: filesMeta,
-          resolved_at: null,
-          workflow: null,
-          resolved_as: null,
-          category: cat,
-          priority: pr
-        });
-
-        const expiry = addDaysISO(RULES.expiryDays);
-        const user = await getUser();
-        if(!user) throw new Error("Not signed in");
-
-        const payload = {
-          id: uuid(),
-          project: p,
-          vendor: v,
-          amount: a,
-          status: "pending",
-          expiry_date: expiry,
-          created_by: user.id,
-          comment: commentPayload,
-          created_at: new Date().toISOString(),
-        };
-
-        await insertQuote(payload);
-        alert("Quote submitted as Pending.");
-        await renderApp();
-      }catch(e){ alert(e?.message || String(e)); }
-    }},["Submit Quote"]);
-
-    const onEnterSubmit = (e)=>{ if(e.key==="Enter"){ e.preventDefault(); submit.click(); } };
-    project.addEventListener("keydown", onEnterSubmit);
-    vendor.addEventListener("keydown", onEnterSubmit);
-    amount.addEventListener("keydown", onEnterSubmit);
-
-    return el("div",{class:"card"},[
-      el("h2",{},["Admin – Create Quote"]),
-      label("Priority", priority),
-      label("Project", project),
-      label("Category", category),
-      label("Vendor", vendor),
-      label("Amount (ex GST)", amount),
-      label("Comment", note),
-      label(`Attach files (PDF/JPG/PNG, up to ${ATTACH.maxFiles})`, attach),
-      el("div",{class:"spacer"},[]),
-      submit
-    ]);
-  }
-
-  async function quotesPanel(profile){
-    const card = el("div",{class:"card"},[
-      el("h2",{},["Quotes (Main Voting)"]),
-      el("div",{class:"muted"},["Pending quotes only. Use History (left) for approved/declined/expired records."])
-    ]);
-
-    const quotes = await listQuotes();
-    const votes  = await listVotes();
-
-    const pending = [];
-    for(const q0 of quotes){
-      const q = await ensureExpiryAndAuto({...q0}, votes);
-      if(String(q.status||"pending").toLowerCase() === "pending") pending.push(q);
-    }
-
-    if(!pending.length){
-      card.appendChild(el("div",{class:"muted", style:"margin-top:10px;"},["No pending quotes."]));
-      return card;
-    }
-
-    for(const q0 of pending){
-      const q = q0;
-      const parsed = parseComment(q.comment);
-
-      const noteText = parsed.note || "";
-      const files = parsed.files || [];
-
-      const approvals = votes.filter(v=>v.quote_id===q.id && v.vote==="approve").length;
-      const declines  = votes.filter(v=>v.quote_id===q.id && v.vote==="decline").length;
-
-      const createdTxt = fmtDate(q.created_at);
-      const dueTxt = q.expiry_date ? fmtDate(q.expiry_date) : "-";
-      const leftDays = q.expiry_date ? daysUntil(q.expiry_date) : null;
-      const leftLabel = (leftDays === null) ? "" : (leftDays <= 0 ? " (due)" : ` (${leftDays} days left)`);
-
-      // Pending pill: yellow normally, red if 1 day or less
-      const pendingPillClass = (leftDays !== null && leftDays <= 1) ? "bad" : "warn";
-
-      // Priority + Category display
-      const pr = (parsed.priority && String(parsed.priority).trim()) ? String(parsed.priority).trim() : "Normal";
-      const cat = (parsed.category && String(parsed.category).trim()) ? String(parsed.category).trim() : "Unassigned";
-
-      const prUpper = pr.toUpperCase();
-      const prPillClass =
-        pr.toLowerCase() === "urgent" ? "priUrgent" :
-        pr.toLowerCase() === "high" ? "priHigh" :
-        "priNormal";
-
-      const item = el("div",{class:"quote"},[
-        el("div",{},[
-          el("div",{class:"row", style:"gap:8px; margin-bottom:6px;"},[
-            el("span",{class:`pill ${prPillClass}`},[`[${prUpper}]`]),
-            el("span",{class:"muted", style:"font-weight:850;"},[cat])
-          ]),
-          el("strong",{},[q.project || "(No project)"]),
-          el("div",{class:"mutedLight"},[
-            `Created: ${createdTxt} • Due: ${dueTxt}${leftLabel} • Approvals ${approvals} • Declines ${declines}`
-          ]),
-          el("div",{style:"margin-top:8px;"},[
-            el("div",{class:"muted", style:"font-weight:850;"},[q.vendor || "-"]),
-            el("div",{style:"font-weight:950; margin-top:2px;"},[fmtMoney(q.amount)])
-          ]),
-          el("div",{style:"margin-top:8px;"},[
-            el("a",{class:"link",href:"#", onClick:(e)=>{
-              e.preventDefault();
-              details.style.display = (details.style.display === "none") ? "" : "none";
-            }},["View details"])
-          ])
-        ]),
-        el("div",{},[ el("span",{class:`pill ${pendingPillClass}`},["Pending"]) ])
-      ]);
-
-      const details = el("div",{style:"grid-column:1 / -1; display:none;"},[]);
-      details.appendChild(el("div",{class:"hr"},[]));
-
-      details.appendChild(el("div",{class:"detailLabel"},["Comment"]));
-      details.appendChild(el("div",{class:"detailBox"},[noteText || "-"]));
-
-      details.appendChild(el("div",{class:"detailLabel"},["Attachments"]));
-      if(!files?.length){
-        details.appendChild(el("div",{class:"detailBox"},["-"]));
-      } else {
-        const box = el("div",{class:"detailBox"},[]);
-        for(const f of files){
-          const url = await signedUrl(f.path);
-          const kind = fileTypeKind(f.type, f.name);
-          const labelText = `${fileLabelByType(f.type, f.name)} (${f.name || "file"})`;
-
-          if(kind === "img"){
-            const a = el("a",{class:"link", href:"#", onClick:(e)=>{
-              e.preventDefault();
-              openImageModal({ titleText: f.name || "Image", imageUrl: url });
-            }},[labelText]);
-            box.appendChild(el("div",{},[a]));
-          } else {
-            const a = el("a",{class:"link",href:url,target:"_blank",rel:"noopener"},[labelText]);
-            box.appendChild(el("div",{},[a]));
-          }
-        }
-        details.appendChild(box);
-      }
-
-      const qVotes = votes.filter(v => v.quote_id === q.id);
-      const myVote = qVotes.find(v => v.user_id === profile.id);
-      const canVote = (profile.role === "committee" && !myVote);
-      if(canVote){
-        details.appendChild(el("div",{class:"hr"},[]));
-        details.appendChild(el("div",{class:"row"},[
-          el("button",{class:"primary", onClick: async()=>{
-            await upsertVote(q.id, profile.id, "approve");
-            showToast("✅ Vote recorded: Approved");
-            await renderApp();
-          }},["Approve"]),
-          el("button",{onClick: async()=>{
-            await upsertVote(q.id, profile.id, "decline");
-            showToast("⚠ Vote recorded: Declined");
-            await renderApp();
-          }},["Decline"])
-        ]));
-      }
-
-      if(profile.role === "admin"){
-        details.appendChild(el("div",{class:"hr"},[]));
-        details.appendChild(el("div",{class:"row"},[
-          el("button",{ onClick: ()=>{
-            openEditCommentModal({
-              titleText: `Edit Comment — ${q.project || "(No project)"}`,
-              initialText: (noteText || ""),
-              onSave: async(nextText)=>{
-                await updateQuoteComment(q.id, nextText);
-                showToast("Comment updated");
-                await renderApp();
-              }
-            });
-          }},["Edit Comment"]),
-          el("button",{class:"danger", onClick: async()=>{
-            const ok = confirm("Delete this quote?\n\nThis cannot be undone.");
-            if(!ok) return;
-            try{ await deleteQuoteEverywhere(q); showToast("Deleted"); await renderApp(); }
-            catch(e){ alert(e?.message || String(e)); }
-          }},["Delete Quote"])
-        ]));
-      }
-
-      item.appendChild(details);
-      card.appendChild(item);
-    }
-
-    return card;
-  }
-
-  async function appScreen(){
-    const profile = await getMyProfile();
-
-    const top = el("div",{class:"topbar"},[
-      el("div",{},[
-        logoNode(),
-        el("div",{class:"sub"},["Strata Plan 77249 • Quote Approval System"])
-      ]),
-      el("div",{class:"row"},[
-        el("span",{class:"tag"},[`${profile.role.toUpperCase()} • ${profile.email}`]),
-        el("span",{class:"tag ver"},[BUILD]),
-        el("button",{onClick: async()=>{
-          const p1 = prompt("New password (min 8 chars):","");
-          if(p1 === null) return;
-          if((p1||"").length < 8){ alert("Password must be at least 8 characters."); return; }
-          const p2 = prompt("Confirm new password:","");
-          if(p2 === null) return;
-          if(p1 !== p2){ alert("Passwords do not match."); return; }
-          try{ await changeMyPassword(p1); alert("Password updated."); }
-          catch(e){ alert(e?.message || String(e)); }
-        }},["Change Password"]),
-        el("button",{onClick: async()=>{ await signOut(); await renderApp(); }},["Log out"])
-      ])
-    ]);
-
-    const grid = el("div",{class:"grid"},[]);
-
-    if(profile.role === "admin"){
-      const left = el("div",{class:"colStack"},[]);
-      left.appendChild(await adminPanel());
-      left.appendChild(await accessPanel(profile));
-      grid.appendChild(left);
-    } else {
-      grid.appendChild(await accessPanel(profile));
-    }
-
-    grid.appendChild(await quotesPanel(profile));
-    return el("div",{class:"wrap"},[ top, grid ]);
-  }
-
-  async function renderApp(){
-    const url = new URL(window.location.href);
-    const wantsResetScreen = url.searchParams.get("reset") === "1";
-
-    const session = await getSession();
-
-    if(wantsResetScreen){
-      if(!session){ mount(resetPasswordScreen()); return; }
-      mount(setNewPasswordScreen());
+  window.handleLogin = async function() {
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const btn = document.getElementById('signInBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    const errorMsg = document.getElementById('errorMsg');
+
+    if (!email || !password) {
+      errorMsg.textContent = 'Please enter your email and password.';
+      errorMsg.classList.add('show');
       return;
     }
 
-    if(!session){ mount(loginScreen()); return; }
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    btnText.textContent = 'Signing in…';
+    errorMsg.classList.remove('show');
 
-    await initRealtime();
-
-    try{
-      mount(await appScreen());
-    }catch(e){
-      mount(el("div",{class:"wrap"},[
-        el("div",{class:"card"},[
-          el("div",{style:"display:flex;align-items:center;gap:12px;"},[
-            logoNode(),
-            el("div",{class:"sub"},["System error"])
-          ]),
-          el("div",{class:"muted", style:"margin-top:10px;"},[String(e?.message || e)]),
-          el("div",{class:"spacer"},[]),
-          el("button",{class:"primary", onClick: ()=>renderApp()},["Retry"])
-        ])
-      ]));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      errorMsg.textContent = err.message || 'Sign in failed. Please try again.';
+      errorMsg.classList.add('show');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      btnText.textContent = 'Sign In →';
     }
-  }
+  };
 
-  supabase.auth.onAuthStateChange(()=>{ renderApp(); });
-  await renderApp();
+  // Enter key support
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
 </script>
 </body>
 </html>
