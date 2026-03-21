@@ -1,4 +1,5 @@
 const webpush = require('web-push');
+const { createClient } = require('@supabase/supabase-js');
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT,
@@ -6,11 +7,30 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY
 );
 
-const { createClient } = require('@supabase/supabase-js');
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  // ── Auth check: verify caller is admin ──
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+  }
+  const token = authHeader.replace('Bearer ', '');
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token' }) };
+  }
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (!profile || profile.role !== 'admin') {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin only' }) };
   }
 
   let body;
@@ -22,11 +42,6 @@ exports.handler = async (event) => {
   if (!title || !message) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing title or message' }) };
   }
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
 
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
@@ -59,7 +74,6 @@ exports.handler = async (event) => {
     }
   }
 
-  // Clean up expired subscriptions
   if (toDelete.length > 0) {
     await supabase.from('push_subscriptions').delete().in('subscription', toDelete);
   }
