@@ -136,7 +136,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
   .sidebar.mobile-open{transform:translateX(0)}
   .main{margin-left:0!important}
-  .main-topbar{padding-left:64px}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{font-size:10px;display:none}
+  .tb-right{gap:6px}
+  .role-chip{padding:4px 8px}
+  .role-label{font-size:11px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
 }
 /* ===== END MOBILE ===== */
 </style>
@@ -158,17 +167,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
   </div>
   <nav class="sb-nav">
-    <div class="nav-section">Navigation</div>
-    <a href="building.html" class="nav-item"><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
-    <a href="announcements.html" class="nav-item"><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
-    <a href="works.html" class="nav-item"><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
-    <a href="hvac.html" class="nav-item active"><div class="nav-icon">❄️</div><span class="nav-label">HVAC / Temperature</span></a>
-    <a href="parking.html" class="nav-item"><div class="nav-icon">🚗</div><span class="nav-label">Parking</span></a>
-    <a href="quotes.html" class="nav-item" id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
-    <a href="history.html" class="nav-item" id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
-    <a href="reports.html" class="nav-item" id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Reports</span></a>
-    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+    <div class="nav-section">General</div>
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <div class="nav-section">Resident Services</div>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item active"><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <div class="nav-section">Building Management</div>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
     <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
   </nav>
   <div class="sb-footer">
     <div class="sb-user">
@@ -309,6 +323,7 @@ document.getElementById('topRole').textContent = roleLabel;
 document.getElementById('topbarRole').textContent = roleLabel;
 
 const privileged = ['admin','committee','observer'];
+const privileged = ['admin','committee','observer'];
 if (privileged.includes(role)) {
   document.getElementById('quotesNav').style.display = 'flex';
   document.getElementById('reportsNav').style.display = 'flex';
@@ -316,6 +331,7 @@ if (privileged.includes(role)) {
 }
 if (role === 'admin') {
   document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
   document.getElementById('adminPanel').style.display = 'block';
   loadAdminData();
 } else {
@@ -469,7 +485,6 @@ async function loadMyRequests() {
   function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
   btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
   overlay.addEventListener("click",closeMenu);
-  // Close when nav item clicked on mobile
   sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
 })();
 </script>

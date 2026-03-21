@@ -201,9 +201,9 @@
   }
   .role-pill.admin    { background:linear-gradient(135deg,#0f2456 0%,#1e3a8a 50%,#2563eb 100%); border-color:transparent; color:#fff; }
   .role-pill.committee{ background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%); border-color:transparent; color:#fff; opacity:0.9; }
-  .role-pill.observer { background:linear-gradient(135deg,#2563eb 0%,#3b82f6 100%); border-color:transparent; color:#fff; opacity:0.75; }
-  .role-pill.owner    { background:linear-gradient(135deg,#93c5fd 0%,#bfdbfe 100%); border-color:transparent; color:#1e3a8a; opacity:0.85; }
-  .role-pill.tenant   { background:linear-gradient(135deg,#bfdbfe 0%,#dbeafe 100%); border-color:transparent; color:#1e4fa3; opacity:0.7; }
+  .role-pill.owner    { background:linear-gradient(135deg,#2563eb 0%,#3b82f6 100%); border-color:transparent; color:#fff; opacity:0.75; }
+  .role-pill.tenant   { background:linear-gradient(135deg,#93c5fd 0%,#bfdbfe 100%); border-color:transparent; color:#1e3a8a; opacity:0.85; }
+  .role-pill.observer { background:linear-gradient(135deg,#bfdbfe 0%,#dbeafe 100%); border-color:transparent; color:#1e4fa3; opacity:0.7; }
 
   @media (max-width: 768px) {
     .login-left { display: none; }
@@ -263,7 +263,7 @@
       <div class="form-group">
         <label class="form-label">Password</label>
         <input class="form-input" type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
-        <a href="#" class="forgot-link">Forgot password?</a>
+        <a href="#" class="forgot-link" onclick="openForgotModal();return false;">Forgot password?</a>
       </div>
 
       <button class="submit-btn" id="signInBtn" onclick="handleLogin()">
@@ -280,11 +280,31 @@
         <div class="role-pills">
           <span class="role-pill admin">Admin</span>
           <span class="role-pill committee">Committee</span>
-          <span class="role-pill observer">Observer</span>
           <span class="role-pill owner">Owner</span>
           <span class="role-pill tenant">Tenant</span>
+          <span class="role-pill observer">Observer</span>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:8px">Reset your password</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:20px">Enter your email and we'll send you a reset link.</div>
+    <div id="forgotSuccess" style="display:none;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:16px">
+      ✓ Reset link sent! Check your email.
+    </div>
+    <div id="forgotError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:16px"></div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px">Email address</label>
+      <input id="forgotEmail" type="email" placeholder="you@example.com" style="width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:#0f172a;background:#f0f4f8;outline:none">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeForgotModal()" style="padding:10px 16px;border-radius:8px;background:#f0f4f8;border:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#475569;cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+      <button id="forgotBtn" onclick="sendResetEmail()" style="padding:10px 16px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">Send Reset Link →</button>
     </div>
   </div>
 </div>
@@ -334,10 +354,42 @@
     }
   };
 
-  // Enter key support
-  document.getElementById('passwordInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleLogin();
+  window.openForgotModal = function() {
+    document.getElementById('forgotEmail').value = '';
+    document.getElementById('forgotSuccess').style.display = 'none';
+    document.getElementById('forgotError').style.display = 'none';
+    document.getElementById('forgotModal').style.display = 'flex';
+  };
+  window.closeForgotModal = function() {
+    document.getElementById('forgotModal').style.display = 'none';
+  };
+  window.sendResetEmail = async function() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    const btn = document.getElementById('forgotBtn');
+    const errEl = document.getElementById('forgotError');
+    const sucEl = document.getElementById('forgotSuccess');
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+    if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password.html'
+      });
+      if (error) throw error;
+      sucEl.style.display = 'block';
+      btn.textContent = 'Sent!';
+    } catch(e) {
+      errEl.textContent = e.message || 'Failed to send reset email.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send Reset Link →';
+    }
+  };
+  document.getElementById('forgotModal').addEventListener('click', function(e) {
+    if (e.target === this) closeForgotModal();
   });
+
 </script>
 </body>
 </html>

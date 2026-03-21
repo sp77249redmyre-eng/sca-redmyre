@@ -137,6 +137,24 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .bottom-grid{grid-template-columns:1fr}
 }
+
+@media(max-width:768px){
+  .topbar{padding:8px 12px 8px 58px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px}
+  .tl-name{font-size:13px}
+  .tl-sub{display:none}
+  .tl-img{width:32px;height:32px}
+  .tb-actions{gap:6px}
+  .notif-btn{width:32px;height:32px;font-size:14px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
+  .logout-btn{padding:5px 10px;font-size:11px}
+  .body{padding:16px}
+  .dash-header{flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:16px}
+  .go-building-btn{width:100%;justify-content:center}
+  .greeting{font-size:20px}
+}
 </style>
 </head>
 <body>
@@ -239,38 +257,49 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
           <div class="qi-title">Building Overview</div>
           <div class="qi-arrow">›</div>
         </a>
+        <a href="announcements.html" class="quick-item" id="qaAnn">
+          <div class="qi-icon" style="background:#fff5f5;border:1px solid #fee2e2">📢</div>
+          <div class="qi-title">Announcements</div>
+          <div class="qi-arrow">›</div>
+        </a>
+        <a href="parking.html" class="quick-item">
+          <div class="qi-icon" style="background:#eff6ff;border:1px solid #bfdbfe">🚗</div>
+          <div class="qi-title">Parking / Towing</div>
+          <span class="qi-badge" id="qaParkingBadge" style="display:none">—</span>
+          <div class="qi-arrow">›</div>
+        </a>
+        <a href="complaints.html" class="quick-item">
+          <div class="qi-icon" style="background:#f0fdf4;border:1px solid #bbf7d0">📬</div>
+          <div class="qi-title">Resident Requests</div>
+          <span class="qi-badge" id="qaComplaintsBadge" style="display:none">—</span>
+          <div class="qi-arrow">›</div>
+        </a>
+        <a href="hvac.html" class="quick-item" id="qaHvac">
+          <div class="qi-icon" style="background:#fff7ed;border:1px solid #fed7aa">❄️</div>
+          <div class="qi-title">A/C Temperature Request</div>
+          <span class="qi-badge yellow" id="qaHvacBadge" style="display:none">—</span>
+          <div class="qi-arrow">›</div>
+        </a>
+        <a href="emergency.html" class="quick-item">
+          <div class="qi-icon" style="background:#fef2f2;border:1px solid #fecaca">📞</div>
+          <div class="qi-title">Emergency Contacts</div>
+          <div class="qi-arrow">›</div>
+        </a>
         <a href="works.html" class="quick-item" id="qaWorks">
           <div class="qi-icon" style="background:var(--blue-50)">🔧</div>
           <div class="qi-title">Ongoing Works</div>
           <span class="qi-badge blue" id="qaWorksBadge">—</span>
           <div class="qi-arrow">›</div>
         </a>
-        <a href="announcements.html" class="quick-item" id="qaAnn">
-          <div class="qi-icon" style="background:#fff5f5;border:1px solid #fee2e2">📢</div>
-          <div class="qi-title">Announcements</div>
-          <div class="qi-arrow">›</div>
-        </a>
-        <a href="hvac.html" class="quick-item" id="qaHvac">
-          <div class="qi-icon" style="background:#fff7ed;border:1px solid #fed7aa">❄️</div>
-          <div class="qi-title">HVAC / Temperature</div>
-          <span class="qi-badge yellow" id="qaHvacBadge" style="display:none">—</span>
-          <div class="qi-arrow">›</div>
-        </a>
-        <a href="parking.html" class="quick-item">
-          <div class="qi-icon" style="background:#fef2f2;border:1px solid #fecaca">🚗</div>
-          <div class="qi-title">Parking</div>
-          <span class="qi-badge" id="qaParkingBadge" style="display:none">—</span>
-          <div class="qi-arrow">›</div>
-        </a>
         <a href="quotes.html" class="quick-item" id="qaQuotes" style="display:none">
           <div class="qi-icon" style="background:var(--green-bg);border:1px solid #a7f3d0">💰</div>
-          <div class="qi-title" style="color:var(--blue-700);font-weight:600">Quote Approvals</div>
+          <div class="qi-title">Quote Approvals</div>
           <span class="qi-badge" id="qaQuotesBadge" style="display:none">—</span>
           <div class="qi-arrow" style="color:var(--blue-600)">›</div>
         </a>
         <a href="reports.html" class="quick-item" id="qaReports" style="display:none">
           <div class="qi-icon" style="background:var(--blue-50)">📊</div>
-          <div class="qi-title">Reports</div>
+          <div class="qi-title">Financial Reports</div>
           <div class="qi-arrow">›</div>
         </a>
       </div>
@@ -349,6 +378,16 @@ try {
     document.getElementById('qaParkingBadge').className = 'qi-badge';
   }
 
+  // Complaints (open)
+  try {
+    const { data: complaints } = await supabase.from('complaints').select('status').eq('status','open');
+    const openComplaints = complaints?.length || 0;
+    if (openComplaints > 0) {
+      document.getElementById('qaComplaintsBadge').style.display = 'inline';
+      document.getElementById('qaComplaintsBadge').textContent = `${openComplaints} open`;
+    }
+  } catch(e) {}
+
   // HVAC
   const { data: hvac } = await supabase.from('hvac_requests').select('status');
   const pendingHvac = hvac ? hvac.filter(h => h.status === 'pending').length : 0;
@@ -366,9 +405,8 @@ try {
     document.getElementById('notifDot').style.display = 'block';
   }
 
-  // Recent works for activity feed
-  const { data: recentWorksRaw } = await supabase.from('works').select('*').order('updated_at', {ascending:false}).limit(20);
-  const recentWorks = (recentWorksRaw||[]).filter(w => w.status !== 'done').slice(0,6);
+  // Recent works for activity feed — active only (no done/completed)
+  const { data: recentWorksRaw } = await supabase.from('works').select('*').neq('status','done').order('updated_at', {ascending:false}).limit(6);
   const actDiv = document.getElementById('recentActivity');
   if (recentWorks && recentWorks.length) {
     const STATUS_COLORS = {

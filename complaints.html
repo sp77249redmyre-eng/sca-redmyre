@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complaints – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --orange:#f97316;--orange-bg:#fff7ed;--orange-text:#c2410c;
+  --purple:#7c3aed;--purple-bg:#ede9fe;--purple-text:#5b21b6;
+  --sidebar-w:232px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
+.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
+.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
+.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
+.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-building{font-size:17px;font-weight:600;color:#fff;letter-spacing:-0.2px}
+.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
+.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
+.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
+.nav-item.active .nav-label{color:#fff}
+.nav-count{font-size:10px;font-weight:700;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 7px;border-radius:100px}
+.nav-count.urgent{background:rgba(239,68,68,0.3);color:#fca5a5}
+.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.page-title{font-size:16px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
+.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:11px;color:var(--muted)}
+.content{padding:24px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600)}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block;white-space:nowrap}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-blue{background:var(--blue-50);color:var(--blue-700)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.badge-orange{background:var(--orange-bg);color:var(--orange-text)}
+.badge-purple{background:var(--purple-bg);color:var(--purple-text)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+
+/* FILTER */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.filter-btn.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
+
+/* COMPLAINT CARDS */
+.complaint-list{display:flex;flex-direction:column;gap:10px}
+.complaint-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:box-shadow 0.12s}
+.complaint-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.complaint-card.status-open{border-left:3px solid var(--red)}
+.complaint-card.status-inprog{border-left:3px solid var(--yellow)}
+.complaint-card.status-resolved{border-left:3px solid var(--green);opacity:0.75}
+.cc-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.cc-title{font-size:14px;font-weight:600}
+.cc-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.cc-body{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:10px;white-space:pre-wrap}
+.cc-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border-light);flex-wrap:wrap;gap:8px}
+.cc-submitter{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.cc-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* STATUS SELECT */
+.status-select{font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:22px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:block}
+.modal-input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
+.modal-input:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-textarea{width:100%;min-height:120px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;resize:vertical;line-height:1.6}
+.modal-textarea:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* PHOTO */
+.photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--bg)}
+.photo-upload-area:hover{border-color:var(--blue-600);background:var(--blue-50)}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:8px}
+.photo-preview-item{position:relative;border-radius:7px;overflow:hidden;aspect-ratio:1}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.photo-preview-item .rm-photo{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-top:8px}
+.photo-gallery-item{border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:pointer}
+.photo-gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.15s}
+.photo-gallery-item:hover img{transform:scale(1.05)}
+.photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;align-items:center;justify-content:center}
+.photo-lightbox.open{display:flex}
+.photo-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
+.photo-lightbox-close{position:fixed;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1001}
+
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+
+/* MOBILE */
+.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .hamburger-btn{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .main{margin-left:0!important}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{display:none}
+  .tb-right{gap:6px}
+  .u-role{display:none}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="sb-header">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
+      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
+      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
+    </a>
+    <div class="sb-building">Redmyre House</div>
+    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-section">General</div>
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <div class="nav-section">Resident Services</div>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item active"><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <div class="nav-section">Building Management</div>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
+    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
+      <div class="sb-logout" onclick="handleLogout()">Log out</div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="main-topbar">
+    <div>
+      <div class="page-title">Complaints</div>
+      <div class="breadcrumb">Redmyre House · Building Management System</div>
+    </div>
+    <div class="tb-right">
+      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
+      <div class="user-chip">
+        <div class="u-avatar" id="topAvatar">?</div>
+        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="section-hdr">
+      <div class="section-title">Complaints</div>
+      <button class="btn-primary" id="addComplaintBtn" style="display:none" onclick="openAddComplaint()">+ New Complaint</button>
+    </div>
+
+    <!-- STATS (admin/committee/observer only) -->
+    <div id="statsWrap" style="display:none">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-num" id="statOpen" style="color:var(--red)">—</div><div class="stat-label">Open</div></div>
+        <div class="stat-card"><div class="stat-num" id="statInprog" style="color:var(--yellow)">—</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card"><div class="stat-num" id="statResolved" style="color:var(--green)">—</div><div class="stat-label">Resolved</div></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-btn active" onclick="filterComplaints('all',this)">All</button>
+      <button class="filter-btn" onclick="filterComplaints('open',this)">🔴 Open</button>
+      <button class="filter-btn" onclick="filterComplaints('inprog',this)">🟡 In Progress</button>
+      <button class="filter-btn" onclick="filterComplaints('resolved',this)">✅ Resolved</button>
+    </div>
+
+    <div class="complaint-list" id="complaintList">
+      <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-backdrop" id="complaintModal">
+  <div class="modal-box">
+    <div class="modal-title" id="complaintModalTitle">New Complaint</div>
+    <input type="hidden" id="complaintEditId">
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="complaintCategory">
+        <option value="noise">🔊 Noise / Vibration</option>
+        <option value="leak">💧 Leak / Plumbing</option>
+        <option value="cleaning">🧹 Cleaning</option>
+        <option value="parking">🚗 Parking</option>
+        <option value="elevator">🛗 Elevator</option>
+        <option value="access">🔒 Access / Security</option>
+        <option value="hvac">❄️ HVAC / Temperature</option>
+        <option value="common">🏢 Common Area</option>
+        <option value="other">📝 Other</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Subject</label>
+      <input class="modal-input" id="complaintTitle" placeholder="Brief description of the issue…">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Details</label>
+      <textarea class="modal-textarea" id="complaintBody" placeholder="Please describe the issue in detail — location, time, frequency…"></textarea>
+    </div>
+    <div class="modal-field" id="photoUploadField">
+      <label class="modal-label">Photos (optional)</label>
+      <div class="photo-upload-area" onclick="document.getElementById('complaintPhotoInput').click()">
+        <div style="font-size:22px;margin-bottom:6px">📷</div>
+        <div style="font-size:13px;color:var(--muted)">Click to add photos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Max 5MB per photo</div>
+      </div>
+      <input type="file" id="complaintPhotoInput" accept="image/*" multiple style="display:none" onchange="previewPhotos(this.files)">
+      <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('complaintModal')">Cancel</button>
+      <button class="btn-primary" id="saveComplaintBtn" onclick="saveComplaint()">Submit →</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL (admin response) -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="modal-title" style="margin-bottom:0" id="detailModalTitle">Complaint Detail</div>
+      <span class="badge" id="detailStatusBadge"></span>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px">Submitted by</div>
+      <div style="font-size:13px;color:var(--text)" id="detailSubmitter">—</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px">Details</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.6;white-space:pre-wrap" id="detailBody">—</div>
+    </div>
+    <div id="detailPhotosWrap" style="margin-bottom:14px;display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
+      <div class="photo-gallery" id="detailPhotoGallery"></div>
+    </div>
+    <div id="adminResponseWrap" style="display:none">
+      <div style="border-top:1px solid var(--border-light);padding-top:16px;margin-top:4px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Admin Response</div>
+        <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="min-height:80px"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px">
+            <option value="open">🔴 Open</option>
+            <option value="inprog">🟡 In Progress</option>
+            <option value="resolved">✅ Resolved</option>
+          </select>
+          <button class="btn-primary" onclick="saveAdminResponse()">Save Response →</button>
+        </div>
+      </div>
+    </div>
+    <div id="existingResponseWrap" style="display:none;margin-top:12px">
+      <div style="background:var(--green-bg);border:1px solid #a7f3d0;border-radius:10px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:4px">Admin Response</div>
+        <div style="font-size:13px;color:var(--green-text);line-height:1.5" id="existingResponseText">—</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteComplaintBtn" onclick="deleteComplaint()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
+  <div class="photo-lightbox-close" onclick="closeLightbox()">✕</div>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const { data:{ session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+const user = session.user;
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const role = profile?.role || 'observer';
+const name = profile?.full_name || user.email.split('@')[0];
+const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
+document.getElementById('sbName').textContent = name;
+document.getElementById('topName').textContent = name;
+const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+document.getElementById('sbRole').textContent = roleLabel;
+document.getElementById('topRole').textContent = roleLabel;
+document.getElementById('topbarRole').textContent = roleLabel;
+
+const privileged = ['admin','committee','observer'];
+const canSubmit = ['admin','committee','owner','tenant'];
+const canViewAll = ['admin','committee','observer'];
+
+const privileged = ['admin','committee','observer'];
+if (privileged.includes(role)) {
+  document.getElementById('quotesNav').style.display = 'flex';
+  document.getElementById('reportsNav').style.display = 'flex';
+  document.getElementById('historyNav').style.display = 'flex';
+}
+if (role === 'admin') {
+  document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
+}
+if (canSubmit.includes(role)) {
+  document.getElementById('addComplaintBtn').style.display = 'inline-flex';
+}
+if (canViewAll.includes(role)) {
+  document.getElementById('statsWrap').style.display = 'block';
+}
+
+window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = isError?'#991b1b':'#0f172a';
+  t.style.display = 'block'; setTimeout(()=>t.style.display='none',3000);
+};
+
+const STATUS_MAP = {
+  open: { label: 'Open', cls: 'badge-red' },
+  inprog: { label: 'In Progress', cls: 'badge-yellow' },
+  resolved: { label: 'Resolved', cls: 'badge-green' },
+};
+
+const CAT_EMOJI = {
+  noise:'🔊', leak:'💧', cleaning:'🧹', parking:'🚗',
+  elevator:'🛗', access:'🔒', hvac:'❄️', common:'🏢', other:'📝'
+};
+
+const CAT_LABEL = {
+  noise:'Noise / Vibration', leak:'Leak / Plumbing', cleaning:'Cleaning',
+  parking:'Parking', elevator:'Elevator', access:'Access / Security',
+  hvac:'HVAC / Temperature', common:'Common Area', other:'Other'
+};
+
+let allComplaints = [];
+let currentFilter = 'all';
+let currentComplaintId = null;
+let pendingPhotos = [];
+
+async function loadComplaints() {
+  let query = supabase.from('complaints').select('*').order('created_at', { ascending: false });
+  if (!canViewAll.includes(role)) {
+    query = query.eq('user_id', user.id);
+  }
+  const { data } = await query;
+  allComplaints = data || [];
+
+  if (canViewAll.includes(role)) {
+    document.getElementById('statTotal').textContent = allComplaints.length;
+    document.getElementById('statOpen').textContent = allComplaints.filter(c=>c.status==='open').length;
+    document.getElementById('statInprog').textContent = allComplaints.filter(c=>c.status==='inprog').length;
+    document.getElementById('statResolved').textContent = allComplaints.filter(c=>c.status==='resolved').length;
+  }
+
+  renderComplaints();
+}
+
+function renderComplaints() {
+  const list = document.getElementById('complaintList');
+  const filtered = currentFilter === 'all' ? allComplaints : allComplaints.filter(c => c.status === currentFilter);
+
+  if (!filtered.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-title">${currentFilter === 'all' ? 'No complaints yet' : 'No ' + currentFilter + ' complaints'}</div>
+        <div style="font-size:13px;color:var(--muted)">${canSubmit.includes(role) ? 'Click "+ New Complaint" to submit one.' : 'Check back later.'}</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => {
+    const st = STATUS_MAP[c.status] || STATUS_MAP.open;
+    const emoji = CAT_EMOJI[c.category] || '📝';
+    const catLabel = CAT_LABEL[c.category] || c.category;
+    const date = new Date(c.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+    const isOwn = c.user_id === user.id;
+
+    return `
+      <div class="complaint-card status-${c.status}" onclick="openDetail('${c.id}')">
+        <div class="cc-header">
+          <div>
+            <div class="cc-title">${emoji} ${c.title}</div>
+            <div class="cc-meta">${catLabel} · ${date}</div>
+          </div>
+          <span class="badge ${st.cls}">${st.label}</span>
+        </div>
+        <div class="cc-body">${c.body?.length > 150 ? c.body.substring(0, 150) + '…' : c.body || ''}</div>
+        ${c.admin_response ? `
+          <div style="background:var(--green-bg);border-radius:8px;padding:8px 12px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:2px">Response</div>
+            <div style="font-size:12px;color:var(--green-text)">${c.admin_response.length > 100 ? c.admin_response.substring(0,100)+'…' : c.admin_response}</div>
+          </div>` : ''}
+        <div class="cc-footer">
+          <div class="cc-submitter">
+            ${canViewAll.includes(role) && !isOwn ? `👤 ${c.submitter_name || 'Unknown'}` : isOwn ? '👤 You' : ''}
+          </div>
+          ${c.has_photos ? '<span style="font-size:11px;color:var(--muted)">📷 Photos attached</span>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+window.filterComplaints = (f, btn) => {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderComplaints();
+};
+
+// ── Photo preview (before submit) ──
+window.previewPhotos = (files) => {
+  const grid = document.getElementById('photoPreviewGrid');
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) { showToast(`${file.name} is too large (max 5MB)`, true); continue; }
+    pendingPhotos.push(file);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const idx = pendingPhotos.length - 1;
+      const div = document.createElement('div');
+      div.className = 'photo-preview-item';
+      div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" onclick="removePreviewPhoto(${idx})">✕</div>`;
+      grid.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  }
+  document.getElementById('complaintPhotoInput').value = '';
+};
+
+window.removePreviewPhoto = (idx) => {
+  pendingPhotos.splice(idx, 1);
+  const grid = document.getElementById('photoPreviewGrid');
+  grid.innerHTML = '';
+  pendingPhotos.forEach((f, i) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'photo-preview-item';
+      div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" onclick="removePreviewPhoto(${i})">✕</div>`;
+      grid.appendChild(div);
+    };
+    reader.readAsDataURL(f);
+  });
+};
+
+// ── Submit complaint ──
+window.openAddComplaint = () => {
+  document.getElementById('complaintModalTitle').textContent = 'New Complaint';
+  document.getElementById('complaintEditId').value = '';
+  document.getElementById('complaintCategory').value = 'noise';
+  document.getElementById('complaintTitle').value = '';
+  document.getElementById('complaintBody').value = '';
+  document.getElementById('photoPreviewGrid').innerHTML = '';
+  pendingPhotos = [];
+  document.getElementById('complaintModal').classList.add('open');
+};
+
+window.saveComplaint = async () => {
+  const title = document.getElementById('complaintTitle').value.trim();
+  const body = document.getElementById('complaintBody').value.trim();
+  const category = document.getElementById('complaintCategory').value;
+  const btn = document.getElementById('saveComplaintBtn');
+
+  if (!title || !body) { showToast('Please fill in all fields', true); return; }
+
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    const { data: inserted, error } = await supabase.from('complaints').insert({
+      title, body, category,
+      user_id: user.id,
+      submitter_name: name,
+      submitter_role: role,
+      status: 'open',
+      has_photos: pendingPhotos.length > 0,
+    }).select().single();
+
+    if (error) throw error;
+
+    // Upload photos
+    if (pendingPhotos.length > 0) {
+      for (const file of pendingPhotos) {
+        const ext = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+        await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
+      }
+    }
+
+    closeModal('complaintModal');
+    pendingPhotos = [];
+    await loadComplaints();
+    showToast('Complaint submitted ✓');
+  } catch(e) {
+    showToast(e.message || 'Failed to submit', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Submit →';
+  }
+};
+
+// ── Detail modal ──
+window.openDetail = async (id) => {
+  const c = allComplaints.find(x => x.id === id);
+  if (!c) return;
+  currentComplaintId = id;
+
+  const st = STATUS_MAP[c.status] || STATUS_MAP.open;
+  const emoji = CAT_EMOJI[c.category] || '📝';
+  const catLabel = CAT_LABEL[c.category] || c.category;
+  const date = new Date(c.created_at).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  document.getElementById('detailModalTitle').textContent = `${emoji} ${c.title}`;
+  document.getElementById('detailStatusBadge').className = `badge ${st.cls}`;
+  document.getElementById('detailStatusBadge').textContent = st.label;
+  document.getElementById('detailSubmitter').textContent = `${c.submitter_name || 'Unknown'} · ${catLabel} · ${date}`;
+  document.getElementById('detailBody').textContent = c.body || '—';
+
+  // Photos
+  const photosWrap = document.getElementById('detailPhotosWrap');
+  const gallery = document.getElementById('detailPhotoGallery');
+  if (c.has_photos) {
+    const { data: files } = await supabase.storage.from('complaint-images').list(id);
+    if (files && files.length > 0) {
+      photosWrap.style.display = 'block';
+      gallery.innerHTML = files.map(f => {
+        const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
+        return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
+      }).join('');
+    } else { photosWrap.style.display = 'none'; }
+  } else { photosWrap.style.display = 'none'; }
+
+  // Admin response
+  const existingWrap = document.getElementById('existingResponseWrap');
+  const adminWrap = document.getElementById('adminResponseWrap');
+
+  if (c.admin_response) {
+    existingWrap.style.display = 'block';
+    document.getElementById('existingResponseText').textContent = c.admin_response;
+  } else { existingWrap.style.display = 'none'; }
+
+  if (role === 'admin') {
+    adminWrap.style.display = 'block';
+    document.getElementById('adminResponse').value = c.admin_response || '';
+    document.getElementById('adminStatusSelect').value = c.status;
+    document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
+  } else {
+    adminWrap.style.display = 'none';
+    document.getElementById('deleteComplaintBtn').style.display = 'none';
+  }
+
+  document.getElementById('detailModal').classList.add('open');
+};
+
+window.saveAdminResponse = async () => {
+  const response = document.getElementById('adminResponse').value.trim();
+  const status = document.getElementById('adminStatusSelect').value;
+  try {
+    await supabase.from('complaints').update({
+      admin_response: response || null,
+      status,
+      updated_at: new Date().toISOString(),
+    }).eq('id', currentComplaintId);
+    closeModal('detailModal');
+    await loadComplaints();
+    showToast('Response saved ✓');
+  } catch(e) { showToast('Failed to save', true); }
+};
+
+window.deleteComplaint = async () => {
+  if (!confirm('Delete this complaint?')) return;
+  try {
+    const { data: files } = await supabase.storage.from('complaint-images').list(currentComplaintId);
+    if (files && files.length > 0) {
+      await supabase.storage.from('complaint-images').remove(files.map(f => `${currentComplaintId}/${f.name}`));
+    }
+    await supabase.from('complaints').delete().eq('id', currentComplaintId);
+    closeModal('detailModal');
+    await loadComplaints();
+    showToast('Complaint deleted');
+  } catch(e) { showToast('Failed to delete', true); }
+};
+
+window.openLightbox = (url) => {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('photoLightbox').classList.add('open');
+};
+window.closeLightbox = () => document.getElementById('photoLightbox').classList.remove('open');
+
+await loadComplaints();
+
+// Mobile hamburger
+(function(){
+  var btn=document.getElementById("hamburgerBtn");
+  var overlay=document.getElementById("sidebarOverlay");
+  var sidebar=document.querySelector(".sidebar");
+  if(!btn||!sidebar) return;
+  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
+  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
+  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
+  overlay.addEventListener("click",closeMenu);
+  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
+})();
+</script>
+</body>
+</html>

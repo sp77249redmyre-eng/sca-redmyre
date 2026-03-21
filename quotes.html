@@ -154,7 +154,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
   .sidebar.mobile-open{transform:translateX(0)}
   .main{margin-left:0!important}
-  .main-topbar{padding-left:64px}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{font-size:10px;display:none}
+  .tb-right{gap:6px}
+  .role-chip{padding:4px 8px}
+  .role-label{font-size:11px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
 }
 /* ===== END MOBILE ===== */
 </style>
@@ -175,17 +184,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
   </div>
   <nav class="sb-nav">
-    <div class="nav-section">Navigation</div>
-    <a href="building.html" class="nav-item"><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
-    <a href="announcements.html" class="nav-item"><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
-    <a href="works.html" class="nav-item"><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
-    <a href="hvac.html" class="nav-item"><div class="nav-icon">❄️</div><span class="nav-label">HVAC / Temperature</span></a>
-    <a href="parking.html" class="nav-item"><div class="nav-icon">🚗</div><span class="nav-label">Parking</span></a>
-    <a href="quotes.html" class="nav-item active"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
-    <a href="history.html" class="nav-item" id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
-    <a href="reports.html" class="nav-item" id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Reports</span></a>
-    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+    <div class="nav-section">General</div>
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <div class="nav-section">Resident Services</div>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <div class="nav-section">Building Management</div>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item active" id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
     <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
   </nav>
   <div class="sb-footer">
     <div class="sb-user">
@@ -256,7 +270,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
         <input class="modal-input" id="quoteContractor" placeholder="Contractor name…">
       </div>
       <div class="modal-field">
-        <label class="modal-label">Amount (AUD)</label>
+        <label class="modal-label">Amount (AUD) <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px">ex GST</span></label>
         <input class="modal-input" id="quoteAmount" type="number" placeholder="0.00">
       </div>
       <div class="modal-field">
@@ -277,10 +291,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="modal-field">
       <label class="modal-label">Scope of Works</label>
       <textarea class="modal-textarea" id="quoteDesc" placeholder="Describe the scope of works…"></textarea>
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Internal Notes (Admin/Committee/Observer only)</label>
-      <textarea class="modal-textarea" id="quoteNotes" placeholder="Internal notes, comparisons, recommendations…" style="min-height:80px"></textarea>
     </div>
     <div class="modal-field">
       <label class="modal-label">Attachments (Quote docs, photos, etc.)</label>
@@ -334,6 +344,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   </div>
 </div>
 
+<!-- PDF VIEWER MODAL -->
+<div class="modal-backdrop" id="pdfModal">
+  <div class="modal-box" style="max-width:860px;width:100%;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600;color:var(--text)" id="pdfModalTitle">Document</div>
+      <div style="display:flex;gap:8px">
+        <a id="pdfOpenNewTab" href="#" target="_blank" class="btn-secondary" style="font-size:12px;padding:6px 12px">↗ Open in new tab</a>
+        <button class="btn-secondary" onclick="closeModal('pdfModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
+      </div>
+    </div>
+    <div id="pdfViewerWrap" style="width:100%;height:70vh;border-radius:10px;overflow:hidden;background:var(--bg)">
+      <iframe id="pdfIframe" src="" style="width:100%;height:100%;border:none;border-radius:10px"></iframe>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -366,6 +392,7 @@ if (privileged.includes(role)) {
 if (role === 'admin') {
   document.getElementById('historyNav').style.display = 'flex';
   document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
   document.getElementById('addQuoteBtn').style.display = 'inline-flex';
 }
 
@@ -523,7 +550,6 @@ function renderQuotes() {
   const filterBar = `<div class="filter-bar">
     <button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="filterQuotes('all')">All</button>
     <button class="filter-btn ${currentFilter==='pending'?'active':''}" onclick="filterQuotes('pending')">⏳ Pending</button>
-    <button class="filter-btn ${currentFilter==='approved'?'active':''}" onclick="filterQuotes('approved')">✅ Approved</button>
     <button class="filter-btn ${currentFilter==='declined'?'active':''}" onclick="filterQuotes('declined')">❌ Declined</button>
     <button class="filter-btn ${currentFilter==='onhold'?'active':''}" onclick="filterQuotes('onhold')">⏸ On Hold</button>
     <button class="filter-btn ${currentFilter==='expired'?'active':''}" onclick="filterQuotes('expired')">🕒 Expired</button>
@@ -690,15 +716,13 @@ function renderQuotes() {
   let html = filterBar;
 
   if (active.length) {
-    if (currentFilter === 'all') html += sectionHeader('Active Votes', 'var(--blue-700)', 'var(--blue-50)', 'var(--blue-600)', active.length);
+    if (currentFilter === 'all' || currentFilter === 'pending') html += sectionHeader('⏳ Pending Approval', 'var(--yellow-text)', 'var(--yellow-bg)', 'var(--yellow)', active.length);
     html += active.map(renderCard).join('');
+  } else if (currentFilter === 'all' || currentFilter === 'pending') {
+    html += `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No pending quotes</div></div>`;
   }
-  if (approved.length) {
-    if (currentFilter === 'all') html += sectionHeader('Approved', 'var(--green-text)', 'var(--green-bg)', 'var(--green)', approved.length);
-    html += approved.map(renderCard).join('');
-  }
-  if (closed.length) {
-    if (currentFilter === 'all') html += sectionHeader('Closed', 'var(--text-2)', 'var(--border-light)', '#94a3b8', closed.length);
+  if (closed.length && (currentFilter === 'all' || currentFilter === 'declined')) {
+    if (currentFilter === 'all') html += sectionHeader('📁 Closed', 'var(--text-2)', 'var(--border-light)', '#94a3b8', closed.length);
     html += closed.map(renderCard).join('');
   }
 
@@ -712,10 +736,18 @@ window.filterQuotes = f => { currentFilter = f; renderQuotes(); };
 window.openAttachment = async (quoteId, path, name, type) => {
   try {
     const url = await getSignedUrl(path);
-    if (type.startsWith('image/') || name.match(/\.(jpg|jpeg|png)$/i)) {
+    const isPdf = name.match(/\.pdf$/i) || type === 'application/pdf';
+    const isImage = type?.startsWith('image/') || name.match(/\.(jpg|jpeg|png)$/i);
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile || isImage || !isPdf) {
       window.open(url, '_blank');
     } else {
-      window.open(url, '_blank');
+      // Desktop PDF → show in modal
+      document.getElementById('pdfModalTitle').textContent = name;
+      document.getElementById('pdfIframe').src = url;
+      document.getElementById('pdfOpenNewTab').href = url;
+      document.getElementById('pdfModal').classList.add('open');
     }
   } catch(e) { showToast('Could not open file: ' + e.message, true); }
 };
@@ -758,9 +790,11 @@ async function syncQuoteToWorks(quoteId) {
     const newWork = {
       title: q.project || '(Unnamed)',
       contractor: q.vendor || '',
+      contractor_name: q.vendor || '',
       status,
       quote_id: quoteId,
       description: parsed.note || '',
+      private_notes: q.amount ? `Price: $${Number(q.amount).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})} (ex GST)` : null,
       updated_at: new Date().toISOString(),
     };
     if (category) newWork.category = category;
@@ -1016,7 +1050,6 @@ renderQuotes();
   function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
   btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
   overlay.addEventListener("click",closeMenu);
-  // Close when nav item clicked on mobile
   sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
 })();
 </script>

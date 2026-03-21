@@ -131,7 +131,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
   .sidebar.mobile-open{transform:translateX(0)}
   .main{margin-left:0!important}
-  .main-topbar{padding-left:64px}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{font-size:10px;display:none}
+  .tb-right{gap:6px}
+  .role-chip{padding:4px 8px}
+  .role-label{font-size:11px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
 }
 /* ===== END MOBILE ===== */
 </style>
@@ -152,17 +161,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
   </div>
   <nav class="sb-nav">
-    <div class="nav-section">Navigation</div>
-    <a href="building.html" class="nav-item"><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
-    <a href="announcements.html" class="nav-item"><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
-    <a href="works.html" class="nav-item"><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
-    <a href="hvac.html" class="nav-item"><div class="nav-icon">❄️</div><span class="nav-label">HVAC / Temperature</span></a>
-    <a href="parking.html" class="nav-item"><div class="nav-icon">🚗</div><span class="nav-label">Parking</span></a>
-    <a href="quotes.html" class="nav-item" id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
-    <a href="history.html" class="nav-item" id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
-    <a href="reports.html" class="nav-item active"><div class="nav-icon">📊</div><span class="nav-label">Reports</span></a>
-    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+    <div class="nav-section">General</div>
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <div class="nav-section">Resident Services</div>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <div class="nav-section">Building Management</div>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item active" id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
     <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
   </nav>
   <div class="sb-footer">
     <div class="sb-user">
@@ -313,7 +327,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
         <input class="modal-input" id="expenseDesc" placeholder="e.g. Emergency pipe repair">
       </div>
       <div class="modal-field">
-        <label class="modal-label">Amount (AUD)</label>
+        <label class="modal-label">Amount (AUD) <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px">ex GST</span></label>
         <input class="modal-input" type="number" id="expenseAmount" placeholder="0.00">
       </div>
       <div class="modal-field">
@@ -338,6 +352,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="modal-field">
       <label class="modal-label">Notes (optional)</label>
       <textarea class="modal-textarea" id="expenseNotes" placeholder="Additional details…"></textarea>
+    </div>
+    <div id="addToWorksField" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s" id="addToWorksToggle">
+        <input type="checkbox" id="addToWorks" style="width:16px;height:16px;cursor:pointer;accent-color:var(--blue-600)" onchange="document.getElementById('addToWorksToggle').style.borderColor=this.checked?'var(--blue-400)':'var(--border)';document.getElementById('addToWorksToggle').style.background=this.checked?'var(--blue-50)':''">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Add to Ongoing Works</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">Amount will be stored in private notes (not visible to Owner/Tenant)</div>
+        </div>
+      </label>
     </div>
     <div class="modal-footer">
       <button class="btn-danger" id="deleteExpenseBtn" onclick="deleteExpense()" style="display:none;margin-right:auto">Delete</button>
@@ -380,6 +403,7 @@ if (privileged.includes(role)) {
 }
 if (role === 'admin') {
   document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
 }
 if (role === 'admin') document.getElementById('addExpenseBtn').style.display = 'inline-flex';
 
@@ -615,6 +639,9 @@ window.openAddExpense = () => {
   document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('expenseNotes').value = '';
   document.getElementById('deleteExpenseBtn').style.display = 'none';
+  document.getElementById('addToWorks').checked = false;
+  document.getElementById('addToWorksToggle').style.borderColor = 'var(--border)';
+  document.getElementById('addToWorksField').style.display = 'block';
   document.getElementById('expenseModal').classList.add('open');
 };
 
@@ -629,11 +656,13 @@ window.editExpense = async (id) => {
   document.getElementById('expenseDate').value = e.expense_date||new Date().toISOString().split('T')[0];
   document.getElementById('expenseNotes').value = e.notes||'';
   document.getElementById('deleteExpenseBtn').style.display = 'inline-flex';
+  document.getElementById('addToWorksField').style.display = 'none';
   document.getElementById('expenseModal').classList.add('open');
 };
 
 window.saveExpense = async () => {
   const id = document.getElementById('expenseEditId').value;
+  const addToWorks = !id && document.getElementById('addToWorks').checked;
   const data = {
     description: document.getElementById('expenseDesc').value.trim(),
     amount: parseFloat(document.getElementById('expenseAmount').value)||0,
@@ -644,11 +673,25 @@ window.saveExpense = async () => {
   };
   if (!data.description) { showToast('Please enter a description', true); return; }
   try {
-    if (id) { await supabase.from('expenses').update(data).eq('id', id); }
-    else { await supabase.from('expenses').insert(data); }
+    if (id) {
+      await supabase.from('expenses').update(data).eq('id', id);
+    } else {
+      await supabase.from('expenses').insert(data);
+
+      // Add to Ongoing Works if checked
+      if (addToWorks) {
+        await supabase.from('works').insert({
+          title: data.description,
+          status: 'done',
+          category: data.category,
+          private_notes: `One-off expense: $${data.amount.toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2})} (ex GST)${data.notes ? '\n' + data.notes : ''}`,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
     closeModal('expenseModal');
     await loadReport();
-    showToast('Expense saved ✓');
+    showToast(addToWorks ? 'Expense saved & added to Ongoing Works ✓' : 'Expense saved ✓');
   } catch(e) { showToast(e.message||'Failed to save', true); }
 };
 
@@ -666,85 +709,100 @@ async function renderWorks(catFilter) {
   const wrap = document.getElementById('worksSection');
   if (!wrap) return;
 
-  let query = supabase.from('works').select('*').order('updated_at', {ascending: false});
-  if (dateFrom) query = query.gte('updated_at', dateFrom.toISOString());
-  if (dateTo)   query = query.lte('updated_at', new Date(dateTo.getTime()+86400000).toISOString());
+  // completed_at 있는 것만 (완료된 Works)
+  let query = supabase.from('works').select('*').eq('status','done').not('completed_at','is',null).order('completed_at', {ascending: false});
+  if (dateFrom) query = query.gte('completed_at', dateFrom.toISOString());
+  if (dateTo)   query = query.lte('completed_at', new Date(dateTo.getTime()+86400000).toISOString());
 
   const { data: works } = await query;
   const allWorks = works || [];
 
-  // 카테고리 필터
   const filtered = catFilter === 'all' ? allWorks
     : allWorks.filter(w => (w.category||'Other') === catFilter);
 
   if (!filtered.length) {
-    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No works for this period</div>';
+    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No completed works for this period</div>';
     return;
-  }
-
-  // 상태별 그룹 (works status 기준)
-  const groups = {
-    urgent:    { label:'🔴 Urgent',       color:'var(--red-text)',  bg:'var(--red-bg)',    items:[] },
-    inprog:    { label:'🔵 In Progress',  color:'var(--blue-600)',  bg:'var(--blue-50)',   items:[] },
-    scheduled: { label:'📅 Scheduled',    color:'var(--muted)',     bg:'var(--border-light)', items:[] },
-    done:      { label:'✅ Completed',    color:'var(--green-text)', bg:'var(--green-bg)', items:[] },
-  };
-
-  for (const w of filtered) {
-    const st = w.status || 'scheduled';
-    // 알 수 없는 상태는 scheduled로 처리
-    if (groups[st]) groups[st].items.push(w);
-    else groups.scheduled.items.push(w);
   }
 
   const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-const CAT_COLORS = {
-  'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
-  'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
-  'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
-  'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
-};
-const CAT_BG = {
-  'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
-  'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
-  'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
-  'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
-};
-function catBadge(cat) {
-  const label = CAT_LABELS[cat] || cat || 'Other';
-  const color = CAT_COLORS[cat] || '#94a3b8';
-  const bg    = CAT_BG[cat]    || '#f1f5f9';
-  return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
-}
+  const CAT_COLORS = {
+    'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
+    'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
+    'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
+    'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
+  };
+  const CAT_BG = {
+    'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
+    'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
+    'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
+    'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
+  };
+  function catBadge(cat) {
+    const label = CAT_LABELS[cat] || cat || 'Other';
+    const color = CAT_COLORS[cat] || '#94a3b8';
+    const bg    = CAT_BG[cat]    || '#f1f5f9';
+    return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
+  }
 
-  let html = '<div style="display:flex;flex-direction:column;gap:16px">';
+  let html = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;border-left:4px solid var(--green)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--green-bg);border-bottom:1px solid var(--border-light)">
+        <span style="font-size:13px;font-weight:700;color:var(--green-text)">✅ Completed Works
+          <span style="font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:100px;color:var(--text-2);margin-left:6px">${filtered.length}</span>
+        </span>
+      </div>
+      <div>`;
 
-  for (const [key, grp] of Object.entries(groups)) {
-    if (!grp.items.length) continue;
-      html += `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;border-left:4px solid ${grp.color}">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:${grp.bg};border-bottom:1px solid var(--border-light)">
-          <span style="font-size:13px;font-weight:700;color:${grp.color}">${grp.label} <span style="font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:100px;color:var(--text-2);margin-left:6px">${grp.items.length}</span></span>
+  for (const w of filtered) {
+    const completedDate = w.completed_at ? new Date(w.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const completedISO = w.completed_at ? new Date(w.completed_at).toISOString().split('T')[0] : '';
 
+    // Get amount from quote or private_notes
+    let amount = '';
+    if (w.quote_id) {
+      // Try to get from quotes table
+      const { data: q } = await supabase.from('quotes').select('amount').eq('id', w.quote_id).single();
+      if (q?.amount) amount = fmt(q.amount) + ' <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:1px 5px;border-radius:4px">ex GST</span>';
+    } else if (w.private_notes) {
+      const match = w.private_notes.match(/Price:\s*(\$[\d,]+\.?\d*)/);
+      if (match) amount = match[1] + ' <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:1px 5px;border-radius:4px">ex GST</span>';
+    }
+
+    html += `
+      <div style="display:grid;grid-template-columns:150px 1fr auto auto;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-light);align-items:center" class="table-row">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Completed</div>
+          <input type="date" value="${completedISO}"
+            onchange="updateCompletedDate('${w.id}',this.value)"
+            style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 6px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer">
         </div>
         <div>
-          ${grp.items.map(w => `
-            <div style="display:grid;grid-template-columns:120px 1fr 120px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--border-light);align-items:center" class="table-row">
-              <div style="font-size:12px;color:var(--text-2)">${new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
-              <div>
-                <div style="font-size:13px;font-weight:500">${w.title||'—'}${w.quote_id?'<span style="font-size:10px;color:var(--blue-600);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:600">QUOTE</span>':''}</div>
-                <div style="font-size:11px;color:var(--muted)">${w.contractor||'—'}</div>
-              </div>
-              <div>${catBadge(w.category||'Other')}</div>
-            </div>`).join('')}
+          <div style="font-size:13px;font-weight:500">${w.title||'—'}${w.quote_id?'<span style="font-size:10px;color:var(--blue-600);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:600">QUOTE</span>':''}</div>
+          <div style="font-size:11px;color:var(--muted)">${w.contractor_name||w.contractor||'—'}</div>
         </div>
+        <div style="text-align:right">
+          ${amount ? `<div style="font-size:14px;font-weight:600;color:var(--green-text)">${amount}</div>` : ''}
+        </div>
+        <div>${catBadge(w.category||'Other')}</div>
       </div>`;
   }
 
-  html += '</div>';
+  html += '</div></div>';
   wrap.innerHTML = html;
 }
+
+window.updateCompletedDate = async (id, dateStr) => {
+  if (!dateStr) return;
+  try {
+    await supabase.from('works').update({
+      completed_at: new Date(dateStr).toISOString(),
+      updated_at: new Date(dateStr).toISOString(),
+    }).eq('id', id);
+    showToast('Date updated ✓');
+  } catch(e) { showToast('Failed to update date', true); }
+};
 
 // ── 정렬 ──
 let currentQuotesData = [];
@@ -843,7 +901,6 @@ updateDateRange();
   function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
   btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
   overlay.addEventListener("click",closeMenu);
-  // Close when nav item clicked on mobile
   sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
 })();
 </script>
