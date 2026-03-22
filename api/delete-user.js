@@ -31,7 +31,8 @@ module.exports = async (req, res) => {
   );
 
   const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role').eq('email', data.user.email).single();
+    .from('profiles').select('role').eq('email', data.user.email.toLowerCase().trim()).single();
+  console.log('[auth email]', data.user.email, '[profile]', profile);
 
   if (!profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
