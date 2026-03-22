@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
 
   const token = auth.replace('Bearer ', '').trim();
 
-  // 🔹 유저 검증 (ANON KEY)
+  // 🔐 USER 검증용 (ANON KEY)
   const supabaseUser = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY,
@@ -25,27 +25,26 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  // 🔹 관리자 권한 체크 (SERVICE ROLE)
+  // 🔥 ADMIN 작업용 (SERVICE ROLE)
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const userId = data.user.id;
-
-  const { data: profile } = await supabaseAdmin
+  // 🔥 핵심: ID 기준으로만 조회 (email 제거)
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
-    .eq('id', userId)   // 🔥 핵심 수정 (id 기반)
-    .maybeSingle();
+    .eq('id', data.user.id)
+    .single();
 
-  console.log('[user id]', userId, '[profile]', profile);
+  console.log('[auth user id]', data.user.id);
+  console.log('[profile]', profile);
 
-  if (!profile || profile.role !== 'admin') {
+  if (profileError || !profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
   }
 
-  // 🔹 입력값 검증
   const { email, full_name, role } = req.body;
 
   if (!email || !full_name || !role) {
@@ -55,7 +54,6 @@ module.exports = async (req, res) => {
   const siteUrl = process.env.SITE_URL || 'https://sca-redmyre.vercel.app';
 
   try {
-    // 🔹 초대 발송
     const { data: inviteData, error: inviteError } =
       await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${siteUrl}/setup.html`,
@@ -64,7 +62,6 @@ module.exports = async (req, res) => {
 
     if (inviteError) throw inviteError;
 
-    // 🔹 profiles 저장
     await supabaseAdmin.from('profiles').upsert(
       {
         id: inviteData.user.id,
