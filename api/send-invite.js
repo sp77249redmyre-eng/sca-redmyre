@@ -6,36 +6,39 @@ module.exports = async (req, res) => {
   }
 
   const auth = req.headers['authorization'] || '';
-  console.log('[send-invite] auth header:', auth ? 'present' : 'MISSING');
-  
+  console.log('[auth header]', auth ? 'present, length:' + auth.length : 'MISSING');
+
   if (!auth.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized', detail: 'No Bearer token' });
   }
   const token = auth.replace('Bearer ', '').trim();
-  console.log('[send-invite] token length:', token.length);
+  console.log('[token] length:', token.length, 'starts:', token.substring(0, 20));
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.log('[send-invite] ENV MISSING');
-    return res.status(500).json({ error: 'Server config error' });
+  // TASK 4 FIX — use ANON KEY for user token validation
+  const supabaseUser = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  const { data, error: authError } = await supabaseUser.auth.getUser(token);
+  console.log('[getUser result]', data?.user?.id || 'NULL', authError?.message || 'no error');
+
+  if (authError || !data?.user) {
+    return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
   }
 
-  const supabase = createClient(
+  // Use SERVICE ROLE for admin operations only
+  const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  console.log('[send-invite] getUser result:', user?.id || 'NULL', authError?.message || 'no error');
-  
-  if (authError || !user) {
-    return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
-  }
+  const { data: profile } = await supabaseAdmin
+    .from('profiles').select('role').eq('id', data.user.id).single();
+  console.log('[profile role]', profile?.role || 'NULL');
 
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single();
-  console.log('[send-invite] profile role:', profile?.role || 'NULL');
-  
   if (!profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
   }
@@ -48,21 +51,21 @@ module.exports = async (req, res) => {
   const siteUrl = process.env.SITE_URL || 'https://sca-redmyre.vercel.app';
 
   try {
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${siteUrl}/setup.html`,
       data: { full_name, role }
     });
-    if (error) throw error;
-    if (!data?.user?.id) throw new Error('Invite succeeded but user ID missing');
+    if (inviteError) throw inviteError;
+    if (!inviteData?.user?.id) throw new Error('Invite succeeded but user ID missing');
 
-    await supabase.from('profiles').upsert(
-      { id: data.user.id, email, full_name, role, setup_complete: false },
+    await supabaseAdmin.from('profiles').upsert(
+      { id: inviteData.user.id, email, full_name, role, setup_complete: false },
       { onConflict: 'email' }
     );
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.log('[send-invite] invite error:', err.message);
+    console.log('[invite error]', err.message);
     return res.status(500).json({ error: err.message || 'Failed to send invite' });
   }
 };
