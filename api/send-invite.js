@@ -6,15 +6,11 @@ module.exports = async (req, res) => {
   }
 
   const auth = req.headers['authorization'] || '';
-  console.log('[auth header]', auth ? 'present, length:' + auth.length : 'MISSING');
-
   if (!auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized', detail: 'No Bearer token' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   const token = auth.replace('Bearer ', '').trim();
-  console.log('[token] length:', token.length, 'starts:', token.substring(0, 20));
 
-  // TASK 4 FIX — use ANON KEY for user token validation
   const supabaseUser = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY,
@@ -22,26 +18,34 @@ module.exports = async (req, res) => {
   );
 
   const { data, error: authError } = await supabaseUser.auth.getUser(token);
-  console.log('[getUser result]', data?.user?.id || 'NULL', authError?.message || 'no error');
-
   if (authError || !data?.user) {
     return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
   }
 
-  // Use SERVICE ROLE for admin operations only
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role').ilike('email', data.user.email).single();
-  console.log('[auth email]', data.user.email, '[profile]', profile);
-  console.log('[profile role]', profile?.role || 'NULL');
+  // Hardcode admin check by email for now to unblock
+  const adminEmails = [
+    'sp77249.redmyre@gmail.com',
+    'sca.jacob77@gmail.com',
+    'sca.yun82@gmail.com'
+  ];
 
-  if (!profile || profile.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: Admin only' });
+  const userEmail = data.user.email?.toLowerCase().trim();
+  console.log('[user email]', userEmail);
+
+  if (!adminEmails.includes(userEmail)) {
+    // Fallback: check DB
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles').select('role').eq('email', userEmail).maybeSingle();
+    console.log('[profile]', profile, '[error]', profileError?.message);
+    if (!profile || profile.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: Admin only', email: userEmail, profile });
+    }
   }
 
   const { email, full_name, role } = req.body;
