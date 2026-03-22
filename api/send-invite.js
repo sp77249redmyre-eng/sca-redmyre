@@ -11,15 +11,26 @@ module.exports = async (req, res) => {
   }
   const token = auth.replace('Bearer ', '');
 
-  const supabase = createClient(
+  // Admin client with service role
+  const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  // User client to verify token
+  const supabaseUser = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
-  const { data: profile } = await supabase
+  const { data: { user }, error: authError } = await supabaseUser.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
+  }
+
+  const { data: profile } = await supabaseAdmin
     .from('profiles').select('role').eq('id', user.id).single();
   if (!profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
@@ -30,19 +41,17 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // CHECK 5 — SITE_URL safe fallback: never undefined
   const siteUrl = process.env.SITE_URL || 'https://sca-redmyre.vercel.app';
-  const redirectTo = `${siteUrl}/setup.html`;
 
   try {
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
+    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/setup.html`,
       data: { full_name, role }
     });
     if (error) throw error;
     if (!data?.user?.id) throw new Error('Invite succeeded but user ID missing');
 
-    await supabase.from('profiles').upsert(
+    await supabaseAdmin.from('profiles').upsert(
       { id: data.user.id, email, full_name, role, setup_complete: false },
       { onConflict: 'email' }
     );

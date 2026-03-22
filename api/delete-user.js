@@ -11,15 +11,18 @@ module.exports = async (req, res) => {
   }
   const token = auth.replace('Bearer ', '');
 
-  const supabase = createClient(
+  const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
+  }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await supabaseAdmin
     .from('profiles').select('role').eq('id', user.id).single();
   if (!profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
@@ -30,9 +33,9 @@ module.exports = async (req, res) => {
   if (user_id === user.id) return res.status(400).json({ error: 'Cannot delete your own account' });
 
   try {
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(user_id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
     if (deleteError) throw deleteError;
-    await supabase.from('profiles').delete().eq('id', user_id);
+    await supabaseAdmin.from('profiles').delete().eq('id', user_id);
     return res.status(200).json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Failed to delete user' });
