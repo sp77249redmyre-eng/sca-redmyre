@@ -383,7 +383,8 @@ window.removeUser = async (uid, uname) => {
   if (!confirm(`Remove ${uname}?
 They will lose access to this system immediately.`)) return;
   try {
-    const { data: { session: s1 } } = await supabase.auth.getSession();
+    const { data: { session: s1 } } = await supabase.auth.refreshSession();
+    if (!s1) { showToast('Session expired. Please log in again.', true); return; }
     const res = await fetch('/api/delete-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s1.access_token}` },
@@ -416,7 +417,9 @@ window.sendInvite = async () => {
 
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
-    const { data: { session: s2 } } = await supabase.auth.getSession();
+    const { data: { session: s2 } } = await supabase.auth.refreshSession();
+    console.log('[invite] session:', s2);
+    if (!s2) { showToast('Session expired. Please log in again.', true); return; }
     const res = await fetch('/api/send-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2.access_token}` },
