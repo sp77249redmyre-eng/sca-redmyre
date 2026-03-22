@@ -1,60 +1,54 @@
 const { createClient } = require('@supabase/supabase-js');
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // ── Auth check: verify caller is admin ──
-  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+  const auth = req.headers['authorization'] || '';
+  if (!auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
-  const token = authHeader.replace('Bearer ', '');
+  const token = auth.replace('Bearer ', '');
 
-  const supabaseAdmin = createClient(
+  const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Verify token and check admin role
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Invalid token' }) };
-  }
-  const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
+  const { data: profile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single();
   if (!profile || profile.role !== 'admin') {
-    return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin only' }) };
+    return res.status(403).json({ error: 'Forbidden: Admin only' });
   }
 
-  let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
-  }
-
-  const { email, full_name, role } = body;
+  const { email, full_name, role } = req.body;
   if (!email || !full_name || !role) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  // CHECK 5 — SITE_URL safe fallback: never undefined
+  const siteUrl = process.env.SITE_URL || 'https://sca-redmyre.vercel.app';
+  const redirectTo = `${siteUrl}/setup.html`;
+
   try {
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: process.env.SITE_URL + '/setup.html',
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo,
       data: { full_name, role }
     });
     if (error) throw error;
-
     if (!data?.user?.id) throw new Error('Invite succeeded but user ID missing');
 
-    await supabaseAdmin.from('profiles').upsert(
+    await supabase.from('profiles').upsert(
       { id: data.user.id, email, full_name, role, setup_complete: false },
       { onConflict: 'email' }
     );
 
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    return res.status(200).json({ success: true });
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message || 'Failed to send invite' }) };
+    return res.status(500).json({ error: err.message || 'Failed to send invite' });
   }
 };
