@@ -19,33 +19,27 @@ module.exports = async (req, res) => {
 
   const { data, error: authError } = await supabaseUser.auth.getUser(token);
   if (authError || !data?.user) {
-    return res.status(401).json({ error: 'Invalid token', detail: authError?.message });
+    return res.status(401).json({ error: 'Invalid token' });
   }
 
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Hardcode admin check by email for now to unblock
-  const adminEmails = [
-    'sp77249.redmyre@gmail.com',
-    'sca.jacob77@gmail.com',
-    'sca.yun82@gmail.com'
-  ];
-
   const userEmail = data.user.email?.toLowerCase().trim();
-  console.log('[user email]', userEmail);
 
-  if (!adminEmails.includes(userEmail)) {
-    // Fallback: check DB
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles').select('role').eq('email', userEmail).maybeSingle();
-    console.log('[profile]', profile, '[error]', profileError?.message);
-    if (!profile || profile.role !== 'admin') {
-      return res.status(403).json({ error: 'Forbidden: Admin only', email: userEmail, profile });
-    }
+  // 🔥 핵심: 이메일 normalize + id fallback
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .or(`email.eq.${userEmail},id.eq.${data.user.id}`)
+    .maybeSingle();
+
+  console.log('[auth email]', userEmail, '[profile]', profile);
+
+  if (!profile || profile.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin only' });
   }
 
   const { email, full_name, role } = req.body;
@@ -56,21 +50,28 @@ module.exports = async (req, res) => {
   const siteUrl = process.env.SITE_URL || 'https://sca-redmyre.vercel.app';
 
   try {
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${siteUrl}/setup.html`,
-      data: { full_name, role }
-    });
+    const { data: inviteData, error: inviteError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${siteUrl}/setup.html`,
+        data: { full_name, role }
+      });
+
     if (inviteError) throw inviteError;
-    if (!inviteData?.user?.id) throw new Error('Invite succeeded but user ID missing');
 
     await supabaseAdmin.from('profiles').upsert(
-      { id: inviteData.user.id, email, full_name, role, setup_complete: false },
+      {
+        id: inviteData.user.id,
+        email: email.toLowerCase().trim(),
+        full_name,
+        role,
+        setup_complete: false
+      },
       { onConflict: 'email' }
     );
 
     return res.status(200).json({ success: true });
+
   } catch (err) {
-    console.log('[invite error]', err.message);
-    return res.status(500).json({ error: err.message || 'Failed to send invite' });
+    return res.status(500).json({ error: err.message });
   }
 };
