@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
   );
 
   const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role').eq('id', data.user.id).single();
+    .from('profiles').select('role').eq('email', data.user.email).single();
   console.log('[profile role]', profile?.role || 'NULL');
 
   if (!profile || profile.role !== 'admin') {
