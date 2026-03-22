@@ -384,7 +384,7 @@ window.removeUser = async (uid, uname) => {
 They will lose access to this system immediately.`)) return;
   try {
     const { data: { session: s1 } } = await supabase.auth.getSession();
-    const res = await fetch('/.netlify/functions/delete-user', {
+    const res = await fetch('/api/delete-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s1.access_token}` },
       body: JSON.stringify({ user_id: uid })
@@ -417,7 +417,7 @@ window.sendInvite = async () => {
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
     const { data: { session: s2 } } = await supabase.auth.getSession();
-    const res = await fetch('/.netlify/functions/send-invite', {
+    const res = await fetch('/api/send-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s2.access_token}` },
       body: JSON.stringify({ email, full_name: fullName, role: inviteRole })
