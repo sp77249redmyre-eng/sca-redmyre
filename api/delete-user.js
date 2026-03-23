@@ -27,9 +27,15 @@ module.exports = async (req, res) => {
 
   // 🔥 ADMIN 권한 확인
   const supabaseAdmin = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
