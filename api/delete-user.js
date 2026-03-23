@@ -47,17 +47,23 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing user_id' });
   }
 
+  // 🔥 자기 자신 삭제 방지
+  if (user_id === data.user.id) {
+    return res.status(400).json({ error: 'You cannot delete yourself' });
+  }
+
   try {
     // 🔥 Auth 삭제
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-
     if (deleteError) throw deleteError;
 
     // 🔥 DB 삭제
-    await supabaseAdmin
+    const { error: dbError } = await supabaseAdmin
       .from('profiles')
       .delete()
       .eq('id', user_id);
+
+    if (dbError) throw dbError;
 
     return res.status(200).json({ success: true });
 
