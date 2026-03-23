@@ -13,11 +13,21 @@ module.exports = async (req, res) => {
   const token = auth.replace('Bearer ', '').trim();
 
   // 🔐 USER 검증
-  const supabaseUser = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+ const supabaseUser = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY,
+  {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
   const { data, error: authError } = await supabaseUser.auth.getUser(token);
 
