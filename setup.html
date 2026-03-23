@@ -563,30 +563,9 @@ async function init() {
   goToStep('screenName');
 }
 
-init();
- 
-const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+/////////////////////////////////////////////////////
 
-console.log("EXCHANGE RESULT:", data, error);
-
-if (error || !data.session) {
-  goToStep('screenInvalid');
-  return;
-}
-
-currentUser = data.session.user;
- 
-  // Get profile to check if setup is needed
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
-
-  // If profile already has a name and password is set, go to dashboard
-  if (profile?.full_name && profile?.setup_complete) {
-    window.location.href = 'dashboard.html';
-    return;
-  }
-
-  // Show the name step
+// Show the name step
   document.getElementById('invitedEmailBadge').textContent = currentUser.email;
   // Pre-fill name if available from invite metadata
   const metaName = currentUser.user_metadata?.full_name || profile?.full_name || '';
@@ -749,6 +728,7 @@ document.getElementById('nameInput').addEventListener('keydown', e => {
     submitName();
   }
 });
-
+ 
+init();
 </script> 
 </html>
