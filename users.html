@@ -263,8 +263,21 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const { data:{ session } } = await supabase.auth.getSession();
-if (!session) { window.location.href = 'index.html'; }
+let session = null;
+
+for (let i = 0; i < 5; i++) {
+  const { data } = await supabase.auth.getSession();
+  session = data.session;
+
+  if (session) break;
+
+  await new Promise(r => setTimeout(r, 200));
+}
+
+if (!session) {
+  window.location.href = 'index.html';
+}
+
 const user = session.user;
 const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 const role = profile?.role || 'observer';
