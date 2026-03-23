@@ -492,6 +492,32 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 🔥 토큰 → 세션 변환 (핵심)
+const hash = window.location.hash;
+const params = new URLSearchParams(hash.substring(1));
+
+const access_token = params.get('access_token');
+const refresh_token = params.get('refresh_token');
+
+if (access_token && refresh_token) {
+  const { data, error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token
+  });
+
+  console.log('SESSION:', data, error);
+
+  if (!error) {
+    console.log("로그인 성공");
+
+    // 🔥 여기서 다음 단계 진행 가능
+    // 예: 페이지 이동
+    // window.location.href = '/users.html';
+  } else {
+    console.error("세션 실패", error);
+  }
+}
+ 
 let currentUser = null;
 let currentRole = null;
 
