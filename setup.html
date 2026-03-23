@@ -491,34 +491,6 @@ const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1bnNleGRucWF0aGx1cGxra3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4ODIxNTIsImV4cCI6MjA4NzQ1ODE1Mn0.txDG7eZPoq4gL4PuCS-Cy8hu2xsNA5mjNLV-J0psI28";
 const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// 🔥 토큰 → 세션 변환 (핵심)
-const hash = window.location.hash;
-const params = new URLSearchParams(hash.substring(1));
-
-const access_token = params.get('access_token');
-const refresh_token = params.get('refresh_token');
-
-if (access_token && refresh_token) {
-  const { data, error } = await supabase.auth.setSession({
-    access_token,
-    refresh_token
-  });
-
-  console.log('SESSION:', data, error);
-
-  if (!error) {
-    console.log("로그인 성공");
-
-   // 🔥 0.5초 기다린 후 이동 (핵심)
-   setTimeout(() => {
-      window.location.replace("/users.html");
-   }, 500);
-   
-  } else {
-    console.error("세션 실패", error);
-  }
-}
  
 let currentUser = null;
 let currentRole = null;
