@@ -12,10 +12,10 @@ module.exports = async (req, res) => {
 
   const token = auth.replace('Bearer ', '').trim();
 
-  // 🔐 USER 검증용 (ANON KEY)
+  // 🔐 USER 검증
   const supabaseUser = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY,
+    process.env.SUPABASE_ANON_KEY, // 👉 반드시 JWT anon key
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
@@ -25,21 +25,17 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  // 🔥 ADMIN 작업용 (SERVICE ROLE)
+  // 🔥 ADMIN 작업용
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // 🔥 핵심: ID 기준으로만 조회 (email 제거)
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
     .eq('id', data.user.id)
     .single();
-
-  console.log('[auth user id]', data.user.id);
-  console.log('[profile]', profile);
 
   if (profileError || !profile || profile.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
@@ -70,7 +66,7 @@ module.exports = async (req, res) => {
         role,
         setup_complete: false
       },
-      { onConflict: 'email' }
+      { onConflict: 'id' } // 🔥 핵심 수정
     );
 
     return res.status(200).json({ success: true });
