@@ -528,40 +528,28 @@ window.goToStep = function(screenId) {
 
 // ── On load: check session from invite link ──
 async function init() {
-  // Supabase sends #access_token=... on invite confirmation
-  const hash = window.location.hash;
-  const params = new URLSearchParams(hash.replace('#', '?'));
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const type = params.get('type'); // 'invite' or 'recovery'
 
-  if (accessToken && (type === 'invite' || type === 'signup')) {
-    // Set session from the invite tokens
-    const { data, error } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
-    if (error || !data.session) {
-      goToStep('screenInvalid');
-      document.getElementById('screenInvalid').style.display = '';
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('screenInvalid').classList.add('active');
-      return;
-    }
-    currentUser = data.session.user;
-  } else {
-    // Check existing session (maybe already verified)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-    } else {
-      goToStep('screenInvalid');
-      document.getElementById('screenLoading').classList.remove('active');
-      document.getElementById('screenInvalid').classList.add('active');
-      return;
-    }
-  }
+const url = new URL(window.location.href);
+const code = url.searchParams.get("code");
 
+console.log("CODE:", code);
+
+if (!code) {
+  goToStep('screenInvalid');
+  return;
+}
+
+const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+console.log("EXCHANGE RESULT:", data, error);
+
+if (error || !data.session) {
+  goToStep('screenInvalid');
+  return;
+}
+
+currentUser = data.session.user;
+ 
   // Get profile to check if setup is needed
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
   currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
