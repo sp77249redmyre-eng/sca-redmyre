@@ -528,31 +528,23 @@ window.goToStep = function(screenId) {
 
 // ── On load: check session from invite link ──
 async function init() {
-
-const url = new URL(window.location.href);
-const code = url.searchParams.get("code");
-
-console.log("CODE:", code);
-
-async function init() {
   console.log("🔥 INIT START");
 
-  // 🔥 핵심: 이미 세션 있는지 확인
+  // 👉 이 2줄이 핵심
+  await supabase.auth.getSession();
+  await supabase.auth.refreshSession();
+
   const { data: { session }, error } = await supabase.auth.getSession();
 
-  console.log("SESSION:", session, error);
+  console.log("SESSION:", session);
 
   if (!session) {
-    console.error("❌ No session");
     goToStep('screenInvalid');
     return;
   }
 
   currentUser = session.user;
 
-  console.log("✅ USER:", currentUser);
-
-  // ── 기존 로직 그대로 ──
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -568,12 +560,10 @@ async function init() {
 
   document.getElementById('invitedEmailBadge').textContent = currentUser.email;
 
-  const metaName = currentUser.user_metadata?.full_name || profile?.full_name || '';
-  if (metaName) document.getElementById('nameInput').value = metaName;
-
   goToStep('screenName');
 }
-
+init();
+</script> 
 const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
 console.log("EXCHANGE RESULT:", data, error);
