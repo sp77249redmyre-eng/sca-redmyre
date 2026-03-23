@@ -534,9 +534,44 @@ const code = url.searchParams.get("code");
 
 console.log("CODE:", code);
 
-if (!code) {
-  goToStep('screenInvalid');
-  return;
+async function init() {
+  console.log("🔥 INIT START");
+
+  // 🔥 핵심: 이미 세션 있는지 확인
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  console.log("SESSION:", session, error);
+
+  if (!session) {
+    console.error("❌ No session");
+    goToStep('screenInvalid');
+    return;
+  }
+
+  currentUser = session.user;
+
+  console.log("✅ USER:", currentUser);
+
+  // ── 기존 로직 그대로 ──
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
+
+  if (profile?.full_name && profile?.setup_complete) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  document.getElementById('invitedEmailBadge').textContent = currentUser.email;
+
+  const metaName = currentUser.user_metadata?.full_name || profile?.full_name || '';
+  if (metaName) document.getElementById('nameInput').value = metaName;
+
+  goToStep('screenName');
 }
 
 const { data, error } = await supabase.auth.exchangeCodeForSession(code);
