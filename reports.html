@@ -413,25 +413,19 @@ window.showToast = (msg, isError=false) => {
 };
 
 const CAT_LABELS = {
-  // 원래 시스템 (대문자)
   'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security',
   'Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other',
-  // 이전 시스템 소문자도 호환
   'hvac':'HVAC','fire':'Fire','electrical':'Electrical','security':'Security',
-  'plumbing':'Plumbing','structural':'Structural','cleaning':'Cleaning',
-  'lift':'Lift','general':'General','legal':'Legal','other':'Other',
+  'plumbing':'Plumbing','lift':'Lift','general':'General','legal':'Legal','other':'Other',
 };
 
-// comment JSON에서 카테고리 추출 (원래 시스템 호환)
 function parseQuoteCategory(q) {
-  // 먼저 comment JSON 시도
   try {
     if (q.comment) {
       const c = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment;
       if (c?.category) return c.category;
     }
   } catch {}
-  // fallback: category 컬럼
   return q.category || 'Other';
 }
 
@@ -440,14 +434,10 @@ const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:
 const CAT_COLORS = {
   'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
   'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
-  'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
-  'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
 };
 const CAT_BG = {
   'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
   'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
-  'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
-  'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
 };
 function catBadge(cat) {
   const label = CAT_LABELS[cat] || cat || 'Other';
@@ -515,17 +505,13 @@ window.loadReport = async function() {
 
   document.getElementById('statPeriodLabel').textContent = periodLabel;
 
-  // Load approved quotes
-  // 날짜 필터만 DB에서, 카테고리는 comment JSON에 있으므로 JS에서 필터
   let qQuery = supabase.from('quotes').select('*').eq('status','approved').order('created_at',{ascending:false});
   if (dateFrom) qQuery = qQuery.gte('created_at', dateFrom.toISOString());
   if (dateTo) qQuery = qQuery.lte('created_at', new Date(dateTo.getTime()+86400000).toISOString());
   const { data: quotesRaw } = await qQuery;
-  // JS에서 카테고리 필터 (comment JSON 파싱)
   const quotes = (quotesRaw || []).map(q => ({...q, _cat: parseQuoteCategory(q)}))
     .filter(q => catFilter === 'all' || q._cat === catFilter);
 
-  // Load one-off expenses
   let eQuery = supabase.from('expenses').select('*').order('expense_date',{ascending:false});
   if (dateFrom) eQuery = eQuery.gte('expense_date', dateFrom.toISOString().split('T')[0]);
   if (dateTo) eQuery = eQuery.lte('expense_date', new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
@@ -539,7 +525,6 @@ window.loadReport = async function() {
   const expenseTotal = expensesData.reduce((s,e) => s + Number(e.amount||0), 0);
   const grandTotal = quoteTotal + expenseTotal;
 
-  // Largest
   const allItems = [
     ...quotesData.map(q => ({label:q.project||q.title||'—', amount:Number(q.amount||0)})),
     ...expensesData.map(e => ({label:e.description||'—', amount:Number(e.amount||0)})),
@@ -553,7 +538,6 @@ window.loadReport = async function() {
   document.getElementById('statLargest').textContent = allItems.length ? fmt(allItems[0].amount) : '$0';
   document.getElementById('statLargestLabel').textContent = allItems.length ? allItems[0].label.substring(0,30) : '—';
 
-  // Category breakdown
   const catTotals = {};
   quotesData.forEach(q => {
     const c = q._cat || parseQuoteCategory(q);
@@ -586,7 +570,6 @@ window.loadReport = async function() {
     }).join('');
   }
 
-  // Quotes list
   currentQuotesData = quotesData;
   currentSortKey = 'date';
   currentSortDir = 'desc';
@@ -594,10 +577,7 @@ window.loadReport = async function() {
   document.getElementById('quotesTotal').textContent = `${quotesData.length} approved quote${quotesData.length!==1?'s':''}`;
   document.getElementById('quotesTotalAmount').textContent = fmt(quoteTotal);
 
-  // Works section
   await renderWorks(catFilter);
-
-  // Expenses list
   renderExpenses(expensesData);
 };
 
@@ -674,8 +654,6 @@ window.saveExpense = async () => {
       await supabase.from('expenses').update(data).eq('id', id);
     } else {
       await supabase.from('expenses').insert(data);
-
-      // Add to Ongoing Works if checked
       if (addToWorks) {
         await supabase.from('works').insert({
           title: data.description,
@@ -701,12 +679,11 @@ window.deleteExpense = async () => {
   showToast('Expense deleted');
 };
 
-// ── Works 섹션 렌더링 ──
+// ==================== 수정된 renderWorks (날짜 수정 가능) ====================
 async function renderWorks(catFilter) {
   const wrap = document.getElementById('worksSection');
   if (!wrap) return;
 
-  // completed_at 있는 것만 (완료된 Works)
   let query = supabase.from('works').select('*').eq('status','done').not('completed_at','is',null).order('completed_at', {ascending: false});
   if (dateFrom) query = query.gte('completed_at', dateFrom.toISOString());
   if (dateTo)   query = query.lte('completed_at', new Date(dateTo.getTime()+86400000).toISOString());
@@ -714,33 +691,11 @@ async function renderWorks(catFilter) {
   const { data: works } = await query;
   const allWorks = works || [];
 
-  const filtered = catFilter === 'all' ? allWorks
-    : allWorks.filter(w => (w.category||'Other') === catFilter);
+  const filtered = catFilter === 'all' ? allWorks : allWorks.filter(w => (w.category||'Other') === catFilter);
 
   if (!filtered.length) {
     wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No completed works for this period</div>';
     return;
-  }
-
-  const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
-
-  const CAT_COLORS = {
-    'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6',
-    'Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8',
-    'hvac':'#2563eb','fire':'#ef4444','electrical':'#f59e0b','security':'#8b5cf6',
-    'plumbing':'#06b6d4','lift':'#10b981','general':'#6b7280','legal':'#f97316','other':'#94a3b8',
-  };
-  const CAT_BG = {
-    'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe',
-    'Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9',
-    'hvac':'#eff6ff','fire':'#fef2f2','electrical':'#fffbeb','security':'#ede9fe',
-    'plumbing':'#ecfeff','lift':'#ecfdf5','general':'#f3f4f6','legal':'#fff7ed','other':'#f1f5f9',
-  };
-  function catBadge(cat) {
-    const label = CAT_LABELS[cat] || cat || 'Other';
-    const color = CAT_COLORS[cat] || '#94a3b8';
-    const bg    = CAT_BG[cat]    || '#f1f5f9';
-    return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
   }
 
   let html = `
@@ -753,13 +708,10 @@ async function renderWorks(catFilter) {
       <div>`;
 
   for (const w of filtered) {
-    const completedDate = w.completed_at ? new Date(w.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
     const completedISO = w.completed_at ? new Date(w.completed_at).toISOString().split('T')[0] : '';
 
-    // Get amount from quote or private_notes
     let amount = '';
     if (w.quote_id) {
-      // Try to get from quotes table
       const { data: q } = await supabase.from('quotes').select('amount').eq('id', w.quote_id).single();
       if (q?.amount) amount = fmt(q.amount) + ' <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:1px 5px;border-radius:4px">ex GST</span>';
     } else if (w.private_notes) {
@@ -798,7 +750,9 @@ window.updateCompletedDate = async (id, dateStr) => {
       updated_at: new Date(dateStr).toISOString(),
     }).eq('id', id);
     showToast('Date updated ✓');
-  } catch(e) { showToast('Failed to update date', true); }
+  } catch(e) { 
+    showToast('Failed to update date', true); 
+  }
 };
 
 // ── 정렬 ──
@@ -813,7 +767,6 @@ function renderQuotesList() {
     return;
   }
 
-  // 정렬
   const sorted = [...currentQuotesData].sort((a, b) => {
     let av, bv;
     if (currentSortKey === 'date')     { av = new Date(a.created_at); bv = new Date(b.created_at); }
@@ -826,13 +779,9 @@ function renderQuotesList() {
     return 0;
   });
 
-  // 카테고리/벤더로 정렬 시 그룹 구분선 추가
   let lastGroup = null;
   list.innerHTML = sorted.map(q => {
-    const groupKey = currentSortKey === 'category' ? (q._cat||'Other')
-      : currentSortKey === 'vendor' ? (q.vendor||q.contractor||'—')
-      : null;
-
+    const groupKey = currentSortKey === 'category' ? (q._cat||'Other') : currentSortKey === 'vendor' ? (q.vendor||q.contractor||'—') : null;
     let groupHeader = '';
     if (groupKey && groupKey !== lastGroup) {
       lastGroup = groupKey;
@@ -851,7 +800,6 @@ function renderQuotesList() {
       </div>`;
   }).join('');
 
-  // 헤더 화살표 업데이트
   ['date','project','vendor','category','amount'].forEach(k => {
     const arr = document.getElementById('arr-'+k);
     if (!arr) return;
@@ -870,18 +818,15 @@ window.sortQuotes = (key) => {
     currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
   } else {
     currentSortKey = key;
-    // 카테고리/벤더는 asc로, 금액/날짜는 desc로 기본
     currentSortDir = (key === 'category' || key === 'vendor' || key === 'project') ? 'asc' : 'desc';
   }
   renderQuotesList();
 };
 
-// 카테고리 카드 클릭 시 해당 카테고리로 필터
 window.filterByCat = (cat) => {
   const sel = document.getElementById('filterCategory');
   sel.value = cat;
   loadReport();
-  // 화면 스크롤
   document.getElementById('quotesList').scrollIntoView({behavior:'smooth', block:'start'});
 };
 
