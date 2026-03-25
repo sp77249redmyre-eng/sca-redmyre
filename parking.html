@@ -470,25 +470,48 @@ window.deleteReport = async (id) => {
 };
 
 async function loadReports() {
-  let query = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
+
+  // 🔥 1. 상습범 먼저 가져오기
+  const { data: offenders } = await supabase
+    .from('repeat_offenders')
+    .select('plate');
+
+  const offenderSet = new Set((offenders || []).map(o => o.plate));
+
+  // 🔥 2. 기존 리포트 가져오기
+  let query = supabase
+    .from('parking_reports')
+    .select('*')
+    .order('created_at',{ascending:false});
+
   if (currentFilter === 'active') query = query.eq('status','active');
   else if (currentFilter === 'resolved') query = query.eq('status','resolved');
 
   const { data: reports } = await query;
 
-  const { data: activeData } = await supabase.from('parking_reports').select('id').eq('status','active');
+  // 🔥 3. active count
+  const { data: activeData } = await supabase
+    .from('parking_reports')
+    .select('id')
+    .eq('status','active');
+
   const activeCount = activeData?.length || 0;
   document.getElementById('activeCount').textContent = activeCount;
 
   const list = document.getElementById('reportsList');
 
   if (!reports || !reports.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">${currentFilter==='active'?'✅':'🚗'}</div><div class="empty-title">${currentFilter==='active'?'No active incidents!':'No reports found'}</div></div>`;
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">${currentFilter==='active'?'✅':'🚗'}</div>
+      <div class="empty-title">${currentFilter==='active'?'No active incidents!':'No reports found'}</div>
+    </div>`;
     return;
   }
 
+  // 🔥 4. 카드 렌더링 + 상습범 표시
   list.innerHTML = reports.map(r => {
     const isResolved = r.status === 'resolved';
+    const isRepeat = offenderSet.has(r.plate); // 🔥 핵심
     const timeAgo = getTimeAgo(r.created_at);
 
     let imageHtml = r.image_url ? 
@@ -501,13 +524,22 @@ async function loadReports() {
           <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}</div>
         </div>
         <div class="pk-body">
+          
+          ${isRepeat ? `<div style="color:#ef4444;font-weight:700;margin-bottom:6px;">🚨 Repeat Offender</div>` : ''}
+
           <div class="pk-location">📍 ${r.location}</div>
+
           <div class="pk-violation">
-            <span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation}</span>
+            <span class="badge ${isResolved?'badge-green':'badge-red'}">
+              ${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation}
+            </span>
           </div>
+
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           ${imageHtml}
+
           <div class="pk-reporter">Reported by ${r.reporter_name||'Anonymous'}</div>
+
           <div class="pk-actions">
             ${!isResolved && role==='admin' ? `<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>` : ''}
             ${role==='admin' ? `<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
