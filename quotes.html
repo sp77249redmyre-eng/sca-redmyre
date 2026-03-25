@@ -1,4 +1,4 @@
-<!-- FULL COMPLETE WORKING CODE (NO OMITTING) -->
+<!-- FULL COMPLETE WORKING CODE -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -456,13 +456,20 @@ async function getSignedUrl(path) {
   return data.signedUrl;
 }
 
+async function uploadFile(file) {
+  const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
+  const path = `${user.id}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  return { path, name: safeName, type: file.type || '', size: file.size };
+}
+
 // ── 첨부파일 열기 ──
 window.openAttachment = async (quoteId, path, name, type) => {
   try {
     const url = await getSignedUrl(path);
     const isPdf = name.toLowerCase().endsWith('.pdf') || (type && type.includes('pdf'));
     const isImage = name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || (type && type.startsWith('image/'));
-
     if (isImage) {
       document.getElementById('viewerModalTitle').textContent = name;
       document.getElementById('viewerOpenNewTab').href = url;
@@ -522,15 +529,12 @@ function getQuoteStatus(q) {
   if (st === 'approved') return 'approved';
   if (st === 'declined') return 'declined';
   if (st === 'expired') return 'expired';
-
   if (st === 'pending' && q.expiry_date && new Date() > new Date(q.expiry_date)) return 'expired';
-
   const votes = getQuoteVotes(q.id);
   const approvals = votes.filter(v=>v.vote==='approve').length;
   const declines = votes.filter(v=>v.vote==='decline').length;
   if (approvals >= RULES.approvalsRequired) return 'approved';
   if (declines >= RULES.declinesToAutoDecline) return 'declined';
-
   return 'pending';
 }
 
@@ -542,11 +546,10 @@ function isResultRevealed(q) {
   return approvals >= majorityNeeded || declines >= majorityNeeded || st === 'approved' || st === 'declined';
 }
 
-// ── renderQuotes (기존 구조 그대로 유지) ──
+// ── renderQuotes ──
 function renderQuotes() {
   const list = document.getElementById('quoteList');
   const filtered = currentFilter === 'all' ? allQuotes : allQuotes.filter(q => getQuoteStatus(q) === currentFilter);
-
   const filterBar = `<div class="filter-bar">
     <button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="filterQuotes('all')">All</button>
     <button class="filter-btn ${currentFilter==='pending'?'active':''}" onclick="filterQuotes('pending')">⏳ Pending</button>
@@ -560,8 +563,8 @@ function renderQuotes() {
     return;
   }
 
-  const active   = filtered.filter(q => ['pending','onhold'].includes(getQuoteStatus(q)));
-  const closed   = filtered.filter(q => ['declined','expired'].includes(getQuoteStatus(q)));
+  const active = filtered.filter(q => ['pending','onhold'].includes(getQuoteStatus(q)));
+  const closed = filtered.filter(q => ['declined','expired'].includes(getQuoteStatus(q)));
 
   function sectionHeader(label, color, bg, lineColor, count) {
     return `<div class="section-divider">
@@ -602,113 +605,25 @@ function renderQuotes() {
     }[st] || '<span class="badge badge-gray">Unknown</span>';
 
     const catBadgeHtml = `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:#f1f5f9;color:#94a3b8;border:1px solid #94a3b822;opacity:0.6">${category || 'Uncategorised'}</span>`;
-
     const prioColor = priority==='Urgent'?'var(--red-text)':priority==='High'?'var(--yellow-text)':'var(--muted)';
     const prioBadge = `<span style="font-size:11px;font-weight:600;color:${prioColor}">${priority}</span>`;
 
     let voteSection = '';
     if (st === 'pending' || st === 'onhold') {
       if (!revealed) {
-        voteSection = `
-          <div class="vote-hidden-box">
-            <p style="font-size:14px;font-weight:600;margin:0 0 4px">${totalVoted} of ${committeeCount} members voted</p>
-            <p style="font-size:12px;color:var(--muted);margin:0">Results revealed at majority (${majorityNeeded})</p>
-          </div>
-          ${canVote && st==='pending' ? `
-            <div style="display:flex;gap:10px;margin-bottom:14px">
-              <button class="btn-success" style="flex:1;justify-content:center" onclick="castVote('${q.id}','approve')">✅ Approve</button>
-              <button class="btn-danger" style="flex:1;justify-content:center" onclick="castVote('${q.id}','decline')">❌ Decline</button>
-            </div>` : ''}
-          ${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong> — Results pending</div>` : ''}`;
+        voteSection = `<div class="vote-hidden-box"><p style="font-size:14px;font-weight:600;margin:0 0 4px">${totalVoted} of ${committeeCount} members voted</p><p style="font-size:12px;color:var(--muted);margin:0">Results revealed at majority (${majorityNeeded})</p></div>${canVote && st==='pending' ? `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn-success" style="flex:1;justify-content:center" onclick="castVote('${q.id}','approve')">✅ Approve</button><button class="btn-danger" style="flex:1;justify-content:center" onclick="castVote('${q.id}','decline')">❌ Decline</button></div>` : ''}${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong> — Results pending</div>` : ''}`;
       } else {
-        voteSection = `
-          <div style="margin-bottom:14px">
-            <div class="vote-bar-wrap">
-              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div>
-              <div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div>
-            </div>
-            <div class="vote-bar-wrap" style="margin-top:8px">
-              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div>
-              <div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div>
-            </div>
-          </div>
-          ${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong></div>` : ''}`;
+        voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div></div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div></div></div>${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong></div>` : ''}`;
       }
     } else if (st === 'approved' || st === 'declined') {
-      voteSection = `
-        <div style="margin-bottom:14px">
-          <div class="vote-bar-wrap">
-            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div>
-            <div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div>
-          </div>
-          <div class="vote-bar-wrap" style="margin-top:8px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div>
-            <div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div>
-          </div>
-        </div>
-        ${st==='approved'?'<div style="font-size:12px;color:var(--green-text);background:var(--green-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">✅ Approved</div>':''}
-        ${st==='declined'?'<div style="font-size:12px;color:var(--red-text);background:var(--red-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">❌ Declined</div>':''}`;
+      voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div></div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div></div></div>${st==='approved'?'<div style="font-size:12px;color:var(--green-text);background:var(--green-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">✅ Approved</div>':''}${st==='declined'?'<div style="font-size:12px;color:var(--red-text);background:var(--red-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">❌ Declined</div>':''}`;
     }
 
-    const filesHtml = parsed.files.length ? `
-      <div style="margin-top:0">
-        <div class="detail-label">Attachments</div>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">
-          ${parsed.files.map((f,i)=>`
-            <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px">
-              <span>${f.name.endsWith('.pdf')?'📄':f.type?.startsWith('image')?'🖼️':'📎'}</span>
-              <a href="#" style="flex:1;color:var(--blue-600);font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" 
-                 onclick="openAttachment('${q.id}','${f.path}','${f.name}','${f.type||''}');return false">${f.name}</a>
-            </div>`).join('')}
-        </div>
-      </div>` : '';
+    const filesHtml = parsed.files.length ? `<div style="margin-top:0"><div class="detail-label">Attachments</div><div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">${parsed.files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px"><span>${f.name.endsWith('.pdf')?'📄':f.type?.startsWith('image')?'🖼️':'📎'}</span><a href="#" style="flex:1;color:var(--blue-600);font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="openAttachment('${q.id}','${f.path}','${f.name}','${f.type||''}');return false">${f.name}</a></div>`).join('')}</div></div>` : '';
 
     const cardClass = st==='onhold'?'on-hold':st==='approved'?'approved-quote':st==='declined'?'declined-quote':st==='expired'?'expired':'active-quote';
 
-    return `
-      <div class="quote-card ${cardClass}">
-        <div class="quote-header" onclick="toggleQuote('qbody-${q.id}')">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-              <span class="quote-title-text">${q.project||'(No project)'}</span>
-              ${stBadge} ${catBadgeHtml} ${prioBadge}
-            </div>
-            <div class="quote-meta-text">
-              ${q.vendor||'—'} · ${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}
-              ${st==='pending'?` · <span style="color:var(--yellow-text);font-weight:600">Expires in ${daysLeft} days</span> · ${totalVoted}/${committeeCount} voted`:''}
-              ${st==='onhold'?` · <span style="color:#7c3aed;font-weight:600">On Hold</span>`:''}
-            </div>
-          </div>
-          ${privileged.includes(role) ? `<div class="quote-amount" style="color:${st==='approved'?'var(--green-text)':st==='declined'?'var(--muted)':'var(--text)'}">$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}</div>` : ''}
-          <span style="color:var(--muted);margin-left:8px">▼</span>
-        </div>
-        <div class="quote-body" id="qbody-${q.id}">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px">
-            <div>
-              <div class="detail-label">Scope of Works</div>
-              <p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${parsed.note||'No description provided.'}</p>
-              ${privileged.includes(role) && q.notes ? `<div class="detail-label">Internal Notes</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${q.notes}</p>` : ''}
-              ${filesHtml}
-            </div>
-            <div>
-              <div class="detail-label">Committee Vote</div>
-              ${voteSection}
-            </div>
-          </div>
-          <div class="quote-footer">
-            ${role==='admin' ? `
-              <button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>
-              ${st==='pending'?`<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">Put On Hold ⏸</button>`:''}
-              ${st==='onhold'?`<button class="btn-secondary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">Resume Voting ▶</button>`:''}
-              ${(st==='pending'||st==='onhold')?`<button class="btn-primary" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>`:''}
-              ${(st==='pending'||st==='onhold'||st==='expired')?`<button class="btn-secondary" style="color:var(--red-text);border-color:#fecaca" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>`:''}
-            ` : ''}
-            ${(role==='admin' && st==='approved') ? `
-              <button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">✏️ Edit Scope</button>
-            ` : ''}
-          </div>
-        </div>
-      </div>`;
+    return `<div class="quote-card ${cardClass}"><div class="quote-header" onclick="toggleQuote('qbody-${q.id}')"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span class="quote-title-text">${q.project||'(No project)'}</span>${stBadge} ${catBadgeHtml} ${prioBadge}</div><div class="quote-meta-text">${q.vendor||'—'} · ${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}${st==='pending'?` · <span style="color:var(--yellow-text);font-weight:600">Expires in ${daysLeft} days</span> · ${totalVoted}/${committeeCount} voted`:''}${st==='onhold'?` · <span style="color:#7c3aed;font-weight:600">On Hold</span>`:''}</div></div>${privileged.includes(role) ? `<div class="quote-amount" style="color:${st==='approved'?'var(--green-text)':st==='declined'?'var(--muted)':'var(--text)'}">$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}</div>` : ''}<span style="color:var(--muted);margin-left:8px">▼</span></div><div class="quote-body" id="qbody-${q.id}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px"><div><div class="detail-label">Scope of Works</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${parsed.note||'No description provided.'}</p>${privileged.includes(role) && q.notes ? `<div class="detail-label">Internal Notes</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${q.notes}</p>` : ''}${filesHtml}</div><div><div class="detail-label">Committee Vote</div>${voteSection}</div></div><div class="quote-footer">${role==='admin' ? `<button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>${st==='pending'?`<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">Put On Hold ⏸</button>`:''}${st==='onhold'?`<button class="btn-secondary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">Resume Voting ▶</button>`:''}${(st==='pending'||st==='onhold')?`<button class="btn-primary" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>`:''}${(st==='pending'||st==='onhold'||st==='expired')?`<button class="btn-secondary" style="color:var(--red-text);border-color:#fecaca" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>`:''}` : ''}${(role==='admin' && st==='approved') ? `<button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">✏️ Edit Scope</button>` : ''}</div></div></div>`;
   }
 
   let html = filterBar;
@@ -720,14 +635,34 @@ function renderQuotes() {
     if (currentFilter === 'all') html += sectionHeader('📁 Closed', 'var(--text-2)', 'var(--border-light)', '#94a3b8', closed.length);
     html += closed.map(renderCard).join('');
   }
-
   list.innerHTML = html;
 }
 
 window.toggleQuote = id => { const b = document.getElementById(id); if(b) b.classList.toggle('open'); };
 window.filterQuotes = f => { currentFilter = f; renderQuotes(); };
 
-// ── ADMIN & FILE FUNCTIONS (전체 복구) ──
+// ── FULLY WORKING SAVEQUOTE (Internal Notes + Scope + Files) ──
+let pendingFiles = [];
+let existingFiles = [];
+
+function resetFileUpload(existing = []) {
+  pendingFiles = [];
+  existingFiles = existing;
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  if (!list) return;
+  list.innerHTML = existingFiles.map((f,i) => `<div class="file-item"><span class="file-item-link" onclick="openAttachment(null,'${f.path}','${f.name}','${f.type}')">${f.name}</span><span class="file-item-remove" onclick="removeExistingFile(${i})">×</span></div>`).join('') +
+    pendingFiles.map((f,i) => `<div class="file-item"><span class="file-item-name">${f.name}</span><span class="file-item-size">${(f.size/1024/1024).toFixed(1)}MB</span><span class="file-item-remove" onclick="removePendingFile(${i})">×</span></div>`).join('');
+}
+
+window.handleFileSelect = e => { pendingFiles = pendingFiles.concat(Array.from(e.target.files)); renderFileList(); e.target.value = ''; };
+window.handleFileDrop = e => { e.preventDefault(); document.getElementById('fileDropArea').classList.remove('dragging'); pendingFiles = pendingFiles.concat(Array.from(e.dataTransfer.files)); renderFileList(); };
+window.removePendingFile = i => { pendingFiles.splice(i,1); renderFileList(); };
+window.removeExistingFile = i => { existingFiles.splice(i,1); renderFileList(); };
+
 window.openAddQuote = () => {
   document.getElementById('quoteModalTitle').textContent = 'Add Quote';
   document.getElementById('quoteEditId').value = '';
@@ -742,28 +677,90 @@ window.openAddQuote = () => {
   document.getElementById('quoteModal').classList.add('open');
 };
 
-window.openEditQuote = (id) => {
-  const q = allQuotes.find(q => q.id === id);
-  if (!q) return showToast('Quote not found', true);
+window.openEditQuote = id => {
+  const q = allQuotes.find(q=>q.id===id);
+  if (!q) return;
   const parsed = parseComment(q.comment);
   document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
   document.getElementById('quoteEditId').value = q.id;
-  document.getElementById('quoteTitle').value = q.project || '';
-  document.getElementById('quoteContractor').value = q.vendor || '';
-  document.getElementById('quoteAmount').value = q.amount || '';
+  document.getElementById('quoteTitle').value = q.project||'';
+  document.getElementById('quoteContractor').value = q.vendor||'';
+  document.getElementById('quoteAmount').value = q.amount||'';
   document.getElementById('quoteCategory').value = parsed.category || q.category || 'General';
-  document.getElementById('quoteDesc').value = parsed.note || '';
-  document.getElementById('quoteNotes').value = q.notes || '';
+  document.getElementById('quoteDesc').value = parsed.note||'';
+  document.getElementById('quoteNotes').value = q.notes||'';
   document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
   resetFileUpload(parsed.files || []);
   document.getElementById('quoteModal').classList.add('open');
 };
 
 window.saveQuote = async () => {
-  // 실제 구현은 원본과 동일하게 유지 (파일 업로드 포함)
-  showToast('Quote saved (demo mode - full logic ready)');
-  closeModal('quoteModal');
-  await loadData(); renderQuotes();
+  const id = document.getElementById('quoteEditId').value;
+  const project = document.getElementById('quoteTitle').value.trim();
+  const vendor = document.getElementById('quoteContractor').value.trim();
+  const amount = parseFloat(document.getElementById('quoteAmount').value)||0;
+  const category = document.getElementById('quoteCategory').value;
+  const note = document.getElementById('quoteDesc').value.trim();          // Scope
+  const notes = document.getElementById('quoteNotes').value.trim();       // Internal Notes
+
+  if (!project) return showToast('Project title is required', true);
+
+  const saveBtn = document.getElementById('saveQuoteBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    // 1. 파일 업로드
+    const uploadedFiles = [...existingFiles];
+    for (const f of pendingFiles) {
+      const meta = await uploadFile(f);
+      uploadedFiles.push(meta);
+    }
+
+    // 2. comment JSON 구성
+    const commentPayload = JSON.stringify({
+      note: note,
+      files: uploadedFiles,
+      category: category,
+      priority: 'Normal',
+      resolved_at: null,
+      resolved_as: null,
+      workflow: null
+    });
+
+    const payload = {
+      project: project,
+      vendor: vendor,
+      amount: amount,
+      notes: notes,                    // Internal Notes
+      comment: commentPayload
+    };
+
+    if (id) {
+      // EDIT MODE
+      await supabase.from('quotes').update(payload).eq('id', id);
+    } else {
+      // ADD MODE
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + RULES.expiryDays);
+      await supabase.from('quotes').insert({
+        ...payload,
+        status: 'pending',
+        expiry_date: expiry.toISOString(),
+        created_by: user.id
+      });
+    }
+
+    closeModal('quoteModal');
+    await loadData();
+    renderQuotes();
+    showToast('Quote saved successfully');
+  } catch(e) {
+    showToast('Save failed: ' + e.message, true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save →';
+  }
 };
 
 window.deleteQuote = async (id) => {
@@ -774,125 +771,74 @@ window.deleteQuote = async (id) => {
     const q = allQuotes.find(q => q.id === qId);
     if (q) {
       const parsed = parseComment(q.comment);
-      const paths = (parsed.files || []).map(f => f.path).filter(Boolean);
+      const paths = (parsed.files||[]).map(f=>f.path).filter(Boolean);
       if (paths.length) await supabase.storage.from('quotes').remove(paths);
     }
     await supabase.from('quotes').delete().eq('id', qId);
     closeModal('quoteModal');
-    await loadData(); renderQuotes();
+    await loadData();
+    renderQuotes();
     showToast('Quote deleted');
   } catch(e) { showToast('Delete failed: ' + e.message, true); }
 };
 
-window.openHold = (id) => {
-  holdingQuoteId = id;
-  document.getElementById('holdReason').value = '';
-  document.getElementById('holdModal').classList.add('open');
-};
-
+// ── 기타 Admin 함수들 ──
+window.openHold = id => { holdingQuoteId = id; document.getElementById('holdReason').value = ''; document.getElementById('holdModal').classList.add('open'); };
 window.confirmHold = async () => {
   const reason = document.getElementById('holdReason').value.trim();
   if (!reason) return showToast('Please enter a reason', true);
-  try {
-    await supabase.from('quotes').update({status:'onhold', hold_reason: reason}).eq('id', holdingQuoteId);
-    closeModal('holdModal');
-    await loadData(); renderQuotes();
-    showToast('Quote put on hold');
-  } catch(e) { showToast('Failed: ' + e.message, true); }
+  await supabase.from('quotes').update({status:'onhold', hold_reason: reason}).eq('id', holdingQuoteId);
+  closeModal('holdModal');
+  await loadData(); renderQuotes();
+  showToast('Quote put on hold');
 };
-
-window.resumeQuote = async (id) => {
-  try {
-    await supabase.from('quotes').update({status:'pending', hold_reason: null}).eq('id', id);
-    await loadData(); renderQuotes();
-    showToast('Voting resumed');
-  } catch(e) { showToast('Failed: ' + e.message, true); }
+window.resumeQuote = async id => {
+  await supabase.from('quotes').update({status:'pending', hold_reason: null}).eq('id', id);
+  await loadData(); renderQuotes();
+  showToast('Voting resumed');
 };
-
-window.forceApprove = async (id) => {
+window.forceApprove = async id => {
   if (!confirm('Force approve this quote?')) return;
-  try {
-    await supabase.from('quotes').update({status:'approved'}).eq('id', id);
-    await loadData(); renderQuotes();
-    showToast('Quote force approved');
-  } catch(e) { showToast('Failed: ' + e.message, true); }
+  await supabase.from('quotes').update({status:'approved'}).eq('id', id);
+  await loadData(); renderQuotes();
+  showToast('Quote force approved');
 };
-
-window.openEditScope = (id) => {
-  const q = allQuotes.find(q => q.id === id);
+window.openEditScope = id => {
+  const q = allQuotes.find(q=>q.id===id);
   if (!q) return;
   const parsed = parseComment(q.comment);
   document.getElementById('scopeEditId').value = id;
   document.getElementById('scopeText').value = parsed.note || '';
   document.getElementById('scopeModal').classList.add('open');
 };
-
 window.saveScope = async () => {
   const id = document.getElementById('scopeEditId').value;
   const note = document.getElementById('scopeText').value.trim();
-  try {
-    const q = allQuotes.find(q => q.id === id);
-    const parsed = parseComment(q.comment);
-    parsed.note = note;
-    await supabase.from('quotes').update({ comment: JSON.stringify(parsed) }).eq('id', id);
-    closeModal('scopeModal');
-    await loadData(); renderQuotes();
-    showToast('Scope updated');
-  } catch(e) { showToast('Failed: ' + e.message, true); }
+  const q = allQuotes.find(q=>q.id===id);
+  if (!q) return;
+  const parsed = parseComment(q.comment);
+  parsed.note = note;
+  await supabase.from('quotes').update({ comment: JSON.stringify(parsed) }).eq('id', id);
+  closeModal('scopeModal');
+  await loadData(); renderQuotes();
+  showToast('Scope updated');
 };
 
-// ── 파일 업로드 관련 ──
-let pendingFiles = [];
-let existingFiles = [];
-
-function resetFileUpload(existing = []) {
-  pendingFiles = [];
-  existingFiles = existing;
-  renderFileList();
-}
-
-function renderFileList() {
-  const list = document.getElementById('fileList');
-  if (!list) return;
-  list.innerHTML = '';
-  // 실제 파일 렌더링 (기존 로직 유지)
-}
-
-window.handleFileSelect = (e) => {
-  addFiles(Array.from(e.target.files));
-  e.target.value = '';
-};
-
-window.handleFileDrop = (e) => {
-  e.preventDefault();
-  document.getElementById('fileDropArea').classList.remove('dragging');
-  addFiles(Array.from(e.dataTransfer.files));
-};
-
-function addFiles(files) {
-  pendingFiles = pendingFiles.concat(files);
-  renderFileList();
-  showToast(`${files.length} file(s) selected`);
-}
-
-// ── 투표 함수 ──
 window.castVote = async (quoteId, vote) => {
-  const existing = allVotes.find(v => v.quote_id === quoteId && v.user_id === user.id);
+  const existing = allVotes.find(v=>v.quote_id===quoteId && v.user_id===user.id);
   if (existing) return showToast('You have already voted', true);
-  try {
-    await supabase.from('votes').insert({ quote_id: quoteId, user_id: user.id, vote });
-    showToast(vote === 'approve' ? '✅ Approved' : '❌ Declined');
-    await loadData(); renderQuotes();
-  } catch(e) { showToast(e.message || 'Vote failed', true); }
+  await supabase.from('votes').insert({ quote_id: quoteId, user_id: user.id, vote });
+  showToast(vote==='approve'?'✅ Approved':'❌ Declined');
+  await loadData(); renderQuotes();
 };
 
 // ── 초기 로드 ──
 try {
   await loadData();
   renderQuotes();
-} catch (e) {
+} catch(e) {
   console.error(e);
-  showToast('Failed to load data', true);
+  showToast('Failed to load quotes', true);
 }
 
 // Mobile hamburger
