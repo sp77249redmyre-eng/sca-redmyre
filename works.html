@@ -91,16 +91,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
 /* WORKS LIST */
 .works-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.work-row{
-  display:grid;
-  grid-template-columns:120px 1fr 130px 110px auto;   /* 모든 row 동일 너비로 통일 */
-  align-items:center;
-  gap:14px;
-  padding:14px 20px;
-  border-bottom:1px solid var(--border-light);
-  cursor:pointer;
-  transition:background 0.12s;
-}
+.work-row{display:grid;grid-template-columns:120px 1fr 130px 110px auto;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 0.12s}
 .work-row:last-child{border-bottom:none}
 .work-row:hover{background:var(--bg)}
 .work-num{
@@ -282,7 +273,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     </div>
 
   <!-- photo upload input -->
-  <input type="file" id="photoUploadInput" accept="image/*" multiple style="display:none" onchange="uploadPhotos(this.files)">
+  <input type="file" id="photoUploadInput" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadPhotos(this.files)">
 
   <!-- LIGHTBOX -->
   <div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
@@ -358,6 +349,18 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <textarea class="modal-textarea" id="workPrivate" placeholder="Financial details, sensitive info — only visible to Admin / Committee / Observer…"></textarea>
       <div class="private-hint">This section is NOT visible to Owners or Tenants.</div>
     </div>
+
+    <!-- 새로 추가된 파일 업로드 영역 -->
+    <div class="modal-field">
+      <label class="modal-label">Upload Photos / Documents</label>
+      <div class="photo-upload-area" onclick="document.getElementById('modalFileInput').click()">
+        <p style="color:var(--muted);margin-bottom:8px">Click to upload images or PDFs</p>
+        <small style="color:var(--muted)">Supports JPG, PNG, PDF • Multiple files</small>
+      </div>
+      <input type="file" id="modalFileInput" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadFilesFromModal(this.files)">
+      <div id="modalUploadPreview" class="photo-preview-grid" style="margin-top:12px"></div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-danger" id="deleteWorkBtn" onclick="deleteWork()" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('workModal')">Cancel</button>
@@ -423,6 +426,7 @@ let allContractors = [];
 let currentFilter = 'all';
 let openAccordionId = null;
 let selectedWork = null;
+let currentUploadFiles = []; // modal 업로드용 임시 배열
 
 async function loadContractors() {
   const { data } = await supabase.from('contractors').select('*').order('position');
@@ -451,19 +455,11 @@ function renderWorks() {
     list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔧</div><div class="empty-title">No works found</div></div>`;
     return;
   }
-
   const active = filtered.filter(w => w.status !== 'done');
   let done = filtered.filter(w => w.status === 'done');
-
-  // Completed works를 최신 완료 날짜 순으로 정렬
-  done.sort((a, b) => {
-    if (!a.completed_date) return 1;
-    if (!b.completed_date) return -1;
-    return new Date(b.completed_date) - new Date(a.completed_date);
-  });
+  done.sort((a, b) => new Date(b.completed_date || 0) - new Date(a.completed_date || 0));
 
   const sorted = [...active, ...done];
-
   let html = '';
   if (active.length && done.length && currentFilter === 'all') {
     html = active.map(w => workRow(w)).join('') +
@@ -478,14 +474,9 @@ function renderWorks() {
 function workRow(w) {
   const st = STATUS_MAP[w.status] || {label:w.status,cls:'badge-gray'};
   const idx = allWorks.indexOf(w) + 1;
-
-  let leftContent = '';
-  if (w.status === 'done' && w.completed_date) {
-    const date = new Date(w.completed_date);
-    leftContent = date.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
-  } else {
-    leftContent = String(idx).padStart(2, '0');
-  }
+  let leftContent = w.status === 'done' && w.completed_date 
+    ? new Date(w.completed_date).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'}) 
+    : String(idx).padStart(2, '0');
 
   return `
     <div class="work-row${w.status==='done'?' work-row-done':''}" id="row-${w.id}">
@@ -529,8 +520,6 @@ function buildAccordion(w) {
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           ${role === 'admin' ? `<button class="btn-secondary" onclick="event.stopPropagation();openEditWorkById('${w.id}')" style="padding:5px 10px;font-size:11px">✏️ Edit</button>` : ''}
-          ${role === 'admin' ? `<button class="btn-secondary" onclick="event.stopPropagation();triggerPhotoUpload('${w.id}')" style="padding:5px 10px;font-size:11px">📷 Add Photo</button>` : ''}
-          ${role === 'admin' && w.status !== 'done' ? `<button class="btn-secondary" onclick="event.stopPropagation();openCompleteModal('${w.id}')" style="padding:5px 10px;font-size:11px;background:var(--green-bg);border-color:#a7f3d0;color:var(--green-text)">✅ Complete</button>` : ''}
           <button class="btn-secondary" onclick="event.stopPropagation();closeAccordion('${w.id}')" style="padding:5px 10px;font-size:11px">✕</button>
         </div>
       </div>
@@ -551,7 +540,7 @@ function buildAccordion(w) {
       ${descHtml}
       ${privateHtml}
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos / Documents</div>
         <div class="photo-gallery" id="gallery-${w.id}">
           <div style="font-size:13px;color:var(--muted);padding:4px 0">Loading…</div>
         </div>
@@ -560,17 +549,13 @@ function buildAccordion(w) {
 }
 
 window.toggleAccordion = async (id) => {
-  if (openAccordionId && openAccordionId !== id) {
-    closeAccordion(openAccordionId);
-  }
+  if (openAccordionId && openAccordionId !== id) closeAccordion(openAccordionId);
   const acc = document.getElementById(`accordion-${id}`);
   if (!acc) return;
-
   if (acc.classList.contains('open')) {
     closeAccordion(id);
     return;
   }
-
   acc.classList.add('open');
   openAccordionId = id;
   selectedWork = allWorks.find(w => w.id === id);
@@ -600,6 +585,8 @@ window.openAddWork = () => {
   document.getElementById('workDesc').value = '';
   document.getElementById('workPrivate').value = '';
   document.getElementById('deleteWorkBtn').style.display = 'none';
+  document.getElementById('modalUploadPreview').innerHTML = '';
+  currentUploadFiles = [];
   document.getElementById('workModal').classList.add('open');
 };
 
@@ -617,6 +604,8 @@ window.openEditWork = () => {
   document.getElementById('workDesc').value = w.description||'';
   document.getElementById('workPrivate').value = w.private_notes||'';
   document.getElementById('deleteWorkBtn').style.display = 'inline-flex';
+  document.getElementById('modalUploadPreview').innerHTML = '';
+  currentUploadFiles = [];
   document.getElementById('workModal').classList.add('open');
 };
 
@@ -659,6 +648,17 @@ window.saveWork = async () => {
     } else {
       await supabase.from('works').insert(data);
     }
+
+    // 업로드된 파일이 있으면 works-photos 버킷에 저장
+    if (currentUploadFiles.length > 0 && selectedWork) {
+      const workId = id || (await supabase.from('works').select('id').order('created_at', {ascending:false}).limit(1).single()).data.id;
+      for (let file of currentUploadFiles) {
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        await supabase.storage.from('works-photos').upload(`${workId}/${fileName}`, file, { upsert: true });
+      }
+    }
+
     closeModal('workModal');
     if (openAccordionId) closeAccordion(openAccordionId);
     await loadWorks();
@@ -670,6 +670,7 @@ window.deleteWork = async () => {
   if (!confirm('Delete this work?')) return;
   const id = document.getElementById('workEditId').value;
   try {
+    // works-photos 버킷에서 파일 삭제
     const { data: files } = await supabase.storage.from('works-photos').list(id);
     if (files && files.length > 0) {
       await supabase.storage.from('works-photos').remove(files.map(f => `${id}/${f.name}`));
@@ -682,6 +683,26 @@ window.deleteWork = async () => {
   showToast('Work deleted');
 };
 
+// Modal 파일 업로드 (임시 저장)
+window.uploadFilesFromModal = (files) => {
+  currentUploadFiles = Array.from(files);
+  const preview = document.getElementById('modalUploadPreview');
+  preview.innerHTML = currentUploadFiles.map((file, i) => `
+    <div class="photo-preview-item">
+      ${file.type.startsWith('image/') 
+        ? `<img src="${URL.createObjectURL(file)}">` 
+        : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px">📄 ${file.name}</div>`}
+      <button class="remove-photo" onclick="removeModalFile(${i});event.stopPropagation()">✕</button>
+    </div>
+  `).join('');
+};
+
+window.removeModalFile = (index) => {
+  currentUploadFiles.splice(index, 1);
+  uploadFilesFromModal(currentUploadFiles); // preview 갱신
+};
+
+// 기존 accordion 사진 로드 (works-photos 버킷 사용)
 const BUCKET = 'works-photos';
 
 async function loadPhotos(workId) {
@@ -690,47 +711,31 @@ async function loadPhotos(workId) {
   try {
     const { data } = await supabase.storage.from(BUCKET).list(workId);
     if (!data || data.length === 0) {
-      gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No photos yet.</div>';
+      gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No photos or documents yet.</div>';
       return;
     }
     gallery.innerHTML = data.map(file => {
       const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(`${workId}/${file.name}`);
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
       return `
         <div class="photo-gallery-item">
-          <img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">
+          ${isImage 
+            ? `<img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">` 
+            : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px;cursor:pointer" onclick="window.open('${urlData.publicUrl}','_blank')">📄 ${file.name}</div>`}
           ${role === 'admin' ? `<button class="delete-photo-btn" onclick="deletePhoto('${workId}','${file.name}',event)">✕</button>` : ''}
         </div>`;
     }).join('');
   } catch(e) {
-    gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">Failed to load photos.</div>';
+    gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">Failed to load files.</div>';
   }
 }
 
-window.uploadPhotos = async (files) => {
-  if (!selectedWork) return;
-  const workId = selectedWork.id;
-  try {
-    for (let file of files) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const { error } = await supabase.storage
-        .from(BUCKET)
-        .upload(`${workId}/${fileName}`, file, { upsert: true });
-      if (error) throw error;
-    }
-    showToast('Photos uploaded');
-    if (openAccordionId === workId) await loadPhotos(workId);
-  } catch(e) {
-    showToast('Upload failed', true);
-  }
-};
-
 window.deletePhoto = async (workId, fileName, e) => {
   e.stopImmediatePropagation();
-  if (!confirm('Delete this photo?')) return;
+  if (!confirm('Delete this file?')) return;
   try {
     await supabase.storage.from(BUCKET).remove([`${workId}/${fileName}`]);
-    showToast('Photo deleted');
+    showToast('File deleted');
     if (openAccordionId === workId) await loadPhotos(workId);
   } catch(e) {
     showToast('Delete failed', true);
