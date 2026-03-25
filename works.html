@@ -670,9 +670,9 @@ window.deleteWork = async () => {
   if (!confirm('Delete this work?')) return;
   const id = document.getElementById('workEditId').value;
   try {
-    const { data: files } = await supabase.storage.from('works-images').list(id);
+    const { data: files } = await supabase.storage.from('works-photos').list(id);
     if (files && files.length > 0) {
-      await supabase.storage.from('works-images').remove(files.map(f => `${id}/${f.name}`));
+      await supabase.storage.from('works-photos').remove(files.map(f => `${id}/${f.name}`));
     }
   } catch(e) {}
   await supabase.from('works').delete().eq('id', id);
@@ -682,7 +682,7 @@ window.deleteWork = async () => {
   showToast('Work deleted');
 };
 
-const BUCKET = 'works-images';
+const BUCKET = 'works-photos';
 
 async function loadPhotos(workId) {
   const gallery = document.getElementById(`gallery-${workId}`);
