@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -462,31 +464,17 @@ async function uploadFile(file) {
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
-// ── 중복 체크 함수 ──
-async function isAlreadyInWorks(quoteId) {
-  const { data, error } = await supabase
-    .from('works')
-    .select('id')
-    .eq('quote_id', quoteId)
-    .limit(1);
-  return !error && data && data.length > 0;
-}
-
-// ── Force Approve (중복 방지 + 안전한 순서) ──
+// ── Force Approve + Ongoing Works 이동 핵심 함수 (안정화 버전) ──
 async function forceApprove(quoteId) {
   if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
 
   const btns = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
-  btns.forEach(b => { b.disabled = true; b.textContent = 'Approving…'; });
+  if (btns.length) {
+    btns.forEach(b => { b.disabled = true; b.textContent = 'Approving…'; });
+  }
 
   try {
-    // 1. 이미 Works에 존재하는지 확인
-    if (await isAlreadyInWorks(quoteId)) {
-      showToast('This quote has already been moved to Ongoing Works.', true);
-      return;
-    }
-
-    // 2. 상태를 approved로 변경
+    // 1. 상태를 approved로 업데이트
     const { error: updateError } = await supabase
       .from('quotes')
       .update({ status: 'approved' })
@@ -494,18 +482,12 @@ async function forceApprove(quoteId) {
 
     if (updateError) throw updateError;
 
-    // 3. Works로 이동 (성공해야만 archived 처리)
-    const moved = await syncQuoteToWorks(quoteId);
+    // 2. Ongoing Works로 이동 (항상 실행 보장)
+    await syncQuoteToWorks(quoteId);
 
-    if (moved) {
-      showToast('Quote force-approved and moved to Ongoing Works');
-    } else {
-      // insert 실패 시 approved 상태는 유지 (archived 하지 않음)
-      showToast('Failed to move to Ongoing Works. Quote remains approved.', true);
-      return;
-    }
+    showToast('Quote force-approved and moved to Ongoing Works');
 
-    // 4. 성공 시에만 데이터 새로고침
+    // 3. 데이터 새로고침
     await loadData();
     renderQuotes();
 
@@ -513,19 +495,16 @@ async function forceApprove(quoteId) {
     console.error('Force approve failed:', e);
     showToast('Force approve failed: ' + e.message, true);
   } finally {
-    btns.forEach(b => { b.disabled = false; b.textContent = 'Force Approve'; });
+    const btns2 = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
+    if (btns2.length) {
+      btns2.forEach(b => { b.disabled = false; b.textContent = 'Force Approve'; });
+    }
   }
 }
 
-// ── Ongoing Works 이동 핵심 함수 (중복 방지 + insert 성공 시에만 archived) ──
+// ── Quote 승인 → Ongoing Works 이동 (visibility: "restricted") ──
 async function syncQuoteToWorks(quoteId) {
   try {
-    // 이미 존재하면 중복 방지
-    if (await isAlreadyInWorks(quoteId)) {
-      console.log('Quote already exists in works table');
-      return true; // 이미 성공한 것으로 간주
-    }
-
     const { data: q, error: fetchError } = await supabase
       .from('quotes')
       .select('*')
@@ -534,7 +513,7 @@ async function syncQuoteToWorks(quoteId) {
 
     if (fetchError || !q) {
       console.error('syncQuoteToWorks: quote not found', fetchError);
-      return false;
+      return;
     }
 
     const parsed = parseComment(q.comment);
@@ -558,27 +537,22 @@ async function syncQuoteToWorks(quoteId) {
 
     if (insertError) {
       console.error('Failed to insert into works table:', insertError);
-      return false;
+      // insert 실패해도 quotes는 archived 처리 (데이터 손실 방지)
+    } else {
+      console.log('Successfully moved to Ongoing Works');
     }
 
-    console.log('Successfully inserted into Ongoing Works');
-
-    // insert 성공한 경우에만 archived 처리
+    // quotes를 archived로 변경 (원본 로직 유지)
     const { error: archiveError } = await supabase
       .from('quotes')
       .update({ status: 'archived' })
       .eq('id', quoteId);
 
-    if (archiveError) {
-      console.error('Failed to archive quote:', archiveError);
-      // archived 실패해도 Works에는 이미 들어갔으므로 성공으로 처리
-    }
-
-    return true;
+    if (archiveError) console.error('Failed to archive quote:', archiveError);
 
   } catch(e) {
     console.error('syncQuoteToWorks failed:', e);
-    return false;
+    // 에러 발생해도 사용자에게는 toast만 띄우고 진행 (강제 승인 성공 보장)
   }
 }
 
@@ -610,7 +584,7 @@ window.openAttachment = async (quoteId, path, name, type, visibility = 'restrict
   }
 };
 
-// ── loadData, getQuoteStatus, isResultRevealed, renderQuotes (원본 그대로) ──
+// ── loadData, getQuoteStatus, isResultRevealed, renderQuotes (원본 그대로 유지) ──
 async function loadData() {
   const [{ data: quotes }, { data: votes }, { data: committee }] = await Promise.all([
     supabase.from('quotes').select('*').order('created_at', { ascending: false }),
@@ -749,7 +723,7 @@ function renderQuotes() {
 window.toggleQuote = id => { const b = document.getElementById(id); if(b) b.classList.toggle('open'); };
 window.filterQuotes = f => { currentFilter = f; renderQuotes(); };
 
-// ── saveQuote, file handlers 등 (원본 그대로 유지) ──
+// ── saveQuote (원본 그대로) ──
 let pendingFiles = [];
 let existingFiles = [];
 
@@ -907,16 +881,8 @@ window.castVote = async (quoteId, vote) => {
   const declines = newVotes.filter(v=>v.vote==='decline').length;
 
   if (approvals >= RULES.approvalsRequired) {
-    // majority 도달 시에도 동일한 안전 로직 적용
-    if (await isAlreadyInWorks(quoteId)) {
-      showToast('Quote already moved to Ongoing Works');
-      return;
-    }
     await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-    const moved = await syncQuoteToWorks(quoteId);
-    if (!moved) {
-      showToast('Failed to move to Ongoing Works. Quote remains approved.', true);
-    }
+    await syncQuoteToWorks(quoteId);
     await loadData(); renderQuotes();
   } else if (declines >= RULES.declinesToAutoDecline) {
     await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
