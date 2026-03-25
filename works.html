@@ -350,7 +350,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <div class="private-hint">This section is NOT visible to Owners or Tenants.</div>
     </div>
 
-    <!-- 새로 추가된 파일 업로드 영역 -->
+    <!-- 파일 업로드 영역 -->
     <div class="modal-field">
       <label class="modal-label">Upload Photos / Documents</label>
       <div class="photo-upload-area" onclick="document.getElementById('modalFileInput').click()">
@@ -426,7 +426,7 @@ let allContractors = [];
 let currentFilter = 'all';
 let openAccordionId = null;
 let selectedWork = null;
-let currentUploadFiles = []; // modal 업로드용 임시 배열
+let currentUploadFiles = [];
 
 async function loadContractors() {
   const { data } = await supabase.from('contractors').select('*').order('position');
@@ -643,15 +643,17 @@ window.saveWork = async () => {
   if (!data.title) { showToast('Please enter a title', true); return; }
 
   try {
+    let workId = id;
+
     if (id) {
       await supabase.from('works').update(data).eq('id', id);
     } else {
-      await supabase.from('works').insert(data);
+      const { data: inserted } = await supabase.from('works').insert(data).select('id').single();
+      workId = inserted.id;
     }
 
-    // 업로드된 파일이 있으면 works-photos 버킷에 저장
-    if (currentUploadFiles.length > 0 && selectedWork) {
-      const workId = id || (await supabase.from('works').select('id').order('created_at', {ascending:false}).limit(1).single()).data.id;
+    // 파일 업로드 (신규 생성 / 수정 모두 지원)
+    if (currentUploadFiles.length > 0) {
       for (let file of currentUploadFiles) {
         const fileExt = file.name.split('.').pop().toLowerCase();
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
@@ -670,7 +672,6 @@ window.deleteWork = async () => {
   if (!confirm('Delete this work?')) return;
   const id = document.getElementById('workEditId').value;
   try {
-    // works-photos 버킷에서 파일 삭제
     const { data: files } = await supabase.storage.from('works-photos').list(id);
     if (files && files.length > 0) {
       await supabase.storage.from('works-photos').remove(files.map(f => `${id}/${f.name}`));
@@ -699,10 +700,9 @@ window.uploadFilesFromModal = (files) => {
 
 window.removeModalFile = (index) => {
   currentUploadFiles.splice(index, 1);
-  uploadFilesFromModal(currentUploadFiles); // preview 갱신
+  uploadFilesFromModal(currentUploadFiles);
 };
 
-// 기존 accordion 사진 로드 (works-photos 버킷 사용)
 const BUCKET = 'works-photos';
 
 async function loadPhotos(workId) {
