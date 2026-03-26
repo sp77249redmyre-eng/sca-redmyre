@@ -158,6 +158,18 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .photo-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
 .photo-lightbox-close{position:fixed;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1001;line-height:1}
 
+/* QUOTE FILES SECTION */
+.quote-files-section{margin-top:12px;padding:14px;background:#fef9f0;border:1px solid #fed7aa;border-radius:10px}
+.quote-files-label{font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.quote-file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:1px solid #fed7aa;border-radius:8px;font-size:12px;margin-bottom:5px}
+.quote-file-item:last-child{margin-bottom:0}
+.quote-file-item a{flex:1;color:#92400e;font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quote-file-item a:hover{text-decoration:underline}
+
+/* WORK FILES SECTION */
+.work-files-section{margin-top:12px}
+.work-files-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
+
 @media(max-width:900px){.work-row{grid-template-columns:120px 1fr auto auto}}
 
 .hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
@@ -406,6 +418,9 @@ if (role === 'admin') {
   document.getElementById('syncQuotesBtn').style.display = 'inline-flex';
 }
 
+// quote_files 파일을 볼 수 있는 권한: admin 또는 committee만
+const canViewQuoteFiles = ['admin','committee'].includes(role);
+
 window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
 window.closeModal = id => document.getElementById(id).classList.remove('open');
 window.showToast = (msg, isError=false) => {
@@ -474,8 +489,8 @@ function renderWorks() {
 function workRow(w) {
   const st = STATUS_MAP[w.status] || {label:w.status,cls:'badge-gray'};
   const idx = allWorks.indexOf(w) + 1;
-  let leftContent = w.status === 'done' && w.completed_date 
-    ? new Date(w.completed_date).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'}) 
+  let leftContent = w.status === 'done' && w.completed_date
+    ? new Date(w.completed_date).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'})
     : String(idx).padStart(2, '0');
 
   return `
@@ -492,6 +507,7 @@ function workRow(w) {
     ${buildAccordion(w)}`;
 }
 
+// ── 아코디언 빌드 (quote_files + work files 분리 표시) ──
 function buildAccordion(w) {
   const st = STATUS_MAP[w.status] || {label:w.status,cls:'badge-gray'};
   const updated = new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
@@ -503,13 +519,52 @@ function buildAccordion(w) {
       <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.description}</p>
     </div>` : '';
 
-  let privateHtml = w.private_notes ? `
+  let privateHtml = '';
+  if (['admin','committee','observer'].includes(role) && w.private_notes) {
+    privateHtml = `
     <div style="margin-top:12px">
       <div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">⚠️ Private Notes</div>
         <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.private_notes}</p>
       </div>
-    </div>` : '';
+    </div>`;
+  }
+
+  // ── Quote Files 섹션 (admin/committee만 표시) ──
+  let quoteFilesHtml = '';
+  if (canViewQuoteFiles && w.quote_files) {
+    let qFiles = [];
+    try {
+      qFiles = typeof w.quote_files === 'string' ? JSON.parse(w.quote_files) : (w.quote_files || []);
+    } catch(e) { qFiles = []; }
+
+    if (qFiles.length > 0) {
+      const fileItems = qFiles.map(f => {
+        const icon = f.name && f.name.endsWith('.pdf') ? '📄' : (f.type && f.type.startsWith('image/')) ? '🖼️' : '📎';
+        return `<div class="quote-file-item">
+          <span>${icon}</span>
+          <a href="#" onclick="openQuoteFile('${f.path}','${(f.name||'').replace(/'/g,"\\'")}','${f.type||''}');return false">${f.name || 'Unnamed file'}</a>
+          <span style="font-size:10px;font-weight:600;background:#fed7aa;color:#92400e;padding:2px 6px;border-radius:4px;flex-shrink:0">Restricted</span>
+        </div>`;
+      }).join('');
+
+      quoteFilesHtml = `
+      <div class="quote-files-section">
+        <div class="quote-files-label">🔒 Quote Files <span style="font-size:10px;font-weight:500;opacity:0.7">(Admin & Committee only)</span></div>
+        ${fileItems}
+      </div>`;
+    }
+  }
+
+  // ── Work Files 섹션 (로딩 플레이스홀더 — loadPhotos에서 채워짐) ──
+  const workFilesHtml = `
+  <div class="work-files-section">
+    <div class="work-files-label">📁 Work Files <span style="font-size:10px;font-weight:500;opacity:0.7">(Visible to all)</span></div>
+    <div class="photo-gallery" id="gallery-${w.id}">
+      <div style="font-size:13px;color:var(--muted);padding:4px 0">Loading…</div>
+    </div>
+    ${role === 'admin' ? `<div style="margin-top:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:8px;font-size:12px;font-weight:600;color:var(--blue-700)"><span>📎</span><span>Upload Files</span><input type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadWorkFiles('${w.id}',this.files)"></label></div>` : ''}
+  </div>`;
 
   return `
     <div class="work-accordion" id="accordion-${w.id}">
@@ -539,14 +594,51 @@ function buildAccordion(w) {
       </div>
       ${descHtml}
       ${privateHtml}
+      ${quoteFilesHtml}
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos / Documents</div>
-        <div class="photo-gallery" id="gallery-${w.id}">
-          <div style="font-size:13px;color:var(--muted);padding:4px 0">Loading…</div>
-        </div>
+        ${workFilesHtml}
       </div>
     </div>`;
 }
+
+// ── Quote 파일 열기 (Supabase quotes 버킷 signed URL) ──
+window.openQuoteFile = async (path, name, type) => {
+  if (!canViewQuoteFiles) {
+    showToast('You do not have permission to view this file', true);
+    return;
+  }
+  try {
+    const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
+    if (error) throw error;
+    const url = data.signedUrl;
+    const isPdf = name.toLowerCase().endsWith('.pdf') || (type && type.includes('pdf'));
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name) || (type && type.startsWith('image/'));
+    if (isImage || isPdf) {
+      window.open(url, '_blank');
+    } else {
+      window.open(url, '_blank');
+    }
+  } catch(e) {
+    showToast('Cannot open file: ' + e.message, true);
+  }
+};
+
+// ── Work 파일 직접 업로드 (아코디언 내부 버튼용) ──
+window.uploadWorkFiles = async (workId, files) => {
+  if (!files || files.length === 0) return;
+  showToast('Uploading…');
+  try {
+    for (let file of Array.from(files)) {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      await supabase.storage.from('works-photos').upload(`${workId}/${fileName}`, file, { upsert: true });
+    }
+    showToast('Files uploaded ✓');
+    await loadPhotos(workId);
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, true);
+  }
+};
 
 window.toggleAccordion = async (id) => {
   if (openAccordionId && openAccordionId !== id) closeAccordion(openAccordionId);
@@ -690,8 +782,8 @@ window.uploadFilesFromModal = (files) => {
   const preview = document.getElementById('modalUploadPreview');
   preview.innerHTML = currentUploadFiles.map((file, i) => `
     <div class="photo-preview-item">
-      ${file.type.startsWith('image/') 
-        ? `<img src="${URL.createObjectURL(file)}">` 
+      ${file.type.startsWith('image/')
+        ? `<img src="${URL.createObjectURL(file)}">`
         : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px">📄 ${file.name}</div>`}
       <button class="remove-photo" onclick="removeModalFile(${i});event.stopPropagation()">✕</button>
     </div>
@@ -705,6 +797,7 @@ window.removeModalFile = (index) => {
 
 const BUCKET = 'works-photos';
 
+// ── Work 파일 로드 (works-photos 버킷 — public) ──
 async function loadPhotos(workId) {
   const gallery = document.getElementById(`gallery-${workId}`);
   if (!gallery) return;
@@ -719,8 +812,8 @@ async function loadPhotos(workId) {
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
       return `
         <div class="photo-gallery-item">
-          ${isImage 
-            ? `<img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">` 
+          ${isImage
+            ? `<img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">`
             : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px;cursor:pointer" onclick="window.open('${urlData.publicUrl}','_blank')">📄 ${file.name}</div>`}
           ${role === 'admin' ? `<button class="delete-photo-btn" onclick="deletePhoto('${workId}','${file.name}',event)">✕</button>` : ''}
         </div>`;
@@ -749,6 +842,13 @@ window.openLightbox = (url) => {
 
 window.closeLightbox = () => {
   document.getElementById('photoLightbox').classList.remove('open');
+};
+
+window.filterWorks = (filter, btn) => {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderWorks();
 };
 
 window.openCompleteModal = (id) => {
