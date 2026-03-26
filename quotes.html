@@ -467,7 +467,7 @@ async function uploadFile(file) {
 }
 
 // ── Force Approve + Ongoing Works 이동 핵심 함수 (안정화 버전) ──
-async function forceApprove(quoteId) {
+window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
 
   const btns = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
@@ -511,7 +511,7 @@ async function syncQuoteToWorks(quoteId) {
       .from('quotes')
       .select('*')
       .eq('id', quoteId)
-      .single();
+      .maybeSingle();
 
     if (fetchError || !q) {
       console.error('syncQuoteToWorks: quote not found', fetchError);
