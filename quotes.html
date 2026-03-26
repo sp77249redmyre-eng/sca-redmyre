@@ -522,18 +522,10 @@ async function syncQuoteToWorks(quoteId) {
     const parsed = parseComment(q.comment);
 
     const workData = {
-      title: q.project || '(Unnamed Quote)',
-      contractor: q.vendor || '',
-      status: 'scheduled',
-      quote_id: quoteId,
-      description: parsed.note || q.description || 'No scope provided',
-      private_notes: q.notes || `Amount: $${Number(q.amount||0).toLocaleString()} (ex GST)`,
-      category: parsed.category || q.category || 'General',
-      visibility: 'restricted',
-      files: parsed.files || [],   // Quote에서 넘어온 파일은 restricted 유지
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+  title: q.project || 'No title',
+  status: 'scheduled',
+  quote_id: quoteId
+};
 
     // Works 테이블에 insert
     const { error: insertError } = await supabase.from('works').insert(workData);
