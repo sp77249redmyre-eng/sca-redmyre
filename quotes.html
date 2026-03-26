@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,6 +511,7 @@ async function syncQuoteToWorks(quoteId) {
 
     if (fetchError || !q) {
       console.error('syncQuoteToWorks: quote not found', fetchError);
+      showToast('Failed to fetch quote data for Ongoing Works', true);
       return;
     }
 
@@ -527,7 +526,7 @@ async function syncQuoteToWorks(quoteId) {
       private_notes: q.notes || `Amount: $${Number(q.amount||0).toLocaleString()} (ex GST)`,
       category: parsed.category || q.category || 'General',
       visibility: 'restricted',
-      files: parsed.files || [],
+      files: parsed.files || [],   // Quote에서 넘어온 파일은 restricted 유지
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -537,7 +536,7 @@ async function syncQuoteToWorks(quoteId) {
 
     if (insertError) {
       console.error('Failed to insert into works table:', insertError);
-      // insert 실패해도 quotes는 archived 처리 (데이터 손실 방지)
+      showToast('Quote approved but failed to create Ongoing Works entry: ' + insertError.message, true);
     } else {
       console.log('Successfully moved to Ongoing Works');
     }
@@ -552,15 +551,17 @@ async function syncQuoteToWorks(quoteId) {
 
   } catch(e) {
     console.error('syncQuoteToWorks failed:', e);
-    // 에러 발생해도 사용자에게는 toast만 띄우고 진행 (강제 승인 성공 보장)
+    showToast('Failed to move to Ongoing Works: ' + e.message, true);
   }
 }
 
 // ── 첨부파일 열기 (권한 체크 포함) ──
 window.openAttachment = async (quoteId, path, name, type, visibility = 'restricted') => {
+  // Quote 단계 파일은 admin / committee만 볼 수 있음
   if (visibility === 'restricted' && !['admin','committee'].includes(role)) {
     return showToast('You do not have permission to view this file', true);
   }
+
   try {
     const url = await getSignedUrl(path);
     const isPdf = name.toLowerCase().endsWith('.pdf') || (type && type.includes('pdf'));
@@ -703,6 +704,7 @@ function renderQuotes() {
 
     const cardClass = st==='onhold'?'on-hold':st==='approved'?'approved-quote':st==='declined'?'declined-quote':st==='expired'?'expired':'active-quote';
 
+    // Internal Notes: admin 또는 committee만 표시 (보안 강화)
     const internalNotesHtml = (role === 'admin' || role === 'committee') && q.notes ? `<div class="detail-label">Internal Notes</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${q.notes}</p>` : '';
 
     return `<div class="quote-card ${cardClass}"><div class="quote-header" onclick="toggleQuote('qbody-${q.id}')"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span class="quote-title-text">${q.project||'(No project)'}</span>${stBadge} ${catBadgeHtml} ${prioBadge}</div><div class="quote-meta-text">${q.vendor||'—'} · ${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}${st==='pending'?` · <span style="color:var(--yellow-text);font-weight:600">Expires in ${daysLeft} days</span> · ${totalVoted}/${committeeCount} voted`:''}${st==='onhold'?` · <span style="color:#7c3aed;font-weight:600">On Hold</span>`:''}</div></div>${privileged.includes(role) ? `<div class="quote-amount" style="color:${st==='approved'?'var(--green-text)':st==='declined'?'var(--muted)':'var(--text)'}">$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}</div>` : ''}<span style="color:var(--muted);margin-left:8px">▼</span></div><div class="quote-body" id="qbody-${q.id}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px"><div><div class="detail-label">Scope of Works</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${parsed.note||'No description provided.'}</p>${internalNotesHtml}${filesHtml}</div><div><div class="detail-label">Committee Vote</div>${voteSection}</div></div><div class="quote-footer">${role==='admin' ? `<button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>${st==='pending'?`<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">Put On Hold ⏸</button>`:''}${st==='onhold'?`<button class="btn-secondary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">Resume Voting ▶</button>`:''}${(st==='pending'||st==='onhold')?`<button class="btn-primary" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>`:''}${(st==='pending'||st==='onhold'||st==='expired')?`<button class="btn-secondary" style="color:var(--red-text);border-color:#fecaca" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>`:''}` : ''}${(role==='admin' && st==='approved') ? `<button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">✏️ Edit Scope</button>` : ''}</div></div></div>`;
