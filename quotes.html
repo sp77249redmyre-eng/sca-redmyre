@@ -387,7 +387,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const { data:{ session } } = await supabase.auth.getSession();
 if (!session) { window.location.href = 'index.html'; }
 const user = session.user;
-const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const { data: profile, error } = await supabase
+  .from('profiles')
+  .select('*')
+  .eq('id', user.id)
+  .maybeSingle()
 const role = profile?.role || 'observer';
 const name = profile?.full_name || user.email.split('@')[0];
 const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
