@@ -479,7 +479,7 @@ window.forceApprove = async function (quoteId) {
     // 1. 상태를 approved로 업데이트
     const { error: updateError } = await supabase
       .from('quotes')
-      .update({ status: 'approved' })
+      .update({ status: 'archived' })
       .eq('id', quoteId);
 
     if (updateError) throw updateError;
@@ -524,7 +524,8 @@ async function syncQuoteToWorks(quoteId) {
     const workData = {
   title: q.project || 'No title',
   status: 'scheduled',
-  quote_id: quoteId
+  quote_id: quoteId,
+  files: parsed.files || []
 };
 
     // Works 테이블에 insert
