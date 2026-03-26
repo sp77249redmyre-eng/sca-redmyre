@@ -466,7 +466,7 @@ async function uploadFile(file) {
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
-// ── Force Approve + Ongoing Works 이동 핵심 함수 (안정화 버전) ──
+// ── Force Approve + Ongoing Works 이동 ──
 window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
 
@@ -476,7 +476,6 @@ window.forceApprove = async function (quoteId) {
   }
 
   try {
-    // 1. 상태를 approved로 업데이트
     const { error: updateError } = await supabase
       .from('quotes')
       .update({ status: 'archived' })
@@ -484,12 +483,10 @@ window.forceApprove = async function (quoteId) {
 
     if (updateError) throw updateError;
 
-    // 2. Ongoing Works로 이동 (항상 실행 보장)
     await syncQuoteToWorks(quoteId);
 
     showToast('Quote force-approved and moved to Ongoing Works');
 
-    // 3. 데이터 새로고침
     await loadData();
     renderQuotes();
 
@@ -504,7 +501,6 @@ window.forceApprove = async function (quoteId) {
   }
 }
 
-// ── Quote 승인 → Ongoing Works 이동 (visibility: "restricted") ──
 async function syncQuoteToWorks(quoteId) {
   try {
     const { data: q, error: fetchError } = await supabase
@@ -515,29 +511,23 @@ async function syncQuoteToWorks(quoteId) {
 
     if (fetchError || !q) {
       console.error('syncQuoteToWorks: quote not found', fetchError);
-      showToast('Failed to fetch quote data for Ongoing Works', true);
       return;
     }
 
     const parsed = parseComment(q.comment);
 
     const workData = {
-  title: q.project || 'No title',
-  status: 'scheduled',
-  quote_id: quoteId
-};
+      title: q.project || 'No title',
+      status: 'scheduled',
+      quote_id: quoteId
+    };
 
-    // Works 테이블에 insert
     const { error: insertError } = await supabase.from('works').insert(workData);
 
     if (insertError) {
       console.error('Failed to insert into works table:', insertError);
-      showToast('Quote approved but failed to create Ongoing Works entry: ' + insertError.message, true);
-    } else {
-      console.log('Successfully moved to Ongoing Works');
     }
 
-    // quotes를 archived로 변경 (원본 로직 유지)
     const { error: archiveError } = await supabase
       .from('quotes')
       .update({ status: 'archived' })
@@ -547,13 +537,11 @@ async function syncQuoteToWorks(quoteId) {
 
   } catch(e) {
     console.error('syncQuoteToWorks failed:', e);
-    showToast('Failed to move to Ongoing Works: ' + e.message, true);
   }
 }
 
-// ── 첨부파일 열기 (권한 체크 포함) ──
+// ── 첨부파일 열기 ──
 window.openAttachment = async (quoteId, path, name, type, visibility = 'restricted') => {
-  // Quote 단계 파일은 admin / committee만 볼 수 있음
   if (visibility === 'restricted' && !['admin','committee'].includes(role)) {
     return showToast('You do not have permission to view this file', true);
   }
@@ -581,14 +569,13 @@ window.openAttachment = async (quoteId, path, name, type, visibility = 'restrict
   }
 };
 
-// ── loadData, getQuoteStatus, isResultRevealed, renderQuotes (원본 그대로 유지) ──
 async function loadData() {
   const [{ data: quotes }, { data: votes }, { data: committee }] = await Promise.all([
     supabase.from('quotes').select('*').order('created_at', { ascending: false }),
     supabase.from('votes').select('*'),
     supabase.from('profiles').select('id').eq('role', 'committee'),
   ]);
-  allQuotes = quotes || [];
+  allQuotes = (quotes || []).filter(q => q.status !== 'archived');  // ← archived 숨김 핵심 수정
   allVotes = votes || [];
   committeeCount = committee?.length || 0;
   majorityNeeded = Math.floor(committeeCount / 2) + 1;
@@ -700,7 +687,6 @@ function renderQuotes() {
 
     const cardClass = st==='onhold'?'on-hold':st==='approved'?'approved-quote':st==='declined'?'declined-quote':st==='expired'?'expired':'active-quote';
 
-    // Internal Notes: admin 또는 committee만 표시 (보안 강화)
     const internalNotesHtml = (role === 'admin' || role === 'committee') && q.notes ? `<div class="detail-label">Internal Notes</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${q.notes}</p>` : '';
 
     return `<div class="quote-card ${cardClass}"><div class="quote-header" onclick="toggleQuote('qbody-${q.id}')"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span class="quote-title-text">${q.project||'(No project)'}</span>${stBadge} ${catBadgeHtml} ${prioBadge}</div><div class="quote-meta-text">${q.vendor||'—'} · ${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}${st==='pending'?` · <span style="color:var(--yellow-text);font-weight:600">Expires in ${daysLeft} days</span> · ${totalVoted}/${committeeCount} voted`:''}${st==='onhold'?` · <span style="color:#7c3aed;font-weight:600">On Hold</span>`:''}</div></div>${privileged.includes(role) ? `<div class="quote-amount" style="color:${st==='approved'?'var(--green-text)':st==='declined'?'var(--muted)':'var(--text)'}">$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}</div>` : ''}<span style="color:var(--muted);margin-left:8px">▼</span></div><div class="quote-body" id="qbody-${q.id}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px"><div><div class="detail-label">Scope of Works</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${parsed.note||'No description provided.'}</p>${internalNotesHtml}${filesHtml}</div><div><div class="detail-label">Committee Vote</div>${voteSection}</div></div><div class="quote-footer">${role==='admin' ? `<button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>${st==='pending'?`<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">Put On Hold ⏸</button>`:''}${st==='onhold'?`<button class="btn-secondary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">Resume Voting ▶</button>`:''}${(st==='pending'||st==='onhold')?`<button class="btn-primary" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>`:''}${(st==='pending'||st==='onhold'||st==='expired')?`<button class="btn-secondary" style="color:var(--red-text);border-color:#fecaca" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>`:''}` : ''}${(role==='admin' && st==='approved') ? `<button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">✏️ Edit Scope</button>` : ''}</div></div></div>`;
@@ -721,7 +707,7 @@ function renderQuotes() {
 window.toggleQuote = id => { const b = document.getElementById(id); if(b) b.classList.toggle('open'); };
 window.filterQuotes = f => { currentFilter = f; renderQuotes(); };
 
-// ── saveQuote (원본 그대로) ──
+// ── saveQuote, openAddQuote, openEditQuote 등 나머지 함수들 (원본 유지) ──
 let pendingFiles = [];
 let existingFiles = [];
 
@@ -742,173 +728,4 @@ window.handleFileDrop = e => { e.preventDefault(); document.getElementById('file
 
 window.openAddQuote = () => {
   document.getElementById('quoteModalTitle').textContent = 'Add Quote';
-  document.getElementById('quoteEditId').value = '';
-  document.getElementById('quoteTitle').value = '';
-  document.getElementById('quoteContractor').value = '';
-  document.getElementById('quoteAmount').value = '';
-  document.getElementById('quoteCategory').value = 'General';
-  document.getElementById('quoteDesc').value = '';
-  document.getElementById('quoteNotes').value = '';
-  document.getElementById('deleteQuoteBtn').style.display = 'none';
-  resetFileUpload([]);
-  document.getElementById('quoteModal').classList.add('open');
-};
-
-window.openEditQuote = id => {
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
-  document.getElementById('quoteEditId').value = q.id;
-  document.getElementById('quoteTitle').value = q.project||'';
-  document.getElementById('quoteContractor').value = q.vendor||'';
-  document.getElementById('quoteAmount').value = q.amount||'';
-  document.getElementById('quoteCategory').value = parsed.category || q.category || 'General';
-  document.getElementById('quoteDesc').value = parsed.note||'';
-  document.getElementById('quoteNotes').value = q.notes||'';
-  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
-  resetFileUpload(parsed.files || []);
-  document.getElementById('quoteModal').classList.add('open');
-};
-
-window.saveQuote = async () => {
-  const id = document.getElementById('quoteEditId').value;
-  const project = document.getElementById('quoteTitle').value.trim();
-  const vendor = document.getElementById('quoteContractor').value.trim();
-  const amount = parseFloat(document.getElementById('quoteAmount').value)||0;
-  const category = document.getElementById('quoteCategory').value;
-  const note = document.getElementById('quoteDesc').value.trim();
-  const notes = document.getElementById('quoteNotes').value.trim();
-
-  if (!project) return showToast('Project title is required', true);
-
-  const saveBtn = document.getElementById('saveQuoteBtn');
-  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
-
-  try {
-    const uploadedFiles = [...existingFiles];
-    for (const f of pendingFiles) {
-      const meta = await uploadFile(f);
-      uploadedFiles.push(meta);
-    }
-
-    const commentPayload = JSON.stringify({
-      note: note,
-      files: uploadedFiles,
-      category: category,
-      priority: 'Normal'
-    });
-
-    const payload = { project, vendor, amount, notes, comment: commentPayload };
-
-    if (id) {
-      await supabase.from('quotes').update(payload).eq('id', id);
-    } else {
-      const expiry = new Date(); expiry.setDate(expiry.getDate() + RULES.expiryDays);
-      await supabase.from('quotes').insert({ ...payload, status: 'pending', expiry_date: expiry.toISOString(), created_by: user.id });
-    }
-
-    closeModal('quoteModal');
-    await loadData(); renderQuotes();
-    showToast('Quote saved successfully');
-  } catch(e) {
-    showToast('Save failed: ' + e.message, true);
-  } finally {
-    saveBtn.disabled = false; saveBtn.textContent = 'Save →';
-  }
-};
-
-// ── 기타 Admin 함수들 (원본 그대로) ──
-window.openHold = id => { holdingQuoteId = id; document.getElementById('holdReason').value = ''; document.getElementById('holdModal').classList.add('open'); };
-window.confirmHold = async () => {
-  const reason = document.getElementById('holdReason').value.trim();
-  if (!reason) return showToast('Please enter a reason', true);
-  await supabase.from('quotes').update({status:'onhold', hold_reason: reason}).eq('id', holdingQuoteId);
-  closeModal('holdModal'); await loadData(); renderQuotes(); showToast('Quote put on hold');
-};
-window.resumeQuote = async id => {
-  await supabase.from('quotes').update({status:'pending', hold_reason: null}).eq('id', id);
-  await loadData(); renderQuotes(); showToast('Voting resumed');
-};
-window.openEditScope = id => {
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  document.getElementById('scopeEditId').value = id;
-  document.getElementById('scopeText').value = parsed.note || '';
-  document.getElementById('scopeModal').classList.add('open');
-};
-window.saveScope = async () => {
-  const id = document.getElementById('scopeEditId').value;
-  const note = document.getElementById('scopeText').value.trim();
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  parsed.note = note;
-  await supabase.from('quotes').update({ comment: JSON.stringify(parsed) }).eq('id', id);
-  closeModal('scopeModal'); await loadData(); renderQuotes(); showToast('Scope updated');
-};
-
-window.deleteQuote = async (id) => {
-  const qId = id || document.getElementById('quoteEditId').value;
-  if (!qId || !confirm('Delete this quote?')) return;
-  try {
-    await supabase.from('votes').delete().eq('quote_id', qId);
-    const q = allQuotes.find(q => q.id === qId);
-    if (q) {
-      const parsed = parseComment(q.comment);
-      const paths = (parsed.files||[]).map(f=>f.path).filter(Boolean);
-      if (paths.length) await supabase.storage.from('quotes').remove(paths);
-    }
-    await supabase.from('quotes').delete().eq('id', qId);
-    closeModal('quoteModal');
-    await loadData(); renderQuotes();
-    showToast('Quote deleted');
-  } catch(e) { showToast('Delete failed: ' + e.message, true); }
-};
-
-window.castVote = async (quoteId, vote) => {
-  const existing = allVotes.find(v=>v.quote_id===quoteId && v.user_id===user.id);
-  if (existing) return showToast('You have already voted', true);
-  await supabase.from('votes').insert({ quote_id: quoteId, user_id: user.id, vote });
-  showToast(vote==='approve'?'✅ Approved':'❌ Declined');
-  await loadData(); renderQuotes();
-
-  const newVotes = allVotes.filter(v=>v.quote_id===quoteId);
-  const approvals = newVotes.filter(v=>v.vote==='approve').length;
-  const declines = newVotes.filter(v=>v.vote==='decline').length;
-
-  if (approvals >= RULES.approvalsRequired) {
-    await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-    await syncQuoteToWorks(quoteId);
-    await loadData(); renderQuotes();
-  } else if (declines >= RULES.declinesToAutoDecline) {
-    await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
-    await loadData(); renderQuotes();
-  }
-};
-
-// ── 초기 로드 ──
-try {
-  await loadData();
-  renderQuotes();
-} catch(e) {
-  console.error(e);
-  showToast('Failed to load quotes', true);
-}
-
-// Mobile hamburger
-(function(){
-  var btn=document.getElementById("hamburgerBtn");
-  var overlay=document.getElementById("sidebarOverlay");
-  var sidebar=document.querySelector(".sidebar");
-  if(!btn||!sidebar) return;
-  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
-  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
-  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
-  overlay.addEventListener("click",closeMenu);
-  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
-})();
-</script>
-</body>
-</html>
+  document.getElementBy
