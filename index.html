@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redmyre House – Building Management</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="application-name" content="SCA Redmyre">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-900: #0f2456;
+    --blue-800: #1e3a8a;
+    --blue-600: #2563eb;
+    --blue-400: #60a5fa;
+    --bg: #f0f4f8;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --green: #10b981;
+    --red: #ef4444;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--blue-900);
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+  }
+  .login-wrap { display: flex; width: 100%; min-height: 100vh; }
+
+  /* LEFT */
+  .login-left {
+    width: 48%;
+    background: linear-gradient(160deg, #0f2456 0%, #1e3a8a 50%, #2563eb 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 48px;
+    position: relative; overflow: hidden;
+  }
+  .login-left::before {
+    content: '';
+    position: absolute; width: 500px; height: 500px;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,0.06);
+    top: -150px; right: -150px;
+  }
+  .login-left::after {
+    content: '';
+    position: absolute; width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%);
+    bottom: -50px; left: -50px;
+  }
+  .left-inner {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center; width: 100%;
+  }
+  .logo-wrap {
+    background: #fff; border-radius: 12px;
+    padding: 12px 22px; margin-bottom: 14px;
+    display: inline-block;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .system-label {
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    letter-spacing: 0.05em; margin-bottom: 40px;
+  }
+  .left-stats {
+    position: absolute; bottom: 36px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 36px; z-index: 1;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 600; color: #fff; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+  /* SCA 로고 */
+  .sca-wrap {
+    position: absolute; bottom: 105px; left: 0; right: 0;
+    z-index: 1; display: flex; align-items: center;
+    justify-content: center; gap: 10px; text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .sca-wrap:hover { opacity: 0.85; }
+  .sca-wrap img {
+    width: 56px; height: 56px; object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+    transition: transform 0.2s;
+  }
+  .sca-wrap:hover img { transform: scale(1.12); }
+  .sca-text-name { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); line-height: 1.3; }
+  .sca-text-sub  { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+  /* RIGHT */
+  .login-right {
+    flex: 1; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 48px;
+  }
+  .form-wrap { width: 100%; max-width: 380px; }
+  .form-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--blue-600); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .form-title  { font-size: 30px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .form-sub    { font-size: 14px; color: var(--muted); margin-bottom: 36px; line-height: 1.5; }
+  .form-group  { margin-bottom: 18px; }
+  .form-label  {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.05em;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+  .form-input {
+    width: 100%; height: 48px; padding: 0 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--bg);
+    outline: none; transition: all 0.15s;
+  }
+  .form-input:focus {
+    border-color: var(--blue-600); background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .forgot-link {
+    display: block; text-align: right; margin-top: 6px;
+    font-size: 12px; color: var(--blue-600); text-decoration: none; font-weight: 500;
+  }
+  .error-msg {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #dc2626; margin-bottom: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+  .submit-btn {
+    width: 100%; height: 50px;
+    background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 100%);
+    border: none; border-radius: 10px;
+    color: #fff; font-size: 15px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 14px rgba(30,58,138,0.3);
+    transition: opacity 0.15s, transform 0.12s; margin-top: 8px;
+  }
+  .submit-btn:hover  { opacity: 0.92; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .form-footer { text-align: center; margin-top: 24px; font-size: 12px; color: var(--muted); }
+  .roles-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9; }
+  .roles-label { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+  .role-pills  { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .role-pill   { font-size: 11px; padding: 4px 11px; border-radius: 100px; border: 1px solid transparent; font-weight: 600; }
+  .role-pill.admin     { background: linear-gradient(135deg,#0f2456 0%,#1e3a8a 50%,#2563eb 100%); color: #fff; }
+  .role-pill.committee { background: linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%); color: #fff; opacity: 0.9; }
+  .role-pill.owner     { background: linear-gradient(135deg,#2563eb 0%,#3b82f6 100%); color: #fff; opacity: 0.75; }
+  .role-pill.tenant    { background: linear-gradient(135deg,#93c5fd 0%,#bfdbfe 100%); color: #1e3a8a; opacity: 0.85; }
+  .role-pill.observer  { background: linear-gradient(135deg,#bfdbfe 0%,#dbeafe 100%); color: #1e4fa3; opacity: 0.7; }
+
+  @media (max-width: 768px) {
+    .login-left  { display: none; }
+    .login-right { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+
+  <!-- LEFT -->
+  <div class="login-left">
+    <div class="left-inner">
+      <div class="logo-wrap">
+        <svg width="168" height="54" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+          <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+          <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+          <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+        </svg>
+      </div>
+      <div class="system-label">Building Management System</div>
+    </div>
+
+    <!-- SCA 로고 -->
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sca-wrap">
+      <img src="/sca-logo.png" alt="SCA" onerror="this.style.display='none'">
+      <div>
+        <div class="sca-text-name">SCA Facility</div>
+        <div class="sca-text-sub">Management</div>
+      </div>
+    </a>
+
+    <!-- Stats -->
+    <div class="left-stats">
+      <div class="stat"><div class="stat-num">SP</div><div class="stat-label">77249</div></div>
+      <div class="stat"><div class="stat-num">L6</div><div class="stat-label">Levels</div></div>
+      <div class="stat"><div class="stat-num">8</div><div class="stat-label">Active Works</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="login-right">
+    <div class="form-wrap">
+      <div class="form-eyebrow">Secure Portal</div>
+      <div class="form-title">Welcome back</div>
+      <div class="form-sub">Sign in to Redmyre House management portal</div>
+
+      <div class="error-msg" id="errorMsg">Invalid email or password. Please try again.</div>
+
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
+        <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
+      </div>
+
+      <button class="submit-btn" id="signInBtn">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Sign In →</span>
+      </button>
+
+      <div class="form-footer">Having trouble? Contact your building manager</div>
+
+      <div class="roles-section">
+        <div class="roles-label">Access roles on this system</div>
+        <div class="role-pills">
+          <span class="role-pill admin">Admin</span>
+          <span class="role-pill committee">Committee</span>
+          <span class="role-pill owner">Owner</span>
+          <span class="role-pill tenant">Tenant</span>
+          <span class="role-pill observer">Observer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:8px">Reset your password</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:20px">Enter your email and we'll send you a reset link.</div>
+    <div id="forgotSuccess" style="display:none;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#065f46;margin-bottom:16px">✓ Reset link sent! Check your email.</div>
+    <div id="forgotError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:16px"></div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px">Email address</label>
+      <input id="forgotEmail" type="email" placeholder="you@example.com" style="width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:#0f172a;background:#f0f4f8;outline:none">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="cancelForgotBtn" style="padding:10px 16px;border-radius:8px;background:#f0f4f8;border:1px solid #e2e8f0;font-size:13px;font-weight:600;color:#475569;cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+      <button id="sendResetBtn" style="padding:10px 16px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">Send Reset Link →</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { getSupabase } from '/js/auth.js';
+const supabase = await getSupabase();
+
+// 이미 로그인 되어있으면 dashboard로
+const { data:{ session } } = await supabase.auth.getSession();
+if (session) window.location.href = '/pages/dashboard.html';
+
+// 로그인
+document.getElementById('signInBtn').addEventListener('click', handleLogin);
+['emailInput','passwordInput'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+});
+
+async function handleLogin() {
+  const email    = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const btn      = document.getElementById('signInBtn');
+  const spinner  = document.getElementById('spinner');
+  const btnText  = document.getElementById('btnText');
+  const errorMsg = document.getElementById('errorMsg');
+
+  if (!email || !password) {
+    errorMsg.textContent = 'Please enter your email and password.';
+    errorMsg.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Signing in…';
+  errorMsg.classList.remove('show');
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    window.location.href = '/pages/dashboard.html';
+  } catch(err) {
+    errorMsg.textContent = err.message || 'Sign in failed. Please try again.';
+    errorMsg.classList.add('show');
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Sign In →';
+  }
+}
+
+// Forgot password modal
+document.getElementById('forgotLink').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('forgotEmail').value = '';
+  document.getElementById('forgotSuccess').style.display = 'none';
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotModal').style.display = 'flex';
+});
+
+document.getElementById('cancelForgotBtn').addEventListener('click', () => {
+  document.getElementById('forgotModal').style.display = 'none';
+});
+
+document.getElementById('forgotModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
+document.getElementById('sendResetBtn').addEventListener('click', async () => {
+  const email  = document.getElementById('forgotEmail').value.trim();
+  const btn    = document.getElementById('sendResetBtn');
+  const errEl  = document.getElementById('forgotError');
+  const sucEl  = document.getElementById('forgotSuccess');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/pages/reset-password.html'
+    });
+    if (error) throw error;
+    sucEl.style.display = 'block';
+    btn.textContent = 'Sent!';
+  } catch(e) {
+    errEl.textContent = e.message || 'Failed to send reset email.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link →';
+  }
+});
+</script>
+</body>
+</html>
