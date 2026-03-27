@@ -479,7 +479,7 @@ window.forceApprove = async function (quoteId) {
     // 1. 상태를 approved로 업데이트
     const { error: updateError } = await supabase
       .from('quotes')
-      .update({ status: 'archived' })
+      .update({ status: 'approved' })
       .eq('id', quoteId);
 
     if (updateError) throw updateError;
@@ -510,7 +510,7 @@ async function syncQuoteToWorks(quoteId) {
     const { data: q, error: fetchError } = await supabase
       .from('quotes')
       .select('*')
-      .eq('id', quoteId)
+      .eq('id', Number(quoteId))
       .maybeSingle();
 
     if (fetchError || !q) {
@@ -538,12 +538,7 @@ async function syncQuoteToWorks(quoteId) {
     }
 
     // quotes를 archived로 변경 (원본 로직 유지)
-    const { error: archiveError } = await supabase
-      .from('quotes')
-      .update({ status: 'archived' })
-      .eq('id', quoteId);
-
-    if (archiveError) console.error('Failed to archive quote:', archiveError);
+    
 
   } catch(e) {
     console.error('syncQuoteToWorks failed:', e);
@@ -639,7 +634,14 @@ function isResultRevealed(q) {
 
 function renderQuotes() {
   const list = document.getElementById('quoteList');
-  const filtered = currentFilter === 'all' ? allQuotes : allQuotes.filter(q => getQuoteStatus(q) === currentFilter);
+  const visibleQuotes = allQuotes.filter(q => {
+  const st = getQuoteStatus(q);
+  return st !== 'approved';
+});
+
+const filtered = currentFilter === 'all'
+  ? visibleQuotes
+  : visibleQuotes.filter(q => getQuoteStatus(q) === currentFilter);
 
   const filterBar = `<div class="filter-bar">
     <button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="filterQuotes('all')">All</button>
