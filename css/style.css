@@ -132,10 +132,6 @@ body {
   border-left: 3px solid transparent;
 }
 .nav-item:hover:not(.active) { background: rgba(255,255,255,0.07); }
-.nav-item.active {
-  background: rgba(255,255,255,0.14);
-  border-left-color: rgba(255,255,255,0.6);
-}
 .nav-icon {
   width: 30px; height: 30px;
   border-radius: 8px;
@@ -143,9 +139,7 @@ body {
   font-size: 15px;
   flex-shrink: 0;
 }
-.nav-item.active .nav-icon { background: rgba(255,255,255,0.12); }
 .nav-label { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65); flex: 1; }
-.nav-item.active .nav-label { color: #fff; }
 .nav-count {
   font-size: 10px; font-weight: 700;
   background: rgba(255,255,255,0.15);
@@ -155,12 +149,43 @@ body {
 }
 .nav-count.urgent { background: rgba(239,68,68,0.3); color: #fca5a5; }
 
-/* Sidebar hidden nav items — controlled by layout.js */
-.nav-admin-only  { display: none; }
-.nav-admin-only.active  { display: flex !important; }
-.nav-privileged.active  { display: flex !important; }
-.nav-privileged  { display: none; }
+/* ============================================================
+   역할 기반 네비게이션 권한 제어
+   ============================================================ */
 
+/* 기본: 권한 필요 메뉴 숨김 */
+.nav-admin-only,
+.nav-privileged {
+  display: none;
+}
+
+/* 역할별 메뉴 표시 - 명시도 높은 선택자 사용 */
+.role-privileged .nav-item.nav-privileged,
+.role-admin .nav-item.nav-privileged {
+  display: flex;
+}
+
+.role-admin .nav-item.nav-admin-only {
+  display: flex;
+}
+
+/* Active 상태 스타일링 (display 제어 제외) */
+.nav-item.active {
+  background: rgba(255,255,255,0.14);
+  border-left-color: rgba(255,255,255,0.6);
+}
+
+.nav-item.active .nav-icon {
+  background: rgba(255,255,255,0.12);
+}
+
+.nav-item.active .nav-label {
+  color: #fff;
+}
+
+/* ============================================================
+   SIDEBAR FOOTER
+   ============================================================ */
 .sb-footer {
   padding: 14px 14px 18px;
   border-top: 1px solid rgba(255,255,255,0.08);
