@@ -43,6 +43,9 @@ async function insertSidebar() {
   } else {
     document.body.insertAdjacentHTML('afterbegin', html);
   }
+  // DOM 렌더링 완료 대기
+  await new Promise(resolve => setTimeout(resolve, 0));
+
   const currentPage = getCurrentPage();
   const navItems = document.querySelectorAll('.nav-item[data-page]');
   navItems.forEach(item => {
@@ -56,6 +59,9 @@ async function insertTopbar() {
   if (placeholder) {
     placeholder.outerHTML = html;
   }
+  // DOM 렌더링 완료 대기
+  await new Promise(resolve => setTimeout(resolve, 0));
+
   const currentPage = getCurrentPage();
   const config = PAGE_CONFIG[currentPage];
   const titleEl = document.getElementById('topbarPageTitle');
@@ -168,11 +174,17 @@ function initCommonUtils() {
 }
 
 export async function initLayout() {
+  // STEP A: 컴포넌트 삽입
   await insertSidebar();
   await insertTopbar();
+
+  // STEP B: 공통 유틸 등록
   initCommonUtils();
+
+  // STEP C: Supabase 인증 확인
   const supabase = await getSupabase();
   const { data: { session } } = await supabase.auth.getSession();
+
   if (!session) {
     const publicPages = ['index', 'setup', 'reset-password'];
     const current = getCurrentPage();
@@ -181,18 +193,33 @@ export async function initLayout() {
     }
     return null;
   }
+
+  // STEP D: 프로필 fetch
   const user = session.user;
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .maybeSingle();
+
   const role = profile?.role || 'observer';
   const name = profile?.full_name || user.email.split('@')[0];
+
+  // STEP E: 페이지 접근 제어
   checkPageAccess(role);
+
+  // STEP F: 메뉴 표시 제어 (DOM 완전 로딩 후 실행)
+  await new Promise(resolve => setTimeout(resolve, 50));
   applyRoleMenuControl(role);
+
+  // STEP G: 사용자 UI 업데이트
   updateUserUI(name, role);
+
+  // STEP H: Logout 초기화
   initLogout(supabase);
+
+  // STEP I: Mobile menu 초기화
   initMobileMenu();
+
   return { supabase, user, profile, role, name };
 }
