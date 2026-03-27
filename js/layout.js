@@ -35,6 +35,7 @@ async function loadComponent(url) {
   }
 }
 
+// ✅ active 코드 제거 — setActiveMenu()에서만 처리
 async function insertSidebar() {
   const html = await loadComponent('/components/sidebar.html');
   const placeholder = document.getElementById('sidebarPlaceholder');
@@ -43,14 +44,6 @@ async function insertSidebar() {
   } else {
     document.body.insertAdjacentHTML('afterbegin', html);
   }
-  // DOM 렌더링 완료 대기
-  await new Promise(resolve => setTimeout(resolve, 0));
-
-  const currentPage = getCurrentPage();
-  const navItems = document.querySelectorAll('.nav-item[data-page]');
-  navItems.forEach(item => {
-    item.classList.toggle('active', item.dataset.page === currentPage);
-  });
 }
 
 async function insertTopbar() {
@@ -59,9 +52,6 @@ async function insertTopbar() {
   if (placeholder) {
     placeholder.outerHTML = html;
   }
-  // DOM 렌더링 완료 대기
-  await new Promise(resolve => setTimeout(resolve, 0));
-
   const currentPage = getCurrentPage();
   const config = PAGE_CONFIG[currentPage];
   const titleEl = document.getElementById('topbarPageTitle');
@@ -70,18 +60,23 @@ async function insertTopbar() {
   }
 }
 
+// ✅ STEP 1 — role class 적용 (display 결정)
 function applyRoleMenuControl(role) {
   const privileged = ['admin', 'committee', 'observer'];
   if (privileged.includes(role)) {
-    document.querySelectorAll('.nav-privileged').forEach(el => {
-      el.style.display = 'flex';
-    });
+    document.body.classList.add('role-privileged');
   }
   if (role === 'admin') {
-    document.querySelectorAll('.nav-admin-only').forEach(el => {
-      el.style.display = el.classList.contains('nav-section') ? 'block' : 'flex';
-    });
+    document.body.classList.add('role-admin');
   }
+}
+
+// ✅ STEP 2 — active 적용 (스타일만, display 건드리지 않음)
+function setActiveMenu() {
+  const currentPage = getCurrentPage();
+  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.classList.toggle('active', item.dataset.page === currentPage);
+  });
 }
 
 function checkPageAccess(role) {
@@ -90,7 +85,6 @@ function checkPageAccess(role) {
   if (!config) return;
   if (!config.allowedRoles) return;
   if (!config.allowedRoles.includes(role)) {
-    console.warn('[layout.js] Access denied: ' + role + ' cannot access ' + currentPage);
     window.location.href = '/pages/building.html';
   }
 }
@@ -174,7 +168,7 @@ function initCommonUtils() {
 }
 
 export async function initLayout() {
-  // STEP A: 컴포넌트 삽입
+  // STEP A: 컴포넌트 삽입 (active 없이 순수 삽입만)
   await insertSidebar();
   await insertTopbar();
 
@@ -208,17 +202,19 @@ export async function initLayout() {
   // STEP E: 페이지 접근 제어
   checkPageAccess(role);
 
-  // STEP F: 메뉴 표시 제어 (DOM 완전 로딩 후 실행)
-  await new Promise(resolve => setTimeout(resolve, 50));
+  // ✅ STEP F: role 적용 먼저 (display 결정)
   applyRoleMenuControl(role);
 
-  // STEP G: 사용자 UI 업데이트
+  // ✅ STEP G: active 적용 (스타일만, display 건드리지 않음)
+  setActiveMenu();
+
+  // STEP H: 사용자 UI 업데이트
   updateUserUI(name, role);
 
-  // STEP H: Logout 초기화
+  // STEP I: Logout 초기화
   initLogout(supabase);
 
-  // STEP I: Mobile menu 초기화
+  // STEP J: Mobile menu 초기화
   initMobileMenu();
 
   return { supabase, user, profile, role, name };
