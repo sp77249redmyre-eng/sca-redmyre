@@ -1,1 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Up Your Account – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-900: #0f2456;
+    --blue-800: #1e3a8a;
+    --blue-600: #2563eb;
+    --blue-400: #60a5fa;
+    --blue-100: #dbeafe;
+    --blue-50:  #eff6ff;
+    --bg:     #f0f4f8;
+    --border: #e2e8f0;
+    --text:   #0f172a;
+    --muted:  #64748b;
+    --green:      #10b981;
+    --green-bg:   #ecfdf5;
+    --green-text: #065f46;
+    --red: #ef4444;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--blue-900);
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+  }
+  .setup-wrap { display: flex; width: 100%; min-height: 100vh; }
 
+  /* LEFT */
+  .setup-left {
+    width: 42%;
+    background: linear-gradient(160deg, #0f2456 0%, #1e3a8a 50%, #2563eb 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 48px;
+    position: relative; overflow: hidden;
+  }
+  .setup-left::before {
+    content: ''; position: absolute;
+    width: 500px; height: 500px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+    top: -150px; right: -150px;
+  }
+  .setup-left::after {
+    content: ''; position: absolute;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%);
+    bottom: -50px; left: -50px;
+  }
+  .left-inner {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+  }
+  .logo-box {
+    background: #fff; border-radius: 12px;
+    padding: 12px 22px; margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .system-label {
+    font-size: 13px; color: rgba(255,255,255,0.45);
+    letter-spacing: 0.06em; margin-bottom: 40px;
+  }
+
+  /* Steps */
+  .steps-wrap { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: 240px; }
+  .step-item  { display: flex; align-items: flex-start; gap: 14px; position: relative; }
+  .step-item:not(:last-child)::after {
+    content: ''; position: absolute; left: 15px; top: 32px;
+    width: 2px; height: 28px; background: rgba(255,255,255,0.12);
+  }
+  .step-item.done::after  { background: rgba(16,185,129,0.4); }
+  .step-item.active::after{ background: rgba(255,255,255,0.12); }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0; transition: all 0.3s;
+  }
+  .step-item.done   .step-num { background: var(--green); color: #fff; }
+  .step-item.active .step-num { background: #fff; color: var(--blue-800); }
+  .step-item.pending .step-num{ background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.15); }
+  .step-text  { padding-top: 6px; padding-bottom: 28px; }
+  .step-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); margin-bottom: 2px; }
+  .step-item.pending .step-title { color: rgba(255,255,255,0.35); }
+  .step-item.active  .step-title { color: #fff; }
+  .step-sub   { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  /* RIGHT */
+  .setup-right {
+    flex: 1; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 48px;
+  }
+  .form-wrap { width: 100%; max-width: 400px; }
+  .screen     { display: none; }
+  .screen.active { display: block; }
+
+  .form-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--blue-600); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .form-title { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .form-sub   { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.5; }
+
+  .invite-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue-50); border: 1px solid var(--blue-100);
+    border-radius: 100px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--blue-800);
+    margin-bottom: 28px;
+  }
+  .invite-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-600); }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--muted); letter-spacing: 0.05em;
+    text-transform: uppercase; margin-bottom: 7px;
+  }
+  .form-input {
+    width: 100%; height: 48px; padding: 0 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--bg);
+    outline: none; transition: all 0.15s;
+  }
+  .form-input:focus {
+    border-color: var(--blue-600); background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .form-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+  .form-hint  { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+  /* Password strength */
+  .pw-strength { margin-top: 8px; display: none; }
+  .pw-strength.visible { display: block; }
+  .pw-bars    { display: flex; gap: 4px; margin-bottom: 4px; }
+  .pw-bar     { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.2s; }
+  .pw-bar.fill-weak { background: var(--red); }
+  .pw-bar.fill-ok   { background: #f59e0b; }
+  .pw-bar.fill-good { background: var(--green); }
+  .pw-label   { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .pw-label.weak { color: var(--red); }
+  .pw-label.ok   { color: #d97706; }
+  .pw-label.good { color: var(--green); }
+
+  .error-msg {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #dc2626; margin-bottom: 16px; display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .submit-btn {
+    width: 100%; height: 50px;
+    background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 100%);
+    border: none; border-radius: 10px;
+    color: #fff; font-size: 15px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 14px rgba(30,58,138,0.3);
+    transition: opacity 0.15s, transform 0.12s; margin-top: 8px;
+  }
+  .submit-btn:hover    { opacity: 0.92; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Success */
+  .success-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--green-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 24px;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .role-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 100px;
+    font-size: 12px; font-weight: 700; margin-bottom: 24px;
+  }
+  .role-pill.admin     { background: linear-gradient(135deg,#0f2456,#2563eb); color: #fff; }
+  .role-pill.committee { background: linear-gradient(135deg,#1e3a8a,#2563eb); color: #fff; }
+  .role-pill.observer  { background: #eff6ff; color: var(--blue-800); border: 1px solid var(--blue-100); }
+  .role-pill.owner     { background: #f8fafc; color: #334155; border: 1px solid var(--border); }
+  .role-pill.tenant    { background: #f8fafc; color: #334155; border: 1px solid var(--border); }
+
+  /* Loading */
+  .loading-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 200px; gap: 16px;
+  }
+  .loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--blue-600);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-text { font-size: 14px; color: var(--muted); }
+
+  /* Invalid */
+  .invalid-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #fef2f2;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .setup-left  { display: none; }
+    .setup-right { padding: 40px 24px; }
+    .form-title  { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="setup-wrap">
+
+  <!-- LEFT -->
+  <div class="setup-left">
+    <div class="left-inner">
+      <div class="logo-box">
+        <svg width="168" height="54" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+          <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+          <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+          <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+        </svg>
+      </div>
+      <div class="system-label">BUILDING MANAGEMENT SYSTEM</div>
+
+      <div class="steps-wrap">
+        <div class="step-item active" id="step1Indicator">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-title">Verify your invite</div>
+            <div class="step-sub">Confirm your email link</div>
+          </div>
+        </div>
+        <div class="step-item pending" id="step2Indicator">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-title">Set your name</div>
+            <div class="step-sub">How you'll appear in the system</div>
+          </div>
+        </div>
+        <div class="step-item pending" id="step3Indicator">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-title">Create password</div>
+            <div class="step-sub">Secure your account</div>
+          </div>
+        </div>
+        <div class="step-item pending" id="step4Indicator">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-title">All done!</div>
+            <div class="step-sub">Access Redmyre House</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="setup-right">
+    <div class="form-wrap">
+
+      <!-- LOADING -->
+      <div class="screen active" id="screenLoading">
+        <div class="loading-wrap">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">Verifying your invitation…</div>
+        </div>
+      </div>
+
+      <!-- INVALID -->
+      <div class="screen" id="screenInvalid">
+        <div class="invalid-icon">⚠️</div>
+        <div class="form-eyebrow">Invitation Invalid</div>
+        <div class="form-title">Link expired or invalid</div>
+        <div class="form-sub" style="margin-bottom:24px">This invitation link has expired or already been used. Please contact your building manager to receive a new invite.</div>
+        <button class="submit-btn" onclick="window.location.href='/index.html'" style="background:var(--bg);border:1px solid var(--border);color:var(--text);box-shadow:none">← Back to Login</button>
+      </div>
+
+      <!-- STEP 1: Name -->
+      <div class="screen" id="screenName">
+        <div class="form-eyebrow">Step 1 of 2</div>
+        <div class="form-title">What's your name?</div>
+        <div class="form-sub">This is how you'll appear across the Redmyre House system.</div>
+        <div class="invite-badge">
+          <div class="invite-dot"></div>
+          <span id="invitedEmailBadge">loading…</span>
+        </div>
+        <div class="error-msg" id="nameError"></div>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" id="nameInput" placeholder="e.g. Sarah Johnson" autocomplete="name">
+          <div class="form-hint">Use your real name — it will be visible to other members.</div>
+        </div>
+        <button class="submit-btn" id="nameBtn">
+          <div class="spinner" id="nameSpinner"></div>
+          <span id="nameBtnText">Continue →</span>
+        </button>
+      </div>
+
+      <!-- STEP 2: Password -->
+      <div class="screen" id="screenPassword">
+        <div class="form-eyebrow">Step 2 of 2</div>
+        <div class="form-title">Create a password</div>
+        <div class="form-sub">Choose a strong password to secure your account.</div>
+        <div class="error-msg" id="pwError"></div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input class="form-input" type="password" id="pwInput" placeholder="Minimum 8 characters" autocomplete="new-password">
+          <div class="pw-strength" id="pwStrength">
+            <div class="pw-bars">
+              <div class="pw-bar" id="bar1"></div>
+              <div class="pw-bar" id="bar2"></div>
+              <div class="pw-bar" id="bar3"></div>
+              <div class="pw-bar" id="bar4"></div>
+            </div>
+            <div class="pw-label" id="pwLabel">Too short</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-input" type="password" id="pwConfirmInput" placeholder="Repeat your password" autocomplete="new-password">
+        </div>
+        <button class="submit-btn" id="pwBtn">
+          <div class="spinner" id="pwSpinner"></div>
+          <span id="pwBtnText">Finish Setup →</span>
+        </button>
+        <div style="text-align:center;margin-top:16px">
+          <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" id="backToNameBtn">← Back</span>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="screen" id="screenSuccess">
+        <div class="success-icon">✅</div>
+        <div class="form-eyebrow">All done!</div>
+        <div class="form-title">Welcome to Redmyre House</div>
+        <div class="form-sub" style="margin-bottom:16px">Your account is set up and ready. You now have access as:</div>
+        <div class="role-pill" id="successRolePill">Member</div>
+        <div class="form-sub" style="margin-bottom:28px">
+          You're signed in as <strong id="successName">—</strong>.<br>
+          Head to the dashboard to get started.
+        </div>
+        <button class="submit-btn" onclick="window.location.href='/pages/dashboard.html'">Go to Dashboard →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { getSupabase } from '/js/auth.js';
+const supabase = await getSupabase();
+
+let currentUser = null;
+let currentRole = null;
+
+// Step indicator
+function setStep(num) {
+  const indicators = [
+    document.getElementById('step1Indicator'),
+    document.getElementById('step2Indicator'),
+    document.getElementById('step3Indicator'),
+    document.getElementById('step4Indicator'),
+  ];
+  indicators.forEach((el, i) => {
+    el.classList.remove('done','active','pending');
+    const numEl = el.querySelector('.step-num');
+    if (i < num-1)      { el.classList.add('done');    numEl.textContent = '✓'; }
+    else if (i === num-1){ el.classList.add('active');  numEl.textContent = i+1; }
+    else                 { el.classList.add('pending'); numEl.textContent = i+1; }
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const stepMap = { screenLoading:1, screenName:1, screenPassword:2, screenSuccess:4, screenInvalid:1 };
+  setStep(stepMap[id] || 1);
+}
+
+// Init
+async function init() {
+  await supabase.auth.getSession();
+  await supabase.auth.refreshSession();
+  const { data:{ session } } = await supabase.auth.getSession();
+  if (!session) { showScreen('screenInvalid'); return; }
+  currentUser = session.user;
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
+  if (profile?.full_name && profile?.setup_complete) { window.location.href = '/pages/dashboard.html'; return; }
+  document.getElementById('invitedEmailBadge').textContent = currentUser.email;
+  showScreen('screenName');
+}
+
+// Name step
+document.getElementById('nameBtn').addEventListener('click', submitName);
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') submitName(); });
+
+async function submitName() {
+  const name    = document.getElementById('nameInput').value.trim();
+  const errorEl = document.getElementById('nameError');
+  const btn     = document.getElementById('nameBtn');
+  const spinner = document.getElementById('nameSpinner');
+  const btnText = document.getElementById('nameBtnText');
+  errorEl.classList.remove('show');
+  if (!name || name.length < 2) {
+    errorEl.textContent = 'Please enter your full name (at least 2 characters).';
+    errorEl.classList.add('show');
+    document.getElementById('nameInput').classList.add('error');
+    return;
+  }
+  document.getElementById('nameInput').classList.remove('error');
+  btn.disabled=true; spinner.style.display='block'; btnText.textContent='Saving…';
+  try {
+    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, role:currentRole });
+    await supabase.auth.updateUser({ data:{ full_name:name } });
+    showScreen('screenPassword');
+  } catch(e) {
+    errorEl.textContent = e.message || 'Failed to save name. Please try again.';
+    errorEl.classList.add('show');
+  } finally {
+    btn.disabled=false; spinner.style.display='none'; btnText.textContent='Continue →';
+  }
+}
+
+// Password strength
+document.getElementById('pwInput').addEventListener('input', () => {
+  const pw = document.getElementById('pwInput').value;
+  const strength = document.getElementById('pwStrength');
+  const bars  = [document.getElementById('bar1'),document.getElementById('bar2'),document.getElementById('bar3'),document.getElementById('bar4')];
+  const label = document.getElementById('pwLabel');
+  if (!pw) { strength.classList.remove('visible'); return; }
+  strength.classList.add('visible');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/[0-9!@#$%^&*]/.test(pw)) score++;
+  bars.forEach((b,i) => {
+    b.className = 'pw-bar';
+    if (i < score) b.classList.add(score<=1?'fill-weak':score<=2?'fill-ok':'fill-good');
+  });
+  if (score<=1)      { label.textContent='Weak';   label.className='pw-label weak'; }
+  else if (score<=2) { label.textContent='Fair';   label.className='pw-label ok'; }
+  else if (score===3){ label.textContent='Good';   label.className='pw-label good'; }
+  else               { label.textContent='Strong'; label.className='pw-label good'; }
+});
+
+// Back button
+document.getElementById('backToNameBtn').addEventListener('click', () => showScreen('screenName'));
+
+// Password step
+document.getElementById('pwBtn').addEventListener('click', submitPassword);
+
+async function submitPassword() {
+  const pw    = document.getElementById('pwInput').value;
+  const pw2   = document.getElementById('pwConfirmInput').value;
+  const errorEl= document.getElementById('pwError');
+  const btn   = document.getElementById('pwBtn');
+  const spinner= document.getElementById('pwSpinner');
+  const btnText= document.getElementById('pwBtnText');
+  errorEl.classList.remove('show');
+  document.getElementById('pwInput').classList.remove('error');
+  document.getElementById('pwConfirmInput').classList.remove('error');
+  if (pw.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters.';
+    errorEl.classList.add('show');
+    document.getElementById('pwInput').classList.add('error');
+    return;
+  }
+  if (pw !== pw2) {
+    errorEl.textContent = 'Passwords do not match.';
+    errorEl.classList.add('show');
+    document.getElementById('pwConfirmInput').classList.add('error');
+    return;
+  }
+  btn.disabled=true; spinner.style.display='block'; btnText.textContent='Setting up…';
+  try {
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    if (error) throw error;
+    const name = document.getElementById('nameInput').value.trim();
+    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, role:currentRole, setup_complete:true });
+    showScreen('screenSuccess');
+    document.getElementById('successName').textContent = name;
+    const pill = document.getElementById('successRolePill');
+    pill.textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+    pill.className = `role-pill ${currentRole}`;
+    history.replaceState(null, '', window.location.pathname);
+  } catch(e) {
+    errorEl.textContent = e.message || 'Failed to set password. Please try again.';
+    errorEl.classList.add('show');
+  } finally {
+    btn.disabled=false; spinner.style.display='none'; btnText.textContent='Finish Setup →';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
