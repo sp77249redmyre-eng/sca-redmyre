@@ -250,7 +250,7 @@ export async function initLayout() {
   initCommonUtils();
 
   // STEP C: Supabase 인증 확인
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
