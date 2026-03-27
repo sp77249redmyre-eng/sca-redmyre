@@ -1,9 +1,3 @@
-
-bash
-
-cat /home/claude/refactor/js/layout.js
-출력
-
 /* ============================================================
    Redmyre BMS — Layout Controller (Central System Controller)
    /js/layout.js
