@@ -1,1 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --orange:#f97316;--orange-bg:#fff7ed;--orange-text:#9a3412;
+  --sidebar-w:232px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
+.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
+.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
+.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
+.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-building{font-size:17px;font-weight:600;color:#fff}
+.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
+.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
+.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
+.nav-item.active .nav-label{color:#fff}
+.nav-count{font-size:10px;font-weight:700;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 7px;border-radius:100px}
+.nav-count.urgent{background:rgba(239,68,68,0.3);color:#fca5a5}
+.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.page-title{font-size:16px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
+.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:11px;color:var(--muted)}
+.content{padding:24px;display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;display:inline-block;white-space:nowrap}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.badge-orange{background:var(--orange-bg);color:var(--orange-text)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-success{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;background:var(--green-bg);border:1px solid #a7f3d0;color:var(--green-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.report-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+.form-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.form-field{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block}
+.form-input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;text-transform:uppercase;letter-spacing:0.1em;font-weight:600}
+.form-input:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 3px rgba(239,68,68,0.1)}
+.form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.form-select:focus{border-color:var(--red);outline:none}
+.form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none;line-height:1.6}
+.form-textarea:focus{border-color:var(--red);background:#fff}
+.violation-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.vio-btn{padding:10px 8px;border-radius:9px;border:2px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;text-align:center;transition:all 0.15s;color:var(--text-2)}
+.vio-btn:hover{border-color:var(--red);color:var(--red-text)}
+.vio-btn.active{border-color:var(--red);background:var(--red-bg);color:var(--red-text)}
+.vio-icon{font-size:20px;margin-bottom:4px;display:block}
+.notice-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--red);display:inline-block;flex-shrink:0}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:5px 12px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.filter-btn.active{background:var(--red);border-color:var(--red);color:#fff}
+.parking-card{background:var(--surface);border:2px solid var(--red);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.parking-card.resolved{border-color:var(--border);opacity:0.75}
+.pk-header{background:var(--red);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.pk-header.resolved{background:var(--border-light)}
+.pk-plate{font-size:20px;font-weight:700;color:#fff;letter-spacing:0.15em;font-family:monospace}
+.pk-plate.resolved{color:var(--text-2)}
+.pk-time{font-size:11px;color:rgba(255,255,255,0.8)}
+.pk-time.resolved{color:var(--muted)}
+.pk-body{padding:14px 16px}
+.pk-location{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px}
+.pk-violation{display:inline-block;margin-bottom:8px}
+.pk-reporter{font-size:11px;color:var(--muted);margin-bottom:8px}
+.pk-comment{font-size:13px;color:var(--text-2);background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.5}
+.pk-actions{display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
 
+.photo-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  margin: 12px 0;
+  transition: all 0.2s;
+}
+.photo-upload-area:hover {
+  border-color: var(--red);
+  background: var(--red-bg);
+}
+.photo-preview {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  margin-top: 10px;
+  display: none;
+}
+
+@media(max-width:900px){.content{grid-template-columns:1fr}}
+/* 모바일 햄버거 메뉴 등 기존 스타일 유지 */
+.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .hamburger-btn{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .main{margin-left:0!important}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+}
+</style>
+</head>
+<body>
+
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <!-- 기존 사이드바 전체 그대로 -->
+  <div class="sb-header">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
+      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
+      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
+    </a>
+    <div class="sb-building">Redmyre House</div>
+    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
+  </div>
+  <nav class="sb-nav">
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <a href="parking.html" class="nav-item active"><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
+    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
+      <div class="sb-logout" onclick="handleLogout()">Log out</div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="main-topbar">
+    <div>
+      <div class="page-title">Parking</div>
+      <div class="breadcrumb">Redmyre House · Building Management System</div>
+    </div>
+    <div class="tb-right">
+      <div class="role-chip"><div class="role-dot" style="background:var(--red)"></div><span class="role-label" id="topbarRole">—</span></div>
+      <div class="user-chip">
+        <div class="u-avatar" id="topAvatar">?</div>
+        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="report-form">
+      <div class="form-title">🚨 Report Illegal Parking</div>
+      <div class="form-sub">All residents will be notified immediately. The vehicle owner will be publicly shamed until they move their car.</div>
+
+      <div class="form-field">
+        <label class="form-label">Number Plate</label>
+        <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Location</label>
+        <select class="form-select" id="locationArea" onchange="updateBayOptions()">
+          <option value="">Select area…</option>
+          <option value="entry">Entry</option>
+          <option value="ground">Ground Floor</option>
+          <option value="b1">B1</option>
+          <option value="b2">B2</option>
+        </select>
+      </div>
+
+      <div class="form-field" id="bayField" style="display:none">
+        <label class="form-label">Bay</label>
+        <select class="form-select" id="baySelect"></select>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Violation Type</label>
+        <div class="violation-grid">
+          <button class="vio-btn" onclick="selectVio(this,'occupied')" data-vio="occupied"><span class="vio-icon">🚫</span>Someone else's bay</button>
+          <button class="vio-btn" onclick="selectVio(this,'disabled')" data-vio="disabled"><span class="vio-icon">♿</span>Disabled bay</button>
+          <button class="vio-btn" onclick="selectVio(this,'loading')" data-vio="loading"><span class="vio-icon">🔴</span>Loading bay</button>
+          <button class="vio-btn" onclick="selectVio(this,'blocking')" data-vio="blocking"><span class="vio-icon">🚧</span>Blocking access</button>
+          <button class="vio-btn" onclick="selectVio(this,'contractor')" data-vio="contractor"><span class="vio-icon">🏗️</span>Contractor bay</button>
+          <button class="vio-btn" onclick="selectVio(this,'other')" data-vio="other"><span class="vio-icon">⚠️</span>Other</button>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Additional Comments (optional)</label>
+        <textarea class="form-textarea" id="pkComment" placeholder="Any additional details…"></textarea>
+      </div>
+
+     <!-- 사진 업로드 영역 -->
+      <div class="form-field">
+        <label class="form-label">Attach Photo (optional)</label>
+        <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+          📸 Click or tap to upload photo
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewImage(event)">
+        </div>
+        <img id="imagePreview" class="photo-preview" alt="Photo Preview">
+        <button class="btn-secondary" onclick="clearPhoto()" style="margin-top:8px; width:100%; display:none;" id="removeBtn">Remove Photo</button>
+      </div>
+
+      <button class="btn-primary" onclick="submitReport()">🚨 Report Now</button>
+    </div>
+    <div>
+      <div class="notice-header">
+        <div class="section-title">Active Incidents</div>
+        <span id="activeCount" style="font-size:13px;font-weight:600;color:var(--red-text)"></span>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterReports('active',this)">Active</button>
+        <button class="filter-btn" onclick="filterReports('all',this)">All</button>
+        <button class="filter-btn" onclick="filterReports('resolved',this)">Resolved</button>
+      </div>
+
+      <div id="reportsList">
+        <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const { data:{ session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+const user = session.user;
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const role = profile?.role || 'tenant';
+const name = profile?.full_name || user.email.split('@')[0];
+const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
+document.getElementById('sbName').textContent = name;
+document.getElementById('topName').textContent = name;
+const roleLabel = role.charAt(0).toUpperCase()+role.slice(1);
+document.getElementById('sbRole').textContent = roleLabel;
+document.getElementById('topRole').textContent = roleLabel;
+document.getElementById('topbarRole').textContent = roleLabel;
+
+const privileged = ['admin','committee','observer'];
+if (privileged.includes(role)) {
+  document.getElementById('quotesNav').style.display = 'flex';
+  document.getElementById('historyNav').style.display = 'flex';
+  document.getElementById('reportsNav').style.display = 'flex';
+}
+if (role === 'admin') document.getElementById('usersNav').style.display = 'flex';
+document.getElementById('adminSection').style.display = 'block';
+
+window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; 
+  t.style.background = isError?'#991b1b':'#0f172a';
+  t.style.display = 'block'; 
+  setTimeout(()=>t.style.display='none',3500);
+};
+
+const BAYS = { /* 기존 BAYS 객체 그대로 */ 
+  entry: ['Loading Bay 1', 'Loading Bay 2'],
+  ground: ['Disabled Bay 1', 'Disabled Bay 2', 'Contractor Bay', 'Management Bay', 'GF 1A','GF 1B','GF 1C','GF 1D','GF 1E','GF 1F','GF 1G','GF 1H','GF 2A','GF 2B','GF 2C','GF 2D','GF 2E','GF 2G','GF 2H'],
+  b1: ['B1 1A','B1 1B','B1 1C','B1 1D','B1 1E','B1 1F','B1 1G','B1 1H','B1 2A','B1 2B','B1 2C','B1 2D','B1 2E','B1 2F','B1 2G','B1 2H','B1 3A','B1 3B','B1 3C','B1 3D','B1 3E','B1 3F','B1 3G','B1 3H','B1 4A','B1 4B','B1 4C','B1 4D','B1 4E','B1 4F','B1 4G','B1 4H','B1 5A','B1 5B','B1 5C','B1 5D','B1 5E','B1 5F','B1 5G','B1 5H','B1 6A','B1 6B','B1 6C','B1 6D','B1 6E','B1 6F','B1 6G','B1 6H'],
+  b2: ['B2 1A','B2 1B','B2 1C','B2 1D','B2 1E','B2 1F','B2 1G','B2 1H','B2 2A','B2 2B','B2 2C','B2 2D','B2 2E','B2 2F','B2 2G','B2 2H','B2 3A','B2 3B','B2 3C','B2 3D','B2 3E','B2 3F','B2 3G','B2 3H','B2 4A','B2 4B','B2 4C','B2 4D','B2 4E','B2 4F','B2 4G','B2 4H','B2 5A','B2 5B','B2 5C','B2 5D','B2 5E','B2 5F','B2 5G','B2 5H','B2 6A','B2 6B','B2 6C','B2 6D','B2 6E','B2 6F','B2 6G','B2 6H']
+};
+
+const VIO_LABELS = {
+  occupied: "Someone else's bay",
+  disabled: "Disabled bay violation",
+  loading: "Loading bay violation",
+  blocking: "Blocking access",
+  contractor: "Contractor bay violation",
+  other: "Other violation",
+};
+
+let selectedVio = null;
+let currentFilter = 'active';
+let selectedFile = null;
+
+window.updateBayOptions = () => {
+  const area = document.getElementById('locationArea').value;
+  const bayField = document.getElementById('bayField');
+  const baySelect = document.getElementById('baySelect');
+  if (!area) { bayField.style.display='none'; return; }
+  bayField.style.display = 'block';
+  baySelect.innerHTML = BAYS[area].map(b=>`<option value="${b}">${b}</option>`).join('');
+};
+
+window.selectVio = (btn, vio) => {
+  selectedVio = vio;
+  document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.previewImage = (e) => {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('이미지 파일만 선택해주세요', true);
+    return;
+  }
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('imagePreview').src = ev.target.result;
+    document.getElementById('imagePreview').style.display = 'block';
+    document.getElementById('removeBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.clearPhoto = () => {
+  selectedFile = null;
+  document.getElementById('imagePreview').style.display = 'none';
+  document.getElementById('removeBtn').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+};
+
+window.submitReport = async () => {
+  const plate = document.getElementById('plateInput')
+  .value
+  .replace(/\s/g,'')   // 공백 제거
+  .toUpperCase();      // 대문자 통일
+  const area = document.getElementById('locationArea').value;
+  const bay = document.getElementById('baySelect').value || '';
+  const comment = document.getElementById('pkComment').value.trim();
+
+  if (!plate) { showToast('Please enter a number plate', true); return; }
+  if (!area) { showToast('Please select a location', true); return; }
+  if (!selectedVio) { showToast('Please select a violation type', true); return; }
+
+  const location = bay || area;
+  let image_url = null;
+
+  if (selectedFile) {
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${selectedFile.name.split('.').pop()}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('parking-images')
+      .upload(fileName, selectedFile, { cacheControl: '3600', upsert: false });
+
+    if (uploadError) {
+      showToast('사진 업로드 실패: ' + uploadError.message, true);
+      return;
+    }
+
+    const { data } = supabase.storage.from('parking-images').getPublicUrl(fileName);
+    image_url = data.publicUrl;
+  }
+
+  try {
+    const { error } = await supabase.from('parking_reports').insert({
+      plate,
+      location,
+      violation: selectedVio,
+      comment,
+      reported_by: user.id,
+      reporter_name: name,
+      status: 'active',
+      image_url: image_url
+    });
+
+    if (error) throw error;
+
+    showToast('Report submitted successfully! 🚨');
+    clearPhoto();
+
+    // 폼 초기화
+    document.getElementById('plateInput').value = '';
+    document.getElementById('locationArea').value = '';
+    document.getElementById('bayField').style.display = 'none';
+    document.getElementById('pkComment').value = '';
+    document.querySelectorAll('.vio-btn').forEach(b => b.classList.remove('active'));
+    selectedVio = null;
+
+    await loadReports();
+  } catch (e) {
+    showToast(e.message || 'Failed to submit report', true);
+  }
+};
+
+window.filterReports = (f, btn) => {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadReports();
+};
+
+window.resolveReport = async (id) => {
+  await supabase.from('parking_reports').update({status:'resolved', resolved_at: new Date().toISOString()}).eq('id', id);
+  showToast('Marked as resolved ✓');
+  await loadReports();
+};
+
+window.deleteReport = async (id) => {
+  if (!confirm('Delete this report?')) return;
+  await supabase.from('parking_reports').delete().eq('id', id);
+  showToast('Report deleted');
+  await loadReports();
+};
+
+async function loadReports() {
+
+  // 🔥 1. 상습범 먼저 가져오기
+  const { data: offenders } = await supabase
+    .from('repeat_offenders')
+    .select('plate');
+
+  const offenderSet = new Set((offenders || []).map(o => o.plate));
+
+  // 🔥 2. 기존 리포트 가져오기
+  let query = supabase
+    .from('parking_reports')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if (currentFilter === 'active') query = query.eq('status','active');
+  else if (currentFilter === 'resolved') query = query.eq('status','resolved');
+
+  const { data: reports } = await query;
+
+  // 🔥 3. active count
+  const { data: activeData } = await supabase
+    .from('parking_reports')
+    .select('id')
+    .eq('status','active');
+
+  const activeCount = activeData?.length || 0;
+  document.getElementById('activeCount').textContent = activeCount;
+
+  const list = document.getElementById('reportsList');
+
+  if (!reports || !reports.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">${currentFilter==='active'?'✅':'🚗'}</div>
+      <div class="empty-title">${currentFilter==='active'?'No active incidents!':'No reports found'}</div>
+    </div>`;
+    return;
+  }
+
+  // 🔥 4. 카드 렌더링 + 상습범 표시
+  list.innerHTML = reports.map(r => {
+    const isResolved = r.status === 'resolved';
+    const isRepeat = offenderSet.has(r.plate); // 🔥 핵심
+    const timeAgo = getTimeAgo(r.created_at);
+
+    let imageHtml = r.image_url ? 
+      `<img src="${r.image_url}" style="max-width:100%; border-radius:10px; margin:10px 0; border:2px solid var(--border);" onclick="window.open('${r.image_url}','_blank')">` : '';
+
+    return `
+      <div class="parking-card ${isResolved?'resolved':''}">
+        <div class="pk-header ${isResolved?'resolved':''}">
+          <div class="pk-plate ${isResolved?'resolved':''}">${r.plate}</div>
+          <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}</div>
+        </div>
+        <div class="pk-body">
+          
+          ${isRepeat ? `<div style="color:#ef4444;font-weight:700;margin-bottom:6px;">🚨 Repeat Offender</div>` : ''}
+
+          <div class="pk-location">📍 ${r.location}</div>
+
+          <div class="pk-violation">
+            <span class="badge ${isResolved?'badge-green':'badge-red'}">
+              ${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation}
+            </span>
+          </div>
+
+          ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
+          ${imageHtml}
+
+          <div class="pk-reporter">Reported by ${r.reporter_name||'Anonymous'}</div>
+
+          <div class="pk-actions">
+            ${!isResolved && role==='admin' ? `<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>` : ''}
+            ${role==='admin' ? `<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function getTimeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff/60000);
+  const hrs = Math.floor(mins/60);
+  const days = Math.floor(hrs/24);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${days}d ago`;
+}
+
+await loadReports();
+
+// 모바일 햄버거 메뉴 (기존 그대로)
+(function(){
+  var btn=document.getElementById("hamburgerBtn");
+  var overlay=document.getElementById("sidebarOverlay");
+  var sidebar=document.querySelector(".sidebar");
+  if(!btn||!sidebar) return;
+  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
+  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
+  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
+  overlay.addEventListener("click",closeMenu);
+  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
+})();
+</script>
+</body>
+</html>

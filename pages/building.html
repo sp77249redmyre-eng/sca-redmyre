@@ -1,1 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Management – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --sidebar-w:232px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
+.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
+.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
+.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
+.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-building{font-size:17px;font-weight:600;color:#fff;letter-spacing:-0.2px}
+.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
+.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
+.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
+.nav-item.active .nav-label{color:#fff}
+.nav-count{font-size:10px;font-weight:700;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 7px;border-radius:100px}
+.nav-count.urgent{background:rgba(239,68,68,0.3);color:#fca5a5}
+.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.page-title{font-size:16px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
+.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:11px;color:var(--muted)}
+
+/* CONTENT */
+.content{padding:24px;display:flex;flex-direction:column;gap:24px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600)}
+
+/* SYSTEM CARDS */
+.systems-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.sys-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}
+.sys-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.07)}
+.sys-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sys-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.sys-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.sys-status{font-size:12px;font-weight:600;padding:4px 10px;border-radius:100px;display:inline-block}
+.sys-note{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.4}
+
+/* RECENT ACTIVITY */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.act-item{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s;cursor:pointer}
+.act-item:last-child{border-bottom:none}
+.act-item:hover{background:var(--bg)}
+.act-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.act-title{font-size:13px;font-weight:500}
+.act-meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* BADGE */
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-blue{background:var(--blue-50);color:var(--blue-700)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+
+/* BUTTONS */
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:20px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block}
+.modal-input{width:100%;height:44px;padding:0 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
+.modal-input:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-textarea{width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;resize:vertical}
+.modal-textarea:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-select{width:100%;height:44px;padding:0 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+
+@media(max-width:1100px){.systems-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)};.main{margin-left:0}}
+
+/* ===== MOBILE HAMBURGER MENU ===== */
+.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .hamburger-btn{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .main{margin-left:0!important}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{font-size:10px;display:none}
+  .tb-right{gap:6px}
+  .role-chip{padding:4px 8px}
+  .role-label{font-size:11px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
+}
+/* ===== END MOBILE ===== */
+</style>
+</head>
+<body>
+
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-header">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
+      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
+      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
+    </a>
+    <div class="sb-building">Redmyre House</div>
+    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
+  </div>
+  <nav class="sb-nav">
+    <a href="building.html" class="nav-item active"><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
+    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
+      <div class="sb-logout" onclick="handleLogout()">Log out</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="main-topbar">
+    <div>
+      <div class="page-title">Overview</div>
+      <div class="breadcrumb">Redmyre House · Building Management System</div>
+    </div>
+    <div class="tb-right">
+      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
+      <div class="user-chip">
+        <div class="u-avatar" id="topAvatar">?</div>
+        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW CARDS -->
+    <div>
+      <div class="section-hdr">
+        <div class="section-title">Overview</div>
+      </div>
+      <div class="systems-grid">
+
+        <!-- 카드 1: 최신 공지 -->
+        <a href="announcements.html" class="sys-card" style="text-decoration:none;color:inherit">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#eff6ff">📢</div>
+            <span class="badge badge-blue" id="annCardBadge">Announcement</span>
+          </div>
+          <div class="sys-name" id="annCardTitle">Loading…</div>
+          <div class="sys-note" id="annCardDate">—</div>
+        </a>
+
+        <!-- 카드 2: 주차 신고 -->
+        <a href="parking.html" class="sys-card" style="text-decoration:none;color:inherit" id="parkingCard">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#fef2f2">🚗</div>
+            <span id="parkingCardBadge" class="badge badge-green">All Clear</span>
+          </div>
+          <div class="sys-name" id="parkingCardTitle">Parking</div>
+          <div class="sys-note" id="parkingCardNote">No active incidents</div>
+        </a>
+
+        <!-- 카드 3: HVAC -->
+        <a href="hvac.html" class="sys-card" style="text-decoration:none;color:inherit">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#eff6ff">❄️</div>
+            <span id="hvacCardBadge" class="badge badge-green">All Good</span>
+          </div>
+          <div class="sys-name">HVAC / Temperature</div>
+          <div class="sys-note" id="hvacCardNote">No pending requests</div>
+        </a>
+
+        <!-- 카드 4: Ongoing Works -->
+        <a href="works.html" class="sys-card" style="text-decoration:none;color:inherit">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#fffbeb">🔧</div>
+            <span id="worksCardBadge" class="badge badge-blue">Works</span>
+          </div>
+          <div class="sys-name">Ongoing Works</div>
+          <div class="sys-note" id="worksCardNote">Loading…</div>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- BUILDING SYSTEMS -->
+    <div>
+      <div class="section-hdr">
+        <div class="section-title">Building Systems</div>
+        <button class="btn-primary" id="addCardBtn" style="display:none" onclick="openAddCard()">+ Add System</button>
+      </div>
+      <div class="systems-grid" id="systemsGrid">
+        <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">Loading…</div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+
+<!-- SYSTEM CARD MODAL -->
+<div class="modal-backdrop" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title" id="cardModalTitle">Edit System</div>
+    <input type="hidden" id="cardEditId">
+    <div class="modal-field">
+      <label class="modal-label">System Name</label>
+      <select class="modal-select" id="cardName" onchange="onSystemNameChange()">
+        <option value="">Select system…</option>
+        <option value="Lift">🛗 Lift</option>
+        <option value="HVAC">❄️ HVAC</option>
+        <option value="Fire Safety (AFSS)">🔥 Fire Safety (AFSS)</option>
+        <option value="Electrical">⚡ Electrical</option>
+        <option value="Garage / Car Park">🚗 Garage / Car Park</option>
+        <option value="Plumbing">💧 Plumbing</option>
+        <option value="Stormwater / Drainage">🌊 Stormwater / Drainage</option>
+        <option value="CCTV / Security">📹 CCTV / Security</option>
+        <option value="Access Control">🚪 Access Control</option>
+        <option value="Common Area Lighting">💡 Common Area Lighting</option>
+        <option value="Waste Management">♻️ Waste Management</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Status</label>
+      <select class="modal-select" id="cardStatus" onchange="onStatusChange()">
+        <option value="normal">Normal ✅</option>
+        <option value="inprog">In Progress 🔵</option>
+        <option value="monitor">Monitoring ⚠️</option>
+        <option value="pending">Pending 🟡</option>
+        <option value="urgent">Urgent 🔴</option>
+        <option value="investigation">Investigation 🟣</option>
+        <option value="done">Completed ✅</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Note</label>
+      <textarea class="modal-textarea" id="cardNote" style="min-height:100px" placeholder="Current status, ongoing works, notes…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteCardBtn" onclick="deleteCard()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('cardModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveCard()">Save →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Auth
+const { data:{ session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+const user = session.user;
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const role = profile?.role || 'observer';
+const name = profile?.full_name || user.email.split('@')[0];
+const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+// UI 업데이트
+['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
+document.getElementById('sbName').textContent = name;
+document.getElementById('topName').textContent = name;
+const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+document.getElementById('sbRole').textContent = roleLabel;
+document.getElementById('topRole').textContent = roleLabel;
+document.getElementById('topbarRole').textContent = roleLabel;
+
+// 역할별 메뉴 표시
+const privileged = ['admin','committee','observer'];
+if (privileged.includes(role)) {
+  document.getElementById('quotesNav').style.display = 'flex';
+  document.getElementById('reportsNav').style.display = 'flex';
+  document.getElementById('historyNav').style.display = 'flex';
+}
+if (role === 'admin') {
+  document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
+  document.getElementById('addCardBtn').style.display = 'inline-flex';
+}
+
+window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+window.openModal = id => document.getElementById(id).classList.add('open');
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
+};
+
+// 배지 카운트 로드
+try {
+  const { data: works } = await supabase.from('works').select('status');
+  const active = works?.filter(w=>w.status!=='done').length || 0;
+  const worksCountEl = document.getElementById('worksCount'); if (active > 0 && worksCountEl) { worksCountEl.textContent = active; worksCountEl.style.display = 'inline'; }
+  const { data: hvac } = await supabase.from('hvac_requests').select('status');
+  const pending = hvac?.filter(h=>h.status==='pending').length || 0;
+  const hvacCountEl = document.getElementById('hvacCount'); if (pending > 0 && hvacCountEl) { hvacCountEl.textContent = pending; hvacCountEl.style.display = 'inline'; }
+  const { data: quotes } = await supabase.from('quotes').select('status');
+  const pq = quotes?.filter(q=>q.status==='pending').length || 0;
+  const quotesCountEl = document.getElementById('quotesCount'); if (pq > 0 && quotesCountEl) { quotesCountEl.textContent = pq; quotesCountEl.style.display = 'inline'; }
+} catch(e) {}
+
+// SUMMARY CARDS
+async function loadSummaryCards() {
+  const grid = document.getElementById('summaryCards');
+  try {
+    // 최신 공지
+    const { data: anns } = await supabase.from('announcements').select('*').order('created_at',{ascending:false}).limit(1);
+    const ann = anns?.[0];
+
+    // 진행 중인 작업
+    const { data: works } = await supabase.from('works').select('status');
+    const activeWorks = works?.filter(w => w.status !== 'done').length || 0;
+
+    // 오늘 HVAC 대기
+    const today = new Date(); today.setHours(0,0,0,0);
+    const { data: hvac } = await supabase.from('hvac_requests').select('status,created_at');
+    const pendingHvac = hvac?.filter(h => h.status === 'pending').length || 0;
+
+    // 투표 대기 견적
+    const { data: quotes } = await supabase.from('quotes').select('status');
+    const pendingQuotes = quotes?.filter(q => q.status === 'pending').length || 0;
+
+    const annDate = ann ? new Date(ann.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const annTitle = ann ? ann.title : 'No announcements yet';
+    const annCat = ann?.category || 'general';
+    const CAT_EMOJI = {urgent:'🚨',maintenance:'🔧',meeting:'📅',reminder:'🔔',general:'📌'};
+
+    grid.innerHTML = `
+      <!-- Announcement -->
+      <a href="announcements.html" style="text-decoration:none">
+        <div class="sys-card" style="cursor:pointer">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#eff6ff;font-size:20px">📢</div>
+            <span style="font-size:11px;font-weight:600;color:var(--muted)">Latest</span>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Announcement</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:6px">${annTitle}</div>
+          <div style="font-size:11px;color:var(--muted)">${annDate}</div>
+        </div>
+      </a>
+
+      <!-- Active Works -->
+      <a href="works.html" style="text-decoration:none">
+        <div class="sys-card" style="cursor:pointer">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#fffbeb;font-size:20px">🔧</div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${activeWorks>0?'var(--yellow)':'var(--green)'}"></div>
+              <span style="font-size:11px;font-weight:600;color:${activeWorks>0?'var(--yellow-text)':'var(--green-text)'}">${activeWorks>0?'Active':'All Done'}</span>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Ongoing Works</div>
+          <div style="font-size:32px;font-weight:600;color:var(--text);letter-spacing:-2px;line-height:1">${activeWorks}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">work${activeWorks!==1?'s':''} in progress</div>
+        </div>
+      </a>
+
+      <!-- HVAC -->
+      <a href="hvac.html" style="text-decoration:none">
+        <div class="sys-card" style="cursor:pointer">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#eff6ff;font-size:20px">❄️</div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${pendingHvac>0?'var(--red)':'var(--green)'}"></div>
+              <span style="font-size:11px;font-weight:600;color:${pendingHvac>0?'var(--red-text)':'var(--green-text)'}">${pendingHvac>0?'Pending':'All Clear'}</span>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">HVAC Requests</div>
+          <div style="font-size:32px;font-weight:600;color:var(--text);letter-spacing:-2px;line-height:1">${pendingHvac}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">pending request${pendingHvac!==1?'s':''}</div>
+        </div>
+      </a>
+
+      <!-- Quotes -->
+      <a href="quotes.html" style="text-decoration:none">
+        <div class="sys-card" style="cursor:pointer">
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#ecfdf5;font-size:20px">💰</div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${pendingQuotes>0?'var(--yellow)':'var(--green)'}"></div>
+              <span style="font-size:11px;font-weight:600;color:${pendingQuotes>0?'var(--yellow-text)':'var(--green-text)'}">${pendingQuotes>0?'Awaiting Vote':'All Done'}</span>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Pending Quotes</div>
+          <div style="font-size:32px;font-weight:600;color:var(--text);letter-spacing:-2px;line-height:1">${pendingQuotes}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">quote${pendingQuotes!==1?'s':''} awaiting vote</div>
+        </div>
+      </a>
+    `;
+  } catch(e) {
+    grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">Failed to load</div>';
+  }
+}
+
+// OVERVIEW CARDS
+async function loadOverviewCards() {
+  // 카드 1: 최신 공지
+  try {
+    const { data: anns } = await supabase.from('announcements').select('*').order('created_at',{ascending:false}).limit(1);
+    if (anns && anns.length) {
+      const a = anns[0];
+      document.getElementById('annCardTitle').textContent = a.title;
+      document.getElementById('annCardDate').textContent = new Date(a.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+      if (a.pinned) document.getElementById('annCardBadge').textContent = '📌 Pinned';
+    } else {
+      document.getElementById('annCardTitle').textContent = 'No announcements yet';
+      document.getElementById('annCardDate').textContent = '—';
+    }
+  } catch(e){}
+
+  // 카드 2: 주차 신고
+  try {
+    const { data: parking } = await supabase.from('parking_reports').select('*').eq('status','active').order('created_at',{ascending:false});
+    const count = parking?.length || 0;
+    if (count > 0) {
+      const latest = parking[0];
+      document.getElementById('parkingCardBadge').className = 'badge badge-red';
+      document.getElementById('parkingCardBadge').textContent = `${count} Active`;
+      document.getElementById('parkingCardTitle').textContent = `🚨 ${latest.plate}`;
+      document.getElementById('parkingCardNote').textContent = `${latest.location} — ${latest.violation === 'disabled' ? 'Disabled bay' : latest.violation === 'occupied' ? "Someone's bay" : latest.violation}`;
+    } else {
+      document.getElementById('parkingCardBadge').className = 'badge badge-green';
+      document.getElementById('parkingCardBadge').textContent = 'All Clear';
+      document.getElementById('parkingCardTitle').textContent = 'Parking';
+      document.getElementById('parkingCardNote').textContent = 'No active incidents 🎉';
+    }
+  } catch(e){}
+
+  // 카드 3: HVAC
+  try {
+    const { data: hvac } = await supabase.from('hvac_requests').select('*').eq('status','pending');
+    const count = hvac?.length || 0;
+    if (count > 0) {
+      document.getElementById('hvacCardBadge').className = 'badge badge-yellow';
+      document.getElementById('hvacCardBadge').textContent = `${count} Pending`;
+      document.getElementById('hvacCardNote').textContent = `${hvac.filter(h=>h.type==='hot').length} too hot · ${hvac.filter(h=>h.type==='cold').length} too cold`;
+    } else {
+      document.getElementById('hvacCardBadge').className = 'badge badge-green';
+      document.getElementById('hvacCardBadge').textContent = 'All Good';
+      document.getElementById('hvacCardNote').textContent = 'No pending requests';
+    }
+  } catch(e){}
+
+  // 카드 4: Works
+  try {
+    const { data: works } = await supabase.from('works').select('status,title');
+    const active = works?.filter(w=>w.status!=='done') || [];
+    const urgent = active.filter(w=>w.status==='urgent');
+    document.getElementById('worksCardBadge').className = urgent.length ? 'badge badge-red' : active.length ? 'badge badge-yellow' : 'badge badge-green';
+    document.getElementById('worksCardBadge').textContent = urgent.length ? `${urgent.length} Urgent` : `${active.length} Active`;
+    document.getElementById('worksCardNote').textContent = active.length
+      ? `${active.length} work${active.length!==1?'s':''} in progress`
+      : 'All works completed ✓';
+  } catch(e){}
+}
+
+// RECENT WORKS
+async function loadRecentWorks() {
+  const { data } = await supabase.from('works').select('*').order('updated_at',{ascending:false}).limit(5);
+  const card = document.getElementById('recentWorksCard');
+  if (!data || !data.length) {
+    card.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No works recorded yet.</div>';
+    return;
+  }
+  const STATUS_COLORS = {inprog:'var(--blue-600)',scheduled:'var(--muted)',review:'var(--yellow)',quoting:'var(--yellow)',pending:'var(--yellow)',urgent:'var(--red)',legal:'var(--red)',done:'var(--green)'};
+  const STATUS_LABELS = {inprog:'In Progress',scheduled:'Scheduled',review:'Under Review',quoting:'Quoting',pending:'Pending',urgent:'Urgent',legal:'Legal',done:'Done'};
+  const STATUS_CLS = {inprog:'badge-blue',scheduled:'badge-gray',review:'badge-yellow',quoting:'badge-yellow',pending:'badge-yellow',urgent:'badge-red',legal:'badge-red',done:'badge-green'};
+  card.innerHTML = data.map(w => `
+    <div class="act-item" onclick="window.location.href='works.html'">
+      <div class="act-dot" style="background:${STATUS_COLORS[w.status]||'var(--muted)'}"></div>
+      <div style="flex:1">
+        <div class="act-title">${w.title}</div>
+        <div class="act-meta">${w.contractor||''} · ${new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      </div>
+      <span class="badge ${STATUS_CLS[w.status]||'badge-gray'}">${STATUS_LABELS[w.status]||w.status}</span>
+    </div>`).join('');
+}
+
+await loadOverviewCards();
+
+// BUILDING SYSTEM CARDS
+const STATUS_MAP = {
+  normal:{label:'Normal',bg:'var(--green-bg)',c:'var(--green-text)',dot:'var(--green)'},
+  inprog:{label:'In Progress',bg:'var(--blue-50)',c:'var(--blue-700)',dot:'var(--blue-600)'},
+  monitor:{label:'Monitoring',bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)'},
+  pending:{label:'Pending',bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)'},
+  investigation:{label:'Investigation',bg:'#ede9fe',c:'#5b21b6',dot:'#8b5cf6'},
+  urgent:{label:'Urgent',bg:'var(--red-bg)',c:'var(--red-text)',dot:'var(--red)'},
+  done:{label:'Completed',bg:'var(--green-bg)',c:'var(--green-text)',dot:'var(--green)'},
+};
+const DEFAULT_CARDS = [
+  {id:'d0',name:'Lift System',icon:'🛗',icon_bg:'#fffbeb',status:'monitor',note:'Lift 2 re-attended 16 Mar after entrapment incident. No fault found. TK Elevators monitoring.'},
+  {id:'d1',name:'HVAC System',icon:'❄️',icon_bg:'#eff6ff',status:'inprog',note:'L4 condenser done. L1, L5, L6 works pending scheduling by Voyager.'},
+  {id:'d2',name:'Fire Safety (AFSS)',icon:'🔥',icon_bg:'#fef2f2',status:'pending',note:'Annual Fire Safety Statement inspection due. Rectification works to follow.'},
+  {id:'d3',name:'Electrical',icon:'⚡',icon_bg:'#fffbeb',status:'investigation',note:'Switchboard circuit labelling incomplete. Timer wiring fault under investigation.'},
+];
+let cardsData = [];
+let editingCardIdx = null;
+
+async function loadCards() {
+  const grid = document.getElementById('systemsGrid');
+  try {
+    const { data, error } = await supabase.from('building_cards').select('*').order('position');
+    if (error) { cardsData = DEFAULT_CARDS; }
+    else if (!data || data.length === 0) {
+      const toInsert = DEFAULT_CARDS.map((c, i) => ({
+        name: c.name, icon: c.icon, icon_bg: c.icon_bg,
+        status: c.status, note: c.note, position: i
+      }));
+      const { data: inserted } = await supabase.from('building_cards').insert(toInsert).select();
+      cardsData = inserted || DEFAULT_CARDS;
+    } else {
+      cardsData = data;
+    }
+  } catch(e) { cardsData = DEFAULT_CARDS; }
+  grid.innerHTML = cardsData.map((c,i) => {
+    const st = STATUS_MAP[c.status] || STATUS_MAP.normal;
+    return `
+      <div class="sys-card" ${role==='admin'?`onclick="openEditCard(${i})"`:'style="cursor:default"'}>
+        <div class="sys-top">
+          <div class="sys-icon" style="background:${c.icon_bg||'#f1f5f9'}">${c.icon||'🔧'}</div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${st.dot}"></div>
+            <span style="font-size:11px;font-weight:600;color:${st.c}">${st.label}</span>
+          </div>
+        </div>
+        <div class="sys-name">${c.name}</div>
+        <div class="sys-status" style="background:${st.bg};color:${st.c}">${st.label}</div>
+        <div class="sys-note">${c.note||''}</div>
+        ${role==='admin'?'<div style="font-size:10px;color:var(--muted);margin-top:6px">Click to edit</div>':''}
+      </div>`;
+  }).join('');
+}
+
+window.openAddCard = () => {
+  editingCardIdx = null;
+  document.getElementById('cardModalTitle').textContent = 'Add System';
+  document.getElementById('cardEditId').value = '';
+  document.getElementById('cardName').value = '';
+  document.getElementById('cardStatus').value = 'normal';
+  document.getElementById('cardNote').value = '';
+  document.getElementById('deleteCardBtn').style.display = 'none';
+  document.getElementById('cardModal').classList.add('open');
+};
+
+window.openEditCard = (i) => {
+  if (role !== 'admin') return;
+  editingCardIdx = i;
+  const c = cardsData[i];
+  document.getElementById('cardModalTitle').textContent = 'Edit System';
+  document.getElementById('cardEditId').value = c.id||'';
+  document.getElementById('cardName').value = c.name||'';
+  document.getElementById('cardStatus').value = c.status||'normal';
+  document.getElementById('cardNote').value = c.note||'';
+  document.getElementById('deleteCardBtn').style.display = 'inline-flex';
+  document.getElementById('cardModal').classList.add('open');
+};
+
+window.saveCard = async () => {
+  const sysName = document.getElementById('cardName').value;
+  const status = document.getElementById('cardStatus').value;
+  const data = {
+    name: sysName,
+    icon: SYSTEM_ICONS[sysName] || '🔧',
+    icon_bg: STATUS_BG_COLORS[status] || '#f1f5f9',
+    status: status,
+    note: document.getElementById('cardNote').value.trim(),
+    position: editingCardIdx !== null ? editingCardIdx : cardsData.length,
+  };
+  if (!data.name) { showToast('Please enter a system name', true); return; }
+  try {
+    const id = document.getElementById('cardEditId').value;
+    if (id && !id.startsWith('d')) {
+      await supabase.from('building_cards').update(data).eq('id', id);
+    } else {
+      await supabase.from('building_cards').insert(data);
+    }
+    closeModal('cardModal'); await loadCards(); showToast('System card saved ✓');
+  } catch(e) { showToast(e.message||'Failed to save', true); }
+};
+
+const SYSTEM_ICONS = {
+  'Lift': '🛗',
+  'HVAC': '❄️',
+  'Fire Safety (AFSS)': '🔥',
+  'Electrical': '⚡',
+  'Garage / Car Park': '🚗',
+  'Plumbing': '💧',
+  'Stormwater / Drainage': '🌊',
+  'CCTV / Security': '📹',
+  'Access Control': '🚪',
+  'Common Area Lighting': '💡',
+  'Waste Management': '♻️',
+};
+
+const STATUS_BG_COLORS = {
+  normal: '#ecfdf5',
+  inprog: '#eff6ff',
+  monitor: '#fffbeb',
+  pending: '#fffbeb',
+  urgent: '#fef2f2',
+  investigation: '#ede9fe',
+  done: '#ecfdf5',
+};
+
+window.onSystemNameChange = () => {
+  const name = document.getElementById('cardName').value;
+  // 아이콘은 내부적으로만 사용 (표시 안 함)
+};
+
+window.onStatusChange = () => {
+  // 배경색 자동 변경 — 저장할 때 자동 적용
+};
+
+window.deleteCard = async () => {
+  if (!confirm('Delete this system card?')) return;
+  const id = document.getElementById('cardEditId').value;
+  if (id && !id.startsWith('d')) await supabase.from('building_cards').delete().eq('id', id);
+  closeModal('cardModal'); await loadCards(); showToast('Card deleted');
+};
+
+await loadCards();
+
+// Mobile hamburger menu
+(function(){
+  var btn=document.getElementById("hamburgerBtn");
+  var overlay=document.getElementById("sidebarOverlay");
+  var sidebar=document.querySelector(".sidebar");
+  if(!btn||!sidebar) return;
+  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
+  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
+  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
+  overlay.addEventListener("click",closeMenu);
+  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
+})();
+</script>
+</body>
+</html>

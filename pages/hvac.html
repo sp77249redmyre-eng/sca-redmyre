@@ -1,1 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVAC / Temperature – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --sidebar-w:232px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
+.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
+.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
+.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
+.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-building{font-size:17px;font-weight:600;color:#fff}
+.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
+.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
+.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
+.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
+.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
+.nav-item.active .nav-label{color:#fff}
+.nav-count{font-size:10px;font-weight:700;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 7px;border-radius:100px}
+.nav-count.urgent{background:rgba(239,68,68,0.3);color:#fca5a5}
+.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
+.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
+.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.page-title{font-size:16px;font-weight:600}
+.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
+.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
+.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.u-name{font-size:13px;font-weight:500}
+.u-role{font-size:11px;color:var(--muted)}
+.content{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.content.admin-layout{grid-template-columns:1fr 1.2fr}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600)}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-blue{background:var(--blue-50);color:var(--blue-700)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
+.btn-success{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--green-bg);border:1px solid #a7f3d0;color:var(--green-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 
+/* SUBMIT FORM */
+.submit-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+.form-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.type-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.type-btn{padding:20px 16px;border-radius:12px;border:2px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s;text-align:center;font-family:'DM Sans',sans-serif}
+.type-btn:hover{border-color:var(--blue-400);background:var(--blue-50)}
+.type-btn.hot{border-color:#ef4444;background:#fef2f2}
+.type-btn.cold{border-color:#3b82f6;background:#eff6ff}
+.type-icon{font-size:36px;margin-bottom:8px}
+.type-label{font-size:14px;font-weight:600}
+.type-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.form-field{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block}
+.form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.form-select:focus{border-color:var(--blue-600);outline:none}
+.form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none}
+.form-textarea:focus{border-color:var(--blue-600)}
+
+/* PENDING ROW */
+.req-row{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border-light)}
+.req-row:last-child{border-bottom:none}
+.req-info{flex:1}
+.req-title{font-size:13px;font-weight:600}
+.req-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.req-comment{font-size:11px;color:var(--text-2);margin-top:3px;font-style:italic}
+.req-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* TEMP LIMITS */
+.limits-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--bg);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
+.limits-bar label{font-size:12px;color:var(--muted);font-weight:500}
+.limits-input{width:64px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;text-align:center}
+.limits-save{padding:6px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* MY REQUESTS */
+.my-req-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-light)}
+.my-req-row:last-child{border-bottom:none}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+@media(max-width:900px){.content{grid-template-columns:1fr}}
+
+/* ===== MOBILE HAMBURGER MENU ===== */
+.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .hamburger-btn{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .main{margin-left:0!important}
+  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .page-title{font-size:14px}
+  .breadcrumb{font-size:10px;display:none}
+  .tb-right{gap:6px}
+  .role-chip{padding:4px 8px}
+  .role-label{font-size:11px}
+  .user-chip{padding:3px 8px 3px 3px}
+  .u-avatar{width:26px;height:26px;font-size:10px}
+  .u-name{font-size:12px}
+  .u-role{display:none}
+}
+/* ===== END MOBILE ===== */
+</style>
+</head>
+<body>
+
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="sb-header">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
+      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
+      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
+    </a>
+    <div class="sb-building">Redmyre House</div>
+    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
+  </div>
+  <nav class="sb-nav">
+    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
+    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
+    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
+    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
+    <a href="hvac.html" class="nav-item active"><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
+    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
+    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
+    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
+    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
+    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
+    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
+    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
+    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
+      <div class="sb-logout" onclick="handleLogout()">Log out</div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="main-topbar">
+    <div>
+      <div class="page-title">HVAC / Temperature</div>
+      <div class="breadcrumb">Redmyre House · Building Management System</div>
+    </div>
+    <div class="tb-right">
+      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
+      <div class="user-chip">
+        <div class="u-avatar" id="topAvatar">?</div>
+        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="mainContent">
+
+    <!-- 왼쪽: 불만 접수 폼 -->
+    <div class="submit-form">
+      <div class="form-title">Report a Temperature Issue</div>
+      <div class="form-sub">Select your issue and location. Building management will review and adjust automatically.</div>
+
+      <div class="type-btns">
+        <button class="type-btn" id="btnHot" onclick="selectType('hot')">
+          <div class="type-icon">🥵</div>
+          <div class="type-label">Too Hot</div>
+          <div class="type-sub">Temperature will be lowered</div>
+        </button>
+        <button class="type-btn" id="btnCold" onclick="selectType('cold')">
+          <div class="type-icon">🥶</div>
+          <div class="type-label">Too Cold</div>
+          <div class="type-sub">Temperature will be raised</div>
+        </button>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Floor</label>
+        <select class="form-select" id="hvacLevel">
+          <option value="">Select floor…</option>
+          <option>Level 1</option><option>Level 2</option><option>Level 3</option>
+          <option>Level 4</option><option>Level 5</option><option>Level 6</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Tenancy</label>
+        <select class="form-select" id="hvacTenancy">
+          <option value="">Select tenancy…</option>
+          <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
+          <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
+          <option>Tenancy G</option><option>Tenancy H</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Additional Comments (optional)</label>
+        <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
+      </div>
+      <button class="btn-primary" onclick="submitRequest()">Submit Request →</button>
+    </div>
+
+    <!-- 오른쪽: Admin 패널 또는 내 요청 -->
+    <div id="rightPanel">
+      <!-- Admin -->
+      <div id="adminPanel" style="display:none">
+        <!-- 온도 제한 -->
+        <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
+        <div class="limits-bar">
+          <label>Min</label>
+          <input type="number" class="limits-input" id="tempMin" value="20" min="15" max="30">
+          <label>°C &nbsp;&nbsp; Max</label>
+          <input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
+          <label>°C</label>
+          <button class="limits-save" onclick="saveLimits()">Save</button>
+          <span style="font-size:11px;color:var(--muted);margin-left:4px">Applied to all adjustments</span>
+        </div>
+
+        <!-- Pending -->
+        <div class="section-hdr" style="margin-top:4px">
+          <div class="section-title">Pending Requests</div>
+          <span id="pendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
+        </div>
+        <div class="card" id="pendingList">
+          <div class="empty-state">No pending requests 🎉</div>
+        </div>
+
+        <!-- Completed -->
+        <div class="section-hdr" style="margin-top:16px">
+          <div class="section-title">Recently Completed</div>
+        </div>
+        <div class="card" id="completedList">
+          <div class="empty-state">No completed requests yet</div>
+        </div>
+      </div>
+
+      <!-- Non-admin: my requests -->
+      <div id="userPanel" style="display:none">
+        <div class="section-hdr"><div class="section-title">My Requests</div></div>
+        <div class="card" id="myList">
+          <div class="empty-state">No requests submitted yet</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const { data:{ session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+const user = session.user;
+const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+const role = profile?.role || 'observer';
+const name = profile?.full_name || user.email.split('@')[0];
+const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
+document.getElementById('sbName').textContent = name;
+document.getElementById('topName').textContent = name;
+const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+document.getElementById('sbRole').textContent = roleLabel;
+document.getElementById('topRole').textContent = roleLabel;
+document.getElementById('topbarRole').textContent = roleLabel;
+
+const privileged = ['admin','committee','observer'];
+if (privileged.includes(role)) {
+  document.getElementById('quotesNav').style.display = 'flex';
+  document.getElementById('reportsNav').style.display = 'flex';
+  document.getElementById('historyNav').style.display = 'flex';
+}
+if (role === 'admin') {
+  document.getElementById('usersNav').style.display = 'flex';
+  document.getElementById('adminSection').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'block';
+  loadAdminData();
+} else {
+  document.getElementById('userPanel').style.display = 'block';
+  loadMyRequests();
+}
+
+window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = isError?'#991b1b':'#0f172a';
+  t.style.display = 'block'; setTimeout(()=>t.style.display='none',3000);
+};
+
+let selectedType = null;
+
+window.selectType = (type) => {
+  selectedType = type;
+  document.getElementById('btnHot').className = 'type-btn' + (type==='hot'?' hot':'');
+  document.getElementById('btnCold').className = 'type-btn' + (type==='cold'?' cold':'');
+};
+
+window.submitRequest = async () => {
+  if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
+  const level = document.getElementById('hvacLevel').value;
+  const tenancy = document.getElementById('hvacTenancy').value;
+  if (!level || !tenancy) { showToast('Please select floor and tenancy', true); return; }
+  try {
+    await supabase.from('hvac_requests').insert({
+      user_id: user.id,
+      user_name: name,
+      type: selectedType,
+      level, tenancy,
+      comment: document.getElementById('hvacComment').value.trim(),
+      status: 'pending',
+    });
+    showToast('Request submitted! Building management will review shortly ✓');
+    selectedType = null;
+    document.getElementById('btnHot').className = 'type-btn';
+    document.getElementById('btnCold').className = 'type-btn';
+    document.getElementById('hvacLevel').value = '';
+    document.getElementById('hvacTenancy').value = '';
+    document.getElementById('hvacComment').value = '';
+    if (role !== 'admin') await loadMyRequests();
+  } catch(e) { showToast(e.message||'Failed to submit', true); }
+};
+
+async function loadAdminData() {
+  // Load temp limits
+  try {
+    const { data: settings } = await supabase.from('settings').select('*').in('key',['temp_min','temp_max']);
+    settings?.forEach(s => {
+      if (s.key==='temp_min') document.getElementById('tempMin').value = s.value;
+      if (s.key==='temp_max') document.getElementById('tempMax').value = s.value;
+    });
+  } catch(e){}
+
+  // Pending
+  const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
+  const pList = document.getElementById('pendingList');
+  const pCount = document.getElementById('pendingCount');
+  if (!pending?.length) {
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>';
+    pCount.textContent = '';
+  } else {
+    pCount.textContent = `${pending.length} pending`;
+    pList.innerHTML = pending.map(r => `
+      <div class="req-row">
+        <div style="font-size:22px">${r.type==='hot'?'🥵':'🥶'}</div>
+        <div class="req-info">
+          <div class="req-title">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div class="req-meta">${r.user_name||'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          ${r.comment?`<div class="req-comment">"${r.comment}"</div>`:''}
+        </div>
+        <div class="req-actions">
+          <button class="btn-success" onclick="approveReq('${r.id}','${r.type}','${r.level}','${r.tenancy}')">Approve ✓</button>
+          <button class="btn-danger" onclick="rejectReq('${r.id}')">Reject</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Completed
+  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status',['completed','failed','rejected']).order('created_at',{ascending:false}).limit(10);
+  const cList = document.getElementById('completedList');
+  if (!completed?.length) {
+    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>';
+  } else {
+    cList.innerHTML = completed.map(r => `
+      <div class="my-req-row">
+        <div style="font-size:18px">${r.type==='hot'?'🥵':'🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name||'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <span class="badge ${r.status==='completed'?'badge-green':r.status==='rejected'?'badge-red':'badge-gray'}">${r.status}</span>
+      </div>`).join('');
+  }
+}
+
+window.saveLimits = async () => {
+  const min = parseInt(document.getElementById('tempMin').value);
+  const max = parseInt(document.getElementById('tempMax').value);
+  if (min >= max) { showToast('Min must be less than Max', true); return; }
+  try {
+    await supabase.from('settings').upsert({key:'temp_min',value:String(min)},{onConflict:'key'});
+    await supabase.from('settings').upsert({key:'temp_max',value:String(max)},{onConflict:'key'});
+    showToast(`Limits saved: ${min}°C – ${max}°C ✓`);
+  } catch(e) { showToast('Failed to save limits', true); }
+};
+
+window.approveReq = async (id, type, level, tenancy) => {
+  if (!confirm(`Approve?\n${type==='hot'?'🥵 Too Hot → -1°C':'🥶 Too Cold → +1°C'}\n${level}, ${tenancy}`)) return;
+  await supabase.from('hvac_requests').update({status:'approved',approved_at:new Date().toISOString()}).eq('id',id);
+  showToast('Approved! Temperature adjustment queued ✓');
+  await loadAdminData();
+};
+
+window.rejectReq = async (id) => {
+  if (!confirm('Reject this request?')) return;
+  await supabase.from('hvac_requests').update({status:'rejected'}).eq('id',id);
+  showToast('Request rejected');
+  await loadAdminData();
+};
+
+async function loadMyRequests() {
+  const { data } = await supabase.from('hvac_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20);
+  const list = document.getElementById('myList');
+  if (!data?.length) {
+    list.innerHTML = '<div class="empty-state">No requests submitted yet</div>';
+    return;
+  }
+  list.innerHTML = data.map(r => `
+    <div class="my-req-row">
+      <div style="font-size:20px">${r.type==='hot'?'🥵':'🥶'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+        <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        ${r.comment?`<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>`:''}
+      </div>
+      <span class="badge ${r.status==='pending'?'badge-yellow':r.status==='completed'?'badge-green':r.status==='approved'?'badge-blue':'badge-red'}">${r.status}</span>
+    </div>`).join('');
+}
+
+// Mobile hamburger menu
+(function(){
+  var btn=document.getElementById("hamburgerBtn");
+  var overlay=document.getElementById("sidebarOverlay");
+  var sidebar=document.querySelector(".sidebar");
+  if(!btn||!sidebar) return;
+  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
+  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
+  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
+  overlay.addEventListener("click",closeMenu);
+  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
+})();
+</script>
+</body>
+</html>
