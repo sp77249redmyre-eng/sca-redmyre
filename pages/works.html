@@ -13,532 +13,608 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+}
+.content{padding:24px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600)}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block;white-space:nowrap}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-blue{background:var(--blue-50);color:var(--blue-700)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--red-bg);border:1px solid #fecaca;color:var(--red-text);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.filter-btn.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
+.works-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.work-row{display:grid;grid-template-columns:120px 1fr 130px 110px auto;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 0.12s}
+.work-row:last-child{border-bottom:none}
+.work-row:hover{background:var(--bg)}
+.work-num{min-width:92px;height:36px;padding:0 8px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);font-family:monospace;flex-shrink:0;text-align:center;line-height:1.1}
+.work-title-text{font-size:13px;font-weight:600}
+.work-meta-text{font-size:11px;color:var(--muted);margin-top:2px}
+.work-accordion{display:none;background:var(--bg);border-top:1px solid var(--border-light);padding:18px 20px;animation:slideDown 0.2s ease}
+.work-accordion.open{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:22px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:block}
+.modal-input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
+.modal-input:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-textarea{width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;resize:vertical;line-height:1.6}
+.modal-textarea:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.modal-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.private-hint{font-size:12px;color:#92400e;background:#fef9f0;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;margin-top:6px}
+.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+.photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;margin-top:4px;background:var(--bg)}
+.photo-upload-area:hover{border-color:var(--blue-600);background:var(--blue-50)}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:10px}
+.photo-preview-item{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.photo-preview-item .remove-photo{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px}
+.photo-gallery-item{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer;background:var(--bg)}
+.photo-gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.15s}
+.photo-gallery-item:hover img{transform:scale(1.05)}
+.photo-gallery-item .delete-photo-btn{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer;border:none}
+.photo-gallery-item:hover .delete-photo-btn{display:flex}
+.photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;align-items:center;justify-content:center}
+.photo-lightbox.open{display:flex}
+.photo-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
+.photo-lightbox-close{position:fixed;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1001;line-height:1}
+.quote-files-section{margin-top:12px;padding:14px;background:#fef9f0;border:1px solid #fed7aa;border-radius:10px}
+.quote-files-label{font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.quote-file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:1px solid #fed7aa;border-radius:8px;font-size:12px;margin-bottom:5px}
+.quote-file-item:last-child{margin-bottom:0}
+.quote-file-item a{flex:1;color:#92400e;font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quote-file-item a:hover{text-decoration:underline}
+.work-files-section{margin-top:12px}
+.work-files-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
+@media(max-width:900px){.work-row{grid-template-columns:120px 1fr auto auto}}
+</style>
 </head>
 <body>
-
 <div id="sidebarPlaceholder"></div>
-
-<main class="main">
+<div class="main">
   <div id="topbarPlaceholder"></div>
-  
   <div class="content">
-    
-    <!-- Section Header -->
     <div class="section-hdr">
       <div class="section-title">Ongoing Works</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-secondary" id="btnNewWork" style="display:none">+ New Work</button>
-        <button class="btn-primary" id="btnEmergency" style="display:none">🔥 Emergency Work</button>
+      <button class="btn-primary" id="addWorkBtn" style="display:none">+ Add Work</button>
+      <button class="btn-secondary" id="syncQuotesBtn" style="display:none" title="Import all approved quotes as works">↻ Sync Quotes</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total Active</div></div>
+      <div class="stat-card"><div class="stat-num" id="statUrgent" style="color:var(--red)">—</div><div class="stat-label">Urgent</div></div>
+      <div class="stat-card"><div class="stat-num" id="statInprog" style="color:var(--yellow)">—</div><div class="stat-label">In Progress</div></div>
+      <div class="stat-card"><div class="stat-num" id="statDone" style="color:var(--green)">—</div><div class="stat-label">Completed</div></div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="urgent">🔴 Urgent</button>
+      <button class="filter-btn" data-filter="inprog">🔵 In Progress</button>
+      <button class="filter-btn" data-filter="scheduled">📅 Scheduled</button>
+      <button class="filter-btn" data-filter="done">✅ Completed</button>
+    </div>
+
+    <!-- WORKS LIST -->
+    <div class="works-card">
+      <div id="worksList">
+        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
       </div>
     </div>
 
-    <!-- Works List -->
-    <div class="works-card" id="worksList">
-      <div style="padding:40px;text-align:center;color:var(--muted)">Loading works...</div>
-    </div>
+  <input type="file" id="photoUploadInput" accept="image/*,application/pdf" multiple style="display:none">
 
+  <!-- LIGHTBOX -->
+  <div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
+    <div class="photo-lightbox-close" onclick="closeLightbox()">✕</div>
+    <img id="lightboxImg" src="" alt="">
   </div>
-</main>
 
-<!-- Work Modal -->
-<div class="modal-backdrop" id="workModal">
-  <div class="modal-box">
-    <div class="modal-title" id="workModalTitle">New Work</div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Project Name *</label>
-      <input type="text" class="modal-input" id="workProject" placeholder="e.g., Elevator Repair">
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Category *</label>
-      <select class="modal-select" id="workCategory">
-        <option value="">Select category</option>
-        <option value="Plumbing">Plumbing</option>
-        <option value="Electrical">Electrical</option>
-        <option value="HVAC">HVAC</option>
-        <option value="Elevator">Elevator</option>
-        <option value="Painting">Painting</option>
-        <option value="Cleaning">Cleaning</option>
-        <option value="Security">Security</option>
-        <option value="Landscaping">Landscaping</option>
-        <option value="General">General</option>
-      </select>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Cost (Ex GST) *</label>
-      <input type="number" class="modal-input" id="workCost" placeholder="0.00" step="0.01" min="0">
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Contractor *</label>
-      <select class="modal-select" id="workContractor">
-        <option value="">Select contractor</option>
-      </select>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Description</label>
-      <textarea class="modal-textarea" id="workDescription" placeholder="Work details..."></textarea>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Private Notes (Internal Only)</label>
-      <textarea class="modal-textarea" id="workNotes" placeholder="Internal notes..."></textarea>
-      <div class="private-hint">⚠️ This field is NOT visible to residents or contractors</div>
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Status</label>
-      <select class="modal-select" id="workStatus">
-        <option value="scheduled">Scheduled</option>
-        <option value="inprog">In Progress</option>
-        <option value="urgent">Urgent</option>
-      </select>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('workModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveWork()">Save Work</button>
-    </div>
-  </div>
-</div>
-
-<!-- Complete Modal -->
+<!-- COMPLETE MODAL -->
 <div class="modal-backdrop" id="completeModal">
-  <div class="modal-box">
-    <div class="modal-title">Mark as Completed</div>
-    
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title">✅ Complete & Move to Reports</div>
     <input type="hidden" id="completeWorkId">
-    
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:18px;line-height:1.6">This work will be marked as completed and will appear in Financial Reports.</p>
     <div class="modal-field">
-      <label class="modal-label">Completion Date *</label>
-      <input type="date" class="modal-input" id="completeDate">
+      <label class="modal-label">Completion Date</label>
+      <input class="modal-input" type="date" id="completeDate">
     </div>
-
     <div class="modal-field">
-      <label class="modal-label">Completion Notes</label>
-      <textarea class="modal-textarea" id="completeNotes" placeholder="Final notes about completion..."></textarea>
+      <label class="modal-label">Completion Notes (optional)</label>
+      <textarea class="modal-textarea" id="completeNotes" placeholder="Any final notes…" style="min-height:80px"></textarea>
     </div>
-
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('completeModal')">Cancel</button>
-      <button class="btn-primary" onclick="confirmComplete()">Complete Work</button>
+      <button class="btn-primary" onclick="confirmComplete()" style="background:linear-gradient(135deg,#065f46,#10b981)">✅ Mark Complete →</button>
     </div>
   </div>
 </div>
 
-<!-- Photo Lightbox -->
-<div class="modal-backdrop" id="photoLightbox" onclick="closeLightbox()">
-  <img id="lightboxImg" style="max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
-</div>
-
-<!-- File Upload Modal -->
-<div class="modal-backdrop" id="uploadModal">
+<!-- WORK MODAL -->
+<div class="modal-backdrop" id="workModal">
   <div class="modal-box">
-    <div class="modal-title">Upload Photos / Documents</div>
-    <input type="file" id="fileInput" multiple style="margin-bottom:16px">
+    <div class="modal-title" id="workModalTitle">Add Work</div>
+    <input type="hidden" id="workEditId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-field">
+        <label class="modal-label">Title</label>
+        <input class="modal-input" id="workTitle" placeholder="Work description…">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Contractor</label>
+        <select class="modal-select" id="workContractorSelect">
+          <option value="">Select contractor…</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Or enter custom contractor</label>
+        <input class="modal-input" id="workContractorCustom" placeholder="New contractor name...">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Status</label>
+        <select class="modal-select" id="workStatus">
+          <option value="inprog">In Progress</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="urgent">Urgent</option>
+          <option value="done">Completed</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Progress (%)</label>
+        <input class="modal-input" id="workProgress" type="number" min="0" max="100" value="0">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Completion Date</label>
+        <input class="modal-input" type="date" id="workCompletedDate">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Description (Admin / Committee / Observer only)</label>
+      <textarea class="modal-textarea" id="workDesc" placeholder="Work description visible to everyone…"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" style="color:#92400e">⚠️ Private Notes</label>
+      <textarea class="modal-textarea" id="workPrivate" placeholder="Financial details, sensitive info — only visible to Admin / Committee / Observer…"></textarea>
+      <div class="private-hint">This section is NOT visible to Owners or Tenants.</div>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Upload Photos / Documents</label>
+      <div class="photo-upload-area" onclick="document.getElementById('modalFileInput').click()">
+        <p style="color:var(--muted);margin-bottom:8px">Click to upload images or PDFs</p>
+        <small style="color:var(--muted)">Supports JPG, PNG, PDF • Multiple files</small>
+      </div>
+      <input type="file" id="modalFileInput" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadFilesFromModal(this.files)">
+      <div id="modalUploadPreview" class="photo-preview-grid" style="margin-top:12px"></div>
+    </div>
+
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
-      <button class="btn-primary" onclick="uploadFiles()">Upload</button>
+      <button class="btn-danger" id="deleteWorkBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('workModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveWork()">Save →</button>
     </div>
   </div>
 </div>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:1000;box-shadow:0 10px 30px rgba(0,0,0,0.3)"></div>
+<div class="toast" id="toast"></div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
-
-// 🔥 STEP 1 — layout.js 통합
 const ctx = await initLayout();
-if (!ctx) {
-  window.location.href = '/index.html';
-  throw new Error('Layout initialization failed');
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role, name } = ctx;
+
+const privileged = ['admin','committee','observer'];
+const canViewQuoteFiles = ['admin','committee'].includes(role);
+
+if (role === 'admin') {
+  document.getElementById('addWorkBtn').style.display = 'inline-flex';
+  document.getElementById('syncQuotesBtn').style.display = 'inline-flex';
 }
 
-const { supabase, role, permissions } = ctx;
+window.closeModal = id => document.getElementById(id).classList.remove('open');
 
-// 🔥 STEP 2 — 전역 변수
-let allWorks = [];
-let allContractors = [];
-let selectedWork = null;
-let openAccordionId = null;
-let uploadWorkId = null;
-
-const STATUS_MAP = {
-  scheduled: { label: 'Scheduled', badge: 'badge-blue' },
-  inprog: { label: 'In Progress', badge: 'badge-yellow' },
-  urgent: { label: 'Urgent', badge: 'badge-red' },
-  completed: { label: 'Completed', badge: 'badge-green' }
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; 
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block'; 
+  setTimeout(()=>t.style.display='none', 3000);
 };
 
-const BUCKET = 'works-photos';
+const STATUS_MAP = {
+  inprog: {label:'In Progress', cls:'badge-blue'},
+  scheduled: {label:'Scheduled', cls:'badge-gray'},
+  urgent: {label:'Urgent', cls:'badge-red'},
+  done: {label:'Completed', cls:'badge-green'}
+};
 
-// 🔥 STEP 3 — 권한 기반 버튼 제어
-function initPermissions() {
-  const canCreate = window.checkActionPermission('create_work', permissions, role);
-  const canUpload = window.checkActionPermission('upload_files', permissions, role);
-  
-  document.getElementById('btnNewWork').style.display = canCreate ? '' : 'none';
-  document.getElementById('btnEmergency').style.display = canCreate ? '' : 'none';
-  
-  window.canCreateWork = canCreate;
-  window.canCompleteWork = window.checkActionPermission('complete_work', permissions, role);
-  window.canEditWork = window.checkActionPermission('edit_work', permissions, role);
-  window.canUploadFiles = canUpload;
-  window.canDeleteFiles = window.checkActionPermission('delete_files', permissions, role);
-}
+let allWorks = [];
+let allContractors = [];
+let currentFilter = 'all';
+let openAccordionId = null;
+let selectedWork = null;
+let currentUploadFiles = [];
 
-// 🔥 STEP 4 — Contractors 로드
 async function loadContractors() {
-  try {
-    const { data } = await supabase
-      .from('contractors')
-      .select('id, name')
-      .order('name');
-    
-    allContractors = data || [];
-    const sel = document.getElementById('workContractor');
-    sel.innerHTML = '<option value="">Select contractor</option>' + 
-      allContractors.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  } catch(e) {
-    console.error('Failed to load contractors:', e);
-  }
+  const { data } = await supabase.from('contractors').select('*').order('position');
+  allContractors = data || [];
+  const sel = document.getElementById('workContractorSelect');
+  sel.innerHTML = '<option value="">Select contractor…</option>' +
+    allContractors.map(c => `<option value="${c.id}">${c.service} — ${c.company}</option>`).join('');
 }
 
-// 🔥 STEP 5 — Works 로드 (DB 레벨 필터링)
 async function loadWorks() {
-  try {
-    const { data } = await supabase
-      .from('works')
-      .select(`
-        *,
-        contractor:contractors(id, name)
-      `)
-      .is('completed_date', null)
-      .order('updated_at', { ascending: false });
-    
-    allWorks = data || [];
-    renderWorks(allWorks);
-  } catch(e) {
-    console.error('Failed to load works:', e);
-    document.getElementById('worksList').innerHTML = 
-      '<div style="padding:40px;text-align:center;color:var(--red)">Failed to load works</div>';
-  }
+  const { data } = await supabase.from('works').select('*').order('created_at', {ascending: true});
+  allWorks = data || [];
+
+  document.getElementById('statTotal').textContent = allWorks.filter(w => w.status !== 'done').length;
+  document.getElementById('statUrgent').textContent = allWorks.filter(w => w.status === 'urgent').length;
+  document.getElementById('statInprog').textContent = allWorks.filter(w => w.status === 'inprog').length;
+  document.getElementById('statDone').textContent = allWorks.filter(w => w.status === 'done').length;
+
+  renderWorks();
 }
 
-// 🔥 STEP 6 — Works 렌더링
-function renderWorks(works) {
+function renderWorks() {
   const list = document.getElementById('worksList');
-  
-  if (works.length === 0) {
-    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No active works</div>';
+  let filtered = currentFilter === 'all' ? allWorks : allWorks.filter(w => w.status === currentFilter);
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔧</div><div class="empty-title">No works found</div></div>`;
     return;
   }
-  
-  list.innerHTML = works.map(w => {
-    const st = STATUS_MAP[w.status] || STATUS_MAP.scheduled;
-    
-    // 🔥 챗이사 최종: fallback 제거 - contractor 없으면 명확히 표시
-    const contractorName = w.contractor?.name || '⚠️ Missing Contractor';
-    const contractorStyle = w.contractor?.name ? '' : 'color:var(--red);font-weight:600';
-    
-    const lastUpdated = new Date(w.updated_at).toLocaleDateString('en-AU', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-    
-    return `
-      <div class="work-row" onclick="toggleAccordion('${w.id}')">
-        <div><span class="badge ${st.badge}">${st.label}</span></div>
-        <div>
-          <div class="work-title-text">${w.project_name}</div>
-          <div class="work-meta-text">${w.category}</div>
-        </div>
-        <div class="work-meta-text" style="${contractorStyle}">${contractorName}</div>
-        <div class="work-meta-text" style="text-align:right">${lastUpdated}</div>
-      </div>
-      <div class="work-accordion" id="acc-${w.id}">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-          <div>
-            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">DESCRIPTION</div>
-            <div style="font-size:13px;line-height:1.6">${w.description || 'No description'}</div>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">DETAILS</div>
-            <div style="font-size:12px;line-height:1.8">
-              <div><strong>Cost:</strong> $${w.cost.toFixed(2)}</div>
-              <div><strong>Category:</strong> ${w.category}</div>
-              <div style="${contractorStyle}"><strong>Contractor:</strong> ${contractorName}</div>
-              ${w.is_emergency ? '<div style="color:var(--red);font-weight:600">⚠️ EMERGENCY</div>' : ''}
-            </div>
-          </div>
-        </div>
-        
-        ${w.private_notes ? `
-          <div style="background:var(--yellow-bg);border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:20px">
-            <div style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:6px">PRIVATE NOTES</div>
-            <div style="font-size:12px;color:#92400e;white-space:pre-wrap">${w.private_notes}</div>
-          </div>
-        ` : ''}
-        
-        ${w.completion_notes ? `
-          <div style="background:var(--green-bg);border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:20px">
-            <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:6px">COMPLETION NOTES</div>
-            <div style="font-size:12px;color:var(--green-text);white-space:pre-wrap">${w.completion_notes}</div>
-          </div>
-        ` : ''}
-        
-        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:10px">PHOTOS / DOCUMENTS</div>
-        <div class="photo-gallery" id="gallery-${w.id}">
-          <div style="font-size:13px;color:var(--muted)">Loading...</div>
-        </div>
-        
-        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-          ${window.canUploadFiles ? `<button class="btn-secondary" onclick="openUploadModal('${w.id}',event)">📎 Upload Files</button>` : ''}
-          ${window.canEditWork ? `<button class="btn-secondary" onclick="editWork('${w.id}',event)">✏️ Edit</button>` : ''}
-          ${window.canCompleteWork ? `<button class="btn-primary" onclick="openCompleteModal('${w.id}',event)">✓ Mark Complete</button>` : ''}
-        </div>
-      </div>
-    `;
-  }).join('');
+  const active = filtered.filter(w => w.status !== 'done');
+  let done = filtered.filter(w => w.status === 'done');
+  done.sort((a, b) => new Date(b.completed_date || 0) - new Date(a.completed_date || 0));
+  const sorted = [...active, ...done];
+
+  let html = '';
+  if (active.length && done.length && currentFilter === 'all') {
+    html = active.map(w => workRow(w)).join('') +
+      `<div style="padding:8px 20px;background:var(--green-bg);border-top:1px solid var(--border-light);border-bottom:1px solid var(--border-light);font-size:11px;font-weight:700;color:var(--green-text);text-transform:uppercase;letter-spacing:0.07em">✅ Completed (${done.length})</div>` +
+      done.map(w => workRow(w)).join('');
+  } else {
+    html = sorted.map(w => workRow(w)).join('');
+  }
+  list.innerHTML = html;
 }
 
-// 🔥 STEP 7 — Accordion 토글
+function workRow(w) {
+  const st = STATUS_MAP[w.status] || {label: w.status, cls: 'badge-gray'};
+  const idx = allWorks.indexOf(w) + 1;
+  let leftContent = w.status === 'done' && w.completed_date 
+    ? new Date(w.completed_date).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'})
+    : String(idx).padStart(2, '0');
+
+  return `
+    <div class="work-row${w.status==='done'?' work-row-done':''}" id="row-${w.id}">
+      <div onclick="toggleAccordion('${w.id}')" style="display:contents;cursor:pointer">
+        <div class="work-num">${leftContent}</div>
+        <div>
+          <div class="work-title-text">${w.title || 'Untitled'}</div>
+          <div class="work-meta-text">${w.contractor_name || w.contractor || '—'}</div>
+        </div>
+      </div>
+      <span class="badge ${st.cls}">${st.label}</span>
+    </div>
+    ${buildAccordion(w)}`;
+}
+
+function buildAccordion(w) {
+  const st = STATUS_MAP[w.status] || {label:w.status, cls:'badge-gray'};
+  const updated = new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const contractorName = w.contractor_name || w.contractor || '—';
+
+  let descHtml = w.description ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Description</div>
+      <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.description}</p>
+    </div>` : '';
+
+  let privateHtml = '';
+  if (privileged.includes(role) && w.private_notes) {
+    privateHtml = `
+    <div style="margin-top:12px">
+      <div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">⚠️ Private Notes</div>
+        <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.private_notes}</p>
+      </div>
+    </div>`;
+  }
+
+  let quoteFilesHtml = '';
+  if (canViewQuoteFiles && w.quote_files) {
+    let qFiles = [];
+    try { qFiles = typeof w.quote_files === 'string' ? JSON.parse(w.quote_files) : (w.quote_files || []); } catch(e) {}
+    if (qFiles.length > 0) {
+      const fileItems = qFiles.map(f => {
+        const icon = f.name && f.name.endsWith('.pdf') ? '📄' : '🖼️';
+        return `<div class="quote-file-item">
+          <span>${icon}</span>
+          <a href="#" onclick="openQuoteFile('${f.path}','${(f.name||'').replace(/'/g,"\\'")}','${f.type||''}');return false">${f.name || 'Unnamed file'}</a>
+          <span style="font-size:10px;font-weight:600;background:#fed7aa;color:#92400e;padding:2px 6px;border-radius:4px;flex-shrink:0">Restricted</span>
+        </div>`;
+      }).join('');
+      quoteFilesHtml = `
+      <div class="quote-files-section">
+        <div class="quote-files-label">🔒 Quote Files <span style="font-size:10px;font-weight:500;opacity:0.7">(Admin & Committee only)</span></div>
+        ${fileItems}
+      </div>`;
+    }
+  }
+
+  const workFilesHtml = `
+  <div class="work-files-section">
+    <div class="work-files-label">📁 Work Files <span style="font-size:10px;font-weight:500;opacity:0.7">(Visible to all)</span></div>
+    <div class="photo-gallery" id="gallery-${w.id}">
+      <div style="font-size:13px;color:var(--muted);padding:4px 0">Loading…</div>
+    </div>
+    ${role === 'admin' ? `<div style="margin-top:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:8px;font-size:12px;font-weight:600;color:var(--blue-700)"><span>📎</span><span>Upload Files</span><input type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadWorkFiles('${w.id}',this.files)"></label></div>` : ''}
+  </div>`;
+
+  return `
+    <div class="work-accordion" id="accordion-${w.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${w.title || 'Untitled'}</div>
+          <span class="badge ${st.cls}">${st.label}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${role === 'admin' ? `<button class="btn-secondary" onclick="event.stopPropagation();openEditWorkById('${w.id}')" style="padding:5px 10px;font-size:11px">✏️ Edit</button>` : ''}
+          <button class="btn-secondary" onclick="event.stopPropagation();closeAccordion('${w.id}')" style="padding:5px 10px;font-size:11px">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:4px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Contractor</div>
+          <div style="font-size:13px;color:var(--text)">${contractorName}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Progress</div>
+          <div style="font-size:13px;color:var(--text)">${w.progress||0}%</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px">Last Updated</div>
+          <div style="font-size:13px;color:var(--text)">${updated}</div>
+        </div>
+      </div>
+      ${descHtml}
+      ${privateHtml}
+      ${quoteFilesHtml}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+        ${workFilesHtml}
+      </div>
+    </div>`;
+}
+
+window.openQuoteFile = async (path, name, type) => {
+  if (!canViewQuoteFiles) { showToast('You do not have permission to view this file', true); return; }
+  try {
+    const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
+    if (error) throw error;
+    window.open(data.signedUrl, '_blank');
+  } catch(e) {
+    showToast('Cannot open file: ' + e.message, true);
+  }
+};
+
+window.uploadWorkFiles = async (workId, files) => {
+  if (!files || files.length === 0) return;
+  showToast('Uploading…');
+  try {
+    for (let file of Array.from(files)) {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      await supabase.storage.from('works-photos').upload(`${workId}/${fileName}`, file, { upsert: true });
+    }
+    showToast('Files uploaded ✓');
+    if (openAccordionId === workId) await loadPhotos(workId);
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, true);
+  }
+};
+
 window.toggleAccordion = async (id) => {
-  const acc = document.getElementById(`acc-${id}`);
+  if (openAccordionId && openAccordionId !== id) closeAccordion(openAccordionId);
+  const acc = document.getElementById(`accordion-${id}`);
   if (!acc) return;
-  
-  if (openAccordionId && openAccordionId !== id) {
-    document.getElementById(`acc-${openAccordionId}`)?.classList.remove('open');
+  if (acc.classList.contains('open')) {
+    closeAccordion(id);
+    return;
   }
-  
-  const isOpening = !acc.classList.contains('open');
-  acc.classList.toggle('open');
-  openAccordionId = isOpening ? id : null;
-  
-  if (isOpening) {
-    await loadPhotos(id);
-  }
+  acc.classList.add('open');
+  openAccordionId = id;
+  await loadPhotos(id);
 };
 
 window.closeAccordion = (id) => {
-  const acc = document.getElementById(`acc-${id}`);
+  const acc = document.getElementById(`accordion-${id}`);
   if (acc) acc.classList.remove('open');
   if (openAccordionId === id) openAccordionId = null;
 };
 
-// 🔥 STEP 8 — New Work 모달
-document.getElementById('btnNewWork').addEventListener('click', () => {
-  selectedWork = null;
-  document.getElementById('workModalTitle').textContent = 'New Work';
-  document.getElementById('workProject').value = '';
-  document.getElementById('workCategory').value = '';
-  document.getElementById('workCost').value = '';
-  document.getElementById('workContractor').value = '';
-  document.getElementById('workDescription').value = '';
-  document.getElementById('workNotes').value = '';
-  document.getElementById('workStatus').value = 'scheduled';
-  window.openModal('workModal');
-});
-
-// 🔥 STEP 9 — Emergency Work 모달
-document.getElementById('btnEmergency').addEventListener('click', () => {
-  selectedWork = null;
-  document.getElementById('workModalTitle').textContent = '🔥 Emergency Work';
-  document.getElementById('workProject').value = '';
-  document.getElementById('workCategory').value = '';
-  document.getElementById('workCost').value = '';
-  document.getElementById('workContractor').value = '';
-  document.getElementById('workDescription').value = '';
-  document.getElementById('workNotes').value = '';
-  document.getElementById('workStatus').value = 'urgent';
-  window.openModal('workModal');
-});
-
-// 🔥 STEP 10 — Edit Work
-window.editWork = (id, e) => {
-  e.stopPropagation();
+window.openEditWorkById = (id) => {
   selectedWork = allWorks.find(w => w.id === id);
+  openEditWork();
+};
+
+window.openAddWork = () => {
+  document.getElementById('workModalTitle').textContent = 'Add Work';
+  document.getElementById('workEditId').value = '';
+  document.getElementById('workTitle').value = '';
+  document.getElementById('workContractorSelect').value = '';
+  document.getElementById('workContractorCustom').value = '';
+  document.getElementById('workStatus').value = 'inprog';
+  document.getElementById('workProgress').value = '0';
+  document.getElementById('workCompletedDate').value = '';
+  document.getElementById('workDesc').value = '';
+  document.getElementById('workPrivate').value = '';
+  document.getElementById('deleteWorkBtn').style.display = 'none';
+  document.getElementById('modalUploadPreview').innerHTML = '';
+  currentUploadFiles = [];
+  document.getElementById('workModal').classList.add('open');
+};
+
+window.openEditWork = () => {
   if (!selectedWork) return;
-  
+  const w = selectedWork;
   document.getElementById('workModalTitle').textContent = 'Edit Work';
-  document.getElementById('workProject').value = selectedWork.project_name;
-  document.getElementById('workCategory').value = selectedWork.category;
-  document.getElementById('workCost').value = selectedWork.cost;
-  document.getElementById('workContractor').value = selectedWork.contractor_id || '';
-  document.getElementById('workDescription').value = selectedWork.description || '';
-  document.getElementById('workNotes').value = selectedWork.private_notes || '';
-  document.getElementById('workStatus').value = selectedWork.status;
-  window.openModal('workModal');
+  document.getElementById('workEditId').value = w.id;
+  document.getElementById('workTitle').value = w.title||'';
+  document.getElementById('workContractorSelect').value = w.contractor_id || '';
+  document.getElementById('workContractorCustom').value = (w.contractor_name && !w.contractor_id) ? w.contractor_name : '';
+  document.getElementById('workStatus').value = w.status||'inprog';
+  document.getElementById('workProgress').value = w.progress||0;
+  document.getElementById('workCompletedDate').value = w.completed_date || '';
+  document.getElementById('workDesc').value = w.description||'';
+  document.getElementById('workPrivate').value = w.private_notes||'';
+  document.getElementById('deleteWorkBtn').style.display = 'inline-flex';
+  document.getElementById('modalUploadPreview').innerHTML = '';
+  currentUploadFiles = [];
+  document.getElementById('workModal').classList.add('open');
 };
 
-// 🔥 STEP 11 — Save Work (validation 강화)
 window.saveWork = async () => {
-  const projectName = document.getElementById('workProject').value.trim();
-  const category = document.getElementById('workCategory').value.trim();
-  const costInput = document.getElementById('workCost').value;
-  const contractorId = document.getElementById('workContractor').value;
-  const description = document.getElementById('workDescription').value.trim();
-  const privateNotes = document.getElementById('workNotes').value.trim();
-  const status = document.getElementById('workStatus').value;
-  
-  // 🔥 필수 필드 검증
-  if (!projectName) {
-    window.showToast('Please enter project name', true);
-    return;
+  const id = document.getElementById('workEditId').value;
+  const contractorId = document.getElementById('workContractorSelect').value;
+  const customContractor = document.getElementById('workContractorCustom').value.trim();
+  let contractorName = '';
+  let contractorDisplay = '';
+
+  if (customContractor) {
+    contractorName = customContractor;
+    contractorDisplay = customContractor;
+  } else if (contractorId) {
+    const contractorObj = allContractors.find(c => c.id === contractorId);
+    if (contractorObj) {
+      contractorName = contractorObj.company;
+      contractorDisplay = `${contractorObj.service} — ${contractorObj.company}`;
+    }
   }
-  
-  if (!category) {
-    window.showToast('Please select category', true);
-    return;
-  }
-  
-  // 🔥 cost validation 강화
-  const cost = parseFloat(costInput);
-  if (isNaN(cost) || cost <= 0) {
-    window.showToast('Please enter valid cost (greater than 0)', true);
-    return;
-  }
-  
-  // 🔥 contractor 필수
-  if (!contractorId) {
-    window.showToast('Please select contractor', true);
-    return;
-  }
-  
-  const isEmergency = status === 'urgent';
-  
+
   const data = {
-    project_name: projectName,
-    category: category,
-    cost: cost,
-    contractor_id: contractorId,
-    description: description,
-    private_notes: privateNotes,
-    status: status,
-    is_emergency: isEmergency,
-    updated_at: new Date().toISOString()
+    title: document.getElementById('workTitle').value.trim(),
+    contractor_id: customContractor ? null : (contractorId || null),
+    contractor: contractorDisplay,
+    contractor_name: contractorName,
+    status: document.getElementById('workStatus').value,
+    progress: parseInt(document.getElementById('workProgress').value)||0,
+    completed_date: document.getElementById('workCompletedDate').value || null,
+    description: document.getElementById('workDesc').value.trim(),
+    private_notes: document.getElementById('workPrivate').value.trim(),
+    updated_at: new Date().toISOString(),
   };
-  
+
+  if (!data.title) { showToast('Please enter a title', true); return; }
+
   try {
-    if (selectedWork) {
-      await supabase.from('works').update(data).eq('id', selectedWork.id);
-      window.showToast('Work updated');
+    let workId = id;
+    if (id) {
+      await supabase.from('works').update(data).eq('id', id);
     } else {
-      await supabase.from('works').insert(data);
-      window.showToast('Work created');
+      const { data: inserted } = await supabase.from('works').insert(data).select('id').single();
+      workId = inserted.id;
     }
-    
-    window.closeModal('workModal');
-    await loadWorks();
-  } catch(e) {
-    console.error('Failed to save work:', e);
-    window.showToast('Failed to save: ' + e.message, true);
-  }
-};
 
-// 🔥 STEP 12 — Complete Work (completion_notes 필드 사용)
-window.openCompleteModal = (id, e) => {
-  if (e) e.stopPropagation();
-  selectedWork = allWorks.find(w => w.id === id);
-  document.getElementById('completeWorkId').value = id;
-  
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('completeDate').value = today;
-  document.getElementById('completeNotes').value = '';
-  window.openModal('completeModal');
-};
-
-window.confirmComplete = async () => {
-  const id = document.getElementById('completeWorkId').value;
-  const date = document.getElementById('completeDate').value;
-  const notes = document.getElementById('completeNotes').value.trim();
-  
-  if (!date) {
-    window.showToast('Please select completion date', true);
-    return;
-  }
-  
-  try {
-    const work = allWorks.find(w => w.id === id);
-    if (!work) {
-      window.showToast('Work not found', true);
-      return;
+    if (currentUploadFiles.length > 0) {
+      for (let file of currentUploadFiles) {
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        await supabase.storage.from('works-photos').upload(`${workId}/${fileName}`, file, { upsert: true });
+      }
     }
-    
-    // 🔥 챗이사 최종: completion_notes 필드에 저장
-    await supabase.from('works').update({
-      status: 'completed',
-      completed_date: date,
-      completion_notes: notes || null,
-      updated_at: new Date().toISOString()
-    }).eq('id', id);
-    
-    window.closeModal('completeModal');
+
+    closeModal('workModal');
     if (openAccordionId) closeAccordion(openAccordionId);
     await loadWorks();
-    window.showToast('Work completed ✓ (Report auto-generated)');
-  } catch(e) {
-    console.error('Failed to complete work:', e);
-    window.showToast('Failed to complete work: ' + e.message, true);
-  }
+    showToast('Work saved ✓');
+  } catch(e) { showToast(e.message||'Failed to save', true); }
 };
 
-// 🔥 STEP 13 — File Upload
-window.openUploadModal = (workId, e) => {
-  if (e) e.stopPropagation();
-  uploadWorkId = workId;
-  document.getElementById('fileInput').value = '';
-  window.openModal('uploadModal');
-};
-
-window.uploadFiles = async () => {
-  const files = document.getElementById('fileInput').files;
-  if (!files || files.length === 0) {
-    window.showToast('Please select files', true);
-    return;
-  }
-  
+window.deleteWork = async () => {
+  if (!confirm('Delete this work?')) return;
+  const id = document.getElementById('workEditId').value;
   try {
-    for (const file of files) {
-      const filePath = `${uploadWorkId}/${Date.now()}_${file.name}`;
-      await supabase.storage.from(BUCKET).upload(filePath, file);
+    const { data: files } = await supabase.storage.from('works-photos').list(id);
+    if (files && files.length > 0) {
+      await supabase.storage.from('works-photos').remove(files.map(f => `${id}/${f.name}`));
     }
-    
-    window.closeModal('uploadModal');
-    window.showToast('Files uploaded');
-    if (openAccordionId === uploadWorkId) await loadPhotos(uploadWorkId);
-  } catch(e) {
-    console.error('Upload failed:', e);
-    window.showToast('Upload failed: ' + e.message, true);
-  }
+  } catch(e) {}
+  await supabase.from('works').delete().eq('id', id);
+  closeModal('workModal');
+  if (openAccordionId) closeAccordion(openAccordionId);
+  await loadWorks();
+  showToast('Work deleted');
 };
 
-// 🔥 STEP 14 — Load Photos
+window.uploadFilesFromModal = (files) => {
+  currentUploadFiles = Array.from(files);
+  const preview = document.getElementById('modalUploadPreview');
+  preview.innerHTML = currentUploadFiles.map((file, i) => `
+    <div class="photo-preview-item">
+      ${file.type.startsWith('image/') 
+        ? `<img src="${URL.createObjectURL(file)}">` 
+        : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px">📄 ${file.name}</div>`}
+      <button class="remove-photo" onclick="removeModalFile(${i});event.stopPropagation()">✕</button>
+    </div>
+  `).join('');
+};
+
+window.removeModalFile = (index) => {
+  currentUploadFiles.splice(index, 1);
+  uploadFilesFromModal(currentUploadFiles);
+};
+
 async function loadPhotos(workId) {
   const gallery = document.getElementById(`gallery-${workId}`);
   if (!gallery) return;
-  
   try {
-    const { data } = await supabase.storage.from(BUCKET).list(workId);
-    
+    const { data } = await supabase.storage.from('works-photos').list(workId);
     if (!data || data.length === 0) {
       gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No photos or documents yet.</div>';
       return;
     }
-    
     gallery.innerHTML = data.map(file => {
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(`${workId}/${file.name}`);
+      const { data: urlData } = supabase.storage.from('works-photos').getPublicUrl(`${workId}/${file.name}`);
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
-      
       return `
         <div class="photo-gallery-item">
-          ${isImage
-            ? `<img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">`
+          ${isImage 
+            ? `<img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')">` 
             : `<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-size:11px;cursor:pointer" onclick="window.open('${urlData.publicUrl}','_blank')">📄 ${file.name}</div>`}
-          ${window.canDeleteFiles ? `<button class="delete-photo-btn" onclick="deletePhoto('${workId}','${file.name}',event)">✕</button>` : ''}
+          ${role === 'admin' ? `<button class="delete-photo-btn" onclick="deletePhoto('${workId}','${file.name}',event)">✕</button>` : ''}
         </div>`;
     }).join('');
   } catch(e) {
@@ -549,13 +625,12 @@ async function loadPhotos(workId) {
 window.deletePhoto = async (workId, fileName, e) => {
   e.stopImmediatePropagation();
   if (!confirm('Delete this file?')) return;
-  
   try {
-    await supabase.storage.from(BUCKET).remove([`${workId}/${fileName}`]);
-    window.showToast('File deleted');
+    await supabase.storage.from('works-photos').remove([`${workId}/${fileName}`]);
+    showToast('File deleted');
     if (openAccordionId === workId) await loadPhotos(workId);
   } catch(e) {
-    window.showToast('Delete failed', true);
+    showToast('Delete failed', true);
   }
 };
 
@@ -568,11 +643,47 @@ window.closeLightbox = () => {
   document.getElementById('photoLightbox').classList.remove('open');
 };
 
-// 🔥 STEP 15 — Initialize
-initPermissions();
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderWorks();
+  });
+});
+
+window.openCompleteModal = (id) => {
+  selectedWork = allWorks.find(w => w.id === id);
+  document.getElementById('completeWorkId').value = id;
+  document.getElementById('completeDate').value = selectedWork.completed_date || '';
+  document.getElementById('completeNotes').value = '';
+  document.getElementById('completeModal').classList.add('open');
+};
+
+window.confirmComplete = async () => {
+  const id = document.getElementById('completeWorkId').value;
+  const date = document.getElementById('completeDate').value;
+  const notes = document.getElementById('completeNotes').value.trim();
+  if (!date) { showToast('Please select completion date', true); return; }
+  try {
+    await supabase.from('works').update({
+      status: 'done',
+      completed_date: date,
+      private_notes: notes ? (allWorks.find(w=>w.id===id)?.private_notes||'') + "\n\nCompletion: " + notes : '',
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    closeModal('completeModal');
+    if (openAccordionId) closeAccordion(openAccordionId);
+    await loadWorks();
+    showToast('Work marked as completed');
+  } catch(e) { showToast('Failed to complete work', true); }
+};
+
+document.getElementById('addWorkBtn').addEventListener('click', openAddWork);
+document.getElementById('deleteWorkBtn').addEventListener('click', deleteWork);
+
 await loadContractors();
 await loadWorks();
-
 </script>
 </body>
 </html>
