@@ -332,6 +332,13 @@ window.saveQuote = async () => {
     return;
   }
   
+  // 🔥 DEBUG: category 값 확인
+  console.log('=== SAVE QUOTE DEBUG ===');
+  console.log('category input value:', category);
+  console.log('project_name:', projectName);
+  console.log('vendor:', vendor);
+  console.log('amount:', amount);
+  
   // 🔥 챗이사 최종: comment는 note만 저장 (category 제거)
   const comment = {
     note: internalNote,
@@ -339,17 +346,22 @@ window.saveQuote = async () => {
     priority: 'Normal'
   };
   
+  const quoteData = {
+    project_name: projectName,
+    vendor: vendor,
+    category: category,  // 🔥 반드시 포함
+    amount: amount,
+    notes: notes,
+    comment: JSON.stringify(comment),
+    status: 'pending',
+    created_at: new Date().toISOString()
+  };
+  
+  // 🔥 DEBUG: INSERT 데이터 확인
+  console.log('INSERT data:', quoteData);
+  
   try {
-    const { error } = await supabase.from('quotes').insert({
-      project_name: projectName,
-      vendor: vendor,
-      category: category,
-      amount: amount,
-      notes: notes,
-      comment: JSON.stringify(comment),
-      status: 'pending',
-      created_at: new Date().toISOString()
-    });
+    const { error } = await supabase.from('quotes').insert(quoteData);
     
     if (error) throw error;
     
