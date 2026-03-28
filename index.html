@@ -196,7 +196,7 @@
 
     <!-- SCA 로고 -->
     <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sca-wrap">
-      <img src="/sca-logo.png" alt="SCA" onerror="this.style.display='none'">
+      <img src="/sca-logo.png?v=7" alt="SCA">
       <div>
         <div class="sca-text-name">SCA Facility</div>
         <div class="sca-text-sub">Management</div>
@@ -273,9 +273,11 @@
 import { getSupabase } from '/js/auth.js';
 const supabase = await getSupabase();
 
-// 이미 로그인 되어있으면 dashboard로
+// 이미 로그인 되어있으면 바로 Overview 페이지로 이동
 const { data:{ session } } = await supabase.auth.getSession();
-if (session) window.location.href = '/pages/dashboard.html';
+if (session) {
+  window.location.href = '/pages/building.html';
+}
 
 // 로그인
 document.getElementById('signInBtn').addEventListener('click', handleLogin);
@@ -307,7 +309,10 @@ async function handleLogin() {
   try {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    window.location.href = '/pages/dashboard.html';
+    
+    // 로그인 성공 시 바로 Overview (Building) 페이지로 이동
+    window.location.href = '/pages/building.html';
+    
   } catch(err) {
     errorMsg.textContent = err.message || 'Sign in failed. Please try again.';
     errorMsg.classList.add('show');
