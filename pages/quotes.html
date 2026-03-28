@@ -361,9 +361,15 @@ window.saveQuote = async () => {
   console.log('INSERT data:', quoteData);
   
   try {
-    const { error } = await supabase.from('quotes').insert(quoteData);
+    // 🔥 챗이사 최종: 배열로 전달 (Supabase v2)
+    const { data, error } = await supabase.from('quotes').insert([quoteData]);
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ INSERT ERROR:', error);
+      throw error;
+    }
+    
+    console.log('✅ INSERT SUCCESS:', data);
     
     window.closeModal('addQuoteModal');
     window.showToast('Quote created');
