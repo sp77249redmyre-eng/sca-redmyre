@@ -35,7 +35,6 @@ async function loadComponent(url) {
   }
 }
 
-// ✅ DOM 렌더 완료 대기 추가
 async function insertSidebar() {
   const html = await loadComponent('/components/sidebar.html');
   const placeholder = document.getElementById('sidebarPlaceholder');
@@ -44,7 +43,6 @@ async function insertSidebar() {
   } else {
     document.body.insertAdjacentHTML('afterbegin', html);
   }
-  // 🔥 DOM 렌더링 완료 대기 (챗이사 지시)
   await new Promise(resolve => setTimeout(resolve, 0));
 }
 
@@ -62,7 +60,6 @@ async function insertTopbar() {
   }
 }
 
-// ✅ STEP 1 — role class 적용 (display 결정)
 function applyRoleMenuControl(role) {
   const privileged = ['admin', 'committee', 'observer'];
   if (privileged.includes(role)) {
@@ -73,7 +70,6 @@ function applyRoleMenuControl(role) {
   }
 }
 
-// ✅ STEP 2 — active 적용 (스타일만, display 건드리지 않음)
 function setActiveMenu() {
   const currentPage = getCurrentPage();
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
@@ -108,6 +104,27 @@ function updateUserUI(name, role) {
   if (topName)    topName.textContent    = name;
   if (topRole)    topRole.textContent    = roleLabel;
   if (topbarRole) topbarRole.textContent = roleLabel;
+}
+
+function updateGreeting(name) {
+  const el = document.getElementById('topbarGreeting');
+  if (!el) return;
+  const hour = new Date().getHours();
+  let greet = 'Good morning';
+  if (hour >= 12 && hour < 17) greet = 'Good afternoon';
+  else if (hour >= 17) greet = 'Good evening';
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  el.innerHTML = `
+    <div style="font-size:14px;font-weight:600">
+      ${greet}, ${name.split(' ')[0]} 👋
+    </div>
+    <div style="font-size:11px;color:var(--muted)">
+      ${dateStr} · Redmyre House · SP77249
+    </div>
+  `;
 }
 
 function initLogout(supabase) {
@@ -170,14 +187,11 @@ function initCommonUtils() {
 }
 
 export async function initLayout() {
-  // STEP A: sidebar 삽입 + DOM 렌더 완료 대기
   await insertSidebar();
   await insertTopbar();
 
-  // STEP B: 공통 유틸 등록
   initCommonUtils();
 
-  // STEP C: Supabase 인증 확인
   const supabase = await getSupabase();
   const { data: { session } } = await supabase.auth.getSession();
 
@@ -190,7 +204,6 @@ export async function initLayout() {
     return null;
   }
 
-  // STEP D: 프로필 fetch
   const user = session.user;
   const { data: profile } = await supabase
     .from('profiles')
@@ -201,22 +214,12 @@ export async function initLayout() {
   const role = profile?.role || 'observer';
   const name = profile?.full_name || user.email.split('@')[0];
 
-  // STEP E: 페이지 접근 제어
   checkPageAccess(role);
-
-  // ✅ STEP F: role 적용 먼저 (display 결정)
   applyRoleMenuControl(role);
-
-  // ✅ STEP G: active 적용 (스타일만, display 건드리지 않음)
   setActiveMenu();
-
-  // STEP H: 사용자 UI 업데이트
   updateUserUI(name, role);
-
-  // STEP I: Logout 초기화
+  updateGreeting(name);           // ← 인사 문구 추가
   initLogout(supabase);
-
-  // STEP J: Mobile menu 초기화
   initMobileMenu();
 
   return { supabase, user, profile, role, name };
