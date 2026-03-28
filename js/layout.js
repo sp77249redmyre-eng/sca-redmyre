@@ -8,6 +8,7 @@ const PAGE_CONFIG = {
   'hvac':          { title: 'A/C Temperature',       allowedRoles: null },
   'emergency':     { title: 'Emergency Contacts',    allowedRoles: null },
   'works':         { title: 'Ongoing Works',         allowedRoles: null },
+  'dashboard':     { title: 'Dashboard',             allowedRoles: null },
   'history':       { title: 'Temperature History',   allowedRoles: ['admin'] },
   'quotes':        { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':       { title: 'Financial Reports',     allowedRoles: ['admin', 'committee', 'observer'] },
@@ -106,8 +107,9 @@ function updateUserUI(name, role) {
 }
 
 function updateGreeting(name) {
-  const el = document.getElementById('topbarGreeting');
-  if (!el) return;
+  const greetEl = document.getElementById('topbarGreeting');
+  const dateEl = document.getElementById('topbarDate');
+  if (!greetEl) return;
   const hour = new Date().getHours();
   let greet = 'Good morning';
   if (hour >= 12 && hour < 17) greet = 'Good afternoon';
@@ -116,14 +118,10 @@ function updateGreeting(name) {
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-  el.innerHTML = `
-    <div style="font-size:14px;font-weight:600">
-      ${greet}, ${name.split(' ')[0]} 👋
-    </div>
-    <div style="font-size:11px;color:var(--muted)">
-      ${dateStr} · Redmyre House · SP77249
-    </div>
-  `;
+  greetEl.innerHTML = `${greet}, ${name.split(' ')[0]} 👋`;
+  if (dateEl) {
+    dateEl.textContent = dateStr;
+  }
 }
 
 function initLogout(supabase) {
@@ -217,7 +215,7 @@ export async function initLayout() {
   applyRoleMenuControl(role);
   setActiveMenu();
   updateUserUI(name, role);
-  updateGreeting(name);           // ← 인사 문구 추가
+  updateGreeting(name);
   initLogout(supabase);
   initMobileMenu();
 
