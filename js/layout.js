@@ -50,7 +50,7 @@ async function loadComponent(url) {
 
 async function insertSidebar() {
   try {
-    const html = await loadComponent('/components/sidebar.html');
+    const html = await loadComponent('../components/sidebar.html');
     const placeholder = document.getElementById('sidebarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
@@ -65,7 +65,7 @@ async function insertSidebar() {
 
 async function insertTopbar() {
   try {
-    const html = await loadComponent('/components/topbar.html');
+    const html = await loadComponent('../components/topbar.html');
     const placeholder = document.getElementById('topbarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
