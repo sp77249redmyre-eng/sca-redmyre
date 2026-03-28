@@ -365,7 +365,12 @@ window.saveQuote = async () => {
     const { data, error } = await supabase.from('quotes').insert([quoteData]);
     
     if (error) {
-      console.error('❌ INSERT ERROR:', error);
+      console.error('❌ INSERT ERROR:');
+      console.error('error.message:', error.message);
+      console.error('error.details:', error.details);
+      console.error('error.hint:', error.hint);
+      console.error('error.code:', error.code);
+      console.error('Full error:', JSON.stringify(error, null, 2));
       throw error;
     }
     
@@ -376,6 +381,7 @@ window.saveQuote = async () => {
     await loadQuotes();
   } catch(e) {
     console.error('Failed to save quote:', e);
+    console.error('Exception message:', e.message);
     window.showToast('Failed to save: ' + e.message, true);
   }
 };
