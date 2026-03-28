@@ -64,10 +64,34 @@
 @media(max-width:768px){.body{padding:16px}.dash-header{flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:16px}.go-building-btn{width:100%;justify-content:center}.greeting{font-size:20px}}
 </style>
 </head>
-<body>
+<body style="display:block">
 
-<div id="sidebarPlaceholder"></div>
-<div id="topbarPlaceholder"></div>
+<!-- Dashboard는 sidebar 없음 — topbar만 별도 구조 -->
+<div class="topbar" style="height:62px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="https://www.scafacility.com" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="/sca-logo.png" style="height:38px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.15))" alt="SCA" onerror="this.style.visibility='hidden'">
+    </a>
+    <div>
+      <div style="font-size:15px;font-weight:600">Redmyre House</div>
+      <div style="font-size:11px;color:var(--muted)">SCA Facility Management · SP77249</div>
+    </div>
+  </div>
+  
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+    <div style="width:38px;height:38px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;position:relative" id="notifBtn">
+      🔔<div id="notifDot" style="display:none;position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid #fff"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px">
+      <div class="u-avatar" id="userAvatar">?</div>
+      <div>
+        <div style="font-size:13px;font-weight:500" id="userName">Loading…</div>
+        <div style="font-size:11px;color:var(--muted)" id="userRole">—</div>
+      </div>
+    </div>
+    <button style="padding:7px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif" id="logoutBtn">Log out</button>
+  </div>
+</div>
 
 <div class="body">
   <div class="dash-header">
@@ -124,9 +148,6 @@
 
 <script type="module">
 import { getSupabase } from '/js/auth.js';
-import { initLayout } from '/js/layout.js';
-
-await initLayout();
 
 const supabase = await getSupabase();
 
