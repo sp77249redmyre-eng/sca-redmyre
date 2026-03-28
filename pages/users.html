@@ -36,11 +36,6 @@
 .user-email{font-size:11px;color:var(--muted);margin-top:2px}
 .role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
-.perm-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light)}
-.perm-title{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:8px}
-.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.perm-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--bg)}
-.perm-item input[type="checkbox"]{margin:0}
 </style>
 </head>
 <body>
@@ -100,28 +95,6 @@
   </div>
 </div>
 
-<!-- PERMISSIONS MODAL -->
-<div class="modal-backdrop" id="permModal">
-  <div class="modal-box">
-    <div class="modal-title">Edit Permissions</div>
-    <input type="hidden" id="permUserId">
-    <input type="hidden" id="permUserName">
-    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Customize access for <strong id="permUserLabel"></strong></div>
-    <div class="perm-section">
-      <div class="perm-title">📄 Pages Access</div>
-      <div class="perm-grid" id="permPages"></div>
-    </div>
-    <div class="perm-section">
-      <div class="perm-title">⚡ Actions</div>
-      <div class="perm-grid" id="permActions"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('permModal')">Cancel</button>
-      <button class="btn-primary" id="savePermBtn">Save Permissions →</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -130,36 +103,8 @@ const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
-// 🔥 챗이사 지시: setTimeout 버그 수정
-if (role !== 'admin') { 
-  setTimeout(() => {
-    window.location.href = '/pages/building.html';
-  }, 0);
-}
-
-// 🔥 챗이사 지시: 기본 권한 정의
-const DEFAULT_PERMISSIONS = {
-  admin: { pages: ['all'], actions: ['all'] },
-  committee: { 
-    pages: ['quotes','works','reports','history','building','announcements','parking','complaints','hvac','emergency','dashboard'], 
-    actions: ['approve','create_work','edit_work','view_quotes'] 
-  },
-  observer: { 
-    pages: ['quotes','works','reports','history','building','announcements','parking','complaints','hvac','emergency','dashboard'], 
-    actions: ['view_quotes'] 
-  },
-  owner: { 
-    pages: ['building','announcements','works','reports','parking','complaints','hvac','emergency','dashboard'], 
-    actions: [] 
-  },
-  tenant: { 
-    pages: ['building','announcements','hvac','emergency','dashboard'], 
-    actions: [] 
-  }
-};
-
-const ALL_PAGES = ['building','announcements','parking','complaints','hvac','emergency','works','dashboard','history','quotes','reports','users'];
-const ALL_ACTIONS = ['approve','create_work','edit_work','view_quotes','force_approve','delete_quote'];
+// Users 페이지는 admin 전용 — layout.js가 이미 처리하지만 추가 보호
+if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
 const ROLE_HINTS = {
   committee:'Can view all quotes with amounts and vote to approve or decline.',
@@ -212,83 +157,16 @@ async function loadUsers() {
         </select>
         <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          ${!isSelf?`
-            <button class="btn-secondary" style="padding:5px 10px;font-size:11px" onclick="openPermissions('${p.id}','${displayName.replace(/'/g,"\\'")}')">⚙️ Permissions</button>
-            <button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName.replace(/'/g,"\\'")}')">Remove</button>
-          `:'<span style="font-size:11px;color:var(--muted)">—</span>'}
+          ${!isSelf?`<button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>`:'<span style="font-size:11px;color:var(--muted)">—</span>'}
         </div>
       </div>`;
   }).join('');
 }
 
-// 🔥 챗이사 지시: role 변경 시 permissions 자동 업데이트 + 즉시 반영
 window.changeRole = async (uid, newRole) => {
-  try { 
-    const newPerms = DEFAULT_PERMISSIONS[newRole] || DEFAULT_PERMISSIONS.observer;
-    await supabase.from('profiles').update({role:newRole, permissions:newPerms}).eq('id',uid); 
-    showToast(`Role updated to ${newRole} ✓`); 
-    await loadUsers(); 
-    // 🔥 챗이사 지시: 자신의 role 변경 시 즉시 반영
-    if (uid === user.id) {
-      setTimeout(() => { location.reload(); }, 500);
-    }
-  }
+  try { await supabase.from('profiles').update({role:newRole}).eq('id',uid); showToast(`Role updated to ${newRole} ✓`); await loadUsers(); }
   catch(e) { showToast('Failed to update role', true); }
 };
-
-// 🔥 Permissions 모달 열기
-window.openPermissions = async (uid, uname) => {
-  document.getElementById('permUserId').value = uid;
-  document.getElementById('permUserName').value = uname;
-  document.getElementById('permUserLabel').textContent = uname;
-  
-  const { data:profile } = await supabase.from('profiles').select('permissions').eq('id',uid).single();
-  const perms = profile?.permissions || { pages: [], actions: [] };
-  
-  // Pages 체크박스
-  const pagesEl = document.getElementById('permPages');
-  pagesEl.innerHTML = ALL_PAGES.map(page => `
-    <label class="perm-item">
-      <input type="checkbox" value="${page}" ${perms.pages.includes(page)||perms.pages.includes('all')?'checked':''}>
-      <span>${page}</span>
-    </label>
-  `).join('');
-  
-  // Actions 체크박스
-  const actionsEl = document.getElementById('permActions');
-  actionsEl.innerHTML = ALL_ACTIONS.map(action => `
-    <label class="perm-item">
-      <input type="checkbox" value="${action}" ${perms.actions.includes(action)||perms.actions.includes('all')?'checked':''}>
-      <span>${action}</span>
-    </label>
-  `).join('');
-  
-  document.getElementById('permModal').classList.add('open');
-};
-
-// 🔥 Permissions 저장
-document.getElementById('savePermBtn').addEventListener('click', async () => {
-  const uid = document.getElementById('permUserId').value;
-  const checkedPages = Array.from(document.querySelectorAll('#permPages input:checked')).map(cb => cb.value);
-  const checkedActions = Array.from(document.querySelectorAll('#permActions input:checked')).map(cb => cb.value);
-  
-  try {
-    await supabase.from('profiles').update({
-      permissions: { pages: checkedPages, actions: checkedActions }
-    }).eq('id', uid);
-    
-    closeModal('permModal');
-    showToast('Permissions updated ✓');
-    await loadUsers();
-    
-    // 🔥 챗이사 지시: 자신의 permissions 변경 시 즉시 반영
-    if (uid === user.id) {
-      setTimeout(() => { location.reload(); }, 500);
-    }
-  } catch(e) {
-    showToast('Failed to update permissions', true);
-  }
-});
 
 window.removeUser = async (uid, uname) => {
   if (!confirm(`Remove ${uname}?\nThey will lose access to this system immediately.`)) return;

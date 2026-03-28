@@ -12,70 +12,16 @@
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
-  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
-  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
-  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
-  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
-  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
-  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
-  --orange:#f97316;--orange-bg:#fff7ed;--orange-text:#c2410c;
-  --purple:#7c3aed;--purple-bg:#ede9fe;--purple-text:#5b21b6;
-  --sidebar-w:232px;
-}
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
-.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
-.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
-.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
-.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
-.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
-.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
-.sb-building{font-size:17px;font-weight:600;color:#fff;letter-spacing:-0.2px}
-.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
-.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
-.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
-.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
-.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
-.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
-.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
-.nav-item.active .nav-label{color:#fff}
-.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
-.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
-.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
-.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
-.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
-.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
-.page-title{font-size:16px;font-weight:600}
-.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
-.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
-.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
-.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
-.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
-.u-name{font-size:13px;font-weight:500}
-.u-role{font-size:11px;color:var(--muted)}
 .content{padding:24px;display:flex;flex-direction:column;gap:20px}
 .section-hdr{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .section-hdr::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block}
-
-/* EMERGENCY BANNER */
 .emergency-banner{background:var(--red-bg);border:1px solid #fecaca;border-radius:14px;padding:18px 22px;display:flex;align-items:center;gap:14px}
 .eb-icon{font-size:28px;flex-shrink:0}
 .eb-title{font-size:15px;font-weight:600;color:var(--red-text)}
 .eb-sub{font-size:12px;color:var(--red);margin-top:3px}
-.eb-btn{margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-
-/* EMERGENCY GRID */
+.eb-btn{margin-left:auto;background:var(--red);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;text-decoration:none}
 .emg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .emg-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:transform 0.12s,box-shadow 0.12s;text-decoration:none;display:block}
 .emg-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.07)}
@@ -87,8 +33,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .emg-num{font-size:16px;font-weight:700;color:var(--blue-600)}
 .emg-card.red .emg-num{color:var(--red)}
 .emg-card.orange .emg-num{color:var(--orange)}
-
-/* MANAGEMENT CARDS */
 .people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .person-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:18px}
 .person-card.blue{border-top:3px solid var(--blue-600)}
@@ -104,23 +48,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .status-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;margin-bottom:12px}
 .sb-green{background:var(--green-bg);color:var(--green-text)}
 .sb-orange{background:var(--orange-bg);color:var(--orange-text)}
-.sb-red{background:var(--red-bg);color:var(--red-text)}
 .status-dot{width:6px;height:6px;border-radius:50%}
 .dot-green{background:var(--green)}
 .dot-orange{background:var(--orange)}
-.dot-red{background:var(--red)}
 .person-phone{font-size:16px;font-weight:700;color:var(--blue-600)}
 .person-phone-label{font-size:11px;color:var(--muted);margin-top:2px;margin-bottom:8px}
-.person-email{font-size:12px;color:var(--blue-600);margin-bottom:8px}
+.person-email{font-size:12px;color:var(--blue-600);margin-bottom:8px;display:block;margin-top:6px}
 .person-note{font-size:11px;color:var(--text-2);background:var(--bg);border-radius:8px;padding:8px 10px;line-height:1.5;margin-top:4px}
 .person-actions{display:flex;gap:8px;margin-top:12px}
-.call-btn{flex:1;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.call-btn{flex:1;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .btn-blue{background:var(--blue-600);color:#fff}
 .btn-email{background:var(--bg);border:1px solid var(--border);color:var(--text-2)}
 .btn-orange{background:var(--orange);color:#fff}
 .btn-purple{background:var(--purple);color:#fff}
-
-/* CONTRACTOR GRID */
 .contact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .contact-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:flex-start;gap:12px}
 .cc-icon{width:38px;height:38px;border-radius:10px;background:var(--blue-50);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -130,89 +70,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .cc-phone{font-size:13px;color:var(--blue-600);font-weight:500;margin-top:3px}
 .cc-actions{display:flex;gap:6px;margin-top:8px}
 .cc-btn{font-size:11px;padding:5px 10px;border-radius:7px;border:0.5px solid var(--blue-100);background:var(--blue-50);color:var(--blue-800);cursor:pointer;font-weight:600;font-family:'DM Sans',sans-serif;text-decoration:none}
-
-/* MOBILE */
-/* ===== MOBILE HAMBURGER MENU ===== */
-.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
-.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
-.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
-.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
-.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
-.sidebar-overlay.open{display:block}
-@media(max-width:768px){
-  .hamburger-btn{display:flex}
-  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
-  .sidebar.mobile-open{transform:translateX(0)}
-  .main{margin-left:0!important}
-  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
-  .page-title{font-size:14px}
-  .breadcrumb{display:none}
-  .tb-right{gap:6px}
-  .u-role{display:none}
-  .emg-grid{grid-template-columns:repeat(2,1fr)}
-  .people-grid{grid-template-columns:1fr}
-  .contact-grid{grid-template-columns:1fr}
-}
+@media(max-width:768px){.emg-grid{grid-template-columns:repeat(2,1fr)}.people-grid{grid-template-columns:1fr}.contact-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
-<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
-  <span></span><span></span><span></span>
-</button>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<aside class="sidebar">
-  <div class="sb-header">
-    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
-      <div class="sb-logo-icon"><img src="/sca-logo.png?v=7" alt="SCA"></div>
-      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
-    </a>
-    <div class="sb-building">Redmyre House</div>
-    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
-  </div>
-  <nav class="sb-nav">
-    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
-    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
-    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
-    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
-    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
-    <a href="emergency.html" class="nav-item active"><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
-    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
-    <a href="quotes.html" class="nav-item " id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
-    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
-    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
-    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
-    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
-    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
-  </nav>
-  <div class="sb-footer">
-    <div class="sb-user">
-      <div class="sb-avatar" id="sbAvatar">?</div>
-      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
-      <div class="sb-logout" onclick="handleLogout()">Log out</div>
-    </div>
-  </div>
-</aside>
-
+<div id="sidebarPlaceholder"></div>
 <div class="main">
-  <div class="main-topbar">
-    <div>
-      <div class="page-title">Emergency Contacts</div>
-      <div class="breadcrumb">Redmyre House · Building Management System</div>
-    </div>
-    <div class="tb-right">
-      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
-      <div class="user-chip">
-        <div class="u-avatar" id="topAvatar">?</div>
-        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
-      </div>
-    </div>
-  </div>
-
+  <div id="topbarPlaceholder"></div>
   <div class="content">
-
     <!-- 000 BANNER -->
     <div class="emergency-banner">
       <div class="eb-icon">🚨</div>
@@ -227,36 +92,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div>
       <div class="section-hdr">Emergency Services</div>
       <div class="emg-grid">
-        <a href="tel:000" class="emg-card red">
-          <div class="emg-emoji">🚒</div>
-          <div class="emg-name">Fire & Rescue</div>
-          <div class="emg-num">000</div>
-        </a>
-        <a href="tel:000" class="emg-card red">
-          <div class="emg-emoji">🚑</div>
-          <div class="emg-name">Ambulance</div>
-          <div class="emg-num">000</div>
-        </a>
-        <a href="tel:000" class="emg-card blue">
-          <div class="emg-emoji">🚓</div>
-          <div class="emg-name">Police</div>
-          <div class="emg-num">000</div>
-        </a>
-        <a href="tel:131909" class="emg-card orange">
-          <div class="emg-emoji">🔥</div>
-          <div class="emg-name">Gas Emergency</div>
-          <div class="emg-num">131 909</div>
-        </a>
-        <a href="tel:132090" class="emg-card orange">
-          <div class="emg-emoji">💧</div>
-          <div class="emg-name">Water Emergency</div>
-          <div class="emg-num">13 20 90</div>
-        </a>
-        <a href="tel:131388" class="emg-card orange">
-          <div class="emg-emoji">⚡</div>
-          <div class="emg-name">Electricity Emergency</div>
-          <div class="emg-num">13 13 88</div>
-        </a>
+        <a href="tel:000" class="emg-card red"><div class="emg-emoji">🚒</div><div class="emg-name">Fire & Rescue</div><div class="emg-num">000</div></a>
+        <a href="tel:000" class="emg-card red"><div class="emg-emoji">🚑</div><div class="emg-name">Ambulance</div><div class="emg-num">000</div></a>
+        <a href="tel:000" class="emg-card blue"><div class="emg-emoji">🚓</div><div class="emg-name">Police</div><div class="emg-num">000</div></a>
+        <a href="tel:131909" class="emg-card orange"><div class="emg-emoji">🔥</div><div class="emg-name">Gas Emergency</div><div class="emg-num">131 909</div></a>
+        <a href="tel:132090" class="emg-card orange"><div class="emg-emoji">💧</div><div class="emg-name">Water Emergency</div><div class="emg-num">13 20 90</div></a>
+        <a href="tel:131388" class="emg-card orange"><div class="emg-emoji">⚡</div><div class="emg-name">Electricity Emergency</div><div class="emg-num">13 13 88</div></a>
       </div>
     </div>
 
@@ -264,8 +105,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div>
       <div class="section-hdr">Management</div>
       <div class="people-grid">
-
-        <!-- Building Manager — dynamic based on time -->
         <div class="person-card" id="mgrCard">
           <div class="person-header">
             <div class="person-av" id="mgrAv">JK</div>
@@ -280,14 +119,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
             <div class="person-phone-label" id="mgrPhoneLabel">—</div>
           </div>
           <div class="person-note" id="mgrNote" style="display:none"></div>
-          <a class="person-email" id="mgrEmailLabel" href="#" style="display:block;margin-top:6px"></a>
+          <a class="person-email" id="mgrEmailLabel" href="#"></a>
           <div class="person-actions">
             <a class="call-btn btn-blue" id="mgrCallBtn" href="#">📞 Call</a>
             <a class="call-btn btn-email" id="mgrEmailBtn" href="#" style="display:none">✉️ Email</a>
           </div>
         </div>
-
-        <!-- Strata Manager -->
         <div class="person-card purple">
           <div class="person-header">
             <div class="person-av av-purple">HT</div>
@@ -300,339 +137,208 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
             <div class="person-phone">02 9736 1699</div>
             <div class="person-phone-label">359-361 Concord Rd, Concord West NSW 2138</div>
           </div>
-          <div class="person-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcd4ddd0d5d0fcd9c4dfd0c9cfd5cad9ced992dfd3d192ddc9">[email&#160;protected]</a></div>
+          <div class="person-email">htopalcik@exclusivre.com.au</div>
           <div class="person-actions">
             <a class="call-btn btn-purple" href="tel:0297361699">📞 Call</a>
-            <a class="call-btn btn-email" href="/cdn-cgi/l/email-protection#7c141d1015103c19041f10090f150a190e19521f1311521d09">✉️ Email</a>
+            <a class="call-btn btn-email" href="mailto:htopalcik@exclusivre.com.au">✉️ Email</a>
           </div>
         </div>
-
       </div>
     </div>
 
-    <!-- CONTRACTORS — Admin only -->
+    <!-- CONTRACTORS (admin only) -->
     <div id="contractorSection" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="section-hdr" style="margin-bottom:0">Building Contractors</div>
-        <button onclick="openContractorModal()" style="padding:7px 13px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">+ Add</button>
+        <button class="btn-primary" id="addContractorBtn">+ Add</button>
       </div>
       <div class="contact-grid" id="contractorGrid">
         <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
       </div>
     </div>
-
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
-const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
-const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- CONTRACTOR MODAL -->
+<div class="modal-backdrop" id="contractorModal">
+  <div class="modal-box">
+    <div class="modal-title" id="contractorModalTitle">Add Contractor</div>
+    <input type="hidden" id="contractorEditId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div><label class="modal-label">Service Type</label><input id="cService" class="modal-input" placeholder="e.g. Lift, Plumber…"></div>
+      <div><label class="modal-label">Company Name</label><input id="cCompany" class="modal-input" placeholder="Company name…"></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">Contact Name</label><input id="cContact" class="modal-input" placeholder="e.g. Danny McKinney"></div>
+    <div class="modal-field"><label class="modal-label">Phone</label><input id="cPhone" class="modal-input" placeholder="e.g. 02 9123 4567 / 0412 345 678"></div>
+    <div class="modal-field"><label class="modal-label">Email</label><input id="cEmail" class="modal-input" placeholder="email@example.com"></div>
+    <div class="modal-field"><label class="modal-label">Website (optional)</label><input id="cWebsite" class="modal-input" placeholder="www.example.com.au"></div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="contractorDeleteBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('contractorModal')">Cancel</button>
+      <button class="btn-primary" id="saveContractorBtn">Save →</button>
+    </div>
+  </div>
+</div>
 
-const { data:{ session } } = await supabase.auth.getSession();
-if (!session) { window.location.href = 'index.html'; }
-const user = session.user;
-const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-const role = profile?.role || 'observer';
-const name = profile?.full_name || user.email.split('@')[0];
-const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+<div class="toast" id="toast"></div>
 
-['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
-document.getElementById('sbName').textContent = name;
-document.getElementById('topName').textContent = name;
-const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-document.getElementById('sbRole').textContent = roleLabel;
-document.getElementById('topRole').textContent = roleLabel;
-document.getElementById('topbarRole').textContent = roleLabel;
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
 
-const privileged = ['admin','committee','observer'];
-if (privileged.includes(role)) {
-  document.getElementById('quotesNav').style.display = 'flex';
-  document.getElementById('reportsNav').style.display = 'flex';
-  document.getElementById('historyNav').style.display = 'flex';
-}
-if (role === 'admin') {
-  document.getElementById('usersNav').style.display = 'flex';
-  document.getElementById('adminSection').style.display = 'block';
-}
-
-window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
-
-// ── Building Manager card (time-aware) ──
+// Manager card (time-aware)
 async function isNSWPublicHoliday(date) {
   try {
-    const year = date.getFullYear();
-    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/AU`);
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${date.getFullYear()}/AU`);
     const holidays = await res.json();
     const today = date.toISOString().split('T')[0];
-    return holidays.some(h => h.date === today && (!h.counties || h.counties.includes('AU-NSW')));
-  } catch(e) {
-    return false;
-  }
+    return holidays.some(h=>h.date===today&&(!h.counties||h.counties.includes('AU-NSW')));
+  } catch { return false; }
 }
 
 async function renderManagerCard() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const timeNum = hour * 60 + minute;
-
-  const isWorkDay = [1, 3, 5].includes(day); // Mon, Wed, Fri
-  const isWorkHours = timeNum >= 8 * 60 && timeNum < 16 * 60; // 8AM–4PM
+  const day = now.getDay();
+  const timeNum = now.getHours()*60+now.getMinutes();
+  const isWorkDay = [1,3,5].includes(day);
+  const isWorkHours = timeNum>=8*60 && timeNum<16*60;
   const isHoliday = await isNSWPublicHoliday(now);
-
   const available = isWorkDay && isWorkHours && !isHoliday;
-
-  const card = document.getElementById('mgrCard');
-  const av = document.getElementById('mgrAv');
-  const mgrName = document.getElementById('mgrName');
-  const mgrRole = document.getElementById('mgrRole');
-  const statusEl = document.getElementById('mgrStatus');
-  const phoneEl = document.getElementById('mgrPhone');
-  const phoneLabelEl = document.getElementById('mgrPhoneLabel');
-  const noteEl = document.getElementById('mgrNote');
-  const callBtn = document.getElementById('mgrCallBtn');
-  const emailBtn = document.getElementById('mgrEmailBtn');
-  const emailLabel = document.getElementById('mgrEmailLabel');
-
+  const card=document.getElementById('mgrCard');
+  const av=document.getElementById('mgrAv');
+  const statusEl=document.getElementById('mgrStatus');
+  const phoneEl=document.getElementById('mgrPhone');
+  const phoneLabelEl=document.getElementById('mgrPhoneLabel');
+  const noteEl=document.getElementById('mgrNote');
+  const callBtn=document.getElementById('mgrCallBtn');
+  const emailBtn=document.getElementById('mgrEmailBtn');
+  const emailLabel=document.getElementById('mgrEmailLabel');
   if (available) {
-    card.className = 'person-card blue';
-    av.className = 'person-av av-blue';
-    av.textContent = 'JK';
-    mgrName.textContent = 'Jacob Kim';
-    mgrRole.textContent = 'Building Manager';
-    statusEl.className = 'status-badge sb-green';
-    statusEl.innerHTML = '<div class="status-dot dot-green"></div> Available now';
-    phoneEl.textContent = '0478 705 406';
-    phoneLabelEl.textContent = 'Mon / Wed / Fri · 8:00 AM – 4:00 PM';
-    noteEl.style.display = 'none';
-    callBtn.href = 'tel:0478705406';
-    callBtn.className = 'call-btn btn-blue';
-    callBtn.textContent = '📞 Call';
-    emailBtn.href = 'mailto:sp77249.redmyre@gmail.com';
-    emailBtn.style.display = 'flex';
-    emailLabel.textContent = 'sp77249.redmyre@gmail.com';
-    emailLabel.href = 'mailto:sp77249.redmyre@gmail.com';
+    card.className='person-card blue'; av.className='person-av av-blue'; av.textContent='JK';
+    document.getElementById('mgrName').textContent='Jacob Kim';
+    document.getElementById('mgrRole').textContent='Building Manager';
+    statusEl.className='status-badge sb-green'; statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
+    phoneEl.textContent='0478 705 406'; phoneLabelEl.textContent='Mon / Wed / Fri · 8:00 AM – 4:00 PM';
+    noteEl.style.display='none'; callBtn.href='tel:0478705406'; callBtn.className='call-btn btn-blue'; callBtn.textContent='📞 Call';
+    emailBtn.href='mailto:sp77249.redmyre@gmail.com'; emailBtn.style.display='flex';
+    emailLabel.textContent='sp77249.redmyre@gmail.com'; emailLabel.href='mailto:sp77249.redmyre@gmail.com';
   } else {
-    card.className = 'person-card orange';
-    av.className = 'person-av av-orange';
-    av.textContent = 'SCA';
-    mgrName.textContent = 'SCA Emergency Line';
-    mgrRole.textContent = '24/7 Urgent Matters';
-    statusEl.className = 'status-badge sb-orange';
-    statusEl.innerHTML = '<div class="status-dot dot-orange"></div>' +
-      (isHoliday ? ' Public holiday' : !isWorkDay ? ' Building manager unavailable' : ' Outside working hours');
-    phoneEl.textContent = '1300 785 007';
-    phoneLabelEl.textContent = 'Available 24/7 for urgent matters';
-    noteEl.style.display = 'block';
-    noteEl.textContent = 'Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA.';
-    callBtn.href = 'tel:1300785007';
-    callBtn.className = 'call-btn btn-orange';
-    callBtn.textContent = '📞 Call SCA';
-    emailBtn.href = 'mailto:info@scafacility.com';
-    emailBtn.style.display = 'flex';
-    emailLabel.textContent = 'info@scafacility.com';
-    emailLabel.href = 'mailto:info@scafacility.com';
+    card.className='person-card orange'; av.className='person-av av-orange'; av.textContent='SCA';
+    document.getElementById('mgrName').textContent='SCA Emergency Line';
+    document.getElementById('mgrRole').textContent='24/7 Urgent Matters';
+    statusEl.className='status-badge sb-orange'; statusEl.innerHTML='<div class="status-dot dot-orange"></div>'+(isHoliday?' Public holiday':!isWorkDay?' Building manager unavailable':' Outside working hours');
+    phoneEl.textContent='1300 785 007'; phoneLabelEl.textContent='Available 24/7 for urgent matters';
+    noteEl.style.display='block'; noteEl.textContent='Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA.';
+    callBtn.href='tel:1300785007'; callBtn.className='call-btn btn-orange'; callBtn.textContent='📞 Call SCA';
+    emailBtn.href='mailto:info@scafacility.com'; emailBtn.style.display='flex';
+    emailLabel.textContent='info@scafacility.com'; emailLabel.href='mailto:info@scafacility.com';
   }
 }
 
-// ── Service icon mapping ──
 function getServiceIcon(service) {
-  const s = (service || '').toLowerCase();
-  if (s.includes('lift') || s.includes('elevator')) return '🛗';
-  if (s.includes('air') || s.includes('hvac') || s.includes('conditioning')) return '❄️';
+  const s=(service||'').toLowerCase();
+  if (s.includes('lift')||s.includes('elevator')) return '🛗';
+  if (s.includes('air')||s.includes('hvac')||s.includes('conditioning')) return '❄️';
   if (s.includes('fire')) return '🔥';
-  if (s.includes('plumb') || s.includes('drip') || s.includes('water')) return '💧';
+  if (s.includes('plumb')||s.includes('water')) return '💧';
   if (s.includes('electr')) return '⚡';
   if (s.includes('lock')) return '🔑';
   if (s.includes('pest')) return '🐛';
-  if (s.includes('hygiene') || s.includes('clean')) return '🧹';
-  if (s.includes('garage') || s.includes('door') || s.includes('gate')) return '🚪';
-  if (s.includes('access') || s.includes('security')) return '🔒';
-  if (s.includes('waste') || s.includes('recycl')) return '♻️';
-  if (s.includes('anchor') || s.includes('roof')) return '⚓';
-  if (s.includes('paint')) return '🎨';
-  if (s.includes('dryer') || s.includes('hand')) return '🌬️';
-  if (s.includes('sliding') || s.includes('glass')) return '🪟';
+  if (s.includes('clean')) return '🧹';
+  if (s.includes('garage')||s.includes('gate')) return '🚪';
+  if (s.includes('access')||s.includes('security')) return '🔒';
+  if (s.includes('waste')||s.includes('recycl')) return '♻️';
   return '🔧';
 }
 
-// ── Load contractors ──
 let contractorsData = [];
 
 async function loadContractors() {
   const { data } = await supabase.from('contractors').select('*').order('position');
-  contractorsData = data || [];
+  contractorsData = data||[];
   const grid = document.getElementById('contractorGrid');
-  if (!contractorsData.length) {
-    grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No contractors found.</div>';
-    return;
-  }
-  grid.innerHTML = contractorsData.map((c, i) => {
+  if (!contractorsData.length) { grid.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No contractors found.</div>'; return; }
+  grid.innerHTML = contractorsData.map((c,i) => {
     const icon = getServiceIcon(c.service);
-    const phones = c.phone ? c.phone.split('/').map(p => p.trim()) : [];
-    const primaryPhone = phones[0] || '';
-    const emails = c.email ? c.email.split(',').map(e => e.trim()) : [];
-    const primaryEmail = emails[0] || '';
+    const primaryPhone = c.phone ? c.phone.split('/').map(p=>p.trim())[0] : '';
+    const primaryEmail = c.email ? c.email.split(',').map(e=>e.trim())[0] : '';
     return `
       <div class="contact-card">
         <div class="cc-icon">${icon}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <div class="cc-service">${c.service}</div>
-            <button onclick="openContractorModal('${c.id}')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0">✏️ Edit</button>
+            <button onclick="openContractorEdit('${c.id}')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0">✏️ Edit</button>
           </div>
           <div class="cc-company">${c.company}</div>
-          ${c.contact_name ? `<div class="cc-contact">${c.contact_name}</div>` : ''}
+          ${c.contact_name?`<div class="cc-contact">${c.contact_name}</div>`:''}
           <div class="cc-phone">${primaryPhone}</div>
           <div class="cc-actions">
-            ${primaryPhone ? `<a class="cc-btn" href="tel:${primaryPhone.replace(/\s/g,'')}">📞 Call</a>` : ''}
-            ${primaryEmail ? `<a class="cc-btn" href="mailto:${primaryEmail}">✉️ Email</a>` : ''}
+            ${primaryPhone?`<a class="cc-btn" href="tel:${primaryPhone.replace(/\s/g,'')}">📞 Call</a>`:''}
+            ${primaryEmail?`<a class="cc-btn" href="mailto:${primaryEmail}">✉️ Email</a>`:''}
           </div>
         </div>
       </div>`;
   }).join('');
 }
 
-// ── Contractor CRUD ──
-window.showToast = (msg, isError=false) => {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.background = isError ? '#991b1b' : '#0f172a';
-  t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
+window.openContractorEdit = (id) => {
+  const c = contractorsData.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('contractorModalTitle').textContent='Edit Contractor';
+  document.getElementById('contractorEditId').value=c.id;
+  document.getElementById('cService').value=c.service||'';
+  document.getElementById('cCompany').value=c.company||'';
+  document.getElementById('cContact').value=c.contact_name||'';
+  document.getElementById('cPhone').value=c.phone||'';
+  document.getElementById('cEmail').value=c.email||'';
+  document.getElementById('cWebsite').value=c.website||'';
+  document.getElementById('contractorDeleteBtn').style.display='inline-block';
+  document.getElementById('contractorModal').classList.add('open');
 };
 
-window.openContractorModal = (id) => {
-  const modal = document.getElementById('contractorModal');
-  const deleteBtn = document.getElementById('contractorDeleteBtn');
-  document.getElementById('contractorEditId').value = '';
-  document.getElementById('cService').value = '';
-  document.getElementById('cCompany').value = '';
-  document.getElementById('cContact').value = '';
-  document.getElementById('cPhone').value = '';
-  document.getElementById('cEmail').value = '';
-  document.getElementById('cWebsite').value = '';
+document.getElementById('addContractorBtn').addEventListener('click', () => {
+  document.getElementById('contractorModalTitle').textContent='Add Contractor';
+  document.getElementById('contractorEditId').value='';
+  document.getElementById('cService').value='';
+  document.getElementById('cCompany').value='';
+  document.getElementById('cContact').value='';
+  document.getElementById('cPhone').value='';
+  document.getElementById('cEmail').value='';
+  document.getElementById('cWebsite').value='';
+  document.getElementById('contractorDeleteBtn').style.display='none';
+  document.getElementById('contractorModal').classList.add('open');
+});
 
-  if (id) {
-    const c = contractorsData.find(x => x.id === id);
-    if (c) {
-      document.getElementById('contractorModalTitle').textContent = 'Edit Contractor';
-      document.getElementById('contractorEditId').value = c.id;
-      document.getElementById('cService').value = c.service || '';
-      document.getElementById('cCompany').value = c.company || '';
-      document.getElementById('cContact').value = c.contact_name || '';
-      document.getElementById('cPhone').value = c.phone || '';
-      document.getElementById('cEmail').value = c.email || '';
-      document.getElementById('cWebsite').value = c.website || '';
-      deleteBtn.style.display = 'inline-block';
-    }
-  } else {
-    document.getElementById('contractorModalTitle').textContent = 'Add Contractor';
-    deleteBtn.style.display = 'none';
-  }
-  modal.style.display = 'flex';
-};
-
-window.closeContractorModal = () => {
-  document.getElementById('contractorModal').style.display = 'none';
-};
-
-window.saveContractor = async () => {
-  const id = document.getElementById('contractorEditId').value;
+document.getElementById('saveContractorBtn').addEventListener('click', async () => {
+  const id      = document.getElementById('contractorEditId').value;
   const service = document.getElementById('cService').value.trim();
   const company = document.getElementById('cCompany').value.trim();
-  if (!service || !company) { showToast('Service and company are required', true); return; }
-
-  const data = {
-    service,
-    company,
-    contact_name: document.getElementById('cContact').value.trim() || null,
-    phone: document.getElementById('cPhone').value.trim() || null,
-    email: document.getElementById('cEmail').value.trim() || null,
-    website: document.getElementById('cWebsite').value.trim() || null,
-  };
-
+  if (!service||!company) { showToast('Service and company are required', true); return; }
+  const data = { service, company, contact_name:document.getElementById('cContact').value.trim()||null, phone:document.getElementById('cPhone').value.trim()||null, email:document.getElementById('cEmail').value.trim()||null, website:document.getElementById('cWebsite').value.trim()||null };
   try {
-    if (id) {
-      await supabase.from('contractors').update(data).eq('id', id);
-    } else {
-      const maxPos = contractorsData.length ? Math.max(...contractorsData.map(c => c.position || 0)) + 1 : 1;
-      await supabase.from('contractors').insert({ ...data, position: maxPos });
-    }
-    closeContractorModal();
+    if (id) { await supabase.from('contractors').update(data).eq('id',id); }
+    else { const maxPos=contractorsData.length?Math.max(...contractorsData.map(c=>c.position||0))+1:1; await supabase.from('contractors').insert({...data,position:maxPos}); }
+    closeModal('contractorModal');
     await loadContractors();
     showToast('Contractor saved ✓');
-  } catch(e) {
-    showToast(e.message || 'Failed to save', true);
-  }
-};
+  } catch(e) { showToast(e.message||'Failed to save', true); }
+});
 
-window.deleteContractor = async () => {
-  const id = document.getElementById('contractorEditId').value;
+document.getElementById('contractorDeleteBtn').addEventListener('click', async () => {
+  const id=document.getElementById('contractorEditId').value;
   if (!confirm('Delete this contractor?')) return;
-  try {
-    await supabase.from('contractors').delete().eq('id', id);
-    closeContractorModal();
-    await loadContractors();
-    showToast('Contractor deleted');
-  } catch(e) {
-    showToast('Failed to delete', true);
-  }
-};
+  try { await supabase.from('contractors').delete().eq('id',id); closeModal('contractorModal'); await loadContractors(); showToast('Contractor deleted'); }
+  catch(e) { showToast('Failed to delete', true); }
+});
 
 await renderManagerCard();
-if (role === 'admin') {
-  document.getElementById('contractorSection').style.display = 'block';
+if (role==='admin') {
+  document.getElementById('contractorSection').style.display='block';
   await loadContractors();
 }
-
-// Mobile hamburger
-(function(){
-  var btn=document.getElementById("hamburgerBtn");
-  var overlay=document.getElementById("sidebarOverlay");
-  var sidebar=document.querySelector(".sidebar");
-  if(!btn||!sidebar) return;
-  function openMenu(){sidebar.classList.add("mobile-open");overlay.classList.add("open");btn.classList.add("open")}
-  function closeMenu(){sidebar.classList.remove("mobile-open");overlay.classList.remove("open");btn.classList.remove("open")}
-  btn.addEventListener("click",function(){sidebar.classList.contains("mobile-open")?closeMenu():openMenu()});
-  overlay.addEventListener("click",closeMenu);
-  sidebar.querySelectorAll(".nav-item").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=768)closeMenu()})});
-})();
 </script>
-<!-- CONTRACTOR MODAL -->
-<div id="contractorModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto">
-    <div style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:22px" id="contractorModalTitle">Add Contractor</div>
-    <input type="hidden" id="contractorEditId">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <div>
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Service Type</label>
-        <input id="cService" class="modal-input" placeholder="e.g. Lift, Plumber…" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-      </div>
-      <div>
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Company Name</label>
-        <input id="cCompany" class="modal-input" placeholder="Company name…" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-      </div>
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Contact Name</label>
-      <input id="cContact" class="modal-input" placeholder="e.g. Danny McKinney" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Phone</label>
-      <input id="cPhone" class="modal-input" placeholder="e.g. 02 9123 4567 / 0412 345 678" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Email</label>
-      <input id="cEmail" class="modal-input" placeholder="email@example.com" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-    </div>
-    <div style="margin-bottom:20px">
-      <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px">Website (optional)</label>
-      <input id="cWebsite" class="modal-input" placeholder="www.example.com.au" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none">
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="contractorDeleteBtn" onclick="deleteContractor()" style="display:none;margin-right:auto;padding:9px 14px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Delete</button>
-      <button onclick="closeContractorModal()" style="padding:9px 16px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
-      <button onclick="saveContractor()" style="padding:9px 16px;border
+</body>
 </html>
