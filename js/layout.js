@@ -15,7 +15,6 @@ const PAGE_CONFIG = {
   'users':         { title: 'User Management',      requiredAction: 'manage_users' },
 };
 
-// 🔥 ROLE 기본 권한 (초기값 세팅 용도)
 const ROLE_DEFAULT_ACTIONS = {
   'admin': ['all'],
   'committee': [
@@ -50,7 +49,7 @@ async function loadComponent(url) {
 
 async function insertSidebar() {
   try {
-    const html = await loadComponent('../components/sidebar.html');
+    const html = await loadComponent('../components/sidebar.html'); // ✅ 수정됨
     const placeholder = document.getElementById('sidebarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
@@ -65,11 +64,12 @@ async function insertSidebar() {
 
 async function insertTopbar() {
   try {
-    const html = await loadComponent('../components/topbar.html');
+    const html = await loadComponent('../components/topbar.html'); // ✅ 수정됨
     const placeholder = document.getElementById('topbarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
     }
+
     const currentPage = getCurrentPage();
     const config = PAGE_CONFIG[currentPage];
     const titleEl = document.getElementById('topbarPageTitle');
@@ -81,38 +81,29 @@ async function insertTopbar() {
   }
 }
 
-// 🔥 ACTION 권한 체크 (permissions = 절대 기준)
 function checkActionPermission(action, permissions, role) {
-  // STEP 1: permissions 있으면 → permissions ONLY
   if (permissions && permissions.actions) {
     const permActions = permissions.actions;
     if (permActions.includes('all')) return true;
     return permActions.includes(action);
   }
-  
-  // STEP 2: permissions 없으면 → role 기본값
+
   const roleDefaults = ROLE_DEFAULT_ACTIONS[role] || [];
   if (roleDefaults.includes('all')) return true;
   return roleDefaults.includes(action);
 }
 
-// 🔥 메뉴 권한 제어 (action 기반 단일 구조)
 function applyMenuPermissions(role, permissions) {
-  // STEP 1: 모든 메뉴 아이템 가져오기
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     const page = item.dataset.page;
     const config = PAGE_CONFIG[page];
-    
-    // STEP 2: requiredAction 없으면 → 모두 표시
+
     if (!config || !config.requiredAction) {
       item.style.display = '';
       return;
     }
-    
-    // STEP 3: action 권한 체크
+
     const hasPermission = checkActionPermission(config.requiredAction, permissions, role);
-    
-    // STEP 4: 권한 없으면 숨김
     item.style.display = hasPermission ? '' : 'none';
   });
 }
@@ -124,18 +115,15 @@ function setActiveMenu() {
   });
 }
 
-// 🔥 페이지 접근 제어 (action 기반 단일 구조)
 function checkPageAccess(role, permissions) {
   const currentPage = getCurrentPage();
   const config = PAGE_CONFIG[currentPage];
   if (!config) return;
-  
-  // STEP 1: requiredAction 없으면 → 모두 접근 가능
+
   if (!config.requiredAction) return;
-  
-  // STEP 2: requiredAction 있으면 → action 권한 체크
+
   const hasPermission = checkActionPermission(config.requiredAction, permissions, role);
-  
+
   if (!hasPermission) {
     window.location.href = '/pages/building.html';
   }
@@ -144,16 +132,20 @@ function checkPageAccess(role, permissions) {
 function updateUserUI(name, role) {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
   const sbAvatar = document.getElementById('sbAvatar');
   const sbName   = document.getElementById('sbName');
   const sbRole   = document.getElementById('sbRole');
+
   if (sbAvatar) sbAvatar.textContent = initials;
   if (sbName)   sbName.textContent   = name;
   if (sbRole)   sbRole.textContent   = roleLabel;
+
   const topAvatar  = document.getElementById('topAvatar');
   const topName    = document.getElementById('topName');
   const topRole    = document.getElementById('topRole');
   const topbarRole = document.getElementById('topbarRole');
+
   if (topAvatar)  topAvatar.textContent  = initials;
   if (topName)    topName.textContent    = name;
   if (topRole)    topRole.textContent    = roleLabel;
@@ -168,79 +160,49 @@ function initLogout(supabase) {
       window.location.href = '/index.html';
     });
   }
-  window.handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/index.html';
-  };
 }
 
 function initMobileMenu() {
   const btn     = document.getElementById('hamburgerBtn');
   const overlay = document.getElementById('sidebarOverlay');
   const sidebar = document.getElementById('appSidebar');
+
   if (!btn || !sidebar) return;
+
   function openMenu() {
     sidebar.classList.add('mobile-open');
     overlay.classList.add('open');
     btn.classList.add('open');
   }
+
   function closeMenu() {
     sidebar.classList.remove('mobile-open');
     overlay.classList.remove('open');
     btn.classList.remove('open');
   }
+
   btn.addEventListener('click', () => {
     sidebar.classList.contains('mobile-open') ? closeMenu() : openMenu();
   });
-  overlay.addEventListener('click', closeMenu);
-  sidebar.querySelectorAll('.nav-item').forEach(a => {
-    a.addEventListener('click', () => {
-      if (window.innerWidth <= 768) closeMenu();
-    });
-  });
-}
 
-function initCommonUtils() {
-  window.closeModal = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  };
-  window.openModal = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('open');
-  };
-  window.showToast = (msg, isError = false) => {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.textContent      = msg;
-    t.style.background = isError ? '#991b1b' : '#0f172a';
-    t.style.display    = 'block';
-    setTimeout(() => { t.style.display = 'none'; }, 3000);
-  };
-  
-  // 🔥 권한 체크 함수 전역 공개
-  window.checkActionPermission = checkActionPermission;
+  overlay.addEventListener('click', closeMenu);
 }
 
 export async function initLayout() {
   try {
     await insertSidebar();
     await insertTopbar();
-    initCommonUtils();
 
     const supabase = await getSupabase();
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
-      const publicPages = ['index', 'setup', 'reset-password'];
-      const current = getCurrentPage();
-      if (!publicPages.includes(current)) {
-        window.location.href = '/index.html';
-      }
+      window.location.href = '/index.html';
       return null;
     }
 
     const user = session.user;
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
@@ -248,17 +210,16 @@ export async function initLayout() {
       .maybeSingle();
 
     const role = profile?.role || 'observer';
-    const name = profile?.full_name || user.email.split('@')[0];
-    const permissions = profile?.permissions || null;
+    const name = profile?.full_name || user.email;
 
-    checkPageAccess(role, permissions);
-    applyMenuPermissions(role, permissions);
+    applyMenuPermissions(role, profile?.permissions);
     setActiveMenu();
     updateUserUI(name, role);
     initLogout(supabase);
     initMobileMenu();
 
-    return { supabase, user, profile, role, name, permissions };
+    return { supabase, user, profile };
+
   } catch (e) {
     console.error('🔥 LAYOUT ERROR:', e);
     return null;
