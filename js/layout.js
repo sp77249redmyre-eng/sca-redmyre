@@ -8,7 +8,6 @@ const PAGE_CONFIG = {
   'hvac':          { title: 'A/C Temperature',       allowedRoles: null },
   'emergency':     { title: 'Emergency Contacts',    allowedRoles: null },
   'works':         { title: 'Ongoing Works',         allowedRoles: null },
-  'dashboard':     { title: 'Dashboard',             allowedRoles: null },
   'history':       { title: 'Temperature History',   allowedRoles: ['admin'] },
   'quotes':        { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':       { title: 'Financial Reports',     allowedRoles: ['admin', 'committee', 'observer'] },
