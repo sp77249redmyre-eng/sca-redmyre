@@ -52,12 +52,6 @@ async function insertTopbar() {
   if (placeholder) {
     placeholder.outerHTML = html;
   }
-  const currentPage = getCurrentPage();
-  const config = PAGE_CONFIG[currentPage];
-  const titleEl = document.getElementById('topbarPageTitle');
-  if (titleEl && config) {
-    titleEl.textContent = config.title;
-  }
 }
 
 function applyRoleMenuControl(role) {
@@ -110,14 +104,17 @@ function updateGreeting(name) {
   const greetEl = document.getElementById('topbarGreeting');
   const dateEl = document.getElementById('topbarDate');
   if (!greetEl) return;
+
   const hour = new Date().getHours();
   let greet = 'Good morning';
   if (hour >= 12 && hour < 17) greet = 'Good afternoon';
   else if (hour >= 17) greet = 'Good evening';
+
   const now = new Date();
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dateStr = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
   greetEl.innerHTML = `${greet}, ${name.split(' ')[0]} 👋`;
   if (dateEl) {
     dateEl.textContent = dateStr;
