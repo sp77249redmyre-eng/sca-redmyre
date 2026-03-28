@@ -6,11 +6,11 @@ const PAGE_CONFIG = {
   'parking':       { title: 'Parking / Towing',     requiredAction: null },
   'complaints':    { title: 'Resident Requests',    requiredAction: null },
   'hvac':          { title: 'A/C Temperature',      requiredAction: null },
-  'emergency':     { title: 'Emergency Contacts',   requiredAction: null },
-  'works':         { title: 'Ongoing Works',        requiredAction: 'create_work' },
-  'dashboard':     { title: 'Dashboard',            requiredAction: null },
   'history':       { title: 'Temperature History',  requiredAction: 'all' },
+  'emergency':     { title: 'Emergency Contacts',   requiredAction: null },
+  'dashboard':     { title: 'Dashboard',            requiredAction: null },
   'quotes':        { title: 'Quote Approvals',      requiredAction: 'approve' },
+  'works':         { title: 'Ongoing Works',        requiredAction: 'create_work' },
   'reports':       { title: 'Financial Reports',    requiredAction: 'view_reports' },
   'users':         { title: 'User Management',      requiredAction: 'manage_users' },
 };
@@ -49,7 +49,7 @@ async function loadComponent(url) {
 
 async function insertSidebar() {
   try {
-    const html = await loadComponent('../components/sidebar.html'); // ✅ 수정됨
+    const html = await loadComponent('/components/sidebar.html'); // ✅ 수정됨
     const placeholder = document.getElementById('sidebarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
@@ -64,7 +64,7 @@ async function insertSidebar() {
 
 async function insertTopbar() {
   try {
-    const html = await loadComponent('../components/topbar.html'); // ✅ 수정됨
+    const html = await loadComponent('/components/topbar.html'); // ✅ 수정됨
     const placeholder = document.getElementById('topbarPlaceholder');
     if (placeholder) {
       placeholder.innerHTML = html || '';
