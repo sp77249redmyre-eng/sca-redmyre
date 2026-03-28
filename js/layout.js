@@ -1,30 +1,18 @@
 import { getSupabase } from '/js/auth.js';
 
 const PAGE_CONFIG = {
-  'building':      { title: 'Overview',             requiredAction: null },
-  'announcements': { title: 'Announcements',        requiredAction: null },
-  'parking':       { title: 'Parking / Towing',     requiredAction: null },
-  'complaints':    { title: 'Resident Requests',    requiredAction: null },
-  'hvac':          { title: 'A/C Temperature',      requiredAction: null },
-  'history':       { title: 'Temperature History',  requiredAction: 'all' },
-  'emergency':     { title: 'Emergency Contacts',   requiredAction: null },
-  'dashboard':     { title: 'Dashboard',            requiredAction: null },
-  'quotes':        { title: 'Quote Approvals',      requiredAction: 'approve' },
-  'works':         { title: 'Ongoing Works',        requiredAction: 'create_work' },
-  'reports':       { title: 'Financial Reports',    requiredAction: 'view_reports' },
-  'users':         { title: 'User Management',      requiredAction: 'manage_users' },
-};
-
-const ROLE_DEFAULT_ACTIONS = {
-  'admin': ['all'],
-  'committee': [
-    'approve', 'decline', 'hold', 'force_approve',
-    'create_work', 'complete_work', 'edit_work',
-    'view_reports', 'export_reports',
-    'upload_files', 'delete_files'
-  ],
-  'observer': ['view_reports'],
-  'resident': []
+  'building':      { title: 'Overview',             allowedRoles: null },
+  'announcements': { title: 'Announcements',         allowedRoles: null },
+  'parking':       { title: 'Parking / Towing',      allowedRoles: null },
+  'complaints':    { title: 'Resident Requests',     allowedRoles: null },
+  'hvac':          { title: 'A/C Temperature',       allowedRoles: null },
+  'emergency':     { title: 'Emergency Contacts',    allowedRoles: null },
+  'works':         { title: 'Ongoing Works',         allowedRoles: null },
+  'dashboard':     { title: 'Dashboard',             allowedRoles: null },
+  'history':       { title: 'Temperature History',   allowedRoles: ['admin'] },
+  'quotes':        { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
+  'reports':       { title: 'Financial Reports',     allowedRoles: ['admin', 'committee', 'observer'] },
+  'users':         { title: 'User Management',       allowedRoles: ['admin'] },
 };
 
 function getCurrentPage() {
@@ -47,67 +35,45 @@ async function loadComponent(url) {
   }
 }
 
+// ✅ DOM 렌더 완료 대기 추가
 async function insertSidebar() {
-  try {
-    const html = await loadComponent('/components/sidebar.html'); // ✅ 수정됨
-    const placeholder = document.getElementById('sidebarPlaceholder');
-    if (placeholder) {
-      placeholder.innerHTML = html || '';
-    } else {
-      document.body.insertAdjacentHTML('afterbegin', html || '');
-    }
-    await new Promise(resolve => setTimeout(resolve, 0));
-  } catch (e) {
-    console.error('[layout.js] insertSidebar error:', e);
+  const html = await loadComponent('/components/sidebar.html');
+  const placeholder = document.getElementById('sidebarPlaceholder');
+  if (placeholder) {
+    placeholder.outerHTML = html;
+  } else {
+    document.body.insertAdjacentHTML('afterbegin', html);
   }
+  // 🔥 DOM 렌더링 완료 대기 (챗이사 지시)
+  await new Promise(resolve => setTimeout(resolve, 0));
 }
 
 async function insertTopbar() {
-  try {
-    const html = await loadComponent('/components/topbar.html'); // ✅ 수정됨
-    const placeholder = document.getElementById('topbarPlaceholder');
-    if (placeholder) {
-      placeholder.innerHTML = html || '';
-    }
-
-    const currentPage = getCurrentPage();
-    const config = PAGE_CONFIG[currentPage];
-    const titleEl = document.getElementById('topbarPageTitle');
-    if (titleEl && config) {
-      titleEl.textContent = config.title;
-    }
-  } catch (e) {
-    console.error('[layout.js] insertTopbar error:', e);
+  const html = await loadComponent('/components/topbar.html');
+  const placeholder = document.getElementById('topbarPlaceholder');
+  if (placeholder) {
+    placeholder.outerHTML = html;
+  }
+  const currentPage = getCurrentPage();
+  const config = PAGE_CONFIG[currentPage];
+  const titleEl = document.getElementById('topbarPageTitle');
+  if (titleEl && config) {
+    titleEl.textContent = config.title;
   }
 }
 
-function checkActionPermission(action, permissions, role) {
-  if (permissions && permissions.actions) {
-    const permActions = permissions.actions;
-    if (permActions.includes('all')) return true;
-    return permActions.includes(action);
+// ✅ STEP 1 — role class 적용 (display 결정)
+function applyRoleMenuControl(role) {
+  const privileged = ['admin', 'committee', 'observer'];
+  if (privileged.includes(role)) {
+    document.body.classList.add('role-privileged');
   }
-
-  const roleDefaults = ROLE_DEFAULT_ACTIONS[role] || [];
-  if (roleDefaults.includes('all')) return true;
-  return roleDefaults.includes(action);
+  if (role === 'admin') {
+    document.body.classList.add('role-admin');
+  }
 }
 
-function applyMenuPermissions(role, permissions) {
-  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-    const page = item.dataset.page;
-    const config = PAGE_CONFIG[page];
-
-    if (!config || !config.requiredAction) {
-      item.style.display = '';
-      return;
-    }
-
-    const hasPermission = checkActionPermission(config.requiredAction, permissions, role);
-    item.style.display = hasPermission ? '' : 'none';
-  });
-}
-
+// ✅ STEP 2 — active 적용 (스타일만, display 건드리지 않음)
 function setActiveMenu() {
   const currentPage = getCurrentPage();
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
@@ -115,16 +81,12 @@ function setActiveMenu() {
   });
 }
 
-function checkPageAccess(role, permissions) {
+function checkPageAccess(role) {
   const currentPage = getCurrentPage();
   const config = PAGE_CONFIG[currentPage];
   if (!config) return;
-
-  if (!config.requiredAction) return;
-
-  const hasPermission = checkActionPermission(config.requiredAction, permissions, role);
-
-  if (!hasPermission) {
+  if (!config.allowedRoles) return;
+  if (!config.allowedRoles.includes(role)) {
     window.location.href = '/pages/building.html';
   }
 }
@@ -132,20 +94,16 @@ function checkPageAccess(role, permissions) {
 function updateUserUI(name, role) {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-
   const sbAvatar = document.getElementById('sbAvatar');
   const sbName   = document.getElementById('sbName');
   const sbRole   = document.getElementById('sbRole');
-
   if (sbAvatar) sbAvatar.textContent = initials;
   if (sbName)   sbName.textContent   = name;
   if (sbRole)   sbRole.textContent   = roleLabel;
-
   const topAvatar  = document.getElementById('topAvatar');
   const topName    = document.getElementById('topName');
   const topRole    = document.getElementById('topRole');
   const topbarRole = document.getElementById('topbarRole');
-
   if (topAvatar)  topAvatar.textContent  = initials;
   if (topName)    topName.textContent    = name;
   if (topRole)    topRole.textContent    = roleLabel;
@@ -160,68 +118,106 @@ function initLogout(supabase) {
       window.location.href = '/index.html';
     });
   }
+  window.handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/index.html';
+  };
 }
 
 function initMobileMenu() {
   const btn     = document.getElementById('hamburgerBtn');
   const overlay = document.getElementById('sidebarOverlay');
   const sidebar = document.getElementById('appSidebar');
-
   if (!btn || !sidebar) return;
-
   function openMenu() {
     sidebar.classList.add('mobile-open');
     overlay.classList.add('open');
     btn.classList.add('open');
   }
-
   function closeMenu() {
     sidebar.classList.remove('mobile-open');
     overlay.classList.remove('open');
     btn.classList.remove('open');
   }
-
   btn.addEventListener('click', () => {
     sidebar.classList.contains('mobile-open') ? closeMenu() : openMenu();
   });
-
   overlay.addEventListener('click', closeMenu);
+  sidebar.querySelectorAll('.nav-item').forEach(a => {
+    a.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeMenu();
+    });
+  });
+}
+
+function initCommonUtils() {
+  window.closeModal = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  };
+  window.openModal = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  };
+  window.showToast = (msg, isError = false) => {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent      = msg;
+    t.style.background = isError ? '#991b1b' : '#0f172a';
+    t.style.display    = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  };
 }
 
 export async function initLayout() {
-  try {
-    await insertSidebar();
-    await insertTopbar();
+  // STEP A: sidebar 삽입 + DOM 렌더 완료 대기
+  await insertSidebar();
+  await insertTopbar();
 
-    const supabase = await getSupabase();
-    const { data: { session } } = await supabase.auth.getSession();
+  // STEP B: 공통 유틸 등록
+  initCommonUtils();
 
-    if (!session) {
+  // STEP C: Supabase 인증 확인
+  const supabase = await getSupabase();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    const publicPages = ['index', 'setup', 'reset-password'];
+    const current = getCurrentPage();
+    if (!publicPages.includes(current)) {
       window.location.href = '/index.html';
-      return null;
     }
-
-    const user = session.user;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    const role = profile?.role || 'observer';
-    const name = profile?.full_name || user.email;
-
-    applyMenuPermissions(role, profile?.permissions);
-    setActiveMenu();
-    updateUserUI(name, role);
-    initLogout(supabase);
-    initMobileMenu();
-
-    return { supabase, user, profile };
-
-  } catch (e) {
-    console.error('🔥 LAYOUT ERROR:', e);
     return null;
   }
+
+  // STEP D: 프로필 fetch
+  const user = session.user;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const role = profile?.role || 'observer';
+  const name = profile?.full_name || user.email.split('@')[0];
+
+  // STEP E: 페이지 접근 제어
+  checkPageAccess(role);
+
+  // ✅ STEP F: role 적용 먼저 (display 결정)
+  applyRoleMenuControl(role);
+
+  // ✅ STEP G: active 적용 (스타일만, display 건드리지 않음)
+  setActiveMenu();
+
+  // STEP H: 사용자 UI 업데이트
+  updateUserUI(name, role);
+
+  // STEP I: Logout 초기화
+  initLogout(supabase);
+
+  // STEP J: Mobile menu 초기화
+  initMobileMenu();
+
+  return { supabase, user, profile, role, name };
 }
