@@ -12,60 +12,9 @@
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
-  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
-  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
-  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
-  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
-  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
-  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
-  --purple:#7c3aed;--purple-bg:#ede9fe;--purple-text:#5b21b6;
-  --sidebar-w:232px;
-}
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-.sidebar{width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(185deg,#0a1a3e 0%,#1e3a8a 45%,#1e4fa3 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;overflow:hidden}
-.sidebar::before{content:'';position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.2) 0%,transparent 70%);top:-80px;right:-80px;pointer-events:none}
-.sb-header{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
-.sb-logo{display:flex;align-items:center;gap:10px;margin-bottom:14px;text-decoration:none}
-.sb-logo-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sb-logo-icon img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3))}
-.sb-company{font-size:12px;font-weight:600;color:rgba(255,255,255,0.9)}
-.sb-company-sub{font-size:10px;color:rgba(255,255,255,0.4)}
-.sb-building{font-size:17px;font-weight:600;color:#fff}
-.sb-building-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
-.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;position:relative;z-index:1}
-.nav-section{font-size:10px;font-weight:600;letter-spacing:0.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;padding:10px 10px 5px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;text-decoration:none;border-left:3px solid transparent}
-.nav-item:hover:not(.active){background:rgba(255,255,255,0.07)}
-.nav-item.active{background:rgba(255,255,255,0.14);border-left-color:rgba(255,255,255,0.6)}
-.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.nav-item.active .nav-icon{background:rgba(255,255,255,0.12)}
-.nav-label{font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);flex:1}
-.nav-item.active .nav-label{color:#fff}
-.nav-count{font-size:10px;font-weight:700;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);padding:2px 7px;border-radius:100px}
-.nav-count.urgent{background:rgba(239,68,68,0.3);color:#fca5a5}
-.sb-footer{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1}
-.sb-user{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
-.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
-.sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)}
-.sb-urole{font-size:10px;color:rgba(255,255,255,0.4)}
-.sb-logout{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.main-topbar{height:58px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
-.page-title{font-size:16px;font-weight:600}
-.breadcrumb{font-size:12px;color:var(--muted);margin-top:1px}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.role-chip{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:var(--blue-50);border:1px solid var(--blue-100)}
-.role-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
-.role-label{font-size:12px;font-weight:600;color:var(--blue-700)}
-.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--border);border-radius:100px}
-.u-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
-.u-name{font-size:13px;font-weight:500}
-.u-role{font-size:11px;color:var(--muted)}
-.content{padding:24px}
+/* ===== QUOTES PAGE SPECIFIC STYLES ===== */
 .badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;display:inline-block;white-space:nowrap}
 .badge-green{background:var(--green-bg);color:var(--green-text)}
 .badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
@@ -113,114 +62,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .vote-fill-r{height:100%;background:var(--red);border-radius:100px;transition:width 0.5s}
 .admin-voter-list{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
 .quote-footer{display:flex;align-items:center;gap:8px;padding-top:14px;border-top:1px solid var(--border-light);flex-wrap:wrap}
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:500;align-items:center;justify-content:center;padding:20px}
-.modal-backdrop.open{display:flex}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
-.modal-title{font-size:17px;font-weight:600;margin-bottom:22px}
-.modal-field{margin-bottom:14px}
-.modal-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:block}
-.modal-input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none}
-.modal-input:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
-.modal-textarea{width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;resize:vertical;line-height:1.6}
-.modal-textarea:focus{border-color:var(--blue-600);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
-.modal-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
-.file-upload-area{border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--bg)}
-.file-upload-area:hover{border-color:var(--blue-400);background:var(--blue-50)}
-.file-upload-area.dragging{border-color:var(--blue-600);background:var(--blue-50)}
-.file-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
-.file-item-name{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-item-size{color:var(--muted);flex-shrink:0}
-.file-item-remove{color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;line-height:1}
-.file-item-remove:hover{color:var(--red)}
-.file-item-link{color:var(--blue-600);text-decoration:none;font-weight:500}
-.file-item-link:hover{text-decoration:underline}
-.toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
-.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
-.empty-icon{font-size:48px;margin-bottom:16px}
-.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
-
-/* ===== MOBILE HAMBURGER MENU ===== */
-.hamburger-btn{display:none;position:fixed;top:11px;left:14px;z-index:400;width:38px;height:38px;border-radius:9px;background:var(--blue-800);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
-.hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s}
-.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
-.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
-.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,26,62,0.55);z-index:199;backdrop-filter:blur(2px)}
-.sidebar-overlay.open{display:block}
-@media(max-width:768px){
-  .hamburger-btn{display:flex}
-  .sidebar{transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1)}
-  .sidebar.mobile-open{transform:translateX(0)}
-  .main{margin-left:0!important}
-  .main-topbar{padding-left:58px!important;padding-right:12px;height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
-  .page-title{font-size:14px}
-  .breadcrumb{font-size:10px;display:none}
-  .tb-right{gap:6px}
-  .role-chip{padding:4px 8px}
-  .role-label{font-size:11px}
-  .user-chip{padding:3px 8px 3px 3px}
-  .u-avatar{width:26px;height:26px;font-size:10px}
-  .u-name{font-size:12px}
-  .u-role{display:none}
-}
 </style>
 </head>
 <body>
 
-<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
-  <span></span><span></span><span></span>
-</button>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-<aside class="sidebar">
-  <div class="sb-header">
-    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
-      <div class="sb-logo-icon"><img src="sca-logo.png" alt="SCA" onerror="this.style.display='none'"></div>
-      <div><div class="sb-company">SCA Facility</div><div class="sb-company-sub">Management</div></div>
-    </a>
-    <div class="sb-building">Redmyre House</div>
-    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
-  </div>
-  <nav class="sb-nav">
-    <a href="building.html" class="nav-item "><div class="nav-icon">🏠</div><span class="nav-label">Overview</span></a>
-    <a href="announcements.html" class="nav-item "><div class="nav-icon">📢</div><span class="nav-label">Announcements</span></a>
-    <a href="parking.html" class="nav-item "><div class="nav-icon">🚗</div><span class="nav-label">Parking / Towing</span></a>
-    <a href="complaints.html" class="nav-item "><div class="nav-icon">📬</div><span class="nav-label">Resident Requests</span></a>
-    <a href="hvac.html" class="nav-item "><div class="nav-icon">❄️</div><span class="nav-label">A/C Temperature Request</span></a>
-    <a href="emergency.html" class="nav-item "><div class="nav-icon">📞</div><span class="nav-label">Emergency Contacts</span></a>
-    <a href="history.html" class="nav-item " id="historyNav" style="display:none"><div class="nav-icon">🌡️</div><span class="nav-label">Temperature History</span></a>
-    <a href="quotes.html" class="nav-item active" id="quotesNav" style="display:none"><div class="nav-icon">💰</div><span class="nav-label">Quote Approvals</span></a>
-    <a href="works.html" class="nav-item "><div class="nav-icon">🔧</div><span class="nav-label">Ongoing Works</span></a>
-    <a href="reports.html" class="nav-item " id="reportsNav" style="display:none"><div class="nav-icon">📊</div><span class="nav-label">Financial Reports</span></a>
-    <a href="dashboard.html" class="nav-item"><div class="nav-icon">⬅️</div><span class="nav-label">Dashboard</span></a>
-    <div class="nav-section" id="adminSection" style="display:none">Admin</div>
-    <a href="users.html" class="nav-item" id="usersNav" style="display:none"><div class="nav-icon">👥</div><span class="nav-label">User Management</span></a>
-  </nav>
-  <div class="sb-footer">
-    <div class="sb-user">
-      <div class="sb-avatar" id="sbAvatar">?</div>
-      <div><div class="sb-uname" id="sbName">Loading…</div><div class="sb-urole" id="sbRole">—</div></div>
-      <div class="sb-logout" onclick="handleLogout()">Log out</div>
-    </div>
-  </div>
-</aside>
+<div id="sidebarPlaceholder"></div>
 
-<div class="main">
-  <div class="main-topbar">
-    <div>
-      <div class="page-title">Quote Approvals</div>
-      <div class="breadcrumb">Redmyre House · Building Management System</div>
-    </div>
-    <div class="tb-right">
-      <div class="role-chip"><div class="role-dot"></div><span class="role-label" id="topbarRole">—</span></div>
-      <div class="user-chip">
-        <div class="u-avatar" id="topAvatar">?</div>
-        <div><div class="u-name" id="topName">—</div><div class="u-role" id="topRole">—</div></div>
-      </div>
-    </div>
-  </div>
-
+<main class="main">
+  <div id="topbarPlaceholder"></div>
+  
   <div class="content">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px">
@@ -249,7 +99,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
     </div>
   </div>
-</div>
+</main>
 
 <!-- ADD/EDIT QUOTE MODAL -->
 <div class="modal-backdrop" id="quoteModal">
@@ -293,53 +143,46 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <textarea class="modal-textarea" id="quoteNotes" placeholder="Private notes for committee/admins only..."></textarea>
     </div>
     <div class="modal-field">
-      <label class="modal-label">Attachments (Quote docs, photos, etc.)</label>
-      <div class="file-upload-area" id="fileDropArea" onclick="document.getElementById('fileInput').click()"
-           ondragover="event.preventDefault();this.classList.add('dragging')"
-           ondragleave="this.classList.remove('dragging')"
-           ondrop="handleFileDrop(event)">
-        <div style="font-size:22px;margin-bottom:6px">📎</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text-2)">Click to attach files</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">or drag & drop · PDF, JPG, PNG, DOCX · Max 10MB each</div>
-      </div>
-      <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.doc" style="display:none" onchange="handleFileSelect(event)">
-      <div class="file-list" id="fileList"></div>
+      <label class="modal-label">Attachments</label>
+      <input type="file" id="quoteFileInput" multiple style="display:none">
+      <button class="btn-secondary" onclick="document.getElementById('quoteFileInput').click()" style="width:100%;justify-content:center">📎 Upload Files</button>
+      <div id="fileListContainer" style="margin-top:10px"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none;margin-right:auto">Delete</button>
+    <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveQuote()" id="saveQuoteBtn">Save →</button>
+      <button class="btn-danger" id="deleteQuoteBtn" style="display:none" onclick="deleteQuote()">Delete</button>
+      <button class="btn-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
 </div>
 
 <!-- HOLD REASON MODAL -->
 <div class="modal-backdrop" id="holdModal">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-title">Put Quote On Hold</div>
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-title">Put Quote on Hold</div>
     <div class="modal-field">
-      <label class="modal-label">Reason for hold</label>
-      <textarea class="modal-textarea" id="holdReason" placeholder="e.g. Awaiting additional quotes, legal review required…" style="min-height:100px"></textarea>
+      <label class="modal-label">Reason for Hold</label>
+      <textarea class="modal-textarea" id="holdReason" placeholder="Explain why this quote is being paused..."></textarea>
     </div>
-    <div class="modal-footer">
+    <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('holdModal')">Cancel</button>
-      <button class="btn-hold" onclick="confirmHold()">Put On Hold ⏸</button>
+      <button class="btn-hold" onclick="confirmHold()">Confirm Hold</button>
     </div>
   </div>
 </div>
 
 <!-- EDIT SCOPE MODAL -->
 <div class="modal-backdrop" id="scopeModal">
-  <div class="modal-box" style="max-width:520px">
+  <div class="modal-box" style="max-width:600px">
     <div class="modal-title">Edit Scope of Works</div>
     <input type="hidden" id="scopeEditId">
     <div class="modal-field">
       <label class="modal-label">Scope of Works</label>
-      <textarea class="modal-textarea" id="scopeText" style="min-height:140px" placeholder="Describe the scope of works…"></textarea>
+      <textarea class="modal-textarea" id="scopeText" rows="8"></textarea>
     </div>
-    <div class="modal-footer">
+    <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('scopeModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveScope()">Save →</button>
+      <button class="btn-primary" onclick="saveScope()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -355,22 +198,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       </div>
     </div>
     <div id="pdfViewerWrap" style="width:100%;height:70vh;border-radius:10px;overflow:hidden;background:var(--bg)">
-      <iframe id="pdfIframe" src="" style="width:100%;height:100%;border:none;border-radius:10px"></iframe>
-    </div>
-  </div>
-</div>
-
-<!-- IMAGE VIEWER MODAL -->
-<div class="modal-backdrop" id="viewerModal">
-  <div class="modal-box" style="max-width:860px;width:100%;padding:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:600;color:var(--text)" id="viewerModalTitle">Document</div>
-      <div style="display:flex;gap:8px">
-        <a id="viewerOpenNewTab" href="#" target="_blank" class="btn-secondary" style="font-size:12px;padding:6px 12px">↗ Open in new tab</a>
-        <button class="btn-secondary" onclick="closeModal('viewerModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
-      </div>
-    </div>
-    <div id="viewerContent" style="width:100%;height:72vh;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center">
+      <iframe id="pdfIframe" style="width:100%;height:100%;border:none;"></iframe>
     </div>
   </div>
 </div>
@@ -378,79 +206,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 <div class="toast" id="toast"></div>
 
 <script type="module">
-const SUPABASE_URL = "https://wunsexdnqathluplkkvo.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo";
-const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { initLayout } from '/js/layout.js';
 
-// ── Auth ──
-const { data:{ session } } = await supabase.auth.getSession();
-if (!session) { window.location.href = 'index.html'; }
-const user = session.user;
-const { data: profile, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('id', user.id)
-  .maybeSingle()
-const role = profile?.role || 'observer';
-const name = profile?.full_name || user.email.split('@')[0];
-const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-
-['sbAvatar','topAvatar'].forEach(id => document.getElementById(id).textContent = initials);
-document.getElementById('sbName').textContent = name;
-document.getElementById('topName').textContent = name;
-const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-document.getElementById('sbRole').textContent = roleLabel;
-document.getElementById('topRole').textContent = roleLabel;
-document.getElementById('topbarRole').textContent = roleLabel;
-
-const privileged = ['admin','committee','observer'];
-if (privileged.includes(role)) {
-  document.getElementById('reportsNav').style.display = 'flex';
-}
-if (role === 'admin') {
-  document.getElementById('historyNav').style.display = 'flex';
-  document.getElementById('usersNav').style.display = 'flex';
-  document.getElementById('adminSection').style.display = 'block';
-  document.getElementById('addQuoteBtn').style.display = 'inline-flex';
+const ctx = await initLayout();
+if (!ctx) {
+  window.location.href = '/index.html';
+  throw new Error('Layout init failed');
 }
 
-window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
-window.closeModal = id => document.getElementById(id).classList.remove('open');
-window.showToast = (msg, isError=false) => {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.style.background = isError ? '#991b1b' : '#0f172a';
-  t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
-};
-
-// ── 데이터 변수 ──
-let allQuotes = [];
-let allVotes = [];
-let committeeCount = 0;
-let majorityNeeded = 0;
-let currentFilter = 'all';
-let holdingQuoteId = null;
-
-const RULES = { declinesToAutoDecline: 5, expiryDays: 15 };
-
-// ── 헬퍼 ──
-function parseComment(comment) {
-  try {
-    // 🔥 수정 5: JSON category 완전 제거
-    if (!comment) return { note:'', files:[], priority:'Normal', resolved_at:null, resolved_as:null, workflow:null };
-    const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
-    let files = [];
-    if (Array.isArray(obj?.files)) files = obj.files.filter(f=>f&&f.path);
-    return {
-      note: obj?.note || '',
-      files,
-      priority: obj?.priority || 'Normal',
-      resolved_at: obj?.resolved_at || null,
-      resolved_as: obj?.resolved_as || null,
-      workflow: obj?.workflow || null,
-    };
-  } catch { return { note:'', files:[], priority:'Normal', resolved_at:null, resolved_as:null, workflow:null }; }
-}
+const { supabase, user, role, permissions } = ctx;
 
 async function getSignedUrl(path) {
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
@@ -466,12 +230,8 @@ async function uploadFile(file) {
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
-// ── Force Approve + Ongoing Works 이동 핵심 함수 (안정화 버전) ──
 window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
-
-  // 🔥 수정 3: 상태 단일화 — status='approved', is_forced=true
-  console.log('🔥 FORCE APPROVE executed by admin - quote_id:', quoteId, '- timestamp:', new Date().toISOString());
 
   const btns = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
   if (btns.length) {
@@ -479,7 +239,6 @@ window.forceApprove = async function (quoteId) {
   }
 
   try {
-    // STEP 1: status를 'approved'로 변경 + is_forced = true
     const { error: updateError } = await supabase
       .from('quotes')
       .update({ status: 'approved', is_forced: true })
@@ -487,12 +246,10 @@ window.forceApprove = async function (quoteId) {
 
     if (updateError) throw updateError;
 
-    // STEP 2: Works 생성 (중복 체크 포함)
     await syncQuoteToWorks(quoteId);
 
     showToast('⚡ Quote force-approved and moved to Ongoing Works');
 
-    // STEP 3: 데이터 새로고침
     await loadData();
     renderQuotes();
 
@@ -507,21 +264,8 @@ window.forceApprove = async function (quoteId) {
   }
 }
 
-// ── Quote 승인 → Ongoing Works 이동 (visibility: "restricted") ──
 async function syncQuoteToWorks(quoteId) {
   try {
-    // 🔥 수정 4: DB + JS 중복 차단 (조용히 RETURN)
-    const { data: existingWork } = await supabase
-      .from('works')
-      .select('id')
-      .eq('quote_id', quoteId)
-      .single();
-    
-    if (existingWork) {
-      console.log('Work already exists for quote_id:', quoteId);
-      return; // 조용히 종료 (에러 없음)
-    }
-
     const { data: q, error: fetchError } = await supabase
       .from('quotes')
       .select('*')
@@ -542,15 +286,17 @@ async function syncQuoteToWorks(quoteId) {
       quote_id: quoteId
     };
 
-    // Works 테이블에 insert
     const { error: insertError } = await supabase.from('works').insert(workData);
 
     if (insertError) {
+      if (insertError.code === '23505') {
+       
+        return;
+      }
       console.error('Failed to insert into works table:', insertError);
       showToast('Quote approved but failed to create Ongoing Works entry: ' + insertError.message, true);
     } else {
-      console.log('Successfully moved to Ongoing Works');
-      // 🔥 수정 1: archived 상태 완전 제거 (아무것도 안 함)
+      
     }
 
   } catch(e) {
@@ -559,37 +305,18 @@ async function syncQuoteToWorks(quoteId) {
   }
 }
 
-// ── 첨부파일 열기 (권한 체크 포함) ──
 window.openAttachment = async (quoteId, path, name, type, visibility = 'restricted') => {
-  // Quote 단계 파일은 admin / committee만 볼 수 있음
   if (visibility === 'restricted' && !['admin','committee'].includes(role)) {
     return showToast('You do not have permission to view this file', true);
   }
-
   try {
     const url = await getSignedUrl(path);
-    const isPdf = name.toLowerCase().endsWith('.pdf') || (type && type.includes('pdf'));
-    const isImage = name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || (type && type.startsWith('image/'));
-
-    if (isImage) {
-      document.getElementById('viewerModalTitle').textContent = name;
-      document.getElementById('viewerOpenNewTab').href = url;
-      document.getElementById('viewerContent').innerHTML = `<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">`;
-      document.getElementById('viewerModal').classList.add('open');
-    } else if (isPdf) {
-      document.getElementById('pdfModalTitle').textContent = name;
-      document.getElementById('pdfIframe').src = url;
-      document.getElementById('pdfOpenNewTab').href = url;
-      document.getElementById('pdfModal').classList.add('open');
-    } else {
-      window.open(url, '_blank');
-    }
+    window.open(url, '_blank');
   } catch(e) {
     showToast('파일을 열 수 없습니다: ' + e.message, true);
   }
 };
 
-// ── loadData, getQuoteStatus, isResultRevealed, renderQuotes (원본 그대로 유지) ──
 async function loadData() {
   const [{ data: quotes }, { data: votes }, { data: committee }] = await Promise.all([
     supabase.from('quotes').select('*').order('created_at', { ascending: false }),
@@ -621,14 +348,23 @@ async function loadData() {
   document.getElementById('statApproved').textContent = counts.approved;
   document.getElementById('statDeclined').textContent = counts.declined;
   document.getElementById('statHold').textContent = counts.hold;
+
+  if (role === 'admin') {
+    document.getElementById('addQuoteBtn').style.display = 'inline-flex';
+  }
 }
 
-function getQuoteVotes(quoteId) { return allVotes.filter(v => v.quote_id === quoteId); }
+function parseComment(c) {
+  try { return JSON.parse(c || '{}'); } catch { return {}; }
+}
+
+function getQuoteVotes(qid) {
+  return allVotes.filter(v => v.quote_id === qid);
+}
 
 function getQuoteStatus(q) {
-  const st = (q.status || 'pending').toLowerCase();
+  const st = q.status;
   if (st === 'onhold') return 'onhold';
-  // 🔥 수정 2: 상태 단일화 — 오직 approved만 사용
   if (st === 'approved') return 'approved';
   if (st === 'declined') return 'declined';
   if (st === 'expired') return 'expired';
@@ -651,7 +387,6 @@ function isResultRevealed(q) {
 
 function renderQuotes() {
   const list = document.getElementById('quoteList');
-  // 🔥 수정 3: approved 숨김 제거 - 모든 상태 표시
   const visibleQuotes = allQuotes;
 
 const filtered = currentFilter === 'all'
@@ -693,11 +428,9 @@ const filtered = currentFilter === 'all'
     const now = new Date();
     const daysLeft = q.expiry_date ? Math.max(0, Math.ceil((new Date(q.expiry_date) - now) / (1000*60*60*24))) : Math.max(0, 15 - Math.floor((now - created) / (1000*60*60*24)));
 
-    // 🔥 수정 5: category는 q.category만 사용 (JSON 제거)
     const category = q.category || '';
     const priority = parsed.priority || 'Normal';
 
-    // 🔥 수정 2: is_forced 기반 배지 구분
     let stBadge;
     if (q.is_forced && st === 'approved') {
       stBadge = '<span class="badge badge-purple">🔒 Force Approved</span>';
@@ -712,70 +445,108 @@ const filtered = currentFilter === 'all'
     const prioBadge = `<span style="font-size:11px;font-weight:600;color:${prioColor}">${priority}</span>`;
 
     let voteSection = '';
-    // 🔥 수정 2: is_forced=true인 경우 투표 섹션 숨김
     if (q.is_forced && st === 'approved') {
       voteSection = '';
     } else if (st === 'pending' || st === 'onhold') {
       if (!revealed) {
         voteSection = `<div class="vote-hidden-box"><p style="font-size:14px;font-weight:600;margin:0 0 4px">${totalVoted} of ${committeeCount} members voted</p><p style="font-size:12px;color:var(--muted);margin:0">Results revealed at majority (${majorityNeeded})</p></div>${canVote && st==='pending' ? `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn-success" style="flex:1;justify-content:center" onclick="castVote('${q.id}','approve')">✅ Approve</button><button class="btn-danger" style="flex:1;justify-content:center" onclick="castVote('${q.id}','decline')">❌ Decline</button></div>` : ''}${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong> — Results pending</div>` : ''}`;
       } else {
-        // 🔥 투표자 이름 표시 추가
         const approveVoters = votes.filter(v=>v.vote==='approve').map(v => v.profiles?.full_name || 'Unknown').join(', ');
         const declineVoters = votes.filter(v=>v.vote==='decline').map(v => v.profiles?.full_name || 'Unknown').join(', ');
         
         voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div>${approveVoters ? `<div style="font-size:11px;color:var(--green-text);margin-top:4px">${approveVoters}</div>` : ''}</div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div>${declineVoters ? `<div style="font-size:11px;color:var(--red-text);margin-top:4px">${declineVoters}</div>` : ''}</div></div>${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong></div>` : ''}`;
       }
     } else if (st === 'approved' || st === 'declined') {
-      // 🔥 투표자 이름 표시 추가
       const approveVoters = votes.filter(v=>v.vote==='approve').map(v => v.profiles?.full_name || 'Unknown').join(', ');
       const declineVoters = votes.filter(v=>v.vote==='decline').map(v => v.profiles?.full_name || 'Unknown').join(', ');
       
-      voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div>${approveVoters ? `<div style="font-size:11px;color:var(--green-text);margin-top:4px">${approveVoters}</div>` : ''}</div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div>${declineVoters ? `<div style="font-size:11px;color:var(--red-text);margin-top:4px">${declineVoters}</div>` : ''}</div></div>${st==='approved'?'<div style="font-size:12px;color:var(--green-text);background:var(--green-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">✅ Approved</div>':''}${st==='declined'?'<div style="font-size:12px;color:var(--red-text);background:var(--red-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">❌ Declined</div>':''}`;
+      voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div>${approveVoters ? `<div style="font-size:11px;color:var(--green-text);margin-top:4px">${approveVoters}</div>` : ''}</div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div>${declineVoters ? `<div style="font-size:11px;color:var(--red-text);margin-top:4px">${declineVoters}</div>` : ''}</div></div>`;
     }
 
-    const filesHtml = parsed.files.length ? `<div style="margin-top:0"><div class="detail-label">Attachments</div><div style="display:flex;flex-direction:column;gap:5px;margin-top:6px">${parsed.files.map((f,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px"><span>${f.name.endsWith('.pdf')?'📄':f.type?.startsWith('image')?'🖼️':'📎'}</span><a href="#" style="flex:1;color:var(--blue-600);font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" onclick="openAttachment('${q.id}','${f.path}','${f.name}','${f.type||''}','restricted');return false">${f.name}</a></div>`).join('')}</div></div>` : '';
+    const holdInfo = q.hold_reason ? `<div style="background:var(--purple-bg);border-left:3px solid #8b5cf6;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:12px;color:var(--purple-text)"><strong>Reason:</strong> ${q.hold_reason}</div>` : '';
 
-    const cardClass = st==='onhold'?'on-hold':st==='approved'?'approved-quote':st==='declined'?'declined-quote':st==='expired'?'expired':'active-quote';
+    let filesHtml = '';
+    if (parsed.files?.length) {
+      filesHtml = '<div class="detail-label">Attachments</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">';
+      for (const f of parsed.files) {
+        const ext = f.name.split('.').pop().toLowerCase();
+        const icon = ext==='pdf'?'📄':['jpg','jpeg','png','gif','webp'].includes(ext)?'🖼️':'📎';
+        filesHtml += `<button class="btn-secondary" onclick="openAttachment('${q.id}','${f.path}','${f.name}','${f.type}','restricted')" style="font-size:11px;padding:5px 10px">${icon} ${f.name}</button>`;
+      }
+      filesHtml += '</div>';
+    }
 
-    // Internal Notes: admin 또는 committee만 표시 (보안 강화)
-    const internalNotesHtml = (role === 'admin' || role === 'committee') && q.notes ? `<div class="detail-label">Internal Notes</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${q.notes}</p>` : '';
+    let notesHtml = '';
+    if (q.notes && ['admin','committee'].includes(role)) {
+      notesHtml = `<div style="background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:8px;margin-bottom:14px"><div class="detail-label" style="margin-bottom:6px">Internal Notes</div><div style="font-size:12px;line-height:1.6;color:var(--text-2);white-space:pre-wrap">${q.notes}</div></div>`;
+    }
 
-    return `<div class="quote-card ${cardClass}"><div class="quote-header" onclick="toggleQuote('qbody-${q.id}')"><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><span class="quote-title-text">${q.project_name||'(No project)'}</span>${stBadge} ${catBadgeHtml} ${prioBadge}</div><div class="quote-meta-text">${q.vendor||'—'} · ${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}${st==='pending'?` · <span style="color:var(--yellow-text);font-weight:600">Expires in ${daysLeft} days</span> · ${totalVoted}/${committeeCount} voted`:''}${st==='onhold'?` · <span style="color:#7c3aed;font-weight:600">On Hold</span>`:''}</div></div>${privileged.includes(role) ? `<div class="quote-amount" style="color:${st==='approved'?'var(--green-text)':st==='declined'?'var(--muted)':'var(--text)'}">$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}</div>` : ''}<span style="color:var(--muted);margin-left:8px">▼</span></div><div class="quote-body" id="qbody-${q.id}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px"><div><div class="detail-label">Scope of Works</div><p style="font-size:13px;color:var(--text-2);line-height:1.7;margin:0 0 12px">${parsed.note||'No description provided.'}</p>${internalNotesHtml}${filesHtml}</div><div><div class="detail-label">Committee Vote</div>${voteSection}</div></div><div class="quote-footer">${role==='admin' ? `<button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>${st==='pending'?`<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">Put On Hold ⏸</button>`:''}${st==='onhold'?`<button class="btn-secondary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">Resume Voting ▶</button>`:''}${(st==='pending'||st==='onhold')?`<button class="btn-primary" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>`:''}${(st==='pending'||st==='onhold'||st==='expired')?`<button class="btn-secondary" style="color:var(--red-text);border-color:#fecaca" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>`:''}` : ''}${(role==='admin' && st==='approved') ? `<button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">✏️ Edit Scope</button>` : ''}</div></div></div>`;
+    let adminActions = '';
+    if (role === 'admin') {
+      const holdBtn = st === 'onhold'
+        ? `<button class="btn-secondary" onclick="resumeQuote('${q.id}')">▶ Resume</button>`
+        : st === 'pending' ? `<button class="btn-hold" onclick="openHold('${q.id}')">⏸ Hold</button>` : '';
+      const forceBtn = (st === 'pending' || st === 'onhold') ? `<button class="btn-primary" onclick="forceApprove('${q.id}')">⚡ Force Approve</button>` : '';
+      const editScopeBtn = st === 'pending' ? `<button class="btn-secondary" onclick="openEditScope('${q.id}')">✏ Edit Scope</button>` : '';
+      adminActions = `<div class="quote-footer">${holdBtn}${forceBtn}${editScopeBtn}<button class="btn-secondary" onclick="openEditQuote('${q.id}')">✏ Edit Quote</button></div>`;
+    }
+
+    const cardClass = st==='pending'?'active-quote':st==='onhold'?'on-hold':st==='approved'?'approved-quote':st==='declined'?'declined-quote':'expired';
+    const amtStr = '$' + q.amount.toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    return `
+      <div class="quote-card ${cardClass}">
+        <div class="quote-header" onclick="toggleCard(this)">
+          <div style="flex:1">
+            <div class="quote-title-text">${q.project_name}</div>
+            <div class="quote-meta-text">${q.vendor} · ${catBadgeHtml} ${prioBadge}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="quote-amount">${amtStr}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${stBadge} ${st==='pending'&&daysLeft>0?`· ${daysLeft}d left`:''}</div>
+          </div>
+        </div>
+        <div class="quote-body">
+          ${holdInfo}
+          ${voteSection}
+          ${notesHtml}
+          <div class="detail-label">Scope of Works</div>
+          <div style="font-size:13px;line-height:1.6;color:var(--text-2);margin-bottom:14px;white-space:pre-wrap">${parsed.note || 'No scope provided.'}</div>
+          ${filesHtml}
+          ${adminActions}
+        </div>
+      </div>
+    `;
   }
 
   let html = filterBar;
-  if (active.length) {
-    if (currentFilter === 'all' || currentFilter === 'pending') html += sectionHeader('⏳ Pending Approval', 'var(--yellow-text)', 'var(--yellow-bg)', 'var(--yellow)', active.length);
-    html += active.map(renderCard).join('');
-  }
-  if (closed.length && (currentFilter === 'all' || currentFilter === 'declined')) {
-    if (currentFilter === 'all') html += sectionHeader('📁 Closed', 'var(--text-2)', 'var(--border-light)', '#94a3b8', closed.length);
-    html += closed.map(renderCard).join('');
-  }
+  if (active.length) html += sectionHeader('Active Quotes', 'var(--blue-700)', 'var(--blue-50)', 'var(--blue-600)', active.length) + active.map(renderCard).join('');
+  if (closed.length) html += sectionHeader('Closed', 'var(--muted)', 'var(--border-light)', '#cbd5e1', closed.length) + closed.map(renderCard).join('');
   list.innerHTML = html;
 }
 
-window.toggleQuote = id => { const b = document.getElementById(id); if(b) b.classList.toggle('open'); };
-window.filterQuotes = f => { currentFilter = f; renderQuotes(); };
+window.toggleCard = el => {
+  const body = el.nextElementSibling;
+  body.classList.toggle('open');
+};
 
-// ── saveQuote (원본 그대로) ──
-let pendingFiles = [];
-let existingFiles = [];
+window.filterQuotes = f => {
+  currentFilter = f;
+  renderQuotes();
+};
 
-function resetFileUpload(existing = []) {
-  pendingFiles = [];
-  existingFiles = existing;
-  renderFileList();
-}
+window.closeModal = id => document.getElementById(id).classList.remove('open');
 
-function renderFileList() {
-  const list = document.getElementById('fileList');
-  if (!list) return;
-  list.innerHTML = '';
-}
+window.showToast = (msg, err) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+};
 
-window.handleFileSelect = e => { pendingFiles = pendingFiles.concat(Array.from(e.target.files)); renderFileList(); e.target.value = ''; };
-window.handleFileDrop = e => { e.preventDefault(); document.getElementById('fileDropArea').classList.remove('dragging'); pendingFiles = pendingFiles.concat(Array.from(e.dataTransfer.files)); renderFileList(); };
+const RULES = { expiryDays: 15, declinesToAutoDecline: 2 };
+let allQuotes = [], allVotes = [], committeeCount = 0, majorityNeeded = 0, currentFilter = 'all', holdingQuoteId = null;
+let existingFiles = [], pendingFiles = [];
 
 window.openAddQuote = () => {
   document.getElementById('quoteModalTitle').textContent = 'Add Quote';
@@ -783,30 +554,61 @@ window.openAddQuote = () => {
   document.getElementById('quoteTitle').value = '';
   document.getElementById('quoteContractor').value = '';
   document.getElementById('quoteAmount').value = '';
-  document.getElementById('quoteCategory').value = 'General';
+  document.getElementById('quoteCategory').value = 'HVAC';
   document.getElementById('quoteDesc').value = '';
   document.getElementById('quoteNotes').value = '';
   document.getElementById('deleteQuoteBtn').style.display = 'none';
-  resetFileUpload([]);
+  existingFiles = []; pendingFiles = [];
+  renderFileList();
   document.getElementById('quoteModal').classList.add('open');
 };
 
 window.openEditQuote = id => {
-  const q = allQuotes.find(q=>q.id===id);
+  const q = allQuotes.find(q => q.id === id);
   if (!q) return;
   const parsed = parseComment(q.comment);
   document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
-  document.getElementById('quoteEditId').value = q.id;
-  document.getElementById('quoteTitle').value = q.project_name||'';
-  document.getElementById('quoteContractor').value = q.vendor||'';
-  document.getElementById('quoteAmount').value = q.amount||'';
-  // 🔥 ADD QUOTE 수정: category는 q.category만 사용
-  document.getElementById('quoteCategory').value = q.category || 'General';
-  document.getElementById('quoteDesc').value = parsed.note||'';
-  document.getElementById('quoteNotes').value = q.notes||'';
+  document.getElementById('quoteEditId').value = id;
+  document.getElementById('quoteTitle').value = q.project_name || '';
+  document.getElementById('quoteContractor').value = q.vendor || '';
+  document.getElementById('quoteAmount').value = q.amount || 0;
+  document.getElementById('quoteCategory').value = q.category || 'HVAC';
+  document.getElementById('quoteDesc').value = parsed.note || '';
+  document.getElementById('quoteNotes').value = q.notes || '';
   document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
-  resetFileUpload(parsed.files || []);
+  existingFiles = parsed.files || [];
+  pendingFiles = [];
+  renderFileList();
   document.getElementById('quoteModal').classList.add('open');
+};
+
+document.getElementById('quoteFileInput').addEventListener('change', e => {
+  pendingFiles.push(...e.target.files);
+  e.target.value = '';
+  renderFileList();
+});
+
+function renderFileList() {
+  const container = document.getElementById('fileListContainer');
+  const all = [...existingFiles.map(f => ({...f, existing: true})), ...pendingFiles.map(f => ({name: f.name, size: f.size, existing: false, fileObj: f}))];
+  if (!all.length) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = all.map((f, idx) => {
+    const sizeKb = Math.round((f.size || 0) / 1024);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px"><span style="flex:1">${f.name} (${sizeKb} KB)</span><button class="btn-secondary" onclick="removeFile(${idx}, ${f.existing})" style="font-size:11px;padding:3px 8px">✕</button></div>`;
+  }).join('');
+}
+
+window.removeFile = (idx, isExisting) => {
+  if (isExisting) {
+    existingFiles.splice(idx, 1);
+  } else {
+    const pendingIdx = idx - existingFiles.length;
+    pendingFiles.splice(pendingIdx, 1);
+  }
+  renderFileList();
 };
 
 window.saveQuote = async () => {
@@ -818,7 +620,6 @@ window.saveQuote = async () => {
   const note = document.getElementById('quoteDesc').value.trim();
   const notes = document.getElementById('quoteNotes').value.trim();
 
-  // 🔥 ADD QUOTE 수정: validation 강화
   if (!project) return showToast('Project title is required', true);
   if (!vendor) return showToast('Vendor is required', true);
   if (amount <= 0) return showToast('Amount must be greater than 0', true);
@@ -858,7 +659,6 @@ window.saveQuote = async () => {
   }
 };
 
-// ── 기타 Admin 함수들 (원본 그대로) ──
 window.openHold = id => { holdingQuoteId = id; document.getElementById('holdReason').value = ''; document.getElementById('holdModal').classList.add('open'); };
 window.confirmHold = async () => {
   const reason = document.getElementById('holdReason').value.trim();
@@ -914,7 +714,6 @@ window.castVote = async (quoteId, vote) => {
   showToast(vote==='approve'?'✅ Approved':'❌ Declined');
   await loadData(); renderQuotes();
 
-  // 🔥 수정 4: is_forced=true인 경우 자동 승인 차단
   const q = allQuotes.find(qt => qt.id === quoteId);
   if (q && q.is_forced) return;
 
@@ -922,10 +721,9 @@ window.castVote = async (quoteId, vote) => {
   const approvals = newVotes.filter(v=>v.vote==='approve').length;
   const declines = newVotes.filter(v=>v.vote==='decline').length;
 
-  // 🔥 수정 3: works 생성 트리거 단일화
   if (approvals >= majorityNeeded) {
     await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-    await syncQuoteToWorks(quoteId); // 중복 체크 포함
+    await syncQuoteToWorks(quoteId);
     await loadData(); renderQuotes();
   } else if (declines >= RULES.declinesToAutoDecline) {
     await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
@@ -933,16 +731,14 @@ window.castVote = async (quoteId, vote) => {
   }
 };
 
-// ── 초기 로드 ──
 try {
   await loadData();
   renderQuotes();
 } catch(e) {
-  console.error(e);
+
   showToast('Failed to load quotes', true);
 }
 
-// Mobile hamburger
 (function(){
   var btn=document.getElementById("hamburgerBtn");
   var overlay=document.getElementById("sidebarOverlay");
