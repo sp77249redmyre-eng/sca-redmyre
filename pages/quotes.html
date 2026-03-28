@@ -13,788 +13,497 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-<style>
-/* ===== QUOTES-SPECIFIC STYLES ===== */
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
-.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
-.filter-bar{display:flex;gap:8px;margin-bottom:12px;margin-top:20px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
-.filter-btn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
-.filter-btn.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
-.rule-info{background:var(--blue-50);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--blue-700);line-height:1.6}
-.quote-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
-.quote-card:hover{box-shadow:0 4px 14px rgba(0,0,0,0.07)}
-.quote-card.active-quote{border-left:4px solid var(--blue-600)}
-.quote-card.on-hold{border-left:4px solid #8b5cf6;border-color:#c4b5fd;background:#faf5ff}
-.quote-card.approved-quote{border-left:4px solid var(--green);opacity:0.85}
-.quote-card.declined-quote{border-left:4px solid #94a3b8;opacity:0.6;filter:grayscale(0.3)}
-.quote-card.expired{border-left:4px solid #94a3b8;opacity:0.5;filter:grayscale(0.5)}
-.section-divider{margin:28px 0 14px}
-.section-divider-top{height:3px;border-radius:3px;margin-bottom:10px}
-.section-divider-row{display:flex;align-items:center;gap:10px}
-.section-divider-label{font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap}
-.section-divider-count{font-size:12px;font-weight:600;padding:2px 10px;border-radius:100px}
-.section-divider-line{flex:1;height:2px;border-radius:2px}
-.quote-header{padding:18px 20px;cursor:pointer;transition:background 0.12s}
-.quote-header:hover{background:rgba(37,99,235,0.02)}
-.quote-meta-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
-.quote-amount{font-size:22px;font-weight:600;color:var(--blue-600);white-space:nowrap}
-.quote-body{border-top:1px solid var(--border-light);padding:20px;display:none;background:var(--bg)}
-.quote-body.open{display:block}
-.detail-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
-.vote-hidden-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;margin-bottom:14px}
-.vote-bar-wrap{margin-bottom:6px}
-.vote-bar{height:7px;background:var(--border);border-radius:100px;overflow:hidden;margin-top:4px}
-.vote-fill-g{height:100%;background:var(--green);border-radius:100px;transition:width 0.5s}
-.vote-fill-r{height:100%;background:var(--red);border-radius:100px;transition:width 0.5s}
-.admin-voter-list{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
-.quote-footer{display:flex;align-items:center;gap:8px;padding-top:14px;border-top:1px solid var(--border-light);flex-wrap:wrap}
-.internal-note-label{font-size:11px;font-weight:600;color:var(--purple-text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.internal-note-box{background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:10px;padding:12px;font-size:12px;color:var(--purple-text);margin-top:10px;line-height:1.6;font-style:italic}
-.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px}
-.file-icon{font-size:16px}
-.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-size{font-size:11px;color:var(--muted)}
-.file-del{cursor:pointer;color:var(--red);font-weight:600}
-.file-link{color:var(--blue-600);font-weight:600;text-decoration:none}
-.file-link:hover{text-decoration:underline}
-.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
-.empty-icon{font-size:48px;margin-bottom:16px}
-.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
-@media (max-width: 768px) {
-  .stats-row{grid-template-columns:repeat(2,1fr)}
-  .filter-bar{padding:10px}
-  .quote-meta-row{flex-direction:column;align-items:flex-start}
-  .quote-amount{margin-top:8px}
-}
-</style>
 </head>
 <body>
+
 <div id="sidebarPlaceholder"></div>
-<div class="main">
+
+<main class="main">
   <div id="topbarPlaceholder"></div>
-
+  
   <div class="content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px">
-        <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
-        Quote Approvals
-      </div>
-      <button class="btn-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+    
+    <!-- Section Header -->
+    <div class="section-hdr">
+      <div class="section-title">Quote Approvals</div>
+      <button class="btn-primary" id="btnAddQuote" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
     </div>
 
-    <!-- STATS -->
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
-      <div class="stat-card"><div class="stat-num" id="statPending" style="color:var(--yellow)">—</div><div class="stat-label">Pending</div></div>
-      <div class="stat-card"><div class="stat-num" id="statApproved" style="color:var(--green)">—</div><div class="stat-label">Approved</div></div>
-      <div class="stat-card"><div class="stat-num" id="statDeclined" style="color:var(--red)">—</div><div class="stat-label">Declined</div></div>
-      <div class="stat-card"><div class="stat-num" id="statHold" style="color:var(--purple)">—</div><div class="stat-label">On Hold</div></div>
+    <!-- Quotes List -->
+    <div id="quotesList">
+      <div style="padding:40px;text-align:center;color:var(--muted)">Loading quotes...</div>
     </div>
 
-    <!-- RULE INFO -->
-    <div class="rule-info" id="ruleInfo">
-      Voting rule: majority of committee members required · Results hidden until majority reached · Votes are final once cast · Quotes expire after 15 days (paused while On Hold)
-    </div>
-
-    <!-- QUOTE LIST -->
-    <div id="quoteList">
-      <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
-    </div>
   </div>
-</div>
+</main>
 
-<!-- ADD/EDIT QUOTE MODAL -->
-<div class="modal-backdrop" id="quoteModal">
-  <div class="modal-box" style="max-width:680px">
-    <div class="modal-title" id="quoteModalTitle">Add Quote</div>
-    <input type="hidden" id="quoteEditId">
+<!-- Add Quote Modal -->
+<div class="modal-backdrop" id="addQuoteModal">
+  <div class="modal-box">
+    <div class="modal-title">Add Quote</div>
+    
     <div class="modal-field">
-      <label class="modal-label">Project / Works Description</label>
-      <input type="text" class="modal-input" id="quoteProject" placeholder="e.g., Lift modernization">
+      <label class="modal-label">Project Name *</label>
+      <input type="text" class="modal-input" id="quoteProject" placeholder="e.g., HVAC Maintenance">
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">Vendor / Contractor</label>
+      <label class="modal-label">Vendor *</label>
       <input type="text" class="modal-input" id="quoteVendor" placeholder="Company name">
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">Amount (AUD $)</label>
-      <input type="number" class="modal-input" id="quoteAmount" placeholder="0.00" step="0.01">
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Category</label>
+      <label class="modal-label">Category *</label>
       <select class="modal-select" id="quoteCategory">
-        <option>Repairs</option>
-        <option>Maintenance</option>
-        <option>Upgrade</option>
-        <option>Emergency</option>
-        <option>Compliance</option>
+        <option value="">Select category</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Legal">Legal</option>
+        <option value="General">General</option>
       </select>
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">Priority</label>
-      <select class="modal-select" id="quotePriority">
-        <option>Normal</option>
-        <option>High</option>
-        <option>Urgent</option>
-      </select>
+      <label class="modal-label">Amount (Ex GST) *</label>
+      <input type="number" class="modal-input" id="quoteAmount" placeholder="0.00" step="0.01" min="0">
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">Scope / Notes (Public)</label>
-      <textarea class="modal-textarea" id="quoteNotes" placeholder="Brief description visible to voters…"></textarea>
+      <label class="modal-label">Description</label>
+      <textarea class="modal-textarea" id="quoteNotes" placeholder="Quote details..."></textarea>
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">🔒 Internal Notes (Admin Only)</label>
-      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes for admin reference…" style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
+      <label class="modal-label">Internal Notes (Private)</label>
+      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes..."></textarea>
+      <div class="private-hint">⚠️ This field is NOT visible to residents</div>
     </div>
+
     <div class="modal-field">
-      <label class="modal-label">📎 Attach Files (Quote PDFs, Photos, Docs)</label>
-      <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
-      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
-      <div id="filePreview" style="margin-top:10px"></div>
+      <label class="modal-label">Attachments</label>
+      <input type="file" id="quoteFiles" multiple>
     </div>
+
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
-      <button class="btn-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
+      <button class="btn-secondary" onclick="closeModal('addQuoteModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveQuote()">Save Quote</button>
     </div>
   </div>
 </div>
 
-<!-- HOLD MODAL -->
-<div class="modal-backdrop" id="holdModal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-title">Put Quote On Hold</div>
-    <div class="modal-field">
-      <label class="modal-label">Reason for Hold</label>
-      <textarea class="modal-textarea" id="holdReason" placeholder="Why is this being put on hold?"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('holdModal')">Cancel</button>
-      <button class="btn-hold" onclick="confirmHold()">Confirm Hold</button>
-    </div>
-  </div>
-</div>
-
-<!-- SCOPE EDIT MODAL -->
-<div class="modal-backdrop" id="scopeModal">
-  <div class="modal-box" style="max-width:540px">
-    <div class="modal-title">Edit Scope / Notes</div>
-    <input type="hidden" id="scopeEditId">
-    <div class="modal-field">
-      <label class="modal-label">Internal Admin Note</label>
-      <textarea class="modal-textarea" id="scopeText" placeholder="Add or update admin notes…"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('scopeModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveScope()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- PDF VIEWER MODAL -->
-<div class="modal-backdrop" id="pdfModal">
-  <div class="modal-box" style="max-width:1200px;width:95%;padding:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:600;color:var(--text)" id="pdfModalTitle">Document</div>
-      <div style="display:flex;gap:8px">
-        <a id="pdfOpenNewTab" href="#" target="_blank" class="btn-secondary" style="font-size:12px;padding:6px 12px">↗ Open in new tab</a>
-        <button class="btn-secondary" onclick="closeModal('pdfModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
-      </div>
-    </div>
-    <div id="pdfViewerWrap" style="width:100%;height:70vh;border-radius:10px;overflow:hidden;background:var(--bg)">
-      <iframe id="pdfIframe" src="" style="width:100%;height:100%;border:none;border-radius:10px"></iframe>
-    </div>
-  </div>
-</div>
-
-<!-- IMAGE VIEWER MODAL -->
-<div class="modal-backdrop" id="viewerModal">
-  <div class="modal-box" style="max-width:860px;width:100%;padding:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:600;color:var(--text)" id="viewerModalTitle">Document</div>
-      <div style="display:flex;gap:8px">
-        <a id="viewerOpenNewTab" href="#" target="_blank" class="btn-secondary" style="font-size:12px;padding:6px 12px">↗ Open in new tab</a>
-        <button class="btn-secondary" onclick="closeModal('viewerModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
-      </div>
-    </div>
-    <div id="viewerContent" style="width:100%;height:72vh;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center">
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:1000;box-shadow:0 10px 30px rgba(0,0,0,0.3)"></div>
 
 <script type="module">
-// ✅ REDMYRE BMS 표준 구조: layout.js 사용
 import { initLayout } from '/js/layout.js';
+
+// 🔥 STEP 1 — layout.js 통합
 const ctx = await initLayout();
-if (!ctx) throw new Error('Layout init failed');
-const { supabase, user, role } = ctx;
-
-// ── 데이터 변수 ──
-let allQuotes = [];
-let allVotes = [];
-let committeeCount = 0;
-let majorityNeeded = 0;
-let currentFilter = 'all';
-let holdingQuoteId = null;
-const uploadedFiles = [];
-
-const RULES = { approvalsRequired: 4, declinesToAutoDecline: 4, expiryDays: 15 };
-
-// ── Admin UI 제어 ──
-if (role === 'admin') {
-  document.getElementById('addQuoteBtn').style.display = 'inline-flex';
+if (!ctx) {
+  window.location.href = '/index.html';
+  throw new Error('Layout initialization failed');
 }
 
-// ── 헬퍼 함수들 ──
+const { supabase, user, role, permissions } = ctx;
+
+// 🔥 STEP 2 — 전역 변수
+let allQuotes = [];
+
+// 🔥 STEP 3 — 권한 기반 버튼 제어
+function initPermissions() {
+  const canApprove = window.checkActionPermission('approve', permissions, role);
+  
+  // Add Quote 버튼 (admin만)
+  if (role === 'admin') {
+    document.getElementById('btnAddQuote').style.display = '';
+  }
+  
+  window.canApprove = canApprove;
+  window.canDecline = window.checkActionPermission('decline', permissions, role);
+  window.canForceApprove = window.checkActionPermission('force_approve', permissions, role);
+}
+
+// 🔥 STEP 4 — parseComment (category 제거)
 function parseComment(comment) {
   try {
-    if (!comment) return { note:'', files:[], category:null, priority:'Normal', resolved_at:null, resolved_as:null, workflow:null };
+    if (!comment) return { note: '', files: [], priority: 'Normal' };
     const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
     let files = [];
-    if (Array.isArray(obj?.files)) files = obj.files.filter(f=>f&&f.path);
+    if (Array.isArray(obj?.files)) files = obj.files.filter(f => f && f.path);
+    
+    // 🔥 챗이사 최종: category 제거
     return {
       note: obj?.note || '',
       files,
-      category: obj?.category || null,
-      priority: obj?.priority || 'Normal',
-      resolved_at: obj?.resolved_at || null,
-      resolved_as: obj?.resolved_as || null,
-      workflow: obj?.workflow || null,
+      priority: obj?.priority || 'Normal'
     };
-  } catch { return { note:'', files:[], category:null, priority:'Normal', resolved_at:null, resolved_as:null, workflow:null }; }
-}
-
-async function getSignedUrl(path) {
-  const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
-  if (error) throw error;
-  return data.signedUrl;
-}
-
-async function uploadFile(file) {
-  const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
-  const path = `${user.id}/${Date.now()}-${safeName}`;
-  const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
-  if (error) throw error;
-  return { path, name: safeName, type: file.type || '', size: file.size };
-}
-
-// ── Force Approve 함수 ──
-window.forceApprove = async function (quoteId) {
-  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
-
-  const btns = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
-  if (btns.length) {
-    btns.forEach(b => { b.disabled = true; b.textContent = 'Approving…'; });
+  } catch {
+    return { note: '', files: [], priority: 'Normal' };
   }
+}
 
+// 🔥 STEP 5 — Quotes 로드
+async function loadQuotes() {
   try {
-    const { error: updateError } = await supabase
+    const { data } = await supabase
       .from('quotes')
-      .update({ status: 'approved' })
-      .eq('id', quoteId);
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    allQuotes = data || [];
+    renderQuotes(allQuotes);
+  } catch(e) {
+    console.error('Failed to load quotes:', e);
+    document.getElementById('quotesList').innerHTML = 
+      '<div style="padding:40px;text-align:center;color:var(--red)">Failed to load quotes</div>';
+  }
+}
 
-    if (updateError) throw updateError;
+// 🔥 STEP 6 — Quotes 렌더링 (category 단일 소스)
+function renderQuotes(quotes) {
+  const list = document.getElementById('quotesList');
+  
+  if (quotes.length === 0) {
+    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">No quotes yet</div>';
+    return;
+  }
+  
+  // 승인되지 않은 것만 표시
+  const activeQuotes = quotes.filter(q => q.status !== 'approved');
+  
+  list.innerHTML = activeQuotes.map(q => {
+    // 🔥 챗이사 최종: category NULL = 에러 상태
+    const hasCategory = !!q.category;
+    const hasAmount = !!(q.amount && q.amount > 0);
+    const canApproveQuote = hasCategory && hasAmount;
+    
+    const categoryDisplay = hasCategory 
+      ? q.category 
+      : '<span style="color:var(--red);font-weight:600">⚠️ Missing Category</span>';
+    
+    const statusBadge = {
+      pending: 'badge-yellow',
+      approved: 'badge-green',
+      declined: 'badge-gray',
+      onhold: 'badge-blue'
+    }[q.status] || 'badge-gray';
+    
+    const statusLabel = {
+      pending: 'Pending',
+      approved: 'Approved',
+      declined: 'Declined',
+      onhold: 'On Hold'
+    }[q.status] || 'Unknown';
+    
+    return `
+      <div class="quote-card">
+        <div class="quote-header" onclick="toggleQuote('${q.id}')">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:16px;font-weight:600">${q.project_name}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px">
+                ${q.vendor} · ${categoryDisplay}
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:20px;font-weight:600;color:var(--blue-600)">
+                $${(q.amount || 0).toFixed(2)}
+              </div>
+              <span class="badge ${statusBadge}" style="margin-top:6px">${statusLabel}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="quote-body" id="quote-${q.id}">
+          <div style="padding:20px;background:var(--bg)">
+            
+            ${q.notes ? `
+              <div style="margin-bottom:16px">
+                <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">DESCRIPTION</div>
+                <div style="font-size:13px;line-height:1.6">${q.notes}</div>
+              </div>
+            ` : ''}
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">DETAILS</div>
+                <div style="font-size:12px;line-height:1.8">
+                  <div><strong>Vendor:</strong> ${q.vendor}</div>
+                  <div><strong>Category:</strong> ${categoryDisplay}</div>
+                  <div><strong>Amount:</strong> $${(q.amount || 0).toFixed(2)}</div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">STATUS</div>
+                <div style="font-size:12px;line-height:1.8">
+                  <div><strong>Status:</strong> ${statusLabel}</div>
+                  <div><strong>Created:</strong> ${new Date(q.created_at).toLocaleDateString('en-AU')}</div>
+                </div>
+              </div>
+            </div>
+            
+            ${!canApproveQuote && q.status === 'pending' ? `
+              <div style="background:var(--red-bg);border:1px solid #fecaca;border-radius:10px;padding:12px;margin-bottom:16px">
+                <div style="font-size:12px;color:var(--red-text);font-weight:600">
+                  ⚠️ Cannot approve: ${!hasCategory ? 'Missing category' : 'Invalid amount'}
+                </div>
+              </div>
+            ` : ''}
+            
+            <div style="display:flex;gap:8px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+              ${q.status === 'pending' && canApproveQuote && window.canApprove ? `
+                <button class="btn-primary" onclick="approveQuote('${q.id}',event)">✓ Approve</button>
+              ` : ''}
+              ${q.status === 'pending' && window.canDecline ? `
+                <button class="btn-secondary" onclick="declineQuote('${q.id}',event)">✕ Decline</button>
+              ` : ''}
+              ${q.status === 'pending' && canApproveQuote && window.canForceApprove ? `
+                <button class="btn-secondary" onclick="forceApprove('${q.id}',event)">⚡ Force Approve</button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-    await syncQuoteToWorks(quoteId);
+// 🔥 STEP 7 — Quote 토글
+window.toggleQuote = (id) => {
+  const body = document.getElementById(`quote-${id}`);
+  if (!body) return;
+  
+  const isOpen = body.classList.contains('open');
+  
+  // 다른 모든 quote 닫기
+  document.querySelectorAll('.quote-body').forEach(b => b.classList.remove('open'));
+  
+  // 현재 quote 토글
+  if (!isOpen) {
+    body.classList.add('open');
+  }
+};
 
-    showToast('Quote force-approved and moved to Ongoing Works');
+// 🔥 STEP 8 — Add Quote Modal
+window.openAddQuote = () => {
+  document.getElementById('quoteProject').value = '';
+  document.getElementById('quoteVendor').value = '';
+  document.getElementById('quoteCategory').value = '';
+  document.getElementById('quoteAmount').value = '';
+  document.getElementById('quoteNotes').value = '';
+  document.getElementById('quoteInternalNote').value = '';
+  document.getElementById('quoteFiles').value = '';
+  window.openModal('addQuoteModal');
+};
 
-    await loadData();
-    renderQuotes();
+// 🔥 STEP 9 — Save Quote (validation 강화)
+window.saveQuote = async () => {
+  const projectName = document.getElementById('quoteProject').value.trim();
+  const vendor = document.getElementById('quoteVendor').value.trim();
+  const category = document.getElementById('quoteCategory').value;
+  const amountInput = document.getElementById('quoteAmount').value;
+  const notes = document.getElementById('quoteNotes').value.trim();
+  const internalNote = document.getElementById('quoteInternalNote').value.trim();
+  
+  // 🔥 챗이사 최종: 필수 필드 검증
+  if (!projectName) {
+    window.showToast('Please enter project name', true);
+    return;
+  }
+  
+  if (!vendor) {
+    window.showToast('Please enter vendor', true);
+    return;
+  }
+  
+  // 🔥 챗이사 최종: category 필수
+  if (!category) {
+    window.showToast('Please select category', true);
+    return;
+  }
+  
+  // 🔥 챗이사 최종: amount validation 강화
+  const amount = parseFloat(amountInput);
+  if (isNaN(amount) || amount <= 0) {
+    window.showToast('Please enter valid amount (greater than 0)', true);
+    return;
+  }
+  
+  // 🔥 챗이사 최종: comment는 note만 저장 (category 제거)
+  const comment = {
+    note: internalNote,
+    files: [],
+    priority: 'Normal'
+  };
+  
+  try {
+    const { error } = await supabase.from('quotes').insert({
+      project_name: projectName,
+      vendor: vendor,
+      category: category,
+      amount: amount,
+      notes: notes,
+      comment: JSON.stringify(comment),
+      status: 'pending',
+      created_at: new Date().toISOString()
+    });
+    
+    if (error) throw error;
+    
+    window.closeModal('addQuoteModal');
+    window.showToast('Quote created');
+    await loadQuotes();
+  } catch(e) {
+    console.error('Failed to save quote:', e);
+    window.showToast('Failed to save: ' + e.message, true);
+  }
+};
 
+// 🔥 STEP 10 — Approve Quote
+window.approveQuote = async (id, e) => {
+  if (e) e.stopPropagation();
+  
+  if (!confirm('Approve this quote and move to Ongoing Works?')) return;
+  
+  try {
+    // STEP 1: Update status
+    await supabase.from('quotes').update({ status: 'approved' }).eq('id', id);
+    
+    // STEP 2: Sync to Works
+    await syncQuoteToWorks(id);
+    
+    window.showToast('Quote approved and moved to Ongoing Works');
+    await loadQuotes();
+  } catch(e) {
+    console.error('Approve failed:', e);
+    window.showToast('Approve failed: ' + e.message, true);
+  }
+};
+
+// 🔥 STEP 11 — Decline Quote
+window.declineQuote = async (id, e) => {
+  if (e) e.stopPropagation();
+  
+  if (!confirm('Decline this quote?')) return;
+  
+  try {
+    await supabase.from('quotes').update({ status: 'declined' }).eq('id', id);
+    window.showToast('Quote declined');
+    await loadQuotes();
+  } catch(e) {
+    console.error('Decline failed:', e);
+    window.showToast('Decline failed: ' + e.message, true);
+  }
+};
+
+// 🔥 STEP 12 — Force Approve
+window.forceApprove = async (id, e) => {
+  if (e) e.stopPropagation();
+  
+  if (!confirm('Force approve this quote?')) return;
+  
+  try {
+    await supabase.from('quotes').update({ status: 'approved' }).eq('id', id);
+    await syncQuoteToWorks(id);
+    window.showToast('Quote force-approved and moved to Ongoing Works');
+    await loadQuotes();
   } catch(e) {
     console.error('Force approve failed:', e);
-    showToast('Force approve failed: ' + e.message, true);
-  } finally {
-    const btns2 = document.querySelectorAll(`button[onclick*="forceApprove('${quoteId}'"]`);
-    if (btns2.length) {
-      btns2.forEach(b => { b.disabled = false; b.textContent = 'Force Approve'; });
-    }
+    window.showToast('Force approve failed: ' + e.message, true);
   }
-}
+};
 
-// ✅ CRITICAL FIX: syncQuoteToWorks — 중복 생성 방지
+// 🔥 STEP 13 — syncQuoteToWorks (100% 데이터 일치 + contractor 구조 명확화)
 async function syncQuoteToWorks(quoteId) {
   try {
-    // STEP 1: 이미 works 생성되었는지 확인
+    // STEP 1: 중복 체크
     const { data: existing } = await supabase
       .from('works')
       .select('id')
       .eq('quote_id', quoteId)
       .maybeSingle();
-
+    
     if (existing) {
-      console.log('[syncQuoteToWorks] Work already exists for quote', quoteId, '— skipping duplicate creation');
+      console.log('Work already exists for quote', quoteId);
       return;
     }
-
-    // STEP 2: quote 정보 가져오기
+    
+    // STEP 2: Quote 데이터 가져오기
     const { data: q, error: fetchError } = await supabase
       .from('quotes')
       .select('*')
       .eq('id', quoteId)
       .maybeSingle();
-
+    
     if (fetchError || !q) {
-      console.error('syncQuoteToWorks: quote not found', fetchError);
-      showToast('Failed to fetch quote data for Ongoing Works', true);
-      return;
+      console.error('Quote not found:', fetchError);
+      throw new Error('Quote not found');
     }
-
-    const parsed = parseComment(q.comment);
-
-    // STEP 3: works 생성
+    
+    // 🔥 챗이사 최종: 필수 필드 검증 강화
+    if (!q.category) {
+      throw new Error('Quote missing category - cannot create work');
+    }
+    
+    if (!q.amount || q.amount <= 0) {
+      throw new Error('Quote missing valid amount - cannot create work');
+    }
+    
+    if (!q.project_name) {
+      throw new Error('Quote missing project name - cannot create work');
+    }
+    
+    // 🔥 챗이사 최종: contractor 구조 명확화
+    // Quote 단계: vendor (회사 이름)
+    // Work 단계: contractor_id (contractors 테이블 FK)
+    // 
+    // vendor → contractor_id 매칭 (없으면 NULL)
+    let contractorId = null;
+    
+    if (q.vendor) {
+      const { data: contractor } = await supabase
+        .from('contractors')
+        .select('id')
+        .ilike('name', q.vendor)
+        .maybeSingle();
+      
+      contractorId = contractor?.id || null;
+    }
+    
+    // STEP 3: Works 생성
     const workData = {
-      title: q.project || 'No title',
+      quote_id: quoteId,
+      project_name: q.project_name,
+      contractor_id: contractorId,  // 🔥 vendor → contractor_id 매칭
+      category: q.category,          // 단일 소스
+      cost: q.amount,                // 단일 소스
+      description: q.notes || '',
       status: 'scheduled',
-      quote_id: quoteId
+      is_emergency: false
     };
-
+    
     const { error: insertError } = await supabase.from('works').insert(workData);
-
+    
     if (insertError) {
-      console.error('Failed to insert into works table:', insertError);
-      showToast('Quote approved but failed to create Ongoing Works entry: ' + insertError.message, true);
-    } else {
-      console.log('Successfully moved to Ongoing Works');
+      console.error('Failed to insert work:', insertError);
+      throw insertError;
     }
-
+    
+    console.log('Successfully moved to Ongoing Works (contractor_id:', contractorId, ')');
+    
   } catch(e) {
     console.error('syncQuoteToWorks failed:', e);
-    showToast('Failed to move to Ongoing Works: ' + e.message, true);
+    throw e;
   }
 }
 
-// ── 첨부파일 열기 ──
-window.openAttachment = async (quoteId, path, name, type, visibility = 'restricted') => {
-  try {
-    const url = await getSignedUrl(path);
-    if (type === 'application/pdf') {
-      document.getElementById('pdfModalTitle').textContent = name;
-      document.getElementById('pdfIframe').src = url;
-      document.getElementById('pdfOpenNewTab').href = url;
-      document.getElementById('pdfModal').classList.add('open');
-    } else {
-      document.getElementById('viewerModalTitle').textContent = name;
-      document.getElementById('viewerContent').innerHTML = `<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px" alt="${name}">`;
-      document.getElementById('viewerOpenNewTab').href = url;
-      document.getElementById('viewerModal').classList.add('open');
-    }
-  } catch(e) {
-    showToast('Failed to open file: ' + e.message, true);
-  }
-};
+// 🔥 STEP 14 — Initialize
+initPermissions();
+await loadQuotes();
 
-// ── 데이터 로드 ──
-async function loadData() {
-  const [qRes, vRes, profRes] = await Promise.all([
-    supabase.from('quotes').select('*').order('created_at', { ascending: false }),
-    supabase.from('votes').select('*'),
-    supabase.from('profiles').select('id,role').eq('role','committee')
-  ]);
-  allQuotes = qRes.data || [];
-  allVotes = vRes.data || [];
-  committeeCount = (profRes.data || []).length;
-  majorityNeeded = Math.ceil(committeeCount / 2);
-
-  const counts = { total:0, pending:0, approved:0, declined:0, hold:0 };
-  for (const q of allQuotes) {
-    const st = getQuoteStatus(q);
-    counts.total++;
-    if (st === 'pending') counts.pending++;
-    else if (st === 'approved') counts.approved++;
-    else if (st === 'declined') counts.declined++;
-    else if (st === 'onhold') counts.hold++;
-  }
-  document.getElementById('statTotal').textContent = counts.total;
-  document.getElementById('statPending').textContent = counts.pending;
-  document.getElementById('statApproved').textContent = counts.approved;
-  document.getElementById('statDeclined').textContent = counts.declined;
-  document.getElementById('statHold').textContent = counts.hold;
-}
-
-function getQuoteVotes(quoteId) { return allVotes.filter(v => v.quote_id === quoteId); }
-
-function getQuoteStatus(q) {
-  const st = (q.status || 'pending').toLowerCase();
-  if (st === 'onhold') return 'onhold';
-  if (st === 'approved') return 'approved';
-  if (st === 'declined') return 'declined';
-  if (st === 'expired') return 'expired';
-  if (st === 'pending' && q.expiry_date && new Date() > new Date(q.expiry_date)) return 'expired';
-  const votes = getQuoteVotes(q.id);
-  const approvals = votes.filter(v=>v.vote==='approve').length;
-  const declines = votes.filter(v=>v.vote==='decline').length;
-  if (approvals >= RULES.approvalsRequired) return 'approved';
-  if (declines >= RULES.declinesToAutoDecline) return 'declined';
-  return 'pending';
-}
-
-function isResultRevealed(q) {
-  const votes = getQuoteVotes(q.id);
-  const approvals = votes.filter(v=>v.vote==='approve').length;
-  const declines = votes.filter(v=>v.vote==='decline').length;
-  const st = getQuoteStatus(q);
-  return approvals >= majorityNeeded || declines >= majorityNeeded || st === 'approved' || st === 'declined';
-}
-
-// ── 렌더링 ──
-function renderQuotes() {
-  const list = document.getElementById('quoteList');
-  const visibleQuotes = allQuotes.filter(q => {
-    const st = getQuoteStatus(q);
-    return st !== 'approved';
-  });
-
-  const filtered = currentFilter === 'all'
-    ? visibleQuotes
-    : visibleQuotes.filter(q => getQuoteStatus(q) === currentFilter);
-
-  const filterBar = `<div class="filter-bar">
-    <button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="filterQuotes('all')">All</button>
-    <button class="filter-btn ${currentFilter==='pending'?'active':''}" onclick="filterQuotes('pending')">⏳ Pending</button>
-    <button class="filter-btn ${currentFilter==='declined'?'active':''}" onclick="filterQuotes('declined')">❌ Declined</button>
-    <button class="filter-btn ${currentFilter==='onhold'?'active':''}" onclick="filterQuotes('onhold')">⏸ On Hold</button>
-    <button class="filter-btn ${currentFilter==='expired'?'active':''}" onclick="filterQuotes('expired')">🕒 Expired</button>
-  </div>`;
-
-  if (!filtered.length) {
-    list.innerHTML = filterBar + `<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No quotes found</div></div>`;
-    return;
-  }
-
-  const active = filtered.filter(q => ['pending','onhold'].includes(getQuoteStatus(q)));
-  const closed = filtered.filter(q => ['declined','expired'].includes(getQuoteStatus(q)));
-
-  function sectionHeader(label, color, bg, lineColor, count) {
-    return `<div class="section-divider"><div class="section-divider-top" style="background:${lineColor}"></div><div class="section-divider-row"><span class="section-divider-label" style="color:${color}">${label}</span><span class="section-divider-count" style="background:${bg};color:${color}">${count}</span></div></div>`;
-  }
-
-  function renderCard(q) {
-    const st = getQuoteStatus(q);
-    const parsed = parseComment(q.comment);
-    const votes = getQuoteVotes(q.id);
-    const myVote = votes.find(v => v.user_id === user.id);
-    const approveVotes = votes.filter(v=>v.vote==='approve').length;
-    const declineVotes = votes.filter(v=>v.vote==='decline').length;
-    const totalVoted = votes.length;
-    const revealed = isResultRevealed(q);
-    const canVote = role === 'committee' && !myVote && st === 'pending';
-
-    const created = new Date(q.created_at);
-    const now = new Date();
-    const daysLeft = q.expiry_date ? Math.max(0, Math.ceil((new Date(q.expiry_date) - now) / (1000*60*60*24))) : Math.max(0, 15 - Math.floor((now - created) / (1000*60*60*24)));
-
-    const category = parsed.category || q.category || '';
-    const priority = parsed.priority || 'Normal';
-
-    const stBadge = { pending: '<span class="badge badge-yellow">Pending</span>', approved: '<span class="badge badge-green">Approved</span>', declined: '<span class="badge badge-red">Declined</span>', onhold: '<span class="badge badge-purple">On Hold</span>', expired: '<span class="badge badge-gray">Expired</span>' }[st] || '<span class="badge badge-gray">Unknown</span>';
-
-    const catBadgeHtml = `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:#f1f5f9;color:#94a3b8;border:1px solid #94a3b822;opacity:0.6">${category || 'Uncategorised'}</span>`;
-    const prioColor = priority==='Urgent'?'var(--red-text)':priority==='High'?'var(--yellow-text)':'var(--muted)';
-    const prioBadge = `<span style="font-size:11px;font-weight:600;color:${prioColor}">${priority}</span>`;
-
-    let voteSection = '';
-    if (st === 'pending' || st === 'onhold') {
-      if (!revealed) {
-        voteSection = `<div class="vote-hidden-box"><p style="font-size:14px;font-weight:600;margin:0 0 4px">${totalVoted} of ${committeeCount} members voted</p><p style="font-size:12px;color:var(--muted);margin:0">Results revealed at majority (${majorityNeeded})</p></div>${canVote && st==='pending' ? `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn-success" style="flex:1;justify-content:center" onclick="castVote('${q.id}','approve')">✅ Approve</button><button class="btn-danger" style="flex:1;justify-content:center" onclick="castVote('${q.id}','decline')">❌ Decline</button></div>` : ''}${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong> — Results pending</div>` : ''}`;
-      } else {
-        voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div></div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div></div></div>${myVote ? `<div style="font-size:12px;color:var(--blue-700);background:var(--blue-50);padding:8px 12px;border-radius:8px;margin-bottom:14px">Your vote: <strong>${myVote.vote}</strong></div>` : ''}`;
-      }
-    } else if (st === 'approved' || st === 'declined') {
-      voteSection = `<div style="margin-bottom:14px"><div class="vote-bar-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--green-text)">Approve</span><span style="color:var(--green-text)">${approveVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-g" style="width:${totalVoted?Math.round(approveVotes/totalVoted*100):0}%"></div></div></div><div class="vote-bar-wrap" style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:3px"><span style="color:var(--red-text)">Decline</span><span style="color:var(--red-text)">${declineVotes} votes</span></div><div class="vote-bar"><div class="vote-fill-r" style="width:${totalVoted?Math.round(declineVotes/totalVoted*100):0}%"></div></div></div></div>${st==='approved'?'<div style="font-size:12px;color:var(--green-text);background:var(--green-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">✅ Approved</div>':''}${st==='declined'?'<div style="font-size:12px;color:var(--red-text);background:var(--red-bg);padding:8px 12px;border-radius:8px;margin-bottom:14px">❌ Declined</div>':''}`;
-    }
-
-    let filesHtml = '';
-    if (parsed.files.length) {
-      filesHtml = `<div style="margin-top:14px"><div class="detail-label">📎 Attached Files</div>${parsed.files.map(f=>`<div class="file-preview"><span class="file-icon">📄</span><a href="javascript:void(0)" onclick="openAttachment('${q.id}','${f.path}','${f.name}','${f.type}')" class="file-link">${f.name}</a><span class="file-size">${(f.size/1024).toFixed(1)} KB</span></div>`).join('')}</div>`;
-    }
-
-    let internalNoteHtml = '';
-    if (role === 'admin' && parsed.note) {
-      internalNoteHtml = `<div class="internal-note-box">🔒 <strong>Internal Admin Note:</strong> ${parsed.note}</div>`;
-    }
-
-    let holdReasonHtml = '';
-    if (st === 'onhold' && q.hold_reason) {
-      holdReasonHtml = `<div style="background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:8px;padding:10px;margin-top:12px;font-size:12px;color:var(--purple-text)"><strong>⏸ Hold Reason:</strong> ${q.hold_reason}</div>`;
-    }
-
-    let adminActions = '';
-    if (role === 'admin') {
-      adminActions = `
-        ${st === 'pending' ? `<button class="btn-hold" onclick="openHold('${q.id}')">⏸ Put On Hold</button>` : ''}
-        ${st === 'onhold' ? `<button class="btn-primary" onclick="resumeQuote('${q.id}')">▶ Resume Voting</button>` : ''}
-        ${st === 'pending' ? `<button class="btn-success" onclick="forceApprove('${q.id}')">Force Approve</button>` : ''}
-        <button class="btn-secondary" onclick="openEditQuote('${q.id}')">✏️ Edit</button>
-        <button class="btn-secondary" onclick="openEditScope('${q.id}')">📝 Edit Scope</button>
-      `;
-    }
-
-    let cardClass = 'quote-card';
-    if (st === 'pending') cardClass += ' active-quote';
-    if (st === 'onhold') cardClass += ' on-hold';
-    if (st === 'approved') cardClass += ' approved-quote';
-    if (st === 'declined') cardClass += ' declined-quote';
-    if (st === 'expired') cardClass += ' expired';
-
-    return `
-      <div class="${cardClass}">
-        <div class="quote-header" onclick="toggleQuote('${q.id}')">
-          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-            <div style="flex:1">
-              <div style="font-size:15px;font-weight:600;color:var(--text)">${q.project || 'Untitled Quote'}</div>
-              <div class="quote-meta-row">
-                <span style="font-size:12px;color:var(--muted)">${q.vendor || 'Unknown Vendor'}</span>
-                ${catBadgeHtml}
-                ${prioBadge}
-                ${stBadge}
-                <span style="font-size:11px;color:var(--muted)">⏱ ${daysLeft} days left</span>
-              </div>
-            </div>
-            <div class="quote-amount">$${Number(q.amount || 0).toLocaleString('en-AU', { minimumFractionDigits: 2 })}</div>
-          </div>
-        </div>
-
-        <div class="quote-body" id="body-${q.id}">
-          ${q.notes ? `<div style="margin-bottom:14px"><div class="detail-label">Scope / Notes</div><div style="font-size:13px;line-height:1.6;color:var(--text-2)">${q.notes}</div></div>` : ''}
-          ${internalNoteHtml}
-          ${filesHtml}
-          ${voteSection}
-          ${holdReasonHtml}
-          <div class="quote-footer">
-            ${adminActions}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  let html = filterBar;
-  if (active.length) html += sectionHeader('Active Quotes', '#2563eb', '#2563eb', '#2563eb', active.length) + active.map(renderCard).join('');
-  if (closed.length) html += sectionHeader('Closed / Expired', '#94a3b8', '#94a3b8', '#94a3b8', closed.length) + closed.map(renderCard).join('');
-
-  list.innerHTML = html;
-}
-
-window.toggleQuote = id => {
-  const body = document.getElementById('body-' + id);
-  if (body) body.classList.toggle('open');
-};
-
-window.filterQuotes = (filter) => {
-  currentFilter = filter;
-  renderQuotes();
-};
-
-// ── Quote 생성/편집 ──
-window.openAddQuote = () => {
-  document.getElementById('quoteEditId').value = '';
-  document.getElementById('quoteModalTitle').textContent = 'Add Quote';
-  document.getElementById('deleteQuoteBtn').style.display = 'none';
-  document.getElementById('quoteProject').value = '';
-  document.getElementById('quoteVendor').value = '';
-  document.getElementById('quoteAmount').value = '';
-  document.getElementById('quoteCategory').value = 'Repairs';
-  document.getElementById('quotePriority').value = 'Normal';
-  document.getElementById('quoteNotes').value = '';
-  document.getElementById('quoteInternalNote').value = '';
-  uploadedFiles.length = 0;
-  document.getElementById('filePreview').innerHTML = '';
-  document.getElementById('quoteModal').classList.add('open');
-};
-
-window.openEditQuote = id => {
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  document.getElementById('quoteEditId').value = id;
-  document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
-  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
-  document.getElementById('quoteProject').value = q.project || '';
-  document.getElementById('quoteVendor').value = q.vendor || '';
-  document.getElementById('quoteAmount').value = q.amount || '';
-  document.getElementById('quoteCategory').value = parsed.category || 'Repairs';
-  document.getElementById('quotePriority').value = parsed.priority || 'Normal';
-  document.getElementById('quoteNotes').value = q.notes || '';
-  document.getElementById('quoteInternalNote').value = parsed.note || '';
-  displayExistingFiles(parsed.files);
-  document.getElementById('quoteModal').classList.add('open');
-};
-
-function displayExistingFiles(files) {
-  uploadedFiles.length = 0;
-  files.forEach(f => uploadedFiles.push({ name: f.name, path: f.path, type: f.type, size: f.size }));
-  document.getElementById('fileInput').value = '';
-  updateFilePreview();
-}
-
-document.getElementById('fileInput').addEventListener('change', e => {
-  const files = Array.from(e.target.files);
-  files.forEach(f => {
-    const sizeKB = (f.size / 1024).toFixed(1) + ' KB';
-    uploadedFiles.push({ file: f, name: f.name, size: sizeKB, type: f.type });
-  });
-  updateFilePreview();
-});
-
-function updateFilePreview() {
-  const preview = document.getElementById('filePreview');
-  if (!uploadedFiles.length) { preview.innerHTML = ''; return; }
-  preview.innerHTML = uploadedFiles.map((f, i) => `
-    <div class="file-preview">
-      <span class="file-icon">📄</span>
-      <span class="file-name">${f.name}</span>
-      <span class="file-size">${f.size}</span>
-      <span class="file-del" onclick="removeFile(${i})">✕</span>
-    </div>
-  `).join('');
-}
-
-window.removeFile = idx => {
-  uploadedFiles.splice(idx, 1);
-  updateFilePreview();
-};
-
-window.saveQuote = async () => {
-  const id = document.getElementById('quoteEditId').value;
-  const project = document.getElementById('quoteProject').value.trim();
-  const vendor = document.getElementById('quoteVendor').value.trim();
-  const amount = parseFloat(document.getElementById('quoteAmount').value) || 0;
-  const category = document.getElementById('quoteCategory').value;
-  const priority = document.getElementById('quotePriority').value;
-  const notes = document.getElementById('quoteNotes').value.trim();
-  const internalNote = document.getElementById('quoteInternalNote').value.trim();
-
-  if (!project || !vendor || amount <= 0) return showToast('Please fill all required fields', true);
-
-  const saveBtn = document.getElementById('saveQuoteBtn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
-
-  try {
-    const fileData = [];
-    for (const f of uploadedFiles) {
-      if (f.file) {
-        const uploaded = await uploadFile(f.file);
-        fileData.push(uploaded);
-      } else {
-        fileData.push(f);
-      }
-    }
-
-    const commentPayload = JSON.stringify({
-      note: internalNote,
-      files: fileData,
-      category: category,
-      priority: priority
-    });
-
-    const payload = { project, vendor, amount, notes, comment: commentPayload };
-
-    if (id) {
-      await supabase.from('quotes').update(payload).eq('id', id);
-    } else {
-      const expiry = new Date(); expiry.setDate(expiry.getDate() + RULES.expiryDays);
-      await supabase.from('quotes').insert({ ...payload, status: 'pending', expiry_date: expiry.toISOString(), created_by: user.id });
-    }
-
-    closeModal('quoteModal');
-    await loadData(); renderQuotes();
-    showToast('Quote saved successfully');
-  } catch(e) {
-    showToast('Save failed: ' + e.message, true);
-  } finally {
-    saveBtn.disabled = false; saveBtn.textContent = 'Save →';
-  }
-};
-
-// ── Hold / Resume ──
-window.openHold = id => { holdingQuoteId = id; document.getElementById('holdReason').value = ''; document.getElementById('holdModal').classList.add('open'); };
-window.confirmHold = async () => {
-  const reason = document.getElementById('holdReason').value.trim();
-  if (!reason) return showToast('Please enter a reason', true);
-  await supabase.from('quotes').update({status:'onhold', hold_reason: reason}).eq('id', holdingQuoteId);
-  closeModal('holdModal'); await loadData(); renderQuotes(); showToast('Quote put on hold');
-};
-window.resumeQuote = async id => {
-  await supabase.from('quotes').update({status:'pending', hold_reason: null}).eq('id', id);
-  await loadData(); renderQuotes(); showToast('Voting resumed');
-};
-
-// ── Edit Scope ──
-window.openEditScope = id => {
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  document.getElementById('scopeEditId').value = id;
-  document.getElementById('scopeText').value = parsed.note || '';
-  document.getElementById('scopeModal').classList.add('open');
-};
-window.saveScope = async () => {
-  const id = document.getElementById('scopeEditId').value;
-  const note = document.getElementById('scopeText').value.trim();
-  const q = allQuotes.find(q=>q.id===id);
-  if (!q) return;
-  const parsed = parseComment(q.comment);
-  parsed.note = note;
-  await supabase.from('quotes').update({ comment: JSON.stringify(parsed) }).eq('id', id);
-  closeModal('scopeModal'); await loadData(); renderQuotes(); showToast('Scope updated');
-};
-
-// ── Delete ──
-window.deleteQuote = async (id) => {
-  const qId = id || document.getElementById('quoteEditId').value;
-  if (!qId || !confirm('Delete this quote?')) return;
-  try {
-    await supabase.from('votes').delete().eq('quote_id', qId);
-    const q = allQuotes.find(q => q.id === qId);
-    if (q) {
-      const parsed = parseComment(q.comment);
-      const paths = (parsed.files||[]).map(f=>f.path).filter(Boolean);
-      if (paths.length) await supabase.storage.from('quotes').remove(paths);
-    }
-    await supabase.from('quotes').delete().eq('id', qId);
-    closeModal('quoteModal');
-    await loadData(); renderQuotes();
-    showToast('Quote deleted');
-  } catch(e) { showToast('Delete failed: ' + e.message, true); }
-};
-
-// ── Cast Vote ──
-window.castVote = async (quoteId, vote) => {
-  const existing = allVotes.find(v=>v.quote_id===quoteId && v.user_id===user.id);
-  if (existing) return showToast('You have already voted', true);
-  await supabase.from('votes').insert({ quote_id: quoteId, user_id: user.id, vote });
-  showToast(vote==='approve'?'✅ Approved':'❌ Declined');
-  await loadData(); renderQuotes();
-
-  const newVotes = allVotes.filter(v=>v.quote_id===quoteId);
-  const approvals = newVotes.filter(v=>v.vote==='approve').length;
-  const declines = newVotes.filter(v=>v.vote==='decline').length;
-
-  if (approvals >= RULES.approvalsRequired) {
-    await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-    await syncQuoteToWorks(quoteId);
-    await loadData(); renderQuotes();
-  } else if (declines >= RULES.declinesToAutoDecline) {
-    await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
-    await loadData(); renderQuotes();
-  }
-};
-
-// ── 초기 로드 ──
-try {
-  await loadData();
-  renderQuotes();
-} catch(e) {
-  console.error(e);
-  showToast('Failed to load quotes', true);
-}
 </script>
 </body>
 </html>
