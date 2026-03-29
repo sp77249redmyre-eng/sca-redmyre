@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Complaints – Redmyre House</title>
+<title>Resident Requests – Redmyre House</title>
 <link rel="manifest" href="/manifest.webmanifest?v=5">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
@@ -53,8 +53,8 @@
   <div id="topbarPlaceholder"></div>
   <div class="content">
     <div class="section-hdr">
-      <div class="section-title">Complaints</div>
-      <button class="btn-primary" id="addComplaintBtn" style="display:none">+ New Complaint</button>
+      <div class="section-title">Resident Requests</div>
+      <button class="btn-primary" id="addComplaintBtn" style="display:none">+ New Request</button>
     </div>
     <div id="statsWrap" style="display:none">
       <div class="stats-row">
@@ -79,7 +79,7 @@
 <!-- ADD MODAL -->
 <div class="modal-backdrop" id="complaintModal">
   <div class="modal-box">
-    <div class="modal-title" id="complaintModalTitle">New Complaint</div>
+    <div class="modal-title" id="complaintModalTitle">New Request</div>
     <input type="hidden" id="complaintEditId">
     <div class="modal-field">
       <label class="modal-label">Category</label>
@@ -124,7 +124,7 @@
 <div class="modal-backdrop" id="detailModal">
   <div class="modal-box">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div class="modal-title" style="margin-bottom:0" id="detailModalTitle">Complaint Detail</div>
+      <div class="modal-title" style="margin-bottom:0" id="detailModalTitle">Request Detail</div>
       <span class="badge" id="detailStatusBadge"></span>
     </div>
     <div style="margin-bottom:14px">
@@ -216,7 +216,7 @@ function renderComplaints() {
   const list = document.getElementById('complaintList');
   const filtered = currentFilter==='all' ? allComplaints : allComplaints.filter(c=>c.status===currentFilter);
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${currentFilter==='all'?'No complaints yet':'No '+currentFilter+' complaints'}</div><div style="font-size:13px;color:var(--muted)">${canSubmit.includes(role)?'Click "+ New Complaint" to submit one.':'Check back later.'}</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${currentFilter==='all'?'No complaints yet':'No '+currentFilter+' complaints'}</div><div style="font-size:13px;color:var(--muted)">${canSubmit.includes(role)?'Click "+ New Request" to submit one.':'Check back later.'}</div></div>`;
     return;
   }
   list.innerHTML = filtered.map(c => {
@@ -295,7 +295,7 @@ window.removePreviewPhoto = (idx) => {
 
 // Add complaint
 document.getElementById('addComplaintBtn').addEventListener('click', () => {
-  document.getElementById('complaintModalTitle').textContent = 'New Complaint';
+  document.getElementById('complaintModalTitle').textContent = 'New Request';
   document.getElementById('complaintEditId').value = '';
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
@@ -332,7 +332,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
     closeModal('complaintModal');
     pendingPhotos = [];
     await loadComplaints();
-    showToast('Complaint submitted ✓');
+    showToast('Request submitted ✓');
   } catch(e) { showToast(e.message||'Failed to submit', true); }
   finally { btn.disabled = false; btn.textContent = 'Submit →'; }
 });
@@ -400,7 +400,7 @@ document.getElementById('deleteComplaintBtn').addEventListener('click', async ()
     await supabase.from('complaints').delete().eq('id', currentComplaintId);
     closeModal('detailModal');
     await loadComplaints();
-    showToast('Complaint deleted');
+    showToast('Request deleted');
   } catch(e) { showToast('Failed to delete', true); }
 });
 
