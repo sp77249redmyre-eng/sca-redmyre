@@ -47,6 +47,7 @@
 .pk-reporter{font-size:11px;color:var(--muted);margin-bottom:8px}
 .pk-comment{font-size:13px;color:var(--text-2);background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.5}
 .pk-actions{display:flex;gap:8px;flex-wrap:wrap}
+.pk-image{width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin:8px 0;cursor:pointer}
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 </style>
 </head>
@@ -60,7 +61,7 @@
       <div class="form-sub">All residents will be notified immediately.</div>
       <div class="form-field">
         <label class="form-label">Number Plate</label>
-        <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+        <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value = this.value.replace(/\s/g,'').toUpperCase()">
       </div>
       <div class="form-field">
         <label class="form-label">Location</label>
@@ -91,6 +92,10 @@
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="pkComment" placeholder="Any additional details…"></textarea>
       </div>
+      <div class="form-field">
+        <label class="form-label">Photo (optional)</label>
+        <input type="file" id="photoInput" accept="image/*" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg)">
+      </div>
       <button class="btn-report" id="submitReportBtn">🚨 Report Now</button>
     </div>
 
@@ -109,6 +114,10 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;">
+  <img id="modalImage" style="max-width:92%;max-height:92%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6);" onclick="this.parentElement.style.display='none'">
+</div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
@@ -145,21 +154,53 @@ document.querySelectorAll('.vio-btn').forEach(btn => {
 });
 
 document.getElementById('submitReportBtn').addEventListener('click', async () => {
-  const plate    = document.getElementById('plateInput').value.trim().toUpperCase();
+  let plateInput = document.getElementById('plateInput').value.trim();
+  const plate = plateInput.replace(/\s/g,'').toUpperCase();
   const area     = document.getElementById('locationArea').value;
   const bay      = document.getElementById('baySelect').value||'';
   const comment  = document.getElementById('pkComment').value.trim();
+  const fileInput = document.getElementById('photoInput');
+  const file = fileInput.files[0];
+
   if (!plate)      { showToast('Please enter a number plate', true); return; }
   if (!area)       { showToast('Please select a location', true); return; }
   if (!selectedVio){ showToast('Please select a violation type', true); return; }
+
+  let image_url = null;
+  if (file) {
+    const fileExt = file.name.split('.').pop().toLowerCase();
+    const fileName = `parking_${Date.now()}_${plate}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('parking-images')
+      .upload(fileName, file, { upsert: true });
+    if (uploadError) {
+      showToast('Image upload failed. Report not submitted.', true);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('parking-images').getPublicUrl(fileName);
+    image_url = urlData.publicUrl;
+  }
+
   try {
-    await supabase.from('parking_reports').insert({ plate, location:bay||area, violation:selectedVio, comment, reported_by:user.id, reporter_name:name, status:'active' });
+    await supabase.from('parking_reports').insert({ 
+      plate, 
+      location:bay||area, 
+      violation:selectedVio, 
+      comment, 
+      image_url,
+      reported_by:user.id, 
+      reporter_name:name, 
+      status:'active' 
+    });
+    
     document.getElementById('plateInput').value='';
     document.getElementById('locationArea').value='';
     document.getElementById('bayField').style.display='none';
     document.getElementById('pkComment').value='';
+    document.getElementById('photoInput').value = '';
     document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
     selectedVio=null;
+    
     showToast('Report submitted! All residents have been notified 🚨');
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); }
@@ -187,36 +228,83 @@ window.deleteReport = async (id) => {
   await loadReports();
 };
 
+window.showImage = function(url) {
+  if (!url) return;
+  document.getElementById('modalImage').src = url;
+  document.getElementById('imageModal').style.display = 'flex';
+};
+
+document.getElementById('imageModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
 async function loadReports() {
   let query = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
   if (currentFilter==='active')   query = query.eq('status','active');
   else if (currentFilter==='resolved') query = query.eq('status','resolved');
-  const { data } = await query;
-  const reports = data||[];
+  
+  const { data: reportsData } = await query;
+  const reports = reportsData || [];
+
   const { data: activeData } = await supabase.from('parking_reports').select('id').eq('status','active');
   const activeCount = activeData?.length||0;
   document.getElementById('activeCount').textContent = activeCount > 0 ? `${activeCount} active` : '';
+
+  // Replaced vehicle matching logic
+  let vehicleMap = {};
+  try {
+    const { data: vehicles } = await supabase
+      .from('vehicles')
+      .select('plate, unit, owner_name');
+    (vehicles || []).forEach(v => {
+      if (!v?.plate) return;
+      const normalized = v.plate.replace(/\s/g,'').toUpperCase();
+      vehicleMap[normalized] = v;
+    });
+  } catch(e) {
+    console.warn('Vehicle matching failed, continuing without owner info');
+    vehicleMap = {};
+  }
+
   const list = document.getElementById('reportsList');
   if (!reports.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">${currentFilter==='active'?'✅':'🚗'}</div><div class="empty-title">${currentFilter==='active'?'No active incidents!':'No reports found'}</div><p style="font-size:13px">${currentFilter==='active'?'All clear in the car park 🎉':''}</p></div>`;
+    list.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No reports found</div>`;
     return;
   }
+
   list.innerHTML = reports.map(r => {
     const isResolved = r.status==='resolved';
-    const diff = Date.now()-new Date(r.created_at).getTime();
-    const mins=Math.floor(diff/60000),hrs=Math.floor(mins/60),days=Math.floor(hrs/24);
-    const timeAgo = mins<1?'Just now':mins<60?`${mins}m ago`:hrs<24?`${hrs}h ago`:`${days}d ago`;
+    
+    let timeAgo = '—';
+    let absTime = '—';
+    try {
+      if (r.created_at) {
+        const created = new Date(r.created_at);
+        const diff = Date.now() - created.getTime();
+        const mins = Math.floor(diff/60000);
+        const hrs = Math.floor(mins/60);
+        const days = Math.floor(hrs/24);
+        timeAgo = mins<1 ? 'Just now' : mins<60 ? `${mins}m ago` : hrs<24 ? `${hrs}h ago` : `${days}d ago`;
+        absTime = created.toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+      }
+    } catch(e) {}
+
+    const normPlate = (r.plate || '').replace(/\s/g,'').toUpperCase();
+    const vehicle = vehicleMap[normPlate];
+    const ownerInfo = vehicle ? `${vehicle.unit || ''} • ${vehicle.owner_name || ''}` : '⚠️ External Vehicle';
+
     return `
       <div class="parking-card ${isResolved?'resolved':''}">
         <div class="pk-header ${isResolved?'resolved':''}">
-          <div class="pk-plate ${isResolved?'resolved':''}">${r.plate}</div>
-          <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}</div>
+          <div class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</div>
+          <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}<br><span style="font-size:10px">${absTime}</span></div>
         </div>
         <div class="pk-body">
-          <div class="pk-location">📍 ${r.location}</div>
-          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation}</span></div>
+          <div class="pk-location">📍 ${r.location || '—'}</div>
+          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
+          ${r.image_url ? `<img src="${r.image_url}" class="pk-image" onclick="showImage('${r.image_url}')">` : ''}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
-          <div class="pk-reporter">Reported by ${r.reporter_name||'Anonymous'}</div>
+          <div class="pk-reporter">Reported by ${r.reporter_name||'Anonymous'}<br>${ownerInfo}</div>
           <div class="pk-actions">
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
