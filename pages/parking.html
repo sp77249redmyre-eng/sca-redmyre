@@ -250,7 +250,6 @@ async function loadReports() {
   const activeCount = activeData?.length||0;
   document.getElementById('activeCount').textContent = activeCount > 0 ? `${activeCount} active` : '';
 
-  // Replaced vehicle matching logic
   let vehicleMap = {};
   try {
     const { data: vehicles } = await supabase
@@ -265,6 +264,14 @@ async function loadReports() {
     console.warn('Vehicle matching failed, continuing without owner info');
     vehicleMap = {};
   }
+
+  const offenderMap = {};
+  reports.forEach(r => {
+    if (!r.plate) return;
+    const key = r.plate.replace(/\s/g,'').toUpperCase();
+    if (!offenderMap[key]) offenderMap[key] = 0;
+    offenderMap[key]++;
+  });
 
   const list = document.getElementById('reportsList');
   if (!reports.length) {
@@ -291,12 +298,34 @@ async function loadReports() {
 
     const normPlate = (r.plate || '').replace(/\s/g,'').toUpperCase();
     const vehicle = vehicleMap[normPlate];
-    const ownerInfo = vehicle ? `${vehicle.unit || ''} • ${vehicle.owner_name || ''}` : '⚠️ External Vehicle';
+    const ownerInfo = vehicle ? `${vehicle.unit || ''} • ${vehicle.owner_name || ''}` : '';
+
+    const isInternal = !!vehicle;
+    const isExternal = !vehicle;
+    const suite = vehicle?.unit || '';
+    const isRepeat = offenderMap[normPlate] >= 3;
 
     return `
       <div class="parking-card ${isResolved?'resolved':''}">
         <div class="pk-header ${isResolved?'resolved':''}">
-          <div class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</div>
+          <div class="pk-plate ${isResolved?'resolved':''}">
+            ${r.plate || '—'}
+            ${isInternal ? `
+              <span style="font-size:11px;margin-left:6px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600;">
+                🏢 Suite ${suite || 'Unknown'}
+              </span>
+            ` : ''}
+            ${isExternal ? `
+              <span style="font-size:11px;margin-left:6px;padding:2px 6px;border-radius:6px;background:#f3f4f6;color:#92400e;font-weight:600;">
+                ⚠️ External
+              </span>
+            ` : ''}
+            ${isRepeat ? `
+              <span style="font-size:11px;margin-left:6px;padding:2px 6px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600;">
+                🔴 Repeat
+              </span>
+            ` : ''}
+          </div>
           <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}<br><span style="font-size:10px">${absTime}</span></div>
         </div>
         <div class="pk-body">
