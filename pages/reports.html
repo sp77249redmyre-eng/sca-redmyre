@@ -16,122 +16,360 @@
 <style>
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
-.stat-num{font-size:26px;font-weight:700;margin-top:6px}
-.stat-label{font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em}
-.content{padding:24px}
-.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
-.section-title::before{content:'';width:3px;height:14px;background:var(--blue-600);border-radius:10px}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text-2)}
+.filter-input{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;width:180px}
+.filter-input:focus{border-color:var(--blue-600)}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer}
+.cat-name{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:4px}
+.cat-amount{font-size:18px;font-weight:600}
+.cat-count{font-size:11px;color:var(--muted);margin-top:3px}
+.cat-bar{height:4px;background:var(--border);border-radius:100px;margin-top:10px;overflow:hidden}
+.cat-fill{height:100%;background:var(--blue-600);border-radius:100px}
+.orange-section{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:20px;margin-bottom:20px}
+.table-head{display:grid;gap:10px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
+.th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;user-select:none}
+.sort-arrow{font-size:10px;opacity:0.5;margin-left:2px}
+.sort-arrow.asc,.sort-arrow.desc{opacity:1;color:var(--blue-600)}
+.table-row{display:grid;gap:10px;padding:13px 20px;border-bottom:1px solid var(--border-light);align-items:center;transition:background 0.12s}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:var(--bg)}
+@media(max-width:900px){.stats-row,.cat-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<div id="sidebar"></div>
-<div id="topbar"></div>
-
-<div class="content">
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-label">Total Expenses (YTD)</div>
-      <div class="stat-num" id="statTotal">$0.00</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Monthly Average</div>
-      <div class="stat-num" id="statAvg">$0.00</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Budget Utilization</div>
-      <div class="stat-num" id="statUtil">0%</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Projected Annual</div>
-      <div class="stat-num" id="statProjected">$0.00</div>
-    </div>
-  </div>
-
-  <div class="section-hdr">
-    <div class="section-title">Detailed Expenses</div>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+    <div class="filter-bar">
+      <select class="filter-select" id="filterPeriod">
+        <option value="thismonth">This Month</option>
+        <option value="lastmonth">Last Month</option>
+        <option value="thisquarter">This Quarter</option>
+        <option value="thisyear" selected>This Year</option>
+        <option value="alltime">All Time</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      <input type="date" class="filter-input" id="dateFrom" style="display:none;width:140px">
+      <input type="date" class="filter-input" id="dateTo" style="display:none;width:140px">
+      <select class="filter-select" id="filterCategory">
+        <option value="all">All Categories</option>
+        <option value="HVAC">HVAC</option><option value="Fire">Fire</option><option value="Electrical">Electrical</option>
+        <option value="Security">Security</option><option value="Plumbing">Plumbing</option><option value="Lift">Lift</option>
+        <option value="General">General</option><option value="Legal">Legal</option><option value="Other">Other</option>
+      </select>
+      <button class="btn-secondary" id="refreshBtn">↻ Refresh</button>
     </div>
 
-  <div class="table-container">
-    <table id="expensesTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Description</th>
-          <th>Category</th>
-          <th style="text-align:right">Amount</th>
-        </tr>
-      </thead>
-      <tbody id="expenseList"></tbody>
-    </table>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Spend</div><div class="stat-num" id="statTotal" style="color:var(--blue-600)">$0</div><div class="stat-sub" id="statPeriodLabel">—</div></div>
+      <div class="stat-card"><div class="stat-label">Approved Quotes</div><div class="stat-num" id="statQuoteTotal" style="color:var(--green)">$0</div><div class="stat-sub" id="statQuoteCount">0 quotes</div></div>
+      <div class="stat-card"><div class="stat-label">One-off Expenses</div><div class="stat-num" id="statOneoffTotal" style="color:var(--orange)">$0</div><div class="stat-sub" id="statOneoffCount">0 items</div></div>
+      <div class="stat-card"><div class="stat-label">Largest Expense</div><div class="stat-num" id="statLargest" style="color:var(--text)">$0</div><div class="stat-sub" id="statLargestLabel">—</div></div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:16px">Spend by Category</div>
+    <div class="cat-grid" id="catGrid"><div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">Loading…</div></div>
+
+    <div class="section-title" style="margin-bottom:16px">Approved Quotes</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="table-head" style="grid-template-columns:120px 1fr 100px 110px 100px">
+        <div class="th" onclick="sortQuotes('date')" id="th-date">Date <span class="sort-arrow" id="arr-date">↕</span></div>
+        <div class="th" onclick="sortQuotes('project')" id="th-project">Project <span class="sort-arrow" id="arr-project">↕</span></div>
+        <div class="th" onclick="sortQuotes('vendor')" id="th-vendor">Vendor <span class="sort-arrow" id="arr-vendor">↕</span></div>
+        <div class="th" onclick="sortQuotes('category')" id="th-category">Category <span class="sort-arrow" id="arr-category">↕</span></div>
+        <div class="th" onclick="sortQuotes('amount')" id="th-amount" style="text-align:right">Amount <span class="sort-arrow" id="arr-amount">↕</span></div>
+      </div>
+      <div id="quotesList"><div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Loading…</div></div>
+      <div style="padding:12px 20px;background:var(--bg);border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--muted)" id="quotesTotal">—</span>
+        <span style="font-size:14px;font-weight:600" id="quotesTotalAmount">$0.00</span>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:16px;margin-top:8px">Ongoing Works Status</div>
+    <div id="worksSection" style="margin-bottom:24px"><div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Loading…</div></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:0">One-off Emergency Expenses</div>
+      <button class="btn-primary" id="addExpenseBtn" style="display:none">+ Add Expense</button>
+    </div>
+    <div class="orange-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:13px;color:#9a3412;font-weight:500">Emergency / unplanned expenses not going through the quote approval process</span>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="table-head" style="grid-template-columns:120px 1fr 100px 100px 90px">
+          <div class="th">Date</div><div class="th">Description</div><div class="th">Category</div>
+          <div class="th" style="text-align:right">Amount</div><div class="th"></div>
+        </div>
+        <div id="expensesList"><div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No one-off expenses recorded.</div></div>
+        <div style="padding:12px 20px;background:var(--bg);border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:var(--muted)" id="expensesTotal">—</span>
+          <span style="font-size:14px;font-weight:600" id="expensesTotalAmount">$0.00</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-backdrop" id="expenseModal">
+  <div class="modal-box">
+    <div class="modal-title" id="expenseModalTitle">Add One-off Expense</div>
+    <input type="hidden" id="expenseEditId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-field"><label class="modal-label">Description</label><input class="modal-input" id="expenseDesc" placeholder="e.g. Emergency pipe repair"></div>
+      <div class="modal-field"><label class="modal-label">Amount (AUD) <span style="font-size:10px;font-weight:600;background:#fef9f0;border:1px solid #fed7aa;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px">ex GST</span></label><input class="modal-input" type="number" id="expenseAmount" placeholder="0.00"></div>
+      <div class="modal-field"><label class="modal-label">Category</label><select class="modal-select" id="expenseCategory"><option value="HVAC">HVAC</option><option value="Fire">Fire</option><option value="Electrical">Electrical</option><option value="Security">Security</option><option value="Plumbing">Plumbing</option><option value="Lift">Lift</option><option value="General">General</option><option value="Legal">Legal</option><option value="Other">Other</option></select></div>
+      <div class="modal-field"><label class="modal-label">Date</label><input class="modal-input" type="date" id="expenseDate"></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">Notes (optional)</label><textarea class="modal-textarea" id="expenseNotes" placeholder="Additional details…"></textarea></div>
+    <div id="addToWorksField" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer" id="addToWorksToggle">
+        <input type="checkbox" id="addToWorks" style="width:16px;height:16px;cursor:pointer;accent-color:var(--blue-600)">
+        <div><div style="font-size:13px;font-weight:500;color:var(--text)">Add to Ongoing Works</div><div style="font-size:11px;color:var(--muted);margin-top:1px">Amount will be stored in private notes</div></div>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteExpenseBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+      <button class="btn-primary" id="saveExpenseBtn">Save →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script type="module">
-import { supabase } from '/js/auth.js';
 import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
 
-let user;
+if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/building.html';
+if (role==='admin') document.getElementById('addExpenseBtn').style.display='inline-flex';
 
-async function init() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) { window.location.href = '/'; return; }
-  user = session.user;
-  
-  // [유지] 원본 레이아웃 초기화
-  initLayout('Reports');
-  await loadReport();
+const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
+const CAT_COLORS = { 'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6','Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8' };
+const CAT_BG    = { 'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9' };
+
+const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function parseQuoteCategory(q) {
+  try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
+  return q.category||'Other';
+}
+
+function catBadge(cat) {
+  const label=CAT_LABELS[cat]||cat||'Other';
+  const color=CAT_COLORS[cat]||'#94a3b8';
+  const bg=CAT_BG[cat]||'#f1f5f9';
+  return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
+}
+
+let dateFrom=null, dateTo=null;
+let currentQuotesData=[];
+let currentSortKey='date', currentSortDir='desc';
+
+document.getElementById('filterPeriod').addEventListener('change', updateDateRange);
+document.getElementById('filterCategory').addEventListener('change', loadReport);
+document.getElementById('refreshBtn').addEventListener('click', loadReport);
+
+function updateDateRange() {
+  const period=document.getElementById('filterPeriod').value;
+  const fromEl=document.getElementById('dateFrom');
+  const toEl=document.getElementById('dateTo');
+  if (period==='custom') { fromEl.style.display='block'; toEl.style.display='block'; return; }
+  fromEl.style.display='none'; toEl.style.display='none';
+  const now=new Date(); const y=now.getFullYear(); const m=now.getMonth();
+  if (period==='thismonth')  { dateFrom=new Date(y,m,1); dateTo=new Date(y,m+1,0); }
+  else if (period==='lastmonth')  { dateFrom=new Date(y,m-1,1); dateTo=new Date(y,m,0); }
+  else if (period==='thisquarter'){ const q=Math.floor(m/3); dateFrom=new Date(y,q*3,1); dateTo=new Date(y,q*3+3,0); }
+  else if (period==='thisyear')   { dateFrom=new Date(y,0,1); dateTo=new Date(y,11,31); }
+  else { dateFrom=null; dateTo=null; }
+  loadReport();
 }
 
 async function loadReport() {
-  // [수정] expenses 테이블에서만 데이터를 가져오도록 변경 (reports 호출 제거)
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('*')
-    .order('expense_date', { ascending: false });
-
-  if (error) { console.error('Error loading expenses:', error); return; }
-  
-  renderExpenses(data);
-  updateStats(data);
-}
-
-// [삭제] renderQuotesList, sortQuotes, filterByCat 등 관련 로직 전체 삭제
-
-function renderExpenses(data) {
-  const list = document.getElementById('expenseList');
-  if (!data || data.length === 0) {
-    list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--muted)">No records found</td></tr>';
-    return;
+  const period=document.getElementById('filterPeriod').value;
+  const catFilter=document.getElementById('filterCategory').value;
+  if (period==='custom') {
+    const fromVal=document.getElementById('dateFrom').value;
+    const toVal=document.getElementById('dateTo').value;
+    if (fromVal) dateFrom=new Date(fromVal);
+    if (toVal)   dateTo=new Date(toVal);
   }
-  
-  // [유지] 기존 테이블 렌더링 방식 (수정 버튼 제외)
-  list.innerHTML = data.map(e => `
-    <tr>
-      <td>${new Date(e.expense_date).toLocaleDateString('en-AU')}</td>
-      <td style="font-weight:500">${e.description}</td>
-      <td><span class="badge badge-gray">${e.category}</span></td>
-      <td style="text-align:right; font-weight:600">$${e.amount.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
-    </tr>
-  `).join('');
+  const periodLabel = period==='alltime'?'All time':period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`:period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'}):'—';
+  document.getElementById('statPeriodLabel').textContent=periodLabel;
+  // ✅ CRITICAL FIX: 데이터 소스 변경 — quotes (approved) → reports
+  let qQuery=supabase.from('reports').select('*').order('created_at',{ascending:false});
+  if (dateFrom) qQuery=qQuery.gte('created_at',dateFrom.toISOString());
+  if (dateTo)   qQuery=qQuery.lte('created_at',new Date(dateTo.getTime()+86400000).toISOString());
+  const { data:reportsRaw } = await qQuery;
+  const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
+  let eQuery=supabase.from('expenses').select('*').order('expense_date',{ascending:false});
+  if (dateFrom) eQuery=eQuery.gte('expense_date',dateFrom.toISOString().split('T')[0]);
+  if (dateTo)   eQuery=eQuery.lte('expense_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+  if (catFilter!=='all') eQuery=eQuery.eq('category',catFilter);
+  const { data:expenses } = await eQuery;
+  const reportsData=reports||[];
+  const expensesData=expenses||[];
+  const reportTotal=reportsData.reduce((s,q)=>s+Number(q.amount||0),0);
+  const expenseTotal=expensesData.reduce((s,e)=>s+Number(e.amount||0),0);
+  const grandTotal=reportTotal+expenseTotal;
+  const allItems=[...reportsData.map(q=>({label:q.project||'—',amount:Number(q.amount||0)})),...expensesData.map(e=>({label:e.description||'—',amount:Number(e.amount||0)}))].sort((a,b)=>b.amount-a.amount);
+  document.getElementById('statTotal').textContent     =fmt(grandTotal);
+  document.getElementById('statQuoteTotal').textContent=fmt(reportTotal);
+  document.getElementById('statQuoteCount').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
+  document.getElementById('statOneoffTotal').textContent=fmt(expenseTotal);
+  document.getElementById('statOneoffCount').textContent=`${expensesData.length} item${expensesData.length!==1?'s':''}`;
+  document.getElementById('statLargest').textContent=allItems.length?fmt(allItems[0].amount):'$0';
+  document.getElementById('statLargestLabel').textContent=allItems.length?allItems[0].label.substring(0,30):'—';
+  const catTotals={};
+  reportsData.forEach(q=>{const c=q._cat||parseQuoteCategory(q);catTotals[c]=(catTotals[c]||0)+Number(q.amount||0);});
+  expensesData.forEach(e=>{const c=e.category||'Other';catTotals[c]=(catTotals[c]||0)+Number(e.amount||0);});
+  const maxCat=Math.max(...Object.values(catTotals),1);
+  const catGrid=document.getElementById('catGrid');
+  const sortedCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  if (!sortedCats.length) { catGrid.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:span 4">No data for this period</div>'; }
+  else {
+    catGrid.innerHTML=sortedCats.map(([cat,total])=>{
+      const qCount=reportsData.filter(q=>(q._cat||parseQuoteCategory(q))===cat).length;
+      const eCount=expensesData.filter(e=>(e.category||'Other')===cat).length;
+      const color=CAT_COLORS[cat]||'var(--blue-600)';
+      const pct=Math.round(total/grandTotal*100);
+      return `<div class="cat-card" style="border-top:3px solid ${color}" onclick="filterByCat('${cat}')"><div class="cat-name">${CAT_LABELS[cat]||cat}</div><div class="cat-amount" style="color:${color}">${fmt(total)}</div><div class="cat-count">${qCount} report${qCount!==1?'s':''} · ${eCount} expense${eCount!==1?'s':''} · ${pct}% of total</div><div class="cat-bar"><div class="cat-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div></div>`;
+    }).join('');
+  }
+  currentQuotesData=reportsData; currentSortKey='date'; currentSortDir='desc';
+  renderQuotesList();
+  document.getElementById('quotesTotal').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
+  document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal);
+  renderExpenses(expensesData);
 }
 
-function updateStats(data) {
-  // [유지] 기존 통계 계산 로직
-  const total = data.reduce((sum, e) => sum + (e.amount || 0), 0);
-  document.getElementById('statTotal').textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits:2});
-  
-  const avg = data.length ? total / 12 : 0; 
-  document.getElementById('statAvg').textContent = '$' + avg.toLocaleString(undefined, {minimumFractionDigits:2});
-  
-  const projected = avg * 12;
-  document.getElementById('statProjected').textContent = '$' + projected.toLocaleString(undefined, {minimumFractionDigits:2});
+function renderExpenses(expensesData) {
+  const list=document.getElementById('expensesList');
+  if (!expensesData.length) { list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No one-off expenses recorded for this period.</div>'; }
+  else {
+    list.innerHTML=expensesData.map(e=>`
+      <div class="table-row" style="grid-template-columns:120px 1fr 100px 100px 90px">
+        <div style="font-size:12px;color:var(--text-2)">${new Date(e.expense_date||e.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+        <div><div style="font-size:13px;font-weight:500">${e.description||'—'}</div>${e.notes?`<div style="font-size:11px;color:var(--muted)">${e.notes}</div>`:''}</div>
+        <div>${catBadge(e.category||'Other')}</div>
+        <div style="font-size:13px;font-weight:600;text-align:right">${fmt(e.amount)}</div>
+        <div style="text-align:right">${role==='admin'?`<button class="btn-secondary" style="padding:4px 8px;font-size:11px" onclick="editExpense('${e.id}')">Edit</button>`:''}</div>
+      </div>`).join('');
+  }
+  const total=expensesData.reduce((s,e)=>s+Number(e.amount||0),0);
+  document.getElementById('expensesTotal').textContent=`${expensesData.length} item${expensesData.length!==1?'s':''}`;
+  document.getElementById('expensesTotalAmount').textContent=fmt(total);
 }
 
-// [삭제] 모든 Modal 관련, 이벤트 리스너(save/delete), 카테고리 필터 코드 제거
+function renderQuotesList() {
+  const list=document.getElementById('quotesList');
+  if (!currentQuotesData.length) { list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No reports for this period</div>'; return; }
+  const sorted=[...currentQuotesData].sort((a,b)=>{
+    let av,bv;
+    if (currentSortKey==='date')     {av=new Date(a.created_at);bv=new Date(b.created_at);}
+    if (currentSortKey==='project')  {av=(a.project||'').toLowerCase();bv=(b.project||'').toLowerCase();}
+    if (currentSortKey==='vendor')   {av=(a.vendor||a.contractor||'').toLowerCase();bv=(b.vendor||b.contractor||'').toLowerCase();}
+    if (currentSortKey==='category') {av=(a._cat||'').toLowerCase();bv=(b._cat||'').toLowerCase();}
+    if (currentSortKey==='amount')   {av=Number(a.amount||0);bv=Number(b.amount||0);}
+    if (av<bv) return currentSortDir==='asc'?-1:1;
+    if (av>bv) return currentSortDir==='asc'?1:-1;
+    return 0;
+  });
+  list.innerHTML=sorted.map(q=>`
+    <div class="table-row" style="grid-template-columns:120px 1fr 100px 110px 100px">
+      <div style="font-size:12px;color:var(--text-2)">${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <div style="font-size:13px;font-weight:500">${q.project||q.title||'—'}</div>
+      <div style="font-size:12px;color:var(--text-2)">${q.vendor||q.contractor||'—'}</div>
+      <div>${catBadge(q._cat)}</div>
+      <div style="font-size:13px;font-weight:600;text-align:right">${fmt(q.amount)}</div>
+    </div>`).join('');
+  ['date','project','vendor','category','amount'].forEach(k=>{
+    const arr=document.getElementById('arr-'+k);
+    if (!arr) return;
+    if (k===currentSortKey) { arr.textContent=currentSortDir==='asc'?'↑':'↓'; arr.className='sort-arrow '+currentSortDir; }
+    else { arr.textContent='↕'; arr.className='sort-arrow'; }
+  });
+}
 
-init();
+window.sortQuotes = (key) => {
+  if (currentSortKey===key) { currentSortDir=currentSortDir==='asc'?'desc':'asc'; }
+  else { currentSortKey=key; currentSortDir=(key==='category'||key==='vendor'||key==='project')?'asc':'desc'; }
+  renderQuotesList();
+};
+
+window.filterByCat = (cat) => {
+  document.getElementById('filterCategory').value=cat;
+  loadReport();
+  document.getElementById('quotesList').scrollIntoView({behavior:'smooth',block:'start'});
+};
+
+document.getElementById('addExpenseBtn').addEventListener('click', () => {
+  document.getElementById('expenseModalTitle').textContent='Add One-off Expense';
+  document.getElementById('expenseEditId').value='';
+  document.getElementById('expenseDesc').value='';
+  document.getElementById('expenseAmount').value='';
+  document.getElementById('expenseCategory').value='Other';
+  document.getElementById('expenseDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('expenseNotes').value='';
+  document.getElementById('deleteExpenseBtn').style.display='none';
+  document.getElementById('addToWorks').checked=false;
+  document.getElementById('addToWorksField').style.display='block';
+  document.getElementById('expenseModal').classList.add('open');
+});
+
+window.editExpense = async (id) => {
+  const { data:e } = await supabase.from('expenses').select('*').eq('id',id).single();
+  if (!e) return;
+  document.getElementById('expenseModalTitle').textContent='Edit Expense';
+  document.getElementById('expenseEditId').value=e.id;
+  document.getElementById('expenseDesc').value=e.description||'';
+  document.getElementById('expenseAmount').value=e.amount||'';
+  document.getElementById('expenseCategory').value=e.category||'other';
+  document.getElementById('expenseDate').value=e.expense_date||new Date().toISOString().split('T')[0];
+  document.getElementById('expenseNotes').value=e.notes||'';
+  document.getElementById('deleteExpenseBtn').style.display='inline-flex';
+  document.getElementById('addToWorksField').style.display='none';
+  document.getElementById('expenseModal').classList.add('open');
+};
+
+document.getElementById('saveExpenseBtn').addEventListener('click', async () => {
+  const id=document.getElementById('expenseEditId').value;
+  const addToWorks=!id&&document.getElementById('addToWorks').checked;
+  const data={ description:document.getElementById('expenseDesc').value.trim(), amount:parseFloat(document.getElementById('expenseAmount').value)||0, category:document.getElementById('expenseCategory').value, expense_date:document.getElementById('expenseDate').value, notes:document.getElementById('expenseNotes').value.trim(), created_by:user.id };
+  if (!data.description) { showToast('Please enter a description', true); return; }
+  try {
+    if (id) { await supabase.from('expenses').update(data).eq('id',id); }
+    else {
+      await supabase.from('expenses').insert(data);
+      if (addToWorks) await supabase.from('works').insert({ title:data.description, status:'done', category:data.category, private_notes:`One-off expense: $${data.amount.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})} (ex GST)${data.notes?'\n'+data.notes:''}`, updated_at:new Date().toISOString() });
+    }
+    closeModal('expenseModal');
+    await loadReport();
+    showToast(addToWorks?'Expense saved & added to Ongoing Works ✓':'Expense saved ✓');
+  } catch(e) { showToast(e.message||'Failed to save', true); }
+});
+
+document.getElementById('deleteExpenseBtn').addEventListener('click', async () => {
+  if (!confirm('Delete this expense?')) return;
+  const id=document.getElementById('expenseEditId').value;
+  await supabase.from('expenses').delete().eq('id',id);
+  closeModal('expenseModal');
+  await loadReport();
+  showToast('Expense deleted');
+});
+
+updateDateRange();
 </script>
 </body>
 </html>
