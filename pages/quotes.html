@@ -8,146 +8,190 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
 <meta name="theme-color" content="#1e3a8a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
-.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
-.filter-bar{display:flex;gap:8px;margin-bottom:12px;margin-top:20px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#0f2456;--blue-800:#1e3a8a;--blue-700:#1e4fa3;--blue-600:#2563eb;
+  --blue-400:#60a5fa;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --bg:#f8fafc;--surface:#fff;--border:#e2e8f0;--border-light:#f1f5f9;
+  --text:#0f172a;--text-2:#475569;--muted:#94a3b8;
+  --green:#10b981;--green-bg:#ecfdf5;--green-text:#065f46;
+  --yellow:#f59e0b;--yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --red:#ef4444;--red-bg:#fef2f2;--red-text:#991b1b;
+  --purple:#8b5cf6;--purple-bg:#f5f3ff;--purple-text:#5b21b6;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+.content{padding:32px;max-width:1600px;margin:0 auto}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+.page-title{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;display:inline-block;white-space:nowrap}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.badge-purple{background:var(--purple-bg);color:var(--purple-text)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+.btn-warning{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.btn-ghost{background:transparent;border:2px solid var(--border);color:var(--text-2);box-shadow:none}
+.btn-ghost:hover{border-color:var(--blue-600);color:var(--blue-600);background:var(--blue-50)}
+.btn-sm{padding:6px 14px;font-size:13px;border-radius:8px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:linear-gradient(135deg,var(--surface),var(--blue-50));border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(37,99,235,0.1),transparent);border-radius:50%}
+.stat-num{font-size:32px;font-weight:700;letter-spacing:-0.03em;position:relative;z-index:1}
+.stat-label{font-size:13px;color:var(--muted);margin-top:6px;font-weight:500;position:relative;z-index:1}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:32px}
+.section-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,var(--surface),var(--bg))}
+.section-title{font-size:18px;font-weight:700;color:var(--text)}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:8px 16px;border-radius:8px;border:2px solid transparent;background:var(--border-light);font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;transition:all 0.2s}
+.filter-btn:hover{background:var(--blue-50);color:var(--blue-600)}
+.filter-btn.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600);box-shadow:0 2px 8px rgba(37,99,235,0.3)}
 .quote-table{width:100%;border-collapse:collapse}
-.quote-table th{background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding:12px 16px;text-align:left}
-.quote-table td{padding:16px;border-top:1px solid var(--border-light);cursor:pointer}
-.quote-table tr:hover{background:rgba(37,99,235,0.02)}
-.priority-normal{color:var(--muted)}
-.priority-high{color:#f59e0b}
-.priority-urgent{color:#ef4444}
-.amount-confidential{color:var(--muted);font-style:italic}
-.quote-body{border-top:1px solid var(--border-light);padding:20px;display:none;background:var(--bg)}
-.quote-body.open{display:block}
-.detail-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
-.vote-status-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin:14px 0}
-.vote-row{display:flex;gap:12px;margin-bottom:8px;font-size:13px}
-.vote-item{display:flex;align-items:center;gap:6px;flex:1}
-.vote-icon{font-size:16px}
-.files-list{margin-top:8px}
-.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;cursor:pointer}
-.file-icon{font-size:16px}
-.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quote-table thead{background:var(--bg)}
+.quote-table th{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:12px 20px;text-align:left;border-bottom:2px solid var(--border)}
+.quote-table td{padding:16px 20px;border-bottom:1px solid var(--border-light);font-size:14px}
+.quote-row{cursor:pointer;transition:background 0.15s}
+.quote-row:hover{background:var(--blue-50)}
+.quote-row:hover td{color:var(--blue-700)}
+.quote-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
+.quote-meta{font-size:12px;color:var(--muted)}
+.quote-accordion{display:none;background:linear-gradient(to bottom,var(--bg),var(--surface);padding:24px;border-top:1px solid var(--border)}
+.quote-accordion.open{display:block;animation:slideDown 0.2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.accordion-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid var(--border)}
+.accordion-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+.info-item{padding:12px;border-radius:8px;background:var(--bg)}
+.info-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+.info-value{font-size:14px;font-weight:600;color:var(--text)}
+.content-block{margin-top:20px;padding-top:20px;border-top:1px solid var(--border-light)}
+.content-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.content-text{font-size:14px;color:var(--text-2);line-height:1.7}
+.internal-note{background:linear-gradient(135deg,var(--purple-bg),var(--blue-50));border:2px solid var(--purple);border-radius:12px;padding:16px;margin-top:16px}
+.internal-note-label{font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.internal-note-text{font-size:13px;color:var(--purple-text);line-height:1.6}
+.vote-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.vote-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:12px;text-align:center;transition:all 0.2s}
+.vote-card.voted-approve{border-color:var(--green);background:var(--green-bg)}
+.vote-card.voted-decline{border-color:var(--red);background:var(--red-bg)}
+.vote-card.voted-hold{border-color:var(--purple);background:var(--purple-bg)}
+.vote-icon{font-size:24px;margin-bottom:6px}
+.vote-name{font-size:11px;color:var(--muted);font-weight:600}
+.action-bar{margin-top:24px;padding-top:20px;border-top:2px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+.file-list{margin-top:12px}
+.file-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.file-item:hover{border-color:var(--blue-600);background:var(--blue-50);transform:translateX(2px)}
+.file-icon{font-size:20px}
+.file-name{flex:1;font-size:13px;font-weight:500;color:var(--text)}
 .file-size{font-size:11px;color:var(--muted)}
-.file-visibility{font-size:10px;padding:1px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1}
-.internal-note-box{background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:10px;padding:12px;font-size:12px;color:var(--purple-text);margin-top:10px;line-height:1.6;font-style:italic}
-.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
-.empty-icon{font-size:48px;margin-bottom:16px}
-.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
-.inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
-.btn-pill {
-  border-radius: 999px;
-  padding: 14px 26px;
-  font-size: 14px;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-  transition: all 0.12s ease;
-}
-.btn-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.3);
-}
-.btn-pill:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-.btn-pill-success {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #fff;
-}
-.btn-pill-danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #fff;
-}
-.btn-pill-warning {
-  background: linear-gradient(135deg, #f59e0b, #f97316);
-  color: #fff;
-}
-.btn-pill-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-}
-.btn-pill-active {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #fff;
-}
-.files-section {
-  margin-top:14px;
-  padding:12px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:var(--surface);
-}
-.action-bar {
-  margin-top:16px;
-  padding-top:12px;
-  border-top:1px solid var(--border);
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
+.inline-viewer{margin-top:12px;padding:16px;background:var(--surface);border:2px solid var(--blue-600);border-radius:12px}
+.empty-state{text-align:center;padding:80px 24px;color:var(--muted)}
+.empty-icon{font-size:64px;margin-bottom:16px;opacity:0.5}
+.empty-title{font-size:18px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+.empty-text{font-size:14px;color:var(--muted)}
+.rule-info{background:linear-gradient(135deg,var(--blue-50),var(--purple-bg));border:2px solid var(--blue-600);border-radius:12px;padding:20px;margin-bottom:32px;font-size:13px;line-height:1.8;color:var(--text-2)}
 </style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
 <div class="main">
   <div id="topbarPlaceholder"></div>
-
   <div class="content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px">
-        <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
-        Quote Approvals
+    
+    <div class="page-header">
+      <div class="page-title">💼 Quote Approvals</div>
+      <button class="btn btn-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">
+        <span>+</span> Add Quote
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div>
+        <div class="stat-label">Total Quotes</div>
       </div>
-      <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+      <div class="stat-card">
+        <div class="stat-num" id="statPending" style="color:var(--yellow)">—</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statDeclined" style="color:var(--red)">—</div>
+        <div class="stat-label">Declined</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statHold" style="color:var(--purple)">—</div>
+        <div class="stat-label">On Hold</div>
+      </div>
     </div>
 
     <div class="rule-info" id="ruleInfo">
-      This quote will be decided by a vote of 8 committee members.<br>
-      If 5 or more members approve, the quote will be automatically approved.<br>
-      If 4 or more members decline, the quote will be automatically declined.<br>
-      If 3 or more members choose to hold and fewer than 5 approvals are received, the quote will be placed on hold.<br>
-      Quotes that are on hold or expired can be re-opened for voting by the administrator.<br>
-      Once a vote has been submitted, it cannot be changed.
+      <strong>📋 Voting Rules:</strong> This quote will be decided by committee vote. If <strong>5 or more members approve</strong>, it will be automatically approved. If <strong>4 or more decline</strong>, it will be declined. If <strong>3 or more choose hold</strong>, it will be placed on hold. Admin can override any decision with Force Approve or Put On Hold.
     </div>
 
-    <div style="margin-top:30px">
-      <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:12px">⏳ Pending Approval</div>
-      <div id="pendingList"></div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">⏳ Pending Approval</div>
+      </div>
+      <table class="quote-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Project</th>
+            <th>Contractor</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody">
+          <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--muted)">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <div style="margin-top:50px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:14px;font-weight:600;color:var(--text-2)">📋 Management Archive</div>
-        <div class="filter-bar" id="archiveFilterBar" style="margin:0">
-          <button class="btn-pill btn-pill-active" data-filter="all" onclick="filterArchive('all')">All</button>
-          <button class="btn-pill" data-filter="onhold" onclick="filterArchive('onhold')">On Hold</button>
-          <button class="btn-pill" data-filter="expired" onclick="filterArchive('expired')">Expired</button>
-          <button class="btn-pill" data-filter="declined" onclick="filterArchive('declined')">Declined</button>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">📋 Management Archive</div>
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all" onclick="filterArchive('all')">All</button>
+          <button class="filter-btn" data-filter="onhold" onclick="filterArchive('onhold')">On Hold</button>
+          <button class="filter-btn" data-filter="expired" onclick="filterArchive('expired')">Expired</button>
+          <button class="filter-btn" data-filter="declined" onclick="filterArchive('declined')">Declined</button>
         </div>
       </div>
-      <div id="archiveList"></div>
+      <table class="quote-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Project</th>
+            <th>Contractor</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="archiveBody">
+          <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--muted)">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
+
   </div>
 </div>
 
 <div class="modal-backdrop" id="quoteModal">
-  <div class="modal-box" style="max-width:680px">
+  <div class="modal-box" style="max-width:720px">
     <div class="modal-title" id="quoteModalTitle">Add Quote</div>
     <input type="hidden" id="quoteEditId">
     <div class="modal-field">
@@ -190,32 +234,32 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
-      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
+      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:var(--purple)"></textarea>
     </div>
     <div class="modal-field">
       <label class="modal-label">📎 Attach Files</label>
       <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
-      <button class="btn-pill" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
-      <div id="filePreview" style="margin-top:10px"></div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
+      <div id="filePreview" style="margin-top:12px"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
-      <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
+      <button class="btn btn-ghost" onclick="closeModal('quoteModal')">Cancel</button>
+      <button class="btn btn-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
+      <button class="btn btn-primary" id="saveQuoteBtn" onclick="saveQuote()">Save Quote →</button>
     </div>
   </div>
 </div>
 
 <div class="modal-backdrop" id="holdModal">
-  <div class="modal-box" style="max-width:480px">
+  <div class="modal-box" style="max-width:540px">
     <div class="modal-title">Put Quote On Hold</div>
     <div class="modal-field">
       <label class="modal-label">Reason for Hold</label>
       <textarea class="modal-textarea" id="holdReason" placeholder="Why is this being put on hold?"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-pill" onclick="closeModal('holdModal')">Cancel</button>
-      <button class="btn-pill btn-pill-warning" onclick="confirmHold()">Confirm Hold</button>
+      <button class="btn btn-ghost" onclick="closeModal('holdModal')">Cancel</button>
+      <button class="btn btn-warning" onclick="confirmHold()">Confirm Hold</button>
     </div>
   </div>
 </div>
@@ -258,7 +302,6 @@ function parseComment(comment) {
       priority: obj?.priority || 'Normal'
     };
   } catch(e) { 
-    console.error('parseComment failed:', e, comment); 
     return { note:'', files:[], category:'General', priority:'Normal' }; 
   }
 }
@@ -293,10 +336,7 @@ window.showToast = (msg, isError = false) => {
 
 window.showInlineViewer = async function(path, name, type, containerId) {
   const container = document.getElementById(containerId);
-  if (!container) {
-    console.error('Container not found:', containerId);
-    return;
-  }
+  if (!container) return;
 
   if (container.innerHTML.trim() !== '') {
     container.innerHTML = '';
@@ -308,15 +348,15 @@ window.showInlineViewer = async function(path, name, type, containerId) {
     let content = '';
     
     if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
-      content = `<iframe src="${url}" style="width:100%;height:420px;border:none;border-radius:6px"></iframe>`;
+      content = `<iframe src="${url}" style="width:100%;height:480px;border:none;border-radius:8px"></iframe>`;
     } else {
-      content = `<img src="${url}" style="max-width:100%;max-height:420px;border-radius:6px" alt="${name}">`;
+      content = `<img src="${url}" style="max-width:100%;max-height:480px;border-radius:8px" alt="${name}">`;
     }
     
-    container.innerHTML = `<div style="margin-top:8px">${content}</div>`;
+    container.innerHTML = content;
   } catch(e) {
     console.error('showInlineViewer failed:', e);
-    container.innerHTML = `<div style="color:#ef4444;font-size:12px">Failed to load file: ${e.message}</div>`;
+    container.innerHTML = `<div style="color:#ef4444;font-size:13px">Failed to load file</div>`;
   }
 };
 
@@ -350,6 +390,19 @@ async function loadData() {
     ]);
     allQuotes = qRes.data || [];
     allVotes = vRes.data || [];
+
+    const counts = { total:0, pending:0, declined:0, hold:0 };
+    for (const q of allQuotes) {
+      const st = getQuoteStatus(q);
+      counts.total++;
+      if (st === 'pending') counts.pending++;
+      else if (st === 'declined') counts.declined++;
+      else if (st === 'onhold') counts.hold++;
+    }
+    document.getElementById('statTotal').textContent = counts.total;
+    document.getElementById('statPending').textContent = counts.pending;
+    document.getElementById('statDeclined').textContent = counts.declined;
+    document.getElementById('statHold').textContent = counts.hold;
   } catch(e) {
     console.error('loadData failed:', e);
   }
@@ -378,7 +431,6 @@ function getQuoteStatus(q) {
     if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) return 'onhold';
     return 'pending';
   } catch(e) {
-    console.error('getQuoteStatus error:', e);
     return 'pending';
   }
 }
@@ -388,26 +440,20 @@ function renderVotesStatus(quoteId) {
   const voteMap = {};
   votes.forEach(v => { voteMap[v.user_email] = v.vote; });
 
-  let topRow = '', bottomRow = '';
-  committeeEmails.forEach((email, idx) => {
+  let html = '<div class="content-block"><div class="content-label">Committee Votes</div><div class="vote-grid">';
+  
+  committeeEmails.forEach(email => {
     const v = voteMap[email] || null;
-    let icon = '⏳', color = 'var(--muted)';
-    if (v === 'approve') { icon = '✅'; color = 'var(--green)'; }
-    else if (v === 'decline') { icon = '❌'; color = 'var(--red)'; }
-    else if (v === 'hold') { icon = '⏸'; color = '#8b5cf6'; }
+    let icon = '⏳', className = '';
+    if (v === 'approve') { icon = '✅'; className = 'voted-approve'; }
+    else if (v === 'decline') { icon = '❌'; className = 'voted-decline'; }
+    else if (v === 'hold') { icon = '⏸'; className = 'voted-hold'; }
 
-    const html = `<div class="vote-item"><span class="vote-icon" style="color:${color}">${icon}</span><span>${email.split('@')[0]}</span></div>`;
-    if (idx % 2 === 0) topRow += html;
-    else bottomRow += html;
+    html += `<div class="vote-card ${className}"><div class="vote-icon">${icon}</div><div class="vote-name">${email.split('@')[0]}</div></div>`;
   });
 
-  return `
-    <div class="vote-status-box">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">Votes Status</div>
-      <div class="vote-row">${topRow}</div>
-      <div class="vote-row">${bottomRow}</div>
-    </div>
-  `;
+  html += '</div></div>';
+  return html;
 }
 
 window.resendToVoting = async function(id) {
@@ -429,51 +475,17 @@ window.resendToVoting = async function(id) {
 
 window.filterArchive = function(type) {
   archiveFilter = type;
-  updateArchiveFilterUI();
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === type);
+  });
   renderQuotes();
 };
 
-function updateArchiveFilterUI() {
-  const buttons = document.querySelectorAll('#archiveFilterBar button');
-  buttons.forEach(btn => {
-    if (btn.getAttribute('data-filter') === archiveFilter) {
-      btn.classList.add('btn-pill-active');
-    } else {
-      btn.classList.remove('btn-pill-active');
-    }
-  });
-}
-
 function renderPendingQuotes(quotes) {
-  const container = document.getElementById('pendingList');
-
-  container.innerHTML = `
-    <table class="quote-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Priority</th>
-          <th>Project Name</th>
-          <th>Contractor</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody id="pendingBody"></tbody>
-    </table>
-  `;
-
   const tbody = document.getElementById('pendingBody');
 
   if (!quotes.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
-          <div style="font-size:48px;margin-bottom:16px">⏳</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">No pending quotes</div><div class="empty-text">All quotes have been reviewed</div></div></td></tr>`;
     return;
   }
 
@@ -482,8 +494,13 @@ function renderPendingQuotes(quotes) {
     const parsed = parseComment(q.comment);
     const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
     const amountHtml = (role === 'owner' || role === 'tenant') 
-      ? `<span class="amount-confidential">Confidential</span>` 
+      ? `<span style="color:var(--muted);font-style:italic">Confidential</span>` 
       : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+
+    const priorityClass = (parsed.priority || 'normal').toLowerCase();
+    let priorityBadge = 'badge-gray';
+    if (priorityClass === 'urgent') priorityBadge = 'badge-red';
+    else if (priorityClass === 'high') priorityBadge = 'badge-yellow';
 
     let filesHtml = '';
     const visibleFiles = canSeeSensitive 
@@ -491,11 +508,11 @@ function renderPendingQuotes(quotes) {
       : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
 
     if (visibleFiles.length) {
-      filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
+      filesHtml = `<div class="content-block"><div class="content-label">📎 Attached Files</div><div class="file-list">`;
       filesHtml += visibleFiles.map((f, idx) => {
         const viewerId = `viewer-${q.id}-${idx}`;
         return `
-        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
+        <div class="file-item" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
           <span class="file-icon">📄</span>
           <span class="file-name">${f.name}</span>
         </div>
@@ -506,33 +523,45 @@ function renderPendingQuotes(quotes) {
     }
 
     rows += `
-      <tr onclick="toggleQuote('${q.id}')">
+      <tr class="quote-row" onclick="toggleQuote('${q.id}')">
         <td>${dateStr}</td>
         <td>${q.category}</td>
-        <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-        <td>${q.project || 'Untitled Quote'}</td>
+        <td><span class="badge ${priorityBadge}">${parsed.priority}</span></td>
+        <td><div class="quote-title">${q.project || 'Untitled'}</div></td>
         <td>${q.vendor || 'Unknown'}</td>
         <td>${amountHtml}</td>
       </tr>
       <tr style="display:none" id="row-body-${q.id}">
-        <td colspan="6">
-          <div class="quote-body open" id="body-${q.id}">
-            ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
-            ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
+        <td colspan="6" style="padding:0">
+          <div class="quote-accordion" id="body-${q.id}">
+            <div class="accordion-header">
+              <div>
+                <div class="accordion-title">${q.project || 'Untitled'}</div>
+                <span class="badge badge-yellow">Pending Approval</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="toggleQuote('${q.id}'); event.stopPropagation();">✕ Close</button>
+            </div>
             
-            ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
+            <div class="info-grid">
+              <div class="info-item"><div class="info-label">Vendor</div><div class="info-value">${q.vendor || '—'}</div></div>
+              <div class="info-item"><div class="info-label">Amount</div><div class="info-value">${amountHtml}</div></div>
+              <div class="info-item"><div class="info-label">Created</div><div class="info-value">${dateStr}</div></div>
+            </div>
 
+            ${q.notes ? `<div class="content-block"><div class="content-label">Project Scope</div><div class="content-text">${q.notes}</div></div>` : ''}
+            ${canSeeSensitive && parsed.note ? `<div class="internal-note"><div class="internal-note-label">🔒 Internal Notes</div><div class="internal-note-text">${parsed.note}</div></div>` : ''}
+            ${filesHtml}
             ${renderVotesStatus(q.id)}
 
             <div class="action-bar">
               ${role === 'committee' ? `
-                <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-                <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-                <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
+                <button class="btn btn-success" onclick="castVote('${q.id}','approve');event.stopPropagation()">✅ Approve</button>
+                <button class="btn btn-danger" onclick="castVote('${q.id}','decline');event.stopPropagation()">❌ Decline</button>
+                <button class="btn btn-warning" onclick="castVote('${q.id}','hold');event.stopPropagation()">⏸ Hold</button>
               ` : ''}
               ${role === 'admin' ? `
-                <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
-                <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
+                <button class="btn btn-warning" onclick="openHold('${q.id}');event.stopPropagation()">⏸ Put On Hold</button>
+                <button class="btn btn-success" onclick="forceApprove('${q.id}');event.stopPropagation()">✅ Force Approve</button>
               ` : ''}
             </div>
           </div>
@@ -545,37 +574,10 @@ function renderPendingQuotes(quotes) {
 }
 
 function renderArchiveTable(quotes) {
-  const container = document.getElementById('archiveList');
-
-  container.innerHTML = `
-    <table class="quote-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Status</th>
-          <th>Category</th>
-          <th>Priority</th>
-          <th>Project Name</th>
-          <th>Contractor</th>
-          <th>Amount</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="archiveBody"></tbody>
-    </table>
-  `;
-
   const tbody = document.getElementById('archiveBody');
 
   if (!quotes.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align:center;padding:60px 24px;color:var(--muted)">
-          <div style="font-size:48px;margin-bottom:16px">📋</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No archived quotes</div>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No archived quotes</div></div></td></tr>`;
     return;
   }
 
@@ -584,9 +586,20 @@ function renderArchiveTable(quotes) {
     const st = getQuoteStatus(q);
     const parsed = parseComment(q.comment);
     const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
-    const statusText = st === 'onhold' ? 'On Hold' : st === 'declined' ? 'Declined' : st === 'expired' ? 'Expired' : st;
+    
+    let statusBadge = 'badge-gray';
+    let statusText = st;
+    if (st === 'onhold') { statusBadge = 'badge-purple'; statusText = 'On Hold'; }
+    else if (st === 'declined') { statusBadge = 'badge-red'; statusText = 'Declined'; }
+    else if (st === 'expired') { statusBadge = 'badge-yellow'; statusText = 'Expired'; }
+
+    const priorityClass = (parsed.priority || 'normal').toLowerCase();
+    let priorityBadge = 'badge-gray';
+    if (priorityClass === 'urgent') priorityBadge = 'badge-red';
+    else if (priorityClass === 'high') priorityBadge = 'badge-yellow';
+
     const amountHtml = (role === 'owner' || role === 'tenant') 
-      ? `<span class="amount-confidential">Confidential</span>` 
+      ? `<span style="color:var(--muted);font-style:italic">Confidential</span>` 
       : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
 
     const showReopen = (st === 'onhold' || st === 'expired') && role === 'admin';
@@ -594,18 +607,15 @@ function renderArchiveTable(quotes) {
     rows += `
       <tr>
         <td>${dateStr}</td>
-        <td><span style="padding:2px 10px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:11px">${statusText}</span></td>
+        <td><span class="badge ${statusBadge}">${statusText}</span></td>
         <td>${q.category}</td>
-        <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-        <td>${q.project || 'Untitled Quote'}</td>
+        <td><span class="badge ${priorityBadge}">${parsed.priority}</span></td>
+        <td>${q.project || 'Untitled'}</td>
         <td>${q.vendor || 'Unknown'}</td>
         <td>${amountHtml}</td>
         <td>
-          ${showReopen ? `
-            <button class="btn-pill btn-pill-primary" onclick="resendToVoting('${q.id}');event.stopImmediatePropagation()">🔄 Re-open Voting</button>
-            <span style="font-size:11px;color:var(--muted);margin-left:8px">Re-open for committee voting</span>
-          ` : ''}
-          ${role === 'admin' ? `<button class="btn-pill" style="margin-left:8px" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>` : ''}
+          ${showReopen ? `<button class="btn btn-primary btn-sm" onclick="resendToVoting('${q.id}')">🔄 Re-open</button>` : ''}
+          ${role === 'admin' ? `<button class="btn btn-ghost btn-sm" onclick="openEditQuote('${q.id}')" style="margin-left:8px">Edit</button>` : ''}
         </td>
       </tr>
     `;
@@ -615,10 +625,7 @@ function renderArchiveTable(quotes) {
 }
 
 function renderQuotes() {
-  const pendingQuotes = allQuotes.filter(q => {
-    const st = getQuoteStatus(q);
-    return st === 'pending';
-  });
+  const pendingQuotes = allQuotes.filter(q => getQuoteStatus(q) === 'pending');
   renderPendingQuotes(pendingQuotes);
 
   let archiveQuotes = allQuotes.filter(q => {
@@ -635,7 +642,12 @@ function renderQuotes() {
 
 window.toggleQuote = id => {
   const row = document.getElementById('row-body-' + id);
-  if (row) row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
+  const body = document.getElementById('body-' + id);
+  if (row && body) {
+    const isOpen = row.style.display === 'table-row';
+    row.style.display = isOpen ? 'none' : 'table-row';
+    body.classList.toggle('open', !isOpen);
+  }
 };
 
 window.openAddQuote = () => {
@@ -694,12 +706,11 @@ document.getElementById('fileInput').addEventListener('change', e => {
 function updateFilePreview() {
   const preview = document.getElementById('filePreview');
   preview.innerHTML = uploadedFiles.map((f,i) => `
-    <div class="file-preview">
+    <div class="file-item">
       <span class="file-icon">📄</span>
       <span class="file-name">${f.name}</span>
       <span class="file-size">${f.size}</span>
-      <span style="font-size:11px;color:#64748b">Internal</span>
-      <span class="file-del" onclick="removeFile(${i});event.stopImmediatePropagation()">✕</span>
+      <span style="color:#ef4444;cursor:pointer;font-weight:700" onclick="removeFile(${i});event.stopPropagation()">✕</span>
     </div>
   `).join('');
 }
@@ -721,7 +732,7 @@ window.saveQuote = async () => {
   const internalNote = document.getElementById('quoteInternalNote').value.trim();
 
   if (!project || !vendor || amount <= 0) {
-    alert('Required fields missing: Project, Vendor, Amount');
+    alert('Required: Project, Vendor, Amount');
     return;
   }
 
@@ -783,22 +794,18 @@ window.saveQuote = async () => {
         });
     }
 
-    if (res.error) {
-      console.error('SUPABASE ERROR:', res.error);
-      alert('SUPABASE ERROR: ' + res.error.message + '\nCode: ' + (res.error.code || 'N/A'));
-      throw res.error;
-    }
+    if (res.error) throw res.error;
 
-    alert('Quote saved successfully');
+    showToast('Quote saved');
     closeModal('quoteModal');
     await loadData(); 
     renderQuotes();
   } catch (e) {
-    console.error('FINAL SAVE ERROR:', e);
+    console.error('Save failed:', e);
     alert('Save failed: ' + (e.message || e));
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Save →';
+    saveBtn.textContent = 'Save Quote →';
   }
 };
 
@@ -870,7 +877,6 @@ window.castVote = async (quoteId, vote) => {
 try {
   await loadData();
   renderQuotes();
-  updateArchiveFilterUI();
 } catch(e) {
   console.error('Initial load failed:', e);
   alert('Failed to load quotes: ' + e.message);
