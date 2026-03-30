@@ -42,18 +42,55 @@
 .file-size{font-size:11px;color:var(--muted)}
 .file-visibility{font-size:10px;padding:1px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1}
 .internal-note-box{background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:10px;padding:12px;font-size:12px;color:var(--purple-text);margin-top:10px;line-height:1.6;font-style:italic}
-.quote-footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
 .inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
 
-/* Large Pill Action Buttons */
-.btn-pill.large {
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 600;
+/* 강력한 입체 액션 버튼 */
+.btn-pill {
   border-radius: 999px;
+  padding: 14px 26px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 핵심: 더 강하게 */
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: all 0.12s ease;
+}
+.btn-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+}
+.btn-pill:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* 색상 강화 */
+.btn-pill-success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+}
+.btn-pill-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+.btn-pill-warning {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #fff;
+}
+.btn-pill-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+}
+.btn-pill-active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
 }
 
 /* Files Section */
@@ -315,7 +352,6 @@ async function showInlineViewer(path, name, type, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // 기존 내용 있으면 닫기 (toggle)
   if (container.innerHTML.trim() !== '') {
     container.innerHTML = '';
     return;
@@ -492,6 +528,8 @@ function renderPendingQuotes(quotes) {
             
             ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
 
+            ${renderVotesStatus(q.id)}
+
             <div class="action-bar">
               ${role === 'committee' ? `
                 <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
@@ -503,8 +541,6 @@ function renderPendingQuotes(quotes) {
                 <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
               ` : ''}
             </div>
-
-            ${renderVotesStatus(q.id)}
           </div>
         </td>
       </tr>
