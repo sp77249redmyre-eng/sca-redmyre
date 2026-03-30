@@ -29,7 +29,7 @@
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
 .works-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.work-row{display:grid;grid-template-columns:120px 140px 120px 1fr 160px 100px;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer}
+.work-row{display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer}
 .work-row:hover{background:var(--bg)}
 .work-title-text{font-size:13px;font-weight:600}
 .work-meta-text{font-size:11px;color:var(--muted)}
@@ -41,9 +41,11 @@
 .file-icon{font-size:16px}
 .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-del{color:#ef4444;cursor:pointer;font-size:16px;padding:0 4px}
-.status-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.status-select-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px}
+.status-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s}
 .status-btn.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
-.completion-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;margin-top:12px}
+.status-btn:hover{border-color:var(--blue-600)}
+.completion-date-box{background:#ecfdf5;border:1px solid #86efac;border-radius:10px;padding:12px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -56,21 +58,13 @@
       <button class="btn-primary" id="addWorkBtn" style="display:none" onclick="openAddEmergencyWork()">+ Emergency Work</button>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
-      <div class="stat-card"><div class="stat-num" id="statUrgent" style="color:var(--red)">—</div><div class="stat-label">Urgent</div></div>
-      <div class="stat-card"><div class="stat-num" id="statApproved" style="color:var(--green)">—</div><div class="stat-label">Approved</div></div>
-      <div class="stat-card"><div class="stat-num" id="statAmount" style="color:var(--text)">$0</div><div class="stat-label">Total Value</div></div>
-    </div>
-
     <div class="works-card">
-      <div style="display:grid;grid-template-columns:120px 140px 120px 1fr 160px 100px;gap:14px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">
+      <div style="display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">
         <div>Date</div>
         <div>Category</div>
-        <div>Priority</div>
+        <div>Status</div>
         <div>Project</div>
         <div>Contractor</div>
-        <div style="text-align:right">Amount</div>
       </div>
       <div id="worksList">
         <div style="padding:24px;text-align:center;color:var(--muted)">Loading…</div>
@@ -123,30 +117,47 @@
   </div>
 </div>
 
-<!-- STATUS CHANGE MODAL -->
-<div class="modal-backdrop" id="statusModal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-title">Change Work Status</div>
-    <input type="hidden" id="statusQuoteId">
+<!-- EDIT WORK MODAL -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">Edit Work</div>
+    <input type="hidden" id="editWorkId">
     <div class="modal-field">
-      <label class="modal-label">Current Project</label>
-      <div style="font-size:14px;font-weight:600;padding:8px 0" id="statusProjectName">—</div>
+      <label class="modal-label">Project Description</label>
+      <input type="text" class="modal-input" id="editProject">
     </div>
     <div class="modal-field">
-      <label class="modal-label">Status</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="status-btn active" data-status="approved" onclick="selectStatus('approved')">✅ Approved</button>
-        <button class="status-btn" data-status="in_progress" onclick="selectStatus('in_progress')">🔵 In Progress</button>
-        <button class="status-btn" data-status="completed" onclick="selectStatus('completed')">✔️ Completed</button>
-      </div>
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="editVendor">
     </div>
-    <div class="modal-field" id="completionDateField" style="display:none">
-      <label class="modal-label">Completion Date (Required for Completed status)</label>
-      <input type="date" class="modal-input" id="completionDate">
+    <div class="modal-field">
+      <label class="modal-label">Amount (AUD) (ex GST)</label>
+      <input type="text" class="modal-input" id="editAmount" oninput="formatAmount(this)">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="editCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Notes</label>
+      <textarea class="modal-textarea" id="editNotes"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Internal Notes</label>
+      <textarea class="modal-textarea" id="editInternalNotes" style="background:#f0f7ff;border-color:#dbeafe"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('statusModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveStatusChange()">Save Status →</button>
+      <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()">Save Changes →</button>
     </div>
   </div>
 </div>
@@ -181,8 +192,8 @@ window.formatAmount = (input) => {
 
 let allWorks = [];
 let openAccordionId = null;
-let selectedStatus = 'approved';
 let emergencyFiles = [];
+let currentWorkStatus = {};
 
 function parseComment(comment) {
   try {
@@ -245,20 +256,14 @@ async function loadWorks() {
   const { data } = await supabase
     .from('quotes')
     .select('*')
-    .eq('status', 'approved')
-    .is('completion_date', null)
+    .in('work_status', ['scheduled', 'in_progress', 'completed'])
+    .or('work_status.is.null,and(status.eq.approved,completion_date.is.null)')
     .order('created_at', {ascending: false});
-  allWorks = data || [];
-
-  const totalAmount = allWorks.reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
   
-  document.getElementById('statTotal').textContent = allWorks.length;
-  document.getElementById('statUrgent').textContent = allWorks.filter(w => {
-    const parsed = parseComment(w.comment);
-    return (parsed.priority || '').toLowerCase() === 'urgent';
-  }).length;
-  document.getElementById('statApproved').textContent = allWorks.length;
-  document.getElementById('statAmount').textContent = '$' + totalAmount.toLocaleString('en-AU', {minimumFractionDigits: 0});
+  allWorks = (data || []).map(w => {
+    if (!w.work_status && w.status === 'approved') w.work_status = 'scheduled';
+    return w;
+  });
 
   renderWorks();
 }
@@ -274,22 +279,21 @@ function renderWorks() {
 
 function workRow(w) {
   const parsed = parseComment(w.comment);
-  const priorityClass = (parsed.priority || '').toLowerCase() === 'urgent' ? 'badge-red' : (parsed.priority || '').toLowerCase() === 'high' ? 'badge-yellow' : 'badge-gray';
+  const ws = w.work_status || 'scheduled';
+  let statusBadge = '';
+  if (ws === 'scheduled') statusBadge = '<span class="badge badge-gray">Scheduled</span>';
+  else if (ws === 'in_progress') statusBadge = '<span class="badge badge-blue">In Progress</span>';
+  else if (ws === 'completed') statusBadge = '<span class="badge badge-yellow">Completed</span>';
   
   return `
     <div class="work-row" onclick="toggleAccordion('${w.id}')">
       <div style="font-size:12px;color:var(--text-2)">${new Date(w.created_at).toLocaleDateString('en-AU')}</div>
       <div class="work-meta-text">${w.category || 'General'}</div>
-      <div>
-        <span class="badge ${priorityClass}">
-          ${parsed.priority || 'Normal'}
-        </span>
-      </div>
+      <div>${statusBadge}</div>
       <div>
         <div class="work-title-text">${w.project || 'Untitled'}</div>
       </div>
       <div class="work-meta-text">${w.vendor || '—'}</div>
-      <div style="text-align:right;font-size:13px;font-weight:600">$${Number(w.amount || 0).toLocaleString('en-AU')}</div>
     </div>
     ${buildAccordion(w)}`;
 }
@@ -297,6 +301,7 @@ function workRow(w) {
 function buildAccordion(w) {
   const parsed = parseComment(w.comment);
   const updated = new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const ws = w.work_status || 'scheduled';
 
   let descHtml = w.notes ? `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
@@ -330,13 +335,23 @@ function buildAccordion(w) {
     filesHtml += `</div>`;
   }
 
-  let completionHtml = role === 'admin' ? `
-    <div class="completion-box">
-      <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">✔️ Mark as Completed</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="date" class="modal-input" id="complete-date-${w.id}" style="flex:1" value="${new Date().toISOString().split('T')[0]}">
-        <button class="btn-primary" onclick="markCompleted('${w.id}'); event.stopPropagation();" style="white-space:nowrap">Complete Work →</button>
+  let statusControlHtml = role === 'admin' ? `
+    <div class="status-select-box">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Work Status</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="status-btn ${ws === 'scheduled' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'scheduled'); event.stopPropagation();">📅 Scheduled</button>
+        <button class="status-btn ${ws === 'in_progress' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'in_progress'); event.stopPropagation();">🔵 In Progress</button>
+        <button class="status-btn ${ws === 'completed' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'completed'); event.stopPropagation();">✅ Completed</button>
       </div>
+      ${ws === 'completed' ? `
+        <div class="completion-date-box">
+          <div style="font-size:11px;font-weight:600;color:#166534;margin-bottom:8px">Set Completion Date to Move to Reports</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" class="modal-input" id="complete-date-${w.id}" value="${new Date().toISOString().split('T')[0]}" onclick="event.stopPropagation();">
+            <button class="btn-primary" onclick="moveToReports('${w.id}'); event.stopPropagation();" style="white-space:nowrap">Move to Reports →</button>
+          </div>
+        </div>
+      ` : ''}
     </div>` : '';
 
   return `
@@ -344,19 +359,20 @@ function buildAccordion(w) {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
         <div>
           <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${w.project || 'Untitled'}</div>
-          <span class="badge badge-green">Approved</span>
         </div>
-        <button class="btn-secondary" onclick="closeAccordion('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✕</button>
+        <div style="display:flex;gap:6px">
+          ${role === 'admin' ? `<button class="btn-secondary" onclick="openEditWork('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✏️ Edit</button>` : ''}
+          <button class="btn-secondary" onclick="closeAccordion('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✕</button>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Vendor</div><div style="font-size:13px">${w.vendor || '—'}</div></div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Amount</div><div style="font-size:13px;font-weight:600">$${Number(w.amount || 0).toLocaleString('en-AU')}</div></div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Approved</div><div style="font-size:13px">${updated}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Last Updated</div><div style="font-size:13px">${updated}</div></div>
       </div>
       ${descHtml}
       ${privateHtml}
       ${filesHtml}
-      ${completionHtml}
+      ${statusControlHtml}
     </div>`;
 }
 
@@ -379,6 +395,52 @@ window.closeAccordion = (id) => {
 };
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+window.changeWorkStatus = async (quoteId, newStatus) => {
+  try {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ work_status: newStatus })
+      .eq('id', quoteId);
+
+    if (error) throw error;
+
+    showToast('Status updated');
+    await loadWorks();
+  } catch(e) {
+    console.error('Status change failed:', e);
+    alert('Failed: ' + e.message);
+  }
+};
+
+window.moveToReports = async (quoteId) => {
+  const dateInput = document.getElementById(`complete-date-${quoteId}`);
+  const completionDate = dateInput.value;
+
+  if (!completionDate) {
+    alert('Please select completion date');
+    return;
+  }
+
+  if (!confirm('Move this work to Reports?')) return;
+
+  try {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ 
+        completion_date: completionDate
+      })
+      .eq('id', quoteId);
+
+    if (error) throw error;
+
+    showToast('Work moved to Reports');
+    await loadWorks();
+  } catch(e) {
+    console.error('Move to reports failed:', e);
+    alert('Failed: ' + e.message);
+  }
+};
 
 window.openAddEmergencyWork = () => {
   document.getElementById('emergencyProject').value = '';
@@ -469,7 +531,8 @@ window.saveEmergencyWork = async () => {
       notes: notes,
       comment: commentPayload,
       category: category,
-      status: 'approved'
+      status: 'approved',
+      work_status: 'scheduled'
     });
 
     if (error) throw error;
@@ -486,48 +549,68 @@ window.saveEmergencyWork = async () => {
   }
 };
 
-window.markCompleted = async (quoteId) => {
-  const dateInput = document.getElementById(`complete-date-${quoteId}`);
-  const completionDate = dateInput.value;
+window.openEditWork = (quoteId) => {
+  const work = allWorks.find(w => w.id === quoteId);
+  if (!work) return;
+  
+  const parsed = parseComment(work.comment);
+  
+  document.getElementById('editWorkId').value = work.id;
+  document.getElementById('editProject').value = work.project || '';
+  document.getElementById('editVendor').value = work.vendor || '';
+  document.getElementById('editAmount').value = work.amount ? Number(work.amount).toLocaleString('en-AU') : '';
+  document.getElementById('editCategory').value = work.category || 'General';
+  document.getElementById('editNotes').value = work.notes || '';
+  document.getElementById('editInternalNotes').value = parsed.note || '';
+  
+  document.getElementById('editModal').classList.add('open');
+};
 
-  if (!completionDate) {
-    alert('Please select completion date');
+window.saveEdit = async () => {
+  const id = document.getElementById('editWorkId').value;
+  const project = document.getElementById('editProject').value.trim();
+  const vendor = document.getElementById('editVendor').value.trim();
+  let amountStr = document.getElementById('editAmount').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(amountStr) || 0;
+  const category = document.getElementById('editCategory').value;
+  const notes = document.getElementById('editNotes').value.trim();
+  const internalNote = document.getElementById('editInternalNotes').value.trim();
+
+  if (!project || !vendor || amount <= 0) {
+    alert('Required: Project, Vendor, Amount');
     return;
   }
 
-  if (!confirm('Mark this work as completed and move to Reports?')) return;
-
   try {
+    const work = allWorks.find(w => w.id === id);
+    const parsed = parseComment(work.comment);
+    
+    const updatedComment = {
+      ...parsed,
+      note: internalNote,
+      category: category
+    };
+
     const { error } = await supabase
       .from('quotes')
-      .update({ 
-        status: 'completed',
-        completion_date: completionDate
+      .update({
+        project: project,
+        vendor: vendor,
+        amount: Number(amount),
+        category: category,
+        notes: notes,
+        comment: updatedComment
       })
-      .eq('id', quoteId);
+      .eq('id', id);
 
     if (error) throw error;
 
-    showToast('Work completed and moved to Reports');
+    showToast('Work updated');
+    closeModal('editModal');
     await loadWorks();
   } catch(e) {
-    console.error('Mark completed failed:', e);
+    console.error('Edit failed:', e);
     alert('Failed: ' + e.message);
-  }
-};
-
-window.selectStatus = (status) => {
-  selectedStatus = status;
-  document.querySelectorAll('.status-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.status === status) btn.classList.add('active');
-  });
-  
-  if (status === 'completed') {
-    document.getElementById('completionDateField').style.display = 'block';
-    document.getElementById('completionDate').value = new Date().toISOString().split('T')[0];
-  } else {
-    document.getElementById('completionDateField').style.display = 'none';
   }
 };
 
