@@ -47,6 +47,33 @@
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
 .inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
+
+/* Large Pill Action Buttons */
+.btn-pill.large {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+/* Files Section */
+.files-section {
+  margin-top:14px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+}
+
+/* Action Bar */
+.action-bar {
+  margin-top:16px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
 </style>
 </head>
 <body>
@@ -462,19 +489,22 @@ function renderPendingQuotes(quotes) {
           <div class="quote-body open" id="body-${q.id}">
             ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
             ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
-            ${filesHtml}
-            ${renderVotesStatus(q.id)}
-            <div class="quote-footer">
+            
+            ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
+
+            <div class="action-bar">
               ${role === 'committee' ? `
-                <button class="btn-pill btn-pill-success" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-                <button class="btn-pill btn-pill-danger" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-                <button class="btn-pill btn-pill-warning" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
+                <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
+                <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
+                <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
               ` : ''}
               ${role === 'admin' ? `
                 <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
                 <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
               ` : ''}
             </div>
+
+            ${renderVotesStatus(q.id)}
           </div>
         </td>
       </tr>
