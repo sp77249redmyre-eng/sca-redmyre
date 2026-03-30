@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
+/* 원본 로컬 스타일 유지 */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
 .stat-num{font-size:26px;font-weight:700;margin-top:6px}
@@ -50,7 +51,7 @@
 
   <div class="section-hdr">
     <div class="section-title">Detailed Expenses</div>
-  </div>
+    </div>
 
   <div class="table-container">
     <table id="expensesTable">
@@ -60,41 +61,11 @@
           <th>Description</th>
           <th>Category</th>
           <th style="text-align:right">Amount</th>
-          <th style="text-align:center">Actions</th>
-        </tr>
+          </tr>
       </thead>
-      <tbody id="expenseList"></tbody>
+      <tbody id="expenseList">
+        </tbody>
     </table>
-  </div>
-</div>
-
-<div class="modal" id="expenseModal">
-  <div class="modal-content" style="max-width:440px">
-    <div class="modal-header">
-      <h3 id="modalTitle">Edit Expense</h3>
-      <button class="modal-close" onclick="closeModal('expenseModal')">&times;</button>
-    </div>
-    <input type="hidden" id="expenseEditId">
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
-      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Date</label><input type="date" id="expenseDate" class="input-fld"></div>
-      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Description</label><input type="text" id="expenseDesc" class="input-fld" placeholder="e.g. Garden Maintenance"></div>
-      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Category</label>
-        <select id="expenseCategory" class="input-fld">
-          <option value="Maintenance">Maintenance</option>
-          <option value="Repairs">Repairs</option>
-          <option value="Cleaning">Cleaning</option>
-          <option value="Utilities">Utilities</option>
-          <option value="Admin">Admin</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Amount ($)</label><input type="number" id="expenseAmount" class="input-fld" step="0.01"></div>
-      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Notes</label><textarea id="expenseNotes" class="input-fld" rows="2"></textarea></div>
-    </div>
-    <div style="margin-top:20px;display:flex;gap:8px">
-      <button class="btn-primary" id="saveExpenseBtn" style="flex:1">Save Changes</button>
-      <button class="btn-danger-outline" id="deleteExpenseBtn">Delete</button>
-    </div>
   </div>
 </div>
 
@@ -104,7 +75,6 @@ import { supabase } from '/js/auth.js';
 import { initLayout } from '/js/layout.js';
 
 let userRole = 'resident';
-let expensesData = [];
 
 async function init() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -113,83 +83,52 @@ async function init() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
   userRole = profile?.role || 'resident';
   
+  // 레이아웃 초기화 (사이드바/탑바 정상 작동)
   initLayout('Reports');
   await loadReport();
 }
 
 async function loadReport() {
+  // 데이터 로드 로직 유지
   const { data, error } = await supabase.from('expenses').select('*').order('expense_date', { ascending: false });
-  if (error) return;
-  expensesData = data;
+  if (error) { console.error(error); return; }
   renderExpenses(data);
   updateStats(data);
 }
 
+// [삭제됨] renderWorksStatus 함수 삭제
+
 function renderExpenses(data) {
   const list = document.getElementById('expenseList');
   if (!data?.length) {
-    list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">No records found</td></tr>';
+    list.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">No records found</td></tr>';
     return;
   }
+  
+  // 테이블 렌더링 (수정 버튼 컬럼 제외)
   list.innerHTML = data.map(e => `
     <tr>
       <td>${new Date(e.expense_date).toLocaleDateString('en-AU')}</td>
       <td style="font-weight:500">${e.description}</td>
       <td><span class="badge badge-gray">${e.category}</span></td>
       <td style="text-align:right;font-weight:600">$${e.amount.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-      <td style="text-align:center">
-        <button class="btn-icon" onclick="openEditExpense('${e.id}')">✏️</button>
-      </td>
     </tr>
   `).join('');
 }
 
 function updateStats(data) {
+  // 통계 계산 로직 유지
   const total = data.reduce((sum, e) => sum + (e.amount || 0), 0);
   document.getElementById('statTotal').textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits:2});
   
+  // (임시 예산 로직 유지)
   const avg = data.length ? total / 12 : 0; 
   document.getElementById('statAvg').textContent = '$' + avg.toLocaleString(undefined, {minimumFractionDigits:2});
-  
   const projected = avg * 12;
   document.getElementById('statProjected').textContent = '$' + projected.toLocaleString(undefined, {minimumFractionDigits:2});
 }
 
-window.openEditExpense = (id) => {
-  const e = expensesData.find(ex => ex.id === id);
-  if (!e) return;
-  document.getElementById('expenseEditId').value = e.id;
-  document.getElementById('expenseDate').value = e.expense_date;
-  document.getElementById('expenseDesc').value = e.description;
-  document.getElementById('expenseCategory').value = e.category;
-  document.getElementById('expenseAmount').value = e.amount;
-  document.getElementById('expenseNotes').value = e.notes || '';
-  document.getElementById('expenseModal').classList.add('open');
-};
-
-window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-
-document.getElementById('saveExpenseBtn').addEventListener('click', async () => {
-  const id = document.getElementById('expenseEditId').value;
-  const data = {
-    expense_date: document.getElementById('expenseDate').value,
-    description: document.getElementById('expenseDesc').value.trim(),
-    category: document.getElementById('expenseCategory').value,
-    amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
-    notes: document.getElementById('expenseNotes').value.trim()
-  };
-  await supabase.from('expenses').update(data).eq('id', id);
-  closeModal('expenseModal');
-  await loadReport();
-});
-
-document.getElementById('deleteExpenseBtn').addEventListener('click', async () => {
-  if (!confirm('Delete this record?')) return;
-  const id = document.getElementById('expenseEditId').value;
-  await supabase.from('expenses').delete().eq('id', id);
-  closeModal('expenseModal');
-  await loadReport();
-});
+// [삭제됨] openEditExpense, submitExpense, deleteExpense 등 모든 수정/팝업 관련 함수 삭제
 
 init();
 </script>
