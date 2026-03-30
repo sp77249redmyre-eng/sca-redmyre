@@ -260,8 +260,8 @@ async function loadWorks() {
   const { data } = await supabase
     .from('quotes')
     .select('*')
-    .in('work_status', ['scheduled', 'in_progress', 'completed'])
-    .or('work_status.is.null,and(status.eq.approved,completion_date.is.null)')
+    .or('work_status.in.(scheduled,in_progress,completed),and(status.eq.approved,completion_date.is.null)'
+     )
     .order('created_at', {ascending: false});
   
   allWorks = (data || []).map(w => {
