@@ -14,7 +14,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-/* ===== QUOTES-SPECIFIC STYLES ===== */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
@@ -46,8 +45,6 @@
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
 .inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
-
-/* 강력한 입체 액션 버튼 */
 .btn-pill {
   border-radius: 999px;
   padding: 14px 26px;
@@ -89,8 +86,6 @@
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
 }
-
-/* Files Section */
 .files-section {
   margin-top:14px;
   padding:12px;
@@ -98,8 +93,6 @@
   border-radius:10px;
   background:var(--surface);
 }
-
-/* Action Bar */
 .action-bar {
   margin-top:16px;
   padding-top:12px;
@@ -124,7 +117,6 @@
       <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
     </div>
 
-    <!-- STATS -->
     <div class="stats-row">
       <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
       <div class="stat-card"><div class="stat-num" id="statPending" style="color:var(--yellow)">—</div><div class="stat-label">Pending</div></div>
@@ -132,7 +124,6 @@
       <div class="stat-card"><div class="stat-num" id="statHold" style="color:var(--purple)">—</div><div class="stat-label">On Hold</div></div>
     </div>
 
-    <!-- RULE INFO -->
     <div class="rule-info" id="ruleInfo">
       This quote will be decided by a vote of 8 committee members.<br>
       If 5 or more members approve, the quote will be automatically approved.<br>
@@ -142,13 +133,11 @@
       Once a vote has been submitted, it cannot be changed.
     </div>
 
-    <!-- PENDING SECTION -->
     <div style="margin-top:30px">
       <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:12px">⏳ Pending Approval</div>
       <div id="pendingList"></div>
     </div>
 
-    <!-- ARCHIVE SECTION -->
     <div style="margin-top:50px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:14px;font-weight:600;color:var(--text-2)">📋 Management Archive</div>
@@ -164,7 +153,6 @@
   </div>
 </div>
 
-<!-- ADD/EDIT QUOTE MODAL -->
 <div class="modal-backdrop" id="quoteModal">
   <div class="modal-box" style="max-width:680px">
     <div class="modal-title" id="quoteModalTitle">Add Quote</div>
@@ -225,7 +213,6 @@
   </div>
 </div>
 
-<!-- HOLD MODAL -->
 <div class="modal-backdrop" id="holdModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-title">Put Quote On Hold</div>
@@ -243,13 +230,11 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-// ✅ REDMYRE BMS 표준 구조: layout.js 사용
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
-// ── 데이터 변수 ──
 let allQuotes = [];
 let allVotes = [];
 let committeeEmails = [
@@ -264,12 +249,10 @@ const uploadedFiles = [];
 
 const canSeeSensitive = ['admin', 'committee', 'observer'].includes(role);
 
-// ── Admin UI 제어 ──
 if (role === 'admin') {
   document.getElementById('addQuoteBtn').style.display = 'inline-flex';
 }
 
-// ── 헬퍼 함수들 ──
 function parseComment(comment) {
   try {
     if (!comment) return { note:'', files:[], category:'General', priority:'Normal' };
@@ -289,12 +272,8 @@ function parseComment(comment) {
 
 async function getSignedUrl(path) {
   if (!path) return '';
-  console.log('FILE PATH:', path);
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
-  if (error) {
-    console.error('SIGNED URL ERROR:', error);
-    throw error;
-  }
+  if (error) throw error;
   return data.signedUrl;
 }
 
@@ -302,16 +281,50 @@ async function uploadFile(file, quoteId) {
   const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
   const path = `${quoteId}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
-  if (error) {
-    console.error('uploadFile error:', error);
-    throw error;
-  }
+  if (error) throw error;
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
 window.formatAmount = function(input) {
   let val = input.value.replace(/[^0-9.]/g, '');
   if (val) input.value = parseFloat(val).toLocaleString('en-AU');
+};
+
+window.showToast = (msg, isError = false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+};
+
+window.showInlineViewer = async function(path, name, type, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error('Container not found:', containerId);
+    return;
+  }
+
+  if (container.innerHTML.trim() !== '') {
+    container.innerHTML = '';
+    return;
+  }
+
+  try {
+    const url = await getSignedUrl(path);
+    let content = '';
+    
+    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+      content = `<iframe src="${url}" style="width:100%;height:420px;border:none;border-radius:6px"></iframe>`;
+    } else {
+      content = `<img src="${url}" style="max-width:100%;max-height:420px;border-radius:6px" alt="${name}">`;
+    }
+    
+    container.innerHTML = `<div style="margin-top:8px">${content}</div>`;
+  } catch(e) {
+    console.error('showInlineViewer failed:', e);
+    container.innerHTML = `<div style="color:#ef4444;font-size:12px">Failed to load file: ${e.message}</div>`;
+  }
 };
 
 async function clearVotesForQuote(quoteId) {
@@ -321,6 +334,53 @@ async function clearVotesForQuote(quoteId) {
     console.error('Failed to clear votes:', e); 
   }
 }
+
+async function safeSyncQuoteToWorks(quoteId) {
+  try {
+    const { data: existing } = await supabase.from('works').select('id').eq('quote_id', quoteId).maybeSingle();
+    if (existing) return true;
+
+    const { data: q } = await supabase.from('quotes').select('*').eq('id', quoteId).maybeSingle();
+    if (!q) throw new Error('Quote not found');
+
+    const parsed = parseComment(q.comment);
+    const workData = { 
+      quote_id: quoteId,
+      project: q.project || 'No title', 
+      vendor: q.vendor,
+      amount: q.amount,
+      category: q.category,
+      priority: parsed.priority || 'Normal',
+      notes: q.notes,
+      private_notes: parsed.note,
+      status: 'scheduled'
+    };
+    const { error } = await supabase.from('works').insert(workData);
+    if (error) throw error;
+    return true;
+  } catch(e) {
+    console.error('syncQuoteToWorks failed:', e);
+    await supabase.from('quotes').update({ status: 'pending' }).eq('id', quoteId);
+    showToast('CRITICAL: Failed to create Ongoing Works. Status reverted to PENDING. Error: ' + e.message, true);
+    return false;
+  }
+}
+
+window.forceApprove = async function (quoteId) {
+  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
+  try {
+    const syncSuccess = await safeSyncQuoteToWorks(quoteId);
+    if (!syncSuccess) return;
+    await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+    await clearVotesForQuote(quoteId);
+    showToast('Quote force-approved and moved to Ongoing Works');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('forceApprove failed:', e);
+    showToast('Force approve failed: ' + e.message, true);
+  }
+};
 
 async function loadData() {
   try {
@@ -485,13 +545,16 @@ function renderPendingQuotes(quotes) {
 
     if (visibleFiles.length) {
       filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
-      filesHtml += visibleFiles.map((f, idx) => `
-        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','viewer-${q.id}-${idx}'); event.stopPropagation();">
+      filesHtml += visibleFiles.map((f, idx) => {
+        const viewerId = `viewer-${q.id}-${idx}`;
+        return `
+        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
           <span class="file-icon">📄</span>
           <span class="file-name">${f.name}</span>
         </div>
-        <div id="viewer-${q.id}-${idx}" class="inline-viewer"></div>
-      `).join('');
+        <div id="${viewerId}" class="inline-viewer"></div>
+      `;
+      }).join('');
       filesHtml += `</div></div>`;
     }
 
@@ -699,7 +762,6 @@ window.removeFile = idx => {
   updateFilePreview();
 };
 
-// FINAL FIX — ID NULL 100% 해결
 window.saveQuote = async () => {
   const editId = document.getElementById('quoteEditId').value.trim();
   const project = document.getElementById('quoteProject').value.trim();
@@ -721,9 +783,8 @@ window.saveQuote = async () => {
   saveBtn.textContent = 'Saving…';
 
   try {
-    // 파일 처리
     const fileData = [];
-    const quoteId = editId || crypto.randomUUID();   // 신규일 때만 새 UUID 생성
+    const quoteId = editId || crypto.randomUUID();
 
     for (const f of uploadedFiles) {
       if (f.file) {
@@ -747,11 +808,8 @@ window.saveQuote = async () => {
       priority: priority
     };
 
-    console.log('🔥 Saving Quote - Edit ID:', editId, 'New ID:', quoteId);
-
     let res;
     if (editId && editId !== '') {
-      // UPDATE
       res = await supabase
         .from('quotes')
         .update({
@@ -764,7 +822,6 @@ window.saveQuote = async () => {
         })
         .eq('id', editId);
     } else {
-      // INSERT — 무조건 id 포함
       res = await supabase
         .from('quotes')
         .insert({
@@ -780,18 +837,17 @@ window.saveQuote = async () => {
     }
 
     if (res.error) {
-      console.error('❌ SUPABASE ERROR:', res.error);
+      console.error('SUPABASE ERROR:', res.error);
       alert('SUPABASE ERROR: ' + res.error.message + '\nCode: ' + (res.error.code || 'N/A'));
       throw res.error;
     }
 
-    console.log('✅ Quote saved successfully');
     alert('Quote saved successfully');
     closeModal('quoteModal');
     await loadData(); 
     renderQuotes();
   } catch (e) {
-    console.error('🔥 FINAL SAVE ERROR:', e);
+    console.error('FINAL SAVE ERROR:', e);
     alert('Save failed: ' + (e.message || e));
   } finally {
     saveBtn.disabled = false;
@@ -826,23 +882,6 @@ window.confirmHold = async () => {
   }
 };
 
-window.forceApprove = async function (quoteId) {
-  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
-  try {
-    await supabase
-      .from('quotes')
-      .update({ status: 'scheduled' })
-      .eq('id', quoteId);
-    await clearVotesForQuote(quoteId);
-    showToast('Quote force-approved and moved to Ongoing Works');
-    await loadData();
-    renderQuotes();
-  } catch(e) {
-    console.error('forceApprove failed:', e);
-    showToast('Force approve failed: ' + e.message, true);
-  }
-};
-
 window.castVote = async (quoteId, vote) => {
   try {
     const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
@@ -863,11 +902,11 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      await supabase
-        .from('quotes')
-        .update({ status: 'scheduled' })
-        .eq('id', quoteId);
-      await clearVotesForQuote(quoteId);
+      const syncSuccess = await safeSyncQuoteToWorks(quoteId);
+      if (syncSuccess) {
+        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+        await clearVotesForQuote(quoteId);
+      }
     } else if (declines >= RULES.declinesToAutoDecline) {
       await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
       await clearVotesForQuote(quoteId);

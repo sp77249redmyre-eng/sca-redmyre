@@ -121,31 +121,10 @@
     <img id="lightboxImg" src="" alt="">
   </div>
 
-<div class="modal-backdrop" id="completeModal">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-title">✅ Complete & Move to Reports</div>
-    <input type="hidden" id="completeWorkId">
-    <p style="font-size:13px;color:var(--text-2);margin-bottom:18px;line-height:1.6">This work will be marked as completed and will appear in Financial Reports.</p>
-    <div class="modal-field">
-      <label class="modal-label">Completion Date</label>
-      <input class="modal-input" type="date" id="completeDate">
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Completion Notes (optional)</label>
-      <textarea class="modal-textarea" id="completeNotes" placeholder="Any final notes…" style="min-height:80px"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('completeModal')">Cancel</button>
-      <button class="btn-primary" onclick="confirmComplete()" style="background:linear-gradient(135deg,#065f46,#10b981)">✅ Mark Complete →</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-backdrop" id="workModal">
-  <div class="modal-box" style="max-width:680px">
-    <div class="modal-title" id="workModalTitle">Emergency Work</div>
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">Emergency Work</div>
     <input type="hidden" id="workEditId">
-    
     <div class="modal-field">
       <label class="modal-label">Project / Works Description</label>
       <input type="text" class="modal-input" id="workProject" placeholder="e.g., Emergency roof repair">
@@ -242,11 +221,9 @@ let currentUploadFiles = [];
 
 async function loadWorks() {
   const { data } = await supabase
-    .from('quotes')
+    .from('works')
     .select('*')
-    .is('completion_date', null)
-    .not('status', 'is', null)
-    .order('created_at', {ascending: true});
+    .order('created_at', {ascending: false});
   allWorks = data || [];
 
   document.getElementById('statTotal').textContent = allWorks.length;
@@ -319,7 +296,6 @@ function buildAccordion(w) {
         </div>
         <div style="display:flex;gap:6px">
           ${role === 'admin' ? `<button class="btn-secondary" onclick="openEditWorkById('${w.id}')" style="padding:5px 10px;font-size:11px">✏️ Edit</button>` : ''}
-          ${role === 'admin' ? `<button class="btn-primary" onclick="openCompleteModal('${w.id}')" style="padding:5px 10px;font-size:11px">✅ Complete</button>` : ''}
           <button class="btn-secondary" onclick="closeAccordion('${w.id}')" style="padding:5px 10px;font-size:11px">✕</button>
         </div>
       </div>
@@ -356,13 +332,25 @@ async function loadPhotos(workId) {
   const gallery = document.getElementById(`gallery-${workId}`);
   if (!gallery) return;
   try {
-    const { data } = await supabase.storage.from('quotes').list(`quotes/${workId}/work`);
-    if (!data || data.length === 0) { gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No files.</div>'; return; }
+    const work = allWorks.find(w => w.id === workId);
+    if (!work || !work.quote_id) {
+      gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No files.</div>';
+      return;
+    }
+    
+    const { data } = await supabase.storage.from('quotes').list(`${work.quote_id}`);
+    if (!data || data.length === 0) { 
+      gallery.innerHTML = '<div style="font-size:13px;color:var(--muted)">No files.</div>'; 
+      return; 
+    }
     gallery.innerHTML = data.map(file => {
-      const { data: urlData } = supabase.storage.from('quotes').getPublicUrl(`quotes/${workId}/work/${file.name}`);
+      const { data: urlData } = supabase.storage.from('quotes').getPublicUrl(`${work.quote_id}/${file.name}`);
       return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
     }).join('');
-  } catch(e) { gallery.innerHTML = 'Error loading files.'; }
+  } catch(e) { 
+    console.error('Load photos error:', e);
+    gallery.innerHTML = 'Error loading files.'; 
+  }
 }
 
 window.openLightbox = (url) => {
@@ -396,15 +384,6 @@ document.getElementById('addWorkBtn').addEventListener('click', () => {
 window.formatAmount = (input) => {
   let val = input.value.replace(/[^0-9.]/g, '');
   if (val) input.value = parseFloat(val).toLocaleString('en-AU');
-};
-
-window.confirmComplete = async () => {
-  const id = document.getElementById('completeWorkId').value;
-  const date = document.getElementById('completeDate').value;
-  if (!date) { showToast('Select date', true); return; }
-  await supabase.from('quotes').update({ status: 'completed', completion_date: date }).eq('id', id);
-  closeModal('completeModal');
-  loadWorks();
 };
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
