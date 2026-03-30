@@ -299,7 +299,6 @@ async function uploadFile(file, quoteId) {
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
-// formatAmount를 window에 노출하여 HTML oninput에서 호출 가능하게 수정
 window.formatAmount = function(input) {
   let val = input.value.replace(/[^0-9.]/g, '');
   if (val) input.value = parseFloat(val).toLocaleString('en-AU');
@@ -474,15 +473,32 @@ function updateArchiveFilterUI() {
 
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
+
   if (!quotes.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">No pending quotes</div></div>`;
     return;
   }
 
-  let html = `<table class="quote-table"><thead><tr>
-    <th>Date</th><th>Priority</th><th>Project Name</th><th>Contractor</th><th>Amount</th><th></th>
-  </tr></thead><tbody>`;
+  // 테이블 구조가 없으면 한 번만 생성 (thead 1회만)
+  if (!document.getElementById('pendingBody')) {
+    container.innerHTML = `
+      <table class="quote-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Priority</th>
+            <th>Project Name</th>
+            <th>Contractor</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    `;
+  }
 
+  let rows = '';
   quotes.forEach(q => {
     const parsed = parseComment(q.comment);
     const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
@@ -507,7 +523,7 @@ function renderPendingQuotes(quotes) {
       filesHtml += `</div></div>`;
     }
 
-    html += `
+    rows += `
       <tr onclick="toggleQuote('${q.id}')">
         <td>${dateStr}</td>
         <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
@@ -544,21 +560,39 @@ function renderPendingQuotes(quotes) {
       </tr>
     `;
   });
-  html += `</tbody></table>`;
-  container.innerHTML = html;
+
+  document.getElementById('pendingBody').innerHTML = rows;
 }
 
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
+
   if (!quotes.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No archived quotes</div></div>`;
     return;
   }
 
-  let html = `<table class="quote-table"><thead><tr>
-    <th>Date</th><th>Status</th><th>Priority</th><th>Project Name</th><th>Contractor</th><th>Amount</th><th>Action</th>
-  </tr></thead><tbody>`;
+  // 테이블 구조가 없으면 한 번만 생성
+  if (!document.getElementById('archiveBody')) {
+    container.innerHTML = `
+      <table class="quote-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Project Name</th>
+            <th>Contractor</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="archiveBody"></tbody>
+      </table>
+    `;
+  }
 
+  let rows = '';
   quotes.forEach(q => {
     const st = getQuoteStatus(q);
     const parsed = parseComment(q.comment);
@@ -570,7 +604,7 @@ function renderArchiveTable(quotes) {
 
     const showReopen = (st === 'onhold' || st === 'expired') && role === 'admin';
 
-    html += `
+    rows += `
       <tr>
         <td>${dateStr}</td>
         <td><span style="padding:2px 10px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:11px">${statusText}</span></td>
@@ -588,8 +622,8 @@ function renderArchiveTable(quotes) {
       </tr>
     `;
   });
-  html += `</tbody></table>`;
-  container.innerHTML = html;
+
+  document.getElementById('archiveBody').innerHTML = rows;
 }
 
 function renderQuotes() {
@@ -729,18 +763,17 @@ window.saveQuote = async () => {
       priority: priority
     });
 
-    const payload = { project, vendor, amount, notes, comment: commentPayload, priority, category };
+    const payload = { project, vendor, amount, notes, comment: commentPayload };
 
     if (id) {
       await supabase.from('quotes').update(payload).eq('id', id);
     } else {
-      const expiry = new Date(); expiry.setDate(expiry.getDate() + RULES.expiryDays);
-      // id 필드 제거 (Supabase가 자동 생성하도록 함)
+      const expiry = new Date(); 
+      expiry.setDate(expiry.getDate() + RULES.expiryDays);
       await supabase.from('quotes').insert({ 
         ...payload, 
         status: 'pending', 
-        expiry_date: expiry.toISOString(), 
-        created_by: user.id 
+        expiry_date: expiry.toISOString() 
       });
     }
 
