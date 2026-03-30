@@ -117,13 +117,6 @@
       <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
-      <div class="stat-card"><div class="stat-num" id="statPending" style="color:var(--yellow)">—</div><div class="stat-label">Pending</div></div>
-      <div class="stat-card"><div class="stat-num" id="statDeclined" style="color:var(--red)">—</div><div class="stat-label">Declined</div></div>
-      <div class="stat-card"><div class="stat-num" id="statHold" style="color:var(--purple)">—</div><div class="stat-label">On Hold</div></div>
-    </div>
-
     <div class="rule-info" id="ruleInfo">
       This quote will be decided by a vote of 8 committee members.<br>
       If 5 or more members approve, the quote will be automatically approved.<br>
@@ -357,19 +350,6 @@ async function loadData() {
     ]);
     allQuotes = qRes.data || [];
     allVotes = vRes.data || [];
-
-    const counts = { total:0, pending:0, declined:0, hold:0 };
-    for (const q of allQuotes) {
-      const st = getQuoteStatus(q);
-      counts.total++;
-      if (st === 'pending') counts.pending++;
-      else if (st === 'declined') counts.declined++;
-      else if (st === 'onhold') counts.hold++;
-    }
-    document.getElementById('statTotal').textContent = counts.total;
-    document.getElementById('statPending').textContent = counts.pending;
-    document.getElementById('statDeclined').textContent = counts.declined;
-    document.getElementById('statHold').textContent = counts.hold;
   } catch(e) {
     console.error('loadData failed:', e);
   }
