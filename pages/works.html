@@ -45,10 +45,9 @@
 .filter-btn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
 .filter-btn.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
 .works-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.work-row{display:grid;grid-template-columns:120px 1fr 130px 110px auto;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 0.12s}
+.work-row{display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 0.12s}
 .work-row:last-child{border-bottom:none}
 .work-row:hover{background:var(--bg)}
-.work-num{min-width:92px;height:36px;padding:0 8px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);font-family:monospace;flex-shrink:0;text-align:center;line-height:1.1}
 .work-title-text{font-size:13px;font-weight:600}
 .work-meta-text{font-size:11px;color:var(--muted);margin-top:2px}
 .work-accordion{display:none;background:var(--bg);border-top:1px solid var(--border-light);padding:18px 20px;animation:slideDown 0.2s ease}
@@ -95,7 +94,7 @@
 .quote-file-item a:hover{text-decoration:underline}
 .work-files-section{margin-top:12px}
 .work-files-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
-@media(max-width:900px){.work-row{grid-template-columns:120px 1fr auto auto}}
+@media(max-width:900px){.work-row{grid-template-columns:120px 140px 120px 1fr 160px}}
 </style>
 </head>
 <body>
@@ -125,6 +124,13 @@
 
     <!-- WORKS LIST -->
     <div class="works-card">
+      <div style="display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">
+        <div>Date</div>
+        <div>Category</div>
+        <div>Priority</div>
+        <div>Project</div>
+        <div>Contractor</div>
+      </div>
       <div id="worksList">
         <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
       </div>
@@ -290,18 +296,49 @@ function renderWorks() {
 
 function workRow(w) {
   const st = STATUS_MAP[w.status] || {label: w.status, cls: 'badge-gray'};
-  const idx = allWorks.indexOf(w) + 1;
+  const dateStr = new Date(w.created_at).toLocaleDateString('en-AU', {
+    day:'2-digit', month:'short', year:'numeric'
+  });
 
   return `
     <div class="work-row" id="row-${w.id}">
       <div onclick="toggleAccordion('${w.id}')" style="display:contents;cursor:pointer">
-        <div class="work-num">${String(idx).padStart(2, '0')}</div>
+
+        <!-- Date -->
+        <div class="work-meta-text">
+          ${dateStr}
+        </div>
+
+        <!-- Category -->
+        <div class="work-meta-text">
+          ${w.category || 'General'}
+        </div>
+
+        <!-- Priority -->
+        <div>
+          <span class="badge ${
+            (w.priority || '').toLowerCase() === 'urgent' ? 'badge-red' :
+            (w.priority || '').toLowerCase() === 'high' ? 'badge-yellow' :
+            'badge-gray'
+          }">
+            ${w.priority || 'Normal'}
+          </span>
+        </div>
+
+        <!-- Project -->
         <div>
           <div class="work-title-text">${w.project || 'Untitled'}</div>
-          <div class="work-meta-text">${w.vendor || '—'}</div>
+          <div class="work-meta-text">
+            <span class="badge ${st.cls}" style="font-size:10px">${st.label}</span>
+          </div>
         </div>
+
+        <!-- Contractor -->
+        <div class="work-meta-text">
+          ${w.vendor || '—'}
+        </div>
+
       </div>
-      <span class="badge ${st.cls}">${st.label}</span>
     </div>
     ${buildAccordion(w)}`;
 }
