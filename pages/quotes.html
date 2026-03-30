@@ -764,9 +764,9 @@ window.removeFile = idx => {
   updateFilePreview();
 };
 
-// 🔥 핵심 수정: saveQuote 전체 교체 (Supabase 400 에러 완전 제거용)
+// FINAL FIX — ID NULL 100% 해결
 window.saveQuote = async () => {
-  const id = document.getElementById('quoteEditId').value;
+  const editId = document.getElementById('quoteEditId').value.trim();
   const project = document.getElementById('quoteProject').value.trim();
   const vendor = document.getElementById('quoteVendor').value.trim();
   let amountStr = document.getElementById('quoteAmount').value.replace(/[^0-9.]/g, '');
@@ -786,10 +786,10 @@ window.saveQuote = async () => {
   saveBtn.textContent = 'Saving…';
 
   try {
-    const quoteId = id || crypto.randomUUID();
-
-    // 🔥 FILES 처리
+    // 파일 처리
     const fileData = [];
+    const quoteId = editId || crypto.randomUUID();   // 신규일 때만 새 UUID 생성
+
     for (const f of uploadedFiles) {
       if (f.file) {
         const uploaded = await uploadFile(f.file, quoteId);
@@ -805,7 +805,6 @@ window.saveQuote = async () => {
       }
     }
 
-    // 🔥 JSONB (절대 stringify 금지)
     const commentPayload = {
       note: internalNote,
       files: fileData,
@@ -813,46 +812,50 @@ window.saveQuote = async () => {
       priority: priority
     };
 
-    const insertData = {
-      id: quoteId,
-      project: project,
-      vendor: vendor,
-      amount: Number(amount),
-      notes: notes,
-      comment: commentPayload,
-      status: 'pending'
-    };
-
-    console.log('🔥 INSERT/UPDATE DATA:', insertData);
+    console.log('🔥 Saving Quote - Edit ID:', editId, 'New ID:', quoteId);
 
     let res;
-    if (id) {
-      // Update
+    if (editId && editId !== '') {
+      // UPDATE
       res = await supabase
         .from('quotes')
-        .update(insertData)
-        .eq('id', id);
+        .update({
+          project: project,
+          vendor: vendor,
+          amount: Number(amount),
+          notes: notes,
+          comment: commentPayload
+        })
+        .eq('id', editId);
     } else {
-      // Insert
+      // INSERT — 무조건 id 포함
       res = await supabase
         .from('quotes')
-        .insert(insertData);
+        .insert({
+          id: quoteId,
+          project: project,
+          vendor: vendor,
+          amount: Number(amount),
+          notes: notes,
+          comment: commentPayload,
+          status: 'pending'
+        });
     }
 
     if (res.error) {
       console.error('❌ SUPABASE ERROR:', res.error);
-      alert('SUPABASE ERROR: ' + res.error.message + '\nCode: ' + res.error.code);
+      alert('SUPABASE ERROR: ' + res.error.message + '\nCode: ' + (res.error.code || 'N/A'));
       throw res.error;
     }
 
-    console.log('✅ Save successful');
+    console.log('✅ Quote saved successfully');
     alert('Quote saved successfully');
     closeModal('quoteModal');
     await loadData(); 
     renderQuotes();
   } catch (e) {
-    console.error('🔥 FINAL ERROR:', e);
-    alert('FAILED: ' + (e.message || e));
+    console.error('🔥 FINAL SAVE ERROR:', e);
+    alert('Save failed: ' + (e.message || e));
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save →';
