@@ -58,7 +58,6 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  /* 핵심: 더 강하게 */
   box-shadow: 0 4px 14px rgba(0,0,0,0.25);
   transition: all 0.12s ease;
 }
@@ -70,8 +69,6 @@
   transform: translateY(2px);
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-
-/* 색상 강화 */
 .btn-pill-success {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #fff;
@@ -595,7 +592,11 @@ function renderArchiveTable(quotes) {
 }
 
 function renderQuotes() {
-  const pendingQuotes = allQuotes.filter(q => getQuoteStatus(q) === 'pending');
+  // 수정: 승인된 것만 제외하고 나머지는 모두 Pending 섹션에 표시
+  const pendingQuotes = allQuotes.filter(q => {
+    const st = getQuoteStatus(q);
+    return st !== 'approved';
+  });
   renderPendingQuotes(pendingQuotes);
 
   let archiveQuotes = allQuotes.filter(q => {
