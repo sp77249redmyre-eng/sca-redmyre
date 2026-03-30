@@ -1,4 +1,4 @@
-<DOCUMENT filename="quotes.html"><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -319,68 +319,6 @@ async function clearVotesForQuote(quoteId) {
     await supabase.from('votes').delete().eq('quote_id', quoteId);
   } catch(e) { 
     console.error('Failed to clear votes:', e); 
-  }
-}
-
-async function safeSyncQuoteToWorks(quoteId) {
-  try {
-    const { data: existing } = await supabase.from('works').select('id').eq('quote_id', quoteId).maybeSingle();
-    if (existing) return true;
-
-    const { data: q } = await supabase.from('quotes').select('*').eq('id', quoteId).maybeSingle();
-    if (!q) throw new Error('Quote not found');
-
-    const workData = { title: q.project || 'No title', status: 'scheduled', quote_id: quoteId };
-    const { error } = await supabase.from('works').insert(workData);
-    if (error) throw error;
-    return true;
-  } catch(e) {
-    console.error('syncQuoteToWorks failed:', e);
-    await supabase.from('quotes').update({ status: 'pending' }).eq('id', quoteId);
-    showToast('CRITICAL: Failed to create Ongoing Works. Status reverted to PENDING. Error: ' + e.message, true);
-    return false;
-  }
-}
-
-window.forceApprove = async function (quoteId) {
-  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
-  try {
-    const syncSuccess = await safeSyncQuoteToWorks(quoteId);
-    if (!syncSuccess) return;
-    await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
-    await clearVotesForQuote(quoteId);
-    showToast('Quote force-approved and moved to Ongoing Works');
-    await loadData();
-    renderQuotes();
-  } catch(e) {
-    console.error('forceApprove failed:', e);
-    showToast('Force approve failed: ' + e.message, true);
-  }
-};
-
-window.showInlineViewer = async function(path, name, type, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  if (container.innerHTML.trim() !== '') {
-    container.innerHTML = '';
-    return;
-  }
-
-  try {
-    const url = await getSignedUrl(path);
-    let content = '';
-    
-    if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
-      content = `<iframe src="${url}" style="width:100%;height:420px;border:none;border-radius:6px"></iframe>`;
-    } else {
-      content = `<img src="${url}" style="max-width:100%;max-height:420px;border-radius:6px" alt="${name}">`;
-    }
-    
-    container.innerHTML = `<div style="margin-top:8px">${content}</div>`;
-  } catch(e) {
-    console.error('showInlineViewer failed:', e);
-    container.innerHTML = `<div style="color:#ef4444;font-size:12px">Failed to load file</div>`;
   }
 }
 
@@ -822,7 +760,7 @@ window.saveQuote = async () => {
           amount: Number(amount),
           notes: notes,
           comment: commentPayload,
-          category: category // 🔥 추가 (필수)
+          category: category
         })
         .eq('id', editId);
     } else {
@@ -836,7 +774,7 @@ window.saveQuote = async () => {
           amount: Number(amount),
           notes: notes,
           comment: commentPayload,
-          category: category, // 🔥 추가 (필수)
+          category: category,
           status: 'pending'
         });
     }
@@ -888,6 +826,23 @@ window.confirmHold = async () => {
   }
 };
 
+window.forceApprove = async function (quoteId) {
+  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
+  try {
+    await supabase
+      .from('quotes')
+      .update({ status: 'scheduled' })
+      .eq('id', quoteId);
+    await clearVotesForQuote(quoteId);
+    showToast('Quote force-approved and moved to Ongoing Works');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('forceApprove failed:', e);
+    showToast('Force approve failed: ' + e.message, true);
+  }
+};
+
 window.castVote = async (quoteId, vote) => {
   try {
     const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
@@ -908,11 +863,11 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      const syncSuccess = await safeSyncQuoteToWorks(quoteId);
-      if (syncSuccess) {
-        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-        await clearVotesForQuote(quoteId);
-      }
+      await supabase
+        .from('quotes')
+        .update({ status: 'scheduled' })
+        .eq('id', quoteId);
+      await clearVotesForQuote(quoteId);
     } else if (declines >= RULES.declinesToAutoDecline) {
       await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
       await clearVotesForQuote(quoteId);
@@ -942,4 +897,3 @@ window.closeModal = (id) => document.getElementById(id).classList.remove('open')
 </script>
 </body>
 </html>
-</DOCUMENT>
