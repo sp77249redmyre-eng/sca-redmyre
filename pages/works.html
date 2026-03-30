@@ -304,7 +304,9 @@ function workRow(w) {
 
 function buildAccordion(w) {
   const parsed = parseComment(w.comment);
-  const updated = new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const updated = new Date(
+  w.display_updated_at || w.updated_at || w.created_at
+).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
   const ws = w.work_status || 'scheduled';
 
   let descHtml = w.notes ? `
@@ -567,7 +569,9 @@ window.openEditWork = (quoteId) => {
   document.getElementById('editNotes').value = work.notes || '';
   document.getElementById('editInternalNotes').value = parsed.note || '';
   
-  const updatedDate = work.updated_at ? new Date(work.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  const updatedDate = work.display_updated_at 
+  ? new Date(work.display_updated_at).toISOString().split('T')[0] 
+  : new Date().toISOString().split('T')[0];
   document.getElementById('editUpdatedDate').value = updatedDate;
   
   document.getElementById('editModal').classList.add('open');
@@ -605,7 +609,7 @@ window.saveEdit = async () => {
     };
 
     // 날짜를 ISO timestamp로 변환 (현재 시간 사용)
-    const updatedTimestamp = new Date(updatedDate).toISOString();
+    const updatedTimestamp = new Date(updatedDate + 'T12:00:00').toISOString();
 
     const { error } = await supabase
       .from('quotes')
@@ -616,7 +620,7 @@ window.saveEdit = async () => {
         category: category,
         notes: notes,
         comment: updatedComment,
-        updated_at: updatedTimestamp
+       display_updated_at: updatedTimestamp
       })
       .eq('id', id);
 
