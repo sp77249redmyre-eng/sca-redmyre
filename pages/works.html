@@ -155,6 +155,10 @@
       <label class="modal-label">Internal Notes</label>
       <textarea class="modal-textarea" id="editInternalNotes" style="background:#f0f7ff;border-color:#dbeafe"></textarea>
     </div>
+    <div class="modal-field">
+      <label class="modal-label">Last Updated Date</label>
+      <input type="date" class="modal-input" id="editUpdatedDate">
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
       <button class="btn-primary" onclick="saveEdit()">Save Changes →</button>
@@ -563,6 +567,9 @@ window.openEditWork = (quoteId) => {
   document.getElementById('editNotes').value = work.notes || '';
   document.getElementById('editInternalNotes').value = parsed.note || '';
   
+  const updatedDate = work.updated_at ? new Date(work.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  document.getElementById('editUpdatedDate').value = updatedDate;
+  
   document.getElementById('editModal').classList.add('open');
 };
 
@@ -575,9 +582,15 @@ window.saveEdit = async () => {
   const category = document.getElementById('editCategory').value;
   const notes = document.getElementById('editNotes').value.trim();
   const internalNote = document.getElementById('editInternalNotes').value.trim();
+  const updatedDate = document.getElementById('editUpdatedDate').value;
 
   if (!project || !vendor || amount <= 0) {
     alert('Required: Project, Vendor, Amount');
+    return;
+  }
+
+  if (!updatedDate) {
+    alert('Please select Last Updated date');
     return;
   }
 
@@ -599,7 +612,8 @@ window.saveEdit = async () => {
         amount: Number(amount),
         category: category,
         notes: notes,
-        comment: updatedComment
+        comment: updatedComment,
+        updated_at: updatedDate
       })
       .eq('id', id);
 
