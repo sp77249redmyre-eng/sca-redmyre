@@ -14,7 +14,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-/* 원본 로컬 스타일 유지 */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
 .stat-num{font-size:26px;font-weight:700;margin-top:6px}
@@ -63,8 +62,7 @@
           <th style="text-align:right">Amount</th>
           </tr>
       </thead>
-      <tbody id="expenseList">
-        </tbody>
+      <tbody id="expenseList"></tbody>
     </table>
   </div>
 </div>
@@ -74,29 +72,27 @@
 import { supabase } from '/js/auth.js';
 import { initLayout } from '/js/layout.js';
 
-let userRole = 'resident';
+let user;
+let expensesData = [];
 
 async function init() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) { window.location.href = '/'; return; }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href = '/'; return; }
+  user = session.user;
   
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  userRole = profile?.role || 'resident';
-  
-  // 레이아웃 초기화 (사이드바/탑바 정상 작동)
-  initLayout('Reports');
+  initLayout('Reports'); // 사이드바/탑바 로드
   await loadReport();
 }
 
 async function loadReport() {
-  // 데이터 로드 로직 유지
   const { data, error } = await supabase.from('expenses').select('*').order('expense_date', { ascending: false });
-  if (error) { console.error(error); return; }
+  if (error) return;
+  expensesData = data;
   renderExpenses(data);
   updateStats(data);
 }
 
-// [삭제됨] renderWorksStatus 함수 삭제
+// [삭제 완료] loadWorks, renderWorksStatus 등 Ongoing 관련 로직 제거
 
 function renderExpenses(data) {
   const list = document.getElementById('expenseList');
@@ -105,7 +101,7 @@ function renderExpenses(data) {
     return;
   }
   
-  // 테이블 렌더링 (수정 버튼 컬럼 제외)
+  // 수정 버튼 없이 깔끔하게 지출 내역만 출력
   list.innerHTML = data.map(e => `
     <tr>
       <td>${new Date(e.expense_date).toLocaleDateString('en-AU')}</td>
@@ -117,18 +113,17 @@ function renderExpenses(data) {
 }
 
 function updateStats(data) {
-  // 통계 계산 로직 유지
   const total = data.reduce((sum, e) => sum + (e.amount || 0), 0);
   document.getElementById('statTotal').textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits:2});
   
-  // (임시 예산 로직 유지)
   const avg = data.length ? total / 12 : 0; 
   document.getElementById('statAvg').textContent = '$' + avg.toLocaleString(undefined, {minimumFractionDigits:2});
+  
   const projected = avg * 12;
   document.getElementById('statProjected').textContent = '$' + projected.toLocaleString(undefined, {minimumFractionDigits:2});
 }
 
-// [삭제됨] openEditExpense, submitExpense, deleteExpense 등 모든 수정/팝업 관련 함수 삭제
+// [삭제 완료] openAddExpense, openEditExpense, submitExpense 등 모든 팝업/수정 기능 제거
 
 init();
 </script>
