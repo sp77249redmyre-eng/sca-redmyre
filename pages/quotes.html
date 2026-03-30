@@ -474,12 +474,7 @@ function updateArchiveFilterUI() {
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
 
-  if (!quotes.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">No pending quotes</div></div>`;
-    return;
-  }
-
-  // 테이블 구조가 없으면 한 번만 생성 (thead 1회만)
+  // table은 최초 1회만 생성
   if (!document.getElementById('pendingBody')) {
     container.innerHTML = `
       <table class="quote-table">
@@ -496,6 +491,20 @@ function renderPendingQuotes(quotes) {
         <tbody id="pendingBody"></tbody>
       </table>
     `;
+  }
+
+  const tbody = document.getElementById('pendingBody');
+
+  if (!quotes.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
+          <div style="font-size:48px;margin-bottom:16px">⏳</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
+        </td>
+      </tr>
+    `;
+    return;
   }
 
   let rows = '';
@@ -561,18 +570,13 @@ function renderPendingQuotes(quotes) {
     `;
   });
 
-  document.getElementById('pendingBody').innerHTML = rows;
+  tbody.innerHTML = rows;
 }
 
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
 
-  if (!quotes.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No archived quotes</div></div>`;
-    return;
-  }
-
-  // 테이블 구조가 없으면 한 번만 생성
+  // table은 최초 1회만 생성
   if (!document.getElementById('archiveBody')) {
     container.innerHTML = `
       <table class="quote-table">
@@ -590,6 +594,20 @@ function renderArchiveTable(quotes) {
         <tbody id="archiveBody"></tbody>
       </table>
     `;
+  }
+
+  const tbody = document.getElementById('archiveBody');
+
+  if (!quotes.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:60px 24px;color:var(--muted)">
+          <div style="font-size:48px;margin-bottom:16px">📋</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No archived quotes</div>
+        </td>
+      </tr>
+    `;
+    return;
   }
 
   let rows = '';
@@ -623,7 +641,7 @@ function renderArchiveTable(quotes) {
     `;
   });
 
-  document.getElementById('archiveBody').innerHTML = rows;
+  tbody.innerHTML = rows;
 }
 
 function renderQuotes() {
