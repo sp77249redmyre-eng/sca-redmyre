@@ -40,8 +40,10 @@
 .file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;cursor:pointer}
 .file-icon{font-size:16px}
 .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-del{color:#ef4444;cursor:pointer;font-size:16px;padding:0 4px}
 .status-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s}
 .status-btn.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+.completion-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -108,9 +110,15 @@
       <label class="modal-label">Notes</label>
       <textarea class="modal-textarea" id="emergencyNotes" placeholder="Reason for emergency work"></textarea>
     </div>
+    <div class="modal-field">
+      <label class="modal-label">📎 Attach Files (Internal Only - Admin/Committee/Observer)</label>
+      <input type="file" id="emergencyFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
+      <button class="btn-secondary" onclick="document.getElementById('emergencyFileInput').click()">+ Choose Files</button>
+      <div id="emergencyFilePreview" style="margin-top:10px"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('emergencyModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveEmergencyWork()">Save Emergency Work →</button>
+      <button class="btn-primary" id="saveEmergencyBtn" onclick="saveEmergencyWork()">Save Emergency Work →</button>
     </div>
   </div>
 </div>
@@ -132,6 +140,10 @@
         <button class="status-btn" data-status="completed" onclick="selectStatus('completed')">✔️ Completed</button>
       </div>
     </div>
+    <div class="modal-field" id="completionDateField" style="display:none">
+      <label class="modal-label">Completion Date (Required for Completed status)</label>
+      <input type="date" class="modal-input" id="completionDate">
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('statusModal')">Cancel</button>
       <button class="btn-primary" onclick="saveStatusChange()">Save Status →</button>
@@ -148,6 +160,7 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
 const privileged = ['admin','committee','observer'];
+const canViewInternal = privileged.includes(role);
 
 if (role === 'admin') {
   document.getElementById('addWorkBtn').style.display = 'inline-flex';
@@ -169,6 +182,7 @@ window.formatAmount = (input) => {
 let allWorks = [];
 let openAccordionId = null;
 let selectedStatus = 'approved';
+let emergencyFiles = [];
 
 function parseComment(comment) {
   try {
@@ -191,6 +205,14 @@ async function getSignedUrl(path) {
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
   if (error) throw error;
   return data.signedUrl;
+}
+
+async function uploadFile(file, quoteId) {
+  const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
+  const path = `${quoteId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
 window.showInlineViewer = async function(path, name, type, containerId) {
@@ -224,6 +246,7 @@ async function loadWorks() {
     .from('quotes')
     .select('*')
     .eq('status', 'approved')
+    .is('completion_date', null)
     .order('created_at', {ascending: false});
   allWorks = data || [];
 
@@ -243,7 +266,7 @@ async function loadWorks() {
 function renderWorks() {
   const list = document.getElementById('worksList');
   if (!allWorks.length) {
-    list.innerHTML = `<div class="empty-state"><div style="font-size:48px;margin-bottom:16px">📋</div><div style="font-size:16px;font-weight:600;color:var(--text-2)">No approved works</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div style="font-size:48px;margin-bottom:16px">📋</div><div style="font-size:16px;font-weight:600;color:var(--text-2)">No ongoing works</div></div>`;
     return;
   }
   list.innerHTML = allWorks.map(w => workRow(w)).join('');
@@ -281,7 +304,7 @@ function buildAccordion(w) {
       <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.notes}</p>
     </div>` : '';
 
-  let privateHtml = privileged.includes(role) && parsed.note ? `
+  let privateHtml = canViewInternal && parsed.note ? `
     <div style="margin-top:12px">
       <div style="background:#f0f7ff;border:1px solid #dbeafe;border-radius:10px;padding:14px">
         <div style="font-size:11px;font-weight:600;color:var(--blue-700);text-transform:uppercase;margin-bottom:6px">🔒 Internal Notes</div>
@@ -290,9 +313,9 @@ function buildAccordion(w) {
     </div>` : '';
 
   let filesHtml = '';
-  if (parsed.files && parsed.files.length > 0) {
+  if (canViewInternal && parsed.files && parsed.files.length > 0) {
     filesHtml = `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px">📎 Attached Files</div>`;
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px">📎 Attached Files (Internal Only)</div>`;
     
     parsed.files.forEach((f, idx) => {
       const viewerId = `file-viewer-${w.id}-${idx}`;
@@ -307,6 +330,15 @@ function buildAccordion(w) {
     filesHtml += `</div>`;
   }
 
+  let completionHtml = role === 'admin' ? `
+    <div class="completion-box">
+      <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:8px">✔️ Mark as Completed</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="date" class="modal-input" id="complete-date-${w.id}" style="flex:1" value="${new Date().toISOString().split('T')[0]}">
+        <button class="btn-primary" onclick="markCompleted('${w.id}'); event.stopPropagation();" style="white-space:nowrap">Complete Work →</button>
+      </div>
+    </div>` : '';
+
   return `
     <div class="work-accordion" id="accordion-${w.id}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
@@ -314,10 +346,7 @@ function buildAccordion(w) {
           <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${w.project || 'Untitled'}</div>
           <span class="badge badge-green">Approved</span>
         </div>
-        <div style="display:flex;gap:6px">
-          ${role === 'admin' ? `<button class="btn-primary" onclick="openStatusChange('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">Change Status</button>` : ''}
-          <button class="btn-secondary" onclick="closeAccordion('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✕</button>
-        </div>
+        <button class="btn-secondary" onclick="closeAccordion('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✕</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Vendor</div><div style="font-size:13px">${w.vendor || '—'}</div></div>
@@ -327,6 +356,7 @@ function buildAccordion(w) {
       ${descHtml}
       ${privateHtml}
       ${filesHtml}
+      ${completionHtml}
     </div>`;
 }
 
@@ -356,7 +386,38 @@ window.openAddEmergencyWork = () => {
   document.getElementById('emergencyAmount').value = '';
   document.getElementById('emergencyCategory').value = 'General';
   document.getElementById('emergencyNotes').value = '';
+  emergencyFiles = [];
+  document.getElementById('emergencyFilePreview').innerHTML = '';
   document.getElementById('emergencyModal').classList.add('open');
+};
+
+document.getElementById('emergencyFileInput').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(f => {
+    emergencyFiles.push({ 
+      file: f, 
+      name: f.name, 
+      size: (f.size/1024).toFixed(1)+' KB', 
+      type: f.type
+    });
+  });
+  updateEmergencyFilePreview();
+});
+
+function updateEmergencyFilePreview() {
+  const preview = document.getElementById('emergencyFilePreview');
+  preview.innerHTML = emergencyFiles.map((f,i) => `
+    <div class="file-preview">
+      <span class="file-icon">📄</span>
+      <span class="file-name">${f.name}</span>
+      <span style="font-size:11px;color:var(--muted)">${f.size}</span>
+      <span class="file-del" onclick="removeEmergencyFile(${i});event.stopPropagation()">✕</span>
+    </div>
+  `).join('');
+}
+
+window.removeEmergencyFile = idx => {
+  emergencyFiles.splice(idx, 1);
+  updateEmergencyFilePreview();
 };
 
 window.saveEmergencyWork = async () => {
@@ -372,16 +433,36 @@ window.saveEmergencyWork = async () => {
     return;
   }
 
+  const saveBtn = document.getElementById('saveEmergencyBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
   try {
+    const quoteId = crypto.randomUUID();
+    const fileData = [];
+
+    for (const f of emergencyFiles) {
+      if (f.file) {
+        const uploaded = await uploadFile(f.file, quoteId);
+        fileData.push({
+          path: uploaded.path,
+          name: uploaded.name,
+          type: uploaded.type,
+          size: uploaded.size,
+          visibility: 'internal'
+        });
+      }
+    }
+
     const commentPayload = {
       note: 'Emergency work - no committee approval required',
-      files: [],
+      files: fileData,
       category: category,
       priority: 'Urgent'
     };
 
     const { error } = await supabase.from('quotes').insert({
-      id: crypto.randomUUID(),
+      id: quoteId,
       project: project,
       vendor: vendor,
       amount: Number(amount),
@@ -399,23 +480,40 @@ window.saveEmergencyWork = async () => {
   } catch(e) {
     console.error('Save emergency work failed:', e);
     alert('Failed: ' + e.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Emergency Work →';
   }
 };
 
-window.openStatusChange = (quoteId) => {
-  const work = allWorks.find(w => w.id === quoteId);
-  if (!work) return;
-  
-  document.getElementById('statusQuoteId').value = quoteId;
-  document.getElementById('statusProjectName').textContent = work.project || 'Untitled';
-  
-  selectedStatus = 'approved';
-  document.querySelectorAll('.status-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.status === 'approved') btn.classList.add('active');
-  });
-  
-  document.getElementById('statusModal').classList.add('open');
+window.markCompleted = async (quoteId) => {
+  const dateInput = document.getElementById(`complete-date-${quoteId}`);
+  const completionDate = dateInput.value;
+
+  if (!completionDate) {
+    alert('Please select completion date');
+    return;
+  }
+
+  if (!confirm('Mark this work as completed and move to Reports?')) return;
+
+  try {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ 
+        status: 'completed',
+        completion_date: completionDate
+      })
+      .eq('id', quoteId);
+
+    if (error) throw error;
+
+    showToast('Work completed and moved to Reports');
+    await loadWorks();
+  } catch(e) {
+    console.error('Mark completed failed:', e);
+    alert('Failed: ' + e.message);
+  }
 };
 
 window.selectStatus = (status) => {
@@ -424,26 +522,12 @@ window.selectStatus = (status) => {
     btn.classList.remove('active');
     if (btn.dataset.status === status) btn.classList.add('active');
   });
-};
-
-window.saveStatusChange = async () => {
-  const quoteId = document.getElementById('statusQuoteId').value;
-  if (!quoteId) return;
-
-  try {
-    const { error } = await supabase
-      .from('quotes')
-      .update({ status: selectedStatus })
-      .eq('id', quoteId);
-
-    if (error) throw error;
-
-    showToast('Status updated');
-    closeModal('statusModal');
-    await loadWorks();
-  } catch(e) {
-    console.error('Status change failed:', e);
-    alert('Failed: ' + e.message);
+  
+  if (status === 'completed') {
+    document.getElementById('completionDateField').style.display = 'block';
+    document.getElementById('completionDate').value = new Date().toISOString().split('T')[0];
+  } else {
+    document.getElementById('completionDateField').style.display = 'none';
   }
 };
 
