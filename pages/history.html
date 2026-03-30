@@ -14,10 +14,20 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css">
 <style>
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
-.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.analysis-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.analysis-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
+.analysis-value{font-size:24px;font-weight:600;margin-bottom:4px}
+.analysis-count{font-size:13px;color:var(--text-2)}
+.heatmap-container{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.heatmap-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.heatmap-title{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px}
+.heatmap-bar{display:grid;grid-template-columns:80px 1fr 60px;gap:10px;align-items:center;margin-bottom:10px}
+.bar-label{font-size:12px;font-weight:500;color:var(--text-2)}
+.bar-fill{height:24px;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#fff;font-weight:600;transition:all 0.3s}
+.bar-count{font-size:12px;font-weight:600;color:var(--text);text-align:right}
+.chart-container{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px}
+.chart-title{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px}
 .filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
 .filter-select{padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text-2)}
 .table-head{display:grid;grid-template-columns:160px 130px 90px 100px 100px 100px 1fr;gap:10px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
@@ -25,7 +35,9 @@
 .hist-row{display:grid;grid-template-columns:160px 130px 90px 100px 100px 100px 1fr;gap:10px;padding:13px 20px;border-bottom:1px solid var(--border-light);align-items:center;transition:background 0.12s}
 .hist-row:last-child{border-bottom:none}
 .hist-row:hover{background:var(--bg)}
+@media(max-width:900px){.analysis-row,.heatmap-container{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="role-admin">
 <div id="sidebarPlaceholder"></div>
@@ -36,12 +48,44 @@
       <div class="section-title">Temperature History</div>
       <button class="btn-danger" id="clearAllBtn">🗑 Clear All</button>
     </div>
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total Requests</div></div>
-      <div class="stat-card"><div class="stat-num" id="statCompleted" style="color:var(--green)">—</div><div class="stat-label">Completed</div></div>
-      <div class="stat-card"><div class="stat-num" id="statFailed" style="color:var(--red)">—</div><div class="stat-label">Failed / Rejected</div></div>
-      <div class="stat-card"><div class="stat-num" id="statPending" style="color:var(--yellow)">—</div><div class="stat-label">Pending</div></div>
+
+    <!-- 패턴 분석 카드 -->
+    <div class="analysis-row">
+      <div class="analysis-card">
+        <div class="analysis-label">Most Problematic</div>
+        <div class="analysis-value" id="mostProblematic">—</div>
+        <div class="analysis-count" id="mostProblematicCount">—</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-label">Hot vs Cold</div>
+        <div class="analysis-value" id="hotVsCold">—</div>
+        <div class="analysis-count" id="hotVsColdRatio">—</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-label">Peak Request Time</div>
+        <div class="analysis-value" id="peakTime">—</div>
+        <div class="analysis-count" id="peakTimeCount">—</div>
+      </div>
     </div>
+
+    <!-- 히트맵 -->
+    <div class="heatmap-container">
+      <div class="heatmap-card">
+        <div class="heatmap-title">Most Complaints by Floor</div>
+        <div id="floorHeatmap">Loading...</div>
+      </div>
+      <div class="heatmap-card">
+        <div class="heatmap-title">Top Tenancies</div>
+        <div id="tenancyHeatmap">Loading...</div>
+      </div>
+    </div>
+
+    <!-- 월별 트렌드 차트 -->
+    <div class="chart-container">
+      <div class="chart-title">Monthly Trend (Last 12 Months)</div>
+      <canvas id="monthlyChart" height="80"></canvas>
+    </div>
+
     <div class="filter-bar">
       <select class="filter-select" id="filterStatus"><option value="all">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="rejected">Rejected</option><option value="pending">Pending</option><option value="approved">Approved</option></select>
       <select class="filter-select" id="filterLevel"><option value="all">All Floors</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select>
@@ -71,6 +115,7 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase } = ctx;
 
 const ST_CLS = { completed:'badge-green',failed:'badge-red',rejected:'badge-red',approved:'badge-yellow',pending:'badge-yellow',processing:'badge-blue' };
+let monthlyChart = null;
 
 async function loadHistory() {
   const statusFilter = document.getElementById('filterStatus').value;
@@ -82,13 +127,136 @@ async function loadHistory() {
   if (typeFilter!=='all')   query = query.eq('type',typeFilter);
   const { data } = await query;
   const list = document.getElementById('historyList');
-  const { data:allData } = await supabase.from('hvac_requests').select('status,type');
+  
+  // 전체 데이터 가져오기 (분석용)
+  const { data:allData } = await supabase.from('hvac_requests').select('*');
+  
   if (allData) {
-    document.getElementById('statTotal').textContent     = allData.length;
-    document.getElementById('statCompleted').textContent = allData.filter(r=>r.status==='completed').length;
-    document.getElementById('statFailed').textContent    = allData.filter(r=>r.status==='failed'||r.status==='rejected').length;
-    document.getElementById('statPending').textContent   = allData.filter(r=>r.status==='pending'||r.status==='approved').length;
+    // 1. Most Problematic Floor
+    const floorCounts = {};
+    allData.forEach(r => {
+      if (r.level) floorCounts[r.level] = (floorCounts[r.level] || 0) + 1;
+    });
+    const sortedFloors = Object.entries(floorCounts).sort((a,b) => b[1] - a[1]);
+    if (sortedFloors.length) {
+      document.getElementById('mostProblematic').textContent = sortedFloors[0][0];
+      document.getElementById('mostProblematicCount').textContent = `${sortedFloors[0][1]}건`;
+    }
+
+    // 2. Hot vs Cold
+    const hotCount = allData.filter(r => r.type === 'hot').length;
+    const coldCount = allData.filter(r => r.type === 'cold').length;
+    const total = hotCount + coldCount;
+    if (total > 0) {
+      const hotPct = Math.round(hotCount / total * 100);
+      const coldPct = 100 - hotPct;
+      document.getElementById('hotVsCold').innerHTML = `🥵 ${hotPct}% <span style="color:var(--muted)">vs</span> 🥶 ${coldPct}%`;
+      document.getElementById('hotVsColdRatio').textContent = `${hotCount} hot / ${coldCount} cold`;
+    }
+
+    // 3. Peak Request Time
+    const hourCounts = {};
+    allData.forEach(r => {
+      const hour = new Date(r.created_at).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    const sortedHours = Object.entries(hourCounts).sort((a,b) => b[1] - a[1]);
+    if (sortedHours.length) {
+      const peakHour = parseInt(sortedHours[0][0]);
+      const peakCount = sortedHours[0][1];
+      const timeRange = `${peakHour}:00-${peakHour+1}:00`;
+      document.getElementById('peakTime').textContent = timeRange;
+      document.getElementById('peakTimeCount').textContent = `${peakCount}건 (${Math.round(peakCount/allData.length*100)}%)`;
+    }
+
+    // 4. Floor Heatmap
+    const floorHtml = sortedFloors.slice(0, 6).map(([floor, count]) => {
+      const maxCount = sortedFloors[0][1];
+      const width = Math.round(count / maxCount * 100);
+      const color = count > maxCount * 0.7 ? '#ef4444' : count > maxCount * 0.4 ? '#f59e0b' : '#3b82f6';
+      return `<div class="heatmap-bar">
+        <div class="bar-label">${floor}:</div>
+        <div class="bar-fill" style="width:${width}%;background:${color}"></div>
+        <div class="bar-count">${count}건</div>
+      </div>`;
+    }).join('');
+    document.getElementById('floorHeatmap').innerHTML = floorHtml || '<div style="color:var(--muted);font-size:12px">No data</div>';
+
+    // 5. Tenancy Heatmap
+    const tenancyCounts = {};
+    allData.forEach(r => {
+      if (r.tenancy) tenancyCounts[r.tenancy] = (tenancyCounts[r.tenancy] || 0) + 1;
+    });
+    const sortedTenancies = Object.entries(tenancyCounts).sort((a,b) => b[1] - a[1]);
+    const maxTenancyCount = sortedTenancies.length ? sortedTenancies[0][1] : 1;
+    const tenancyHtml = sortedTenancies.slice(0, 6).map(([tenancy, count]) => {
+      const width = Math.round(count / maxTenancyCount * 100);
+      const color = count > maxTenancyCount * 0.7 ? '#ef4444' : count > maxTenancyCount * 0.4 ? '#f59e0b' : '#3b82f6';
+      return `<div class="heatmap-bar">
+        <div class="bar-label">${tenancy}:</div>
+        <div class="bar-fill" style="width:${width}%;background:${color}"></div>
+        <div class="bar-count">${count}건</div>
+      </div>`;
+    }).join('');
+    document.getElementById('tenancyHeatmap').innerHTML = tenancyHtml || '<div style="color:var(--muted);font-size:12px">No data</div>';
+
+    // 6. Monthly Trend Chart
+    const monthCounts = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toISOString().slice(0, 7);
+      monthCounts[key] = 0;
+    }
+    allData.forEach(r => {
+      const key = r.created_at.slice(0, 7);
+      if (monthCounts.hasOwnProperty(key)) monthCounts[key]++;
+    });
+    const labels = Object.keys(monthCounts).map(k => {
+      const [y, m] = k.split('-');
+      return new Date(y, m-1).toLocaleDateString('en-AU', {month:'short'});
+    });
+    const values = Object.values(monthCounts);
+
+    if (monthlyChart) monthlyChart.destroy();
+    monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Requests',
+          data: values,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#3b82f6',
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.parsed.y}건`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
   }
+
+  // 테이블 렌더링
   if (!data?.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No history found</div>'; return; }
   list.innerHTML = data.map(r=>`
     <div class="hist-row">
