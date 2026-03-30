@@ -289,9 +289,10 @@ function parseComment(comment) {
 
 async function getSignedUrl(path) {
   if (!path) return '';
+  console.log('FILE PATH:', path);
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
   if (error) {
-    console.error('getSignedUrl error:', error);
+    console.error('SIGNED URL ERROR:', error);
     throw error;
   }
   return data.signedUrl;
@@ -357,7 +358,7 @@ window.forceApprove = async function (quoteId) {
   }
 };
 
-async function showInlineViewer(path, name, type, containerId) {
+window.showInlineViewer = async function(path, name, type, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -501,23 +502,21 @@ function updateArchiveFilterUI() {
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
 
-  if (!document.getElementById('pendingBody')) {
-    container.innerHTML = `
-      <table class="quote-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Project Name</th>
-            <th>Contractor</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody id="pendingBody"></tbody>
-      </table>
-    `;
-  }
+  container.innerHTML = `
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Project Name</th>
+          <th>Contractor</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody"></tbody>
+    </table>
+  `;
 
   const tbody = document.getElementById('pendingBody');
 
@@ -549,7 +548,7 @@ function renderPendingQuotes(quotes) {
     if (visibleFiles.length) {
       filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
       filesHtml += visibleFiles.map((f, idx) => `
-        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','viewer-${q.id}-${idx}')">
+        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','viewer-${q.id}-${idx}'); event.stopPropagation();">
           <span class="file-icon">📄</span>
           <span class="file-name">${f.name}</span>
         </div>
@@ -600,25 +599,23 @@ function renderPendingQuotes(quotes) {
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
 
-  if (!document.getElementById('archiveBody')) {
-    container.innerHTML = `
-      <table class="quote-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Project Name</th>
-            <th>Contractor</th>
-            <th>Amount</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="archiveBody"></tbody>
-      </table>
-    `;
-  }
+  container.innerHTML = `
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Project Name</th>
+          <th>Contractor</th>
+          <th>Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="archiveBody"></tbody>
+    </table>
+  `;
 
   const tbody = document.getElementById('archiveBody');
 
