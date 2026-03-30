@@ -786,12 +786,9 @@ window.saveQuote = async () => {
     if (id) {
       await supabase.from('quotes').update(payload).eq('id', id);
     } else {
-      const expiry = new Date(); 
-      expiry.setDate(expiry.getDate() + RULES.expiryDays);
       await supabase.from('quotes').insert({ 
         ...payload, 
-        status: 'pending', 
-        expiry_date: expiry.toISOString() 
+        status: 'pending'
       });
     }
 
