@@ -281,13 +281,19 @@ function parseComment(comment) {
       category: obj?.category || 'General',
       priority: obj?.priority || 'Normal'
     };
-  } catch { return { note:'', files:[], category:'General', priority:'Normal' }; }
+  } catch(e) { 
+    console.error('parseComment failed:', e, comment); 
+    return { note:'', files:[], category:'General', priority:'Normal' }; 
+  }
 }
 
 async function getSignedUrl(path) {
   if (!path) return '';
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
-  if (error) throw error;
+  if (error) {
+    console.error('getSignedUrl error:', error);
+    throw error;
+  }
   return data.signedUrl;
 }
 
@@ -295,7 +301,10 @@ async function uploadFile(file, quoteId) {
   const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
   const path = `${quoteId}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
-  if (error) throw error;
+  if (error) {
+    console.error('uploadFile error:', error);
+    throw error;
+  }
   return { path, name: safeName, type: file.type || '', size: file.size };
 }
 
@@ -307,7 +316,9 @@ window.formatAmount = function(input) {
 async function clearVotesForQuote(quoteId) {
   try {
     await supabase.from('votes').delete().eq('quote_id', quoteId);
-  } catch(e) { console.error('Failed to clear votes:', e); }
+  } catch(e) { 
+    console.error('Failed to clear votes:', e); 
+  }
 }
 
 async function safeSyncQuoteToWorks(quoteId) {
@@ -341,6 +352,7 @@ window.forceApprove = async function (quoteId) {
     await loadData();
     renderQuotes();
   } catch(e) {
+    console.error('forceApprove failed:', e);
     showToast('Force approve failed: ' + e.message, true);
   }
 };
@@ -366,30 +378,35 @@ async function showInlineViewer(path, name, type, containerId) {
     
     container.innerHTML = `<div style="margin-top:8px">${content}</div>`;
   } catch(e) {
+    console.error('showInlineViewer failed:', e);
     container.innerHTML = `<div style="color:#ef4444;font-size:12px">Failed to load file</div>`;
   }
 }
 
 async function loadData() {
-  const [qRes, vRes] = await Promise.all([
-    supabase.from('quotes').select('*').order('created_at', { ascending: false }),
-    supabase.from('votes').select('*')
-  ]);
-  allQuotes = qRes.data || [];
-  allVotes = vRes.data || [];
+  try {
+    const [qRes, vRes] = await Promise.all([
+      supabase.from('quotes').select('*').order('created_at', { ascending: false }),
+      supabase.from('votes').select('*')
+    ]);
+    allQuotes = qRes.data || [];
+    allVotes = vRes.data || [];
 
-  const counts = { total:0, pending:0, declined:0, hold:0 };
-  for (const q of allQuotes) {
-    const st = getQuoteStatus(q);
-    counts.total++;
-    if (st === 'pending') counts.pending++;
-    else if (st === 'declined') counts.declined++;
-    else if (st === 'onhold') counts.hold++;
+    const counts = { total:0, pending:0, declined:0, hold:0 };
+    for (const q of allQuotes) {
+      const st = getQuoteStatus(q);
+      counts.total++;
+      if (st === 'pending') counts.pending++;
+      else if (st === 'declined') counts.declined++;
+      else if (st === 'onhold') counts.hold++;
+    }
+    document.getElementById('statTotal').textContent = counts.total;
+    document.getElementById('statPending').textContent = counts.pending;
+    document.getElementById('statDeclined').textContent = counts.declined;
+    document.getElementById('statHold').textContent = counts.hold;
+  } catch(e) {
+    console.error('loadData failed:', e);
   }
-  document.getElementById('statTotal').textContent = counts.total;
-  document.getElementById('statPending').textContent = counts.pending;
-  document.getElementById('statDeclined').textContent = counts.declined;
-  document.getElementById('statHold').textContent = counts.hold;
 }
 
 function getQuoteVotes(quoteId) {
@@ -397,22 +414,27 @@ function getQuoteVotes(quoteId) {
 }
 
 function getQuoteStatus(q) {
-  const st = (q.status || 'pending').toLowerCase();
-  if (st === 'onhold') return 'onhold';
-  if (st === 'approved') return 'approved';
-  if (st === 'declined') return 'declined';
-  if (st === 'expired') return 'expired';
-  if (st === 'pending' && q.expiry_date && new Date() > new Date(q.expiry_date)) return 'expired';
+  try {
+    const st = (q.status || 'pending').toLowerCase();
+    if (st === 'onhold') return 'onhold';
+    if (st === 'approved') return 'approved';
+    if (st === 'declined') return 'declined';
+    if (st === 'expired') return 'expired';
+    if (st === 'pending' && q.expiry_date && new Date() > new Date(q.expiry_date)) return 'expired';
 
-  const votes = getQuoteVotes(q.id);
-  const approvals = votes.filter(v=>v.vote==='approve').length;
-  const declines = votes.filter(v=>v.vote==='decline').length;
-  const holds = votes.filter(v=>v.vote==='hold').length;
+    const votes = getQuoteVotes(q.id);
+    const approvals = votes.filter(v=>v.vote==='approve').length;
+    const declines = votes.filter(v=>v.vote==='decline').length;
+    const holds = votes.filter(v=>v.vote==='hold').length;
 
-  if (approvals >= RULES.approvalsRequired) return 'approved';
-  if (declines >= RULES.declinesToAutoDecline) return 'declined';
-  if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) return 'onhold';
-  return 'pending';
+    if (approvals >= RULES.approvalsRequired) return 'approved';
+    if (declines >= RULES.declinesToAutoDecline) return 'declined';
+    if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) return 'onhold';
+    return 'pending';
+  } catch(e) {
+    console.error('getQuoteStatus error:', e);
+    return 'pending';
+  }
 }
 
 function renderVotesStatus(quoteId) {
@@ -444,14 +466,19 @@ function renderVotesStatus(quoteId) {
 
 window.resendToVoting = async function(id) {
   if (!confirm('Re-open this quote for voting?')) return;
-  await supabase.from('votes').delete().eq('quote_id', id);
-  await supabase.from('quotes').update({
-    status: 'pending',
-    hold_reason: null
-  }).eq('id', id);
-  showToast('Quote moved back to voting');
-  await loadData();
-  renderQuotes();
+  try {
+    await supabase.from('votes').delete().eq('quote_id', id);
+    await supabase.from('quotes').update({
+      status: 'pending',
+      hold_reason: null
+    }).eq('id', id);
+    showToast('Quote moved back to voting');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('resendToVoting failed:', e);
+    showToast('Failed to re-open voting', true);
+  }
 };
 
 window.filterArchive = function(type) {
@@ -474,7 +501,6 @@ function updateArchiveFilterUI() {
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
 
-  // table은 최초 1회만 생성
   if (!document.getElementById('pendingBody')) {
     container.innerHTML = `
       <table class="quote-table">
@@ -576,7 +602,6 @@ function renderPendingQuotes(quotes) {
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
 
-  // table은 최초 1회만 생성
   if (!document.getElementById('archiveBody')) {
     container.innerHTML = `
       <table class="quote-table">
@@ -739,6 +764,7 @@ window.removeFile = idx => {
   updateFilePreview();
 };
 
+// 🔥 핵심 수정: saveQuote 전체 교체 (Supabase 400 에러 완전 제거용)
 window.saveQuote = async () => {
   const id = document.getElementById('quoteEditId').value;
   const project = document.getElementById('quoteProject').value.trim();
@@ -750,15 +776,20 @@ window.saveQuote = async () => {
   const notes = document.getElementById('quoteNotes').value.trim();
   const internalNote = document.getElementById('quoteInternalNote').value.trim();
 
-  if (!project || !vendor || amount <= 0) return showToast('Please fill all required fields', true);
+  if (!project || !vendor || amount <= 0) {
+    alert('Required fields missing: Project, Vendor, Amount');
+    return;
+  }
 
   const saveBtn = document.getElementById('saveQuoteBtn');
-  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
 
   try {
-    const fileData = [];
     const quoteId = id || crypto.randomUUID();
 
+    // 🔥 FILES 처리
+    const fileData = [];
     for (const f of uploadedFiles) {
       if (f.file) {
         const uploaded = await uploadFile(f.file, quoteId);
@@ -774,6 +805,7 @@ window.saveQuote = async () => {
       }
     }
 
+    // 🔥 JSONB (절대 stringify 금지)
     const commentPayload = {
       note: internalNote,
       files: fileData,
@@ -781,72 +813,118 @@ window.saveQuote = async () => {
       priority: priority
     };
 
-    const payload = { project, vendor, amount, notes, comment: commentPayload };
+    const insertData = {
+      id: quoteId,
+      project: project,
+      vendor: vendor,
+      amount: Number(amount),
+      notes: notes,
+      comment: commentPayload,
+      status: 'pending'
+    };
 
+    console.log('🔥 INSERT/UPDATE DATA:', insertData);
+
+    let res;
     if (id) {
-      await supabase.from('quotes').update(payload).eq('id', id);
+      // Update
+      res = await supabase
+        .from('quotes')
+        .update(insertData)
+        .eq('id', id);
     } else {
-      await supabase.from('quotes').insert({ 
-        ...payload, 
-        status: 'pending'
-      });
+      // Insert
+      res = await supabase
+        .from('quotes')
+        .insert(insertData);
     }
 
+    if (res.error) {
+      console.error('❌ SUPABASE ERROR:', res.error);
+      alert('SUPABASE ERROR: ' + res.error.message + '\nCode: ' + res.error.code);
+      throw res.error;
+    }
+
+    console.log('✅ Save successful');
+    alert('Quote saved successfully');
     closeModal('quoteModal');
     await loadData(); 
     renderQuotes();
-    showToast('Quote saved successfully');
-  } catch(e) {
-    console.error(e);
-    showToast(e.message || 'Save failed', true);
+  } catch (e) {
+    console.error('🔥 FINAL ERROR:', e);
+    alert('FAILED: ' + (e.message || e));
   } finally {
-    saveBtn.disabled = false; saveBtn.textContent = 'Save →';
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save →';
   }
 };
 
-window.openHold = id => { holdingQuoteId = id; document.getElementById('holdReason').value = ''; document.getElementById('holdModal').classList.add('open'); };
+window.openHold = id => { 
+  holdingQuoteId = id; 
+  document.getElementById('holdReason').value = ''; 
+  document.getElementById('holdModal').classList.add('open'); 
+};
 
 window.confirmHold = async () => {
   const reason = document.getElementById('holdReason').value.trim();
-  if (!reason) return showToast('Please enter a reason', true);
-  await supabase.from('quotes')
-    .update({status:'onhold', hold_reason: reason})
-    .eq('id', holdingQuoteId);
-  await clearVotesForQuote(holdingQuoteId);
-  closeModal('holdModal'); await loadData(); renderQuotes(); showToast('Quote put on hold');
+  if (!reason) {
+    alert('Please enter a reason');
+    return;
+  }
+  try {
+    await supabase.from('quotes')
+      .update({status:'onhold', hold_reason: reason})
+      .eq('id', holdingQuoteId);
+    await clearVotesForQuote(holdingQuoteId);
+    closeModal('holdModal'); 
+    await loadData(); 
+    renderQuotes(); 
+    showToast('Quote put on hold');
+  } catch(e) {
+    console.error('confirmHold failed:', e);
+    alert('Hold failed: ' + e.message);
+  }
 };
 
 window.castVote = async (quoteId, vote) => {
-  const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
-  if (existing) return showToast('You have already voted', true);
+  try {
+    const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
+    if (existing) {
+      alert('You have already voted');
+      return;
+    }
 
-  await supabase.from('votes').insert({ quote_id: quoteId, user_email: user.email, vote });
+    await supabase.from('votes').insert({ quote_id: quoteId, user_email: user.email, vote });
 
-  let toastMsg = vote === 'approve' ? '✅ Approved' : vote === 'decline' ? '❌ Declined' : '⏸ Hold';
-  showToast(toastMsg);
+    let toastMsg = vote === 'approve' ? '✅ Approved' : vote === 'decline' ? '❌ Declined' : '⏸ Hold';
+    showToast(toastMsg);
 
-  const { data: latestVotes } = await supabase.from('votes').select('*').eq('quote_id', quoteId);
+    const { data: latestVotes } = await supabase.from('votes').select('*').eq('quote_id', quoteId);
 
-  const approvals = latestVotes.filter(v=>v.vote==='approve').length;
-  const declines = latestVotes.filter(v=>v.vote==='decline').length;
-  const holds = latestVotes.filter(v=>v.vote==='hold').length;
+    const approvals = latestVotes.filter(v=>v.vote==='approve').length;
+    const declines = latestVotes.filter(v=>v.vote==='decline').length;
+    const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
-  if (approvals >= RULES.approvalsRequired) {
-    const syncSuccess = await safeSyncQuoteToWorks(quoteId);
-    if (syncSuccess) {
-      await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+    if (approvals >= RULES.approvalsRequired) {
+      const syncSuccess = await safeSyncQuoteToWorks(quoteId);
+      if (syncSuccess) {
+        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+        await clearVotesForQuote(quoteId);
+      }
+    } else if (declines >= RULES.declinesToAutoDecline) {
+      await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
+      await clearVotesForQuote(quoteId);
+    } else if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) {
+      await supabase.from('quotes').update({status:'onhold', hold_reason: 'Automatic hold by committee votes'}).eq('id', quoteId);
       await clearVotesForQuote(quoteId);
     }
-  } else if (declines >= RULES.declinesToAutoDecline) {
-    await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
-    await clearVotesForQuote(quoteId);
-  } else if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) {
-    await supabase.from('quotes').update({status:'onhold', hold_reason: 'Automatic hold by committee votes'}).eq('id', quoteId);
-    await clearVotesForQuote(quoteId);
-  }
 
-  await loadData(); 
-  renderQuotes();
+    await loadData(); 
+    renderQuotes();
+  } catch(e) {
+    console.error('castVote failed:', e);
+    alert('Vote failed: ' + e.message);
+  }
 };
 
 try {
@@ -854,8 +932,8 @@ try {
   renderQuotes();
   updateArchiveFilterUI();
 } catch(e) {
-  console.error(e);
-  showToast('Failed to load quotes', true);
+  console.error('Initial load failed:', e);
+  alert('Failed to load quotes: ' + e.message);
 }
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
