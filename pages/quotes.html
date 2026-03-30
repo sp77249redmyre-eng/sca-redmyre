@@ -592,10 +592,10 @@ function renderArchiveTable(quotes) {
 }
 
 function renderQuotes() {
-  // 수정: Pending은 오직 투표 중인 것만 표시 (중복 제거)
+  // 수정: Pending = 투표중 + Hold + Expired (승인 전까지 항상 Pending에 표시)
   const pendingQuotes = allQuotes.filter(q => {
     const st = getQuoteStatus(q);
-    return st === 'pending';
+    return st === 'pending' || st === 'onhold' || st === 'expired';
   });
   renderPendingQuotes(pendingQuotes);
 
