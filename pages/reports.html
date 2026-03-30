@@ -62,6 +62,11 @@
         <option value="Security">Security</option><option value="Plumbing">Plumbing</option><option value="Lift">Lift</option>
         <option value="General">General</option><option value="Legal">Legal</option><option value="Other">Other</option>
       </select>
+      <select class="filter-select" id="filterType">
+        <option value="all">All Works</option>
+        <option value="regular">Regular Quotes</option>
+        <option value="emergency">Emergency Works</option>
+      </select>
       <button class="btn-secondary" id="refreshBtn">↻ Refresh</button>
     </div>
 
@@ -127,6 +132,7 @@ let currentSortDir='desc';
 
 document.getElementById('filterPeriod').addEventListener('change', updateDateRange);
 document.getElementById('filterCategory').addEventListener('change', loadReport);
+document.getElementById('filterType').addEventListener('change', loadReport);
 document.getElementById('refreshBtn').addEventListener('click', loadReport);
 
 function updateDateRange() {
@@ -147,6 +153,7 @@ function updateDateRange() {
 async function loadReport() {
   const period=document.getElementById('filterPeriod').value;
   const catFilter=document.getElementById('filterCategory').value;
+  const typeFilter=document.getElementById('filterType').value;
   if (period==='custom') {
     const fromVal=document.getElementById('dateFrom').value;
     const toVal=document.getElementById('dateTo').value;
@@ -155,9 +162,11 @@ async function loadReport() {
   }
   const periodLabel = period==='alltime'?'All time':period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`:period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'}):'—';
   document.getElementById('statPeriodLabel').textContent=periodLabel;
-  let qQuery=supabase.from('reports').select('*').order('created_at',{ascending:false});
-  if (dateFrom) qQuery=qQuery.gte('created_at',dateFrom.toISOString());
-  if (dateTo)   qQuery=qQuery.lte('created_at',new Date(dateTo.getTime()+86400000).toISOString());
+  let qQuery=supabase.from('quotes').select('*').not('completion_date','is',null).order('completion_date',{ascending:false});
+  if (dateFrom) qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
+  if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+  if (typeFilter==='regular') qQuery=qQuery.eq('is_emergency',false);
+  if (typeFilter==='emergency') qQuery=qQuery.eq('is_emergency',true);
   const { data:reportsRaw } = await qQuery;
   const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
   const reportsData=reports||[];
@@ -194,7 +203,7 @@ function renderQuotesList() {
   if (!currentQuotesData.length) { list.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No reports for this period</div>'; return; }
   const sorted=[...currentQuotesData].sort((a,b)=>{
     let av,bv;
-    if (currentSortKey==='date')     {av=new Date(a.created_at);bv=new Date(b.created_at);}
+    if (currentSortKey==='date')     {av=new Date(a.completion_date);bv=new Date(b.completion_date);}
     if (currentSortKey==='project')  {av=(a.project||'').toLowerCase();bv=(b.project||'').toLowerCase();}
     if (currentSortKey==='vendor')   {av=(a.vendor||a.contractor||'').toLowerCase();bv=(b.vendor||b.contractor||'').toLowerCase();}
     if (currentSortKey==='category') {av=(a._cat||'').toLowerCase();bv=(b._cat||'').toLowerCase();}
@@ -205,7 +214,7 @@ function renderQuotesList() {
   });
   list.innerHTML=sorted.map(q=>`
     <div class="table-row" style="grid-template-columns:120px 1fr 100px 110px 100px">
-      <div style="font-size:12px;color:var(--text-2)">${new Date(q.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <div style="font-size:12px;color:var(--text-2)">${new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
       <div style="font-size:13px;font-weight:500">${q.project||q.title||'—'}</div>
       <div style="font-size:12px;color:var(--text-2)">${q.vendor||q.contractor||'—'}</div>
       <div>${catBadge(q._cat)}</div>
