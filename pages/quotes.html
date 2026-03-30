@@ -335,50 +335,17 @@ async function clearVotesForQuote(quoteId) {
   }
 }
 
-async function safeSyncQuoteToWorks(quoteId) {
-  try {
-    const { data: existing } = await supabase.from('works').select('id').eq('quote_id', quoteId).maybeSingle();
-    if (existing) return true;
-
-    const { data: q } = await supabase.from('quotes').select('*').eq('id', quoteId).maybeSingle();
-    if (!q) throw new Error('Quote not found');
-
-    const parsed = parseComment(q.comment);
-    const workData = { 
-      quote_id: quoteId,
-      project: q.project || 'No title', 
-      vendor: q.vendor,
-      amount: q.amount,
-      category: q.category,
-      priority: parsed.priority || 'Normal',
-      notes: q.notes,
-      private_notes: parsed.note,
-      status: 'scheduled'
-    };
-    const { error } = await supabase.from('works').insert(workData);
-    if (error) throw error;
-    return true;
-  } catch(e) {
-    console.error('syncQuoteToWorks failed:', e);
-    await supabase.from('quotes').update({ status: 'pending' }).eq('id', quoteId);
-    showToast('CRITICAL: Failed to create Ongoing Works. Status reverted to PENDING. Error: ' + e.message, true);
-    return false;
-  }
-}
-
 window.forceApprove = async function (quoteId) {
-  if (!confirm('Force approve this quote and move it to Ongoing Works?')) return;
+  if (!confirm('Force approve this quote?')) return;
   try {
-    const syncSuccess = await safeSyncQuoteToWorks(quoteId);
-    if (!syncSuccess) return;
     await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
     await clearVotesForQuote(quoteId);
-    showToast('Quote force-approved and moved to Ongoing Works');
+    showToast('Quote approved');
     await loadData();
     renderQuotes();
   } catch(e) {
     console.error('forceApprove failed:', e);
-    showToast('Force approve failed: ' + e.message, true);
+    showToast('Approve failed: ' + e.message, true);
   }
 };
 
@@ -902,11 +869,8 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      const syncSuccess = await safeSyncQuoteToWorks(quoteId);
-      if (syncSuccess) {
-        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
-        await clearVotesForQuote(quoteId);
-      }
+      await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+      await clearVotesForQuote(quoteId);
     } else if (declines >= RULES.declinesToAutoDecline) {
       await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
       await clearVotesForQuote(quoteId);
