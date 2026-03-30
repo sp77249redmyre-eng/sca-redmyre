@@ -91,12 +91,16 @@
   border-color: var(--blue-600);
 }
 
-/* Filter buttons */
-.filter-bar .btn-pill {
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
+/* File Upload Style */
+.file-upload {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.file-upload select, .file-upload button {
+  margin-right: 8px;
 }
 
 @media (max-width: 768px) {
@@ -305,9 +309,10 @@ async function getSignedUrl(path) {
   return data.signedUrl;
 }
 
-async function uploadFile(file) {
+// 수정: uploadFile 함수에 quoteId 파라미터 추가
+async function uploadFile(file, quoteId) {
   const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
-  const path = `${user.id}/${Date.now()}-${safeName}`;
+  const path = `${quoteId}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
   if (error) throw error;
   return { path, name: safeName, type: file.type || '', size: file.size };
@@ -374,6 +379,53 @@ window.openAttachment = async (path, name, type) => {
     }
   } catch(e) {
     showToast('Failed to open file: ' + e.message, true);
+  }
+};
+
+// 파일 업로드 함수 (quoteId 기반 경로 사용)
+window.handleFileUpload = async function(quoteId) {
+  const fileInput = document.getElementById(`fileInput-${quoteId}`);
+  if (!fileInput || !fileInput.files.length) {
+    showToast('Please select files to upload', true);
+    return;
+  }
+
+  const visibility = document.getElementById(`fileVisibility-${quoteId}`).value || 'internal';
+  const files = Array.from(fileInput.files);
+  const newFiles = [];
+
+  try {
+    for (const file of files) {
+      const uploaded = await uploadFile(file, quoteId);   // quoteId 전달
+      newFiles.push({
+        path: uploaded.path,
+        name: uploaded.name,
+        type: uploaded.type,
+        size: uploaded.size,
+        visibility: visibility
+      });
+    }
+
+    // 기존 comment 가져와서 files append
+    const { data: quote } = await supabase.from('quotes').select('comment').eq('id', quoteId).single();
+    const parsed = parseComment(quote.comment);
+    parsed.files = [...(parsed.files || []), ...newFiles];
+
+    const commentPayload = JSON.stringify({
+      note: parsed.note || '',
+      files: parsed.files,
+      category: parsed.category || 'General',
+      priority: parsed.priority || 'Normal'
+    });
+
+    await supabase.from('quotes').update({ comment: commentPayload }).eq('id', quoteId);
+
+    showToast('Files uploaded successfully');
+    fileInput.value = '';
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    showToast('File upload failed: ' + e.message, true);
   }
 };
 
@@ -451,7 +503,7 @@ function renderVotesStatus(quoteId) {
 
 function renderQuotes() {
   const list = document.getElementById('quoteList');
-  const visibleQuotes = allQuotes.filter(q => getQuoteStatus(q) !== 'approved');
+  const visibleQuotes = allQuotes;
 
   const filtered = currentFilter === 'all' 
     ? visibleQuotes 
@@ -505,6 +557,17 @@ function renderQuotes() {
       filesHtml += `</div></div>`;
     }
 
+    const uploadUI = `
+      <div class="file-upload">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Upload New Files</div>
+        <input type="file" id="fileInput-${q.id}" multiple style="margin-bottom:6px">
+        <select id="fileVisibility-${q.id}" style="margin-right:8px;font-size:12px;padding:4px 8px;border-radius:4px">
+          <option value="internal">🔒 Internal</option>
+          <option value="public">🌐 Public</option>
+        </select>
+        <button class="btn-pill btn-pill-primary" onclick="handleFileUpload('${q.id}');event.stopImmediatePropagation()">📎 Upload Files</button>
+      </div>`;
+
     html += `
       <tr onclick="toggleQuote('${q.id}')">
         <td>${dateStr}</td>
@@ -521,6 +584,8 @@ function renderQuotes() {
             ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 <strong>Internal Note:</strong> ${parsed.note}</div>` : ''}
             
             ${filesHtml}
+            
+            ${uploadUI}
             
             ${renderVotesStatus(q.id)}
             
@@ -638,6 +703,7 @@ window.removeFile = idx => {
   updateFilePreview();
 };
 
+// saveQuote 내부 업로드도 quoteId 기반으로 수정
 window.saveQuote = async () => {
   const id = document.getElementById('quoteEditId').value;
   const project = document.getElementById('quoteProject').value.trim();
@@ -658,7 +724,9 @@ window.saveQuote = async () => {
     const fileData = [];
     for (const f of uploadedFiles) {
       if (f.file) {
-        const uploaded = await uploadFile(f.file);
+        // 신규 quote 생성 시 임시 quoteId 사용 (실제 저장 후 재조회됨)
+        const tempQuoteId = id || 'temp_' + Date.now();
+        const uploaded = await uploadFile(f.file, tempQuoteId);
         fileData.push({
           path: uploaded.path,
           name: uploaded.name,
@@ -688,7 +756,8 @@ window.saveQuote = async () => {
     }
 
     closeModal('quoteModal');
-    await loadData(); renderQuotes();
+    await loadData(); 
+    renderQuotes();
     showToast('Quote saved successfully');
   } catch(e) {
     showToast('Save failed: ' + e.message, true);
