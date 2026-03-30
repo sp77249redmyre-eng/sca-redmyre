@@ -20,9 +20,6 @@
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
 .filter-bar{display:flex;gap:8px;margin-bottom:12px;margin-top:20px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
-.filter-btn{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
-.filter-btn.active{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
-.rule-info{background:var(--blue-50);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--blue-700);line-height:1.6}
 .quote-table{width:100%;border-collapse:collapse}
 .quote-table th{background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding:12px 16px;text-align:left}
 .quote-table td{padding:16px;border-top:1px solid var(--border-light);cursor:pointer}
@@ -39,25 +36,67 @@
 .vote-item{display:flex;align-items:center;gap:6px;flex:1}
 .vote-icon{font-size:16px}
 .files-list{margin-top:8px}
-.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px}
+.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;cursor:pointer}
 .file-icon{font-size:16px}
 .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-size{font-size:11px;color:var(--muted)}
+.file-visibility{font-size:10px;padding:1px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1}
 .internal-note-box{background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:10px;padding:12px;font-size:12px;color:var(--purple-text);margin-top:10px;line-height:1.6;font-style:italic}
 .quote-footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
 
-/* Put On Hold 버튼 강조 */
-.btn-hold {
-  background-color: #f59e0b !important;
-  color: white !important;
-  border-color: #f59e0b !important;
+/* ===== PILL BUTTON SYSTEM ===== */
+.btn-pill {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
-.btn-hold:hover {
-  background-color: #d97706 !important;
-  border-color: #d97706 !important;
+.btn-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.btn-pill-primary {
+  background: var(--blue-600);
+  color: #fff;
+  border-color: var(--blue-600);
+}
+.btn-pill-success {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+.btn-pill-danger {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+.btn-pill-warning {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #fff;
+  border-color: #f59e0b;
+}
+.btn-pill-active {
+  background: var(--blue-600);
+  color: #fff;
+  border-color: var(--blue-600);
+}
+
+/* Filter buttons */
+.filter-bar .btn-pill {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
@@ -76,7 +115,7 @@
         <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
         Quote Approvals
       </div>
-      <button class="btn-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+      <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
     </div>
 
     <!-- STATS -->
@@ -149,13 +188,13 @@
     <div class="modal-field">
       <label class="modal-label">📎 Attach Files</label>
       <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
-      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
+      <button class="btn-pill" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
       <div id="filePreview" style="margin-top:10px"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
-      <button class="btn-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
+      <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
+      <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
 </div>
@@ -169,8 +208,8 @@
       <textarea class="modal-textarea" id="holdReason" placeholder="Why is this being put on hold?"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('holdModal')">Cancel</button>
-      <button class="btn-hold" onclick="confirmHold()">Confirm Hold</button>
+      <button class="btn-pill" onclick="closeModal('holdModal')">Cancel</button>
+      <button class="btn-pill btn-pill-warning" onclick="confirmHold()">Confirm Hold</button>
     </div>
   </div>
 </div>
@@ -185,8 +224,8 @@
       <textarea class="modal-textarea" id="scopeText" placeholder="Add or update notes…"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('scopeModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveScope()">Save</button>
+      <button class="btn-pill" onclick="closeModal('scopeModal')">Cancel</button>
+      <button class="btn-pill btn-pill-primary" onclick="saveScope()">Save</button>
     </div>
   </div>
 </div>
@@ -196,7 +235,7 @@
   <div class="modal-box" style="max-width:1200px;width:95%;padding:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:14px;font-weight:600;color:var(--text)" id="pdfModalTitle">Document</div>
-      <button class="btn-secondary" onclick="closeModal('pdfModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
+      <button class="btn-pill" onclick="closeModal('pdfModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
     </div>
     <div id="pdfViewerWrap" style="width:100%;height:70vh;border-radius:10px;overflow:hidden;background:var(--bg)">
       <iframe id="pdfIframe" src="" style="width:100%;height:100%;border:none;border-radius:10px"></iframe>
@@ -209,7 +248,7 @@
   <div class="modal-box" style="max-width:860px;width:100%;padding:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:14px;font-weight:600;color:var(--text)" id="viewerModalTitle">Document</div>
-      <button class="btn-secondary" onclick="closeModal('viewerModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
+      <button class="btn-pill" onclick="closeModal('viewerModal')" style="font-size:12px;padding:6px 12px">✕ Close</button>
     </div>
     <div id="viewerContent" style="width:100%;height:72vh;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center"></div>
   </div>
@@ -249,10 +288,10 @@ function parseComment(comment) {
   try {
     if (!comment) return { note:'', files:[], category:'General', priority:'Normal' };
     const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
-    let files = Array.isArray(obj?.files) ? obj.files.filter(f=>f&&f.path) : [];
+    let files = Array.isArray(obj?.files) ? obj.files : [];
     return {
       note: obj?.note || '',
-      files,
+      files: files.filter(f => f && f.path),
       category: obj?.category || 'General',
       priority: obj?.priority || 'Normal'
     };
@@ -260,6 +299,7 @@ function parseComment(comment) {
 }
 
 async function getSignedUrl(path) {
+  if (!path) return '';
   const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
   if (error) throw error;
   return data.signedUrl;
@@ -320,6 +360,7 @@ window.forceApprove = async function (quoteId) {
 };
 
 window.openAttachment = async (path, name, type) => {
+  if (!path) return showToast('Invalid file', true);
   try {
     const url = await getSignedUrl(path);
     if (type === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
@@ -417,11 +458,11 @@ function renderQuotes() {
     : visibleQuotes.filter(q => getQuoteStatus(q) === currentFilter);
 
   const filterBar = `<div class="filter-bar">
-    <button class="filter-btn ${currentFilter==='all'?'active':''}" onclick="filterQuotes('all')">All</button>
-    <button class="filter-btn ${currentFilter==='pending'?'active':''}" onclick="filterQuotes('pending')">⏳ Pending</button>
-    <button class="filter-btn ${currentFilter==='declined'?'active':''}" onclick="filterQuotes('declined')">❌ Declined</button>
-    <button class="filter-btn ${currentFilter==='onhold'?'active':''}" onclick="filterQuotes('onhold')">⏸ On Hold</button>
-    <button class="filter-btn ${currentFilter==='expired'?'active':''}" onclick="filterQuotes('expired')">🕒 Expired</button>
+    <button class="btn-pill ${currentFilter==='all'?'btn-pill-active':''}" onclick="filterQuotes('all')">All</button>
+    <button class="btn-pill ${currentFilter==='pending'?'btn-pill-active':''}" onclick="filterQuotes('pending')">⏳ Pending</button>
+    <button class="btn-pill ${currentFilter==='declined'?'btn-pill-active':''}" onclick="filterQuotes('declined')">❌ Declined</button>
+    <button class="btn-pill ${currentFilter==='onhold'?'btn-pill-active':''}" onclick="filterQuotes('onhold')">⏸ On Hold</button>
+    <button class="btn-pill ${currentFilter==='expired'?'btn-pill-active':''}" onclick="filterQuotes('expired')">🕒 Expired</button>
   </div>`;
 
   if (!filtered.length) {
@@ -446,6 +487,24 @@ function renderQuotes() {
     const canResubmit = (st === 'declined' || st === 'onhold' || st === 'expired') && role === 'admin';
     const showCommitteeButtons = role === 'committee' && st === 'pending';
 
+    let filesHtml = '';
+    const visibleFiles = canSeeSensitive 
+      ? (parsed.files || []) 
+      : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
+
+    if (visibleFiles.length) {
+      filesHtml = `<div style="margin:16px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
+      filesHtml += visibleFiles.map(f => `
+        <div class="file-preview" onclick="openAttachment('${f.path}','${f.name}','${f.type}')">
+          <span class="file-icon">📄</span>
+          <span class="file-name">${f.name}</span>
+          <span class="file-size">${(f.size/1024).toFixed(1)} KB</span>
+          ${f.visibility === 'public' ? `<span class="file-visibility">Public</span>` : `<span class="file-visibility" style="background:#f3e8ff;color:#6b21a8">Internal</span>`}
+        </div>
+      `).join('');
+      filesHtml += `</div></div>`;
+    }
+
     html += `
       <tr onclick="toggleQuote('${q.id}')">
         <td>${dateStr}</td>
@@ -461,30 +520,24 @@ function renderQuotes() {
             
             ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 <strong>Internal Note:</strong> ${parsed.note}</div>` : ''}
             
-            ${canSeeSensitive && parsed.files.length ? `<div><div class="detail-label">Attached Files</div><div class="files-list">${parsed.files.map(f => `
-              <div class="file-preview">
-                <span class="file-icon">📄</span>
-                <a href="javascript:void(0)" onclick="openAttachment('${f.path}','${f.name}','${f.type}')" class="file-link">${f.name}</a>
-                <span class="file-size">${(f.size/1024).toFixed(1)} KB</span>
-              </div>
-            `).join('')}</div></div>` : ''}
+            ${filesHtml}
             
             ${renderVotesStatus(q.id)}
             
             <div class="quote-footer">
               ${showCommitteeButtons ? `
-                <button class="btn-success" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-                <button class="btn-danger" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-                <button class="btn-hold" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
+                <button class="btn-pill btn-pill-success" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
+                <button class="btn-pill btn-pill-danger" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
+                <button class="btn-pill btn-pill-warning" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
               ` : ''}
               
               ${role === 'admin' ? `
-                ${st === 'pending' ? `<button class="btn-hold" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>` : ''}
-                ${st === 'onhold' ? `<button class="btn-primary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">▶ Resume</button>` : ''}
-                ${st === 'pending' ? `<button class="btn-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>` : ''}
-                <button class="btn-secondary" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
-                <button class="btn-secondary" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">📝 Edit Scope</button>
-                ${canResubmit ? `<button class="btn-primary" onclick="resubmitQuote('${q.id}');event.stopImmediatePropagation()">🔄 Re-submit</button>` : ''}
+                ${st === 'pending' ? `<button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>` : ''}
+                ${st === 'onhold' ? `<button class="btn-pill btn-pill-primary" onclick="resumeQuote('${q.id}');event.stopImmediatePropagation()">▶ Resume</button>` : ''}
+                ${st === 'pending' ? `<button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>` : ''}
+                <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
+                <button class="btn-pill" onclick="openEditScope('${q.id}');event.stopImmediatePropagation()">📝 Edit Scope</button>
+                ${canResubmit ? `<button class="btn-pill btn-pill-primary" onclick="resubmitQuote('${q.id}');event.stopImmediatePropagation()">🔄 Re-submit</button>` : ''}
               ` : ''}
             </div>
           </div>
@@ -543,13 +596,19 @@ window.openEditQuote = id => {
 
 function displayExistingFiles(files) {
   uploadedFiles.length = 0;
-  files.forEach(f => uploadedFiles.push(f));
+  if (files) files.forEach(f => uploadedFiles.push(f));
   updateFilePreview();
 }
 
 document.getElementById('fileInput').addEventListener('change', e => {
   Array.from(e.target.files).forEach(f => {
-    uploadedFiles.push({ file: f, name: f.name, size: (f.size/1024).toFixed(1)+' KB', type: f.type });
+    uploadedFiles.push({ 
+      file: f, 
+      name: f.name, 
+      size: (f.size/1024).toFixed(1)+' KB', 
+      type: f.type,
+      visibility: 'internal'
+    });
   });
   updateFilePreview();
 });
@@ -561,10 +620,18 @@ function updateFilePreview() {
       <span class="file-icon">📄</span>
       <span class="file-name">${f.name}</span>
       <span class="file-size">${f.size}</span>
+      <select onchange="setFileVisibility(${i}, this.value)" style="font-size:11px;padding:2px 6px;border-radius:4px">
+        <option value="internal" ${f.visibility==='internal'?'selected':''}>Internal</option>
+        <option value="public" ${f.visibility==='public'?'selected':''}>Public</option>
+      </select>
       <span class="file-del" onclick="removeFile(${i});event.stopImmediatePropagation()">✕</span>
     </div>
   `).join('');
 }
+
+window.setFileVisibility = (idx, vis) => {
+  if (uploadedFiles[idx]) uploadedFiles[idx].visibility = vis;
+};
 
 window.removeFile = idx => {
   uploadedFiles.splice(idx, 1);
@@ -596,7 +663,8 @@ window.saveQuote = async () => {
           path: uploaded.path,
           name: uploaded.name,
           type: uploaded.type,
-          size: uploaded.size
+          size: uploaded.size,
+          visibility: f.visibility || 'internal'
         });
       } else {
         fileData.push(f);
