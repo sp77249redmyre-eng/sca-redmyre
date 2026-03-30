@@ -82,7 +82,8 @@
 
     <div class="stats-row">
       <div class="stat-card"><div class="stat-label">Total Spend</div><div class="stat-num" id="statTotal" style="color:var(--blue-600)">$0</div><div class="stat-sub" id="statPeriodLabel">—</div></div>
-      <div class="stat-card"><div class="stat-label">Approved Quotes</div><div class="stat-num" id="statQuoteTotal" style="color:var(--green)">$0</div><div class="stat-sub" id="statQuoteCount">0 quotes</div></div>
+      <div class="stat-card"><div class="stat-label">Regular Quotes</div><div class="stat-num" id="statRegularTotal" style="color:var(--green)">$0</div><div class="stat-sub" id="statRegularCount">0 quotes</div></div>
+      <div class="stat-card"><div class="stat-label">Emergency Works</div><div class="stat-num" id="statEmergencyTotal" style="color:#ef4444">$0</div><div class="stat-sub" id="statEmergencyCount">0 works</div></div>
       <div class="stat-card"><div class="stat-label">Largest Expense</div><div class="stat-num" id="statLargest" style="color:var(--text)">$0</div><div class="stat-sub" id="statLargestLabel">—</div></div>
     </div>
 
@@ -235,12 +236,18 @@ async function loadReport() {
   const { data:reportsRaw } = await qQuery;
   const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
   const reportsData=reports||[];
+  const regularData=reportsData.filter(q=>!q.is_emergency);
+  const emergencyData=reportsData.filter(q=>q.is_emergency);
   const reportTotal=reportsData.reduce((s,q)=>s+Number(q.amount||0),0);
+  const regularTotal=regularData.reduce((s,q)=>s+Number(q.amount||0),0);
+  const emergencyTotal=emergencyData.reduce((s,q)=>s+Number(q.amount||0),0);
   const grandTotal=reportTotal;
   const allItems=reportsData.map(q=>({label:q.project||'—',amount:Number(q.amount||0)})).sort((a,b)=>b.amount-a.amount);
-  document.getElementById('statTotal').textContent     =fmt(grandTotal);
-  document.getElementById('statQuoteTotal').textContent=fmt(reportTotal);
-  document.getElementById('statQuoteCount').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
+  document.getElementById('statTotal').textContent=fmt(grandTotal);
+  document.getElementById('statRegularTotal').textContent=fmt(regularTotal);
+  document.getElementById('statRegularCount').textContent=`${regularData.length} quote${regularData.length!==1?'s':''}`;
+  document.getElementById('statEmergencyTotal').textContent=fmt(emergencyTotal);
+  document.getElementById('statEmergencyCount').textContent=`${emergencyData.length} work${emergencyData.length!==1?'s':''}`;
   document.getElementById('statLargest').textContent=allItems.length?fmt(allItems[0].amount):'$0';
   document.getElementById('statLargestLabel').textContent=allItems.length?allItems[0].label.substring(0,30):'—';
   const catTotals={};
