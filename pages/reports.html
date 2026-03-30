@@ -190,6 +190,54 @@ window.showInlineViewer = async function(path, name, type, containerId) {
   }
 };
 
+window.deleteFile = async function(quoteId, filePath, fileName) {
+  if (!confirm(`⚠️ 파일을 영구 삭제하시겠습니까?\n\n${fileName}\n\n삭제 후 복구 불가능합니다.`)) {
+    return;
+  }
+
+  try {
+    // 1. quotes에서 현재 데이터 가져오기
+    const { data: quote, error: fetchError } = await supabase
+      .from('quotes')
+      .select('comment')
+      .eq('id', quoteId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+
+    // 2. comment.files에서 해당 파일 제거
+    const parsed = parseComment(quote.comment);
+    const updatedFiles = parsed.files.filter(f => f.path !== filePath);
+    const updatedComment = {
+      ...parsed,
+      files: updatedFiles
+    };
+
+    // 3. DB 업데이트
+    const { error: updateError } = await supabase
+      .from('quotes')
+      .update({ comment: updatedComment })
+      .eq('id', quoteId);
+    
+    if (updateError) throw updateError;
+
+    // 4. Storage에서 파일 삭제
+    const { error: storageError } = await supabase.storage
+      .from('quotes')
+      .remove([filePath]);
+    
+    if (storageError) console.warn('Storage deletion warning:', storageError);
+
+    // 5. 화면 새로고침
+    await loadReport();
+    
+    alert('✓ 파일이 삭제되었습니다.');
+  } catch(e) {
+    console.error('File deletion failed:', e);
+    alert('삭제 실패: ' + e.message);
+  }
+};
+
 window.toggleReportAccordion = function(quoteId) {
   const accordion = document.getElementById(`accordion-${quoteId}`);
   if (!accordion) return;
@@ -292,6 +340,7 @@ function renderQuotesList() {
         <span class="file-icon">📎</span>
         <span class="file-name">${f.name}</span>
         <span class="file-size">${f.size?Math.round(f.size/1024)+'KB':''}</span>
+        ${role==='admin'?`<button onclick="deleteFile('${q.id}','${f.path}','${f.name}');event.stopPropagation()" style="margin-left:auto;padding:4px 8px;font-size:11px;background:#fee;color:#dc2626;border:1px solid #fca;border-radius:6px;cursor:pointer;font-weight:600">🗑️ 삭제</button>`:''}
       </div>
       <div class="inline-viewer" id="viewer-${q.id}-${f.path.replace(/[^a-zA-Z0-9]/g,'')}"></div>
     `).join('') : '<div style="font-size:12px;color:var(--muted);font-style:italic">No files attached</div>';
