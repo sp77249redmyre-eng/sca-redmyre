@@ -35,7 +35,59 @@
 .hist-row{display:grid;grid-template-columns:160px 130px 90px 100px 100px 100px 1fr;gap:10px;padding:13px 20px;border-bottom:1px solid var(--border-light);align-items:center;transition:background 0.12s}
 .hist-row:last-child{border-bottom:none}
 .hist-row:hover{background:var(--bg)}
-@media(max-width:900px){.analysis-row,.heatmap-container{grid-template-columns:1fr}}
+
+/* 모바일 최적화 */
+@media(max-width:768px){
+  .analysis-row{grid-template-columns:1fr;gap:10px}
+  .analysis-card{padding:14px}
+  .analysis-value{font-size:20px}
+  .heatmap-container{grid-template-columns:1fr;gap:12px}
+  .heatmap-card{padding:14px}
+  .heatmap-bar{grid-template-columns:70px 1fr 50px;gap:8px;margin-bottom:8px}
+  .bar-label{font-size:11px}
+  .bar-fill{height:20px;font-size:10px;padding:0 6px}
+  .bar-count{font-size:11px}
+  .chart-container{padding:14px}
+  .filter-bar{gap:6px}
+  .filter-select{padding:8px 10px;font-size:13px;width:100%}
+  .btn-secondary{width:100%;padding:10px;justify-content:center}
+  
+  /* 테이블을 카드형으로 변경 */
+  .table-head{display:none}
+  .hist-row{
+    display:block;
+    padding:14px;
+    border:1px solid var(--border-light);
+    border-radius:10px;
+    margin-bottom:10px;
+    background:var(--surface)
+  }
+  .hist-row:hover{background:var(--bg)}
+  .hist-row > div{
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center
+  }
+  .hist-row > div:last-child{margin-bottom:0}
+  .hist-row > div::before{
+    content:attr(data-label);
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-right:10px
+  }
+  
+  /* 헤더 버튼 */
+  .content > div:first-child{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px
+  }
+  #clearAllBtn{width:100%;justify-content:center}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -260,13 +312,13 @@ async function loadHistory() {
   if (!data?.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No history found</div>'; return; }
   list.innerHTML = data.map(r=>`
     <div class="hist-row">
-      <div style="font-size:12px;color:var(--text-2)">${new Date(r.created_at).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-      <div style="font-size:13px;font-weight:500">${r.user_name||'Unknown'}</div>
-      <div style="font-size:12px;color:var(--text-2)">${r.level||'—'}</div>
-      <div style="font-size:12px;color:var(--text-2)">${r.tenancy||'—'}</div>
-      <div style="font-size:13px">${r.type==='hot'?'🥵 Too Hot':'🥶 Too Cold'}</div>
-      <span class="badge ${ST_CLS[r.status]||'badge-gray'}">${r.status||'—'}</span>
-      <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.comment||''}">${r.comment||'—'}</div>
+      <div data-label="Date / Time" style="font-size:12px;color:var(--text-2)">${new Date(r.created_at).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+      <div data-label="Reported By" style="font-size:13px;font-weight:500">${r.user_name||'Unknown'}</div>
+      <div data-label="Floor" style="font-size:12px;color:var(--text-2)">${r.level||'—'}</div>
+      <div data-label="Tenancy" style="font-size:12px;color:var(--text-2)">${r.tenancy||'—'}</div>
+      <div data-label="Type" style="font-size:13px">${r.type==='hot'?'🥵 Too Hot':'🥶 Too Cold'}</div>
+      <div data-label="Status"><span class="badge ${ST_CLS[r.status]||'badge-gray'}">${r.status||'—'}</span></div>
+      <div data-label="Comment" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.comment||''}">${r.comment||'—'}</div>
     </div>`).join('');
 }
 
