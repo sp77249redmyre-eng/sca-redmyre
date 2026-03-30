@@ -48,6 +48,18 @@
 .empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+
+/* Put On Hold 버튼 강조 */
+.btn-hold {
+  background-color: #f59e0b !important;
+  color: white !important;
+  border-color: #f59e0b !important;
+}
+.btn-hold:hover {
+  background-color: #d97706 !important;
+  border-color: #d97706 !important;
+}
+
 @media (max-width: 768px) {
   .stats-row{grid-template-columns:repeat(2,1fr)}
 }
@@ -580,11 +592,24 @@ window.saveQuote = async () => {
     for (const f of uploadedFiles) {
       if (f.file) {
         const uploaded = await uploadFile(f.file);
-        fileData.push(uploaded);
-      } else fileData.push(f);
+        fileData.push({
+          path: uploaded.path,
+          name: uploaded.name,
+          type: uploaded.type,
+          size: uploaded.size
+        });
+      } else {
+        fileData.push(f);
+      }
     }
 
-    const commentPayload = JSON.stringify({ note: internalNote, files: fileData, category, priority });
+    const commentPayload = JSON.stringify({
+      note: internalNote,
+      files: fileData,
+      category: category,
+      priority: priority
+    });
+
     const payload = { project, vendor, amount, notes, comment: commentPayload, priority, category };
 
     if (id) {
