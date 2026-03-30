@@ -105,7 +105,7 @@
   <div class="content">
     <div class="section-hdr">
       <div class="section-title">Ongoing Works</div>
-      <button class="btn-primary" id="addWorkBtn" style="display:none">+ Add Work</button>
+      <button class="btn-primary" id="addWorkBtn" style="display:none">+ Emergency Work</button>
     </div>
 
     <!-- STATS -->
@@ -159,48 +159,65 @@
   </div>
 </div>
 
-<!-- WORK MODAL -->
+<!-- WORK MODAL (EMERGENCY WORK) -->
 <div class="modal-backdrop" id="workModal">
-  <div class="modal-box">
-    <div class="modal-title" id="workModalTitle">Add Work</div>
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title" id="workModalTitle">Emergency Work</div>
     <input type="hidden" id="workEditId">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="modal-field">
-        <label class="modal-label">Title</label>
-        <input class="modal-input" id="workTitle" placeholder="Work description…">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Status</label>
-        <select class="modal-select" id="workStatus">
-          <option value="in_progress">In Progress</option>
-          <option value="scheduled">Scheduled</option>
-        </select>
-      </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Project / Works Description</label>
+      <input type="text" class="modal-input" id="workProject" placeholder="e.g., Emergency roof repair">
     </div>
     <div class="modal-field">
-      <label class="modal-label">Description (Admin / Committee / Observer only)</label>
-      <textarea class="modal-textarea" id="workDesc" placeholder="Work description visible to everyone…"></textarea>
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="workVendor" placeholder="Company name">
     </div>
     <div class="modal-field">
-      <label class="modal-label" style="color:#92400e">⚠️ Private Notes</label>
-      <textarea class="modal-textarea" id="workPrivate" placeholder="Financial details, sensitive info — only visible to Admin / Committee / Observer…"></textarea>
-      <div class="private-hint">This section is NOT visible to Owners or Tenants.</div>
+      <label class="modal-label">Amount (AUD) (ex GST)</label>
+      <input type="text" class="modal-input" id="workAmount" placeholder="0.00" oninput="formatAmount(this)">
     </div>
-
     <div class="modal-field">
-      <label class="modal-label">Upload Photos / Documents</label>
-      <div class="photo-upload-area" onclick="document.getElementById('modalFileInput').click()">
-        <p style="color:var(--muted);margin-bottom:8px">Click to upload images or PDFs</p>
-        <small style="color:var(--muted)">Supports JPG, PNG, PDF • Multiple files</small>
-      </div>
-      <input type="file" id="modalFileInput" accept="image/*,application/pdf" multiple style="display:none" onchange="uploadFilesFromModal(this.files)">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="workCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Legal">Legal</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Priority</label>
+      <select class="modal-select" id="workPriority">
+        <option value="Normal">Normal</option>
+        <option value="High">High</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Scope / Notes (Public)</label>
+      <textarea class="modal-textarea" id="workNotes" placeholder="Brief description visible to everyone…"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
+      <textarea class="modal-textarea" id="workInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">📎 Attach Files</label>
+      <input type="file" id="modalFileInput" multiple accept="image/*,application/pdf" style="display:none" onchange="uploadFilesFromModal(this.files)">
+      <button class="btn-primary" onclick="document.getElementById('modalFileInput').click()">+ Choose Files</button>
       <div id="modalUploadPreview" class="photo-preview-grid" style="margin-top:12px"></div>
     </div>
 
     <div class="modal-footer">
       <button class="btn-danger" id="deleteWorkBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('workModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveWork()">Save →</button>
+      <button class="btn-primary" onclick="saveWork()">Save Emergency Work →</button>
     </div>
   </div>
 </div>
@@ -294,10 +311,10 @@ function buildAccordion(w) {
   const updated = new Date(w.updated_at||w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
   const vendorName = w.vendor || '—';
 
-  let descHtml = w.description ? `
+  let descHtml = w.description || w.notes ? `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Description</div>
-      <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.description}</p>
+      <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.description || w.notes}</p>
     </div>` : '';
 
   let privateHtml = '';
@@ -425,13 +442,15 @@ window.openEditWorkById = (id) => {
 };
 
 window.openAddWork = () => {
-  document.getElementById('workModalTitle').textContent = 'Add Work';
+  document.getElementById('workModalTitle').textContent = 'Emergency Work';
   document.getElementById('workEditId').value = '';
-  document.getElementById('workTitle').value = '';
-  document.getElementById('workStatus').value = 'scheduled';
-  document.getElementById('workDesc').value = '';
-  document.getElementById('workPrivate').value = '';
-  document.getElementById('deleteWorkBtn').style.display = 'none';
+  document.getElementById('workProject').value = '';
+  document.getElementById('workVendor').value = '';
+  document.getElementById('workAmount').value = '';
+  document.getElementById('workCategory').value = 'General';
+  document.getElementById('workPriority').value = 'Urgent';
+  document.getElementById('workNotes').value = '';
+  document.getElementById('workInternalNote').value = '';
   document.getElementById('modalUploadPreview').innerHTML = '';
   currentUploadFiles = [];
   document.getElementById('workModal').classList.add('open');
@@ -440,62 +459,93 @@ window.openAddWork = () => {
 window.openEditWork = () => {
   if (!selectedWork) return;
   const w = selectedWork;
-  document.getElementById('workModalTitle').textContent = 'Edit Work';
+  document.getElementById('workModalTitle').textContent = 'Edit Emergency Work';
   document.getElementById('workEditId').value = w.id;
-  document.getElementById('workTitle').value = w.project||'';
-  document.getElementById('workStatus').value = w.status||'in_progress';
-  document.getElementById('workDesc').value = w.description||'';
-  document.getElementById('workPrivate').value = w.private_notes||'';
+  document.getElementById('workProject').value = w.project || '';
+  document.getElementById('workVendor').value = w.vendor || '';
+  document.getElementById('workAmount').value = w.amount ? Number(w.amount).toLocaleString('en-AU') : '';
+  document.getElementById('workCategory').value = w.category || 'General';
+  document.getElementById('workPriority').value = w.priority || 'Urgent';
+  document.getElementById('workNotes').value = w.notes || w.description || '';
+  document.getElementById('workInternalNote').value = w.private_notes || '';
   document.getElementById('deleteWorkBtn').style.display = 'inline-flex';
   document.getElementById('modalUploadPreview').innerHTML = '';
   currentUploadFiles = [];
   document.getElementById('workModal').classList.add('open');
 };
 
+window.formatAmount = function(input) {
+  let val = input.value.replace(/[^0-9.]/g, '');
+  if (val) input.value = parseFloat(val).toLocaleString('en-AU');
+};
+
 window.saveWork = async () => {
   const id = document.getElementById('workEditId').value;
+  const project = document.getElementById('workProject').value.trim();
+  const vendor = document.getElementById('workVendor').value.trim();
+  let amountStr = document.getElementById('workAmount').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(amountStr) || 0;
+  const category = document.getElementById('workCategory').value;
+  const priority = document.getElementById('workPriority').value;
+  const notes = document.getElementById('workNotes').value.trim();
+  const internalNote = document.getElementById('workInternalNote').value.trim();
 
-  const data = {
-    project: document.getElementById('workTitle').value.trim(),
-    status: document.getElementById('workStatus').value,
-    description: document.getElementById('workDesc').value.trim(),
-    private_notes: document.getElementById('workPrivate').value.trim(),
-    updated_at: new Date().toISOString(),
-  };
-
-  if (!id) {
-    // New record - add emergency defaults
-    data.source = 'emergency';
-    data.priority = 'Urgent';
-    if (!data.status) {
-      data.status = 'scheduled';
-    }
+  if (!project || !vendor) {
+    showToast('Project and Vendor are required', true);
+    return;
   }
 
-  if (!data.project) { showToast('Please enter a title', true); return; }
-
   try {
-    let workId = id;
+    const quoteId = id || crypto.randomUUID();
+
+    const fileData = [];
+    for (let file of currentUploadFiles) {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      await supabase.storage.from('quotes').upload(`quotes/${quoteId}/work/${fileName}`, file, { upsert: true });
+      fileData.push({
+        path: `quotes/${quoteId}/work/${fileName}`,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+    }
+
+    const commentPayload = {
+      note: internalNote,
+      files: fileData,
+      category: category,
+      priority: priority
+    };
+
+    const data = {
+      id: quoteId,
+      project: project,
+      vendor: vendor,
+      amount: amount,
+      category: category,
+      notes: notes,
+      source: 'emergency',
+      status: 'scheduled',
+      priority: priority,
+      completion_date: null,
+      comment: commentPayload,
+      updated_at: new Date().toISOString()
+    };
+
     if (id) {
       await supabase.from('quotes').update(data).eq('id', id);
     } else {
-      const { data: inserted } = await supabase.from('quotes').insert(data).select('id').single();
-      workId = inserted.id;
-    }
-
-    if (currentUploadFiles.length > 0) {
-      for (let file of currentUploadFiles) {
-        const fileExt = file.name.split('.').pop().toLowerCase();
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-        await supabase.storage.from('quotes').upload(`quotes/${workId}/work/${fileName}`, file, { upsert: true });
-      }
+      await supabase.from('quotes').insert(data);
     }
 
     closeModal('workModal');
     if (openAccordionId) closeAccordion(openAccordionId);
     await loadWorks();
-    showToast('Work saved ✓');
-  } catch(e) { showToast(e.message||'Failed to save', true); }
+    showToast('Emergency Work saved ✓');
+  } catch(e) { 
+    showToast('Failed to save: ' + (e.message || e), true); 
+  }
 };
 
 window.deleteWork = async () => {
