@@ -92,17 +92,33 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script type="module">
-import { supabase, user, role } from '/js/auth.js';
-import { showToast, closeModal } from '/js/layout.js';
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
 
-if (role!=='admin'&&role!=='member') { window.location.href='/'; }
+if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/building.html';
 
-const CAT_LABELS={'HVAC':'HVAC & Climate','Fire':'Fire Safety','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift/Elevator','General':'General Maintenance','Legal':'Legal/Admin','Other':'Other'};
-const CAT_COLORS={'HVAC':'#3b82f6','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6','Plumbing':'#06b6d4','Lift':'#ec4899','General':'#10b981','Legal':'#6366f1','Other':'#64748b'};
-const fmt=v=>`$${Number(v||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-const catBadge=(c)=>`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:${CAT_COLORS[c]||'#e5e7eb'};color:#fff;font-weight:500">${CAT_LABELS[c]||c}</span>`;
-const parseQuoteCategory=(q)=>q.category||(Array.isArray(q.works_categories)&&q.works_categories.length?q.works_categories[0]:(typeof q.works_categories==='string'&&q.works_categories?q.works_categories:'Other'));
+const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
+const CAT_COLORS = { 'HVAC':'#2563eb','Fire':'#ef4444','Electrical':'#f59e0b','Security':'#8b5cf6','Plumbing':'#06b6d4','Lift':'#10b981','General':'#6b7280','Legal':'#f97316','Other':'#94a3b8' };
+const CAT_BG    = { 'HVAC':'#eff6ff','Fire':'#fef2f2','Electrical':'#fffbeb','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#ecfdf5','General':'#f3f4f6','Legal':'#fff7ed','Other':'#f1f5f9' };
+
+const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function parseQuoteCategory(q) {
+  try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
+  return q.category||'Other';
+}
+
+function catBadge(cat) {
+  const label=CAT_LABELS[cat]||cat||'Other';
+  const color=CAT_COLORS[cat]||'#94a3b8';
+  const bg=CAT_BG[cat]||'#f1f5f9';
+  return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:${bg};color:${color};border:1px solid ${color}22">${label}</span>`;
+}
 
 let dateFrom=null, dateTo=null;
 let currentQuotesData=[];
