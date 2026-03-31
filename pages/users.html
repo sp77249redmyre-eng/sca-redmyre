@@ -251,6 +251,61 @@
       </select>
       <div class="role-hint" id="roleHint"></div>
     </div>
+    <div class="modal-field">
+      <label class="modal-label">Unit (Optional)</label>
+      <select class="modal-select" id="inviteUnit">
+        <option value="">Select unit…</option>
+        <option value="Unit 1">Unit 1 (Ground Floor)</option>
+        <option value="1A">1A</option>
+        <option value="1B">1B</option>
+        <option value="1C">1C</option>
+        <option value="1D">1D</option>
+        <option value="1E">1E</option>
+        <option value="1F">1F</option>
+        <option value="1G">1G</option>
+        <option value="1H">1H</option>
+        <option value="2A">2A</option>
+        <option value="2B">2B</option>
+        <option value="2C">2C</option>
+        <option value="2D">2D</option>
+        <option value="2E">2E</option>
+        <option value="2F">2F</option>
+        <option value="2G">2G</option>
+        <option value="2H">2H</option>
+        <option value="3A">3A</option>
+        <option value="3B">3B</option>
+        <option value="3C">3C</option>
+        <option value="3D">3D</option>
+        <option value="3E">3E</option>
+        <option value="3F">3F</option>
+        <option value="3G">3G</option>
+        <option value="3H">3H</option>
+        <option value="4A">4A</option>
+        <option value="4B">4B</option>
+        <option value="4C">4C</option>
+        <option value="4D">4D</option>
+        <option value="4E">4E</option>
+        <option value="4F">4F</option>
+        <option value="4G">4G</option>
+        <option value="4H">4H</option>
+        <option value="5A">5A</option>
+        <option value="5B">5B</option>
+        <option value="5C">5C</option>
+        <option value="5D">5D</option>
+        <option value="5E">5E</option>
+        <option value="5F">5F</option>
+        <option value="5G">5G</option>
+        <option value="5H">5H</option>
+        <option value="6A">6A</option>
+        <option value="6B">6B</option>
+        <option value="6C">6C</option>
+        <option value="6D">6D</option>
+        <option value="6E">6E</option>
+        <option value="6F">6F</option>
+        <option value="6G">6G</option>
+        <option value="6H">6H</option>
+      </select>
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('inviteModal')">Cancel</button>
       <button class="btn-primary" id="sendInviteBtn">Send Invite →</button>
@@ -824,6 +879,7 @@ document.getElementById('inviteBtn').addEventListener('click', () => {
   document.getElementById('inviteEmail').value = '';
   document.getElementById('inviteName').value = '';
   document.getElementById('inviteRole').value = '';
+  document.getElementById('inviteUnit').value = '';
   document.getElementById('roleHint').style.display = 'none';
   document.getElementById('inviteModal').classList.add('open');
 });
@@ -832,6 +888,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
   const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
   const fullName = document.getElementById('inviteName').value.trim();
   const inviteRole = document.getElementById('inviteRole').value;
+  const inviteUnit = document.getElementById('inviteUnit').value;
   const btn = document.getElementById('sendInviteBtn');
   
   if (!email) { showToast('Please enter an email address', true); return; }
@@ -847,7 +904,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
     const res = await fetch('/api/send-invite', { 
       method:'POST', 
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`}, 
-      body:JSON.stringify({email, full_name:fullName, role:inviteRole}) 
+      body:JSON.stringify({email, full_name:fullName, role:inviteRole, unit:inviteUnit || null}) 
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to send invite');
@@ -857,7 +914,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
       action: 'user_invited',
-      details: { invited_email: email, invited_name: fullName, role: inviteRole }
+      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit }
     });
     
     closeModal('inviteModal');
