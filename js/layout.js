@@ -68,7 +68,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['quotes', 'works', 'reports', 'building', 'history', 'users'];
+    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports', 'users'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
@@ -82,31 +82,20 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['quotes', 'works', 'reports', 'building', 'history'],
-        observer: ['quotes', 'works', 'reports', 'building', 'history'],
-        owner: ['building', 'works'],
-        tenant: ['building']
+        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'],
+        observer: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'],
+        owner: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard'],
+        tenant: ['building', 'announcements', 'complaints', 'hvac', 'emergency', 'dashboard']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
   }
 
   // Sidebar 메뉴 항목 숨기기/표시
-  const pageMapping = {
-    'quotes': 'quotes',
-    'works': 'works',
-    'reports': 'reports',
-    'building': 'building',
-    'history': 'history',
-    'temperature': 'history', // temperature는 history 페이지
-    'users': 'users'
-  };
-
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     const page = item.dataset.page;
-    const mappedPage = pageMapping[page] || page;
     
-    if (allowedPages.includes(mappedPage)) {
+    if (allowedPages.includes(page)) {
       item.style.display = ''; // 보이기
     } else {
       item.style.display = 'none'; // 숨기기
