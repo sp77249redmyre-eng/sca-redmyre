@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -23,9 +23,16 @@ export default async function handler(req, res) {
 
     const userToken = authHeader.substring(7);
 
-    // 사용자 Supabase 클라이언트 (권한 확인용)
+    // Supabase 설정
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // 사용자 Supabase 클라이언트 (권한 확인용)
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${userToken}` } }
     });
@@ -63,11 +70,6 @@ export default async function handler(req, res) {
     }
 
     // Service Role로 비밀번호 변경
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseServiceKey) {
-      return res.status(500).json({ error: 'Service role key not configured' });
-    }
-
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
