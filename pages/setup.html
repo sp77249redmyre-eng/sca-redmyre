@@ -314,6 +314,19 @@
           <div class="invite-dot"></div>
           <span id="invitedEmailBadge">loading…</span>
         </div>
+        
+        <!-- Role & Unit Info (Read-only) -->
+        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:10px;padding:14px;margin:16px 0;font-size:13px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <span style="color:var(--muted);min-width:60px">Role:</span>
+            <span style="font-weight:600;color:var(--blue-800)" id="assignedRole">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px" id="assignedUnitRow">
+            <span style="color:var(--muted);min-width:60px">Unit:</span>
+            <span style="font-weight:600;color:var(--blue-800)" id="assignedUnit">—</span>
+          </div>
+        </div>
+        
         <div class="error-msg" id="nameError"></div>
         <div class="form-group">
           <label class="form-label">Full Name</label>
@@ -416,6 +429,18 @@ async function init() {
   currentUser = session.user;
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
   currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
+  
+  // Display assigned role and unit (read-only)
+  const roleLabel = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+  document.getElementById('assignedRole').textContent = roleLabel;
+  
+  const assignedUnit = profile?.unit || currentUser.user_metadata?.unit;
+  if (assignedUnit) {
+    document.getElementById('assignedUnit').textContent = assignedUnit;
+  } else {
+    document.getElementById('assignedUnitRow').style.display = 'none';
+  }
+  
   if (profile?.full_name && profile?.setup_complete) { window.location.href = '/pages/dashboard.html'; return; }
   document.getElementById('invitedEmailBadge').textContent = currentUser.email;
   showScreen('screenName');
