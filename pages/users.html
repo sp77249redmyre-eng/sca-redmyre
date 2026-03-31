@@ -21,9 +21,19 @@
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 .card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-light)}
 .card-title{font-size:14px;font-weight:600}
-.table-head{display:grid;grid-template-columns:48px 1fr 140px 110px 130px;gap:12px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--border-light);margin-bottom:20px}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s}
+.tab:hover{color:var(--text);background:var(--bg)}
+.tab.active{color:var(--blue-600);border-bottom-color:var(--blue-600)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Users List */
+.table-head{display:grid;grid-template-columns:48px 1fr 140px 110px 200px;gap:12px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
 .th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
-.user-row{display:grid;grid-template-columns:48px 1fr 140px 110px 130px;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s}
+.user-row{display:grid;grid-template-columns:48px 1fr 140px 110px 200px;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s}
 .user-row:last-child{border-bottom:none}
 .user-row:hover{background:var(--bg)}
 .avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
@@ -36,6 +46,66 @@
 .user-email{font-size:11px;color:var(--muted);margin-top:2px}
 .role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
+
+/* Permissions Matrix */
+.perm-header{margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.perm-header select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
+.perm-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.perm-section-title{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.perm-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.perm-item:last-child{border-bottom:none}
+.perm-icon{font-size:16px}
+.perm-label{font-size:13px;color:var(--text-2);flex:1}
+.perm-note{font-size:11px;color:var(--muted);margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:6px;line-height:1.5}
+
+/* Activity Log */
+.log-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.log-filters select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
+.log-item{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s}
+.log-item:hover{background:var(--bg)}
+.log-item:last-child{border-bottom:none}
+.log-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.log-content{flex:1}
+.log-user{font-size:13px;font-weight:600;color:var(--text)}
+.log-action{font-size:13px;color:var(--text-2);margin-top:2px}
+.log-time{font-size:11px;color:var(--muted);margin-top:4px}
+.log-empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px}
+
+/* Mobile Optimization */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .stat-card{padding:12px}
+  .stat-num{font-size:20px}
+  .stat-label{font-size:11px}
+  
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{white-space:nowrap;padding:10px 16px;font-size:12px}
+  
+  .table-head{display:none!important}
+  .user-row{
+    display:block!important;
+    grid-template-columns:none!important;
+    padding:14px!important;
+  }
+  .user-row > div{margin-bottom:10px;display:block!important}
+  .user-row > div:last-child{margin-bottom:0}
+  .user-row > div:nth-child(2)::before{content:"Name: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .user-row > div:nth-child(3)::before{content:"Role: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .user-row > div:nth-child(4)::before{content:"Status: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .user-row > div:nth-child(5)::before{content:"Actions: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .user-row > div:nth-child(5){display:flex!important;gap:6px;flex-wrap:wrap}
+  .user-row > div:nth-child(5) button{flex:1;min-width:100px}
+  
+  .perm-header{flex-direction:column;align-items:stretch}
+  .perm-header select{width:100%}
+  .perm-section{padding:14px}
+  .perm-item{flex-direction:column;align-items:start;gap:6px}
+  
+  .log-filters{flex-direction:column}
+  .log-filters select{width:100%}
+  .log-item{padding:12px}
+  .log-avatar{width:32px;height:32px;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -43,10 +113,12 @@
 <div class="main">
   <div id="topbarPlaceholder"></div>
   <div class="content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
       <div class="section-title">User Management</div>
       <button class="btn-primary" id="inviteBtn">+ Invite User</button>
     </div>
+
+    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total Users</div></div>
       <div class="stat-card"><div class="stat-num" id="statAdmin" style="color:var(--purple)">—</div><div class="stat-label">Admin</div></div>
@@ -54,20 +126,82 @@
       <div class="stat-card"><div class="stat-num" id="statObserver" style="color:var(--green)">—</div><div class="stat-label">Observer</div></div>
       <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--muted)">—</div><div class="stat-label">Owner / Tenant</div></div>
     </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">All Users</div>
-        <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
-      </div>
-      <div class="table-head">
-        <div></div>
-        <div class="th">Name / Email</div>
-        <div class="th">Role</div>
-        <div class="th">Status</div>
-        <div class="th" style="text-align:right">Actions</div>
-      </div>
-      <div id="userList"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading users…</div></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="users">👥 Users</div>
+      <div class="tab" data-tab="permissions">🔐 Permissions</div>
+      <div class="tab" data-tab="activity">📝 Activity Log</div>
     </div>
+
+    <!-- Tab Content: Users -->
+    <div id="tab-users" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Users</div>
+          <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
+        </div>
+        <div class="table-head">
+          <div></div>
+          <div class="th">Name / Email</div>
+          <div class="th">Role</div>
+          <div class="th">Status</div>
+          <div class="th" style="text-align:right">Actions</div>
+        </div>
+        <div id="userList"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading users…</div></div>
+      </div>
+    </div>
+
+    <!-- Tab Content: Permissions -->
+    <div id="tab-permissions" class="tab-content">
+      <div class="perm-header">
+        <label style="font-size:13px;font-weight:500;color:var(--text)">Select Role:</label>
+        <select id="permRoleSelect">
+          <option value="admin">Admin</option>
+          <option value="committee" selected>Committee</option>
+          <option value="observer">Observer</option>
+          <option value="owner">Owner</option>
+          <option value="tenant">Tenant</option>
+        </select>
+      </div>
+
+      <div id="permissionsDisplay"></div>
+    </div>
+
+    <!-- Tab Content: Activity Log -->
+    <div id="tab-activity" class="tab-content">
+      <div class="log-filters">
+        <select id="filterUser">
+          <option value="">All Users</option>
+        </select>
+        <select id="filterAction">
+          <option value="">All Actions</option>
+          <option value="quote_approved">Quote Approved</option>
+          <option value="quote_declined">Quote Declined</option>
+          <option value="quote_held">Quote Held</option>
+          <option value="work_created">Work Created</option>
+          <option value="work_completed">Work Completed</option>
+          <option value="role_changed">Role Changed</option>
+          <option value="password_reset">Password Reset</option>
+          <option value="user_invited">User Invited</option>
+          <option value="user_removed">User Removed</option>
+        </select>
+        <select id="filterPeriod">
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Activity</div>
+        </div>
+        <div id="activityList"><div class="log-empty">Loading activity…</div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -103,44 +237,226 @@ const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
-// Users 페이지는 admin 전용 — layout.js가 이미 처리하지만 추가 보호
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
+// Role descriptions
 const ROLE_HINTS = {
   committee:'Can view all quotes with amounts and vote to approve or decline.',
   observer: 'Read-only access to quotes. Can see everything but cannot vote.',
   owner:    'Can view announcements, works and building status. No quote access.',
   tenant:   'Basic access — announcements, HVAC temperature requests only.'
 };
-const ROLE_COLORS = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
-const ROLE_BADGES = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
 
-document.getElementById('inviteRole').addEventListener('change', () => {
-  const val  = document.getElementById('inviteRole').value;
-  const hint = document.getElementById('roleHint');
-  if (val&&ROLE_HINTS[val]) { hint.textContent=ROLE_HINTS[val]; hint.style.display='block'; }
-  else hint.style.display='none';
+const ROLE_COLORS = { 
+  admin:'av-admin',
+  committee:'av-committee',
+  observer:'av-observer',
+  owner:'av-owner',
+  tenant:'av-tenant' 
+};
+
+const ROLE_BADGES = { 
+  admin:'badge-purple',
+  committee:'badge-blue',
+  observer:'badge-green',
+  owner:'badge-gray',
+  tenant:'badge-gray' 
+};
+
+// Permissions Matrix
+const PERMISSIONS = {
+  admin: {
+    quotes: [
+      { label: 'View quotes page', allowed: true },
+      { label: 'View quote amounts', allowed: true },
+      { label: 'Add new quotes', allowed: true },
+      { label: 'Edit existing quotes', allowed: true },
+      { label: 'Force approve quotes', allowed: true },
+      { label: 'Vote on quotes', allowed: false, note: 'Admin manages quotes directly without voting' }
+    ],
+    works: [
+      { label: 'View works page', allowed: true },
+      { label: 'Edit work details', allowed: true },
+      { label: 'Add emergency works', allowed: true },
+      { label: 'Complete works', allowed: true },
+      { label: 'Change work status', allowed: true }
+    ],
+    reports: [
+      { label: 'View reports page', allowed: true },
+      { label: 'View amounts & costs', allowed: true },
+      { label: 'Delete attached files', allowed: true },
+      { label: 'Export data', allowed: true }
+    ],
+    building: [
+      { label: 'View building status', allowed: true },
+      { label: 'Edit building info', allowed: true },
+      { label: 'Manage announcements', allowed: true }
+    ],
+    temperature: [
+      { label: 'Submit temperature requests', allowed: true },
+      { label: 'View request history', allowed: true },
+      { label: 'View all tenant requests', allowed: true }
+    ],
+    users: [
+      { label: 'View users page', allowed: true },
+      { label: 'Invite new users', allowed: true },
+      { label: 'Edit user roles', allowed: true },
+      { label: 'Remove users', allowed: true },
+      { label: 'Reset passwords', allowed: true }
+    ]
+  },
+  committee: {
+    quotes: [
+      { label: 'View quotes page', allowed: true },
+      { label: 'View quote amounts', allowed: true },
+      { label: 'Vote on quotes (Approve/Decline/Hold)', allowed: true },
+      { label: 'Add new quotes', allowed: false },
+      { label: 'Edit existing quotes', allowed: false },
+      { label: 'Force approve quotes', allowed: false }
+    ],
+    works: [
+      { label: 'View works page', allowed: true },
+      { label: 'Edit work details', allowed: false },
+      { label: 'Add emergency works', allowed: false },
+      { label: 'Complete works', allowed: false }
+    ],
+    reports: [
+      { label: 'View reports page', allowed: true },
+      { label: 'View amounts & costs', allowed: false, note: 'Financial information is confidential' },
+      { label: 'Delete attached files', allowed: false }
+    ],
+    building: [
+      { label: 'View building status', allowed: true },
+      { label: 'Edit building info', allowed: false }
+    ],
+    temperature: [
+      { label: 'Submit temperature requests', allowed: true },
+      { label: 'View request history', allowed: true }
+    ],
+    users: [
+      { label: 'View users page', allowed: false },
+      { label: 'Invite new users', allowed: false },
+      { label: 'Edit user roles', allowed: false }
+    ]
+  },
+  observer: {
+    quotes: [
+      { label: 'View quotes page', allowed: true },
+      { label: 'View quote amounts', allowed: false, note: 'Observer role is read-only without financial access' },
+      { label: 'Vote on quotes', allowed: false },
+      { label: 'Add new quotes', allowed: false },
+      { label: 'Edit existing quotes', allowed: false }
+    ],
+    works: [
+      { label: 'View works page', allowed: true },
+      { label: 'Edit work details', allowed: false },
+      { label: 'Add emergency works', allowed: false }
+    ],
+    reports: [
+      { label: 'View reports page', allowed: true },
+      { label: 'View amounts & costs', allowed: false },
+      { label: 'Delete attached files', allowed: false }
+    ],
+    building: [
+      { label: 'View building status', allowed: true },
+      { label: 'Edit building info', allowed: false }
+    ],
+    temperature: [
+      { label: 'Submit temperature requests', allowed: true },
+      { label: 'View request history', allowed: true }
+    ],
+    users: [
+      { label: 'View users page', allowed: false }
+    ]
+  },
+  owner: {
+    quotes: [
+      { label: 'View quotes page', allowed: false, note: 'Quote management is restricted to Committee and Admin' }
+    ],
+    works: [
+      { label: 'View works page', allowed: true },
+      { label: 'Edit work details', allowed: false }
+    ],
+    reports: [
+      { label: 'View reports page', allowed: false }
+    ],
+    building: [
+      { label: 'View building status', allowed: true },
+      { label: 'View announcements', allowed: true }
+    ],
+    temperature: [
+      { label: 'Submit temperature requests', allowed: true },
+      { label: 'View request history', allowed: false, note: 'Owners can only see their own requests' }
+    ],
+    users: [
+      { label: 'View users page', allowed: false }
+    ]
+  },
+  tenant: {
+    quotes: [
+      { label: 'View quotes page', allowed: false }
+    ],
+    works: [
+      { label: 'View works page', allowed: false }
+    ],
+    reports: [
+      { label: 'View reports page', allowed: false }
+    ],
+    building: [
+      { label: 'View building status', allowed: true },
+      { label: 'View announcements', allowed: true }
+    ],
+    temperature: [
+      { label: 'Submit temperature requests', allowed: true },
+      { label: 'View request history', allowed: false, note: 'Tenants can only see their own requests' }
+    ],
+    users: [
+      { label: 'View users page', allowed: false }
+    ]
+  }
+};
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const targetTab = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`tab-${targetTab}`).classList.add('active');
+    
+    if (targetTab === 'activity') loadActivityLog();
+  });
 });
 
+// Load users
 async function loadUsers() {
   const { data:profiles } = await supabase.from('profiles').select('*').order('role').order('full_name');
   if (!profiles) return;
+  
   const counts = { admin:0,committee:0,observer:0,owner:0,tenant:0 };
   profiles.forEach(p=>{ if (counts[p.role]!==undefined) counts[p.role]++; });
-  document.getElementById('statTotal').textContent     = profiles.length;
-  document.getElementById('statAdmin').textContent     = counts.admin;
+  
+  document.getElementById('statTotal').textContent = profiles.length;
+  document.getElementById('statAdmin').textContent = counts.admin;
   document.getElementById('statCommittee').textContent = counts.committee;
-  document.getElementById('statObserver').textContent  = counts.observer;
-  document.getElementById('statOther').textContent     = counts.owner + counts.tenant;
-  document.getElementById('userCountLabel').textContent= `${profiles.length} users`;
+  document.getElementById('statObserver').textContent = counts.observer;
+  document.getElementById('statOther').textContent = counts.owner + counts.tenant;
+  document.getElementById('userCountLabel').textContent = `${profiles.length} users`;
+  
   const list = document.getElementById('userList');
-  if (!profiles.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; return; }
+  if (!profiles.length) { 
+    list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; 
+    return; 
+  }
+  
   list.innerHTML = profiles.map(p => {
     const displayName = p.full_name||p.email?.split('@')[0]||'—';
     const ini = displayName.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     const isSelf = p.id===user.id;
     const avClass = ROLE_COLORS[p.role]||'av-owner';
     const badgeClass = ROLE_BADGES[p.role]||'badge-gray';
+    
     return `
       <div class="user-row">
         <div class="avatar ${avClass}">${ini}</div>
@@ -149,11 +465,11 @@ async function loadUsers() {
           <div class="user-email">${p.email||'—'}</div>
         </div>
         <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
-          <option value="admin"     ${p.role==='admin'     ?'selected':''}>Admin</option>
-          <option value="committee" ${p.role==='committee' ?'selected':''}>Committee</option>
-          <option value="observer"  ${p.role==='observer'  ?'selected':''}>Observer</option>
-          <option value="owner"     ${p.role==='owner'     ?'selected':''}>Owner</option>
-          <option value="tenant"    ${p.role==='tenant'    ?'selected':''}>Tenant</option>
+          <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
+          <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
+          <option value="observer"  ${p.role==='observer'?'selected':''}>Observer</option>
+          <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
+          <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant</option>
         </select>
         <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
         <div style="display:flex;gap:6px;justify-content:flex-end">
@@ -164,11 +480,35 @@ async function loadUsers() {
         </div>
       </div>`;
   }).join('');
+  
+  // Populate user filter
+  const filterUser = document.getElementById('filterUser');
+  filterUser.innerHTML = '<option value="">All Users</option>' + 
+    profiles.map(p => `<option value="${p.id}">${p.full_name||p.email}</option>`).join('');
 }
 
 window.changeRole = async (uid, newRole) => {
-  try { await supabase.from('profiles').update({role:newRole}).eq('id',uid); showToast(`Role updated to ${newRole} ✓`); await loadUsers(); }
-  catch(e) { showToast('Failed to update role', true); }
+  try { 
+    await supabase.from('profiles').update({role:newRole}).eq('id',uid); 
+    
+    // Log the action
+    const { data: changedUser } = await supabase.from('profiles').select('full_name, email').eq('id', uid).single();
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'role_changed',
+      details: { 
+        target_user: changedUser?.full_name || changedUser?.email,
+        new_role: newRole 
+      }
+    });
+    
+    showToast(`Role updated to ${newRole} ✓`); 
+    await loadUsers(); 
+  } catch(e) { 
+    showToast('Failed to update role', true); 
+  }
 };
 
 window.resetPassword = async (email, uname) => {
@@ -178,6 +518,16 @@ window.resetPassword = async (email, uname) => {
       redirectTo: `${window.location.origin}/reset-password`
     });
     if (error) throw error;
+    
+    // Log the action
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'password_reset',
+      details: { target_email: email, target_name: uname }
+    });
+    
     showToast(`Password reset email sent to ${email} ✓`);
   } catch(e) {
     console.error('resetPassword error:', e);
@@ -190,45 +540,228 @@ window.removeUser = async (uid, uname) => {
   try {
     const { data:{session:s1} } = await supabase.auth.refreshSession();
     if (!s1) { showToast('Session expired. Please log in again.', true); return; }
-    const res = await fetch('/api/delete-user', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${s1.access_token}`}, body:JSON.stringify({user_id:uid}) });
+    
+    const res = await fetch('/api/delete-user', { 
+      method:'POST', 
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${s1.access_token}`}, 
+      body:JSON.stringify({user_id:uid}) 
+    });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to remove user');
+    
+    // Log the action
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'user_removed',
+      details: { removed_user: uname }
+    });
+    
     showToast(`${uname} removed ✓`);
     await loadUsers();
-  } catch(e) { showToast(e.message||'Failed to remove user', true); }
+  } catch(e) { 
+    showToast(e.message||'Failed to remove user', true); 
+  }
 };
 
+// Permissions display
+function renderPermissions(selectedRole) {
+  const perms = PERMISSIONS[selectedRole];
+  const sections = {
+    quotes: { title: '📋 Quotes (견적 승인)', items: perms.quotes },
+    works: { title: '🔧 Works (진행 작업)', items: perms.works },
+    reports: { title: '📊 Reports (완료 분석)', items: perms.reports },
+    building: { title: '🏢 Building (빌딩 현황)', items: perms.building },
+    temperature: { title: '🌡️ Temperature (온도 요청)', items: perms.temperature },
+    users: { title: '👥 Users (사용자 관리)', items: perms.users }
+  };
+  
+  const html = Object.entries(sections).map(([key, section]) => `
+    <div class="perm-section">
+      <div class="perm-section-title">${section.title}</div>
+      ${section.items.map(item => `
+        <div class="perm-item">
+          <span class="perm-icon">${item.allowed ? '✅' : '❌'}</span>
+          <span class="perm-label">${item.label}</span>
+        </div>
+        ${item.note ? `<div class="perm-note">💡 ${item.note}</div>` : ''}
+      `).join('')}
+    </div>
+  `).join('');
+  
+  document.getElementById('permissionsDisplay').innerHTML = html;
+}
+
+document.getElementById('permRoleSelect').addEventListener('change', (e) => {
+  renderPermissions(e.target.value);
+});
+
+// Activity Log
+async function loadActivityLog() {
+  const filterUser = document.getElementById('filterUser').value;
+  const filterAction = document.getElementById('filterAction').value;
+  const filterPeriod = parseInt(document.getElementById('filterPeriod').value);
+  
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - filterPeriod);
+  
+  let query = supabase
+    .from('audit_logs')
+    .select('*')
+    .gte('created_at', cutoffDate.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(50);
+  
+  if (filterUser) query = query.eq('user_id', filterUser);
+  if (filterAction) query = query.eq('action', filterAction);
+  
+  const { data: logs } = await query;
+  
+  const list = document.getElementById('activityList');
+  
+  if (!logs || !logs.length) {
+    list.innerHTML = '<div class="log-empty">No activity found for the selected filters.</div>';
+    return;
+  }
+  
+  const actionIcons = {
+    quote_approved: '✅',
+    quote_declined: '❌',
+    quote_held: '⏸️',
+    work_created: '➕',
+    work_completed: '✅',
+    role_changed: '👥',
+    password_reset: '🔐',
+    user_invited: '📧',
+    user_removed: '🗑️'
+  };
+  
+  const actionLabels = {
+    quote_approved: 'Approved Quote',
+    quote_declined: 'Declined Quote',
+    quote_held: 'Put Quote on Hold',
+    work_created: 'Created Work',
+    work_completed: 'Completed Work',
+    role_changed: 'Changed User Role',
+    password_reset: 'Sent Password Reset',
+    user_invited: 'Invited User',
+    user_removed: 'Removed User'
+  };
+  
+  list.innerHTML = logs.map(log => {
+    const ini = (log.user_name || log.user_email || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const timeAgo = formatTimeAgo(new Date(log.created_at));
+    const icon = actionIcons[log.action] || '📝';
+    const label = actionLabels[log.action] || log.action;
+    
+    let details = '';
+    if (log.details) {
+      if (log.details.quote_title) details = ` #${log.details.quote_id} (${log.details.quote_title})`;
+      if (log.details.new_role) details = ` → ${log.details.target_user} to ${log.details.new_role}`;
+      if (log.details.target_email) details = ` to ${log.details.target_email}`;
+      if (log.details.removed_user) details = ` ${log.details.removed_user}`;
+    }
+    
+    return `
+      <div class="log-item">
+        <div class="log-avatar av-committee">${ini}</div>
+        <div class="log-content">
+          <div class="log-user">${log.user_name || log.user_email}</div>
+          <div class="log-action">${icon} ${label}${details}</div>
+          <div class="log-time">${timeAgo}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
+
+document.getElementById('filterUser').addEventListener('change', loadActivityLog);
+document.getElementById('filterAction').addEventListener('change', loadActivityLog);
+document.getElementById('filterPeriod').addEventListener('change', loadActivityLog);
+
+// Invite modal
+document.getElementById('inviteRole').addEventListener('change', () => {
+  const val = document.getElementById('inviteRole').value;
+  const hint = document.getElementById('roleHint');
+  if (val && ROLE_HINTS[val]) { 
+    hint.textContent = ROLE_HINTS[val]; 
+    hint.style.display = 'block'; 
+  } else {
+    hint.style.display = 'none';
+  }
+});
+
 document.getElementById('inviteBtn').addEventListener('click', () => {
-  document.getElementById('inviteEmail').value='';
-  document.getElementById('inviteName').value='';
-  document.getElementById('inviteRole').value='';
-  document.getElementById('roleHint').style.display='none';
+  document.getElementById('inviteEmail').value = '';
+  document.getElementById('inviteName').value = '';
+  document.getElementById('inviteRole').value = '';
+  document.getElementById('roleHint').style.display = 'none';
   document.getElementById('inviteModal').classList.add('open');
 });
 
 document.getElementById('sendInviteBtn').addEventListener('click', async () => {
-  const email      = document.getElementById('inviteEmail').value.trim().toLowerCase();
-  const fullName   = document.getElementById('inviteName').value.trim();
+  const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
+  const fullName = document.getElementById('inviteName').value.trim();
   const inviteRole = document.getElementById('inviteRole').value;
   const btn = document.getElementById('sendInviteBtn');
-  if (!email)      { showToast('Please enter an email address', true); return; }
-  if (!fullName)   { showToast('Please enter a full name', true); return; }
+  
+  if (!email) { showToast('Please enter an email address', true); return; }
+  if (!fullName) { showToast('Please enter a full name', true); return; }
   if (!inviteRole) { showToast('Please select a role', true); return; }
-  btn.disabled=true; btn.textContent='Sending…';
+  
+  btn.disabled = true; 
+  btn.textContent = 'Sending…';
+  
   try {
     const { data:{session:s2} } = await supabase.auth.refreshSession();
     if (!s2) { showToast('Session expired. Please log in again.', true); return; }
-    const res = await fetch('/api/send-invite', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`}, body:JSON.stringify({email,full_name:fullName,role:inviteRole}) });
+    
+    const res = await fetch('/api/send-invite', { 
+      method:'POST', 
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`}, 
+      body:JSON.stringify({email, full_name:fullName, role:inviteRole}) 
+    });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to send invite');
+    
+    // Log the action
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'user_invited',
+      details: { invited_email: email, invited_name: fullName, role: inviteRole }
+    });
+    
     closeModal('inviteModal');
     showToast(`Invite sent to ${email} ✓`);
     await loadUsers();
-  } catch(e) { showToast(e.message||'Failed to send invite', true); }
-  finally { btn.disabled=false; btn.textContent='Send Invite →'; }
+  } catch(e) { 
+    showToast(e.message||'Failed to send invite', true); 
+  } finally { 
+    btn.disabled = false; 
+    btn.textContent = 'Send Invite →'; 
+  }
 });
 
+// Initialize
 await loadUsers();
+renderPermissions('committee');
 </script>
 </body>
 </html>
