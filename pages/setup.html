@@ -422,30 +422,82 @@ function showScreen(id) {
 
 // Init
 async function init() {
-  await supabase.auth.getSession();
-  await supabase.auth.refreshSession();
-  const { data:{ session } } = await supabase.auth.getSession();
-  if (!session) { showScreen('screenInvalid'); return; }
+
+  // 🔥 STEP 1 — URL 기반 로그인 처리
+  const url = new URL(window.location.href);
+
+  // 1️⃣ code 방식 (Supabase invite 기본)
+  const code = url.searchParams.get("code");
+  if (code) {
+    try {
+      await supabase.auth.exchangeCodeForSession(code);
+      // URL 깔끔하게 정리 (중복 실행 방지)
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {
+      console.error("Code exchange failed:", e);
+    }
+  }
+
+  // 2️⃣ access_token 방식 (fallback)
+  if (window.location.hash.includes("access_token")) {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    try {
+      await supabase.auth.setSession({
+        access_token: params.get("access_token"),
+        refresh_token: params.get("refresh_token")
+      });
+    } catch (e) {
+      console.error("Set session failed:", e);
+    }
+  }
+
+  // 🔥 STEP 2 — 세션 확인
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    showScreen('screenInvalid');
+    return;
+  }
+
   currentUser = session.user;
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
-  
-  // Display assigned role and unit (read-only)
+
+  // 🔥 STEP 3 — profile 조회 (안전)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  currentRole =
+    profile?.role ||
+    currentUser.user_metadata?.role ||
+    'tenant';
+
+  // 🔥 STEP 4 — UI 표시
   const roleLabel = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
   document.getElementById('assignedRole').textContent = roleLabel;
-  
-  const assignedUnit = profile?.unit || currentUser.user_metadata?.unit;
+
+  const assignedUnit =
+    profile?.unit ||
+    currentUser.user_metadata?.unit;
+
   if (assignedUnit) {
     document.getElementById('assignedUnit').textContent = assignedUnit;
   } else {
     document.getElementById('assignedUnitRow').style.display = 'none';
   }
-  
-  if (profile?.full_name && profile?.setup_complete) { window.location.href = '/pages/building.html'; return; }
+
+  // 🔥 STEP 5 — 이미 완료된 계정이면 바로 이동
+  if (profile?.full_name && profile?.setup_complete) {
+    window.location.href = '/pages/building.html';
+    return;
+  }
+
   document.getElementById('invitedEmailBadge').textContent = currentUser.email;
+
+  // 🔥 STEP 6 — 정상 진입
   showScreen('screenName');
 }
-
 // Name step
 document.getElementById('nameBtn').addEventListener('click', submitName);
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') submitName(); });
