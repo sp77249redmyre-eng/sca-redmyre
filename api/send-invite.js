@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
   try {
     const { data, error } =
       await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${siteUrl}/setup.html`,
+        redirectTo: `${siteUrl}/setup`,
         data: { full_name, role, unit: unit || null }
       });
 
