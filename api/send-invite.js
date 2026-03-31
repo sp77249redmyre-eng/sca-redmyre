@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { email, full_name, role } = req.body;
+  const { email, full_name, role, unit } = req.body;
 
   if (!email || !full_name || !role) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     const { data, error } =
       await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${siteUrl}/setup.html`,
-        data: { full_name, role }
+        data: { full_name, role, unit: unit || null }
       });
 
     if (error) throw error;
@@ -32,6 +32,7 @@ module.exports = async (req, res) => {
       email: email.toLowerCase().trim(),
       full_name,
       role,
+      unit: unit || null,
       setup_complete: false
     });
 
