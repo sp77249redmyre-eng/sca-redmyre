@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Occupants – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.content { padding: 24px; max-width: 1100px; }
+
+/* Suite Tabs */
+.suite-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+}
+.suite-tab {
+  padding: 8px 18px;
+  border-radius: 8px 8px 0 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -2px;
+}
+.suite-tab:hover { background: var(--surface); }
+.suite-tab.active {
+  background: var(--surface);
+  color: var(--blue-600);
+  border-color: var(--blue-600);
+  border-bottom: 2px solid var(--surface);
+  z-index: 1;
+}
+
+/* Occupant List */
+.occ-list { display: flex; flex-direction: column; gap: 10px; }
+.occ-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.15s;
+}
+.occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-unit {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-600);
+  min-width: 50px;
+}
+.occ-info { flex: 1; }
+.occ-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.occ-contact {
+  font-size: 12px;
+  color: var(--muted);
+}
+.occ-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.occ-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.occ-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Ground Floor Special */
+.ground-floor {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fbbf24;
+}
+
+/* Committee Badge */
+.committee-star {
+  font-size: 16px;
+  margin-left: 6px;
+}
+
+/* Modal Specific */
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px 16px;
+  margin: 20px 0;
+}
+.modal-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+}
+.modal-info-value {
+  font-size: 13px;
+  color: var(--text);
+}
+.vehicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vehicle-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .suite-tabs { gap: 4px; }
+  .suite-tab { padding: 6px 12px; font-size: 12px; }
+  .occ-item { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+  .occ-unit { min-width: auto; }
+  .occ-meta { flex-wrap: wrap; }
+  .occ-actions { width: 100%; justify-content: flex-end; }
+  .modal-info-grid { grid-template-columns: 1fr; gap: 8px; }
+  .modal-info-label { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+    
+    <div class="section-hdr">
+      <div class="section-title">Occupants</div>
+    </div>
+
+    <!-- Suite Tabs -->
+    <div class="suite-tabs">
+      <button class="suite-tab active" data-suite="Ground">Ground</button>
+      <button class="suite-tab" data-suite="Suite A">Suite A</button>
+      <button class="suite-tab" data-suite="Suite B">Suite B</button>
+      <button class="suite-tab" data-suite="Suite C">Suite C</button>
+      <button class="suite-tab" data-suite="Suite D">Suite D</button>
+      <button class="suite-tab" data-suite="Suite E">Suite E</button>
+      <button class="suite-tab" data-suite="Suite F">Suite F</button>
+      <button class="suite-tab" data-suite="Suite G">Suite G</button>
+      <button class="suite-tab" data-suite="Suite H">Suite H</button>
+    </div>
+
+    <!-- Occupant List -->
+    <div class="occ-list" id="occList">
+      <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-backdrop" id="viewModal">
+  <div class="modal-box">
+    <div class="modal-title" id="viewModalTitle">Unit Details</div>
+    
+    <div class="modal-info-grid" id="viewModalContent">
+      <!-- Dynamically populated -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-primary" id="viewEditBtn" style="display:none">✏️ Edit</button>
+      <button class="btn-secondary" onclick="closeModal('viewModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title" id="editModalTitle">Edit Unit</div>
+    <input type="hidden" id="editId">
+    
+    <div class="modal-field">
+      <label class="modal-label">Unit</label>
+      <input class="modal-input" id="editUnit" disabled>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Business Name</label>
+      <input class="modal-input" id="editBusinessName" placeholder="Business or tenant name">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Contact Person</label>
+      <input class="modal-input" id="editContactPerson" placeholder="Primary contact name">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Primary Email</label>
+      <input class="modal-input" type="email" id="editPrimaryEmail" placeholder="Primary contact email">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Business Email(s)</label>
+      <input class="modal-input" id="editBusinessEmail" placeholder="Additional emails (comma-separated)">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Phone</label>
+      <input class="modal-input" id="editPhone" placeholder="Contact phone number">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Committee Member</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="editIsCommittee">
+        <span style="font-size:13px">This occupant is a committee member</span>
+      </label>
+    </div>
+    
+    <div class="modal-field" id="committeeRoleField" style="display:none">
+      <label class="modal-label">Committee Role</label>
+      <select class="modal-select" id="editCommitteeRole">
+        <option value="Member">Member</option>
+        <option value="Chairman">Chairman</option>
+        <option value="Treasurer">Treasurer</option>
+        <option value="Secretary">Secretary</option>
+      </select>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">License Plates (one per line)</label>
+      <textarea class="modal-textarea" id="editLicensePlates" placeholder="ABC123&#10;XYZ789&#10;DEF456" style="min-height:100px;font-family:'Courier New',monospace"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-primary" id="saveBtn">Save →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+
+const { supabase, user, role, name } = ctx;
+
+let allOccupants = [];
+let currentSuite = 'Ground';
+
+// Load occupants
+async function loadOccupants() {
+  const { data, error } = await supabase
+    .from('occupants')
+    .select('*')
+    .order('unit', { ascending: true });
+  
+  if (error) {
+    showToast('Failed to load occupants', true);
+    return;
+  }
+  
+  allOccupants = data || [];
+  renderOccupants();
+}
+
+// Render occupants
+function renderOccupants() {
+  const list = document.getElementById('occList');
+  
+  // Filter by current suite
+  let filtered;
+  if (currentSuite === 'Ground') {
+    filtered = allOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1');
+  } else {
+    filtered = allOccupants.filter(o => o.suite === currentSuite);
+  }
+  
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">No occupants in this suite</div></div>`;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(o => {
+    const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
+    const emails = [o.primary_email, o.business_email].filter(e => e).length;
+    const isGround = o.level === 'Ground';
+    
+    return `
+      <div class="occ-item ${isGround ? 'ground-floor' : ''}">
+        <div class="occ-unit">${o.unit}</div>
+        <div class="occ-info">
+          <div class="occ-name">
+            ${o.business_name || 'Vacant'}
+            ${o.is_committee ? '<span class="committee-star" title="Committee Member">⭐</span>' : ''}
+          </div>
+          ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
+        </div>
+        <div class="occ-meta">
+          <div class="occ-meta-item">📧 ${emails}</div>
+          <div class="occ-meta-item">🚗 ${vehicles}</div>
+        </div>
+        <div class="occ-actions">
+          <button class="btn-secondary" onclick="openViewModal('${o.id}')">👁️ View</button>
+          ${role === 'admin' ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Suite tab click
+document.querySelectorAll('.suite-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentSuite = tab.dataset.suite;
+    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderOccupants();
+  });
+});
+
+// Open View Modal
+window.openViewModal = (id) => {
+  const occ = allOccupants.find(o => o.id === id);
+  if (!occ) return;
+  
+  document.getElementById('viewModalTitle').textContent = `Unit ${occ.unit} Details`;
+  
+  const vehicles = (occ.license_plates || '').split(',').filter(p => p.trim());
+  
+  const content = `
+    <div class="modal-info-label">Business:</div>
+    <div class="modal-info-value">${occ.business_name || '—'}</div>
+    
+    <div class="modal-info-label">Contact:</div>
+    <div class="modal-info-value">${occ.contact_person || '—'} ${occ.is_committee ? '⭐ Committee' : ''}</div>
+    
+    ${occ.committee_role ? `
+      <div class="modal-info-label">Role:</div>
+      <div class="modal-info-value">${occ.committee_role}</div>
+    ` : ''}
+    
+    <div class="modal-info-label">Primary Email:</div>
+    <div class="modal-info-value">${occ.primary_email || '—'}</div>
+    
+    ${occ.business_email ? `
+      <div class="modal-info-label">Business Email:</div>
+      <div class="modal-info-value">${occ.business_email}</div>
+    ` : ''}
+    
+    <div class="modal-info-label">Phone:</div>
+    <div class="modal-info-value">${occ.phone || '—'}</div>
+    
+    <div class="modal-info-label">Vehicles:</div>
+    <div class="modal-info-value">
+      ${vehicles.length ? `
+        <div class="vehicle-list">
+          ${vehicles.map(v => `<div class="vehicle-item">🚗 ${v.trim()}</div>`).join('')}
+        </div>
+      ` : '—'}
+    </div>
+  `;
+  
+  document.getElementById('viewModalContent').innerHTML = content;
+  
+  // Show Edit button for admin
+  const editBtn = document.getElementById('viewEditBtn');
+  if (role === 'admin') {
+    editBtn.style.display = 'inline-flex';
+    editBtn.onclick = () => {
+      closeModal('viewModal');
+      openEditModal(id);
+    };
+  } else {
+    editBtn.style.display = 'none';
+  }
+  
+  openModal('viewModal');
+};
+
+// Open Edit Modal
+window.openEditModal = (id) => {
+  const occ = allOccupants.find(o => o.id === id);
+  if (!occ) return;
+  
+  document.getElementById('editModalTitle').textContent = `Edit Unit ${occ.unit}`;
+  document.getElementById('editId').value = occ.id;
+  document.getElementById('editUnit').value = occ.unit;
+  document.getElementById('editBusinessName').value = occ.business_name || '';
+  document.getElementById('editContactPerson').value = occ.contact_person || '';
+  document.getElementById('editPrimaryEmail').value = occ.primary_email || '';
+  document.getElementById('editBusinessEmail').value = occ.business_email || '';
+  document.getElementById('editPhone').value = occ.phone || '';
+  document.getElementById('editIsCommittee').checked = occ.is_committee || false;
+  document.getElementById('editCommitteeRole').value = occ.committee_role || 'Member';
+  
+  // License plates - one per line
+  const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
+  document.getElementById('editLicensePlates').value = plates.join('\n');
+  
+  // Toggle committee role field
+  toggleCommitteeRole();
+  
+  openModal('editModal');
+};
+
+// Toggle committee role field
+document.getElementById('editIsCommittee').addEventListener('change', toggleCommitteeRole);
+
+function toggleCommitteeRole() {
+  const isCommittee = document.getElementById('editIsCommittee').checked;
+  document.getElementById('committeeRoleField').style.display = isCommittee ? 'block' : 'none';
+}
+
+// Save
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const id = document.getElementById('editId').value;
+  
+  // Get license plates - split by newline, trim, filter empty
+  const platesText = document.getElementById('editLicensePlates').value;
+  const plates = platesText.split('\n').map(p => p.trim()).filter(p => p);
+  const platesStr = plates.join(', ');
+  
+  const data = {
+    business_name: document.getElementById('editBusinessName').value.trim(),
+    contact_person: document.getElementById('editContactPerson').value.trim(),
+    primary_email: document.getElementById('editPrimaryEmail').value.trim(),
+    business_email: document.getElementById('editBusinessEmail').value.trim(),
+    phone: document.getElementById('editPhone').value.trim(),
+    is_committee: document.getElementById('editIsCommittee').checked,
+    committee_role: document.getElementById('editIsCommittee').checked ? document.getElementById('editCommitteeRole').value : null,
+    license_plates: platesStr || null,
+  };
+  
+  const { error } = await supabase
+    .from('occupants')
+    .update(data)
+    .eq('id', id);
+  
+  if (error) {
+    showToast('Failed to save: ' + error.message, true);
+    return;
+  }
+  
+  closeModal('editModal');
+  await loadOccupants();
+  showToast('Occupant updated ✓');
+});
+
+// Initial load
+await loadOccupants();
+</script>
+</body>
+</html>
