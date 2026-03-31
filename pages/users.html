@@ -280,14 +280,32 @@ const ROLE_HINTS = {
 const ROLE_COLORS = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
 const ROLE_BADGES = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
 
-const PAGE_ICONS = { quotes: '📋', works: '🔧', reports: '📊', building: '🏢', temperature: '🌡️', users: '👥' };
+const PAGE_ICONS = { 
+  building: '🏢',
+  announcements: '📢',
+  parking: '🚗',
+  complaints: '📝',
+  hvac: '❄️',
+  emergency: '🚨',
+  works: '🔧',
+  dashboard: '📊',
+  history: '🌡️',
+  quotes: '📋',
+  reports: '💰'
+};
+
 const PAGE_LABELS = {
-  quotes: 'Quotes (견적 승인)',
-  works: 'Works (진행 작업)',
-  reports: 'Reports (완료 분석)',
   building: 'Building (빌딩 현황)',
-  temperature: 'Temperature (온도 요청)',
-  users: 'Users (사용자 관리)'
+  announcements: 'Announcements (공지사항)',
+  parking: 'Parking (주차/견인)',
+  complaints: 'Complaints (입주민 요청)',
+  hvac: 'HVAC (A/C 온도)',
+  emergency: 'Emergency (긴급 연락처)',
+  works: 'Works (진행 작업)',
+  dashboard: 'Dashboard (대시보드)',
+  history: 'History (온도 히스토리)',
+  quotes: 'Quotes (견적 승인)',
+  reports: 'Reports (재무 보고)'
 };
 
 // Tab switching
@@ -479,7 +497,7 @@ async function loadSidebarPermissions() {
 }
 
 function renderSidebarPermissions(selectedRole) {
-  const pages = ['quotes', 'works', 'reports', 'building', 'temperature', 'users'];
+  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'];
   
   const html = `
     <div class="perm-section">
@@ -497,7 +515,12 @@ function renderSidebarPermissions(selectedRole) {
           </div>
         `;
       }).join('')}
+      <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted)">
+        💡 <strong>Note:</strong> Users page is Admin-only and cannot be modified.
+      </div>
     </div>
+    
+    <div id="permissionsSummary" style="margin-top:16px"></div>
   `;
   
   document.getElementById('permissionsDisplay').innerHTML = html;
@@ -506,8 +529,59 @@ function renderSidebarPermissions(selectedRole) {
     cb.addEventListener('change', (e) => {
       const page = e.target.dataset.page;
       currentPermissions[page] = e.target.checked;
+      updatePermissionsSummary(selectedRole);
     });
   });
+  
+  updatePermissionsSummary(selectedRole);
+}
+
+function updatePermissionsSummary(selectedRole) {
+  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'];
+  
+  const allowed = pages.filter(page => currentPermissions[page] !== false);
+  const denied = pages.filter(page => currentPermissions[page] === false);
+  
+  const summaryHTML = `
+    <div class="perm-section" style="background:var(--bg);border:1px solid var(--border-light)">
+      <div class="perm-section-title">📋 Current Access Summary</div>
+      
+      ${allowed.length > 0 ? `
+        <div style="margin-bottom:16px">
+          <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px">
+            ✅ Can Access (${allowed.length}):
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${allowed.map(page => `
+              <span style="font-size:11px;padding:4px 8px;background:var(--green-bg);color:var(--green-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+                ${PAGE_ICONS[page]} ${PAGE_LABELS[page].split(' (')[0]}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+      
+      ${denied.length > 0 ? `
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:8px">
+            ❌ Cannot Access (${denied.length}):
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${denied.map(page => `
+              <span style="font-size:11px;padding:4px 8px;background:var(--red-bg);color:var(--red-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+                ${PAGE_ICONS[page]} ${PAGE_LABELS[page].split(' (')[0]}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  const summaryEl = document.getElementById('permissionsSummary');
+  if (summaryEl) {
+    summaryEl.innerHTML = summaryHTML;
+  }
 }
 
 document.getElementById('permRoleSelect').addEventListener('change', loadSidebarPermissions);
@@ -536,6 +610,7 @@ document.getElementById('savePermBtn').addEventListener('click', async () => {
       details: { role: selectedRole, permissions: currentPermissions }
     });
     
+    updatePermissionsSummary(selectedRole);
     showToast(`Sidebar permissions saved for ${selectedRole} ✓`);
   } catch(e) {
     console.error('Save permissions error:', e);
