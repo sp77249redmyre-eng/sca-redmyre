@@ -47,16 +47,19 @@
 .role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
 
-/* Permissions Matrix */
+/* Permissions - Sidebar */
 .perm-header{margin-bottom:20px;display:flex;align-items:center;gap:12px}
 .perm-header select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
+.perm-warning{background:var(--amber-50);border:1px solid var(--amber-200);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:var(--amber-900);line-height:1.6}
 .perm-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
-.perm-section-title{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)}
-.perm-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.perm-section-title{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text)}
+.perm-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)}
 .perm-item:last-child{border-bottom:none}
-.perm-icon{font-size:16px}
+.perm-checkbox{width:20px;height:20px;cursor:pointer}
+.perm-checkbox:disabled{opacity:0.5;cursor:not-allowed}
 .perm-label{font-size:13px;color:var(--text-2);flex:1}
-.perm-note{font-size:11px;color:var(--muted);margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:6px;line-height:1.5}
+.perm-page-icon{font-size:16px;width:24px}
+.perm-save-btn{margin-top:16px}
 
 /* Activity Log */
 .log-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
@@ -99,7 +102,7 @@
   .perm-header{flex-direction:column;align-items:stretch}
   .perm-header select{width:100%}
   .perm-section{padding:14px}
-  .perm-item{flex-direction:column;align-items:start;gap:6px}
+  .perm-item{flex-wrap:wrap}
   
   .log-filters{flex-direction:column}
   .log-filters select{width:100%}
@@ -130,7 +133,7 @@
     <!-- Tabs -->
     <div class="tabs">
       <div class="tab active" data-tab="users">👥 Users</div>
-      <div class="tab" data-tab="permissions">🔐 Permissions</div>
+      <div class="tab" data-tab="permissions">🔐 Sidebar Permissions</div>
       <div class="tab" data-tab="activity">📝 Activity Log</div>
     </div>
 
@@ -152,20 +155,27 @@
       </div>
     </div>
 
-    <!-- Tab Content: Permissions -->
+    <!-- Tab Content: Sidebar Permissions -->
     <div id="tab-permissions" class="tab-content">
       <div class="perm-header">
         <label style="font-size:13px;font-weight:500;color:var(--text)">Select Role:</label>
         <select id="permRoleSelect">
-          <option value="admin">Admin</option>
-          <option value="committee" selected>Committee</option>
+          <option value="committee">Committee</option>
           <option value="observer">Observer</option>
           <option value="owner">Owner</option>
           <option value="tenant">Tenant</option>
+          <option value="admin">Admin (View Only)</option>
         </select>
       </div>
 
+      <div id="adminWarning" style="display:none" class="perm-warning">
+        ⚠️ <strong>Admin role cannot be modified.</strong><br>
+        Admin has full access to all pages for security and system management purposes.
+      </div>
+
       <div id="permissionsDisplay"></div>
+      
+      <button class="btn-primary perm-save-btn" id="savePermBtn" style="display:none">💾 Save Changes</button>
     </div>
 
     <!-- Tab Content: Activity Log -->
@@ -182,9 +192,10 @@
           <option value="work_created">Work Created</option>
           <option value="work_completed">Work Completed</option>
           <option value="role_changed">Role Changed</option>
-          <option value="password_reset">Password Reset</option>
+          <option value="password_changed">Password Changed</option>
           <option value="user_invited">User Invited</option>
           <option value="user_removed">User Removed</option>
+          <option value="sidebar_permissions_updated">Sidebar Permissions Updated</option>
         </select>
         <select id="filterPeriod">
           <option value="7">Last 7 days</option>
@@ -229,6 +240,26 @@
   </div>
 </div>
 
+<!-- SET PASSWORD MODAL -->
+<div class="modal-backdrop" id="setPasswordModal">
+  <div class="modal-box">
+    <div class="modal-title">Set Password</div>
+    <div class="modal-field">
+      <label class="modal-label">User</label>
+      <div style="font-size:13px;color:var(--text);padding:8px 0" id="pwdUserName">—</div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">New Password</label>
+      <input class="modal-input" type="text" id="newPassword" placeholder="Enter new password (min 4 characters)">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 You can set any password (e.g. "1111") - the user will be notified to change it.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('setPasswordModal')">Cancel</button>
+      <button class="btn-primary" id="setPwdBtn">Set Password</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -239,7 +270,6 @@ const { supabase, user, role } = ctx;
 
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
-// Role descriptions
 const ROLE_HINTS = {
   committee:'Can view all quotes with amounts and vote to approve or decline.',
   observer: 'Read-only access to quotes. Can see everything but cannot vote.',
@@ -247,173 +277,17 @@ const ROLE_HINTS = {
   tenant:   'Basic access — announcements, HVAC temperature requests only.'
 };
 
-const ROLE_COLORS = { 
-  admin:'av-admin',
-  committee:'av-committee',
-  observer:'av-observer',
-  owner:'av-owner',
-  tenant:'av-tenant' 
-};
+const ROLE_COLORS = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
+const ROLE_BADGES = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
 
-const ROLE_BADGES = { 
-  admin:'badge-purple',
-  committee:'badge-blue',
-  observer:'badge-green',
-  owner:'badge-gray',
-  tenant:'badge-gray' 
-};
-
-// Permissions Matrix
-const PERMISSIONS = {
-  admin: {
-    quotes: [
-      { label: 'View quotes page', allowed: true },
-      { label: 'View quote amounts', allowed: true },
-      { label: 'Add new quotes', allowed: true },
-      { label: 'Edit existing quotes', allowed: true },
-      { label: 'Force approve quotes', allowed: true },
-      { label: 'Vote on quotes', allowed: false, note: 'Admin manages quotes directly without voting' }
-    ],
-    works: [
-      { label: 'View works page', allowed: true },
-      { label: 'Edit work details', allowed: true },
-      { label: 'Add emergency works', allowed: true },
-      { label: 'Complete works', allowed: true },
-      { label: 'Change work status', allowed: true }
-    ],
-    reports: [
-      { label: 'View reports page', allowed: true },
-      { label: 'View amounts & costs', allowed: true },
-      { label: 'Delete attached files', allowed: true },
-      { label: 'Export data', allowed: true }
-    ],
-    building: [
-      { label: 'View building status', allowed: true },
-      { label: 'Edit building info', allowed: true },
-      { label: 'Manage announcements', allowed: true }
-    ],
-    temperature: [
-      { label: 'Submit temperature requests', allowed: true },
-      { label: 'View request history', allowed: true },
-      { label: 'View all tenant requests', allowed: true }
-    ],
-    users: [
-      { label: 'View users page', allowed: true },
-      { label: 'Invite new users', allowed: true },
-      { label: 'Edit user roles', allowed: true },
-      { label: 'Remove users', allowed: true },
-      { label: 'Reset passwords', allowed: true }
-    ]
-  },
-  committee: {
-    quotes: [
-      { label: 'View quotes page', allowed: true },
-      { label: 'View quote amounts', allowed: true },
-      { label: 'Vote on quotes (Approve/Decline/Hold)', allowed: true },
-      { label: 'Add new quotes', allowed: false },
-      { label: 'Edit existing quotes', allowed: false },
-      { label: 'Force approve quotes', allowed: false }
-    ],
-    works: [
-      { label: 'View works page', allowed: true },
-      { label: 'Edit work details', allowed: false },
-      { label: 'Add emergency works', allowed: false },
-      { label: 'Complete works', allowed: false }
-    ],
-    reports: [
-      { label: 'View reports page', allowed: true },
-      { label: 'View amounts & costs', allowed: false, note: 'Financial information is confidential' },
-      { label: 'Delete attached files', allowed: false }
-    ],
-    building: [
-      { label: 'View building status', allowed: true },
-      { label: 'Edit building info', allowed: false }
-    ],
-    temperature: [
-      { label: 'Submit temperature requests', allowed: true },
-      { label: 'View request history', allowed: true }
-    ],
-    users: [
-      { label: 'View users page', allowed: false },
-      { label: 'Invite new users', allowed: false },
-      { label: 'Edit user roles', allowed: false }
-    ]
-  },
-  observer: {
-    quotes: [
-      { label: 'View quotes page', allowed: true },
-      { label: 'View quote amounts', allowed: false, note: 'Observer role is read-only without financial access' },
-      { label: 'Vote on quotes', allowed: false },
-      { label: 'Add new quotes', allowed: false },
-      { label: 'Edit existing quotes', allowed: false }
-    ],
-    works: [
-      { label: 'View works page', allowed: true },
-      { label: 'Edit work details', allowed: false },
-      { label: 'Add emergency works', allowed: false }
-    ],
-    reports: [
-      { label: 'View reports page', allowed: true },
-      { label: 'View amounts & costs', allowed: false },
-      { label: 'Delete attached files', allowed: false }
-    ],
-    building: [
-      { label: 'View building status', allowed: true },
-      { label: 'Edit building info', allowed: false }
-    ],
-    temperature: [
-      { label: 'Submit temperature requests', allowed: true },
-      { label: 'View request history', allowed: true }
-    ],
-    users: [
-      { label: 'View users page', allowed: false }
-    ]
-  },
-  owner: {
-    quotes: [
-      { label: 'View quotes page', allowed: false, note: 'Quote management is restricted to Committee and Admin' }
-    ],
-    works: [
-      { label: 'View works page', allowed: true },
-      { label: 'Edit work details', allowed: false }
-    ],
-    reports: [
-      { label: 'View reports page', allowed: false }
-    ],
-    building: [
-      { label: 'View building status', allowed: true },
-      { label: 'View announcements', allowed: true }
-    ],
-    temperature: [
-      { label: 'Submit temperature requests', allowed: true },
-      { label: 'View request history', allowed: false, note: 'Owners can only see their own requests' }
-    ],
-    users: [
-      { label: 'View users page', allowed: false }
-    ]
-  },
-  tenant: {
-    quotes: [
-      { label: 'View quotes page', allowed: false }
-    ],
-    works: [
-      { label: 'View works page', allowed: false }
-    ],
-    reports: [
-      { label: 'View reports page', allowed: false }
-    ],
-    building: [
-      { label: 'View building status', allowed: true },
-      { label: 'View announcements', allowed: true }
-    ],
-    temperature: [
-      { label: 'Submit temperature requests', allowed: true },
-      { label: 'View request history', allowed: false, note: 'Tenants can only see their own requests' }
-    ],
-    users: [
-      { label: 'View users page', allowed: false }
-    ]
-  }
+const PAGE_ICONS = { quotes: '📋', works: '🔧', reports: '📊', building: '🏢', temperature: '🌡️', users: '👥' };
+const PAGE_LABELS = {
+  quotes: 'Quotes (견적 승인)',
+  works: 'Works (진행 작업)',
+  reports: 'Reports (완료 분석)',
+  building: 'Building (빌딩 현황)',
+  temperature: 'Temperature (온도 요청)',
+  users: 'Users (사용자 관리)'
 };
 
 // Tab switching
@@ -426,6 +300,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById(`tab-${targetTab}`).classList.add('active');
     
     if (targetTab === 'activity') loadActivityLog();
+    if (targetTab === 'permissions') loadSidebarPermissions();
   });
 });
 
@@ -445,10 +320,7 @@ async function loadUsers() {
   document.getElementById('userCountLabel').textContent = `${profiles.length} users`;
   
   const list = document.getElementById('userList');
-  if (!profiles.length) { 
-    list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; 
-    return; 
-  }
+  if (!profiles.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; return; }
   
   list.innerHTML = profiles.map(p => {
     const displayName = p.full_name||p.email?.split('@')[0]||'—';
@@ -474,66 +346,86 @@ async function loadUsers() {
         <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           ${!isSelf?`
-            <button class="btn-secondary" style="padding:5px 10px;font-size:11px" onclick="resetPassword('${p.email}','${displayName}')">Reset Password</button>
+            <button class="btn-secondary" style="padding:5px 10px;font-size:11px" onclick="openSetPassword('${p.id}','${displayName}')">Set Password</button>
             <button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>
           `:'<span style="font-size:11px;color:var(--muted)">—</span>'}
         </div>
       </div>`;
   }).join('');
   
-  // Populate user filter
   const filterUser = document.getElementById('filterUser');
-  filterUser.innerHTML = '<option value="">All Users</option>' + 
-    profiles.map(p => `<option value="${p.id}">${p.full_name||p.email}</option>`).join('');
+  filterUser.innerHTML = '<option value="">All Users</option>' + profiles.map(p => `<option value="${p.id}">${p.full_name||p.email}</option>`).join('');
 }
 
 window.changeRole = async (uid, newRole) => {
   try { 
     await supabase.from('profiles').update({role:newRole}).eq('id',uid); 
-    
-    // Log the action
     const { data: changedUser } = await supabase.from('profiles').select('full_name, email').eq('id', uid).single();
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
       action: 'role_changed',
-      details: { 
-        target_user: changedUser?.full_name || changedUser?.email,
-        new_role: newRole 
-      }
+      details: { target_user: changedUser?.full_name || changedUser?.email, new_role: newRole }
     });
-    
     showToast(`Role updated to ${newRole} ✓`); 
     await loadUsers(); 
-  } catch(e) { 
-    showToast('Failed to update role', true); 
-  }
+  } catch(e) { showToast('Failed to update role', true); }
 };
 
-window.resetPassword = async (email, uname) => {
-  if (!confirm(`Send password reset email to ${uname} (${email})?`)) return;
+let currentPasswordUserId = null;
+let currentPasswordUserName = null;
+
+window.openSetPassword = (uid, uname) => {
+  currentPasswordUserId = uid;
+  currentPasswordUserName = uname;
+  document.getElementById('pwdUserName').textContent = uname;
+  document.getElementById('newPassword').value = '';
+  document.getElementById('setPasswordModal').classList.add('open');
+};
+
+document.getElementById('setPwdBtn').addEventListener('click', async () => {
+  const newPwd = document.getElementById('newPassword').value.trim();
+  const btn = document.getElementById('setPwdBtn');
+  
+  if (!newPwd) { showToast('Please enter a password', true); return; }
+  if (newPwd.length < 4) { showToast('Password must be at least 4 characters', true); return; }
+  if (!currentPasswordUserId) { showToast('User ID missing', true); return; }
+  
+  btn.disabled = true; btn.textContent = 'Setting...';
+  
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
-    if (error) throw error;
+    const { data:{session:s1} } = await supabase.auth.refreshSession();
+    if (!s1) { showToast('Session expired. Please log in again.', true); return; }
     
-    // Log the action
+    const res = await fetch('/api/admin-set-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s1.access_token}` },
+      body: JSON.stringify({ user_id: currentPasswordUserId, new_password: newPwd })
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to set password');
+    
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
-      action: 'password_reset',
-      details: { target_email: email, target_name: uname }
+      action: 'password_changed',
+      details: { target_user: currentPasswordUserName, password_length: newPwd.length }
     });
     
-    showToast(`Password reset email sent to ${email} ✓`);
+    closeModal('setPasswordModal');
+    showToast(`Password set for ${currentPasswordUserName} ✓`);
+    currentPasswordUserId = null;
+    currentPasswordUserName = null;
   } catch(e) {
-    console.error('resetPassword error:', e);
-    showToast(e.message || 'Failed to send reset email', true);
+    console.error('Set password error:', e);
+    showToast(e.message || 'Failed to set password', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Set Password';
   }
-};
+});
 
 window.removeUser = async (uid, uname) => {
   if (!confirm(`Remove ${uname}?\nThey will lose access to this system immediately.`)) return;
@@ -549,7 +441,6 @@ window.removeUser = async (uid, uname) => {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to remove user');
     
-    // Log the action
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
@@ -560,41 +451,98 @@ window.removeUser = async (uid, uname) => {
     
     showToast(`${uname} removed ✓`);
     await loadUsers();
-  } catch(e) { 
-    showToast(e.message||'Failed to remove user', true); 
-  }
+  } catch(e) { showToast(e.message||'Failed to remove user', true); }
 };
 
-// Permissions display
-function renderPermissions(selectedRole) {
-  const perms = PERMISSIONS[selectedRole];
-  const sections = {
-    quotes: { title: '📋 Quotes (견적 승인)', items: perms.quotes },
-    works: { title: '🔧 Works (진행 작업)', items: perms.works },
-    reports: { title: '📊 Reports (완료 분석)', items: perms.reports },
-    building: { title: '🏢 Building (빌딩 현황)', items: perms.building },
-    temperature: { title: '🌡️ Temperature (온도 요청)', items: perms.temperature },
-    users: { title: '👥 Users (사용자 관리)', items: perms.users }
-  };
+// Sidebar Permissions
+let currentPermissions = {};
+
+async function loadSidebarPermissions() {
+  const selectedRole = document.getElementById('permRoleSelect').value;
   
-  const html = Object.entries(sections).map(([key, section]) => `
-    <div class="perm-section">
-      <div class="perm-section-title">${section.title}</div>
-      ${section.items.map(item => `
-        <div class="perm-item">
-          <span class="perm-icon">${item.allowed ? '✅' : '❌'}</span>
-          <span class="perm-label">${item.label}</span>
-        </div>
-        ${item.note ? `<div class="perm-note">💡 ${item.note}</div>` : ''}
-      `).join('')}
-    </div>
-  `).join('');
+  if (selectedRole === 'admin') {
+    document.getElementById('adminWarning').style.display = 'block';
+    document.getElementById('permissionsDisplay').innerHTML = '';
+    document.getElementById('savePermBtn').style.display = 'none';
+    return;
+  }
   
-  document.getElementById('permissionsDisplay').innerHTML = html;
+  document.getElementById('adminWarning').style.display = 'none';
+  document.getElementById('savePermBtn').style.display = 'block';
+  
+  const { data: perms } = await supabase.from('sidebar_permissions').select('*').eq('role', selectedRole);
+  
+  currentPermissions = {};
+  if (perms) { perms.forEach(p => { currentPermissions[p.page] = p.allowed; }); }
+  
+  renderSidebarPermissions(selectedRole);
 }
 
-document.getElementById('permRoleSelect').addEventListener('change', (e) => {
-  renderPermissions(e.target.value);
+function renderSidebarPermissions(selectedRole) {
+  const pages = ['quotes', 'works', 'reports', 'building', 'temperature', 'users'];
+  
+  const html = `
+    <div class="perm-section">
+      <div class="perm-section-title">📱 Sidebar Menu Access</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        Select which pages <strong>${selectedRole}</strong> users can access from the sidebar menu.
+      </div>
+      ${pages.map(page => {
+        const isChecked = currentPermissions[page] !== false;
+        return `
+          <div class="perm-item">
+            <input type="checkbox" class="perm-checkbox" id="perm-${page}" data-page="${page}" ${isChecked ? 'checked' : ''}>
+            <span class="perm-page-icon">${PAGE_ICONS[page]}</span>
+            <label for="perm-${page}" class="perm-label">${PAGE_LABELS[page]}</label>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  
+  document.getElementById('permissionsDisplay').innerHTML = html;
+  
+  document.querySelectorAll('.perm-checkbox').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const page = e.target.dataset.page;
+      currentPermissions[page] = e.target.checked;
+    });
+  });
+}
+
+document.getElementById('permRoleSelect').addEventListener('change', loadSidebarPermissions);
+
+document.getElementById('savePermBtn').addEventListener('click', async () => {
+  const selectedRole = document.getElementById('permRoleSelect').value;
+  const btn = document.getElementById('savePermBtn');
+  
+  btn.disabled = true; btn.textContent = 'Saving...';
+  
+  try {
+    await supabase.from('sidebar_permissions').delete().eq('role', selectedRole);
+    
+    const permsToInsert = Object.entries(currentPermissions).map(([page, allowed]) => ({
+      role: selectedRole, page: page, allowed: allowed
+    }));
+    
+    const { error } = await supabase.from('sidebar_permissions').insert(permsToInsert);
+    if (error) throw error;
+    
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'sidebar_permissions_updated',
+      details: { role: selectedRole, permissions: currentPermissions }
+    });
+    
+    showToast(`Sidebar permissions saved for ${selectedRole} ✓`);
+  } catch(e) {
+    console.error('Save permissions error:', e);
+    showToast('Failed to save permissions', true);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Save Changes';
+  }
 });
 
 // Activity Log
@@ -606,12 +554,7 @@ async function loadActivityLog() {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - filterPeriod);
   
-  let query = supabase
-    .from('audit_logs')
-    .select('*')
-    .gte('created_at', cutoffDate.toISOString())
-    .order('created_at', { ascending: false })
-    .limit(50);
+  let query = supabase.from('audit_logs').select('*').gte('created_at', cutoffDate.toISOString()).order('created_at', { ascending: false }).limit(50);
   
   if (filterUser) query = query.eq('user_id', filterUser);
   if (filterAction) query = query.eq('action', filterAction);
@@ -626,27 +569,15 @@ async function loadActivityLog() {
   }
   
   const actionIcons = {
-    quote_approved: '✅',
-    quote_declined: '❌',
-    quote_held: '⏸️',
-    work_created: '➕',
-    work_completed: '✅',
-    role_changed: '👥',
-    password_reset: '🔐',
-    user_invited: '📧',
-    user_removed: '🗑️'
+    quote_approved: '✅', quote_declined: '❌', quote_held: '⏸️', work_created: '➕', work_completed: '✅',
+    role_changed: '👥', password_changed: '🔐', user_invited: '📧', user_removed: '🗑️', sidebar_permissions_updated: '🔐'
   };
   
   const actionLabels = {
-    quote_approved: 'Approved Quote',
-    quote_declined: 'Declined Quote',
-    quote_held: 'Put Quote on Hold',
-    work_created: 'Created Work',
-    work_completed: 'Completed Work',
-    role_changed: 'Changed User Role',
-    password_reset: 'Sent Password Reset',
-    user_invited: 'Invited User',
-    user_removed: 'Removed User'
+    quote_approved: 'Approved Quote', quote_declined: 'Declined Quote', quote_held: 'Put Quote on Hold',
+    work_created: 'Created Work', work_completed: 'Completed Work', role_changed: 'Changed User Role',
+    password_changed: 'Changed Password', user_invited: 'Invited User', user_removed: 'Removed User',
+    sidebar_permissions_updated: 'Updated Sidebar Permissions'
   };
   
   list.innerHTML = logs.map(log => {
@@ -659,8 +590,10 @@ async function loadActivityLog() {
     if (log.details) {
       if (log.details.quote_title) details = ` #${log.details.quote_id} (${log.details.quote_title})`;
       if (log.details.new_role) details = ` → ${log.details.target_user} to ${log.details.new_role}`;
-      if (log.details.target_email) details = ` to ${log.details.target_email}`;
+      if (log.details.target_user && log.action === 'password_changed') details = ` for ${log.details.target_user}`;
+      if (log.details.invited_email) details = ` ${log.details.invited_email}`;
       if (log.details.removed_user) details = ` ${log.details.removed_user}`;
+      if (log.details.role && log.action === 'sidebar_permissions_updated') details = ` for ${log.details.role}`;
     }
     
     return `
@@ -698,12 +631,8 @@ document.getElementById('filterPeriod').addEventListener('change', loadActivityL
 document.getElementById('inviteRole').addEventListener('change', () => {
   const val = document.getElementById('inviteRole').value;
   const hint = document.getElementById('roleHint');
-  if (val && ROLE_HINTS[val]) { 
-    hint.textContent = ROLE_HINTS[val]; 
-    hint.style.display = 'block'; 
-  } else {
-    hint.style.display = 'none';
-  }
+  if (val && ROLE_HINTS[val]) { hint.textContent = ROLE_HINTS[val]; hint.style.display = 'block'; }
+  else hint.style.display = 'none';
 });
 
 document.getElementById('inviteBtn').addEventListener('click', () => {
@@ -724,8 +653,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
   if (!fullName) { showToast('Please enter a full name', true); return; }
   if (!inviteRole) { showToast('Please select a role', true); return; }
   
-  btn.disabled = true; 
-  btn.textContent = 'Sending…';
+  btn.disabled = true; btn.textContent = 'Sending…';
   
   try {
     const { data:{session:s2} } = await supabase.auth.refreshSession();
@@ -739,7 +667,6 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to send invite');
     
-    // Log the action
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
@@ -751,17 +678,11 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
     closeModal('inviteModal');
     showToast(`Invite sent to ${email} ✓`);
     await loadUsers();
-  } catch(e) { 
-    showToast(e.message||'Failed to send invite', true); 
-  } finally { 
-    btn.disabled = false; 
-    btn.textContent = 'Send Invite →'; 
-  }
+  } catch(e) { showToast(e.message||'Failed to send invite', true); }
+  finally { btn.disabled = false; btn.textContent = 'Send Invite →'; }
 });
 
-// Initialize
 await loadUsers();
-renderPermissions('committee');
 </script>
 </body>
 </html>
