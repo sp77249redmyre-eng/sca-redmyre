@@ -44,9 +44,23 @@
 .limits-bar label{font-size:12px;color:var(--muted);font-weight:500}
 .limits-input{width:64px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;text-align:center}
 .limits-save{padding:6px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
-.my-req-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-light)}
+.my-req-row{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
 .my-req-row:last-child{border-bottom:none}
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.filter-tabs{display:flex;gap:8px;margin-bottom:12px}
+.filter-tab{padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--muted)}
+.filter-tab.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+.filter-tab:hover:not(.active){border-color:var(--blue-400);color:var(--text)}
+.progress-bar{display:flex;align-items:center;gap:0;margin-top:10px;padding:12px 16px;background:var(--bg);border-radius:10px}
+.progress-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+.progress-icon{font-size:20px;margin-bottom:2px}
+.progress-label{font-size:10px;color:var(--muted);font-weight:500;text-align:center}
+.progress-line{height:2px;background:var(--border);flex:1;margin:0 -4px;position:relative;top:-14px}
+.progress-line.active{background:var(--blue-600)}
+.step-completed .progress-icon{filter:none}
+.step-active .progress-icon{animation:pulse 1.5s ease-in-out infinite}
+.step-pending .progress-icon{opacity:0.3}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 </style>
 </head>
@@ -107,7 +121,14 @@
       </div>
       <!-- Non-admin: my requests -->
       <div id="userPanel" style="display:none">
-        <div class="section-hdr"><div class="section-title">My Requests</div></div>
+        <div class="section-hdr">
+          <div class="section-title">My Requests</div>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="ongoing">Ongoing</button>
+          <button class="filter-tab" data-filter="completed">Completed</button>
+        </div>
         <div class="card" id="myList"><div class="empty-state">No requests submitted yet</div></div>
       </div>
     </div>
@@ -122,6 +143,8 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
 
 let selectedType = null;
+let currentFilter = 'all';
+let allMyRequests = [];
 
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -149,92 +172,188 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   } catch(e) { showToast(e.message||'Failed to submit', true); }
 });
 
-if (role==='admin') {
-  document.getElementById('adminPanel').style.display='block';
+// Filter tabs
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentFilter = tab.dataset.filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderMyRequests();
+  });
+});
+
+function getProgressBar(status, type) {
+  const steps = [
+    { key: 'pending', icon: '📝', label: '제출' },
+    { key: 'approved', icon: '✅', label: '승인' },
+    { key: 'processing', icon: type === 'hot' ? '🌡️⬇️' : '🌡️⬆️', label: '조정중' },
+    { key: 'completed', icon: '✓', label: '완료' }
+  ];
+
+  const statusOrder = ['pending', 'approved', 'processing', 'completed'];
+  const currentIndex = statusOrder.indexOf(status);
+  
+  let html = '<div class="progress-bar">';
+  
+  steps.forEach((step, idx) => {
+    const stepClass = idx < currentIndex ? 'step-completed' : 
+                     idx === currentIndex ? 'step-active' : 'step-pending';
+    
+    html += `<div class="progress-step ${stepClass}">
+      <div class="progress-icon">${step.icon}</div>
+      <div class="progress-label">${step.label}</div>
+    </div>`;
+    
+    if (idx < steps.length - 1) {
+      const lineClass = idx < currentIndex ? 'active' : '';
+      html += `<div class="progress-line ${lineClass}"></div>`;
+    }
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+function renderMyRequests() {
+  const list = document.getElementById('myList');
+  
+  let filtered = allMyRequests;
+  if (currentFilter === 'ongoing') {
+    filtered = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
+  } else if (currentFilter === 'completed') {
+    filtered = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
+  }
+  
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No requests in this category</div>';
+    return;
+  }
+  
+  list.innerHTML = filtered.map(r => `
+    <div class="my-req-row">
+      <div style="font-size:20px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+        <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
+        ${r.comment ? `<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>` : ''}
+        ${['pending', 'approved', 'processing', 'completed'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
+      </div>
+      <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
+    </div>
+  `).join('');
+}
+
+async function loadMyRequests() {
+  const { data } = await supabase.from('hvac_requests').select('*').eq('user_id', user.id).order('created_at', {ascending: false}).limit(20);
+  allMyRequests = data || [];
+  renderMyRequests();
+}
+
+if (role === 'admin') {
+  document.getElementById('adminPanel').style.display = 'block';
   await loadAdminData();
+  
+  // Admin realtime subscription
+  supabase.channel('admin-hvac-updates')
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
+      loadAdminData();
+    })
+    .subscribe();
+    
 } else {
-  document.getElementById('userPanel').style.display='block';
+  document.getElementById('userPanel').style.display = 'block';
   await loadMyRequests();
+  
+  // User realtime subscription
+  supabase.channel('user-hvac-updates')
+    .on('postgres_changes', {
+      event: 'UPDATE', 
+      schema: 'public', 
+      table: 'hvac_requests',
+      filter: `user_id=eq.${user.id}`
+    }, () => {
+      loadMyRequests();
+    })
+    .subscribe();
 }
 
 async function loadAdminData() {
   try {
-    const { data:settings } = await supabase.from('settings').select('*').in('key',['temp_min','temp_max']);
-    settings?.forEach(s => { if (s.key==='temp_min') document.getElementById('tempMin').value=s.value; if (s.key==='temp_max') document.getElementById('tempMax').value=s.value; });
-  } catch(e){}
-  const { data:pending } = await supabase.from('hvac_requests').select('*').eq('status','pending').order('created_at',{ascending:false});
-  const pList=document.getElementById('pendingList');
-  const pCount=document.getElementById('pendingCount');
-  if (!pending?.length) { pList.innerHTML='<div class="empty-state">No pending requests 🎉</div>'; pCount.textContent=''; }
-  else {
-    pCount.textContent=`${pending.length} pending`;
-    pList.innerHTML=pending.map(r=>`
+    const { data: settings } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
+    settings?.forEach(s => { 
+      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value; 
+      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value; 
+    });
+  } catch(e) {}
+  
+  const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
+  const pList = document.getElementById('pendingList');
+  const pCount = document.getElementById('pendingCount');
+  
+  if (!pending?.length) { 
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>'; 
+    pCount.textContent = ''; 
+  } else {
+    pCount.textContent = `${pending.length} pending`;
+    pList.innerHTML = pending.map(r => `
       <div class="req-row">
-        <div style="font-size:22px">${r.type==='hot'?'🥵':'🥶'}</div>
+        <div style="font-size:22px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
         <div class="req-info">
-          <div class="req-title">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div class="req-meta">${r.user_name||'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-          ${r.comment?`<div class="req-comment">"${r.comment}"</div>`:''}
+          <div class="req-title">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div class="req-meta">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${r.comment ? `<div class="req-comment">"${r.comment}"</div>` : ''}
         </div>
         <div class="req-actions">
           <button class="btn-success" onclick="approveReq('${r.id}','${r.type}','${r.level}','${r.tenancy}')">Approve ✓</button>
           <button class="btn-danger" onclick="rejectReq('${r.id}')">Reject</button>
         </div>
-      </div>`).join('');
+      </div>
+    `).join('');
   }
-  const { data:completed } = await supabase.from('hvac_requests').select('*').in('status',['completed','failed','rejected']).order('created_at',{ascending:false}).limit(10);
-  const cList=document.getElementById('completedList');
-  if (!completed?.length) { cList.innerHTML='<div class="empty-state">No completed requests yet</div>'; }
-  else {
-    cList.innerHTML=completed.map(r=>`
+  
+  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(10);
+  const cList = document.getElementById('completedList');
+  
+  if (!completed?.length) { 
+    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; 
+  } else {
+    cList.innerHTML = completed.map(r => `
       <div class="my-req-row">
-        <div style="font-size:18px">${r.type==='hot'?'🥵':'🥶'}</div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div><div style="font-size:11px;color:var(--muted)">${r.user_name||'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div></div>
-        <span class="badge ${r.status==='completed'?'badge-green':r.status==='rejected'?'badge-red':'badge-gray'}">${r.status}</span>
-      </div>`).join('');
+        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+        </div>
+        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
+      </div>
+    `).join('');
   }
 }
 
 document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
-  const min=parseInt(document.getElementById('tempMin').value);
-  const max=parseInt(document.getElementById('tempMax').value);
-  if (min>=max) { showToast('Min must be less than Max', true); return; }
+  const min = parseInt(document.getElementById('tempMin').value);
+  const max = parseInt(document.getElementById('tempMax').value);
+  if (min >= max) { showToast('Min must be less than Max', true); return; }
   try {
-    await supabase.from('settings').upsert({key:'temp_min',value:String(min)},{onConflict:'key'});
-    await supabase.from('settings').upsert({key:'temp_max',value:String(max)},{onConflict:'key'});
+    await supabase.from('settings').upsert({key: 'temp_min', value: String(min)}, {onConflict: 'key'});
+    await supabase.from('settings').upsert({key: 'temp_max', value: String(max)}, {onConflict: 'key'});
     showToast(`Limits saved: ${min}°C – ${max}°C ✓`);
   } catch(e) { showToast('Failed to save limits', true); }
 });
 
 window.approveReq = async (id, type, level, tenancy) => {
-  if (!confirm(`Approve?\n${type==='hot'?'🥵 Too Hot → -1°C':'🥶 Too Cold → +1°C'}\n${level}, ${tenancy}`)) return;
-  await supabase.from('hvac_requests').update({status:'approved',approved_at:new Date().toISOString()}).eq('id',id);
+  if (!confirm(`Approve?\n${type === 'hot' ? '🥵 Too Hot → -1°C' : '🥶 Too Cold → +1°C'}\n${level}, ${tenancy}`)) return;
+  await supabase.from('hvac_requests').update({status: 'approved', approved_at: new Date().toISOString()}).eq('id', id);
   showToast('Approved! Temperature adjustment queued ✓');
   await loadAdminData();
 };
 
 window.rejectReq = async (id) => {
   if (!confirm('Reject this request?')) return;
-  await supabase.from('hvac_requests').update({status:'rejected'}).eq('id',id);
+  await supabase.from('hvac_requests').update({status: 'rejected'}).eq('id', id);
   showToast('Request rejected');
   await loadAdminData();
 };
-
-async function loadMyRequests() {
-  const { data } = await supabase.from('hvac_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20);
-  const list=document.getElementById('myList');
-  if (!data?.length) { list.innerHTML='<div class="empty-state">No requests submitted yet</div>'; return; }
-  list.innerHTML=data.map(r=>`
-    <div class="my-req-row">
-      <div style="font-size:20px">${r.type==='hot'?'🥵':'🥶'}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">${r.type==='hot'?'Too Hot':'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-        <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-        ${r.comment?`<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>`:''}
-      </div>
-      <span class="badge ${r.status==='pending'?'badge-yellow':r.status==='completed'?'badge-green':r.status==='approved'?'badge-blue':'badge-red'}">${r.status}</span>
-    </div>`).join('');
-}
 </script>
 </body>
 </html>
