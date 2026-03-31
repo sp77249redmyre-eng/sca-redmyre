@@ -157,7 +157,10 @@ async function loadUsers() {
         </select>
         <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          ${!isSelf?`<button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>`:'<span style="font-size:11px;color:var(--muted)">—</span>'}
+          ${!isSelf?`
+            <button class="btn-secondary" style="padding:5px 10px;font-size:11px" onclick="resetPassword('${p.email}','${displayName}')">Reset Password</button>
+            <button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>
+          `:'<span style="font-size:11px;color:var(--muted)">—</span>'}
         </div>
       </div>`;
   }).join('');
@@ -166,6 +169,20 @@ async function loadUsers() {
 window.changeRole = async (uid, newRole) => {
   try { await supabase.from('profiles').update({role:newRole}).eq('id',uid); showToast(`Role updated to ${newRole} ✓`); await loadUsers(); }
   catch(e) { showToast('Failed to update role', true); }
+};
+
+window.resetPassword = async (email, uname) => {
+  if (!confirm(`Send password reset email to ${uname} (${email})?`)) return;
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) throw error;
+    showToast(`Password reset email sent to ${email} ✓`);
+  } catch(e) {
+    console.error('resetPassword error:', e);
+    showToast(e.message || 'Failed to send reset email', true);
+  }
 };
 
 window.removeUser = async (uid, uname) => {
