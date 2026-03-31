@@ -64,15 +64,26 @@
 /* Activity Log */
 .log-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
 .log-filters select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
-.log-item{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s}
-.log-item:hover{background:var(--bg)}
-.log-item:last-child{border-bottom:none}
-.log-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
-.log-content{flex:1}
-.log-user{font-size:13px;font-weight:600;color:var(--text)}
-.log-action{font-size:13px;color:var(--text-2);margin-top:2px}
-.log-time{font-size:11px;color:var(--muted);margin-top:4px}
+.log-count{font-size:13px;color:var(--muted);margin-bottom:12px}
+.log-table{width:100%;border-collapse:collapse}
+.log-table thead{background:var(--bg);border-bottom:2px solid var(--border)}
+.log-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.log-table tbody tr{border-bottom:1px solid var(--border-light);transition:background 0.12s}
+.log-table tbody tr:hover{background:var(--bg)}
+.log-table tbody tr:last-child{border-bottom:none}
+.log-table td{padding:14px 16px;font-size:13px}
+.log-table .log-time{color:var(--muted);font-size:12px;white-space:nowrap}
+.log-table .log-user-cell{display:flex;align-items:center;gap:8px}
+.log-table .log-user-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.log-table .log-user-name{font-weight:500}
+.log-table .log-action-icon{font-size:14px;margin-right:4px}
+.log-table .log-action-text{color:var(--text-2)}
+.log-delete-btn{padding:4px 8px;font-size:11px;border:1px solid var(--red);color:var(--red);background:transparent;border-radius:6px;cursor:pointer;transition:all 0.2s}
+.log-delete-btn:hover{background:var(--red);color:white}
 .log-empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px}
+.log-load-more{width:100%;padding:12px;margin-top:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s}
+.log-load-more:hover{background:var(--bg)}
+.log-load-more:disabled{opacity:0.5;cursor:not-allowed}
 
 /* Mobile Optimization */
 @media(max-width:768px){
@@ -106,8 +117,16 @@
   
   .log-filters{flex-direction:column}
   .log-filters select{width:100%}
-  .log-item{padding:12px}
-  .log-avatar{width:32px;height:32px;font-size:11px}
+  
+  .log-table thead{display:none}
+  .log-table,.log-table tbody,.log-table tr{display:block;width:100%}
+  .log-table tr{margin-bottom:12px;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
+  .log-table td{display:block;padding:6px 0;border:none}
+  .log-table td::before{content:attr(data-label);display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .log-table .log-time::before{content:"Time: "}
+  .log-table .log-user-cell::before{content:"User: "}
+  .log-table .log-action-text::before{content:"Action: "}
+  .log-delete-btn{width:100%;margin-top:8px}
 }
 </style>
 </head>
@@ -181,9 +200,6 @@
     <!-- Tab Content: Activity Log -->
     <div id="tab-activity" class="tab-content">
       <div class="log-filters">
-        <select id="filterUser">
-          <option value="">All Users</option>
-        </select>
         <select id="filterAction">
           <option value="">All Actions</option>
           <option value="quote_approved">Quote Approved</option>
@@ -202,15 +218,17 @@
           <option value="30">Last 30 days</option>
           <option value="90">Last 90 days</option>
           <option value="365">Last year</option>
+          <option value="all">All time</option>
         </select>
       </div>
 
+      <div class="log-count" id="logCount">Loading...</div>
+
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Recent Activity</div>
-        </div>
         <div id="activityList"><div class="log-empty">Loading activity…</div></div>
       </div>
+      
+      <button class="log-load-more" id="loadMoreBtn" style="display:none">Load More...</button>
     </div>
 
   </div>
@@ -370,9 +388,6 @@ async function loadUsers() {
         </div>
       </div>`;
   }).join('');
-  
-  const filterUser = document.getElementById('filterUser');
-  filterUser.innerHTML = '<option value="">All Users</option>' + profiles.map(p => `<option value="${p.id}">${p.full_name||p.email}</option>`).join('');
 }
 
 window.changeRole = async (uid, newRole) => {
@@ -621,27 +636,72 @@ document.getElementById('savePermBtn').addEventListener('click', async () => {
 });
 
 // Activity Log
-async function loadActivityLog() {
-  const filterUser = document.getElementById('filterUser').value;
+let currentOffset = 0;
+const LIMIT = 50;
+let allLogs = [];
+let hasMore = true;
+
+async function loadActivityLog(append = false) {
   const filterAction = document.getElementById('filterAction').value;
-  const filterPeriod = parseInt(document.getElementById('filterPeriod').value);
+  const filterPeriod = document.getElementById('filterPeriod').value;
   
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - filterPeriod);
+  let query = supabase.from('audit_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
   
-  let query = supabase.from('audit_logs').select('*').gte('created_at', cutoffDate.toISOString()).order('created_at', { ascending: false }).limit(50);
+  if (filterPeriod !== 'all') {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(filterPeriod));
+    query = query.gte('created_at', cutoffDate.toISOString());
+  }
   
-  if (filterUser) query = query.eq('user_id', filterUser);
   if (filterAction) query = query.eq('action', filterAction);
   
-  const { data: logs } = await query;
+  if (append) {
+    query = query.range(currentOffset, currentOffset + LIMIT - 1);
+  } else {
+    currentOffset = 0;
+    allLogs = [];
+    query = query.range(0, LIMIT - 1);
+  }
   
-  const list = document.getElementById('activityList');
+  const { data: logs, count, error } = await query;
   
-  if (!logs || !logs.length) {
-    list.innerHTML = '<div class="log-empty">No activity found for the selected filters.</div>';
+  if (error) {
+    console.error('Load logs error:', error);
+    showToast('Failed to load activity logs', true);
     return;
   }
+  
+  const list = document.getElementById('activityList');
+  const countEl = document.getElementById('logCount');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  
+  if (!logs || !logs.length) {
+    if (!append) {
+      list.innerHTML = '<div class="log-empty">No activity found for the selected filters.</div>';
+      countEl.textContent = '0 activities found';
+      loadMoreBtn.style.display = 'none';
+    }
+    hasMore = false;
+    return;
+  }
+  
+  if (append) {
+    allLogs = [...allLogs, ...logs];
+  } else {
+    allLogs = logs;
+  }
+  
+  currentOffset = allLogs.length;
+  hasMore = count > currentOffset;
+  
+  countEl.textContent = `${count} ${count === 1 ? 'activity' : 'activities'} found`;
+  loadMoreBtn.style.display = hasMore ? 'block' : 'none';
+  
+  renderActivityTable();
+}
+
+function renderActivityTable() {
+  const list = document.getElementById('activityList');
   
   const actionIcons = {
     quote_approved: '✅', quote_declined: '❌', quote_held: '⏸️', work_created: '➕', work_completed: '✅',
@@ -655,34 +715,84 @@ async function loadActivityLog() {
     sidebar_permissions_updated: 'Updated Sidebar Permissions'
   };
   
-  list.innerHTML = logs.map(log => {
-    const ini = (log.user_name || log.user_email || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-    const timeAgo = formatTimeAgo(new Date(log.created_at));
-    const icon = actionIcons[log.action] || '📝';
-    const label = actionLabels[log.action] || log.action;
-    
-    let details = '';
-    if (log.details) {
-      if (log.details.quote_title) details = ` #${log.details.quote_id} (${log.details.quote_title})`;
-      if (log.details.new_role) details = ` → ${log.details.target_user} to ${log.details.new_role}`;
-      if (log.details.target_user && log.action === 'password_changed') details = ` for ${log.details.target_user}`;
-      if (log.details.invited_email) details = ` ${log.details.invited_email}`;
-      if (log.details.removed_user) details = ` ${log.details.removed_user}`;
-      if (log.details.role && log.action === 'sidebar_permissions_updated') details = ` for ${log.details.role}`;
-    }
-    
-    return `
-      <div class="log-item">
-        <div class="log-avatar av-committee">${ini}</div>
-        <div class="log-content">
-          <div class="log-user">${log.user_name || log.user_email}</div>
-          <div class="log-action">${icon} ${label}${details}</div>
-          <div class="log-time">${timeAgo}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const tableHTML = `
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th style="width:140px">Time</th>
+          <th style="width:200px">User</th>
+          <th>Action</th>
+          <th style="width:80px;text-align:center">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allLogs.map(log => {
+          const ini = (log.user_name || log.user_email || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+          const timeAgo = formatTimeAgo(new Date(log.created_at));
+          const icon = actionIcons[log.action] || '📝';
+          const label = actionLabels[log.action] || log.action;
+          
+          let details = '';
+          if (log.details) {
+            if (log.details.quote_title) details = ` #${log.details.quote_id}`;
+            if (log.details.new_role) details = ` → ${log.details.target_user} to ${log.details.new_role}`;
+            if (log.details.target_user && log.action === 'password_changed') details = ` for ${log.details.target_user}`;
+            if (log.details.invited_email) details = ` ${log.details.invited_email}`;
+            if (log.details.removed_user) details = ` ${log.details.removed_user}`;
+            if (log.details.role && log.action === 'sidebar_permissions_updated') details = ` for ${log.details.role}`;
+          }
+          
+          return `
+            <tr>
+              <td class="log-time" data-label="Time">${timeAgo}</td>
+              <td data-label="User">
+                <div class="log-user-cell">
+                  <div class="log-user-avatar">${ini}</div>
+                  <span class="log-user-name">${log.user_name || log.user_email}</span>
+                </div>
+              </td>
+              <td data-label="Action">
+                <span class="log-action-icon">${icon}</span>
+                <span class="log-action-text">${label}${details}</span>
+              </td>
+              <td style="text-align:center" data-label="Delete">
+                <button class="log-delete-btn" onclick="deleteLog('${log.id}')">🗑️</button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  list.innerHTML = tableHTML;
 }
+
+window.deleteLog = async (logId) => {
+  if (!confirm('Delete this activity log entry?\nThis action cannot be undone.')) return;
+  
+  try {
+    const { error } = await supabase.from('audit_logs').delete().eq('id', logId);
+    if (error) throw error;
+    
+    showToast('Activity log deleted ✓');
+    
+    // Remove from allLogs array
+    allLogs = allLogs.filter(log => log.id !== logId);
+    currentOffset = allLogs.length;
+    
+    renderActivityTable();
+    
+    // Update count
+    const countEl = document.getElementById('logCount');
+    const currentCount = parseInt(countEl.textContent);
+    countEl.textContent = `${currentCount - 1} ${currentCount - 1 === 1 ? 'activity' : 'activities'} found`;
+    
+  } catch(e) {
+    console.error('Delete log error:', e);
+    showToast('Failed to delete log', true);
+  }
+};
 
 function formatTimeAgo(date) {
   const now = new Date();
@@ -698,9 +808,9 @@ function formatTimeAgo(date) {
   return date.toLocaleDateString();
 }
 
-document.getElementById('filterUser').addEventListener('change', loadActivityLog);
-document.getElementById('filterAction').addEventListener('change', loadActivityLog);
-document.getElementById('filterPeriod').addEventListener('change', loadActivityLog);
+document.getElementById('filterAction').addEventListener('change', () => loadActivityLog(false));
+document.getElementById('filterPeriod').addEventListener('change', () => loadActivityLog(false));
+document.getElementById('loadMoreBtn').addEventListener('click', () => loadActivityLog(true));
 
 // Invite modal
 document.getElementById('inviteRole').addEventListener('change', () => {
