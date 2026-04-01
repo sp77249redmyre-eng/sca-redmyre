@@ -224,6 +224,8 @@
 
       <div class="log-count" id="logCount">Loading...</div>
 
+      <button class="btn-danger" onclick="clearAllLogs()" style="margin-bottom:12px;padding:8px 16px;font-size:13px">🗑️ Clear All Logs</button>
+
       <div class="card">
         <div id="activityList"><div class="log-empty">Loading activity…</div></div>
       </div>
@@ -846,6 +848,27 @@ window.deleteLog = async (logId) => {
   } catch(e) {
     console.error('Delete log error:', e);
     showToast('Failed to delete log', true);
+  }
+};
+
+window.clearAllLogs = async () => {
+  if (!confirm('⚠️ Delete ALL activity logs?\n\nThis will permanently delete all activity history.\nThis action cannot be undone.')) return;
+  
+  try {
+    const { error } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) throw error;
+    
+    showToast('All activity logs cleared ✓');
+    
+    allLogs = [];
+    currentOffset = 0;
+    renderActivityTable();
+    
+    document.getElementById('logCount').textContent = '0 activities found';
+    
+  } catch(e) {
+    console.error('Clear all logs error:', e);
+    showToast('Failed to clear logs', true);
   }
 };
 
