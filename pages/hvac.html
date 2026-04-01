@@ -335,14 +335,21 @@ if (role === 'admin') {
 // Load user's units from occupants table
 async function loadMyUnits() {
   try {
+    // 전체 occupants 가져오기
     const { data, error } = await supabase
       .from('occupants')
-      .select('*')
-      .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`);
+      .select('*');
     
     if (error) throw error;
     
-    myUnits = data || [];
+    // 이메일 정확히 매칭 (콤마/세미콜론으로 구분된 이메일 처리)
+    const userEmail = user.email.toLowerCase();
+    myUnits = (data || []).filter(occ => {
+      const primaryEmails = (occ.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
+      const businessEmails = (occ.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
+      return primaryEmails.includes(userEmail) || businessEmails.includes(userEmail);
+    });
+    
     renderUnitSelection();
   } catch (e) {
     console.error('Failed to load units:', e);
