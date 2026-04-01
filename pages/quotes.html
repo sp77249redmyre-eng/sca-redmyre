@@ -834,9 +834,13 @@ window.openCreateProject = () => {
   const projectSelect = document.getElementById('projectSelect');
   projectSelect.innerHTML = '<option value="">+ New Project</option>';
   
-  // 기존 프로젝트 목록 (project_title 기준)
+  
+  // 기존 프로젝트 목록 (진행중만 표시)
   const projectTitles = {};
   allQuotes.forEach(q => {
+    const st = getQuoteStatus(q);
+    if (st !== 'pending' && st !== 'onhold') return;
+
     if (q.project_title && !projectTitles[q.project_title]) {
       projectTitles[q.project_title] = {
         id: q.project_id,
@@ -846,7 +850,7 @@ window.openCreateProject = () => {
       };
     }
   });
-  
+
   Object.values(projectTitles).forEach(p => {
     const option = document.createElement('option');
     option.value = p.id;
@@ -855,6 +859,7 @@ window.openCreateProject = () => {
     option.dataset.priority = p.priority;
     projectSelect.appendChild(option);
   });
+
   
   // 초기화
   document.getElementById('quoteProject').style.display = 'block';
