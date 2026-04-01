@@ -822,9 +822,165 @@ function updateArchiveFilterUI() {
 
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
+  
+  if (!quotes.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 24px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:16px">⏳</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // 🔴 Phase 2-B: 프로젝트별로 그룹핑
+  const projectGroups = {};
+  quotes.forEach(q => {
+    const pid = q.project_id;
+    if (!projectGroups[pid]) {
+      projectGroups[pid] = [];
+    }
+    projectGroups[pid].push(q);
+  });
+  
+  let html = '';
+  
+  Object.keys(projectGroups).forEach(projectId => {
+    const projectQuotes = projectGroups[projectId];
+    const isMultiQuote = projectQuotes.length > 1;
+    
+    if (isMultiQuote) {
+      // 🔴 여러 견적 = 프로젝트 그룹 UI
+      html += renderProjectGroup(projectId, projectQuotes);
+    } else {
+      // 🔴 싱글 견적 = 기존 테이블 UI
+      html += renderSingleQuote(projectQuotes[0]);
+    }
+  });
+  
+  container.innerHTML = html;
+}
 
-  container.innerHTML = `
-    <table class="quote-table">
+// 🔴 Phase 2-B: 프로젝트 그룹 렌더링
+function renderProjectGroup(projectId, quotes) {
+  const firstQuote = quotes[0];
+  const parsed = parseComment(firstQuote.comment);
+  const projectTitle = firstQuote.project_title || firstQuote.project || 'Untitled Project';
+  
+  let html = `
+    <div class="project-group">
+      <div class="project-header">
+        <div class="project-title-box">
+          <div class="project-icon">📁</div>
+          <div class="project-info">
+            <div class="project-name">${projectTitle}</div>
+            <div class="project-meta">${parsed.category} • ${parsed.priority}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="project-quotes-count">${quotes.length} Quotes</span>
+          ${role === 'admin' ? `
+            <button class="btn-pill btn-pill-primary" onclick="openAddQuoteToProject('${projectId}', '${projectTitle.replace(/'/g, "\\'")}')">
+              + Add Quote
+            </button>
+          ` : ''}
+        </div>
+      </div>
+      
+      <table class="quote-compare-table">
+        <thead>
+          <tr>
+            <th>Vendor</th>
+            <th>Amount</th>
+            <th>Scope</th>
+            <th>Votes</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  quotes.forEach(q => {
+    const qParsed = parseComment(q.comment);
+    const amountHtml = (role === 'owner' || role === 'tenant') 
+      ? `<span class="amount-confidential">Confidential</span>` 
+      : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+    
+    const votes = allVotes.filter(v => v.quote_id === q.id);
+    const approvals = votes.filter(v => v.vote === 'approve').length;
+    const declines = votes.filter(v => v.vote === 'decline').length;
+    const holds = votes.filter(v => v.vote === 'hold').length;
+    
+    const isSelected = q.is_selected === true;
+    const rowClass = isSelected ? 'selected' : '';
+    
+    html += `
+      <tr class="${rowClass}">
+        <td>
+          <strong>${q.vendor || 'Unknown'}</strong>
+          ${isSelected ? `<br><span class="selected-badge">✓ Selected</span>` : ''}
+        </td>
+        <td>${amountHtml}</td>
+        <td>
+          <div style="font-size:12px;color:var(--text-2);max-width:200px;overflow:hidden;text-overflow:ellipsis">
+            ${q.notes || '—'}
+          </div>
+        </td>
+        <td>
+          <div style="font-size:12px">
+            ✅ ${approvals} | ❌ ${declines} | ⏸ ${holds}
+          </div>
+        </td>
+        <td>
+          ${isSelected ? '<span class="badge badge-green">Approved</span>' : '<span class="badge badge-gray">Pending</span>'}
+        </td>
+        <td>
+          <button class="btn-pill" onclick="openQuoteDetail('${q.id}')">View</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  return html;
+}
+
+// 🔴 Phase 2-B: 싱글 견적 렌더링 (기존 방식)
+function renderSingleQuote(q) {
+  const parsed = parseComment(q.comment);
+  const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
+  const amountHtml = (role === 'owner' || role === 'tenant') 
+    ? `<span class="amount-confidential">Confidential</span>` 
+    : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+
+  let filesHtml = '';
+  const visibleFiles = canSeeSensitive 
+    ? (parsed.files || []) 
+    : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
+
+  if (visibleFiles.length) {
+    filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
+    filesHtml += visibleFiles.map((f, idx) => {
+      const viewerId = `viewer-${q.id}-${idx}`;
+      return `
+      <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
+        <span class="file-icon">📄</span>
+        <span class="file-name">${f.name}</span>
+      </div>
+      <div id="${viewerId}" class="inline-viewer"></div>
+    `;
+    }).join('');
+    filesHtml += `</div></div>`;
+  }
+
+  return `
+    <table class="quote-table" style="margin-bottom:16px">
       <thead>
         <tr>
           <th>Date</th>
@@ -835,91 +991,44 @@ function renderPendingQuotes(quotes) {
           <th>Amount</th>
         </tr>
       </thead>
-      <tbody id="pendingBody"></tbody>
+      <tbody>
+        <tr onclick="toggleQuote('${q.id}')">
+          <td>${dateStr}</td>
+          <td>${q.category}</td>
+          <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
+          <td>${q.project || 'Untitled Quote'}</td>
+          <td>${q.vendor || 'Unknown'}</td>
+          <td>${amountHtml}</td>
+        </tr>
+        <tr style="display:none" id="row-body-${q.id}">
+          <td colspan="6">
+            <div class="quote-body open" id="body-${q.id}">
+              ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
+              ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
+              
+              ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
+
+              ${renderVotesStatus(q.id)}
+
+              <div class="action-bar">
+                ${role === 'committee' ? `
+                  <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
+                  <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
+                  <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
+                ` : ''}
+                ${role === 'admin' ? `
+                  <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
+                  <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
+                  <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
+                  <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
+                ` : ''}
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </table>
   `;
-
-  const tbody = document.getElementById('pendingBody');
-
-  if (!quotes.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
-          <div style="font-size:48px;margin-bottom:16px">⏳</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  let rows = '';
-  quotes.forEach(q => {
-    const parsed = parseComment(q.comment);
-    const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
-    const amountHtml = (role === 'owner' || role === 'tenant') 
-      ? `<span class="amount-confidential">Confidential</span>` 
-      : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
-
-    let filesHtml = '';
-    const visibleFiles = canSeeSensitive 
-      ? (parsed.files || []) 
-      : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
-
-    if (visibleFiles.length) {
-      filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
-      filesHtml += visibleFiles.map((f, idx) => {
-        const viewerId = `viewer-${q.id}-${idx}`;
-        return `
-        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
-          <span class="file-icon">📄</span>
-          <span class="file-name">${f.name}</span>
-        </div>
-        <div id="${viewerId}" class="inline-viewer"></div>
-      `;
-      }).join('');
-      filesHtml += `</div></div>`;
-    }
-
-    rows += `
-      <tr onclick="toggleQuote('${q.id}')">
-        <td>${dateStr}</td>
-        <td>${q.category}</td>
-        <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-        <td>${q.project || 'Untitled Quote'}</td>
-        <td>${q.vendor || 'Unknown'}</td>
-        <td>${amountHtml}</td>
-      </tr>
-      <tr style="display:none" id="row-body-${q.id}">
-        <td colspan="6">
-          <div class="quote-body open" id="body-${q.id}">
-            ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
-            ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
-            
-            ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
-
-            ${renderVotesStatus(q.id)}
-
-            <div class="action-bar">
-              ${role === 'committee' ? `
-                <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-                <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-                <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
-              ` : ''}
-              ${role === 'admin' ? `
-                <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
-                <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
-                <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
-                <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
-              ` : ''}
-            </div>
-          </div>
-        </td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = rows;
 }
 
 function renderArchiveTable(quotes) {
@@ -1332,6 +1441,110 @@ try {
 }
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+// 🔴 Phase 2-B: 견적 상세 모달
+window.openQuoteDetail = (quoteId) => {
+  const q = allQuotes.find(quote => quote.id === quoteId);
+  if (!q) return;
+  
+  const parsed = parseComment(q.comment);
+  const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'long', year:'numeric'});
+  const amountHtml = (role === 'owner' || role === 'tenant') 
+    ? `<span class="amount-confidential">Confidential</span>` 
+    : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+  
+  const votes = allVotes.filter(v => v.quote_id === quoteId);
+  const approvals = votes.filter(v => v.vote === 'approve').length;
+  const declines = votes.filter(v => v.vote === 'decline').length;
+  const holds = votes.filter(v => v.vote === 'hold').length;
+  
+  let filesHtml = '';
+  const visibleFiles = canSeeSensitive 
+    ? (parsed.files || []) 
+    : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
+
+  if (visibleFiles.length) {
+    filesHtml = `<div style="margin-top:16px"><div class="detail-label">📎 Files</div>`;
+    filesHtml += visibleFiles.map((f, idx) => {
+      const viewerId = `detail-viewer-${quoteId}-${idx}`;
+      return `
+      <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}')">
+        <span class="file-icon">📄</span>
+        <span class="file-name">${f.name}</span>
+      </div>
+      <div id="${viewerId}" class="inline-viewer"></div>
+    `;
+    }).join('');
+    filesHtml += `</div>`;
+  }
+  
+  const modalHtml = `
+    <div class="modal-backdrop open" id="quoteDetailModal" onclick="if(event.target === this) closeModal('quoteDetailModal')">
+      <div class="modal-box" style="max-width:700px">
+        <div class="modal-title">${q.vendor} - Quote Details</div>
+        
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;font-size:13px">
+            <div style="color:var(--muted);font-weight:600">Date:</div>
+            <div>${dateStr}</div>
+            
+            <div style="color:var(--muted);font-weight:600">Category:</div>
+            <div>${q.category}</div>
+            
+            <div style="color:var(--muted);font-weight:600">Priority:</div>
+            <div><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></div>
+            
+            <div style="color:var(--muted);font-weight:600">Amount:</div>
+            <div style="font-size:18px;font-weight:700;color:var(--blue-600)">${amountHtml}</div>
+          </div>
+        </div>
+        
+        ${q.notes ? `
+          <div style="margin-bottom:16px">
+            <div class="detail-label">Scope / Notes</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--text-2)">${q.notes}</div>
+          </div>
+        ` : ''}
+        
+        ${canSeeSensitive && parsed.note ? `
+          <div class="internal-note-box" style="margin-bottom:16px">
+            🔒 Internal Note: ${parsed.note}
+          </div>
+        ` : ''}
+        
+        ${filesHtml}
+        
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">VOTES</div>
+          <div style="display:flex;gap:16px;font-size:13px">
+            <div>✅ Approve: <strong>${approvals}</strong></div>
+            <div>❌ Decline: <strong>${declines}</strong></div>
+            <div>⏸ Hold: <strong>${holds}</strong></div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          ${role === 'committee' ? `
+            <button class="btn-pill btn-pill-success" onclick="castVote('${quoteId}','approve');closeModal('quoteDetailModal')">✅ Approve</button>
+            <button class="btn-pill btn-pill-danger" onclick="castVote('${quoteId}','decline');closeModal('quoteDetailModal')">❌ Decline</button>
+            <button class="btn-pill btn-pill-warning" onclick="castVote('${quoteId}','hold');closeModal('quoteDetailModal')">⏸ Hold</button>
+          ` : ''}
+          ${role === 'admin' ? `
+            <button class="btn-pill btn-pill-success" onclick="forceApprove('${quoteId}');closeModal('quoteDetailModal')">Force Approve</button>
+            <button class="btn-pill" onclick="closeModal('quoteDetailModal');openEditQuote('${quoteId}')">✏️ Edit</button>
+          ` : ''}
+          <button class="btn-pill" onclick="closeModal('quoteDetailModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // 기존 모달 제거 후 추가
+  const existing = document.getElementById('quoteDetailModal');
+  if (existing) existing.remove();
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
 
 // 🔴 Phase 2: 프로젝트 관련 함수들
 let projectUploadedFiles = [];
