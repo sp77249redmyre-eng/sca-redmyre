@@ -426,7 +426,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" style="display:none">Delete</button>
       <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
@@ -1038,7 +1038,11 @@ window.openEditQuote = id => {
   const parsed = parseComment(q.comment);
   document.getElementById('quoteEditId').value = id;
   document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
-  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
+  
+  const deleteBtn = document.getElementById('deleteQuoteBtn');
+  deleteBtn.style.display = 'inline-flex';
+  deleteBtn.onclick = () => deleteQuote();  // quoteEditId에서 자동으로 가져옴
+  
   document.getElementById('quoteProject').value = q.project || '';
   document.getElementById('quoteVendor').value = q.vendor || '';
   document.getElementById('quoteAmount').value = q.amount ? Number(q.amount).toLocaleString('en-AU') : '';
@@ -1209,6 +1213,16 @@ window.confirmHold = async () => {
 };
 
 window.deleteQuote = async (quoteId) => {
+  // quoteId가 없으면 모달에서 가져오기
+  if (!quoteId) {
+    quoteId = document.getElementById('quoteEditId').value;
+  }
+  
+  if (!quoteId || quoteId === 'undefined') {
+    alert('Cannot delete: Quote ID is missing');
+    return;
+  }
+  
   if (!confirm('⚠️ Delete this quote?\n\nThis action cannot be undone.')) return;
   
   try {
@@ -1220,6 +1234,7 @@ window.deleteQuote = async (quoteId) => {
     if (error) throw error;
     
     showToast('Quote deleted ✓');
+    closeModal('quoteModal');
     await loadData();
     renderQuotes();
   } catch(e) {
