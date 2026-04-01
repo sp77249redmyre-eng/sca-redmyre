@@ -225,7 +225,7 @@
         <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
         Quote Approvals
       </div>
-      <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+      <button class="btn-pill btn-pill-primary" id="createProjectBtn" style="display:none" onclick="openCreateProject()">📁 Create Project</button>
     </div>
 
     <div class="rule-info" id="ruleInfo">
@@ -239,7 +239,7 @@
 
     <div style="margin-top:30px">
       <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:12px">⏳ Pending Approval</div>
-      <div id="pendingList"></div>
+      <div id="pendingList"></div><div id="comparePanel" style="display:none;margin-top:20px;border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface)"></div>
     </div>
 
     <div style="margin-top:50px">
@@ -259,21 +259,29 @@
 
 <div class="modal-backdrop" id="quoteModal">
   <div class="modal-box" style="max-width:680px">
-    <div class="modal-title" id="quoteModalTitle">Add Quote</div>
+    <div class="modal-title" id="quoteModalTitle">Create Project</div>
     <input type="hidden" id="quoteEditId">
+    <input type="hidden" id="selectedProjectId">
+    
     <div class="modal-field">
-      <label class="modal-label">Project / Works Description</label>
-      <input type="text" class="modal-input" id="quoteProject" placeholder="e.g., Lift modernization">
+      <label class="modal-label">Project Name</label>
+      <select class="modal-select" id="projectSelect" onchange="handleProjectSelect()" style="margin-bottom:8px">
+        <option value="">+ New Project</option>
+      </select>
+      <input type="text" class="modal-input" id="quoteProject" placeholder="Enter new project name" style="display:none">
     </div>
+    
     <div class="modal-field">
       <label class="modal-label">Vendor / Contractor</label>
       <input type="text" class="modal-input" id="quoteVendor" placeholder="Company name">
     </div>
+    
     <div class="modal-field">
       <label class="modal-label">Amount (AUD) (ex GST)</label>
       <input type="text" class="modal-input" id="quoteAmount" placeholder="0.00" oninput="formatAmount(this)">
     </div>
-    <div class="modal-field">
+    
+    <div class="modal-field" id="categoryField">
       <label class="modal-label">Category</label>
       <select class="modal-select" id="quoteCategory">
         <option value="General">General</option>
@@ -287,7 +295,8 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <div class="modal-field">
+    
+    <div class="modal-field" id="priorityField">
       <label class="modal-label">Priority</label>
       <select class="modal-select" id="quotePriority">
         <option value="Normal">Normal</option>
@@ -295,23 +304,27 @@
         <option value="Urgent">Urgent</option>
       </select>
     </div>
+    
     <div class="modal-field">
       <label class="modal-label">Scope / Notes (Public)</label>
       <textarea class="modal-textarea" id="quoteNotes" placeholder="Brief description visible to voters…"></textarea>
     </div>
+    
     <div class="modal-field">
       <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
       <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
     </div>
+    
     <div class="modal-field">
       <label class="modal-label">📎 Attach Files</label>
       <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
       <button class="btn-pill" onclick="document.getElementById('fileInput').click()">+ Choose Files</button>
       <div id="filePreview" style="margin-top:10px"></div>
     </div>
+    
     <div class="modal-footer">
       <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" style="display:none">Delete</button>
       <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
@@ -355,7 +368,7 @@ const uploadedFiles = [];
 const canSeeSensitive = ['admin', 'committee', 'observer'].includes(role);
 
 if (role === 'admin') {
-  document.getElementById('addQuoteBtn').style.display = 'inline-flex';
+  document.getElementById('createProjectBtn').style.display = 'inline-flex';
 }
 
 function parseComment(comment) {
@@ -443,7 +456,46 @@ async function clearVotesForQuote(quoteId) {
 window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote?')) return;
   try {
-    await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+    const currentQuote = allQuotes.find(q => q.id === quoteId);
+    if (currentQuote && currentQuote.project_id) {
+      const alreadySelected = allQuotes.find(q => 
+        q.project_id === currentQuote.project_id && 
+        q.is_selected === true &&
+        q.id !== quoteId
+      );
+      
+      if (alreadySelected) {
+        if (!confirm(`⚠️ Another quote already approved:\n\n"${alreadySelected.vendor}"\n\nForce approving will decline the other. Continue?`)) {
+          return;
+        }
+        await supabase.from('quotes').update({
+          status: 'declined',
+          is_selected: false
+        }).eq('id', alreadySelected.id);
+      }
+      
+      await supabase.from('quotes').update({
+        status: 'approved',
+        is_selected: true
+      }).eq('id', quoteId);
+      
+      const { data: projectQuotes } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('project_id', currentQuote.project_id)
+        .neq('id', quoteId)
+        .eq('status', 'pending');
+      
+      if (projectQuotes && projectQuotes.length > 0) {
+        for (const pq of projectQuotes) {
+          await supabase.from('quotes').update({status: 'declined'}).eq('id', pq.id);
+          await clearVotesForQuote(pq.id);
+        }
+      }
+    } else {
+      await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+    }
+    
     await clearVotesForQuote(quoteId);
     showToast('Quote approved');
     await loadData();
@@ -564,6 +616,7 @@ function updateArchiveFilterUI() {
   });
 }
 
+
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
 
@@ -596,6 +649,66 @@ function renderPendingQuotes(quotes) {
     `;
     return;
   }
+
+  const projects = {};
+  quotes.forEach(q => {
+    const key = q.project_id || q.id;
+    if (!projects[key]) projects[key] = [];
+    projects[key].push(q);
+  });
+
+  let rows = '';
+
+  Object.values(projects).forEach(group => {
+    const first = group[0];
+    const parsed = parseComment(first.comment);
+
+    rows += `
+      <tr style="background:#f8fafc;font-weight:600">
+        <td colspan="6">
+          📁 ${first.project_title || first.project || 'Untitled'}
+          <span style="margin-left:12px;font-size:12px;color:var(--muted)">
+            ${first.category} | ${parsed.priority}
+          </span>
+        </td>
+      </tr>
+    `;
+
+    group.forEach(q => {
+      const parsed = parseComment(q.comment);
+      const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
+      const amountHtml = (role === 'owner' || role === 'tenant') 
+        ? `<span class="amount-confidential">Confidential</span>` 
+        : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+
+      rows += `
+        <tr onclick="toggleQuote('${q.id}')">
+          <td>${dateStr}</td>
+          <td>${q.category}</td>
+          <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
+          <td>${q.project || 'Untitled Quote'}</td>
+          <td>${q.vendor || 'Unknown'}</td>
+          <td>${amountHtml}</td>
+        </tr>
+        <tr style="display:none" id="row-body-${q.id}">
+          <td colspan="6">
+            <div class="quote-body open" id="body-${q.id}">
+              ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
+
+              <div style="margin-top:10px">
+                <button class="btn-pill btn-pill-primary" onclick="openCompare('${q.project_id}')">Compare</button>
+              </div>
+
+              ${renderVotesStatus(q.id)}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+  });
+
+  tbody.innerHTML = rows;
+}
 
   let rows = '';
   quotes.forEach(q => {
@@ -760,10 +873,40 @@ window.toggleQuote = id => {
   if (row) row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
 };
 
-window.openAddQuote = () => {
+window.openCreateProject = () => {
   document.getElementById('quoteEditId').value = '';
-  document.getElementById('quoteModalTitle').textContent = 'Add Quote';
+  document.getElementById('selectedProjectId').value = '';
+  document.getElementById('quoteModalTitle').textContent = 'Create Project';
   document.getElementById('deleteQuoteBtn').style.display = 'none';
+  
+  // 프로젝트 드롭다운 채우기
+  const projectSelect = document.getElementById('projectSelect');
+  projectSelect.innerHTML = '<option value="">+ New Project</option>';
+  
+  // 기존 프로젝트 목록 (project_title 기준)
+  const projectTitles = {};
+  allQuotes.forEach(q => {
+    if (q.project_title && !projectTitles[q.project_title]) {
+      projectTitles[q.project_title] = {
+        id: q.project_id,
+        title: q.project_title,
+        category: q.category,
+        priority: parseComment(q.comment).priority
+      };
+    }
+  });
+  
+  Object.values(projectTitles).forEach(p => {
+    const option = document.createElement('option');
+    option.value = p.id;
+    option.textContent = p.title;
+    option.dataset.category = p.category;
+    option.dataset.priority = p.priority;
+    projectSelect.appendChild(option);
+  });
+  
+  // 초기화
+  document.getElementById('quoteProject').style.display = 'block';
   document.getElementById('quoteProject').value = '';
   document.getElementById('quoteVendor').value = '';
   document.getElementById('quoteAmount').value = '';
@@ -773,7 +916,44 @@ window.openAddQuote = () => {
   document.getElementById('quoteInternalNote').value = '';
   uploadedFiles.length = 0;
   document.getElementById('filePreview').innerHTML = '';
+  
+  document.getElementById('categoryField').style.display = 'block';
+  document.getElementById('priorityField').style.display = 'block';
+  document.getElementById('quoteCategory').disabled = false;
+  document.getElementById('quotePriority').disabled = false;
+  
   document.getElementById('quoteModal').classList.add('open');
+};
+
+window.handleProjectSelect = () => {
+  const select = document.getElementById('projectSelect');
+  const selectedOption = select.options[select.selectedIndex];
+  const projectInput = document.getElementById('quoteProject');
+  
+  if (select.value === '') {
+    // New Project
+    projectInput.style.display = 'block';
+    projectInput.value = '';
+    document.getElementById('selectedProjectId').value = '';
+    document.getElementById('categoryField').style.display = 'block';
+    document.getElementById('priorityField').style.display = 'block';
+    document.getElementById('quoteCategory').disabled = false;
+    document.getElementById('quotePriority').disabled = false;
+    document.getElementById('quoteCategory').value = 'General';
+    document.getElementById('quotePriority').value = 'Normal';
+  } else {
+    // Existing Project
+    projectInput.style.display = 'none';
+    document.getElementById('selectedProjectId').value = select.value;
+    
+    // Category/Priority 고정
+    const category = selectedOption.dataset.category;
+    const priority = selectedOption.dataset.priority;
+    document.getElementById('quoteCategory').value = category;
+    document.getElementById('quotePriority').value = priority;
+    document.getElementById('quoteCategory').disabled = true;
+    document.getElementById('quotePriority').disabled = true;
+  }
 };
 
 window.openEditQuote = id => {
@@ -782,7 +962,11 @@ window.openEditQuote = id => {
   const parsed = parseComment(q.comment);
   document.getElementById('quoteEditId').value = id;
   document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
-  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
+  
+  const deleteBtn = document.getElementById('deleteQuoteBtn');
+  deleteBtn.style.display = 'inline-flex';
+  deleteBtn.onclick = () => deleteQuote();
+  
   document.getElementById('quoteProject').value = q.project || '';
   document.getElementById('quoteVendor').value = q.vendor || '';
   document.getElementById('quoteAmount').value = q.amount ? Number(q.amount).toLocaleString('en-AU') : '';
@@ -833,7 +1017,26 @@ window.removeFile = idx => {
 
 window.saveQuote = async () => {
   const editId = document.getElementById('quoteEditId').value.trim();
-  const project = document.getElementById('quoteProject').value.trim();
+  const selectedProjectId = document.getElementById('selectedProjectId').value.trim();
+  const projectSelect = document.getElementById('projectSelect');
+  const projectInput = document.getElementById('quoteProject');
+  
+  let projectName, projectId;
+  
+  if (selectedProjectId) {
+    // 기존 프로젝트 선택
+    projectId = selectedProjectId;
+    projectName = projectSelect.options[projectSelect.selectedIndex].textContent;
+  } else {
+    // 신규 프로젝트
+    projectName = projectInput.value.trim();
+    if (!projectName) {
+      alert('Please enter project name');
+      return;
+    }
+    projectId = crypto.randomUUID();
+  }
+  
   const vendor = document.getElementById('quoteVendor').value.trim();
   let amountStr = document.getElementById('quoteAmount').value.replace(/[^0-9.]/g, '');
   const amount = parseFloat(amountStr) || 0;
@@ -842,8 +1045,8 @@ window.saveQuote = async () => {
   const notes = document.getElementById('quoteNotes').value.trim();
   const internalNote = document.getElementById('quoteInternalNote').value.trim();
 
-  if (!project || !vendor || amount <= 0) {
-    alert('Required fields missing: Project, Vendor, Amount');
+  if (!vendor || amount <= 0) {
+    alert('Required fields missing: Vendor, Amount');
     return;
   }
 
@@ -879,10 +1082,11 @@ window.saveQuote = async () => {
 
     let res;
     if (editId && editId !== '') {
+      // Edit 모드
       res = await supabase
         .from('quotes')
         .update({
-          project: project,
+          project: projectName,
           vendor: vendor,
           amount: Number(amount),
           notes: notes,
@@ -891,11 +1095,14 @@ window.saveQuote = async () => {
         })
         .eq('id', editId);
     } else {
+      // 신규 견적
       res = await supabase
         .from('quotes')
         .insert({
           id: quoteId,
-          project: project,
+          project_id: projectId,
+          project_title: projectName,
+          project: projectName,
           vendor: vendor,
           amount: Number(amount),
           notes: notes,
@@ -953,14 +1160,13 @@ window.confirmHold = async () => {
 
 
 window.deleteQuote = async (quoteId) => {
-  // fallback to edit id
   if (!quoteId) {
     quoteId = document.getElementById('quoteEditId').value;
   }
 
-  // invalid guard
-  if (!quoteId || quoteId === 'undefined') {
-    alert('Delete failed: invalid quote id');
+  if (!quoteId || quoteId === 'undefined' || quoteId === 'null') {
+    console.error('INVALID DELETE ID:', quoteId);
+    alert('Delete blocked: invalid quote id');
     return;
   }
 
@@ -970,7 +1176,6 @@ This action cannot be undone.')) return;
 
   try {
     await supabase.from('votes').delete().eq('quote_id', quoteId);
-
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
     if (error) throw error;
 
@@ -1005,7 +1210,44 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+      // Phase 1: 프로젝트 중복 승인 방지
+      const currentQuote = allQuotes.find(q => q.id === quoteId);
+      if (currentQuote && currentQuote.project_id) {
+        const alreadySelected = allQuotes.find(q => 
+          q.project_id === currentQuote.project_id && 
+          q.is_selected === true &&
+          q.id !== quoteId
+        );
+        
+        if (alreadySelected) {
+          alert(`⚠️ Another quote in this project is already approved.\n\nApproved: ${alreadySelected.vendor}\nCannot approve multiple quotes in the same project.`);
+          await loadData();
+          renderQuotes();
+          return;
+        }
+        
+        await supabase.from('quotes').update({
+          status: 'approved',
+          is_selected: true
+        }).eq('id', quoteId);
+        
+        const { data: projectQuotes } = await supabase
+          .from('quotes')
+          .select('id')
+          .eq('project_id', currentQuote.project_id)
+          .neq('id', quoteId)
+          .eq('status', 'pending');
+        
+        if (projectQuotes && projectQuotes.length > 0) {
+          for (const pq of projectQuotes) {
+            await supabase.from('quotes').update({status: 'declined'}).eq('id', pq.id);
+            await clearVotesForQuote(pq.id);
+          }
+        }
+      } else {
+        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+      }
+      
       await clearVotesForQuote(quoteId);
     } else if (declines >= RULES.declinesToAutoDecline) {
       await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
@@ -1031,6 +1273,32 @@ try {
   console.error('Initial load failed:', e);
   alert('Failed to load quotes: ' + e.message);
 }
+
+
+window.openCompare = function(projectId){
+  const panel = document.getElementById('comparePanel');
+  const quotes = allQuotes.filter(q => q.project_id === projectId);
+
+  if (quotes.length < 2){
+    panel.style.display = 'none';
+    return;
+  }
+
+  let html = '<div style="font-weight:600;margin-bottom:10px">📊 Quote Comparison</div>';
+
+  quotes.forEach(q=>{
+    html += `
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div><b>${q.vendor}</b></div>
+        <div>$${Number(q.amount || 0).toLocaleString('en-AU')}</div>
+        <div style="font-size:12px;color:var(--muted)">${q.notes || ''}</div>
+      </div>
+    `;
+  });
+
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+};
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
 </script>
