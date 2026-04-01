@@ -443,7 +443,53 @@ async function clearVotesForQuote(quoteId) {
 window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote?')) return;
   try {
-    await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+    // 🔴 프로젝트 중복 승인 방지 (Phase 1)
+    const currentQuote = allQuotes.find(q => q.id === quoteId);
+    if (currentQuote && currentQuote.project_id) {
+      // 같은 프로젝트에서 이미 승인된 견적이 있는지 확인
+      const alreadySelected = allQuotes.find(q => 
+        q.project_id === currentQuote.project_id && 
+        q.is_selected === true &&
+        q.id !== quoteId
+      );
+      
+      if (alreadySelected) {
+        if (!confirm(`⚠️ Another quote in this project is already approved:\n\n"${alreadySelected.vendor}"\n\nForce approving this will automatically decline the other quote.\n\nContinue?`)) {
+          return;
+        }
+        
+        // 기존 승인 견적 거절
+        await supabase.from('quotes').update({
+          status: 'declined',
+          is_selected: false
+        }).eq('id', alreadySelected.id);
+      }
+      
+      // 이 견적을 선택된 것으로 표시
+      await supabase.from('quotes').update({
+        status: 'approved',
+        is_selected: true
+      }).eq('id', quoteId);
+      
+      // 같은 프로젝트의 다른 견적들 자동 거절
+      const { data: projectQuotes } = await supabase
+        .from('quotes')
+        .select('id')
+        .eq('project_id', currentQuote.project_id)
+        .neq('id', quoteId)
+        .eq('status', 'pending');
+      
+      if (projectQuotes && projectQuotes.length > 0) {
+        for (const pq of projectQuotes) {
+          await supabase.from('quotes').update({status: 'declined'}).eq('id', pq.id);
+          await clearVotesForQuote(pq.id);
+        }
+      }
+    } else {
+      // 기존 로직 (싱글 견적)
+      await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+    }
+    
     await clearVotesForQuote(quoteId);
     showToast('Quote approved');
     await loadData();
@@ -901,7 +947,8 @@ window.saveQuote = async () => {
           notes: notes,
           comment: commentPayload,
           category: category,
-          status: 'pending'
+          status: 'pending',
+          project_id: quoteId  // 🔴 Phase 1: 싱글 견적은 자기 id가 project_id
         });
     }
 
@@ -991,7 +1038,48 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+      // 🔴 프로젝트 중복 승인 방지 (Phase 1)
+      const currentQuote = allQuotes.find(q => q.id === quoteId);
+      if (currentQuote && currentQuote.project_id) {
+        // 같은 프로젝트에서 이미 승인된 견적이 있는지 확인
+        const alreadySelected = allQuotes.find(q => 
+          q.project_id === currentQuote.project_id && 
+          q.is_selected === true &&
+          q.id !== quoteId
+        );
+        
+        if (alreadySelected) {
+          alert(`⚠️ Another quote in this project is already approved.\n\nApproved: ${alreadySelected.vendor}\nCannot approve multiple quotes in the same project.`);
+          await loadData();
+          renderQuotes();
+          return;
+        }
+        
+        // 이 견적을 선택된 것으로 표시
+        await supabase.from('quotes').update({
+          status: 'approved',
+          is_selected: true
+        }).eq('id', quoteId);
+        
+        // 같은 프로젝트의 다른 견적들은 자동 거절
+        const { data: projectQuotes } = await supabase
+          .from('quotes')
+          .select('id')
+          .eq('project_id', currentQuote.project_id)
+          .neq('id', quoteId)
+          .eq('status', 'pending');
+        
+        if (projectQuotes && projectQuotes.length > 0) {
+          for (const pq of projectQuotes) {
+            await supabase.from('quotes').update({status: 'declined'}).eq('id', pq.id);
+            await clearVotesForQuote(pq.id);
+          }
+        }
+      } else {
+        // 기존 로직 (싱글 견적)
+        await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
+      }
+      
       await clearVotesForQuote(quoteId);
     } else if (declines >= RULES.declinesToAutoDecline) {
       await supabase.from('quotes').update({status:'declined'}).eq('id', quoteId);
