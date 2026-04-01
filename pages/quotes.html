@@ -126,118 +126,6 @@
   flex-wrap:wrap;
 }
 
-/* 🔴 Phase 2: 프로젝트 그룹핑 스타일 */
-.project-group {
-  background: var(--surface);
-  border: 2px solid var(--blue-200);
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 16px;
-}
-.project-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--border);
-}
-.project-title-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.project-icon {
-  font-size: 24px;
-}
-.project-info {
-  flex: 1;
-}
-.project-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--blue-800);
-  margin-bottom: 2px;
-}
-.project-meta {
-  font-size: 12px;
-  color: var(--muted);
-}
-.project-quotes-count {
-  background: var(--blue-100);
-  color: var(--blue-800);
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.quote-compare-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
-}
-.quote-compare-table th {
-  background: var(--bg);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 2px solid var(--border);
-}
-.quote-compare-table td {
-  padding: 14px 12px;
-  border-bottom: 1px solid var(--border-light);
-  font-size: 13px;
-}
-.quote-compare-table tr:hover {
-  background: var(--bg);
-}
-.quote-compare-table tr.selected {
-  background: var(--green-bg);
-}
-.selected-badge {
-  background: var(--green-600);
-  color: #fff;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.project-comments-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.comment-item {
-  background: var(--bg);
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 8px;
-}
-.comment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.comment-author {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-.comment-time {
-  font-size: 11px;
-  color: var(--muted);
-}
-.comment-text {
-  font-size: 13px;
-  color: var(--text-2);
-  line-height: 1.5;
-}
-
 /* 모바일 최적화 */
 @media(max-width:768px){
   .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
@@ -337,10 +225,7 @@
         <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
         Quote Approvals
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-pill btn-pill-primary" id="createProjectBtn" style="display:none" onclick="openCreateProject()">📁 Create Project</button>
-        <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
-      </div>
+      <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
     </div>
 
     <div class="rule-info" id="ruleInfo">
@@ -446,123 +331,6 @@
   </div>
 </div>
 
-<!-- 🔴 Phase 2: 프로젝트 생성 = 첫 견적 입력 -->
-<div class="modal-backdrop" id="createProjectModal">
-  <div class="modal-box" style="max-width:680px">
-    <div class="modal-title">📁 Create New Quote Project</div>
-    
-    <div style="background:var(--blue-50);border:1px solid var(--blue-200);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--blue-800)">
-      💡 Enter the first quote. You can add more quotes from different vendors later to compare.
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Project Title</label>
-      <input type="text" class="modal-input" id="projectTitle" placeholder="e.g., Garage Door Replacement">
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Vendor / Contractor (First Quote)</label>
-      <input type="text" class="modal-input" id="projectFirstVendor" placeholder="Company name">
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Amount (AUD) (ex GST)</label>
-      <input type="text" class="modal-input" id="projectFirstAmount" placeholder="0.00" oninput="formatAmount(this)">
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Category</label>
-      <select class="modal-select" id="projectCategory">
-        <option value="General">General</option>
-        <option value="HVAC">HVAC</option>
-        <option value="Fire">Fire</option>
-        <option value="Electrical">Electrical</option>
-        <option value="Security">Security</option>
-        <option value="Plumbing">Plumbing</option>
-        <option value="Lift">Lift</option>
-        <option value="Legal">Legal</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Priority</label>
-      <select class="modal-select" id="projectPriority">
-        <option value="Normal">Normal</option>
-        <option value="High">High</option>
-        <option value="Urgent">Urgent</option>
-      </select>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Scope / Notes (Public)</label>
-      <textarea class="modal-textarea" id="projectDescription" placeholder="Brief description visible to voters…"></textarea>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
-      <textarea class="modal-textarea" id="projectInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">📎 Attach Files</label>
-      <input type="file" id="projectFirstFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
-      <button class="btn-pill" onclick="document.getElementById('projectFirstFileInput').click()">+ Choose Files</button>
-      <div id="projectFirstFilePreview" style="margin-top:10px"></div>
-    </div>
-    
-    <div class="modal-footer">
-      <button class="btn-pill" onclick="closeModal('createProjectModal')">Cancel</button>
-      <button class="btn-pill btn-pill-primary" onclick="saveProject()">Create Project →</button>
-    </div>
-  </div>
-</div>
-
-<!-- 🔴 Phase 2: 프로젝트에 견적 추가 모달 -->
-<div class="modal-backdrop" id="addQuoteToProjectModal">
-  <div class="modal-box" style="max-width:680px">
-    <div class="modal-title" id="addQuoteToProjectTitle">Add Quote to Project</div>
-    <input type="hidden" id="targetProjectId">
-    
-    <div style="background:var(--blue-50);border:1px solid var(--blue-200);border-radius:10px;padding:12px;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--blue-800);margin-bottom:4px">Adding quote to:</div>
-      <div style="font-size:14px;font-weight:700;color:var(--blue-900)" id="targetProjectName"></div>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Vendor / Contractor</label>
-      <input type="text" class="modal-input" id="projectQuoteVendor" placeholder="Company name">
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Amount (AUD) (ex GST)</label>
-      <input type="text" class="modal-input" id="projectQuoteAmount" placeholder="0.00" oninput="formatAmount(this)">
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">Scope / Notes (Public)</label>
-      <textarea class="modal-textarea" id="projectQuoteNotes" placeholder="Brief description visible to voters…"></textarea>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
-      <textarea class="modal-textarea" id="projectQuoteInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
-    </div>
-    
-    <div class="modal-field">
-      <label class="modal-label">📎 Attach Files</label>
-      <input type="file" id="projectFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
-      <button class="btn-pill" onclick="document.getElementById('projectFileInput').click()">+ Choose Files</button>
-      <div id="projectFilePreview" style="margin-top:10px"></div>
-    </div>
-    
-    <div class="modal-footer">
-      <button class="btn-pill" onclick="closeModal('addQuoteToProjectModal')">Cancel</button>
-      <button class="btn-pill btn-pill-primary" onclick="saveQuoteToProject()">Add Quote →</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -588,7 +356,6 @@ const canSeeSensitive = ['admin', 'committee', 'observer'].includes(role);
 
 if (role === 'admin') {
   document.getElementById('addQuoteBtn').style.display = 'inline-flex';
-  document.getElementById('createProjectBtn').style.display = 'inline-flex';
 }
 
 function parseComment(comment) {
@@ -676,10 +443,8 @@ async function clearVotesForQuote(quoteId) {
 window.forceApprove = async function (quoteId) {
   if (!confirm('Force approve this quote?')) return;
   try {
-    // 🔴 프로젝트 중복 승인 방지 (Phase 1)
     const currentQuote = allQuotes.find(q => q.id === quoteId);
     if (currentQuote && currentQuote.project_id) {
-      // 같은 프로젝트에서 이미 승인된 견적이 있는지 확인
       const alreadySelected = allQuotes.find(q => 
         q.project_id === currentQuote.project_id && 
         q.is_selected === true &&
@@ -687,24 +452,20 @@ window.forceApprove = async function (quoteId) {
       );
       
       if (alreadySelected) {
-        if (!confirm(`⚠️ Another quote in this project is already approved:\n\n"${alreadySelected.vendor}"\n\nForce approving this will automatically decline the other quote.\n\nContinue?`)) {
+        if (!confirm(`⚠️ Another quote already approved:\n\n"${alreadySelected.vendor}"\n\nForce approving will decline the other. Continue?`)) {
           return;
         }
-        
-        // 기존 승인 견적 거절
         await supabase.from('quotes').update({
           status: 'declined',
           is_selected: false
         }).eq('id', alreadySelected.id);
       }
       
-      // 이 견적을 선택된 것으로 표시
       await supabase.from('quotes').update({
         status: 'approved',
         is_selected: true
       }).eq('id', quoteId);
       
-      // 같은 프로젝트의 다른 견적들 자동 거절
       const { data: projectQuotes } = await supabase
         .from('quotes')
         .select('id')
@@ -719,7 +480,6 @@ window.forceApprove = async function (quoteId) {
         }
       }
     } else {
-      // 기존 로직 (싱글 견적)
       await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
     }
     
@@ -845,215 +605,104 @@ function updateArchiveFilterUI() {
 
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
-  
+
+  container.innerHTML = `
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Project Name</th>
+          <th>Contractor</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody"></tbody>
+    </table>
+  `;
+
+  const tbody = document.getElementById('pendingBody');
+
   if (!quotes.length) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:60px 24px;color:var(--muted)">
-        <div style="font-size:48px;margin-bottom:16px">⏳</div>
-        <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
-      </div>
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
+          <div style="font-size:48px;margin-bottom:16px">⏳</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
+        </td>
+      </tr>
     `;
     return;
   }
-  
-  // 🔴 Phase 2-B: 프로젝트별로 그룹핑
-  const projectGroups = {};
-  quotes.forEach(q => {
-    const pid = q.project_id;
-    if (!projectGroups[pid]) {
-      projectGroups[pid] = [];
-    }
-    projectGroups[pid].push(q);
-  });
-  
-  let html = '';
-  let hasSingleQuotes = false;
-  let projectGroupsHtml = '';
-  
-  // 프로젝트 그룹과 싱글 견적 분리
-  Object.keys(projectGroups).forEach(projectId => {
-    const projectQuotes = projectGroups[projectId];
-    const isMultiQuote = projectQuotes.length > 1;
-    
-    if (isMultiQuote) {
-      projectGroupsHtml += renderProjectGroup(projectId, projectQuotes);
-    } else {
-      hasSingleQuotes = true;
-    }
-  });
-  
-  // 프로젝트 그룹 먼저
-  html += projectGroupsHtml;
-  
-  // 싱글 견적들은 하나의 테이블로
-  if (hasSingleQuotes) {
-    html += '<table class="quote-table" style="margin-top:20px"><thead><tr><th>Date</th><th>Category</th><th>Priority</th><th>Project Name</th><th>Contractor</th><th>Amount</th></tr></thead><tbody>';
-    
-    Object.keys(projectGroups).forEach(projectId => {
-      const projectQuotes = projectGroups[projectId];
-      if (projectQuotes.length === 1) {
-        html += renderSingleQuoteRow(projectQuotes[0]);
-      }
-    });
-    
-    html += '</tbody></table>';
-  }
-  
-  container.innerHTML = html;
-}
 
-// 🔴 Phase 2-B: 프로젝트 그룹 렌더링
-function renderProjectGroup(projectId, quotes) {
-  const firstQuote = quotes[0];
-  const parsed = parseComment(firstQuote.comment);
-  const projectTitle = firstQuote.project_title || firstQuote.project || 'Untitled Project';
-  
-  let html = `
-    <div class="project-group">
-      <div class="project-header">
-        <div class="project-title-box">
-          <div class="project-icon">📁</div>
-          <div class="project-info">
-            <div class="project-name">${projectTitle}</div>
-            <div class="project-meta">${parsed.category} • ${parsed.priority}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span class="project-quotes-count">${quotes.length} Quotes</span>
-          <button class="btn-pill btn-pill-primary" onclick="openAddQuoteToProject('${projectId}', '${projectTitle.replace(/'/g, "\\'")}'); event.stopPropagation();" style="display:inline-flex">
-            + Add Quote
-          </button>
-        </div>
-      </div>
-      
-      <table class="quote-compare-table">
-        <thead>
-          <tr>
-            <th>Vendor</th>
-            <th>Amount</th>
-            <th>Scope</th>
-            <th>Votes</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-  `;
-  
+  let rows = '';
   quotes.forEach(q => {
-    const qParsed = parseComment(q.comment);
+    const parsed = parseComment(q.comment);
+    const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
     const amountHtml = (role === 'owner' || role === 'tenant') 
       ? `<span class="amount-confidential">Confidential</span>` 
       : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
-    
-    const votes = allVotes.filter(v => v.quote_id === q.id);
-    const approvals = votes.filter(v => v.vote === 'approve').length;
-    const declines = votes.filter(v => v.vote === 'decline').length;
-    const holds = votes.filter(v => v.vote === 'hold').length;
-    
-    const isSelected = q.is_selected === true;
-    const rowClass = isSelected ? 'selected' : '';
-    
-    html += `
-      <tr class="${rowClass}">
-        <td>
-          <strong>${q.vendor || 'Unknown'}</strong>
-          ${isSelected ? `<br><span class="selected-badge">✓ Selected</span>` : ''}
-        </td>
+
+    let filesHtml = '';
+    const visibleFiles = canSeeSensitive 
+      ? (parsed.files || []) 
+      : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
+
+    if (visibleFiles.length) {
+      filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
+      filesHtml += visibleFiles.map((f, idx) => {
+        const viewerId = `viewer-${q.id}-${idx}`;
+        return `
+        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
+          <span class="file-icon">📄</span>
+          <span class="file-name">${f.name}</span>
+        </div>
+        <div id="${viewerId}" class="inline-viewer"></div>
+      `;
+      }).join('');
+      filesHtml += `</div></div>`;
+    }
+
+    rows += `
+      <tr onclick="toggleQuote('${q.id}')">
+        <td>${dateStr}</td>
+        <td>${q.category}</td>
+        <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
+        <td>${q.project || 'Untitled Quote'}</td>
+        <td>${q.vendor || 'Unknown'}</td>
         <td>${amountHtml}</td>
-        <td>
-          <div style="font-size:12px;color:var(--text-2);max-width:200px;overflow:hidden;text-overflow:ellipsis">
-            ${q.notes || '—'}
+      </tr>
+      <tr style="display:none" id="row-body-${q.id}">
+        <td colspan="6">
+          <div class="quote-body open" id="body-${q.id}">
+            ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
+            ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
+            
+            ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
+
+            ${renderVotesStatus(q.id)}
+
+            <div class="action-bar">
+              ${role === 'committee' ? `
+                <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
+                <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
+                <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
+              ` : ''}
+              ${role === 'admin' ? `
+                <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
+                <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
+                <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
+                <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
+              ` : ''}
+            </div>
           </div>
-        </td>
-        <td>
-          <div style="font-size:12px">
-            ✅ ${approvals} | ❌ ${declines} | ⏸ ${holds}
-          </div>
-        </td>
-        <td>
-          ${isSelected ? '<span class="badge badge-green">Approved</span>' : '<span class="badge badge-gray">Pending</span>'}
-        </td>
-        <td>
-          <button class="btn-pill" onclick="openQuoteDetail('${q.id}')">View</button>
         </td>
       </tr>
     `;
   });
-  
-  html += `
-        </tbody>
-      </table>
-    </div>
-  `;
-  
-  return html;
-}
 
-// 🔴 Phase 2-B: 싱글 견적 행 렌더링 (tr만)
-function renderSingleQuoteRow(q) {
-  const parsed = parseComment(q.comment);
-  const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
-  const amountHtml = (role === 'owner' || role === 'tenant') 
-    ? `<span class="amount-confidential">Confidential</span>` 
-    : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
-
-  let filesHtml = '';
-  const visibleFiles = canSeeSensitive 
-    ? (parsed.files || []) 
-    : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
-
-  if (visibleFiles.length) {
-    filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
-    filesHtml += visibleFiles.map((f, idx) => {
-      const viewerId = `viewer-${q.id}-${idx}`;
-      return `
-      <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
-        <span class="file-icon">📄</span>
-        <span class="file-name">${f.name}</span>
-      </div>
-      <div id="${viewerId}" class="inline-viewer"></div>
-    `;
-    }).join('');
-    filesHtml += `</div></div>`;
-  }
-
-  return `
-    <tr onclick="toggleQuote('${q.id}')">
-      <td>${dateStr}</td>
-      <td>${q.category}</td>
-      <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-      <td>${q.project || 'Untitled Quote'}</td>
-      <td>${q.vendor || 'Unknown'}</td>
-      <td>${amountHtml}</td>
-    </tr>
-    <tr style="display:none" id="row-body-${q.id}">
-      <td colspan="6">
-        <div class="quote-body open" id="body-${q.id}">
-          ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
-          ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
-          
-          ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
-
-          ${renderVotesStatus(q.id)}
-
-          <div class="action-bar">
-            ${role === 'committee' ? `
-              <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-              <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-              <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
-            ` : ''}
-            ${role === 'admin' ? `
-              <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
-              <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
-              <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
-              <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
-            ` : ''}
-          </div>
-        </div>
-      </td>
-    </tr>
-  `;
+  tbody.innerHTML = rows;
 }
 
 function renderArchiveTable(quotes) {
@@ -1175,7 +824,7 @@ window.openEditQuote = id => {
   
   const deleteBtn = document.getElementById('deleteQuoteBtn');
   deleteBtn.style.display = 'inline-flex';
-  deleteBtn.onclick = () => deleteQuote();  // quoteEditId에서 자동으로 가져옴
+  deleteBtn.onclick = () => deleteQuote();
   
   document.getElementById('quoteProject').value = q.project || '';
   document.getElementById('quoteVendor').value = q.vendor || '';
@@ -1296,7 +945,7 @@ window.saveQuote = async () => {
           comment: commentPayload,
           category: category,
           status: 'pending',
-          project_id: quoteId  // 🔴 Phase 1: 싱글 견적은 자기 id가 project_id
+          project_id: quoteId
         });
     }
 
@@ -1347,7 +996,6 @@ window.confirmHold = async () => {
 };
 
 window.deleteQuote = async (quoteId) => {
-  // quoteId가 없으면 모달에서 가져오기
   if (!quoteId) {
     quoteId = document.getElementById('quoteEditId').value;
   }
@@ -1360,10 +1008,7 @@ window.deleteQuote = async (quoteId) => {
   if (!confirm('⚠️ Delete this quote?\n\nThis action cannot be undone.')) return;
   
   try {
-    // Delete associated votes
     await supabase.from('votes').delete().eq('quote_id', quoteId);
-    
-    // Delete the quote
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
     if (error) throw error;
     
@@ -1397,10 +1042,9 @@ window.castVote = async (quoteId, vote) => {
     const holds = latestVotes.filter(v=>v.vote==='hold').length;
 
     if (approvals >= RULES.approvalsRequired) {
-      // 🔴 프로젝트 중복 승인 방지 (Phase 1)
+      // Phase 1: 프로젝트 중복 승인 방지
       const currentQuote = allQuotes.find(q => q.id === quoteId);
       if (currentQuote && currentQuote.project_id) {
-        // 같은 프로젝트에서 이미 승인된 견적이 있는지 확인
         const alreadySelected = allQuotes.find(q => 
           q.project_id === currentQuote.project_id && 
           q.is_selected === true &&
@@ -1414,13 +1058,11 @@ window.castVote = async (quoteId, vote) => {
           return;
         }
         
-        // 이 견적을 선택된 것으로 표시
         await supabase.from('quotes').update({
           status: 'approved',
           is_selected: true
         }).eq('id', quoteId);
         
-        // 같은 프로젝트의 다른 견적들은 자동 거절
         const { data: projectQuotes } = await supabase
           .from('quotes')
           .select('id')
@@ -1435,7 +1077,6 @@ window.castVote = async (quoteId, vote) => {
           }
         }
       } else {
-        // 기존 로직 (싱글 견적)
         await supabase.from('quotes').update({status:'approved'}).eq('id', quoteId);
       }
       
@@ -1466,342 +1107,6 @@ try {
 }
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-
-// 🔴 Phase 2-B: 견적 상세 모달
-window.openQuoteDetail = (quoteId) => {
-  const q = allQuotes.find(quote => quote.id === quoteId);
-  if (!q) return;
-  
-  const parsed = parseComment(q.comment);
-  const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'long', year:'numeric'});
-  const amountHtml = (role === 'owner' || role === 'tenant') 
-    ? `<span class="amount-confidential">Confidential</span>` 
-    : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
-  
-  const votes = allVotes.filter(v => v.quote_id === quoteId);
-  const approvals = votes.filter(v => v.vote === 'approve').length;
-  const declines = votes.filter(v => v.vote === 'decline').length;
-  const holds = votes.filter(v => v.vote === 'hold').length;
-  
-  let filesHtml = '';
-  const visibleFiles = canSeeSensitive 
-    ? (parsed.files || []) 
-    : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
-
-  if (visibleFiles.length) {
-    filesHtml = `<div style="margin-top:16px"><div class="detail-label">📎 Files</div>`;
-    filesHtml += visibleFiles.map((f, idx) => {
-      const viewerId = `detail-viewer-${quoteId}-${idx}`;
-      return `
-      <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}')">
-        <span class="file-icon">📄</span>
-        <span class="file-name">${f.name}</span>
-      </div>
-      <div id="${viewerId}" class="inline-viewer"></div>
-    `;
-    }).join('');
-    filesHtml += `</div>`;
-  }
-  
-  const modalHtml = `
-    <div class="modal-backdrop open" id="quoteDetailModal" onclick="if(event.target === this) closeModal('quoteDetailModal')">
-      <div class="modal-box" style="max-width:700px">
-        <div class="modal-title">${q.vendor} - Quote Details</div>
-        
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
-          <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;font-size:13px">
-            <div style="color:var(--muted);font-weight:600">Date:</div>
-            <div>${dateStr}</div>
-            
-            <div style="color:var(--muted);font-weight:600">Category:</div>
-            <div>${q.category}</div>
-            
-            <div style="color:var(--muted);font-weight:600">Priority:</div>
-            <div><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></div>
-            
-            <div style="color:var(--muted);font-weight:600">Amount:</div>
-            <div style="font-size:18px;font-weight:700;color:var(--blue-600)">${amountHtml}</div>
-          </div>
-        </div>
-        
-        ${q.notes ? `
-          <div style="margin-bottom:16px">
-            <div class="detail-label">Scope / Notes</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--text-2)">${q.notes}</div>
-          </div>
-        ` : ''}
-        
-        ${canSeeSensitive && parsed.note ? `
-          <div class="internal-note-box" style="margin-bottom:16px">
-            🔒 Internal Note: ${parsed.note}
-          </div>
-        ` : ''}
-        
-        ${filesHtml}
-        
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0">
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">VOTES</div>
-          <div style="display:flex;gap:16px;font-size:13px">
-            <div>✅ Approve: <strong>${approvals}</strong></div>
-            <div>❌ Decline: <strong>${declines}</strong></div>
-            <div>⏸ Hold: <strong>${holds}</strong></div>
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          ${role === 'committee' ? `
-            <button class="btn-pill btn-pill-success" onclick="castVote('${quoteId}','approve');closeModal('quoteDetailModal')">✅ Approve</button>
-            <button class="btn-pill btn-pill-danger" onclick="castVote('${quoteId}','decline');closeModal('quoteDetailModal')">❌ Decline</button>
-            <button class="btn-pill btn-pill-warning" onclick="castVote('${quoteId}','hold');closeModal('quoteDetailModal')">⏸ Hold</button>
-          ` : ''}
-          ${role === 'admin' ? `
-            <button class="btn-pill btn-pill-success" onclick="forceApprove('${quoteId}');closeModal('quoteDetailModal')">Force Approve</button>
-            <button class="btn-pill" onclick="closeModal('quoteDetailModal');openEditQuote('${quoteId}')">✏️ Edit</button>
-          ` : ''}
-          <button class="btn-pill" onclick="closeModal('quoteDetailModal')">Close</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // 기존 모달 제거 후 추가
-  const existing = document.getElementById('quoteDetailModal');
-  if (existing) existing.remove();
-  
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-};
-
-// 🔴 Phase 2: 프로젝트 관련 함수들
-let projectUploadedFiles = [];
-
-window.openCreateProject = () => {
-  document.getElementById('projectTitle').value = '';
-  document.getElementById('projectFirstVendor').value = '';
-  document.getElementById('projectFirstAmount').value = '';
-  document.getElementById('projectCategory').value = 'General';
-  document.getElementById('projectPriority').value = 'Normal';
-  document.getElementById('projectDescription').value = '';
-  document.getElementById('projectInternalNote').value = '';
-  projectFirstUploadedFiles = [];
-  document.getElementById('projectFirstFilePreview').innerHTML = '';
-  document.getElementById('createProjectModal').classList.add('open');
-};
-
-let projectFirstUploadedFiles = [];
-
-window.saveProject = async () => {
-  const title = document.getElementById('projectTitle').value.trim();
-  const vendor = document.getElementById('projectFirstVendor').value.trim();
-  let amountStr = document.getElementById('projectFirstAmount').value.replace(/[^0-9.]/g, '');
-  const amount = parseFloat(amountStr) || 0;
-  const category = document.getElementById('projectCategory').value;
-  const priority = document.getElementById('projectPriority').value;
-  const notes = document.getElementById('projectDescription').value.trim();
-  const internalNote = document.getElementById('projectInternalNote').value.trim();
-  
-  if (!title || !vendor || amount <= 0) {
-    alert('Required: Project Title, Vendor, Amount');
-    return;
-  }
-  
-  try {
-    const projectId = crypto.randomUUID();
-    const quoteId = crypto.randomUUID();
-    const fileData = [];
-    
-    // 파일 업로드
-    for (const f of projectFirstUploadedFiles) {
-      if (f.file) {
-        const uploaded = await uploadFile(f.file, quoteId);
-        fileData.push({
-          path: uploaded.path,
-          name: uploaded.name,
-          type: uploaded.type,
-          size: uploaded.size,
-          visibility: 'internal'
-        });
-      }
-    }
-    
-    const commentPayload = {
-      note: internalNote,
-      files: fileData,
-      category: category,
-      priority: priority
-    };
-    
-    // 실제 견적으로 바로 저장 (placeholder 없음!)
-    const { error } = await supabase.from('quotes').insert({
-      id: quoteId,
-      project_id: projectId,
-      project_title: title,
-      project: title,
-      vendor: vendor,
-      amount: Number(amount),
-      notes: notes,
-      comment: commentPayload,
-      category: category,
-      status: 'pending'
-    });
-    
-    if (error) throw error;
-    
-    showToast('✅ Project created with first quote!');
-    closeModal('createProjectModal');
-    await loadData();
-    renderQuotes();
-    
-  } catch(e) {
-    console.error('saveProject failed:', e);
-    alert('Failed to create project: ' + e.message);
-  }
-};
-
-// 프로젝트 첫 견적 파일 업로드
-document.getElementById('projectFirstFileInput').addEventListener('change', e => {
-  Array.from(e.target.files).forEach(f => {
-    projectFirstUploadedFiles.push({ 
-      file: f, 
-      name: f.name, 
-      size: (f.size/1024).toFixed(1)+' KB', 
-      type: f.type,
-      visibility: 'internal'
-    });
-  });
-  updateProjectFirstFilePreview();
-});
-
-function updateProjectFirstFilePreview() {
-  const preview = document.getElementById('projectFirstFilePreview');
-  preview.innerHTML = projectFirstUploadedFiles.map((f,i) => `
-    <div class="file-preview">
-      <span class="file-icon">📄</span>
-      <span class="file-name">${f.name}</span>
-      <span class="file-size">${f.size}</span>
-      <span style="font-size:11px;color:#64748b">Internal</span>
-      <span class="file-del" onclick="removeProjectFirstFile(${i});event.stopImmediatePropagation()">✕</span>
-    </div>
-  `).join('');
-}
-
-window.removeProjectFirstFile = idx => {
-  projectFirstUploadedFiles.splice(idx, 1);
-  updateProjectFirstFilePreview();
-};
-
-window.openAddQuoteToProject = (projectId, projectTitle) => {
-  document.getElementById('targetProjectId').value = projectId;
-  document.getElementById('targetProjectName').textContent = projectTitle;
-  document.getElementById('projectQuoteVendor').value = '';
-  document.getElementById('projectQuoteAmount').value = '';
-  document.getElementById('projectQuoteNotes').value = '';
-  document.getElementById('projectQuoteInternalNote').value = '';
-  projectUploadedFiles = [];
-  document.getElementById('projectFilePreview').innerHTML = '';
-  document.getElementById('addQuoteToProjectModal').classList.add('open');
-};
-
-// 프로젝트 파일 업로드
-document.getElementById('projectFileInput').addEventListener('change', e => {
-  Array.from(e.target.files).forEach(f => {
-    projectUploadedFiles.push({ 
-      file: f, 
-      name: f.name, 
-      size: (f.size/1024).toFixed(1)+' KB', 
-      type: f.type,
-      visibility: 'internal'
-    });
-  });
-  updateProjectFilePreview();
-});
-
-function updateProjectFilePreview() {
-  const preview = document.getElementById('projectFilePreview');
-  preview.innerHTML = projectUploadedFiles.map((f,i) => `
-    <div class="file-preview">
-      <span class="file-icon">📄</span>
-      <span class="file-name">${f.name}</span>
-      <span class="file-size">${f.size}</span>
-      <span style="font-size:11px;color:#64748b">Internal</span>
-      <span class="file-del" onclick="removeProjectFile(${i});event.stopImmediatePropagation()">✕</span>
-    </div>
-  `).join('');
-}
-
-window.removeProjectFile = idx => {
-  projectUploadedFiles.splice(idx, 1);
-  updateProjectFilePreview();
-};
-
-window.saveQuoteToProject = async () => {
-  const projectId = document.getElementById('targetProjectId').value;
-  const projectTitle = document.getElementById('targetProjectName').textContent;
-  const vendor = document.getElementById('projectQuoteVendor').value.trim();
-  let amountStr = document.getElementById('projectQuoteAmount').value.replace(/[^0-9.]/g, '');
-  const amount = parseFloat(amountStr) || 0;
-  const notes = document.getElementById('projectQuoteNotes').value.trim();
-  const internalNote = document.getElementById('projectQuoteInternalNote').value.trim();
-  
-  if (!vendor || amount <= 0) {
-    alert('Required: Vendor and Amount');
-    return;
-  }
-  
-  try {
-    const quoteId = crypto.randomUUID();
-    const fileData = [];
-    
-    // 파일 업로드
-    for (const f of projectUploadedFiles) {
-      if (f.file) {
-        const uploaded = await uploadFile(f.file, quoteId);
-        fileData.push({
-          path: uploaded.path,
-          name: uploaded.name,
-          type: uploaded.type,
-          size: uploaded.size,
-          visibility: 'internal'
-        });
-      }
-    }
-    
-    // 프로젝트의 카테고리/우선순위 가져오기
-    const projectQuote = allQuotes.find(q => q.project_id === projectId);
-    const parsed = projectQuote ? parseComment(projectQuote.comment) : { category: 'General', priority: 'Normal' };
-    
-    const commentPayload = {
-      note: internalNote,
-      files: fileData,
-      category: parsed.category,
-      priority: parsed.priority
-    };
-    
-    const { error } = await supabase.from('quotes').insert({
-      id: quoteId,
-      project_id: projectId,
-      project_title: projectTitle,
-      project: projectTitle,
-      vendor: vendor,
-      amount: Number(amount),
-      notes: notes,
-      comment: commentPayload,
-      category: parsed.category,
-      status: 'pending'
-    });
-    
-    if (error) throw error;
-    
-    showToast('✅ Quote added to project');
-    closeModal('addQuoteToProjectModal');
-    await loadData();
-    renderQuotes();
-    
-  } catch(e) {
-    console.error('saveQuoteToProject failed:', e);
-    alert('Failed to add quote: ' + e.message);
-  }
-};
-
 </script>
 </body>
 </html>
