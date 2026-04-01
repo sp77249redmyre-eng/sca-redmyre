@@ -616,38 +616,67 @@ function updateArchiveFilterUI() {
   });
 }
 
+
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
-
-  container.innerHTML = `
-    <table class="quote-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Priority</th>
-          <th>Project Name</th>
-          <th>Contractor</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody id="pendingBody"></tbody>
-    </table>
-  `;
-
-  const tbody = document.getElementById('pendingBody');
+  container.innerHTML = '';
 
   if (!quotes.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
-          <div style="font-size:48px;margin-bottom:16px">⏳</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
-        </td>
-      </tr>
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-title">No pending quotes</div>
+      </div>
     `;
     return;
   }
+
+  const grouped = {};
+  quotes.forEach(q => {
+    const key = q.project_title || 'Untitled';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(q);
+  });
+
+  Object.keys(grouped).forEach(project => {
+    const list = grouped[project];
+    const first = list[0];
+    const parsed = parseComment(first.comment);
+
+    let html = `
+      <div class="project-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="font-weight:600;margin-bottom:6px">📁 ${project}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+          Category: ${first.category} | Priority: ${parsed.priority}
+        </div>
+    `;
+
+    list.forEach(q => {
+      const amountHtml = (role === 'owner' || role === 'tenant') 
+        ? `<span class="amount-confidential">Confidential</span>` 
+        : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+
+      html += `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border-light)">
+          <div>${q.vendor || 'Unknown'}</div>
+          <div>${amountHtml}</div>
+          <div style="display:flex;gap:6px">
+            ${role === 'committee' ? `
+              <button class="btn-pill btn-pill-success" onclick="castVote('${q.id}','approve')">Approve</button>
+              <button class="btn-pill btn-pill-danger" onclick="castVote('${q.id}','decline')">Decline</button>
+            ` : ''}
+            ${role === 'admin' ? `
+              <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}')">Force</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    container.innerHTML += html;
+  });
+}
 
   let rows = '';
   quotes.forEach(q => {
