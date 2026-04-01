@@ -634,7 +634,7 @@ function renderPendingQuotes(quotes) {
       </thead>
       <tbody id="pendingBody"></tbody>
     </table>
-    <div id="comparePanel" style="display:none;margin-top:16px"></div>
+    <div id="comparePanel" style="display:none;margin-top:16px;border:1px solid var(--border);padding:12px;border-radius:10px"></div>
   `;
 
   const tbody = document.getElementById('pendingBody');
@@ -661,29 +661,66 @@ function renderPendingQuotes(quotes) {
       <tr style="background:#f8fafc;font-weight:600">
         <td colspan="6">
           📁 ${first.project_title || first.project}
-          ${group.length > 1 ? `<button class="btn-pill btn-pill-primary" style="margin-left:10px" onclick="openCompare('${first.project_id}')">Compare</button>`:''}
+          ${group.length>1?`<button class="btn-pill btn-pill-primary" style="margin-left:10px" onclick="openCompare('${first.project_id}')">Compare</button>`:''}
         </td>
       </tr>
     `;
 
     group.forEach(q=>{
       const parsed = parseComment(q.comment);
-      const dateStr = new Date(q.created_at).toLocaleDateString('en-AU');
-      const amountHtml = (role==='owner'||role==='tenant') ? 'Confidential' : '$'+Number(q.amount||0).toLocaleString('en-AU');
+      const dateStr = new Date(q.created_at).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
+      const amountHtml = (role==='owner'||role==='tenant') 
+        ? `<span class="amount-confidential">Confidential</span>` 
+        : `$${Number(q.amount||0).toLocaleString('en-AU',{minimumFractionDigits:2})}`;
+
+      let filesHtml = '';
+      const visibleFiles = canSeeSensitive 
+        ? (parsed.files || []) 
+        : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
+
+      if (visibleFiles.length) {
+        filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
+        filesHtml += visibleFiles.map((f, idx) => {
+          const viewerId = `viewer-${q.id}-${idx}`;
+          return `
+          <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
+            <span class="file-icon">📄</span>
+            <span class="file-name">${f.name}</span>
+          </div>
+          <div id="${viewerId}" class="inline-viewer"></div>
+        `;
+        }).join('');
+        filesHtml += `</div></div>`;
+      }
 
       rows += `
         <tr onclick="toggleQuote('${q.id}')">
           <td>${dateStr}</td>
           <td>${q.category}</td>
-          <td>${parsed.priority}</td>
-          <td>${q.project}</td>
-          <td>${q.vendor}</td>
+          <td><span class="priority-${(parsed.priority||'normal').toLowerCase()}">${parsed.priority}</span></td>
+          <td>${q.project||'Untitled'}</td>
+          <td>${q.vendor||'Unknown'}</td>
           <td>${amountHtml}</td>
         </tr>
         <tr style="display:none" id="row-body-${q.id}">
           <td colspan="6">
             <div class="quote-body open">
+              ${q.notes ? `<div><div class="detail-label">Scope</div><div>${q.notes}</div></div>`:''}
+              ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 ${parsed.note}</div>`:''}
+              ${filesHtml}
               ${renderVotesStatus(q.id)}
+              <div class="action-bar">
+                ${role==='committee'?`
+                  <button class="btn-pill btn-pill-success" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">Approve</button>
+                  <button class="btn-pill btn-pill-danger" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">Decline</button>
+                  <button class="btn-pill btn-pill-warning" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">Hold</button>
+                `:''}
+                ${role==='admin'?`
+                  <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force</button>
+                  <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">Edit</button>
+                  <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">Delete</button>
+                `:''}
+              </div>
             </div>
           </td>
         </tr>
@@ -1188,16 +1225,13 @@ window.openCompare = function(projectId){
   const panel = document.getElementById('comparePanel');
   const list = allQuotes.filter(q=>q.project_id===projectId);
 
-  if(list.length < 2){
-    panel.style.display='none';
-    return;
-  }
+  if(list.length<2){panel.style.display='none';return;}
 
-  let html = '<div style="border:1px solid #ddd;padding:12px;border-radius:10px"><b>Comparison</b>';
+  let html = '<b>Comparison</b>';
 
   list.forEach(q=>{
     html += `
-      <div style="margin-top:10px;padding:10px;border:1px solid #eee;border-radius:8px">
+      <div style="margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:8px">
         <b>${q.vendor}</b><br>
         $${Number(q.amount||0).toLocaleString('en-AU')}<br>
         ${q.notes||''}
@@ -1205,7 +1239,6 @@ window.openCompare = function(projectId){
     `;
   });
 
-  html += '</div>';
   panel.innerHTML = html;
   panel.style.display='block';
 };
