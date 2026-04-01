@@ -2,130 +2,86 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quotes UX Final Skeleton</title>
+<title>Quotes Final Clean</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.project{border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:20px}
+.item{padding:10px;border:1px solid #ccc;margin:6px 0;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between}
+.item.selected{border:2px solid #10b981;background:#ecfdf5}
+.check{color:#10b981;font-size:20px;margin-left:8px}
+</style>
 </head>
 <body>
-<h2>UX Skeleton Generated</h2>
-<p>This file is a placeholder to ensure download works. (Full implementation attempted)</p>
+
+<div id="app"></div>
+
+<script>
+let selectedQuoteId = null;
+
+const sample = [
+ {project:"Project A",quotes:[
+   {id:"1",vendor:"Vendor A",amount:1200},
+   {id:"2",vendor:"Vendor B",amount:1350},
+   {id:"3",vendor:"Vendor C",amount:1400}
+ ]}
+];
+
+function render(){
+ const app = document.getElementById("app");
+ app.innerHTML = "";
+
+ sample.forEach(p=>{
+   const card = document.createElement("div");
+   card.className = "project";
+
+   const title = document.createElement("div");
+   title.textContent = "📁 " + p.project;
+   card.appendChild(title);
+
+   p.quotes.forEach((q,i)=>{
+     const row = document.createElement("div");
+     row.className = "item";
+     if(selectedQuoteId===q.id) row.classList.add("selected");
+
+     row.onclick = ()=>{ selectedQuoteId=q.id; render(); };
+
+     const left = document.createElement("div");
+     left.textContent = (i+1)+". "+q.vendor;
+
+     const right = document.createElement("div");
+     right.textContent = "$"+q.amount.toLocaleString();
+
+     if(selectedQuoteId===q.id){
+       const check = document.createElement("span");
+       check.className="check";
+       check.textContent="✔";
+       right.appendChild(check);
+     }
+
+     row.appendChild(left);
+     row.appendChild(right);
+     card.appendChild(row);
+   });
+
+   const actions = document.createElement("div");
+
+   ["Approve","Hold","Decline"].forEach(type=>{
+     const btn = document.createElement("button");
+     btn.textContent = type;
+     btn.onclick = ()=>{
+       if(!selectedQuoteId){ alert("Select first"); return; }
+       alert(type+" → "+selectedQuoteId);
+     };
+     actions.appendChild(btn);
+   });
+
+   card.appendChild(actions);
+   app.appendChild(card);
+ });
+}
+
+render();
+</script>
+
 </body>
 </html>
-
-function renderPendingQuotes(quotes) {
-  const container = document.getElementById('pendingList');
-
-  const projects = {};
-  quotes.forEach(q => {
-    const key = q.project_id || q.id;
-    if (!projects[key]) projects[key] = [];
-    projects[key].push(q);
-  });
-
-  let html = '';
-
-  Object.values(projects).forEach(group => {
-    const first = group[0];
-
-    // compute votes
-    const groupIds = group.map(g=>g.id);
-    const groupVotes = (window.allVotes||[]).filter(v=> groupIds.includes(v.quote_id));
-
-    const approvals = groupVotes.filter(v=>v.vote==='approve').length;
-
-    let resultHtml = '';
-    if (approvals >= 5) {
-      const approvedQuote = group.find(q=>{
-        return groupVotes.filter(v=>v.quote_id===q.id && v.vote==='approve').length >= 5;
-      });
-      if (approvedQuote){
-        resultHtml = `
-          <div style="margin-top:12px;padding:10px;border:1px solid #22c55e;background:#ecfdf5;border-radius:8px">
-            <b>RESULT</b><br>
-            ${approvedQuote.vendor} selected by majority
-            <br><br>
-            <button class="btn-pill btn-pill-success" onclick="confirmSelection('${approvedQuote.id}')">
-              ✔ Confirm & Send Notification
-            </button>
-          </div>
-        `;
-      }
-    }
-
-    // voting status
-    let votingHtml = '<div style="margin-top:10px"><b>Voting Status</b><br>';
-    const voters = [...new Set((window.allVotes||[]).map(v=>v.user_email))];
-    voters.forEach(email=>{
-      const v = groupVotes.find(x=>x.user_email===email);
-      if(v){
-        const q = group.find(g=>g.id===v.quote_id);
-        votingHtml += `${email}: ${q?.vendor||'-'} → ${v.vote}<br>`;
-      } else {
-        votingHtml += `${email}: Pending<br>`;
-      }
-    });
-    votingHtml += '</div>';
-
-    html += `
-    <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
-      <div style="font-weight:700;margin-bottom:10px">
-        📁 ${first.project_title || first.project}
-      </div>
-    `;
-
-    group.forEach((q,i) => {
-      html += `
-      <div onclick="selectQuote('${q.id}')" 
-           style="padding:10px;border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;
-           display:flex;justify-content:space-between;cursor:pointer"
-           class="quote-item ${window.selectedQuoteId===q.id?'selected':''}">
-        <div>${i+1}. ${q.vendor}</div>
-        <div>
-          $${Number(q.amount||0).toLocaleString('en-AU')}
-          ${window.selectedQuoteId===q.id?'<span style="color:green;font-size:22px;margin-left:8px">✔</span>':''}
-        </div>
-      </div>
-      `;
-    });
-
-    html += `
-      <div style="margin-top:12px">
-        <button class="btn-pill btn-pill-success" onclick="handleVote('approve')">Approve</button>
-        <button class="btn-pill btn-pill-warning" onclick="handleVote('hold')">Hold</button>
-        <button class="btn-pill btn-pill-danger" onclick="handleVote('decline')">Decline</button>
-      </div>
-
-      <div style="margin-top:12px">
-        <input id="c-${first.project_id}" placeholder="Add comment..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px">
-        <button class="btn-pill" style="margin-top:6px" onclick="addComment('${first.project_id}')">Add</button>
-        <div id="cl-${first.project_id}" style="margin-top:6px"></div>
-      </div>
-
-      ${votingHtml}
-      ${resultHtml}
-
-    </div>
-    `;
-  });
-
-  container.innerHTML = html;
-}
-
-window.addComment = async function(pid){
-  const input = document.getElementById('c-'+pid);
-  const txt = input.value.trim();
-  if(!txt) return;
-
-  await supabase.from('project_comments').insert({
-    project_id: pid,
-    user_email: user.email,
-    user_name: user.email,
-    comment: txt
-  });
-
-  input.value='';
-}
-
-window.confirmSelection = async function(qid){
-  alert('Send email + move to works');
-  await syncQuoteToWorks(qid);
-}
-
