@@ -341,6 +341,7 @@ const { supabase, user, role } = ctx;
 
 let allQuotes = [];
 let allVotes = [];
+let allProfiles = {}; // email -> full_name 매핑
 let committeeEmails = [
   "jimmyg@ignitelearning.com.au", "michael@efstratiou.com.au", "jskmhc@gmail.com",
   "sudesh@taxwealth.com.au", "niranjan@calculus.net.au", "redmyremedical@gmail.com",
@@ -455,12 +456,19 @@ window.forceApprove = async function (quoteId) {
 
 async function loadData() {
   try {
-    const [qRes, vRes] = await Promise.all([
+    const [qRes, vRes, pRes] = await Promise.all([
       supabase.from('quotes').select('*').order('created_at', { ascending: false }),
-      supabase.from('votes').select('*')
+      supabase.from('votes').select('*'),
+      supabase.from('profiles').select('email, full_name')
     ]);
     allQuotes = qRes.data || [];
     allVotes = vRes.data || [];
+    
+    // profiles를 email -> full_name 매핑으로 변환
+    allProfiles = {};
+    (pRes.data || []).forEach(p => {
+      allProfiles[p.email] = p.full_name || p.email.split('@')[0];
+    });
   } catch(e) {
     console.error('loadData failed:', e);
   }
@@ -502,12 +510,13 @@ function renderVotesStatus(quoteId) {
   let topRow = '', bottomRow = '';
   committeeEmails.forEach((email, idx) => {
     const v = voteMap[email] || null;
-    let icon = '⏳', color = 'var(--muted)';
-    if (v === 'approve') { icon = '✅'; color = 'var(--green)'; }
-    else if (v === 'decline') { icon = '❌'; color = 'var(--red)'; }
-    else if (v === 'hold') { icon = '⏸'; color = '#8b5cf6'; }
+    let icon = '⏳', color = 'var(--muted)', statusText = 'Pending';
+    if (v === 'approve') { icon = '✅'; color = 'var(--green)'; statusText = 'Approve'; }
+    else if (v === 'decline') { icon = '❌'; color = 'var(--red)'; statusText = 'Decline'; }
+    else if (v === 'hold') { icon = '⏸'; color = '#8b5cf6'; statusText = 'Hold'; }
 
-    const html = `<div class="vote-item"><span class="vote-icon" style="color:${color}">${icon}</span><span>${email.split('@')[0]}</span></div>`;
+    const name = allProfiles[email] || email.split('@')[0];
+    const html = `<div class="vote-item"><span class="vote-icon" style="color:${color}">${icon}</span><span>${name} (${statusText})</span></div>`;
     if (idx % 2 === 0) topRow += html;
     else bottomRow += html;
   });
