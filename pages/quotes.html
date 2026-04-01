@@ -311,7 +311,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()" style="display:none">Delete</button>
       <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
@@ -951,18 +951,32 @@ window.confirmHold = async () => {
   }
 };
 
+
 window.deleteQuote = async (quoteId) => {
-  if (!confirm('⚠️ Delete this quote?\n\nThis action cannot be undone.')) return;
-  
+  // force fallback
+  if (!quoteId) {
+    quoteId = document.getElementById('quoteEditId').value;
+  }
+
+  // HARD BLOCK
+  if (!quoteId || quoteId === 'undefined' || quoteId === 'null') {
+    console.error('INVALID DELETE ID:', quoteId);
+    alert('Delete blocked: invalid quote id');
+    return;
+  }
+
+  if (!confirm('⚠️ Delete this quote?
+
+This action cannot be undone.')) return;
+
   try {
-    // Delete associated votes
     await supabase.from('votes').delete().eq('quote_id', quoteId);
-    
-    // Delete the quote
+
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
     if (error) throw error;
-    
+
     showToast('Quote deleted ✓');
+    closeModal('quoteModal');
     await loadData();
     renderQuotes();
   } catch(e) {
@@ -970,6 +984,7 @@ window.deleteQuote = async (quoteId) => {
     alert('Failed to delete quote: ' + e.message);
   }
 };
+
 
 window.castVote = async (quoteId, vote) => {
   try {
