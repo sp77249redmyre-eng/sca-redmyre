@@ -311,7 +311,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
-      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()" style="display:none">Delete</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete</button>
       <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save →</button>
     </div>
   </div>
@@ -953,15 +953,14 @@ window.confirmHold = async () => {
 
 
 window.deleteQuote = async (quoteId) => {
-  // force fallback
+  // fallback to edit id
   if (!quoteId) {
     quoteId = document.getElementById('quoteEditId').value;
   }
 
-  // HARD BLOCK
-  if (!quoteId || quoteId === 'undefined' || quoteId === 'null') {
-    console.error('INVALID DELETE ID:', quoteId);
-    alert('Delete blocked: invalid quote id');
+  // invalid guard
+  if (!quoteId || quoteId === 'undefined') {
+    alert('Delete failed: invalid quote id');
     return;
   }
 
