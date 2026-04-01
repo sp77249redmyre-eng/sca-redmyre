@@ -2,85 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quotes Final Clean</title>
+<title>Quotes Phase 2</title>
 <link rel="stylesheet" href="/css/style.css">
-<style>
-.project{border:1px solid #ddd;border-radius:12px;padding:16px;margin-bottom:20px}
-.item{padding:10px;border:1px solid #ccc;margin:6px 0;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between}
-.item.selected{border:2px solid #10b981;background:#ecfdf5}
-.check{color:#10b981;font-size:20px;margin-left:8px}
-</style>
 </head>
 <body>
 
-<div id="app"></div>
+<div id="pendingList"></div>
 
 <script>
 let selectedQuoteId = null;
 
-const sample = [
- {project:"Project A",quotes:[
-   {id:"1",vendor:"Vendor A",amount:1200},
-   {id:"2",vendor:"Vendor B",amount:1350},
-   {id:"3",vendor:"Vendor C",amount:1400}
- ]}
-];
+function renderPendingQuotes(quotes){
 
-function render(){
- const app = document.getElementById("app");
- app.innerHTML = "";
+  const container = document.getElementById('pendingList');
+  container.innerHTML = '';
 
- sample.forEach(p=>{
-   const card = document.createElement("div");
-   card.className = "project";
+  if(!quotes.length){
+    container.innerHTML = '<div style="padding:40px;text-align:center">No pending quotes</div>';
+    return;
+  }
 
-   const title = document.createElement("div");
-   title.textContent = "📁 " + p.project;
-   card.appendChild(title);
+  const grouped = {};
+  quotes.forEach(q=>{
+    const key = q.project_id || q.id;
+    if(!grouped[key]) grouped[key]=[];
+    grouped[key].push(q);
+  });
 
-   p.quotes.forEach((q,i)=>{
-     const row = document.createElement("div");
-     row.className = "item";
-     if(selectedQuoteId===q.id) row.classList.add("selected");
+  Object.values(grouped).forEach(group=>{
 
-     row.onclick = ()=>{ selectedQuoteId=q.id; render(); };
+    const wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '30px';
 
-     const left = document.createElement("div");
-     left.textContent = (i+1)+". "+q.vendor;
+    const title = document.createElement('div');
+    title.style.fontWeight = '700';
+    title.style.marginBottom = '10px';
+    title.textContent = '📁 ' + (group[0].project || 'Project');
+    wrapper.appendChild(title);
 
-     const right = document.createElement("div");
-     right.textContent = "$"+q.amount.toLocaleString();
+    group.forEach(q=>{
 
-     if(selectedQuoteId===q.id){
-       const check = document.createElement("span");
-       check.className="check";
-       check.textContent="✔";
-       right.appendChild(check);
-     }
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.padding = '12px';
+      row.style.border = '1px solid #ddd';
+      row.style.borderRadius = '8px';
+      row.style.marginBottom = '6px';
+      row.style.cursor = 'pointer';
 
-     row.appendChild(left);
-     row.appendChild(right);
-     card.appendChild(row);
-   });
+      if(selectedQuoteId === q.id){
+        row.style.border = '2px solid #10b981';
+        row.style.background = '#ecfdf5';
+      }
 
-   const actions = document.createElement("div");
+      row.onclick = ()=>{
+        selectedQuoteId = q.id;
+        renderPendingQuotes(quotes);
+      };
 
-   ["Approve","Hold","Decline"].forEach(type=>{
-     const btn = document.createElement("button");
-     btn.textContent = type;
-     btn.onclick = ()=>{
-       if(!selectedQuoteId){ alert("Select first"); return; }
-       alert(type+" → "+selectedQuoteId);
-     };
-     actions.appendChild(btn);
-   });
+      const left = document.createElement('div');
+      left.textContent = q.vendor;
 
-   card.appendChild(actions);
-   app.appendChild(card);
- });
+      const right = document.createElement('div');
+      right.style.display = 'flex';
+      right.style.alignItems = 'center';
+      right.style.gap = '10px';
+
+      const amount = document.createElement('div');
+      amount.textContent = '$' + Number(q.amount||0).toLocaleString('en-AU');
+
+      right.appendChild(amount);
+
+      if(selectedQuoteId === q.id){
+        const check = document.createElement('div');
+        check.textContent = '✔';
+        check.style.color = '#10b981';
+        check.style.fontSize = '26px';
+        right.appendChild(check);
+      }
+
+      row.appendChild(left);
+      row.appendChild(right);
+      wrapper.appendChild(row);
+
+    });
+
+    const action = document.createElement('div');
+    action.style.display = 'flex';
+    action.style.gap = '10px';
+    action.style.marginTop = '10px';
+
+    const approve = document.createElement('button');
+    approve.className = 'btn-pill btn-pill-success';
+    approve.textContent = 'Approve';
+    approve.onclick = ()=>{
+      if(!selectedQuoteId) return alert('Select a quote first');
+      castVote(selectedQuoteId,'approve');
+    };
+
+    const hold = document.createElement('button');
+    hold.className = 'btn-pill btn-pill-warning';
+    hold.textContent = 'Hold';
+    hold.onclick = ()=>{
+      if(!selectedQuoteId) return alert('Select a quote first');
+      castVote(selectedQuoteId,'hold');
+    };
+
+    const decline = document.createElement('button');
+    decline.className = 'btn-pill btn-pill-danger';
+    decline.textContent = 'Decline';
+    decline.onclick = ()=>{
+      if(!selectedQuoteId) return alert('Select a quote first');
+      castVote(selectedQuoteId,'decline');
+    };
+
+    action.appendChild(approve);
+    action.appendChild(hold);
+    action.appendChild(decline);
+
+    wrapper.appendChild(action);
+
+    container.appendChild(wrapper);
+
+  });
+
 }
-
-render();
 </script>
 
 </body>
