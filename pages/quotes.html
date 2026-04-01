@@ -239,7 +239,7 @@
 
     <div style="margin-top:30px">
       <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:12px">⏳ Pending Approval</div>
-      <div id="pendingList"></div><div id="comparePanel" style="display:none;margin-top:20px;border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface)"></div>
+      <div id="pendingList"></div>
     </div>
 
     <div style="margin-top:50px">
@@ -634,71 +634,55 @@ function renderPendingQuotes(quotes) {
       </thead>
       <tbody id="pendingBody"></tbody>
     </table>
+    <div id="comparePanel" style="display:none;margin-top:16px"></div>
   `;
 
   const tbody = document.getElementById('pendingBody');
 
   if (!quotes.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center;padding:60px 24px;color:var(--muted)">
-          <div style="font-size:48px;margin-bottom:16px">⏳</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px">No pending quotes</div>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px">No pending quotes</td></tr>`;
     return;
   }
 
   const projects = {};
-  quotes.forEach(q => {
+  quotes.forEach(q=>{
     const key = q.project_id || q.id;
-    if (!projects[key]) projects[key] = [];
+    if(!projects[key]) projects[key]=[];
     projects[key].push(q);
   });
 
   let rows = '';
 
-  Object.values(projects).forEach(group => {
+  Object.values(projects).forEach(group=>{
     const first = group[0];
     const parsed = parseComment(first.comment);
 
     rows += `
       <tr style="background:#f8fafc;font-weight:600">
         <td colspan="6">
-          📁 ${first.project_title || first.project || 'Untitled'}
-          <span style="margin-left:12px;font-size:12px;color:var(--muted)">
-            ${first.category} | ${parsed.priority}
-          </span>
+          📁 ${first.project_title || first.project}
+          ${group.length > 1 ? `<button class="btn-pill btn-pill-primary" style="margin-left:10px" onclick="openCompare('${first.project_id}')">Compare</button>`:''}
         </td>
       </tr>
     `;
 
-    group.forEach(q => {
+    group.forEach(q=>{
       const parsed = parseComment(q.comment);
-      const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
-      const amountHtml = (role === 'owner' || role === 'tenant') 
-        ? `<span class="amount-confidential">Confidential</span>` 
-        : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
+      const dateStr = new Date(q.created_at).toLocaleDateString('en-AU');
+      const amountHtml = (role==='owner'||role==='tenant') ? 'Confidential' : '$'+Number(q.amount||0).toLocaleString('en-AU');
 
       rows += `
         <tr onclick="toggleQuote('${q.id}')">
           <td>${dateStr}</td>
           <td>${q.category}</td>
-          <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-          <td>${q.project || 'Untitled Quote'}</td>
-          <td>${q.vendor || 'Unknown'}</td>
+          <td>${parsed.priority}</td>
+          <td>${q.project}</td>
+          <td>${q.vendor}</td>
           <td>${amountHtml}</td>
         </tr>
         <tr style="display:none" id="row-body-${q.id}">
           <td colspan="6">
-            <div class="quote-body open" id="body-${q.id}">
-              ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
-
-              <div style="margin-top:10px">
-                <button class="btn-pill btn-pill-primary" onclick="openCompare('${q.project_id}')">Compare</button>
-              </div>
-
+            <div class="quote-body open">
               ${renderVotesStatus(q.id)}
             </div>
           </td>
@@ -709,76 +693,6 @@ function renderPendingQuotes(quotes) {
 
   tbody.innerHTML = rows;
 }
-
-  let rows = '';
-  quotes.forEach(q => {
-    const parsed = parseComment(q.comment);
-    const dateStr = new Date(q.created_at).toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
-    const amountHtml = (role === 'owner' || role === 'tenant') 
-      ? `<span class="amount-confidential">Confidential</span>` 
-      : `$${Number(q.amount || 0).toLocaleString('en-AU', {minimumFractionDigits: 2})}`;
-
-    let filesHtml = '';
-    const visibleFiles = canSeeSensitive 
-      ? (parsed.files || []) 
-      : (parsed.files || []).filter(f => !f.visibility || f.visibility === 'public');
-
-    if (visibleFiles.length) {
-      filesHtml = `<div style="margin:12px 0"><div class="detail-label">📎 Files</div><div class="files-list">`;
-      filesHtml += visibleFiles.map((f, idx) => {
-        const viewerId = `viewer-${q.id}-${idx}`;
-        return `
-        <div class="file-preview" onclick="showInlineViewer('${f.path}','${f.name}','${f.type}','${viewerId}'); event.stopPropagation();">
-          <span class="file-icon">📄</span>
-          <span class="file-name">${f.name}</span>
-        </div>
-        <div id="${viewerId}" class="inline-viewer"></div>
-      `;
-      }).join('');
-      filesHtml += `</div></div>`;
-    }
-
-    rows += `
-      <tr onclick="toggleQuote('${q.id}')">
-        <td>${dateStr}</td>
-        <td>${q.category}</td>
-        <td><span class="priority-${(parsed.priority || 'normal').toLowerCase()}">${parsed.priority}</span></td>
-        <td>${q.project || 'Untitled Quote'}</td>
-        <td>${q.vendor || 'Unknown'}</td>
-        <td>${amountHtml}</td>
-      </tr>
-      <tr style="display:none" id="row-body-${q.id}">
-        <td colspan="6">
-          <div class="quote-body open" id="body-${q.id}">
-            ${q.notes ? `<div><div class="detail-label">Scope</div><div style="font-size:13px;line-height:1.6">${q.notes}</div></div>` : ''}
-            ${canSeeSensitive && parsed.note ? `<div class="internal-note-box">🔒 Internal Note: ${parsed.note}</div>` : ''}
-            
-            ${filesHtml ? `<div class="files-section">${filesHtml}</div>` : ''}
-
-            ${renderVotesStatus(q.id)}
-
-            <div class="action-bar">
-              ${role === 'committee' ? `
-                <button class="btn-pill btn-pill-success large" onclick="castVote('${q.id}','approve');event.stopImmediatePropagation()">✅ Approve</button>
-                <button class="btn-pill btn-pill-danger large" onclick="castVote('${q.id}','decline');event.stopImmediatePropagation()">❌ Decline</button>
-                <button class="btn-pill btn-pill-warning large" onclick="castVote('${q.id}','hold');event.stopImmediatePropagation()">⏸ Hold</button>
-              ` : ''}
-              ${role === 'admin' ? `
-                <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
-                <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
-                <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
-                <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
-              ` : ''}
-            </div>
-          </div>
-        </td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = rows;
-}
-
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
 
@@ -1158,27 +1072,23 @@ window.confirmHold = async () => {
   }
 };
 
-
 window.deleteQuote = async (quoteId) => {
   if (!quoteId) {
     quoteId = document.getElementById('quoteEditId').value;
   }
-
-  if (!quoteId || quoteId === 'undefined' || quoteId === 'null') {
-    console.error('INVALID DELETE ID:', quoteId);
-    alert('Delete blocked: invalid quote id');
+  
+  if (!quoteId || quoteId === 'undefined') {
+    alert('Cannot delete: Quote ID is missing');
     return;
   }
-
-  if (!confirm('⚠️ Delete this quote?
-
-This action cannot be undone.')) return;
-
+  
+  if (!confirm('⚠️ Delete this quote?\n\nThis action cannot be undone.')) return;
+  
   try {
     await supabase.from('votes').delete().eq('quote_id', quoteId);
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
     if (error) throw error;
-
+    
     showToast('Quote deleted ✓');
     closeModal('quoteModal');
     await loadData();
@@ -1188,7 +1098,6 @@ This action cannot be undone.')) return;
     alert('Failed to delete quote: ' + e.message);
   }
 };
-
 
 window.castVote = async (quoteId, vote) => {
   try {
@@ -1277,29 +1186,29 @@ try {
 
 window.openCompare = function(projectId){
   const panel = document.getElementById('comparePanel');
-  const quotes = allQuotes.filter(q => q.project_id === projectId);
+  const list = allQuotes.filter(q=>q.project_id===projectId);
 
-  if (quotes.length < 2){
-    panel.style.display = 'none';
+  if(list.length < 2){
+    panel.style.display='none';
     return;
   }
 
-  let html = '<div style="font-weight:600;margin-bottom:10px">📊 Quote Comparison</div>';
+  let html = '<div style="border:1px solid #ddd;padding:12px;border-radius:10px"><b>Comparison</b>';
 
-  quotes.forEach(q=>{
+  list.forEach(q=>{
     html += `
-      <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
-        <div><b>${q.vendor}</b></div>
-        <div>$${Number(q.amount || 0).toLocaleString('en-AU')}</div>
-        <div style="font-size:12px;color:var(--muted)">${q.notes || ''}</div>
+      <div style="margin-top:10px;padding:10px;border:1px solid #eee;border-radius:8px">
+        <b>${q.vendor}</b><br>
+        $${Number(q.amount||0).toLocaleString('en-AU')}<br>
+        ${q.notes||''}
       </div>
     `;
   });
 
+  html += '</div>';
   panel.innerHTML = html;
-  panel.style.display = 'block';
+  panel.style.display='block';
 };
-
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
 </script>
 </body>
