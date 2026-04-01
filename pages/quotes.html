@@ -644,6 +644,8 @@ function renderPendingQuotes(quotes) {
               ${role === 'admin' ? `
                 <button class="btn-pill btn-pill-warning" onclick="openHold('${q.id}');event.stopImmediatePropagation()">⏸ Put On Hold</button>
                 <button class="btn-pill btn-pill-success" onclick="forceApprove('${q.id}');event.stopImmediatePropagation()">Force Approve</button>
+                <button class="btn-pill" onclick="openEditQuote('${q.id}');event.stopImmediatePropagation()">✏️ Edit</button>
+                <button class="btn-pill btn-pill-danger" onclick="deleteQuote('${q.id}');event.stopImmediatePropagation()">🗑️ Delete</button>
               ` : ''}
             </div>
           </div>
@@ -937,6 +939,26 @@ window.confirmHold = async () => {
   } catch(e) {
     console.error('confirmHold failed:', e);
     alert('Hold failed: ' + e.message);
+  }
+};
+
+window.deleteQuote = async (quoteId) => {
+  if (!confirm('⚠️ Delete this quote?\n\nThis action cannot be undone.')) return;
+  
+  try {
+    // Delete associated votes
+    await supabase.from('votes').delete().eq('quote_id', quoteId);
+    
+    // Delete the quote
+    const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
+    if (error) throw error;
+    
+    showToast('Quote deleted ✓');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('Delete quote error:', e);
+    alert('Failed to delete quote: ' + e.message);
   }
 };
 
