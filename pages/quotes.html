@@ -126,6 +126,118 @@
   flex-wrap:wrap;
 }
 
+/* 🔴 Phase 2: 프로젝트 그룹핑 스타일 */
+.project-group {
+  background: var(--surface);
+  border: 2px solid var(--blue-200);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+.project-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.project-icon {
+  font-size: 24px;
+}
+.project-info {
+  flex: 1;
+}
+.project-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--blue-800);
+  margin-bottom: 2px;
+}
+.project-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.project-quotes-count {
+  background: var(--blue-100);
+  color: var(--blue-800);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.quote-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+.quote-compare-table th {
+  background: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+.quote-compare-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+.quote-compare-table tr:hover {
+  background: var(--bg);
+}
+.quote-compare-table tr.selected {
+  background: var(--green-bg);
+}
+.selected-badge {
+  background: var(--green-600);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.project-comments-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.comment-item {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.comment-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.comment-time {
+  font-size: 11px;
+  color: var(--muted);
+}
+.comment-text {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
 /* 모바일 최적화 */
 @media(max-width:768px){
   .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
@@ -225,7 +337,10 @@
         <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
         Quote Approvals
       </div>
-      <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-pill btn-pill-primary" id="createProjectBtn" style="display:none" onclick="openCreateProject()">📁 Create Project</button>
+        <button class="btn-pill btn-pill-primary" id="addQuoteBtn" style="display:none" onclick="openAddQuote()">+ Add Quote</button>
+      </div>
     </div>
 
     <div class="rule-info" id="ruleInfo">
@@ -331,6 +446,100 @@
   </div>
 </div>
 
+<!-- 🔴 Phase 2: 프로젝트 생성 모달 -->
+<div class="modal-backdrop" id="createProjectModal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-title">📁 Create New Project</div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Project Title</label>
+      <input type="text" class="modal-input" id="projectTitle" placeholder="e.g., Garage Door Replacement">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">
+        A project groups multiple quotes from different vendors for the same work.
+      </div>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="projectCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Legal">Legal</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Priority</label>
+      <select class="modal-select" id="projectPriority">
+        <option value="Normal">Normal</option>
+        <option value="High">High</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Description (Optional)</label>
+      <textarea class="modal-textarea" id="projectDescription" placeholder="Brief description of the work needed…"></textarea>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-pill" onclick="closeModal('createProjectModal')">Cancel</button>
+      <button class="btn-pill btn-pill-primary" onclick="saveProject()">Create Project →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔴 Phase 2: 프로젝트에 견적 추가 모달 -->
+<div class="modal-backdrop" id="addQuoteToProjectModal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title" id="addQuoteToProjectTitle">Add Quote to Project</div>
+    <input type="hidden" id="targetProjectId">
+    
+    <div style="background:var(--blue-50);border:1px solid var(--blue-200);border-radius:10px;padding:12px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--blue-800);margin-bottom:4px">Adding quote to:</div>
+      <div style="font-size:14px;font-weight:700;color:var(--blue-900)" id="targetProjectName"></div>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="projectQuoteVendor" placeholder="Company name">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Amount (AUD) (ex GST)</label>
+      <input type="text" class="modal-input" id="projectQuoteAmount" placeholder="0.00" oninput="formatAmount(this)">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">Scope / Notes (Public)</label>
+      <textarea class="modal-textarea" id="projectQuoteNotes" placeholder="Brief description visible to voters…"></textarea>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">🔒 Internal Notes (Admin / Committee / Observer)</label>
+      <textarea class="modal-textarea" id="projectQuoteInternalNote" placeholder="Private notes..." style="background:var(--purple-bg);border-color:#c4b5fd"></textarea>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">📎 Attach Files</label>
+      <input type="file" id="projectFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
+      <button class="btn-pill" onclick="document.getElementById('projectFileInput').click()">+ Choose Files</button>
+      <div id="projectFilePreview" style="margin-top:10px"></div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-pill" onclick="closeModal('addQuoteToProjectModal')">Cancel</button>
+      <button class="btn-pill btn-pill-primary" onclick="saveQuoteToProject()">Add Quote →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -356,6 +565,7 @@ const canSeeSensitive = ['admin', 'committee', 'observer'].includes(role);
 
 if (role === 'admin') {
   document.getElementById('addQuoteBtn').style.display = 'inline-flex';
+  document.getElementById('createProjectBtn').style.display = 'inline-flex';
 }
 
 function parseComment(comment) {
@@ -1107,6 +1317,193 @@ try {
 }
 
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+// 🔴 Phase 2: 프로젝트 관련 함수들
+let projectUploadedFiles = [];
+
+window.openCreateProject = () => {
+  document.getElementById('projectTitle').value = '';
+  document.getElementById('projectCategory').value = 'General';
+  document.getElementById('projectPriority').value = 'Normal';
+  document.getElementById('projectDescription').value = '';
+  document.getElementById('createProjectModal').classList.add('open');
+};
+
+window.saveProject = async () => {
+  const title = document.getElementById('projectTitle').value.trim();
+  const category = document.getElementById('projectCategory').value;
+  const priority = document.getElementById('projectPriority').value;
+  const description = document.getElementById('projectDescription').value.trim();
+  
+  if (!title) {
+    alert('Please enter a project title');
+    return;
+  }
+  
+  try {
+    const projectId = crypto.randomUUID();
+    
+    // 프로젝트 대표 견적 생성 (placeholder)
+    const commentPayload = {
+      note: description || 'Project created - awaiting vendor quotes',
+      files: [],
+      category: category,
+      priority: priority
+    };
+    
+    const { error } = await supabase.from('quotes').insert({
+      id: crypto.randomUUID(),
+      project_id: projectId,
+      project_title: title,
+      project: title,
+      vendor: '[Pending Quotes]',
+      amount: 0,
+      notes: description || 'Project placeholder',
+      comment: commentPayload,
+      category: category,
+      status: 'pending'
+    });
+    
+    if (error) throw error;
+    
+    showToast('✅ Project created! Now add vendor quotes.');
+    closeModal('createProjectModal');
+    await loadData();
+    renderQuotes();
+    
+    // 바로 견적 추가 모달 열기
+    setTimeout(() => {
+      openAddQuoteToProject(projectId, title);
+    }, 500);
+    
+  } catch(e) {
+    console.error('saveProject failed:', e);
+    alert('Failed to create project: ' + e.message);
+  }
+};
+
+window.openAddQuoteToProject = (projectId, projectTitle) => {
+  document.getElementById('targetProjectId').value = projectId;
+  document.getElementById('targetProjectName').textContent = projectTitle;
+  document.getElementById('projectQuoteVendor').value = '';
+  document.getElementById('projectQuoteAmount').value = '';
+  document.getElementById('projectQuoteNotes').value = '';
+  document.getElementById('projectQuoteInternalNote').value = '';
+  projectUploadedFiles = [];
+  document.getElementById('projectFilePreview').innerHTML = '';
+  document.getElementById('addQuoteToProjectModal').classList.add('open');
+};
+
+// 프로젝트 파일 업로드
+document.getElementById('projectFileInput').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(f => {
+    projectUploadedFiles.push({ 
+      file: f, 
+      name: f.name, 
+      size: (f.size/1024).toFixed(1)+' KB', 
+      type: f.type,
+      visibility: 'internal'
+    });
+  });
+  updateProjectFilePreview();
+});
+
+function updateProjectFilePreview() {
+  const preview = document.getElementById('projectFilePreview');
+  preview.innerHTML = projectUploadedFiles.map((f,i) => `
+    <div class="file-preview">
+      <span class="file-icon">📄</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${f.size}</span>
+      <span style="font-size:11px;color:#64748b">Internal</span>
+      <span class="file-del" onclick="removeProjectFile(${i});event.stopImmediatePropagation()">✕</span>
+    </div>
+  `).join('');
+}
+
+window.removeProjectFile = idx => {
+  projectUploadedFiles.splice(idx, 1);
+  updateProjectFilePreview();
+};
+
+window.saveQuoteToProject = async () => {
+  const projectId = document.getElementById('targetProjectId').value;
+  const projectTitle = document.getElementById('targetProjectName').textContent;
+  const vendor = document.getElementById('projectQuoteVendor').value.trim();
+  let amountStr = document.getElementById('projectQuoteAmount').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(amountStr) || 0;
+  const notes = document.getElementById('projectQuoteNotes').value.trim();
+  const internalNote = document.getElementById('projectQuoteInternalNote').value.trim();
+  
+  if (!vendor || amount <= 0) {
+    alert('Required: Vendor and Amount');
+    return;
+  }
+  
+  try {
+    const quoteId = crypto.randomUUID();
+    const fileData = [];
+    
+    // 파일 업로드
+    for (const f of projectUploadedFiles) {
+      if (f.file) {
+        const uploaded = await uploadFile(f.file, quoteId);
+        fileData.push({
+          path: uploaded.path,
+          name: uploaded.name,
+          type: uploaded.type,
+          size: uploaded.size,
+          visibility: 'internal'
+        });
+      }
+    }
+    
+    // 프로젝트의 카테고리/우선순위 가져오기
+    const projectQuote = allQuotes.find(q => q.project_id === projectId);
+    const parsed = projectQuote ? parseComment(projectQuote.comment) : { category: 'General', priority: 'Normal' };
+    
+    const commentPayload = {
+      note: internalNote,
+      files: fileData,
+      category: parsed.category,
+      priority: parsed.priority
+    };
+    
+    const { error } = await supabase.from('quotes').insert({
+      id: quoteId,
+      project_id: projectId,
+      project_title: projectTitle,
+      project: projectTitle,
+      vendor: vendor,
+      amount: Number(amount),
+      notes: notes,
+      comment: commentPayload,
+      category: parsed.category,
+      status: 'pending'
+    });
+    
+    if (error) throw error;
+    
+    // placeholder 견적 삭제 (vendor가 [Pending Quotes]인 것)
+    const placeholders = allQuotes.filter(q => 
+      q.project_id === projectId && 
+      q.vendor === '[Pending Quotes]'
+    );
+    for (const ph of placeholders) {
+      await supabase.from('quotes').delete().eq('id', ph.id);
+    }
+    
+    showToast('✅ Quote added to project');
+    closeModal('addQuoteToProjectModal');
+    await loadData();
+    renderQuotes();
+    
+  } catch(e) {
+    console.error('saveQuoteToProject failed:', e);
+    alert('Failed to add quote: ' + e.message);
+  }
+};
+
 </script>
 </body>
 </html>
