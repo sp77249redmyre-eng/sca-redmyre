@@ -106,13 +106,10 @@
       <div id="unitRadioBox" style="display:none">
         <div class="form-field">
           <label class="form-label">Select Your Unit</label>
-          <div class="unit-radio-list" id="unitRadioList">
-            <!-- Dynamically populated -->
-          </div>
+          <div class="unit-radio-list" id="unitRadioList"></div>
         </div>
       </div>
       
-      <!-- Manual Selection (Original Floor/Suite) -->
       <div class="form-field" id="floorField">
         <label class="form-label">Floor</label>
         <select class="form-select" id="hvacLevel">
@@ -122,15 +119,14 @@
         </select>
       </div>
       <div class="form-field" id="suiteField">
-        <label class="form-label">Suite</label>
+        <label class="form-label">Tenancy</label>
         <select class="form-select" id="hvacTenancy">
-          <option value="">Select suite…</option>
+          <option value="">Select tenancy…</option>
           <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
           <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
           <option>Tenancy G</option><option>Tenancy H</option>
         </select>
       </div>
-      
       <div class="form-field">
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
@@ -138,49 +134,45 @@
       <button class="btn-submit" id="submitHvacBtn">Submit Request →</button>
     </div>
 
-    <div>
-      <div class="section-hdr"><div class="section-title">My Requests</div></div>
-      <div class="section-content">
+    <div id="rightPanel">
+      <!-- Admin panel -->
+      <div id="adminPanel" style="display:none">
+        <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
+        <div class="limits-bar">
+          <label>Min</label><input type="number" class="limits-input" id="tempMin" value="20" min="15" max="30">
+          <label>°C &nbsp;&nbsp; Max</label><input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
+          <label>°C</label>
+          <button class="limits-save" id="saveLimitsBtn">Save</button>
+          <span style="font-size:11px;color:var(--muted);margin-left:4px">Applied to all adjustments</span>
+        </div>
+        <div class="section-hdr" style="margin-top:4px">
+          <div class="section-title">Pending Requests</div>
+          <span id="pendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
+        </div>
+        <div class="card" id="pendingList"><div class="empty-state">No pending requests 🎉</div></div>
+        <div class="section-hdr" style="margin-top:16px">
+          <div class="section-title">In Progress</div>
+          <span id="progressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span>
+        </div>
+        <div class="card" id="progressList"><div class="empty-state">No requests in progress</div></div>
+        <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
+        <div class="card" id="completedList"><div class="empty-state">No completed requests yet</div></div>
+      </div>
+      <!-- Non-admin: my requests -->
+      <div id="userPanel" style="display:none">
+        <div class="section-hdr">
+          <div class="section-title">My Requests</div>
+        </div>
         <div class="filter-tabs">
           <button class="filter-tab active" data-filter="all">All</button>
           <button class="filter-tab" data-filter="ongoing">Ongoing</button>
           <button class="filter-tab" data-filter="completed">Completed</button>
         </div>
-        <div id="myList"><div class="empty-state">Loading…</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="adminPanel" style="display:none">
-    <div class="content">
-      <div>
-        <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
-        <div class="section-content" style="padding:20px">
-          <div class="limits-bar">
-            <label>Min:</label><input class="limits-input" id="minTemp" placeholder="20" type="number" step="0.5">
-            <label>Max:</label><input class="limits-input" id="maxTemp" placeholder="26" type="number" step="0.5">
-            <button class="limits-save" id="saveLimitsBtn">Save</button>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="section-hdr"><div class="section-title">Pending Requests</div></div>
-        <div class="section-content" id="pendingList"><div class="empty-state">Loading…</div></div>
-      </div>
-    </div>
-    <div class="content">
-      <div>
-        <div class="section-hdr"><div class="section-title">In Progress</div></div>
-        <div class="section-content" id="progressList"><div class="empty-state">Loading…</div></div>
-      </div>
-      <div>
-        <div class="section-hdr"><div class="section-title">Completed</div></div>
-        <div class="section-content" id="completedList"><div class="empty-state">Loading…</div></div>
+        <div class="card" id="myList"><div class="empty-state">No requests submitted yet</div></div>
       </div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -190,103 +182,19 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
 
 let selectedType = null;
-let allMyRequests = [];
 let currentFilter = 'all';
-let myUnits = []; // User's units from occupants table
-let selectedUnit = null; // Selected unit object
+let allMyRequests = [];
+let myUnits = [];
+let selectedUnit = null;
 
-// Load user's units from occupants table
-async function loadMyUnits() {
-  try {
-    // Search occupants by email
-    const { data, error } = await supabase
-      .from('occupants')
-      .select('*')
-      .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`);
-    
-    if (error) throw error;
-    
-    myUnits = data || [];
-    renderUnitSelection();
-  } catch (e) {
-    console.error('Failed to load units:', e);
-    myUnits = [];
-    renderUnitSelection();
-  }
-}
-
-// Render unit selection UI based on number of units
-function renderUnitSelection() {
-  const autoBox = document.getElementById('unitAutoBox');
-  const radioBox = document.getElementById('unitRadioBox');
-  const floorField = document.getElementById('floorField');
-  const suiteField = document.getElementById('suiteField');
-  
-  // Hide all boxes first
-  autoBox.style.display = 'none';
-  radioBox.style.display = 'none';
-  floorField.style.display = 'none';
-  suiteField.style.display = 'none';
-  
-  if (myUnits.length === 1) {
-    // Case 1: Single unit - auto select
-    selectedUnit = myUnits[0];
-    document.getElementById('unitAutoUnit').textContent = `Unit ${selectedUnit.unit}`;
-    document.getElementById('unitAutoDetail').textContent = `${selectedUnit.level}, ${selectedUnit.suite}${selectedUnit.business_name ? ' — ' + selectedUnit.business_name : ''}`;
-    autoBox.style.display = 'block';
-  } else if (myUnits.length > 1) {
-    // Case 2: Multiple units - show radio selection
-    const list = document.getElementById('unitRadioList');
-    list.innerHTML = myUnits.map((u, idx) => `
-      <label class="unit-radio-item" data-idx="${idx}">
-        <input type="radio" name="unitRadio" value="${idx}" ${idx === 0 ? 'checked' : ''}>
-        <div class="unit-radio-info">
-          <div class="unit-radio-unit">Unit ${u.unit}</div>
-          <div class="unit-radio-detail">${u.level}, ${u.suite}${u.business_name ? ' — ' + u.business_name : ''}</div>
-        </div>
-      </label>
-    `).join('');
-    
-    // Select first unit by default
-    selectedUnit = myUnits[0];
-    
-    // Add radio change listeners
-    document.querySelectorAll('input[name="unitRadio"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        const idx = parseInt(e.target.value);
-        selectedUnit = myUnits[idx];
-        
-        // Update selected styling
-        document.querySelectorAll('.unit-radio-item').forEach(item => item.classList.remove('selected'));
-        e.target.closest('.unit-radio-item').classList.add('selected');
-      });
-    });
-    
-    // Set initial selected state
-    document.querySelector('.unit-radio-item').classList.add('selected');
-    
-    radioBox.style.display = 'block';
-  } else {
-    // Case 3: No units - show manual Floor/Suite selection
-    selectedUnit = null;
-    floorField.style.display = 'block';
-    suiteField.style.display = 'block';
-  }
-}
-
-// Type button click
-document.getElementById('btnHot').addEventListener('click', () => {
-  selectedType = 'hot';
-  document.getElementById('btnHot').className = 'type-btn hot';
-  document.getElementById('btnCold').className = 'type-btn';
-});
-document.getElementById('btnCold').addEventListener('click', () => {
-  selectedType = 'cold';
-  document.getElementById('btnCold').className = 'type-btn cold';
-  document.getElementById('btnHot').className = 'type-btn';
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedType = btn.dataset.type;
+    document.getElementById('btnHot').className  = 'type-btn' + (selectedType==='hot'?' hot':'');
+    document.getElementById('btnCold').className = 'type-btn' + (selectedType==='cold'?' cold':'');
+  });
 });
 
-// Submit HVAC request
 document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
   
@@ -295,42 +203,27 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (selectedUnit) {
     // Use selected unit
     level = selectedUnit.level;
-    // Map Suite to Tenancy (Suite A → Tenancy A)
     tenancy = selectedUnit.suite.replace('Suite', 'Tenancy');
   } else {
     // Manual selection
     level = document.getElementById('hvacLevel').value;
     tenancy = document.getElementById('hvacTenancy').value;
-    if (!level || !tenancy) { showToast('Please select floor and suite', true); return; }
+    if (!level||!tenancy) { showToast('Please select floor and tenancy', true); return; }
   }
   
   try {
-    await supabase.from('hvac_requests').insert({ 
-      user_id: user.id, 
-      user_name: name, 
-      type: selectedType, 
-      level, 
-      tenancy, 
-      comment: document.getElementById('hvacComment').value.trim(), 
-      status: 'pending' 
-    });
-    
+    await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
     showToast('Request submitted! Building management will review shortly ✓');
-    selectedType = null;
-    document.getElementById('btnHot').className = 'type-btn';
-    document.getElementById('btnCold').className = 'type-btn';
-    document.getElementById('hvacComment').value = '';
-    
-    // Reset manual selection if used
+    selectedType=null;
+    document.getElementById('btnHot').className='type-btn';
+    document.getElementById('btnCold').className='type-btn';
+    document.getElementById('hvacComment').value='';
     if (!selectedUnit) {
-      document.getElementById('hvacLevel').value = '';
-      document.getElementById('hvacTenancy').value = '';
+      document.getElementById('hvacLevel').value='';
+      document.getElementById('hvacTenancy').value='';
     }
-    
-    if (role !== 'admin') await loadMyRequests();
-  } catch(e) { 
-    showToast(e.message || 'Failed to submit', true); 
-  }
+    if (role!=='admin') await loadMyRequests();
+  } catch(e) { showToast(e.message||'Failed to submit', true); }
 });
 
 // Filter tabs
@@ -345,13 +238,14 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
 
 function getProgressBar(status, type) {
   const steps = [
-    { icon: '📝', label: 'Pending', status: 'pending' },
-    { icon: '✅', label: 'Approved', status: 'approved' },
-    { icon: type === 'hot' ? '❄️' : '🔥', label: 'Adjusting', status: 'processing' },
-    { icon: '🎉', label: 'Done', status: 'completed' }
+    { key: 'pending', icon: '📝', label: '제출' },
+    { key: 'approved', icon: '✅', label: '승인' },
+    { key: 'processing', icon: type === 'hot' ? '🌡️⬇️' : '🌡️⬆️', label: '조정중' },
+    { key: 'completed', icon: '✓', label: '완료' }
   ];
-  
-  const currentIndex = steps.findIndex(s => s.status === status);
+
+  const statusOrder = ['pending', 'approved', 'processing', 'completed'];
+  const currentIndex = statusOrder.indexOf(status);
   
   let html = '<div class="progress-bar">';
   
@@ -413,19 +307,23 @@ if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
   await loadAdminData();
   
-  supabase.channel('hvac_admin')
+  // Admin realtime subscription
+  supabase.channel('admin-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadAdminData();
     })
     .subscribe();
+    
 } else {
-  await loadMyUnits(); // Load user's units
+  document.getElementById('userPanel').style.display = 'block';
+  await loadMyUnits();
   await loadMyRequests();
   
-  supabase.channel('hvac_user')
+  // User realtime subscription
+  supabase.channel('user-hvac-updates')
     .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
+      event: 'UPDATE', 
+      schema: 'public', 
       table: 'hvac_requests',
       filter: `user_id=eq.${user.id}`
     }, () => {
@@ -434,103 +332,176 @@ if (role === 'admin') {
     .subscribe();
 }
 
-async function loadAdminData() {
-  // Load temperature limits
-  const { data: settings } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
-  if (settings) {
-    const minSetting = settings.find(s => s.key === 'temp_min');
-    const maxSetting = settings.find(s => s.key === 'temp_max');
-    if (minSetting) document.getElementById('minTemp').value = minSetting.value;
-    if (maxSetting) document.getElementById('maxTemp').value = maxSetting.value;
+// Load user's units from occupants table
+async function loadMyUnits() {
+  try {
+    const { data, error } = await supabase
+      .from('occupants')
+      .select('*')
+      .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`);
+    
+    if (error) throw error;
+    
+    myUnits = data || [];
+    renderUnitSelection();
+  } catch (e) {
+    console.error('Failed to load units:', e);
+    myUnits = [];
+    renderUnitSelection();
   }
+}
 
-  // Load pending requests
-  const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
-  const pendingList = document.getElementById('pendingList');
-  if (!pending || !pending.length) {
-    pendingList.innerHTML = '<div class="empty-state">No pending requests</div>';
+// Render unit selection UI
+function renderUnitSelection() {
+  const autoBox = document.getElementById('unitAutoBox');
+  const radioBox = document.getElementById('unitRadioBox');
+  const floorField = document.getElementById('floorField');
+  const suiteField = document.getElementById('suiteField');
+  
+  autoBox.style.display = 'none';
+  radioBox.style.display = 'none';
+  floorField.style.display = 'none';
+  suiteField.style.display = 'none';
+  
+  if (myUnits.length === 1) {
+    // Single unit - auto select
+    selectedUnit = myUnits[0];
+    document.getElementById('unitAutoUnit').textContent = `Unit ${selectedUnit.unit}`;
+    document.getElementById('unitAutoDetail').textContent = `${selectedUnit.level}, ${selectedUnit.suite}${selectedUnit.business_name ? ' — ' + selectedUnit.business_name : ''}`;
+    autoBox.style.display = 'block';
+  } else if (myUnits.length > 1) {
+    // Multiple units - show radio selection
+    const list = document.getElementById('unitRadioList');
+    list.innerHTML = myUnits.map((u, idx) => `
+      <label class="unit-radio-item" data-idx="${idx}">
+        <input type="radio" name="unitRadio" value="${idx}" ${idx === 0 ? 'checked' : ''}>
+        <div class="unit-radio-info">
+          <div class="unit-radio-unit">Unit ${u.unit}</div>
+          <div class="unit-radio-detail">${u.level}, ${u.suite}${u.business_name ? ' — ' + u.business_name : ''}</div>
+        </div>
+      </label>
+    `).join('');
+    
+    selectedUnit = myUnits[0];
+    
+    document.querySelectorAll('input[name="unitRadio"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.value);
+        selectedUnit = myUnits[idx];
+        document.querySelectorAll('.unit-radio-item').forEach(item => item.classList.remove('selected'));
+        e.target.closest('.unit-radio-item').classList.add('selected');
+      });
+    });
+    
+    document.querySelector('.unit-radio-item').classList.add('selected');
+    radioBox.style.display = 'block';
   } else {
-    pendingList.innerHTML = pending.map(r => `
+    // No units - manual selection
+    selectedUnit = null;
+    floorField.style.display = 'block';
+    suiteField.style.display = 'block';
+  }
+}
+
+async function loadAdminData() {
+  try {
+    const { data: settings } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
+    settings?.forEach(s => { 
+      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value; 
+      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value; 
+    });
+  } catch(e) {}
+  
+  const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
+  const pList = document.getElementById('pendingList');
+  const pCount = document.getElementById('pendingCount');
+  
+  if (!pending?.length) { 
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>'; 
+    pCount.textContent = ''; 
+  } else {
+    pCount.textContent = `${pending.length} pending`;
+    pList.innerHTML = pending.map(r => `
       <div class="req-row">
-        <div style="font-size:24px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="font-size:22px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
         <div class="req-info">
           <div class="req-title">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div class="req-meta">${r.user_name} • ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          <div class="req-meta">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
           ${r.comment ? `<div class="req-comment">"${r.comment}"</div>` : ''}
         </div>
         <div class="req-actions">
-          <button class="btn-secondary" onclick="approveRequest('${r.id}')">✅ Approve</button>
-          <button class="btn-secondary" onclick="rejectRequest('${r.id}')">❌ Reject</button>
+          <button class="btn-success" onclick="approveReq('${r.id}','${r.type}','${r.level}','${r.tenancy}')">Approve ✓</button>
+          <button class="btn-danger" onclick="rejectReq('${r.id}')">Reject</button>
         </div>
       </div>
     `).join('');
   }
-
-  // Load in-progress requests
+  
   const { data: progress } = await supabase.from('hvac_requests').select('*').in('status', ['approved', 'processing']).order('created_at', {ascending: false});
-  const progressList = document.getElementById('progressList');
-  if (!progress || !progress.length) {
-    progressList.innerHTML = '<div class="empty-state">No requests in progress</div>';
+  const prList = document.getElementById('progressList');
+  const prCount = document.getElementById('progressCount');
+  
+  if (!progress?.length) { 
+    prList.innerHTML = '<div class="empty-state">No requests in progress</div>'; 
+    prCount.textContent = ''; 
   } else {
-    progressList.innerHTML = progress.map(r => `
-      <div class="req-row">
-        <div style="font-size:24px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
-        <div class="req-info">
-          <div class="req-title">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div class="req-meta">${r.user_name} • ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
-          ${r.comment ? `<div class="req-comment">"${r.comment}"</div>` : ''}
+    prCount.textContent = `${progress.length} in progress`;
+    prList.innerHTML = progress.map(r => `
+      <div class="my-req-row">
+        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${getProgressBar(r.status, r.type)}
         </div>
-        <span class="badge ${r.status === 'approved' ? 'badge-blue' : 'badge-yellow'}">${r.status}</span>
+        <span class="badge badge-blue">${r.status}</span>
       </div>
     `).join('');
   }
-
-  // Load completed requests
+  
   const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(10);
-  const completedList = document.getElementById('completedList');
-  if (!completed || !completed.length) {
-    completedList.innerHTML = '<div class="empty-state">No completed requests</div>';
+  const cList = document.getElementById('completedList');
+  
+  if (!completed?.length) { 
+    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; 
   } else {
-    completedList.innerHTML = completed.map(r => `
-      <div class="req-row">
-        <div style="font-size:24px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
-        <div class="req-info">
-          <div class="req-title">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div class="req-meta">${r.user_name} • ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
-          ${r.comment ? `<div class="req-comment">"${r.comment}"</div>` : ''}
+    cList.innerHTML = completed.map(r => `
+      <div class="my-req-row">
+        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
         </div>
-        <span class="badge ${r.status === 'completed' ? 'badge-green' : 'badge-red'}">${r.status}</span>
+        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
       </div>
     `).join('');
   }
 }
 
-// Admin actions
-window.approveRequest = async (id) => {
+document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
+  const min = parseInt(document.getElementById('tempMin').value);
+  const max = parseInt(document.getElementById('tempMax').value);
+  if (min >= max) { showToast('Min must be less than Max', true); return; }
+  try {
+    await supabase.from('settings').upsert({key: 'temp_min', value: String(min)}, {onConflict: 'key'});
+    await supabase.from('settings').upsert({key: 'temp_max', value: String(max)}, {onConflict: 'key'});
+    showToast(`Limits saved: ${min}°C – ${max}°C ✓`);
+  } catch(e) { showToast('Failed to save limits', true); }
+});
+
+window.approveReq = async (id, type, level, tenancy) => {
+  if (!confirm(`Approve?\n${type === 'hot' ? '🥵 Too Hot → -1°C' : '🥶 Too Cold → +1°C'}\n${level}, ${tenancy}`)) return;
   await supabase.from('hvac_requests').update({status: 'approved', approved_at: new Date().toISOString()}).eq('id', id);
-  showToast('Request approved ✓');
+  showToast('Approved! Temperature adjustment queued ✓');
   await loadAdminData();
 };
 
-window.rejectRequest = async (id) => {
+window.rejectReq = async (id) => {
+  if (!confirm('Reject this request?')) return;
   await supabase.from('hvac_requests').update({status: 'rejected'}).eq('id', id);
   showToast('Request rejected');
   await loadAdminData();
 };
-
-// Save temperature limits
-document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
-  const min = parseFloat(document.getElementById('minTemp').value);
-  const max = parseFloat(document.getElementById('maxTemp').value);
-  if (isNaN(min) || isNaN(max)) { showToast('Please enter valid numbers', true); return; }
-  if (min >= max) { showToast('Min must be less than Max', true); return; }
-  
-  await supabase.from('settings').upsert([
-    { key: 'temp_min', value: min.toString() },
-    { key: 'temp_max', value: max.toString() }
-  ]);
-  showToast('Temperature limits saved ✓');
-});
 </script>
 </body>
 </html>
