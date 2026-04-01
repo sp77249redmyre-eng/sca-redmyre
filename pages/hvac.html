@@ -112,25 +112,23 @@
         </div>
       </div>
       
-      <!-- Manual Selection (No Units Found) -->
-      <div id="manualSelectionBox" style="display:none">
-        <div class="form-field">
-          <label class="form-label">Floor</label>
-          <select class="form-select" id="hvacLevel">
-            <option value="">Select floor…</option>
-            <option>Level 1</option><option>Level 2</option><option>Level 3</option>
-            <option>Level 4</option><option>Level 5</option><option>Level 6</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Suite</label>
-          <select class="form-select" id="hvacTenancy">
-            <option value="">Select suite…</option>
-            <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
-            <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
-            <option>Tenancy G</option><option>Tenancy H</option>
-          </select>
-        </div>
+      <!-- Manual Selection (Original Floor/Suite) -->
+      <div class="form-field" id="floorField">
+        <label class="form-label">Floor</label>
+        <select class="form-select" id="hvacLevel">
+          <option value="">Select floor…</option>
+          <option>Level 1</option><option>Level 2</option><option>Level 3</option>
+          <option>Level 4</option><option>Level 5</option><option>Level 6</option>
+        </select>
+      </div>
+      <div class="form-field" id="suiteField">
+        <label class="form-label">Suite</label>
+        <select class="form-select" id="hvacTenancy">
+          <option value="">Select suite…</option>
+          <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
+          <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
+          <option>Tenancy G</option><option>Tenancy H</option>
+        </select>
       </div>
       
       <div class="form-field">
@@ -221,12 +219,14 @@ async function loadMyUnits() {
 function renderUnitSelection() {
   const autoBox = document.getElementById('unitAutoBox');
   const radioBox = document.getElementById('unitRadioBox');
-  const manualBox = document.getElementById('manualSelectionBox');
+  const floorField = document.getElementById('floorField');
+  const suiteField = document.getElementById('suiteField');
   
   // Hide all boxes first
   autoBox.style.display = 'none';
   radioBox.style.display = 'none';
-  manualBox.style.display = 'none';
+  floorField.style.display = 'none';
+  suiteField.style.display = 'none';
   
   if (myUnits.length === 1) {
     // Case 1: Single unit - auto select
@@ -267,9 +267,10 @@ function renderUnitSelection() {
     
     radioBox.style.display = 'block';
   } else {
-    // Case 3: No units - manual selection
+    // Case 3: No units - show manual Floor/Suite selection
     selectedUnit = null;
-    manualBox.style.display = 'block';
+    floorField.style.display = 'block';
+    suiteField.style.display = 'block';
   }
 }
 
