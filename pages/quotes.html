@@ -51,10 +51,11 @@
 
 .result-box{
   margin-top:15px;
-  padding:12px;
+  padding:14px;
   border-radius:10px;
   background:#ecfdf5;
   font-weight:600;
+  font-size:14px;
 }
 </style>
 </head>
@@ -74,7 +75,7 @@
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-const { supabase, role } = ctx;
+const { supabase } = ctx;
 
 let allQuotes = [];
 let allVotes = [];
@@ -91,22 +92,6 @@ async function loadData(){
 
 function getVotes(id){
   return allVotes.filter(v=>v.quote_id===id);
-}
-
-function castVoteWrapper(type){
-  if(type === 'approve'){
-    if(!window.selectedQuoteId){
-      alert("Select a quote first");
-      return;
-    }
-    castVote(window.selectedQuoteId,'approve');
-  }
-  if(type === 'hold'){
-    castVote(null,'hold');
-  }
-  if(type === 'decline'){
-    castVote(null,'decline');
-  }
 }
 
 function renderPendingQuotes(){
@@ -130,13 +115,12 @@ function renderPendingQuotes(){
     html += `<div class="project-header">📁 ${first.project}</div>`;
 
     group.forEach(q=>{
-
       let selected = window.selectedQuoteId === q.id;
 
       html += `
       <div class="vendor-row ${selected?'vendor-selected':''}">
 
-        <div onclick="toggleQuote('${q.id}')">
+        <div onclick="selectQuote('${q.id}')">
           ${q.vendor} | $${q.amount} + GST
         </div>
 
@@ -144,7 +128,7 @@ function renderPendingQuotes(){
           ${
             selected
             ? '✔ Selected'
-            : (window.selectedQuoteId ? '❌' : `<button class="btn btn-green" onclick="selectQuote('${q.id}')">Select</button>`)
+            : `<button class="btn btn-green" onclick="selectQuote('${q.id}')">Select</button>`
           }
         </div>
 
@@ -154,29 +138,17 @@ function renderPendingQuotes(){
 
     html += `
     <div class="action-bar">
-      <button class="btn btn-green" onclick="castVoteWrapper('approve')">Approve</button>
-      <button class="btn btn-yellow" onclick="castVoteWrapper('hold')">Hold</button>
-      <button class="btn btn-red" onclick="castVoteWrapper('decline')">Decline</button>
+      <button class="btn btn-green">Approve</button>
+      <button class="btn btn-yellow">Hold</button>
+      <button class="btn btn-red">Decline</button>
     </div>
     `;
 
-    html += `<div><b>Committee Comments</b><br></div>`;
+    html += `<div style="margin-top:10px"><b>Committee Comments</b><br>Jimmy: ...<br>Sarah: ...</div>`;
 
-    html += `
-    <div>
-      <b>Voting Status</b><br>
-    `;
+    html += `<div style="margin-top:10px"><b>Voting Status</b><br>Jimmy: ...<br>Sarah: ...</div>`;
 
-    group.forEach(q=>{
-      const votes = getVotes(q.id);
-      votes.forEach(v=>{
-        html += `${v.user_email}: ${v.vote}<br>`;
-      });
-    });
-
-    html += `</div>`;
-
-    html += `<div class="result-box">Result: Pending</div>`;
+    html += `<div class="result-box">RESULT: PENDING</div>`;
 
     html += `</div>`;
   });
