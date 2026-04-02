@@ -454,17 +454,25 @@ function renderPendingQuotes(quotes) {
     const votingSection = document.createElement('div');
     votingSection.className = 'voting-section';
 
+    // 투표: 선택된 quote 기준
     const votesForSelected = selectedQuote ? allVotes.filter(v => v.quote_id === selectedQuote.id) : [];
     const voteVotes = votesForSelected.filter(v => v.vote && v.vote !== '');
     const approvals = voteVotes.filter(v => v.vote === 'approve').length;
     const declines  = voteVotes.filter(v => v.vote === 'decline').length;
     const holds     = voteVotes.filter(v => v.vote === 'hold').length;
 
+    // 이 프로젝트 그룹의 모든 quote_id에 걸린 votes (코멘트용)
+    const allGroupVotes = allVotes.filter(v => groupIds.has(v.quote_id));
+
+    // 현재 유저가 이미 투표했는지 (선택된 quote 기준)
     const userAlreadyVoted = selectedQuote
       ? allVotes.some(v => v.quote_id === selectedQuote.id && v.user_email === user?.email && v.vote && v.vote !== '')
       : false;
 
-    // Action buttons – committee only (admin은 투표 버튼 없음)
+    // 현재 유저의 코멘트 row (그룹 전체에서 찾기)
+    const userCommentRow = allGroupVotes.find(v => v.user_email === user?.email);
+
+    // Action buttons – committee only
     if (role === 'committee' && selectedQuote) {
       const actionTitle = document.createElement('div');
       actionTitle.className = 'section-title';
@@ -481,7 +489,7 @@ function renderPendingQuotes(quotes) {
           btn.disabled = true;
           btn.title = 'You have already voted';
         } else {
-          btn.onclick = () => castVote(selectedQuote.id, type, btn);
+          btn.onclick = () => castVote(selectedQuote.id, type, btn, userCommentRow);
         }
         actionButtons.appendChild(btn);
       });
@@ -514,7 +522,7 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(adminRow);
     }
 
-    // Committee comments
+    // Committee comments – 프로젝트 그룹 전체 코멘트 표시 (선택 여부 무관)
     const commTitle = document.createElement('div');
     commTitle.className = 'section-title';
     commTitle.innerHTML = '💬 Committee Comments';
@@ -522,7 +530,7 @@ function renderPendingQuotes(quotes) {
 
     const commBox = document.createElement('div');
     commBox.className = 'comments-box';
-    const commentVotes = votesForSelected.filter(v => v.comment && v.comment.trim());
+    const commentVotes = allGroupVotes.filter(v => v.comment && v.comment.trim());
     if (commentVotes.length) {
       commentVotes.forEach(v => {
         const item = document.createElement('div');
@@ -536,7 +544,7 @@ function renderPendingQuotes(quotes) {
     }
     votingSection.appendChild(commBox);
 
-    // Comment input
+    // Comment input – 선택 여부 무관하게 항상 가능
     const inputTitle = document.createElement('div');
     inputTitle.className = 'section-title';
     inputTitle.innerHTML = '✏️ Add Your Comment';
@@ -546,14 +554,10 @@ function renderPendingQuotes(quotes) {
     inputArea.className = 'input-area';
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Enter your comment...';
-    if (selectedQuote) textarea.dataset.quoteId = selectedQuote.id;
     const submitBtn = document.createElement('button');
     submitBtn.className = 'submit-btn';
     submitBtn.textContent = 'Submit';
-    submitBtn.onclick = () => {
-      if (!selectedQuote) { showToast('Please select a vendor first', true); return; }
-      submitComment(selectedQuote.id, textarea, submitBtn);
-    };
+    submitBtn.onclick = () => submitComment(projectKey, group, textarea, submitBtn, userCommentRow);
     inputArea.appendChild(textarea);
     inputArea.appendChild(submitBtn);
     votingSection.appendChild(inputArea);
@@ -706,51 +710,63 @@ async function deselectVendor(voteRowId, projectKey, triggerBtn) {
   }
 }
 
-/* ── VOTING ── */
-window.castVote = async function(quoteId, voteType, triggerBtn) {
+/* ── VOTING – 중복투표 완전 차단 ── */
+window.castVote = async function(quoteId, voteType, triggerBtn, existingRow) {
   if (!quoteId || !user?.email) return;
   if (triggerBtn) triggerBtn.disabled = true;
   try {
-    const already = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email && v.vote && v.vote !== '');
-    if (already) { showToast('You have already voted on this quote', true); return; }
+    // 중복투표 체크 (로컬 + 최신 DB 재확인)
+    const already = allVotes.find(v =>
+      v.quote_id === quoteId && v.user_email === user.email && v.vote && v.vote !== ''
+    );
+    if (already) {
+      showToast('You have already voted on this quote', true);
+      if (triggerBtn) triggerBtn.disabled = true;
+      return;
+    }
 
-    const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
-    console.log('[castVote] existing row:', existing, '| quoteId:', quoteId, '| voteType:', voteType);
-    if (existing) {
-      const { error } = await supabase.from('votes').update({ vote: voteType }).eq('id', existing.id);
-      console.log('[castVote] update error:', JSON.stringify(error));
+    if (existingRow) {
+      // 기존 row(선택만 된 row)에 vote 업데이트
+      const { error } = await supabase.from('votes')
+        .update({ vote: voteType })
+        .eq('id', existingRow.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('votes').insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, vote: voteType });
-      console.log('[castVote] insert error:', JSON.stringify(error));
+      // 새 row 삽입
+      const { error } = await supabase.from('votes')
+        .insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, vote: voteType });
       if (error) throw error;
     }
     showToast(`Vote recorded: ${voteType}`);
     await loadData();
     renderQuotes();
   } catch(e) {
-    console.error('castVote error detail:', JSON.stringify(e), e?.message, e?.details, e?.hint, e?.code);
+    console.error('castVote error:', JSON.stringify(e));
     showToast('Failed to record vote', true);
     if (triggerBtn) triggerBtn.disabled = false;
   }
 };
 
-/* ── COMMENT ── */
-window.submitComment = async function(quoteId, textarea, triggerBtn) {
-  if (!quoteId || !user?.email) return;
+/* ── COMMENT – 선택 여부 무관, 프로젝트 단위로 저장 ── */
+window.submitComment = async function(projectKey, group, textarea, triggerBtn, existingRow) {
+  if (!user?.email) return;
   const commentText = textarea.value.trim();
   if (!commentText) { showToast('Please enter a comment', true); return; }
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
+
   try {
-    const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
-    console.log('[submitComment] existing row:', existing, '| quoteId:', quoteId);
-    if (existing) {
-      const { error } = await supabase.from('votes').update({ comment: commentText }).eq('id', existing.id);
-      console.log('[submitComment] update error:', JSON.stringify(error));
+    if (existingRow) {
+      // 기존 row 업데이트 (comment 필드만)
+      const { error } = await supabase.from('votes')
+        .update({ comment: commentText })
+        .eq('id', existingRow.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('votes').insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, comment: commentText });
-      console.log('[submitComment] insert error:', JSON.stringify(error));
+      // 새 row 삽입 – quote_id는 그룹의 첫 번째 quote (프로젝트 대표)
+      const representativeQuoteId = group[0]?.id;
+      if (!representativeQuoteId) throw new Error('No quote id found');
+      const { error } = await supabase.from('votes')
+        .insert({ id: crypto.randomUUID(), quote_id: representativeQuoteId, user_email: user.email, comment: commentText });
       if (error) throw error;
     }
     textarea.value = '';
@@ -758,7 +774,7 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
     await loadData();
     renderQuotes();
   } catch(e) {
-    console.error('submitComment error detail:', JSON.stringify(e), e?.message, e?.details, e?.hint, e?.code);
+    console.error('submitComment error:', JSON.stringify(e));
     showToast('Failed to submit comment', true);
   } finally {
     if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Submit'; }
