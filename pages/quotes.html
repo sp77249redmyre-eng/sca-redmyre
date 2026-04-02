@@ -7,17 +7,15 @@
 <link rel="stylesheet" href="/css/style.css">
 
 <style>
+.top-bar-btn{
+  margin-bottom:20px;
+}
 .project-card{
   background:#fff;
   border:1px solid #e5e7eb;
   border-radius:14px;
   padding:20px;
   margin-bottom:20px;
-}
-.project-header{
-  font-size:18px;
-  font-weight:600;
-  margin-bottom:16px;
 }
 .vendor-row{
   display:flex;
@@ -42,20 +40,19 @@
 .btn-green{background:#16a34a;color:#fff;}
 .btn-yellow{background:#f59e0b;color:#fff;}
 .btn-red{background:#dc2626;color:#fff;}
-
-.action-bar{
-  display:flex;
-  gap:10px;
-  margin:15px 0;
+.modal{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.4);
+  display:none;
+  justify-content:center;
+  align-items:center;
 }
-
-.result-box{
-  margin-top:15px;
-  padding:14px;
+.modal-content{
+  background:#fff;
+  padding:20px;
   border-radius:10px;
-  background:#ecfdf5;
-  font-weight:600;
-  font-size:14px;
+  width:300px;
 }
 </style>
 </head>
@@ -68,7 +65,21 @@
   <div id="topbarPlaceholder"></div>
 
   <div class="content">
+
+    <button class="btn btn-green top-bar-btn" onclick="openModal()">+ Create Project</button>
+
     <div id="pendingList"></div>
+
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3>Create Project</h3>
+    <input id="project" placeholder="Project Name"><br><br>
+    <input id="vendor" placeholder="Vendor"><br><br>
+    <input id="amount" placeholder="Amount"><br><br>
+    <button class="btn btn-green" onclick="save()">Save</button>
   </div>
 </div>
 
@@ -78,77 +89,36 @@ const ctx = await initLayout();
 const { supabase } = ctx;
 
 let allQuotes = [];
-let allVotes = [];
 window.selectedQuoteId = null;
 
 async function loadData(){
-  const [q,v] = await Promise.all([
-    supabase.from('quotes').select('*'),
-    supabase.from('votes').select('*')
-  ]);
-  allQuotes = q.data || [];
-  allVotes = v.data || [];
-}
-
-function getVotes(id){
-  return allVotes.filter(v=>v.quote_id===id);
+  const {data} = await supabase.from('quotes').select('*');
+  allQuotes = data || [];
 }
 
 function renderPendingQuotes(){
-
   const container = document.getElementById('pendingList');
-
-  const projects = {};
-  allQuotes.forEach(q=>{
-    const key = q.project_id || q.id;
-    if(!projects[key]) projects[key] = [];
-    projects[key].push(q);
-  });
-
   let html = '';
 
-  Object.values(projects).forEach(group=>{
-    const first = group[0];
+  const grouped = {};
+  allQuotes.forEach(q=>{
+    const key = q.project_id || q.id;
+    if(!grouped[key]) grouped[key] = [];
+    grouped[key].push(q);
+  });
 
-    html += `<div class="project-card">`;
-
-    html += `<div class="project-header">📁 ${first.project}</div>`;
+  Object.values(grouped).forEach(group=>{
+    html += `<div class="project-card"><b>${group[0].project}</b>`;
 
     group.forEach(q=>{
       let selected = window.selectedQuoteId === q.id;
-
       html += `
-      <div class="vendor-row ${selected?'vendor-selected':''}">
-
-        <div onclick="selectQuote('${q.id}')">
-          ${q.vendor} | $${q.amount} + GST
-        </div>
-
-        <div>
-          ${
-            selected
-            ? '✔ Selected'
-            : `<button class="btn btn-green" onclick="selectQuote('${q.id}')">Select</button>`
-          }
-        </div>
-
+      <div class="vendor-row ${selected?'vendor-selected':''}" onclick="selectQuote('${q.id}')">
+        ${q.vendor} | $${q.amount} + GST
+        <div>${selected ? '✔' : ''}</div>
       </div>
       `;
     });
-
-    html += `
-    <div class="action-bar">
-      <button class="btn btn-green">Approve</button>
-      <button class="btn btn-yellow">Hold</button>
-      <button class="btn btn-red">Decline</button>
-    </div>
-    `;
-
-    html += `<div style="margin-top:10px"><b>Committee Comments</b><br>Jimmy: ...<br>Sarah: ...</div>`;
-
-    html += `<div style="margin-top:10px"><b>Voting Status</b><br>Jimmy: ...<br>Sarah: ...</div>`;
-
-    html += `<div class="result-box">RESULT: PENDING</div>`;
 
     html += `</div>`;
   });
@@ -158,6 +128,29 @@ function renderPendingQuotes(){
 
 window.selectQuote = function(id){
   window.selectedQuoteId = id;
+  renderPendingQuotes();
+}
+
+window.openModal = function(){
+  document.getElementById('modal').style.display='flex';
+}
+
+window.save = async function(){
+  const project = document.getElementById('project').value;
+  const vendor = document.getElementById('vendor').value;
+  const amount = document.getElementById('amount').value;
+
+  const project_id = crypto.randomUUID();
+
+  await supabase.from('quotes').insert([{
+    project,
+    vendor,
+    amount,
+    project_id
+  }]);
+
+  document.getElementById('modal').style.display='none';
+  await loadData();
   renderPendingQuotes();
 }
 
