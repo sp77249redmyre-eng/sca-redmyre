@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quote Approvals</title>
+<title>Quotes – Phase 2</title>
 <link rel="stylesheet" href="/css/style.css">
 
 <style>
-.project-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-bottom:20px}
-.project-header{font-weight:600;font-size:16px;margin-bottom:14px}
-.vendor-row{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-.vendor-left{display:flex;gap:10px;align-items:center}
-.btn{padding:8px 14px;border-radius:8px;border:none;cursor:pointer}
+.project-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:18px}
+.project-title{font-weight:600;font-size:16px;margin-bottom:12px}
+.vendor-row{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.btn{padding:6px 12px;border-radius:8px;border:none;cursor:pointer}
 .btn-green{background:#22c55e;color:#fff}
-.btn-red{background:#ef4444;color:#fff}
 .btn-yellow{background:#f59e0b;color:#fff}
+.btn-red{background:#ef4444;color:#fff}
 .selected{color:#16a34a;font-weight:600}
-.section{margin-top:15px}
+.vote-box{margin-top:8px;font-size:13px;color:#475569}
 </style>
 </head>
-<body>
 
+<body>
 <div id="sidebarPlaceholder"></div>
 <div class="main">
 <div id="topbarPlaceholder"></div>
 
 <div class="content">
+<button id="createProjectBtn" class="btn btn-green" onclick="openCreate()">Create Project</button>
 <div id="list"></div>
 </div>
 </div>
@@ -33,14 +33,14 @@
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-const { supabase, user, role } = ctx;
+const { supabase, user } = ctx;
 
 let allQuotes = [];
 let allVotes = [];
 
 async function loadData(){
   const [q,v] = await Promise.all([
-    supabase.from('quotes').select('*'),
+    supabase.from('quotes').select('*').order('created_at',{ascending:false}),
     supabase.from('votes').select('*')
   ]);
   allQuotes = q.data || [];
@@ -48,41 +48,32 @@ async function loadData(){
 }
 
 function group(){
-  const m = {};
+  const map = {};
   allQuotes.forEach(q=>{
-    if(!m[q.project_id]) m[q.project_id]=[];
-    m[q.project_id].push(q);
+    const key = q.project_title || 'No Project';
+    if(!map[key]) map[key]=[];
+    map[key].push(q);
   });
-  return m;
+  return map;
 }
 
 function getVotes(id){
   return allVotes.filter(v=>v.quote_id===id);
 }
 
-function voteHtml(id){
-  const votes = getVotes(id);
-  let html = '<div class="section">';
-  votes.forEach(v=>{
-    html += `<div>${v.user_email} : ${v.vote}</div>`;
-  });
-  html += '</div>';
-  return html;
-}
-
 async function selectVendor(id){
   const q = allQuotes.find(x=>x.id===id);
 
-  await supabase.from('quotes').update({is_selected:false}).eq('project_id', q.project_id);
+  await supabase.from('quotes').update({is_selected:false}).eq('project_title', q.project_title);
   await supabase.from('quotes').update({is_selected:true}).eq('id', id);
 
   await loadData();
   render();
 }
 
-async function vote(id, type){
-  const exist = allVotes.find(v=>v.quote_id===id && v.user_email===user.email);
-  if(exist) return alert('already voted');
+async function vote(id,type){
+  const exists = allVotes.find(v=>v.quote_id===id && v.user_email===user.email);
+  if(exists) return alert('already voted');
 
   await supabase.from('votes').insert({
     quote_id:id,
@@ -100,18 +91,15 @@ function render(){
 
   let html = '';
 
-  Object.values(groups).forEach(g=>{
-    const first = g[0];
+  Object.entries(groups).forEach(([project, list])=>{
 
     html += `<div class="project-card">`;
-    html += `<div class="project-header">📁 ${first.project}</div>`;
+    html += `<div class="project-title">📁 ${project}</div>`;
 
-    g.forEach(q=>{
+    list.forEach(q=>{
       html += `
       <div class="vendor-row">
-        <div class="vendor-left">
-          ${q.vendor} | $${q.amount}
-        </div>
+        <div>${q.vendor} | $${q.amount}</div>
         <div>
           ${q.is_selected
             ? '<span class="selected">✔ Selected</span>'
@@ -120,25 +108,46 @@ function render(){
         </div>
       </div>
 
-      <div class="section">
+      <div>
         <button class="btn btn-green" onclick="vote('${q.id}','approve')">Approve</button>
         <button class="btn btn-yellow" onclick="vote('${q.id}','hold')">Hold</button>
         <button class="btn btn-red" onclick="vote('${q.id}','decline')">Decline</button>
       </div>
 
-      ${voteHtml(q.id)}
+      <div class="vote-box">
+        ${getVotes(q.id).map(v=>`${v.user_email}: ${v.vote}`).join('<br>')}
+      </div>
       `;
     });
 
-    const selected = g.find(x=>x.is_selected);
+    const selected = list.find(q=>q.is_selected);
     if(selected){
-      html += `<div class="section">✔ ${selected.vendor} selected</div>`;
+      html += `<div class="vote-box">✔ ${selected.vendor} selected</div>`;
     }
 
     html += `</div>`;
   });
 
   container.innerHTML = html;
+}
+
+function openCreate(){
+  const name = prompt('Project Name');
+  if(!name) return;
+
+  const vendor = prompt('Vendor');
+  const amount = prompt('Amount');
+
+  supabase.from('quotes').insert({
+    project_title:name,
+    project:name,
+    vendor:vendor,
+    amount:amount,
+    status:'pending'
+  }).then(async ()=>{
+    await loadData();
+    render();
+  });
 }
 
 window.selectVendor = selectVendor;
