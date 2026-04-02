@@ -621,10 +621,7 @@ async function selectVendor(quoteId, projectKey, triggerBtn) {
         .from('votes')
         .update({ selected: false })
         .eq('id', prevSel.id);
-      if (resetErr) {
-        console.error('selectVendor reset error:', JSON.stringify(resetErr));
-        throw resetErr;
-      }
+      if (resetErr) throw resetErr;
     }
 
     // 2. Set new selection – update if row exists, insert if not
@@ -636,25 +633,19 @@ async function selectVendor(quoteId, projectKey, triggerBtn) {
         .from('votes')
         .update({ selected: true })
         .eq('id', existingRow.id);
-      if (error) {
-        console.error('selectVendor update error:', JSON.stringify(error));
-        throw error;
-      }
+      if (error) throw error;
     } else {
       const { error } = await supabase
         .from('votes')
         .insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, selected: true });
-      if (error) {
-        console.error('selectVendor insert error:', JSON.stringify(error));
-        throw error;
-      }
+      if (error) throw error;
     }
 
     showToast('Vendor selected');
     await loadData();
     renderQuotes();
   } catch(e) {
-    console.error('selectVendor caught:', JSON.stringify(e), e);
+    console.error('selectVendor error:', JSON.stringify(e));
     showToast('Failed to select vendor', true);
     if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Select'; }
   } finally {
@@ -693,7 +684,7 @@ window.castVote = async function(quoteId, voteType, triggerBtn) {
     } else {
       const { error } = await supabase
         .from('votes')
-        .insert({ quote_id: quoteId, user_email: user.email, vote: voteType });
+        .insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, vote: voteType });
       if (error) throw error;
     }
 
@@ -729,7 +720,7 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
     } else {
       const { error } = await supabase
         .from('votes')
-        .insert({ quote_id: quoteId, user_email: user.email, comment: commentText });
+        .insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, comment: commentText });
       if (error) throw error;
     }
     textarea.value = '';
