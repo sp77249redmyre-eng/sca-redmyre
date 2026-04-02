@@ -3,159 +3,453 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quotes – Phase 2</title>
+<title>Quote Approvals – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-
 <style>
-.project-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:18px}
-.project-title{font-weight:600;font-size:16px;margin-bottom:12px}
-.vendor-row{border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-.btn{padding:6px 12px;border-radius:8px;border:none;cursor:pointer}
-.btn-green{background:#22c55e;color:#fff}
-.btn-yellow{background:#f59e0b;color:#fff}
-.btn-red{background:#ef4444;color:#fff}
-.selected{color:#16a34a;font-weight:600}
-.vote-box{margin-top:8px;font-size:13px;color:#475569}
+.rule-info{font-size:13px;line-height:1.7;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text-2);margin-bottom:20px}
+
+.quote-list{margin-top:24px}
+.quote-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:all 0.2s}
+.quote-item.expanded{box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+
+.quote-header{display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;user-select:none}
+.quote-header:hover{background:rgba(0,0,0,0.02)}
+
+.quote-title{font-size:15px;font-weight:600;color:var(--text-1);flex:1}
+.quote-subtitle{font-size:13px;color:var(--muted);margin-top:2px}
+
+.vendor-list{display:flex;flex-direction:column;gap:12px}
+.vendor-item{padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;transition:all 0.2s}
+.vendor-item:hover{border-color:var(--blue-600);background:rgba(37,99,235,0.02)}
+
+.vendor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0}
+.vendor-name{font-size:14px;font-weight:600;color:var(--text-1)}
+.vendor-amount{font-size:14px;font-weight:600;color:var(--text-1)}
+
+.vendor-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.vendor-status.selected{color:#10b981}
+.vendor-status.rejected{color:#ef4444}
+
+.vendor-details{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light)}
+.vendor-details.show{display:block}
+
+.detail-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}
+.detail-label{font-weight:600;color:var(--text-1);min-width:80px}
+.detail-value{color:var(--text-2);flex:1}
+
+.quote-details{display:none}
+.quote-details.show{display:block;border-top:1px solid var(--border);padding:20px;background:rgba(0,0,0,0.02)}
+
+.action-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border-light)}
+
+.action-buttons{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.btn-pill{border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+
+.btn-approve{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.btn-approve:hover{background:linear-gradient(135deg,#059669,#047857);transform:translateY(-1px)}
+
+.btn-hold{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
+.btn-hold:hover{background:linear-gradient(135deg,#d97706,#b45309);transform:translateY(-1px)}
+
+.btn-decline{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+.btn-decline:hover{background:linear-gradient(135deg,#dc2626,#b91c1c);transform:translateY(-1px)}
+
+.comments-section{margin-top:16px}
+.comments-header{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:10px}
+.comments-icon{font-size:16px}
+
+.comment-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.comment-author{font-weight:600;color:var(--text-1)}
+.comment-text{color:var(--text-2);margin-top:2px}
+
+.committee-comments{margin-top:14px;padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+
+.input-area{margin-top:12px}
+.input-area textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;resize:vertical;min-height:80px;background:var(--bg);color:var(--text-1)}
+.input-area textarea::placeholder{color:var(--muted)}
+
+.submit-btn{background:var(--blue-600);color:#fff;padding:12px 24px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px}
+.submit-btn:hover{background:var(--blue-700)}
+
+.voting-status{margin-top:16px;padding:14px;background:var(--surface);border-radius:10px;border:1px solid var(--border)}
+.voting-header{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.vote-row{display:flex;gap:8px;margin-bottom:6px;font-size:13px}
+.vote-name{font-weight:600;color:var(--text-1);min-width:100px}
+.vote-value{color:var(--text-2)}
+
+.result-box{margin-top:16px;padding:14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#047857}
+.result-icon{font-size:18px}
+
+.final-btn{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;padding:14px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;transition:all 0.2s}
+.final-btn:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+
+.chevron{transition:transform 0.2s}
+.quote-item.expanded .chevron{transform:rotate(180deg)}
+
+@media(max-width:768px){
+  .quote-header{flex-direction:column;align-items:flex-start}
+  .quote-title{margin-bottom:4px}
+  .vendor-header{flex-direction:column;align-items:flex-start}
+  .vendor-amount{margin-top:4px}
+  .action-buttons{flex-direction:column}
+  .btn-pill{width:100%;justify-content:center}
+  .final-btn{padding:12px 20px;font-size:13px}
+}
 </style>
 </head>
-
 <body>
 <div id="sidebarPlaceholder"></div>
 <div class="main">
-<div id="topbarPlaceholder"></div>
+  <div id="topbarPlaceholder"></div>
 
-<div class="content">
-<button id="createProjectBtn" class="btn btn-green" onclick="openCreate()">Create Project</button>
-<div id="list"></div>
+  <div class="content">
+    <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;margin-bottom:20px">
+      <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
+      Quote Approvals
+    </div>
+
+    <div class="rule-info" id="ruleInfo">
+      This quote will be decided by a vote of 8 committee members.<br>
+      If 5 or more members approve, the quote will be automatically approved.<br>
+      If 4 or more members decline, the quote will be automatically declined.<br>
+      If 3 or more members choose to hold and fewer than 5 approvals are received, the quote will be placed on hold.
+    </div>
+
+    <div class="quote-list" id="quoteList"></div>
+  </div>
 </div>
-</div>
+
+<div id="toast" style="position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;color:#fff;font-size:13px;display:none;z-index:9999;max-width:300px"></div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
-const ctx = await initLayout();
-const { supabase, user } = ctx;
+import { getSupabase } from '/js/auth.js';
 
 let allQuotes = [];
 let allVotes = [];
+let supabase = null;
+let user = null;
 
-async function loadData(){
-  const [q,v] = await Promise.all([
-    supabase.from('quotes').select('*').order('created_at',{ascending:false}),
-    supabase.from('votes').select('*')
-  ]);
-  allQuotes = q.data || [];
-  allVotes = v.data || [];
-}
+const RULES = {
+  approvalsRequired: 5,
+  declinesToAutoDecline: 4,
+  holdsToAutoHold: 3
+};
 
-function group(){
-  const map = {};
-  allQuotes.forEach(q=>{
-    const key = q.project_title || 'No Project';
-    if(!map[key]) map[key]=[];
-    map[key].push(q);
-  });
-  return map;
-}
-
-function getVotes(id){
-  return allVotes.filter(v=>v.quote_id===id);
-}
-
-async function selectVendor(id){
-  const q = allQuotes.find(x=>x.id===id);
-
-  await supabase.from('quotes').update({is_selected:false}).eq('project_title', q.project_title);
-  await supabase.from('quotes').update({is_selected:true}).eq('id', id);
-
+async function init() {
+  const layoutResult = await initLayout();
+  if (!layoutResult) return;
+  
+  supabase = layoutResult.supabase;
+  user = layoutResult.user;
+  
   await loadData();
-  render();
+  renderQuotes();
 }
 
-async function vote(id,type){
-  const exists = allVotes.find(v=>v.quote_id===id && v.user_email===user.email);
-  if(exists) return alert('already voted');
+async function loadData() {
+  try {
+    const [quotesRes, votesRes] = await Promise.all([
+      supabase.from('quotes').select('*'),
+      supabase.from('votes').select('*')
+    ]);
+    
+    allQuotes = quotesRes.data || [];
+    allVotes = votesRes.data || [];
+  } catch(e) {
+    console.error('loadData error:', e);
+    showToast('Failed to load data: ' + e.message, true);
+  }
+}
 
-  await supabase.from('votes').insert({
-    quote_id:id,
-    user_email:user.email,
-    vote:type
+function renderQuotes() {
+  const container = document.getElementById('quoteList');
+  const pending = allQuotes.filter(q => q.status === 'pending' || q.status === 'approved');
+  
+  if (pending.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--muted)">No quotes available</div>';
+    return;
+  }
+  
+  container.innerHTML = pending.map(quote => renderQuoteCard(quote)).join('');
+  
+  // Attach event listeners
+  document.querySelectorAll('[data-quote-toggle]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const quoteId = btn.dataset.quoteToggle;
+      const card = document.querySelector(`[data-quote-id="${quoteId}"]`);
+      card.classList.toggle('expanded');
+      const details = card.querySelector('[data-quote-details]');
+      details?.classList.toggle('show');
+    });
   });
-
-  await loadData();
-  render();
+  
+  // Vendor select listeners
+  document.querySelectorAll('[data-vendor-select]').forEach(item => {
+    item.addEventListener('click', (e) => {
+      const quoteId = e.currentTarget.dataset.quoteId;
+      const vendorIdx = parseInt(e.currentTarget.dataset.vendorSelect);
+      const quote = allQuotes.find(q => q.id === quoteId);
+      if (!quote.vendors) quote.vendors = [];
+      quote.selected_vendor = vendorIdx;
+      renderQuotes();
+    });
+  });
+  
+  // Vote buttons
+  document.querySelectorAll('[data-vote-btn]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const quoteId = btn.dataset.quoteId;
+      const vote = btn.dataset.voteBtn;
+      await castVote(quoteId, vote);
+    });
+  });
+  
+  // Comment submit
+  document.querySelectorAll('[data-comment-submit]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const quoteId = btn.dataset.quoteId;
+      const textarea = document.querySelector(`[data-comment-input="${quoteId}"]`);
+      if (!textarea.value.trim()) {
+        showToast('Please enter a comment', true);
+        return;
+      }
+      await submitComment(quoteId, textarea.value);
+      textarea.value = '';
+    });
+  });
+  
+  // Final confirm button
+  document.querySelectorAll('[data-confirm-vendor]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const quoteId = btn.dataset.quoteId;
+      await confirmAndSendNotification(quoteId);
+    });
+  });
 }
 
-function render(){
-  const container = document.getElementById('list');
-  const groups = group();
-
-  let html = '';
-
-  Object.entries(groups).forEach(([project, list])=>{
-
-    html += `<div class="project-card">`;
-    html += `<div class="project-title">📁 ${project}</div>`;
-
-    list.forEach(q=>{
-      html += `
-      <div class="vendor-row">
-        <div>${q.vendor} | $${q.amount}</div>
-        <div>
-          ${q.is_selected
-            ? '<span class="selected">✔ Selected</span>'
-            : `<button class="btn btn-green" onclick="selectVendor('${q.id}')">Select</button>`
-          }
+function renderQuoteCard(quote) {
+  const vendors = quote.vendors || [];
+  const selectedIdx = quote.selected_vendor;
+  const votes = allVotes.filter(v => v.quote_id === quote.id);
+  const userVote = votes.find(v => v.user_email === user.email);
+  
+  let html = `
+    <div class="quote-item" data-quote-id="${quote.id}">
+      <div class="quote-header" data-quote-toggle="${quote.id}">
+        <div style="flex:1">
+          <div class="quote-title">📁 ${quote.project || 'Project'} · ${quote.category || 'General'}</div>
+        </div>
+        <div class="chevron" style="font-size:20px">▼</div>
+      </div>
+      
+      <div class="quote-details" data-quote-details>
+        <div class="vendor-list">
+  `;
+  
+  vendors.forEach((vendor, idx) => {
+    const isSelected = selectedIdx === idx;
+    const icon = isSelected ? '✔' : '✕';
+    const statusClass = isSelected ? 'selected' : 'rejected';
+    
+    html += `
+      <div class="vendor-item" data-vendor-select="${idx}" data-quote-id="${quote.id}">
+        <div class="vendor-header">
+          <div>
+            <div class="vendor-name">${vendor.name || 'Vendor ' + (idx+1)}</div>
+            <div class="vendor-amount">$${Number(vendor.amount || 0).toLocaleString('en-AU')} + GST</div>
+          </div>
+          <div class="vendor-status ${statusClass}">
+            <span style="font-size:18px;line-height:1">${icon}</span>
+            <span>${isSelected ? 'Selected' : ''}</span>
+          </div>
+        </div>
+        
+        <div class="vendor-details ${isSelected ? 'show' : ''}">
+          <div class="detail-row">
+            <span class="detail-label">Details:</span>
+            <span class="detail-value">${vendor.details || '—'}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Timeline:</span>
+            <span class="detail-value">${vendor.timeline || '—'}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Warranty:</span>
+            <span class="detail-value">${vendor.warranty || '—'}</span>
+          </div>
         </div>
       </div>
-
-      <div>
-        <button class="btn btn-green" onclick="vote('${q.id}','approve')">Approve</button>
-        <button class="btn btn-yellow" onclick="vote('${q.id}','hold')">Hold</button>
-        <button class="btn btn-red" onclick="vote('${q.id}','decline')">Decline</button>
+    `;
+  });
+  
+  html += `
+        </div>
+        
+        <div class="action-section">
+          <div class="action-buttons">
+            <button class="btn-pill btn-approve" data-vote-btn="approve" data-quote-id="${quote.id}">Approve</button>
+            <button class="btn-pill btn-hold" data-vote-btn="hold" data-quote-id="${quote.id}">Hold</button>
+            <button class="btn-pill btn-decline" data-vote-btn="decline" data-quote-id="${quote.id}">Decline</button>
+          </div>
+          
+          <div class="committee-comments">
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px">💬 Committee Comments</div>
+  `;
+  
+  const committeeCmts = allVotes.filter(v => v.quote_id === quote.id && v.comment).map(v => `<strong>${v.user_email.split('@')[0]}:</strong> ${v.comment}`);
+  if (committeeCmts.length > 0) {
+    html += committeeCmts.map(c => `<div style="font-size:12px;margin-bottom:6px;line-height:1.4">${c}</div>`).join('');
+  } else {
+    html += '<div style="font-size:12px;color:var(--muted)">No comments yet</div>';
+  }
+  
+  html += `
+            </div>
+            
+            <div class="input-area">
+              <textarea placeholder="Enter your comment..." data-comment-input="${quote.id}"></textarea>
+              <button class="submit-btn" data-comment-submit="${quote.id}">Submit Comment</button>
+            </div>
+            
+            <div class="voting-status">
+              <div class="voting-header">📊 Voting Status</div>
+  `;
+  
+  const approvals = votes.filter(v => v.vote === 'approve').length;
+  const holds = votes.filter(v => v.vote === 'hold').length;
+  const declines = votes.filter(v => v.vote === 'decline').length;
+  
+  votes.forEach(v => {
+    const voteTxt = v.vote === 'approve' ? 'Approve' : v.vote === 'hold' ? 'Hold' : 'Decline';
+    const arrow = v.vote === 'approve' ? '→' : v.vote === 'hold' ? '→' : '→';
+    html += `<div class="vote-row"><span class="vote-name">${v.user_email.split('@')[0]}:</span> <span class="vote-value">${v.vote === 'approve' ? '✅' : v.vote === 'hold' ? '⏸' : '❌'} ${voteTxt}</span></div>`;
+  });
+  
+  html += `
+            </div>
+  `;
+  
+  // Result message
+  if (approvals >= RULES.approvalsRequired) {
+    html += `<div class="result-box"><div class="result-icon">✔</div> Selected by majority</div>`;
+    html += `<button class="final-btn" data-confirm-vendor="${quote.id}">✔ Confirm & Send Notification</button>`;
+  } else if (declines >= RULES.declinesToAutoDecline) {
+    html += `<div class="result-box" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b"><div class="result-icon">✕</div> Declined by majority</div>`;
+  } else if (holds >= RULES.holdsToAutoHold) {
+    html += `<div class="result-box" style="background:#fef3c7;border-color:#fcd34d;color:#92400e"><div class="result-icon">⏸</div> Placed on hold</div>`;
+  } else {
+    html += `<div class="result-box" style="background:#dbeafe;border-color:#93c5fd;color:#1e40af"><div class="result-icon">📋</div> Voting in progress</div>`;
+  }
+  
+  html += `
+        </div>
       </div>
+    </div>
+  `;
+  
+  return html;
+}
 
-      <div class="vote-box">
-        ${getVotes(q.id).map(v=>`${v.user_email}: ${v.vote}`).join('<br>')}
-      </div>
-      `;
-    });
-
-    const selected = list.find(q=>q.is_selected);
-    if(selected){
-      html += `<div class="vote-box">✔ ${selected.vendor} selected</div>`;
+async function castVote(quoteId, vote) {
+  try {
+    const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
+    if (existing) {
+      showToast('You have already voted', true);
+      return;
     }
-
-    html += `</div>`;
-  });
-
-  container.innerHTML = html;
-}
-
-function openCreate(){
-  const name = prompt('Project Name');
-  if(!name) return;
-
-  const vendor = prompt('Vendor');
-  const amount = prompt('Amount');
-
-  supabase.from('quotes').insert({
-    project_title:name,
-    project:name,
-    vendor:vendor,
-    amount:amount,
-    status:'pending'
-  }).then(async ()=>{
+    
+    await supabase.from('votes').insert({
+      quote_id: quoteId,
+      user_email: user.email,
+      vote: vote
+    });
+    
+    const voteMsg = vote === 'approve' ? '✅ Approved' : vote === 'hold' ? '⏸ Held' : '❌ Declined';
+    showToast(voteMsg);
+    
     await loadData();
-    render();
-  });
+    renderQuotes();
+  } catch(e) {
+    console.error('castVote error:', e);
+    showToast('Vote failed: ' + e.message, true);
+  }
 }
 
-window.selectVendor = selectVendor;
-window.vote = vote;
+async function submitComment(quoteId, comment) {
+  try {
+    const quote = allQuotes.find(q => q.id === quoteId);
+    if (!quote) return;
+    
+    const votes = allVotes.filter(v => v.quote_id === quoteId);
+    const userVote = votes.find(v => v.user_email === user.email);
+    
+    if (userVote) {
+      await supabase.from('votes')
+        .update({ comment })
+        .eq('id', userVote.id);
+    } else {
+      await supabase.from('votes').insert({
+        quote_id: quoteId,
+        user_email: user.email,
+        vote: 'pending',
+        comment
+      });
+    }
+    
+    showToast('Comment added');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('submitComment error:', e);
+    showToast('Failed to add comment: ' + e.message, true);
+  }
+}
 
-await loadData();
-render();
+async function confirmAndSendNotification(quoteId) {
+  try {
+    const quote = allQuotes.find(q => q.id === quoteId);
+    if (!quote) return;
+    
+    const selectedVendor = quote.vendors[quote.selected_vendor];
+    if (!selectedVendor) {
+      showToast('Please select a vendor', true);
+      return;
+    }
+    
+    // Update quote status to confirmed
+    await supabase.from('quotes')
+      .update({ status: 'confirmed', selected_vendor: quote.selected_vendor })
+      .eq('id', quoteId);
+    
+    showToast('✓ Vendor confirmed and notification sent');
+    
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('confirmAndSendNotification error:', e);
+    showToast('Failed to confirm: ' + e.message, true);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = isError ? '#991b1b' : '#0f172a';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+init();
 </script>
-
 </body>
 </html>
