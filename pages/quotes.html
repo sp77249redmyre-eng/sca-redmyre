@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quotes</title>
+<title>Quote Approvals – Redmyre House</title>
 <link rel="stylesheet" href="/css/style.css">
 
 <style>
-.top-bar-btn{
-  margin-bottom:20px;
-}
 .project-card{
   background:#fff;
   border:1px solid #e5e7eb;
@@ -17,70 +14,54 @@
   padding:20px;
   margin-bottom:20px;
 }
+.project-header{
+  font-weight:600;
+  font-size:16px;
+  margin-bottom:14px;
+}
 .vendor-row{
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:14px;
+  margin-bottom:10px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  border:1px solid #e5e7eb;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:10px;
 }
-.vendor-selected{
-  border-color:#16a34a;
-  background:#f0fdf4;
-}
-.btn{
-  padding:8px 16px;
-  border-radius:999px;
-  border:none;
-  font-weight:600;
-  cursor:pointer;
-}
-.btn-green{background:#16a34a;color:#fff;}
-.btn-yellow{background:#f59e0b;color:#fff;}
-.btn-red{background:#dc2626;color:#fff;}
-.modal{
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,0.4);
-  display:none;
-  justify-content:center;
+.vendor-left{
+  display:flex;
+  gap:10px;
   align-items:center;
 }
-.modal-content{
-  background:#fff;
-  padding:20px;
-  border-radius:10px;
-  width:300px;
+.btn{
+  padding:8px 14px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+}
+.btn-green{background:#22c55e;color:#fff;}
+.btn-red{background:#ef4444;color:#fff;}
+.selected{
+  color:#16a34a;
+  font-weight:600;
+}
+.result-box{
+  margin-top:15px;
+  padding:10px;
+  background:#f1f5f9;
+  border-radius:8px;
 }
 </style>
 </head>
-
 <body>
 
 <div id="sidebarPlaceholder"></div>
-
 <div class="main">
-  <div id="topbarPlaceholder"></div>
+<div id="topbarPlaceholder"></div>
 
-  <div class="content">
-
-    <button class="btn btn-green top-bar-btn" onclick="openModal()">+ Create Project</button>
-
-    <div id="pendingList"></div>
-
-  </div>
+<div class="content">
+<div id="projectList"></div>
 </div>
-
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <h3>Create Project</h3>
-    <input id="project" placeholder="Project Name"><br><br>
-    <input id="vendor" placeholder="Vendor"><br><br>
-    <input id="amount" placeholder="Amount"><br><br>
-    <button class="btn btn-green" onclick="save()">Save</button>
-  </div>
 </div>
 
 <script type="module">
@@ -89,36 +70,69 @@ const ctx = await initLayout();
 const { supabase } = ctx;
 
 let allQuotes = [];
-window.selectedQuoteId = null;
 
 async function loadData(){
-  const {data} = await supabase.from('quotes').select('*');
+  const { data } = await supabase.from('quotes').select('*');
   allQuotes = data || [];
 }
 
-function renderPendingQuotes(){
-  const container = document.getElementById('pendingList');
+function groupProjects(){
+  const map = {};
+  allQuotes.forEach(q=>{
+    if(!map[q.project_id]) map[q.project_id]=[];
+    map[q.project_id].push(q);
+  });
+  return map;
+}
+
+async function selectVendor(id){
+  const q = allQuotes.find(x=>x.id===id);
+
+  await supabase.from('quotes')
+    .update({is_selected:false})
+    .eq('project_id', q.project_id);
+
+  await supabase.from('quotes')
+    .update({is_selected:true})
+    .eq('id', id);
+
+  await loadData();
+  render();
+}
+
+function render(){
+  const container = document.getElementById('projectList');
+  const groups = groupProjects();
+
   let html = '';
 
-  const grouped = {};
-  allQuotes.forEach(q=>{
-    const key = q.project_id || q.id;
-    if(!grouped[key]) grouped[key] = [];
-    grouped[key].push(q);
-  });
+  Object.values(groups).forEach(group=>{
+    const first = group[0];
 
-  Object.values(grouped).forEach(group=>{
-    html += `<div class="project-card"><b>${group[0].project}</b>`;
+    html += `<div class="project-card">`;
+    html += `<div class="project-header">📁 ${first.project}</div>`;
 
     group.forEach(q=>{
-      let selected = window.selectedQuoteId === q.id;
       html += `
-      <div class="vendor-row ${selected?'vendor-selected':''}" onclick="selectQuote('${q.id}')">
-        ${q.vendor} | $${q.amount} + GST
-        <div>${selected ? '✔' : ''}</div>
+      <div class="vendor-row">
+        <div class="vendor-left">
+          <div>${q.vendor} | $${q.amount}</div>
+        </div>
+        <div>
+          ${q.is_selected
+            ? '<span class="selected">✔ Selected</span>'
+            : `<button class="btn btn-green" onclick="selectVendor('${q.id}')">Select</button>`
+          }
+        </div>
       </div>
       `;
     });
+
+    const selected = group.find(q=>q.is_selected);
+
+    if(selected){
+      html += `<div class="result-box">✔ ${selected.vendor} selected</div>`;
+    }
 
     html += `</div>`;
   });
@@ -126,37 +140,10 @@ function renderPendingQuotes(){
   container.innerHTML = html;
 }
 
-window.selectQuote = function(id){
-  window.selectedQuoteId = id;
-  renderPendingQuotes();
-}
-
-window.openModal = function(){
-  document.getElementById('modal').style.display='flex';
-}
-
-window.save = async function(){
-  const project = document.getElementById('project').value;
-  const vendor = document.getElementById('vendor').value;
-  const amount = document.getElementById('amount').value;
-
-  const project_id = crypto.randomUUID();
-
-  await supabase.from('quotes').insert([{
-    project,
-    vendor,
-    amount,
-    project_id
-  }]);
-
-  document.getElementById('modal').style.display='none';
-  await loadData();
-  renderPendingQuotes();
-}
+window.selectVendor = selectVendor;
 
 await loadData();
-renderPendingQuotes();
-
+render();
 </script>
 
 </body>
