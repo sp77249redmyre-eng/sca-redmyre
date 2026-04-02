@@ -47,7 +47,7 @@
 .action-buttons{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
 .btn-admin-row{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
 .btn-action{padding:10px 22px;border:none;border-radius:9999px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;min-width:100px;color:#fff}
-.btn-action:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-action:disabled{opacity:0.5;cursor:not-allowed}
 .btn-approve{background:#22c55e}.btn-approve:hover:not(:disabled){background:#16a34a}
 .btn-hold{background:#eab308}.btn-hold:hover:not(:disabled){background:#ca8a04}
 .btn-decline{background:#ef4444}.btn-decline:hover:not(:disabled){background:#dc2626}
@@ -172,7 +172,7 @@
         <option value="Fire">Fire</option>
         <option value="Electrical">Electrical</option>
         <option value="Security">Security</option>
-        <option value="Plumbing">Plumbing</option>
+        <option class="Plumbing">Plumbing</option>
         <option value="Lift">Lift</option>
         <option value="Legal">Legal</option>
         <option value="Other">Other</option>
@@ -212,11 +212,10 @@ let supabase    = null;
 let user        = null;
 let role        = 'observer';
 let allProfiles = {};
-let expandedVendors = {};  // { quoteId: bool } – persists across re-renders
+let expandedVendors = {};
 let archiveFilter   = 'all';
 
-// Per-project in-flight lock – prevents race condition on simultaneous selects
-// key: projectKey, value: true while a selectVendor call is in progress
+// Per-project lock – prevents double-tap race condition
 const selectionLocks = {};
 
 const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold: 3 };
@@ -271,17 +270,21 @@ function parseComment(comment) {
   return comment;
 }
 
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 /* ─────────────────────────────────────────
-   RENDER ROUTER
+   RENDER
 ───────────────────────────────────────── */
 function renderQuotes() {
   renderPendingQuotes(allQuotes.filter(q => q.status === 'pending'));
   renderArchiveTable(allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status)));
 }
 
-/* ─────────────────────────────────────────
-   PENDING
-───────────────────────────────────────── */
 function renderPendingQuotes(quotes) {
   const container = document.getElementById('pendingList');
   if (!quotes.length) {
@@ -289,7 +292,6 @@ function renderPendingQuotes(quotes) {
     return;
   }
 
-  // Group by project_id
   const projectMap = {};
   quotes.forEach(q => {
     const key = q.project_id || q.id;
@@ -303,20 +305,17 @@ function renderPendingQuotes(quotes) {
     const first      = group[0];
     const parsed     = parseComment(first.comment);
     const projectKey = first.project_id || first.id;
+    const groupIds   = new Set(group.map(q => q.id).filter(Boolean));
 
-    // O(1) membership check
-    const groupIds = new Set(group.map(q => q.id).filter(Boolean));
-
-    // Single pass – find current user's selection in this project
+    // Find current user's selection for this project group
     const selVote = allVotes.find(v =>
       groupIds.has(v.quote_id) &&
       v.user_email === user?.email &&
       v.selected === true
     );
     const selectedQuoteId = selVote ? selVote.quote_id : null;
-    const selectedQuote   = selectedQuoteId ? group.find(q => q.id === selectedQuoteId) ?? null : null;
+    const selectedQuote   = selectedQuoteId ? (group.find(q => q.id === selectedQuoteId) ?? null) : null;
 
-    /* ── Card ── */
     const card = document.createElement('div');
     card.className = 'project-card';
 
@@ -327,17 +326,15 @@ function renderPendingQuotes(quotes) {
       <div>
         <span class="project-title">${escHtml(first.project || first.project_title || 'Project')}</span>
         <span class="project-meta">${escHtml(first.category || 'General')} | ${escHtml(parsed.priority || 'Normal')}</span>
-      </div>
-    `;
+      </div>`;
     card.appendChild(header);
 
-    /* ── Vendor list ── */
     const vendorList = document.createElement('div');
     vendorList.className = 'vendor-list';
 
     group.forEach(q => {
       const quoteId = q.id;
-      if (!quoteId) return;  // never render a row with undefined id
+      if (!quoteId) return;
 
       const isSelected   = selectedQuoteId === quoteId;
       const hasSelection = !!selectedQuoteId;
@@ -353,11 +350,10 @@ function renderPendingQuotes(quotes) {
       vendorContent.className = 'vendor-content';
       vendorContent.innerHTML = `
         <div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
-        <div class="vendor-amount">$${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>
-      `;
+        <div class="vendor-amount">$${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>`;
       vendorHeader.appendChild(vendorContent);
 
-      // Strictly one UI state – never mix Select + X
+      // Strictly one state: Selected ✔ | Others ✕ | No selection → Select button
       const statusDiv = document.createElement('div');
       statusDiv.className = 'vendor-status';
       if (isSelected) {
@@ -376,7 +372,7 @@ function renderPendingQuotes(quotes) {
       }
       vendorHeader.appendChild(statusDiv);
 
-      // Accordion – persists via expandedVendors, never collapses on re-render
+      // Accordion – state preserved in expandedVendors, never collapses on re-render
       vendorHeader.onclick = (e) => {
         if (e.target.closest('button')) return;
         const details = vendorItem.querySelector('.vendor-details');
@@ -391,19 +387,17 @@ function renderPendingQuotes(quotes) {
       detailsDiv.innerHTML = `
         <div class="detail-line"><span class="detail-label">Details:</span> ${escHtml(q.notes || '—')}</div>
         <div class="detail-line"><span class="detail-label">Timeline:</span> 2 weeks</div>
-        <div class="detail-line"><span class="detail-label">Warranty:</span> 1 year</div>
-      `;
+        <div class="detail-line"><span class="detail-label">Warranty:</span> 1 year</div>`;
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
     });
 
     card.appendChild(vendorList);
 
-    /* ── Voting section ── */
     const votingSection = document.createElement('div');
     votingSection.className = 'voting-section';
 
-    // Filter votes strictly by quote_id – never mix selected field
+    // Votes strictly filtered by selectedQuote.id only
     const votesForSelected = selectedQuote
       ? allVotes.filter(v => v.quote_id === selectedQuote.id)
       : [];
@@ -412,12 +406,11 @@ function renderPendingQuotes(quotes) {
     const declines  = voteVotes.filter(v => v.vote === 'decline').length;
     const holds     = voteVotes.filter(v => v.vote === 'hold').length;
 
-    // Has current user already voted on selectedQuote?
     const userAlreadyVoted = selectedQuote
       ? allVotes.some(v => v.quote_id === selectedQuote.id && v.user_email === user?.email && v.vote)
       : false;
 
-    // Action buttons – committee/admin, only when vendor selected
+    // Action buttons
     if ((role === 'committee' || role === 'admin') && selectedQuote) {
       const actionTitle = document.createElement('div');
       actionTitle.className = 'section-title';
@@ -441,7 +434,7 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(actionButtons);
     }
 
-    // Admin controls – ALWAYS rendered for admin role, never gated on selectedQuote
+    // Admin controls – ALWAYS visible for admin
     if (role === 'admin') {
       const adminTitle = document.createElement('div');
       adminTitle.className = 'section-title';
@@ -450,7 +443,6 @@ function renderPendingQuotes(quotes) {
 
       const adminRow = document.createElement('div');
       adminRow.className = 'btn-admin-row';
-
       [
         { label: 'Force Approve', status: 'approved', cls: 'btn-approve' },
         { label: 'Force Hold',    status: 'onhold',   cls: 'btn-hold'    },
@@ -501,7 +493,6 @@ function renderPendingQuotes(quotes) {
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Enter your comment...';
     if (selectedQuote) textarea.dataset.quoteId = selectedQuote.id;
-
     const submitBtn = document.createElement('button');
     submitBtn.className = 'submit-btn';
     submitBtn.textContent = 'Submit';
@@ -513,7 +504,7 @@ function renderPendingQuotes(quotes) {
     inputArea.appendChild(submitBtn);
     votingSection.appendChild(inputArea);
 
-    // Voting status grid
+    // Voting status
     const voteTitle = document.createElement('div');
     voteTitle.className = 'section-title';
     voteTitle.innerHTML = '📊 Voting Status';
@@ -535,11 +526,10 @@ function renderPendingQuotes(quotes) {
     }
     votingSection.appendChild(voteGrid);
 
-    // Result box – correct thresholds
+    // Result
     const resultBox = document.createElement('div');
     let resultClass = 'result-pending';
     let resultHTML  = '📋 RESULT: PENDING';
-
     if (selectedQuote && approvals >= RULES.approvalsRequired) {
       resultClass = 'result-approved';
       resultHTML  = `✔ ${escHtml(selectedQuote.vendor)} selected by majority`;
@@ -550,12 +540,11 @@ function renderPendingQuotes(quotes) {
       resultClass = 'result-onhold';
       resultHTML  = '⏸ RESULT: On Hold';
     }
-
     resultBox.className = `result-box ${resultClass}`;
     resultBox.innerHTML = resultHTML;
     votingSection.appendChild(resultBox);
 
-    // Confirm button – admin + threshold met
+    // Confirm button
     const thresholdMet = selectedQuote && (
       approvals >= RULES.approvalsRequired ||
       declines  >= RULES.declinesToAutoDecline ||
@@ -574,32 +563,20 @@ function renderPendingQuotes(quotes) {
   });
 }
 
-/* ─────────────────────────────────────────
-   ARCHIVE
-───────────────────────────────────────── */
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
   const filtered  = archiveFilter === 'all' ? quotes : quotes.filter(q => q.status === archiveFilter);
-
   if (!filtered.length) {
     container.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:15px">No archived items</div>';
     return;
   }
-
   let html = `<table class="archive-table">
-    <thead><tr>
-      <th>Date</th><th>Status</th><th>Category</th><th>Priority</th>
-      <th>Project</th><th>Vendor</th><th>Amount</th><th>Action</th>
-    </tr></thead><tbody>`;
-
+    <thead><tr><th>Date</th><th>Status</th><th>Category</th><th>Priority</th><th>Project</th><th>Vendor</th><th>Amount</th><th>Action</th></tr></thead><tbody>`;
   filtered.forEach(q => {
     const parsed    = parseComment(q.comment);
     const dateStr   = new Date(q.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
     const canReopen = (q.status === 'onhold' || q.status === 'expired') && role === 'admin';
-    const action    = canReopen
-      ? `<button class="reopen-btn" onclick="resendToVoting('${q.id}')">Reopen</button>`
-      : '—';
-
+    const action    = canReopen ? `<button class="reopen-btn" onclick="resendToVoting('${q.id}')">Reopen</button>` : '—';
     html += `<tr>
       <td>${dateStr}</td>
       <td><span class="status-badge status-${q.status}">${q.status.toUpperCase()}</span></td>
@@ -608,47 +585,32 @@ function renderArchiveTable(quotes) {
       <td>${escHtml(q.project || q.project_title || '—')}</td>
       <td>${escHtml(q.vendor || '—')}</td>
       <td>$${Number(q.amount || 0).toLocaleString('en-AU')}</td>
-      <td>${action}</td>
-    </tr>`;
+      <td>${action}</td></tr>`;
   });
-
   html += '</tbody></table>';
   container.innerHTML = html;
 }
 
 /* ─────────────────────────────────────────
-   SELECTION  – race-condition safe
-   Strategy:
-   1. Acquire per-project client-side lock (prevents double-tap races)
-   2. Upsert new selection first (selected:true) using onConflict
-   3. Then reset any OTHER selection for this user in this project
-   This order ensures at least one valid selection always exists in DB,
-   and the final state after both ops is exactly one selected=true row.
+   SELECTION
+   Uses insert/update split – no upsert, no unique constraint needed.
+   Lock prevents double-tap race condition.
 ───────────────────────────────────────── */
 async function selectVendor(quoteId, projectKey, triggerBtn) {
   if (!quoteId || !user?.email) { showToast('Invalid selection', true); return; }
-
-  // Client-side lock per project – prevents concurrent calls
   if (selectionLocks[projectKey]) return;
   selectionLocks[projectKey] = true;
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
 
   try {
-    // Step 1: Upsert new selection (idempotent, safe even if row exists)
-    const { error: upsertErr } = await supabase.from('votes').upsert(
-      { quote_id: quoteId, user_email: user.email, selected: true },
-      { onConflict: 'quote_id,user_email' }
-    );
-    if (upsertErr) throw upsertErr;
-
-    // Step 2: Clear any previous selection for this user in this project
-    // (done AFTER upsert so we never have zero selected state in DB)
     const groupIds = new Set(
       allQuotes
-        .filter(q => (q.project_id || q.id) === projectKey && q.id !== quoteId)
+        .filter(q => (q.project_id || q.id) === projectKey)
         .map(q => q.id)
         .filter(Boolean)
     );
+
+    // 1. Reset any previous selection for this user in this project (single find + single update)
     const prevSel = allVotes.find(v =>
       groupIds.has(v.quote_id) &&
       v.user_email === user.email &&
@@ -660,6 +622,23 @@ async function selectVendor(quoteId, projectKey, triggerBtn) {
         .update({ selected: false })
         .eq('id', prevSel.id);
       if (resetErr) throw resetErr;
+    }
+
+    // 2. Set new selection – update if row exists, insert if not
+    const existingRow = allVotes.find(v =>
+      v.quote_id === quoteId && v.user_email === user.email
+    );
+    if (existingRow) {
+      const { error } = await supabase
+        .from('votes')
+        .update({ selected: true })
+        .eq('id', existingRow.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('votes')
+        .insert({ quote_id: quoteId, user_email: user.email, selected: true });
+      if (error) throw error;
     }
 
     showToast('Vendor selected');
@@ -676,28 +655,38 @@ async function selectVendor(quoteId, projectKey, triggerBtn) {
 
 /* ─────────────────────────────────────────
    VOTING
+   Uses insert/update split – no upsert needed.
 ───────────────────────────────────────── */
 window.castVote = async function(quoteId, voteType, triggerBtn) {
   if (!quoteId || !user?.email) return;
-  if (triggerBtn) { triggerBtn.disabled = true; }
+  if (triggerBtn) triggerBtn.disabled = true;
 
   try {
-    // Re-check with fresh local data to prevent double-vote
+    // Prevent double-vote
     const already = allVotes.find(v =>
       v.quote_id === quoteId && v.user_email === user.email && v.vote
     );
     if (already) {
       showToast('You have already voted on this quote', true);
-      if (triggerBtn) triggerBtn.disabled = true;
       return;
     }
 
-    // Upsert merges cleanly if a selection-only row exists for this user+quote
-    const { error } = await supabase.from('votes').upsert(
-      { quote_id: quoteId, user_email: user.email, vote: voteType },
-      { onConflict: 'quote_id,user_email' }
+    // Insert new vote OR update existing selection-only row
+    const existingRow = allVotes.find(v =>
+      v.quote_id === quoteId && v.user_email === user.email
     );
-    if (error) throw error;
+    if (existingRow) {
+      const { error } = await supabase
+        .from('votes')
+        .update({ vote: voteType })
+        .eq('id', existingRow.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('votes')
+        .insert({ quote_id: quoteId, user_email: user.email, vote: voteType });
+      if (error) throw error;
+    }
 
     showToast(`Vote recorded: ${voteType}`);
     await loadData();
@@ -710,7 +699,7 @@ window.castVote = async function(quoteId, voteType, triggerBtn) {
 };
 
 /* ─────────────────────────────────────────
-   COMMENT  – update if exists, insert if not
+   COMMENT
 ───────────────────────────────────────── */
 window.submitComment = async function(quoteId, textarea, triggerBtn) {
   if (!quoteId || !user?.email) return;
@@ -719,16 +708,19 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
 
   try {
-    const existing = allVotes.find(v =>
+    const existingRow = allVotes.find(v =>
       v.quote_id === quoteId && v.user_email === user.email
     );
-    if (existing) {
-      const { error } = await supabase.from('votes').update({ comment: commentText }).eq('id', existing.id);
+    if (existingRow) {
+      const { error } = await supabase
+        .from('votes')
+        .update({ comment: commentText })
+        .eq('id', existingRow.id);
       if (error) throw error;
     } else {
-      const { error } = await supabase.from('votes').insert({
-        quote_id: quoteId, user_email: user.email, comment: commentText
-      });
+      const { error } = await supabase
+        .from('votes')
+        .insert({ quote_id: quoteId, user_email: user.email, comment: commentText });
       if (error) throw error;
     }
     textarea.value = '';
@@ -744,42 +736,33 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
 };
 
 /* ─────────────────────────────────────────
-   ADMIN FORCE ACTION  – deterministic & consistent
-   approved  → selected quote = approved, all others in group = declined
-   declined  → ALL quotes in group = declined
-   onhold    → selected quote = onhold, all others remain unchanged
+   ADMIN FORCE ACTION
+   approved  → selected = approved, others = declined (batch .in())
+   declined  → ALL in group = declined (batch .in())
+   onhold    → selected = onhold only, others unchanged
 ───────────────────────────────────────── */
 window.forceAction = async function(status, quoteId, group, triggerBtn) {
   if (!quoteId) { showToast('No vendor selected', true); return; }
   if (!Array.isArray(group) || !group.length) { showToast('Invalid group', true); return; }
-  if (triggerBtn) { triggerBtn.disabled = true; }
+  if (triggerBtn) triggerBtn.disabled = true;
 
   try {
-    const otherIds = group.map(q => q.id).filter(id => id && id !== quoteId);
+    const allIds   = group.map(q => q.id).filter(Boolean);
+    const otherIds = allIds.filter(id => id !== quoteId);
 
     if (status === 'approved') {
-      // Approved: selected → approved, others → declined (batch)
       if (otherIds.length) {
-        const { error: othersErr } = await supabase
-          .from('quotes')
-          .update({ status: 'declined' })
-          .in('id', otherIds);
-        if (othersErr) throw othersErr;
+        const { error: e1 } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
+        if (e1) throw e1;
       }
-      const { error } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
-      if (error) throw error;
+      const { error: e2 } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+      if (e2) throw e2;
 
     } else if (status === 'declined') {
-      // Declined: ALL quotes in group → declined (single batch call)
-      const allIds = group.map(q => q.id).filter(Boolean);
-      const { error } = await supabase
-        .from('quotes')
-        .update({ status: 'declined' })
-        .in('id', allIds);
+      const { error } = await supabase.from('quotes').update({ status: 'declined' }).in('id', allIds);
       if (error) throw error;
 
     } else if (status === 'onhold') {
-      // On Hold: selected → onhold, others unchanged
       const { error } = await supabase.from('quotes').update({ status: 'onhold' }).eq('id', quoteId);
       if (error) throw error;
     }
@@ -795,31 +778,35 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
 };
 
 /* ─────────────────────────────────────────
-   CONFIRM SELECTION  – audit-safe
-   Instead of deleting votes, marks them as finalized.
-   Vote history is preserved for auditability.
-   If votes table has no 'finalized' column, falls back gracefully.
+   CONFIRM SELECTION
+   Marks the approved quote status – does NOT delete vote history.
+   Votes remain intact for audit trail.
 ───────────────────────────────────────── */
 window.confirmSelection = async function(quoteId, group, triggerBtn) {
   if (!quoteId) return;
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Confirming…'; }
 
   try {
-    // Mark votes as finalized (preserves history)
-    const { error: markErr } = await supabase
-      .from('votes')
-      .update({ finalized: true })
-      .eq('quote_id', quoteId);
+    // Update the winning quote status to 'approved'
+    const { error: approveErr } = await supabase
+      .from('quotes')
+      .update({ status: 'approved' })
+      .eq('id', quoteId);
+    if (approveErr) throw approveErr;
 
-    // If 'finalized' column doesn't exist yet (400/column error), degrade gracefully
-    if (markErr && (markErr.code === '42703' || markErr.message?.includes('finalized'))) {
-      // Column not yet added – skip silently, don't delete
-      console.warn('votes.finalized column not found – skipping finalization mark');
-    } else if (markErr) {
-      throw markErr;
+    // Decline the rest of the group
+    if (Array.isArray(group)) {
+      const otherIds = group.map(q => q.id).filter(id => id && id !== quoteId);
+      if (otherIds.length) {
+        const { error: declineErr } = await supabase
+          .from('quotes')
+          .update({ status: 'declined' })
+          .in('id', otherIds);
+        if (declineErr) throw declineErr;
+      }
     }
 
-    showToast('Selection confirmed and notification sent');
+    showToast('✔ Selection confirmed and notification sent');
     await loadData();
     renderQuotes();
   } catch(e) {
@@ -836,8 +823,8 @@ window.resendToVoting = async function(id) {
   if (!id) return;
   if (!confirm('Re-open this quote for voting?')) return;
   try {
-    // Clear finalized flags if column exists; ignore error if not
-    await supabase.from('votes').update({ finalized: false, selected: false }).eq('quote_id', id).then(() => {});
+    // Reset selection flags for this quote's votes
+    await supabase.from('votes').update({ selected: false }).eq('quote_id', id);
     const { error } = await supabase.from('quotes')
       .update({ status: 'pending', hold_reason: null })
       .eq('id', id);
@@ -862,24 +849,22 @@ window.filterArchive = function(type) {
 };
 
 /* ─────────────────────────────────────────
-   MODAL – CREATE QUOTE
+   MODAL
 ───────────────────────────────────────── */
 window.openCreateProject = function() {
   const sel = document.getElementById('projectSelect');
   sel.innerHTML = '<option value="">+ New Project</option>';
   const seen = new Set();
-  allQuotes
-    .filter(q => q.status === 'pending')
-    .forEach(q => {
-      const name = q.project || q.project_title;
-      if (name && !seen.has(name)) {
-        seen.add(name);
-        const opt = document.createElement('option');
-        opt.value = q.project_id || q.id;
-        opt.textContent = name;
-        sel.appendChild(opt);
-      }
-    });
+  allQuotes.filter(q => q.status === 'pending').forEach(q => {
+    const name = q.project || q.project_title;
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      const opt = document.createElement('option');
+      opt.value = q.project_id || q.id;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  });
   document.getElementById('quoteEditId').value        = '';
   document.getElementById('quoteModalTitle').textContent = 'Add New Quote';
   document.getElementById('deleteQuoteBtn').style.display = 'none';
@@ -991,20 +976,6 @@ function showToast(message, isError = false) {
   setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-/* ─────────────────────────────────────────
-   UTIL – XSS-safe text rendering
-───────────────────────────────────────── */
-function escHtml(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/* expose selectVendor for inline onclick */
 window.selectVendor = selectVendor;
 
 init();
