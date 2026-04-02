@@ -3,54 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quote Approvals – Redmyre House</title>
+<title>Quote Approvals</title>
 <link rel="stylesheet" href="/css/style.css">
 
 <style>
-.project-card{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:20px;
-  margin-bottom:20px;
-}
-.project-header{
-  font-weight:600;
-  font-size:16px;
-  margin-bottom:14px;
-}
-.vendor-row{
-  border:1px solid #e5e7eb;
-  border-radius:10px;
-  padding:14px;
-  margin-bottom:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.vendor-left{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-.btn{
-  padding:8px 14px;
-  border-radius:8px;
-  border:none;
-  cursor:pointer;
-}
-.btn-green{background:#22c55e;color:#fff;}
-.btn-red{background:#ef4444;color:#fff;}
-.selected{
-  color:#16a34a;
-  font-weight:600;
-}
-.result-box{
-  margin-top:15px;
-  padding:10px;
-  background:#f1f5f9;
-  border-radius:8px;
-}
+.project-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-bottom:20px}
+.project-header{font-weight:600;font-size:16px;margin-bottom:14px}
+.vendor-row{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.vendor-left{display:flex;gap:10px;align-items:center}
+.btn{padding:8px 14px;border-radius:8px;border:none;cursor:pointer}
+.btn-green{background:#22c55e;color:#fff}
+.btn-red{background:#ef4444;color:#fff}
+.btn-yellow{background:#f59e0b;color:#fff}
+.selected{color:#16a34a;font-weight:600}
+.section{margin-top:15px}
 </style>
 </head>
 <body>
@@ -60,63 +26,91 @@
 <div id="topbarPlaceholder"></div>
 
 <div class="content">
-<div id="projectList"></div>
+<div id="list"></div>
 </div>
 </div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-const { supabase } = ctx;
+const { supabase, user, role } = ctx;
 
 let allQuotes = [];
+let allVotes = [];
 
 async function loadData(){
-  const { data } = await supabase.from('quotes').select('*');
-  allQuotes = data || [];
+  const [q,v] = await Promise.all([
+    supabase.from('quotes').select('*'),
+    supabase.from('votes').select('*')
+  ]);
+  allQuotes = q.data || [];
+  allVotes = v.data || [];
 }
 
-function groupProjects(){
-  const map = {};
+function group(){
+  const m = {};
   allQuotes.forEach(q=>{
-    if(!map[q.project_id]) map[q.project_id]=[];
-    map[q.project_id].push(q);
+    if(!m[q.project_id]) m[q.project_id]=[];
+    m[q.project_id].push(q);
   });
-  return map;
+  return m;
+}
+
+function getVotes(id){
+  return allVotes.filter(v=>v.quote_id===id);
+}
+
+function voteHtml(id){
+  const votes = getVotes(id);
+  let html = '<div class="section">';
+  votes.forEach(v=>{
+    html += `<div>${v.user_email} : ${v.vote}</div>`;
+  });
+  html += '</div>';
+  return html;
 }
 
 async function selectVendor(id){
   const q = allQuotes.find(x=>x.id===id);
 
-  await supabase.from('quotes')
-    .update({is_selected:false})
-    .eq('project_id', q.project_id);
+  await supabase.from('quotes').update({is_selected:false}).eq('project_id', q.project_id);
+  await supabase.from('quotes').update({is_selected:true}).eq('id', id);
 
-  await supabase.from('quotes')
-    .update({is_selected:true})
-    .eq('id', id);
+  await loadData();
+  render();
+}
+
+async function vote(id, type){
+  const exist = allVotes.find(v=>v.quote_id===id && v.user_email===user.email);
+  if(exist) return alert('already voted');
+
+  await supabase.from('votes').insert({
+    quote_id:id,
+    user_email:user.email,
+    vote:type
+  });
 
   await loadData();
   render();
 }
 
 function render(){
-  const container = document.getElementById('projectList');
-  const groups = groupProjects();
+  const container = document.getElementById('list');
+  const groups = group();
 
   let html = '';
 
-  Object.values(groups).forEach(group=>{
-    const first = group[0];
+  Object.values(groups).forEach(g=>{
+    const first = g[0];
 
     html += `<div class="project-card">`;
     html += `<div class="project-header">📁 ${first.project}</div>`;
 
-    group.forEach(q=>{
+    g.forEach(q=>{
       html += `
       <div class="vendor-row">
         <div class="vendor-left">
-          <div>${q.vendor} | $${q.amount}</div>
+          ${q.vendor} | $${q.amount}
         </div>
         <div>
           ${q.is_selected
@@ -125,13 +119,20 @@ function render(){
           }
         </div>
       </div>
+
+      <div class="section">
+        <button class="btn btn-green" onclick="vote('${q.id}','approve')">Approve</button>
+        <button class="btn btn-yellow" onclick="vote('${q.id}','hold')">Hold</button>
+        <button class="btn btn-red" onclick="vote('${q.id}','decline')">Decline</button>
+      </div>
+
+      ${voteHtml(q.id)}
       `;
     });
 
-    const selected = group.find(q=>q.is_selected);
-
+    const selected = g.find(x=>x.is_selected);
     if(selected){
-      html += `<div class="result-box">✔ ${selected.vendor} selected</div>`;
+      html += `<div class="section">✔ ${selected.vendor} selected</div>`;
     }
 
     html += `</div>`;
@@ -141,6 +142,7 @@ function render(){
 }
 
 window.selectVendor = selectVendor;
+window.vote = vote;
 
 await loadData();
 render();
