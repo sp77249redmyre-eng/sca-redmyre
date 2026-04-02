@@ -715,18 +715,21 @@ window.castVote = async function(quoteId, voteType, triggerBtn) {
     if (already) { showToast('You have already voted on this quote', true); return; }
 
     const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
+    console.log('[castVote] existing row:', existing, '| quoteId:', quoteId, '| voteType:', voteType);
     if (existing) {
       const { error } = await supabase.from('votes').update({ vote: voteType }).eq('id', existing.id);
+      console.log('[castVote] update error:', JSON.stringify(error));
       if (error) throw error;
     } else {
       const { error } = await supabase.from('votes').insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, vote: voteType });
+      console.log('[castVote] insert error:', JSON.stringify(error));
       if (error) throw error;
     }
     showToast(`Vote recorded: ${voteType}`);
     await loadData();
     renderQuotes();
   } catch(e) {
-    console.error('castVote error:', e);
+    console.error('castVote error detail:', JSON.stringify(e), e?.message, e?.details, e?.hint, e?.code);
     showToast('Failed to record vote', true);
     if (triggerBtn) triggerBtn.disabled = false;
   }
@@ -740,11 +743,14 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
   try {
     const existing = allVotes.find(v => v.quote_id === quoteId && v.user_email === user.email);
+    console.log('[submitComment] existing row:', existing, '| quoteId:', quoteId);
     if (existing) {
       const { error } = await supabase.from('votes').update({ comment: commentText }).eq('id', existing.id);
+      console.log('[submitComment] update error:', JSON.stringify(error));
       if (error) throw error;
     } else {
       const { error } = await supabase.from('votes').insert({ id: crypto.randomUUID(), quote_id: quoteId, user_email: user.email, comment: commentText });
+      console.log('[submitComment] insert error:', JSON.stringify(error));
       if (error) throw error;
     }
     textarea.value = '';
@@ -752,7 +758,7 @@ window.submitComment = async function(quoteId, textarea, triggerBtn) {
     await loadData();
     renderQuotes();
   } catch(e) {
-    console.error('submitComment error:', e);
+    console.error('submitComment error detail:', JSON.stringify(e), e?.message, e?.details, e?.hint, e?.code);
     showToast('Failed to submit comment', true);
   } finally {
     if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Submit'; }
