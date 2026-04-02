@@ -31,13 +31,9 @@
 .btn-pill-active{background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff}
 .btn-pill:not(.btn-pill-active):not(.btn-pill-success):not(.btn-pill-danger):not(.btn-pill-warning):not(.btn-pill-primary){background:#f1f5f9;color:#64748b}
 .project-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;border-left:4px solid var(--blue-600)}
-.project-header{padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;background:rgba(59,130,246,0.05)}
-.project-header:hover{background:rgba(59,130,246,0.08)}
+.project-header{padding:16px;cursor:default;display:flex;align-items:center;justify-content:space-between;user-select:none;background:rgba(59,130,246,0.05)}
 .project-title{font-size:15px;font-weight:700;color:var(--text-1)}
-.chevron{font-size:18px;transition:transform 0.2s;color:var(--muted)}
-.project-card.expanded .chevron{transform:rotate(180deg)}
-.vendor-list{padding:16px;background:var(--bg);border-top:1px solid var(--border);display:none}
-.project-card.expanded .vendor-list{display:block}
+.vendor-list{padding:16px;background:var(--bg);border-top:1px solid var(--border);display:block}
 .vendor-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
 .vendor-header{display:flex;align-items:center;justify-content:space-between;padding:14px;cursor:pointer;user-select:none;transition:all 0.2s}
 .vendor-header:hover{background:rgba(37,99,235,0.02);border-color:var(--blue-600)}
@@ -45,16 +41,14 @@
 .vendor-content{flex:1;display:flex;align-items:center;gap:20px}
 .vendor-company{font-size:14px;font-weight:600;color:var(--text-1)}
 .vendor-amount{font-size:14px;font-weight:600;color:var(--text-1)}
-.vendor-action{display:flex;align-items:center;gap:10px}
-.vendor-status{font-size:13px;font-weight:600;color:#10b981;min-width:100px;text-align:right}
-.select-btn{background:#10b981;color:#fff;padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
-.select-btn:hover{background:#059669}
+.vendor-status{font-size:20px;font-weight:600;min-width:60px;text-align:right;cursor:pointer;color:#ef4444;transition:all 0.2s}
+.vendor-status.selected{color:#10b981}
+.vendor-status:hover{transform:scale(1.1)}
 .vendor-details{display:none;padding:14px;border-top:1px solid var(--border-light);background:rgba(0,0,0,0.02);font-size:12px}
 .vendor-details.show{display:block}
 .detail-line{margin-bottom:8px}
 .detail-label{font-weight:600;color:var(--text-1)}
-.voting-section{padding:16px;border-top:1px solid var(--border);display:none;background:var(--bg)}
-.project-card.expanded .voting-section{display:block}
+.voting-section{padding:16px;border-top:1px solid var(--border);display:block;background:var(--bg)}
 .action-buttons{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .btn-action{padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .btn-approve{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
@@ -232,6 +226,7 @@ let role = 'observer';
 let allProfiles = {};
 let archiveFilter = 'all';
 let uploadedFiles = [];
+let expandedVendors = {};
 
 const RULES = {approvalsRequired:5, declinesToAutoDecline:4, holdsToAutoHold:3};
 
@@ -305,17 +300,15 @@ function renderPendingQuotes(quotes) {
     const selectedQuote = userSelection ? group.find(q => q.id === userSelection.quote_id) : null;
 
     const card = document.createElement('div');
-    card.className = 'project-card expanded';
+    card.className = 'project-card';
     card.dataset.projectId = first.project_id;
 
     const header = document.createElement('div');
     header.className = 'project-header';
-    header.onclick = () => card.classList.toggle('expanded');
     header.innerHTML = `
       <div style="flex:1">
         <div class="project-title">📁 ${first.project || 'Project'} | ${first.category} | ${parsed.priority}</div>
       </div>
-      <div class="chevron">▼</div>
     `;
     card.appendChild(header);
 
@@ -326,6 +319,7 @@ function renderPendingQuotes(quotes) {
       const isSelected = selectedQuote && selectedQuote.id === q.id;
       const vendorItem = document.createElement('div');
       vendorItem.className = 'vendor-item';
+      vendorItem.id = 'vendor-' + q.id;
 
       const vendorHeader = document.createElement('div');
       vendorHeader.className = `vendor-header ${isSelected ? 'selected' : ''}`;
@@ -338,20 +332,12 @@ function renderPendingQuotes(quotes) {
       `;
       vendorHeader.appendChild(vendorContentDiv);
 
-      const vendorActionDiv = document.createElement('div');
-      vendorActionDiv.className = 'vendor-action';
-
-      if (isSelected) {
-        const status = document.createElement('div');
-        status.className = 'vendor-status';
-        status.innerHTML = '✔ Selected';
-        vendorActionDiv.appendChild(status);
-      } else {
-        const selectBtn = document.createElement('button');
-        selectBtn.className = 'select-btn';
-        selectBtn.textContent = 'Select';
-        selectBtn.onclick = async (e) => {
-          e.stopPropagation();
+      const vendorStatusDiv = document.createElement('div');
+      vendorStatusDiv.className = `vendor-status ${isSelected ? 'selected' : ''}`;
+      vendorStatusDiv.textContent = isSelected ? '✔' : '✕';
+      vendorStatusDiv.onclick = async (e) => {
+        e.stopPropagation();
+        if (!isSelected) {
           const prevSelection = allVotes.find(v => group.some(qx => qx.id === v.quote_id) && v.user_email === user.email && v.selected === true);
           if (prevSelection) {
             await supabase.from('votes').update({selected: false}).eq('id', prevSelection.id);
@@ -360,21 +346,20 @@ function renderPendingQuotes(quotes) {
           showToast('✓ Vendor selected');
           await loadData();
           renderQuotes();
-        };
-        vendorActionDiv.appendChild(selectBtn);
-      }
-
-      vendorHeader.appendChild(vendorActionDiv);
+        }
+      };
+      vendorHeader.appendChild(vendorStatusDiv);
 
       vendorHeader.onclick = (e) => {
-        if (e.target.closest('.select-btn')) return;
+        if (e.target === vendorStatusDiv) return;
         vendorDetails.classList.toggle('show');
+        expandedVendors[q.id] = vendorDetails.classList.contains('show');
       };
 
       vendorItem.appendChild(vendorHeader);
 
       const vendorDetails = document.createElement('div');
-      vendorDetails.className = 'vendor-details';
+      vendorDetails.className = `vendor-details ${expandedVendors[q.id] ? 'show' : ''}`;
       if (q.notes) {
         const detail = document.createElement('div');
         detail.className = 'detail-line';
@@ -426,7 +411,7 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(actionButtons);
     }
 
-    if (role === 'admin' && selectedQuote) {
+    if (role === 'admin') {
       const adminTitle = document.createElement('div');
       adminTitle.className = 'section-title';
       adminTitle.innerHTML = '👨‍💼 Admin Controls';
@@ -438,19 +423,37 @@ function renderPendingQuotes(quotes) {
       const forceApproveBtn = document.createElement('button');
       forceApproveBtn.className = 'admin-btn admin-approve';
       forceApproveBtn.textContent = 'Force Approve';
-      forceApproveBtn.onclick = () => forceAction('approved', selectedQuote.id, group);
+      forceApproveBtn.onclick = () => {
+        if (!selectedQuote) {
+          showToast('Select vendor first', true);
+          return;
+        }
+        forceAction('approved', selectedQuote.id, group);
+      };
       adminButtons.appendChild(forceApproveBtn);
       
       const forceHoldBtn = document.createElement('button');
       forceHoldBtn.className = 'admin-btn admin-hold';
       forceHoldBtn.textContent = 'Force Hold';
-      forceHoldBtn.onclick = () => forceAction('onhold', selectedQuote.id, group);
+      forceHoldBtn.onclick = () => {
+        if (!selectedQuote) {
+          showToast('Select vendor first', true);
+          return;
+        }
+        forceAction('onhold', selectedQuote.id, group);
+      };
       adminButtons.appendChild(forceHoldBtn);
       
       const forceDeclineBtn = document.createElement('button');
       forceDeclineBtn.className = 'admin-btn admin-decline';
       forceDeclineBtn.textContent = 'Force Decline';
-      forceDeclineBtn.onclick = () => forceAction('declined', selectedQuote.id, group);
+      forceDeclineBtn.onclick = () => {
+        if (!selectedQuote) {
+          showToast('Select vendor first', true);
+          return;
+        }
+        forceAction('declined', selectedQuote.id, group);
+      };
       adminButtons.appendChild(forceDeclineBtn);
       
       votingSection.appendChild(adminButtons);
