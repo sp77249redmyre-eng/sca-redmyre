@@ -91,6 +91,38 @@
 .final-btn{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;padding:14px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;transition:all 0.2s}
 .final-btn:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.3)}
 
+.btn-pill-primary{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;transition:all 0.2s}
+.btn-pill-primary:hover{background:linear-gradient(135deg,#2563eb,#1d4ed8);transform:translateY(-1px)}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.open{display:flex}
+
+.modal-content{background:var(--surface);border-radius:14px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 25px rgba(0,0,0,0.2)}
+
+.modal-title{font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:20px}
+
+.form-group{margin-bottom:16px}
+.form-label{font-size:13px;font-weight:600;color:var(--text-1);display:block;margin-bottom:6px}
+.form-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-1)}
+.form-input::placeholder{color:var(--muted)}
+.form-input:focus{outline:none;border-color:var(--blue-600);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+
+.form-textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-1);min-height:100px;resize:vertical}
+
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.modal-actions button{padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+
+.btn-modal-cancel{background:var(--border);color:var(--text-2)}
+.btn-modal-cancel:hover{background:var(--muted)}
+
+.btn-modal-save{background:var(--blue-600);color:#fff}
+.btn-modal-save:hover{background:var(--blue-700)}
+
+@media(max-width:768px){
+  .modal-content{width:95%;max-height:90vh;padding:20px}
+  .modal-title{font-size:16px}
+}
+
 .chevron{transition:transform 0.2s}
 .quote-item.expanded .chevron{transform:rotate(180deg)}
 
@@ -111,9 +143,12 @@
   <div id="topbarPlaceholder"></div>
 
   <div class="content">
-    <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;margin-bottom:20px">
-      <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
-      Quote Approvals
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px">
+        <span style="width:3px;height:14px;border-radius:2px;background:var(--blue-600);display:inline-block"></span>
+        Quote Approvals
+      </div>
+      <button class="btn-pill btn-pill-primary" id="createProjectBtn" onclick="openCreateProjectModal()">📁 Create Project</button>
     </div>
 
     <div class="rule-info" id="ruleInfo">
@@ -128,6 +163,39 @@
 </div>
 
 <div id="toast" style="position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;color:#fff;font-size:13px;display:none;z-index:9999;max-width:300px"></div>
+
+<div class="modal-overlay" id="createProjectModal">
+  <div class="modal-content">
+    <div class="modal-title">📁 Create New Project</div>
+    
+    <div class="form-group">
+      <label class="form-label">Project Name *</label>
+      <input type="text" class="form-input" id="projectName" placeholder="e.g. HVAC System Upgrade">
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Category *</label>
+      <select class="form-input" id="projectCategory" style="cursor:pointer">
+        <option value="">Select Category</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Structural">Structural</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="projectDescription" placeholder="Add project details (optional)..."></textarea>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeCreateProjectModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveNewProject()">Create Project</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
@@ -448,6 +516,54 @@ function showToast(msg, isError = false) {
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 3000);
 }
+
+window.openCreateProjectModal = () => {
+  document.getElementById('createProjectModal').classList.add('open');
+};
+
+window.closeCreateProjectModal = () => {
+  document.getElementById('createProjectModal').classList.remove('open');
+  document.getElementById('projectName').value = '';
+  document.getElementById('projectCategory').value = '';
+  document.getElementById('projectDescription').value = '';
+};
+
+window.saveNewProject = async () => {
+  const name = document.getElementById('projectName').value.trim();
+  const category = document.getElementById('projectCategory').value.trim();
+  const description = document.getElementById('projectDescription').value.trim();
+  
+  if (!name) {
+    showToast('Project name is required', true);
+    return;
+  }
+  
+  if (!category) {
+    showToast('Category is required', true);
+    return;
+  }
+  
+  try {
+    const projectId = crypto.randomUUID();
+    
+    await supabase.from('projects').insert({
+      id: projectId,
+      name: name,
+      category: category,
+      description: description,
+      status: 'active',
+      created_at: new Date().toISOString()
+    });
+    
+    showToast('✓ Project created');
+    closeCreateProjectModal();
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('saveNewProject error:', e);
+    showToast('Failed to create project: ' + e.message, true);
+  }
+};
 
 init();
 </script>
