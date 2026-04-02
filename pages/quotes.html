@@ -21,11 +21,30 @@
 .filter-bar{display:flex;gap:8px;margin-bottom:12px;margin-top:20px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
 .quote-table{width:100%;border-collapse:collapse}
 .quote-table th{background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
-.quote-table td{padding:16px;border-top:1px solid var(--border-light)}
+.quote-table td{padding:16px;border-top:1px solid var(--border-light);cursor:pointer}
 .quote-table tr:hover{background:rgba(37,99,235,0.02)}
 .priority-normal{color:var(--muted)}
 .priority-high{color:#f59e0b}
 .priority-urgent{color:#ef4444}
+.amount-confidential{color:var(--muted);font-style:italic}
+.quote-body{border-top:1px solid var(--border-light);padding:20px;display:none;background:var(--bg)}
+.quote-body.open{display:block}
+.detail-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.vote-status-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin:14px 0}
+.vote-row{display:flex;gap:12px;margin-bottom:8px;font-size:13px}
+.vote-item{display:flex;align-items:center;gap:6px;flex:1}
+.vote-icon{font-size:16px}
+.files-list{margin-top:8px}
+.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;cursor:pointer}
+.file-icon{font-size:16px}
+.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-size{font-size:11px;color:var(--muted)}
+.file-visibility{font-size:10px;padding:1px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1}
+.internal-note-box{background:var(--purple-bg);border:1px solid #c4b5fd;border-radius:10px;padding:12px;font-size:12px;color:var(--purple-text);margin-top:10px;line-height:1.6;font-style:italic}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-2);margin-bottom:8px}
+.inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px}
 .btn-pill {
   border-radius: 10px;
   padding: 10px 20px;
@@ -52,25 +71,44 @@
   background: linear-gradient(135deg, #10b981, #059669);
   color: #fff;
 }
+.btn-pill-success:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
 .btn-pill-danger {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
+}
+.btn-pill-danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 .btn-pill-warning {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #fff;
 }
+.btn-pill-warning:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
 .btn-pill-primary {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
 }
+.btn-pill-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
 .btn-pill-active {
   background: linear-gradient(135deg, #2563eb, #1e40af);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 .btn-pill:not(.btn-pill-active):not(.btn-pill-success):not(.btn-pill-danger):not(.btn-pill-warning):not(.btn-pill-primary) {
   background: #f1f5f9;
   color: #64748b;
+  border: 2px solid transparent;
+}
+.btn-pill:not(.btn-pill-active):not(.btn-pill-success):not(.btn-pill-danger):not(.btn-pill-warning):not(.btn-pill-primary):hover {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #cbd5e1;
 }
 .project-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden}
 .project-header{padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
@@ -82,13 +120,20 @@
 .project-card.expanded .vendor-list{display:block}
 .vendor-row{display:flex;align-items:center;justify-content:space-between;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:10px;transition:all 0.2s}
 .vendor-row:hover{border-color:var(--blue-600);background:rgba(37,99,235,0.02)}
+.vendor-row.selected{border-color:#10b981;background:#ecfdf5}
 .vendor-info{flex:1}
 .vendor-company{font-size:14px;font-weight:600;color:var(--text-1)}
 .vendor-date{font-size:11px;color:var(--muted);margin-top:2px}
 .vendor-amount{font-size:14px;font-weight:600;color:var(--text-1);margin:0 20px}
-.select-btn{background:#10b981;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;min-width:80px;text-align:center}
+.vendor-status{font-size:13px;font-weight:600;color:#10b981;min-width:120px;text-align:right}
+.vendor-status.unselected{color:#ef4444}
+.select-btn{background:#10b981;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .select-btn:hover{background:#059669}
-.select-btn.selected{background:var(--muted);cursor:default;opacity:0.6}
+.vendor-details{display:none;padding:14px;border-top:1px solid var(--border-light);background:rgba(0,0,0,0.02);margin-top:10px;font-size:12px}
+.vendor-details.show{display:block}
+.detail-line{margin-bottom:8px}
+.detail-label-inline{font-weight:600;color:var(--text-1)}
+.detail-value-inline{color:var(--text-2)}
 .voting-section{padding:16px;border-top:1px solid var(--border);display:none;background:var(--bg)}
 .project-card.expanded .voting-section{display:block}
 .action-buttons{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -99,16 +144,16 @@
 .btn-decline{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
 .btn-decline:hover{background:linear-gradient(135deg,#dc2626,#b91c1c)}
 .section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:10px;margin-top:14px}
-.committee-comments{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:12px;max-height:120px;overflow-y:auto}
+.committee-comments{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:12px;max-height:100px;overflow-y:auto}
 .comment-item{margin-bottom:6px;line-height:1.4}
 .comment-author{font-weight:600;color:var(--text-1)}
 .input-area{margin-bottom:14px}
 .input-area textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;min-height:70px;background:var(--surface);color:var(--text-1);resize:vertical;box-sizing:border-box}
 .submit-btn{background:var(--blue-600);color:#fff;padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px}
 .submit-btn:hover{background:var(--blue-700)}
-.voting-status{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:12px;max-height:120px;overflow-y:auto}
-.vote-row{font-size:12px;margin-bottom:4px}
-.vote-row-name{font-weight:600;color:var(--text-1);display:inline-block;min-width:90px}
+.voting-status{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:12px;max-height:100px;overflow-y:auto}
+.vote-row-status{font-size:12px;margin-bottom:4px}
+.vote-name{font-weight:600;color:var(--text-1);display:inline-block;min-width:90px}
 .result-box{padding:14px;border-radius:8px;border:2px solid;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:14px}
 .result-pending{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .result-approved{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
@@ -130,14 +175,16 @@
 .modal-field{margin-bottom:16px}
 .modal-label{font-size:13px;font-weight:600;color:var(--text-1);display:block;margin-bottom:6px}
 .modal-input,.modal-select,.modal-textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-1);box-sizing:border-box}
+.modal-input:focus,.modal-select:focus,.modal-textarea:focus{outline:none;border-color:var(--blue-600)}
 .modal-textarea{min-height:100px;resize:vertical}
 .modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap}
-.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;justify-content:space-between}
-.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-remove{cursor:pointer;color:#ef4444;font-weight:600;font-size:14px}
+.file-preview-modal{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;justify-content:space-between}
+.file-name-modal{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-remove-modal{cursor:pointer;color:#ef4444;font-weight:600;font-size:14px}
 @media(max-width:768px){
   .vendor-row{flex-direction:column;align-items:flex-start}
   .vendor-amount{margin:8px 0;margin-left:0}
+  .vendor-status{margin-top:8px;text-align:left}
   .action-buttons{flex-direction:column}
   .action-buttons button{width:100%}
   .confirm-btn{width:100%}
@@ -197,7 +244,10 @@
     <input type="hidden" id="quoteEditId">
     <div class="modal-field">
       <label class="modal-label">Project / Works Description</label>
-      <input type="text" class="modal-input" id="quoteProject" placeholder="e.g., Lift modernization">
+      <select class="modal-select" id="projectSelect" onchange="handleProjectSelect()">
+        <option value="">+ New Project</option>
+      </select>
+      <input type="text" class="modal-input" id="quoteProject" placeholder="Enter new project name" style="display:none;margin-top:8px">
     </div>
     <div class="modal-field">
       <label class="modal-label">Vendor / Contractor</label>
@@ -346,6 +396,7 @@ function renderPendingQuotes(quotes) {
   Object.values(projects).forEach(group => {
     const first = group[0];
     const parsed = parseComment(first.comment);
+    const selectedQuote = group.find(q => q.is_selected);
 
     const card = document.createElement('div');
     card.className = 'project-card';
@@ -367,7 +418,7 @@ function renderPendingQuotes(quotes) {
 
     group.forEach((q) => {
       const vendorRow = document.createElement('div');
-      vendorRow.className = 'vendor-row';
+      vendorRow.className = `vendor-row ${q.is_selected ? 'selected' : ''}`;
       
       const vendorInfo = document.createElement('div');
       vendorInfo.className = 'vendor-info';
@@ -382,22 +433,39 @@ function renderPendingQuotes(quotes) {
       amount.textContent = `$${Number(q.amount || 0).toLocaleString('en-AU')} + GST`;
       vendorRow.appendChild(amount);
 
-      const selectBtn = document.createElement('button');
-      selectBtn.className = `select-btn ${q.is_selected ? 'selected' : ''}`;
-      selectBtn.textContent = q.is_selected ? '✔' : '✕';
-      selectBtn.onclick = async (e) => {
-        e.stopPropagation();
-        for (const qx of group) {
-          if (qx.id !== q.id) {
-            await supabase.from('quotes').update({is_selected:false}).eq('id',qx.id);
+      if (q.is_selected) {
+        const status = document.createElement('div');
+        status.className = 'vendor-status';
+        status.innerHTML = '✔ Selected';
+        vendorRow.appendChild(status);
+      } else {
+        const selectBtn = document.createElement('button');
+        selectBtn.className = 'select-btn';
+        selectBtn.textContent = 'Select';
+        selectBtn.onclick = async (e) => {
+          e.stopPropagation();
+          for (const qx of group) {
+            if (qx.id !== q.id) {
+              await supabase.from('quotes').update({is_selected:false}).eq('id',qx.id);
+            }
           }
-        }
-        await supabase.from('quotes').update({is_selected:true}).eq('id',q.id);
-        showToast('✓ Vendor selected');
-        await loadData();
-        renderQuotes();
-      };
-      vendorRow.appendChild(selectBtn);
+          await supabase.from('quotes').update({is_selected:true}).eq('id',q.id);
+          showToast('✓ Vendor selected');
+          await loadData();
+          renderQuotes();
+        };
+        vendorRow.appendChild(selectBtn);
+      }
+
+      if (q.is_selected && q.notes) {
+        const details = document.createElement('div');
+        details.className = 'vendor-details show';
+        const detail = document.createElement('div');
+        detail.className = 'detail-line';
+        detail.innerHTML = `<div class="detail-label-inline">Details:</div> ${q.notes}`;
+        details.appendChild(detail);
+        vendorRow.appendChild(details);
+      }
 
       vendorList.appendChild(vendorRow);
     });
@@ -407,11 +475,10 @@ function renderPendingQuotes(quotes) {
     const votingSection = document.createElement('div');
     votingSection.className = 'voting-section';
 
-    const votes = allVotes.filter(v => group.some(q => q.id === v.quote_id));
+    const votes = selectedQuote ? allVotes.filter(v => v.quote_id === selectedQuote.id) : [];
     const approvals = votes.filter(v => v.vote === 'approve').length;
     const declines = votes.filter(v => v.vote === 'decline').length;
     const holds = votes.filter(v => v.vote === 'hold').length;
-    const selectedQuote = group.find(q => q.is_selected);
 
     const actionTitle = document.createElement('div');
     actionTitle.className = 'section-title';
@@ -424,19 +491,19 @@ function renderPendingQuotes(quotes) {
     const approveBtn = document.createElement('button');
     approveBtn.className = 'btn-approve';
     approveBtn.textContent = 'Approve';
-    approveBtn.onclick = () => castVote(first.id, 'approve');
+    approveBtn.onclick = () => selectedQuote ? castVote(selectedQuote.id, 'approve') : showToast('Select vendor first', true);
     actionButtons.appendChild(approveBtn);
     
     const holdBtn = document.createElement('button');
     holdBtn.className = 'btn-hold';
     holdBtn.textContent = 'Hold';
-    holdBtn.onclick = () => castVote(first.id, 'hold');
+    holdBtn.onclick = () => selectedQuote ? castVote(selectedQuote.id, 'hold') : showToast('Select vendor first', true);
     actionButtons.appendChild(holdBtn);
     
     const declineBtn = document.createElement('button');
     declineBtn.className = 'btn-decline';
     declineBtn.textContent = 'Decline';
-    declineBtn.onclick = () => castVote(first.id, 'decline');
+    declineBtn.onclick = () => selectedQuote ? castVote(selectedQuote.id, 'decline') : showToast('Select vendor first', true);
     actionButtons.appendChild(declineBtn);
     
     votingSection.appendChild(actionButtons);
@@ -472,12 +539,12 @@ function renderPendingQuotes(quotes) {
     inputArea.className = 'input-area';
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Enter your comment…';
-    textarea.dataset.quoteId = first.id;
+    textarea.dataset.quoteId = selectedQuote?.id || '';
     inputArea.appendChild(textarea);
     const submitBtn = document.createElement('button');
     submitBtn.className = 'submit-btn';
     submitBtn.textContent = 'Submit';
-    submitBtn.onclick = () => submitComment(first.id);
+    submitBtn.onclick = () => selectedQuote ? submitComment(selectedQuote.id) : showToast('Select vendor first', true);
     inputArea.appendChild(submitBtn);
     votingSection.appendChild(inputArea);
 
@@ -491,10 +558,10 @@ function renderPendingQuotes(quotes) {
     if (votes.length > 0) {
       votes.forEach(v => {
         const row = document.createElement('div');
-        row.className = 'vote-row';
+        row.className = 'vote-row-status';
         const author = allProfiles[v.user_email] || v.user_email.split('@')[0];
         const voteText = v.vote === 'approve' ? 'Approve' : v.vote === 'hold' ? 'Hold' : v.vote === 'decline' ? 'Decline' : 'Pending';
-        row.innerHTML = `<span class="vote-row-name">${author}:</span> ${selectedQuote ? selectedQuote.vendor + ' → ' + voteText : voteText}`;
+        row.innerHTML = `<span class="vote-name">${author}:</span> ${selectedQuote ? selectedQuote.vendor + ' → ' + voteText : voteText}`;
         voteBox.appendChild(row);
       });
     } else {
@@ -507,12 +574,12 @@ function renderPendingQuotes(quotes) {
     if (selectedQuote && approvals >= RULES.approvalsRequired) {
       resultBox.className = 'result-box result-approved';
       resultBox.innerHTML = `✔ ${selectedQuote.vendor} selected by majority`;
-    } else if (declines >= RULES.declinesToAutoDecline) {
+    } else if (selectedQuote && declines >= RULES.declinesToAutoDecline) {
       resultBox.className = 'result-box result-declined';
-      resultBox.innerHTML = `❌ RESULT: All quotes declined`;
-    } else if (holds >= RULES.holdsToAutoHold) {
+      resultBox.innerHTML = `❌ RESULT: Declined`;
+    } else if (selectedQuote && holds >= RULES.holdsToAutoHold) {
       resultBox.className = 'result-box result-onhold';
-      resultBox.innerHTML = `⏸ RESULT: All quotes on hold`;
+      resultBox.innerHTML = `⏸ RESULT: On Hold`;
     } else {
       resultBox.className = 'result-box result-pending';
       resultBox.innerHTML = `📋 RESULT: Pending`;
@@ -611,18 +678,13 @@ window.castVote = async function(quoteId, vote) {
 };
 
 window.submitComment = async function(quoteId) {
-  const textarea = document.querySelector(`[data-quote-id="${quoteId}"]`);
+  const textareas = document.querySelectorAll('textarea');
   let commentText = '';
   
-  if (textarea) {
-    commentText = textarea.value.trim();
-  } else {
-    const textareas = document.querySelectorAll('textarea');
-    for (const ta of textareas) {
-      if (ta.dataset.quoteId === quoteId) {
-        commentText = ta.value.trim();
-        break;
-      }
+  for (const ta of textareas) {
+    if (ta.dataset.quoteId === quoteId) {
+      commentText = ta.value.trim();
+      break;
     }
   }
 
@@ -645,12 +707,12 @@ window.submitComment = async function(quoteId) {
       });
     }
     
-    const textareas = document.querySelectorAll('textarea');
-    textareas.forEach(ta => {
+    const textareas2 = document.querySelectorAll('textarea');
+    for (const ta of textareas2) {
       if (ta.dataset.quoteId === quoteId) {
         ta.value = '';
       }
-    });
+    }
     
     showToast('✓ Comment added');
     
@@ -702,7 +764,7 @@ window.forceApprove = async function(quoteId) {
       }
     }
     
-    await supabase.from('quotes').update({status: 'confirmed'}).eq('id', quoteId);
+    await supabase.from('quotes').update({status: 'approved'}).eq('id', quoteId);
     
     await supabase.from('votes').delete().eq('quote_id', quoteId);
     
@@ -715,20 +777,56 @@ window.forceApprove = async function(quoteId) {
   }
 };
 
-window.openCreateProject = function() {
+window.openCreateProject = async function() {
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  
+  const unique = [...new Set(allQuotes.filter(q => q.status === 'pending').map(q => q.project_title || q.project))].filter(Boolean);
+  unique.forEach(name => {
+    const q = allQuotes.find(x => (x.project_title || x.project) === name && x.status === 'pending');
+    if (q) {
+      const opt = document.createElement('option');
+      opt.value = q.project_id;
+      opt.textContent = name;
+      opt.dataset.category = q.category;
+      opt.dataset.priority = parseComment(q.comment).priority;
+      sel.appendChild(opt);
+    }
+  });
+  
   document.getElementById('quoteEditId').value = '';
   document.getElementById('quoteModalTitle').textContent = 'Add Quote';
   document.getElementById('deleteQuoteBtn').style.display = 'none';
+  document.getElementById('quoteProject').style.display = 'block';
   document.getElementById('quoteProject').value = '';
   document.getElementById('quoteVendor').value = '';
   document.getElementById('quoteAmount').value = '';
   document.getElementById('quoteCategory').value = 'General';
+  document.getElementById('quoteCategory').disabled = false;
   document.getElementById('quotePriority').value = 'Normal';
+  document.getElementById('quotePriority').disabled = false;
   document.getElementById('quoteNotes').value = '';
   document.getElementById('quoteInternalNote').value = '';
   document.getElementById('filePreview').innerHTML = '';
   uploadedFiles = [];
   document.getElementById('quoteModal').classList.add('open');
+};
+
+window.handleProjectSelect = function() {
+  const sel = document.getElementById('projectSelect');
+  const isNew = sel.value === '';
+  document.getElementById('quoteProject').style.display = isNew ? 'block' : 'none';
+  
+  if (isNew) {
+    document.getElementById('quoteCategory').disabled = false;
+    document.getElementById('quotePriority').disabled = false;
+  } else {
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('quoteCategory').value = opt.dataset.category || 'General';
+    document.getElementById('quoteCategory').disabled = true;
+    document.getElementById('quotePriority').value = opt.dataset.priority || 'Normal';
+    document.getElementById('quotePriority').disabled = true;
+  }
 };
 
 window.closeModal = function(id) {
@@ -748,9 +846,9 @@ function updateFilePreview() {
   }
   
   container.innerHTML = uploadedFiles.map((f, idx) => `
-    <div class="file-preview">
-      <span class="file-name">📄 ${f.name}</span>
-      <span class="file-remove" onclick="removeFile(${idx})">✕</span>
+    <div class="file-preview-modal">
+      <span class="file-name-modal">📄 ${f.name}</span>
+      <span class="file-remove-modal" onclick="removeFile(${idx})">✕</span>
     </div>
   `).join('');
 }
@@ -765,7 +863,10 @@ window.formatAmount = function(input) {
 };
 
 window.saveQuote = async function() {
-  const project = document.getElementById('quoteProject').value.trim();
+  const sel = document.getElementById('projectSelect');
+  const isNew = sel.value === '';
+  
+  const project = isNew ? document.getElementById('quoteProject').value.trim() : (sel.options[sel.selectedIndex]?.text || '');
   const vendor = document.getElementById('quoteVendor').value.trim();
   let amountStr = document.getElementById('quoteAmount').value.replace(/[^0-9.]/g, '');
   const amount = parseFloat(amountStr) || 0;
@@ -785,7 +886,7 @@ window.saveQuote = async function() {
   
   try {
     const quoteId = crypto.randomUUID();
-    const projectId = crypto.randomUUID();
+    const projectId = isNew ? crypto.randomUUID() : sel.value;
     
     const commentPayload = {
       note: internalNote,
@@ -797,6 +898,7 @@ window.saveQuote = async function() {
     const { error } = await supabase.from('quotes').insert({
       id: quoteId,
       project_id: projectId,
+      project_title: project,
       project: project,
       vendor: vendor,
       amount: amount,
