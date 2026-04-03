@@ -367,7 +367,7 @@ async function init() {
 async function loadData() {
   try {
     const [qRes, vRes] = await Promise.all([
-      supabase.from('quotes').select('*').order('created_at', { ascending: false }),
+      supabase.from('quotes').select('*').eq('archived', false).order('created_at', { ascending: false }),
       supabase.from('votes').select('*')
     ]);
     allQuotes = qRes.data || [];
