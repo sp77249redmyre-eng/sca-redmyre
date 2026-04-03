@@ -73,10 +73,17 @@
 .submit-btn{background:#3b82f6;color:#fff;padding:11px 22px;border:none;border-radius:9999px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s}
 .submit-btn:hover{background:#2563eb}
 .submit-btn:disabled{opacity:0.5;cursor:not-allowed}
-.voting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:4px;font-size:13.5px}
-.vote-cell{padding:10px;background:#fff;border-radius:8px;border:1px solid #e5e7eb}
-.vote-name{font-weight:600;color:#1f2937;display:block}
-.vote-value{color:#4b5563;font-size:13px;margin-top:2px}
+.voting-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:4px;font-size:13.5px}
+.vote-cell{padding:10px 12px;background:#fff;border-radius:8px;border:1px solid #e5e7eb;min-width:0}
+.vote-name{font-weight:600;color:#1f2937;display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vote-value{font-size:12.5px;margin-top:3px;display:block}
+.vote-value.v-approve{color:#16a34a;font-weight:600}
+.vote-value.v-hold{color:#ca8a04;font-weight:600}
+.vote-value.v-decline{color:#dc2626;font-weight:600}
+.vote-value.v-pending{color:#9ca3af}
+.vote-value.v-closed{color:#d1d5db}
+@media(max-width:900px){.voting-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.voting-grid{grid-template-columns:repeat(2,1fr)}}
 .result-box{padding:14px 18px;border-radius:12px;border:2px solid;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .result-pending{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .result-approved{background:#ecfdf5;border-color:#4ade80;color:#166534}
@@ -239,6 +246,7 @@ let supabase    = null;
 let user        = null;
 let role        = 'observer';
 let allProfiles = {};
+let committeeMembers = [];
 let expandedVendors = {};
 let archiveFilter   = 'all';
 let pendingFiles    = [];
@@ -254,8 +262,12 @@ async function init() {
   supabase = layoutResult.supabase;
   user     = layoutResult.user;
   role     = layoutResult.role || 'observer';
-  const { data: profiles } = await supabase.from('profiles').select('email, full_name');
-  (profiles || []).forEach(p => { allProfiles[p.email] = p.full_name || p.email.split('@')[0]; });
+  const { data: profiles } = await supabase.from('profiles').select('email, full_name, role');
+  committeeMembers = [];
+  (profiles || []).forEach(p => {
+    allProfiles[p.email] = p.full_name || p.email.split('@')[0];
+    if (p.role === 'committee') committeeMembers.push({ email: p.email, name: p.full_name || p.email.split('@')[0] });
+  });
   if (role === 'admin') {
     const btn = document.getElementById('createProjectBtn');
     if (btn) btn.style.display = 'flex';
@@ -583,7 +595,7 @@ function renderPendingQuotes(quotes) {
     inputArea.appendChild(submitBtn);
     votingSection.appendChild(inputArea);
 
-    // Voting status
+    // Voting status – full committee grid
     const voteTitle = document.createElement('div');
     voteTitle.className = 'section-title';
     voteTitle.innerHTML = '📊 Voting Status';
@@ -591,18 +603,44 @@ function renderPendingQuotes(quotes) {
 
     const voteGrid = document.createElement('div');
     voteGrid.className = 'voting-grid';
-    if (votedRows.length) {
-      votedRows.forEach(v => {
-        const cell   = document.createElement('div');
+
+    const isFinalized = ['approved','declined','onhold'].includes(group[0]?.status);
+
+    // Use full committee list if loaded, otherwise fall back to voters only
+    const membersToShow = committeeMembers.length > 0
+      ? committeeMembers
+      : [...new Map(
+          projectVotes.filter(v => v.vote && v.vote !== '')
+            .map(v => [v.user_email, { email: v.user_email, name: allProfiles[v.user_email] || v.user_email.split('@')[0] }])
+        ).values()];
+
+    if (membersToShow.length > 0) {
+      membersToShow.forEach(member => {
+        const vRow = projectVotes.find(v => v.user_email === member.email);
+        const cell = document.createElement('div');
         cell.className = 'vote-cell';
-        const author   = allProfiles[v.user_email] || v.user_email.split('@')[0];
-        const selQ     = v.selected_quote_id ? group.find(q => q.id === v.selected_quote_id) : null;
-        const voteText = v.vote === 'approve' ? 'Approve' : v.vote === 'hold' ? 'Hold' : 'Decline';
-        cell.innerHTML = `<span class="vote-name">${escHtml(author)}</span><span class="vote-value">${selQ ? escHtml(selQ.vendor) + ' → ' : ''}${voteText}</span>`;
+
+        let valueText = 'Pending';
+        let valueCls  = 'v-pending';
+
+        if (vRow && vRow.vote && vRow.vote !== '') {
+          const selQ = vRow.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+          const voteLabel = vRow.vote === 'approve' ? 'Approve' : vRow.vote === 'hold' ? 'Hold' : 'Decline';
+          valueCls  = vRow.vote === 'approve' ? 'v-approve' : vRow.vote === 'hold' ? 'v-hold' : 'v-decline';
+          valueText = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + voteLabel;
+        } else if (isFinalized) {
+          valueCls  = 'v-closed';
+          valueText = 'Closed';
+        }
+
+        cell.innerHTML = '<span class="vote-name">' + escHtml(member.name) + '</span><span class="vote-value ' + valueCls + '">' + valueText + '</span>';
         voteGrid.appendChild(cell);
       });
     } else {
-      voteGrid.innerHTML = '<div style="color:#94a3b8;padding:12px;text-align:center">No votes recorded yet</div>';
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color:#94a3b8;padding:12px;text-align:center;grid-column:1/-1';
+      empty.textContent = 'No votes recorded yet';
+      voteGrid.appendChild(empty);
     }
     votingSection.appendChild(voteGrid);
 
