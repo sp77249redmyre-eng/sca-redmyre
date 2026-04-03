@@ -269,7 +269,8 @@ const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold:
 // ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
 // Priority order: conflict(4A+4D) → approved → declined → hold → pending
 function calculateResult({ approvals, declines, holds }) {
-  if (approvals >= RULES.approvalsRequired && declines >= RULES.declinesToAutoDecline) return 'hold';   // conflict → hold (HIGHEST PRIORITY)
+  const hasConflict = approvals >= 4 && declines >= 4;   // 4A+4D conflict → hold (HIGHEST PRIORITY)
+  if (hasConflict) return 'hold';
   if (approvals >= RULES.approvalsRequired) return 'approved';
   if (declines  >= RULES.declinesToAutoDecline) return 'declined';
   if (holds     >= RULES.holdsToAutoHold) return 'hold';
@@ -426,8 +427,7 @@ function renderPendingQuotes(quotes) {
     const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
 
     // ── Single source of truth: calculateResult() ─────────
-    const effectiveHolds   = hasTie ? Math.max(holds, RULES.holdsToAutoHold) : holds;
-    const calcResult       = calculateResult({ approvals, declines, holds: effectiveHolds });
+    const calcResult       = calculateResult({ approvals, declines, holds });
     const resultApproved   = calcResult === 'approved';
     const resultDeclined   = calcResult === 'declined';
     const resultHold       = calcResult === 'hold';
@@ -746,7 +746,7 @@ function renderPendingQuotes(quotes) {
       resultHTML  = '❌ RESULT: Declined';
     } else if (resultHold) {
       resultClass = 'result-onhold';
-      const holdReason = hasTie ? ' (Tie)' : (declines >= RULES.declinesToAutoDecline && approvals >= RULES.approvalsRequired) ? ' (Conflict)' : '';
+      const holdReason = hasTie ? ' (Tie)' : (approvals >= 4 && declines >= 4) ? ' (Conflict)' : '';
       resultHTML  = '⏸ RESULT: On Hold' + holdReason;
     }
 
@@ -876,8 +876,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
           const pHasTie     = !pIsSingle && cntAtMax > 1 && maxA > 0;
           const pDec        = pVoted.filter(v => v.vote === 'decline').length;
           const pHold       = pVoted.filter(v => v.vote === 'hold').length;
-          const pEffHolds   = pHasTie ? Math.max(pHold, RULES.holdsToAutoHold) : pHold;
-          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pEffHolds });
+          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pHold });
           if (pCalcResult !== 'pending' && !resultEmailSent.has(projectId)) {
             resultEmailSent.add(projectId);
             const resultLabel = pCalcResult === 'approved' ? 'Approved' : pCalcResult === 'declined' ? 'Declined' : 'On Hold';
