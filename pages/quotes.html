@@ -266,6 +266,40 @@ const resultEmailSent = new Set(); // PATCH 5: track projects where result email
 
 const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold: 3 };
 
+// ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
+// Priority order: conflict(4A+4D) → approved → declined → hold → pending
+function calculateResult({ approvals, declines, holds }) {
+  if (approvals >= RULES.approvalsRequired && declines >= RULES.declinesToAutoDecline) return 'hold';   // conflict → hold (HIGHEST PRIORITY)
+  if (approvals >= RULES.approvalsRequired) return 'approved';
+  if (declines  >= RULES.declinesToAutoDecline) return 'declined';
+  if (holds     >= RULES.holdsToAutoHold) return 'hold';
+  return 'pending';
+}
+
+// ── Internal validation (runs once on load, logs to console) ──────
+(function validateCalculateResult() {
+  const cases = [
+    { input: { approvals:5, declines:0, holds:0 }, expected:'approved',  label:'5A → approved'      },
+    { input: { approvals:0, declines:4, holds:0 }, expected:'declined',  label:'4D → declined'      },
+    { input: { approvals:0, declines:0, holds:3 }, expected:'hold',      label:'3H → hold'          },
+    { input: { approvals:4, declines:4, holds:0 }, expected:'hold',      label:'4A 4D → hold'       },
+    { input: { approvals:5, declines:4, holds:0 }, expected:'hold',      label:'5A 4D → hold'       },
+    { input: { approvals:5, declines:3, holds:0 }, expected:'approved',  label:'5A 3D → approved'   },
+    { input: { approvals:0, declines:4, holds:3 }, expected:'declined',  label:'4D 3H → declined'   },
+    { input: { approvals:3, declines:0, holds:3 }, expected:'hold',      label:'3A 3H → hold'       },
+    { input: { approvals:2, declines:2, holds:2 }, expected:'pending',   label:'2A 2D 2H → pending' },
+    { input: { approvals:4, declines:3, holds:0 }, expected:'pending',   label:'4A 3D → pending'    },
+  ];
+  let passed = 0; let failed = 0;
+  cases.forEach(({ input, expected, label }) => {
+    const got = calculateResult(input);
+    if (got === expected) { passed++; }
+    else { failed++; console.error(`[calculateResult] FAIL: ${label} → got "${got}", expected "${expected}"`); }
+  });
+  if (failed === 0) console.log(`[calculateResult] ✔ All ${passed} validation tests passed`);
+  else console.error(`[calculateResult] ✖ ${failed} test(s) FAILED – check voting logic`);
+})();
+
 async function init() {
   const layoutResult = await initLayout();
   if (!layoutResult) return;
@@ -385,22 +419,20 @@ function renderPendingQuotes(quotes) {
     const vendorsAtMax = vendorApproveCounts.filter(c => c === maxVendorApprovals && c > 0).length;
 
     // For single-quote projects use total approvals directly
-    const isSingle   = group.length === 1;
-    const approvals  = isSingle ? totalApprovals : maxVendorApprovals;
+    const isSingle  = group.length === 1;
+    const approvals = isSingle ? totalApprovals : maxVendorApprovals;
 
-    // Tie: multiple vendors share highest approval count
+    // Tie: multiple vendors share highest approval count → force hold
     const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
 
-    // ── Result determination ───────────────────────────────
-    const hasConflict    = totalApprovals >= 4 && declines >= 4;
-    const resultApproved = approvals >= RULES.approvalsRequired && !hasTie;
-    const resultDeclined = declines >= RULES.declinesToAutoDecline && !resultApproved;
-    const resultHold     = !resultApproved && !resultDeclined && (
-      hasTie ||
-      hasConflict ||
-      holds >= RULES.holdsToAutoHold
-    );
+    // ── Single source of truth: calculateResult() ─────────
+    const effectiveHolds   = hasTie ? Math.max(holds, RULES.holdsToAutoHold) : holds;
+    const calcResult       = calculateResult({ approvals, declines, holds: effectiveHolds });
+    const resultApproved   = calcResult === 'approved';
+    const resultDeclined   = calcResult === 'declined';
+    const resultHold       = calcResult === 'hold';
     const resultDetermined = resultApproved || resultDeclined || resultHold;
+    const isLocked         = resultDetermined;
 
     // Winning vendor (for approved result)
     const winnerQuoteId = resultApproved && !isSingle
@@ -714,9 +746,7 @@ function renderPendingQuotes(quotes) {
       resultHTML  = '❌ RESULT: Declined';
     } else if (resultHold) {
       resultClass = 'result-onhold';
-      let holdReason = '';
-      if (hasTie)        holdReason = ' (Tie)';
-      else if (hasConflict)  holdReason = ' (Conflict)';
+      const holdReason = hasTie ? ' (Tie)' : (declines >= RULES.declinesToAutoDecline && approvals >= RULES.approvalsRequired) ? ' (Conflict)' : '';
       resultHTML  = '⏸ RESULT: On Hold' + holdReason;
     }
 
@@ -835,22 +865,22 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
         const pVoted   = pVotes.filter(v => v.vote && v.vote !== '');
         const pGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
         if (pGroup.length > 0) {
-          const pFirst   = pGroup[0];
-          const isSingle = pGroup.length === 1;
-          const vMap     = {};
+          const pFirst      = pGroup[0];
+          const pIsSingle   = pGroup.length === 1;
+          const vMap        = {};
           pGroup.forEach(q => { vMap[q.id] = 0; });
           pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && vMap[v.selected_quote_id] !== undefined) vMap[v.selected_quote_id]++; });
-          const maxA     = isSingle ? pVoted.filter(v => v.vote === 'approve').length : Math.max(...Object.values(vMap), 0);
-          const cntAtMax = Object.values(vMap).filter(c => c === maxA && c > 0).length;
-          const pDec     = pVoted.filter(v => v.vote === 'decline').length;
-          const pHold    = pVoted.filter(v => v.vote === 'hold').length;
-          const pApproved  = maxA >= RULES.approvalsRequired && !(cntAtMax > 1);
-          const pDeclined  = pDec >= RULES.declinesToAutoDecline && !pApproved;
-          const pConflict  = (pVoted.filter(v=>v.vote==='approve').length >= 4) && pDec >= 4;
-          const pHoldResult = !pApproved && !pDeclined && (cntAtMax > 1 || pConflict || pHold >= RULES.holdsToAutoHold);
-          if ((pApproved || pDeclined || pHoldResult) && !resultEmailSent.has(projectId)) {
+          const vMapVals    = Object.values(vMap);
+          const maxA        = pIsSingle ? pVoted.filter(v => v.vote === 'approve').length : (vMapVals.length > 0 ? Math.max(...vMapVals) : 0);
+          const cntAtMax    = vMapVals.filter(c => c === maxA && c > 0).length;
+          const pHasTie     = !pIsSingle && cntAtMax > 1 && maxA > 0;
+          const pDec        = pVoted.filter(v => v.vote === 'decline').length;
+          const pHold       = pVoted.filter(v => v.vote === 'hold').length;
+          const pEffHolds   = pHasTie ? Math.max(pHold, RULES.holdsToAutoHold) : pHold;
+          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pEffHolds });
+          if (pCalcResult !== 'pending' && !resultEmailSent.has(projectId)) {
             resultEmailSent.add(projectId);
-            const resultLabel = pApproved ? 'Approved' : pDeclined ? 'Declined' : 'On Hold';
+            const resultLabel = pCalcResult === 'approved' ? 'Approved' : pCalcResult === 'declined' ? 'Declined' : 'On Hold';
             await fetch('/api/send-quote-email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
