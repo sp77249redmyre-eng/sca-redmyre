@@ -837,7 +837,7 @@ function renderPendingQuotes(quotes) {
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'confirm-btn';
       confirmBtn.innerHTML = '✔ Confirm &amp; Send Notification';
-      confirmBtn.onclick = () => confirmSelection(confirmQuoteId, group, confirmBtn);
+      confirmBtn.onclick = () => confirmSelection(confirmQuoteId, group, confirmBtn, calcResult);
       votingSection.appendChild(confirmBtn);
     }
 
@@ -1134,8 +1134,10 @@ function renderArchiveTable(quotes) {
           <span style="color:#64748b;margin-left:8px">$${Number(q.amount||0).toLocaleString('en-AU')} + GST</span>
           <span class="status-badge status-${q.status}" style="margin-left:8px">${q.status.toUpperCase()}</span>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           ${files.map(f => `<a class="detail-file-link" href="#" onclick="openFilePreview(${JSON.stringify(f.url)},${JSON.stringify(f.name)});return false;">📎 ${escHtml(f.name)}</a>`).join('')}
+          ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-blue" onclick="editQuote('${q.id}')">✏️ Edit</button>` : ''}
+          ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-red" onclick="deleteQuoteFromArchive('${q.id}')">🗑 Delete</button>` : ''}
         </div>`;
       quotesList.appendChild(row);
     });
@@ -1357,41 +1359,66 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
 };
 
 // Confirm – selected → approved, others → declined (always)
-window.confirmSelection = async function(quoteId, group, triggerBtn) {
-  // PATCH 3: safety checks
+window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult) {
   if (!Array.isArray(group) || !group.length) return;
-  if (!quoteId && !group.some(q => q.id)) return;
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Confirming…'; }
   try {
+    // Recalculate result at confirm time — final authority, overrides UI-passed value
+    const projectId    = group[0]?.project_id || group[0]?.id;
+    const pVotes       = allVotes.filter(v => v.project_id === projectId);
+    const pVoted       = pVotes.filter(v => v.vote && v.vote !== '');
+    const pIsSingle    = group.length === 1;
+    const vMap         = {};
+    group.forEach(q => { vMap[q.id] = 0; });
+    pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && vMap[v.selected_quote_id] !== undefined) vMap[v.selected_quote_id]++; });
+    const vVals        = Object.values(vMap);
+    const maxApprovals = pIsSingle ? pVoted.filter(v => v.vote === 'approve').length : (vVals.length ? Math.max(...vVals) : 0);
+    const pDeclines    = pVoted.filter(v => v.vote === 'decline').length;
+    const pHolds       = pVoted.filter(v => v.vote === 'hold').length;
+    const tieCnt       = vVals.filter(c => c === maxApprovals && c > 0).length;
+    const pHasTie      = !pIsSingle && tieCnt > 1;
+    calcResult = calculateResult({ approvals: maxApprovals, declines: pDeclines, holds: pHolds, hasTie: pHasTie });
+
     const allIds   = group.map(q => q.id).filter(Boolean);
     const otherIds = quoteId ? allIds.filter(id => id !== quoteId) : allIds;
 
-    if (quoteId) {
-      const { error } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
-      if (error) throw error;
-
-      // PATCH 1: Upsert into works – create if not exists, update if exists
+    if (calcResult === 'approved') {
+      // Winner → approved, others → declined
+      if (!quoteId) { showToast('No vendor selected', true); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = '✔ Confirm & Send Notification'; } return; }
+      const { error: eA } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+      if (eA) throw eA;
+      if (otherIds.length) {
+        const { error: eD } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
+        if (eD) throw eD;
+      }
+      // Upsert into works
       try {
         const projectId = group[0]?.project_id || group[0]?.id || null;
         if (quoteId && projectId) {
           await supabase.from('works').upsert(
-            {
-              quote_id: quoteId,
-              project_id: projectId,
-              work_status: 'scheduled',
-              completion_date: null
-            },
+            { quote_id: quoteId, project_id: projectId, work_status: 'scheduled', completion_date: null },
             { onConflict: 'quote_id' }
           );
         }
-      } catch(workErr) {
-        console.warn('Works upsert failed (non-critical):', workErr);
-      }
+      } catch(workErr) { console.warn('Works upsert failed (non-critical):', workErr); }
+
+    } else if (calcResult === 'hold') {
+      // ALL quotes → onhold
+      const { error: eH } = await supabase.from('quotes').update({ status: 'onhold' }).in('id', allIds);
+      if (eH) throw eH;
+
+    } else if (calcResult === 'declined') {
+      // ALL quotes → declined
+      const { error: eD } = await supabase.from('quotes').update({ status: 'declined' }).in('id', allIds);
+      if (eD) throw eD;
+
+    } else {
+      console.error('Invalid result state in confirmSelection:', calcResult);
+      showToast('Invalid result state – please reload and try again', true);
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = '✔ Confirm & Send Notification'; }
+      return;
     }
-    if (otherIds.length) {
-      const { error } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
-      if (error) throw error;
-    }
+
     showToast('✔ Selection confirmed and notification sent');
     await loadData();
     renderQuotes();
@@ -1430,6 +1457,57 @@ window.resendToVoting = async function(quoteId, projectId) {
   } catch(e) {
     console.error('resendToVoting error:', e);
     showToast('Failed to reopen', true);
+  }
+};
+
+// Edit individual quote (opens modal pre-filled)
+window.editQuote = function(id) {
+  const q = allQuotes.find(x => x.id === id);
+  if (!q) return;
+  const parsed = parseComment(q.comment);
+
+  // Populate project select
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  const opt = document.createElement('option');
+  opt.value = q.project_id || q.id;
+  opt.textContent = q.project || q.project_title || '';
+  sel.appendChild(opt);
+  sel.value = q.project_id || q.id;
+
+  document.getElementById('quoteProject').style.display  = 'none';
+  document.getElementById('quoteEditId').value           = q.id;
+  document.getElementById('quoteVendor').value           = q.vendor  || '';
+  document.getElementById('quoteAmount').value           = q.amount  || '';
+  document.getElementById('quoteCategory').value         = q.category || parsed.category || 'General';
+  document.getElementById('quotePriority').value         = parsed.priority || 'Normal';
+  document.getElementById('quoteNotes').value            = q.notes   || '';
+  document.getElementById('quoteInternalNote').value     = parsed.note || '';
+  document.getElementById('quoteCategory').disabled      = false;
+  document.getElementById('quotePriority').disabled      = false;
+  document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
+  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
+  pendingFiles = [];
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('quoteModal').classList.add('open');
+};
+
+// Delete individual quote (quote-level, not project-level)
+window.deleteQuoteFromArchive = async function(id) {
+  if (!confirm('Delete this quote permanently? This cannot be undone.')) return;
+  try {
+    const q = allQuotes.find(x => x.id === id);
+    if (!q) return;
+    const projectId = q.project_id || q.id;
+    await supabase.from('votes').delete().eq('project_id', projectId);
+    const { error } = await supabase.from('quotes').delete().eq('id', id);
+    if (error) throw error;
+    showToast('Quote deleted');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('deleteQuoteFromArchive error:', e);
+    showToast('Delete failed', true);
   }
 };
 
