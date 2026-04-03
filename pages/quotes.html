@@ -169,6 +169,15 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="filePreviewModal" onclick="if(event.target===this)closeModal('filePreviewModal')">
+  <div class="modal-box" style="max-width:860px;width:96%;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f8fafc">
+      <span id="filePreviewTitle" style="font-weight:600;color:#1f2937;font-size:15px"></span>
+      <button onclick="closeModal('filePreviewModal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
+    </div>
+    <div id="filePreviewBody" style="min-height:420px;display:flex;align-items:center;justify-content:center;padding:20px;background:#fff"></div>
+  </div>
+</div>
 <div id="toast" class="toast"></div>
 
 <div class="modal-backdrop" id="quoteModal">
@@ -253,6 +262,7 @@ let pendingFiles    = [];
 
 // Per-(projectId+email) lock – prevents race conditions under fast clicks
 const actionLocks = new Map();
+const resultEmailSent = new Set(); // PATCH 5: track projects where result email was sent
 
 const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold: 3 };
 
@@ -381,23 +391,14 @@ function renderPendingQuotes(quotes) {
     // Tie: multiple vendors share highest approval count
     const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
 
-    // Conflict: someone reaching approve threshold AND decline threshold simultaneously
-    const hasConflict = totalApprovals >= RULES.approvalsRequired && declines >= RULES.declinesToAutoDecline;
-
-    // Distributed: no vendor has majority, votes spread across vendors
-    const hasDistributed = !isSingle && maxVendorApprovals > 0 && maxVendorApprovals < RULES.approvalsRequired
-      && (totalApprovals - maxVendorApprovals) > 0;
-
     // ── Result determination ───────────────────────────────
-    // Priority: Approved > Declined > Hold > Pending
-    // Hold overrides Approved if tie or conflict
-    const resultApproved = approvals >= RULES.approvalsRequired && !hasTie && !hasConflict;
+    const hasConflict    = totalApprovals >= 4 && declines >= 4;
+    const resultApproved = approvals >= RULES.approvalsRequired && !hasTie;
     const resultDeclined = declines >= RULES.declinesToAutoDecline && !resultApproved;
     const resultHold     = !resultApproved && !resultDeclined && (
       hasTie ||
       hasConflict ||
-      (holds >= RULES.holdsToAutoHold) ||
-      hasDistributed
+      holds >= RULES.holdsToAutoHold
     );
     const resultDetermined = resultApproved || resultDeclined || resultHold;
 
@@ -476,12 +477,17 @@ function renderPendingQuotes(quotes) {
       statusDiv.className = 'vendor-status';
 
       if (isVoting) {
-        if (isSelected) {
+        if (isSingle) {
+          // PATCH 3: single quote – auto-selected, no UI button needed
           const badge = document.createElement('span');
           badge.className = 'badge-selected';
           badge.textContent = '✔ Selected';
           statusDiv.appendChild(badge);
-          // Allow change only if user hasn't voted yet
+        } else if (isSelected) {
+          const badge = document.createElement('span');
+          badge.className = 'badge-selected';
+          badge.textContent = '✔ Selected';
+          statusDiv.appendChild(badge);
           if (!userAlreadyVoted) {
             const deselBtn = document.createElement('button');
             deselBtn.className = 'deselect-btn';
@@ -524,7 +530,7 @@ function renderPendingQuotes(quotes) {
         <div class="detail-line"><span class="detail-label">Internal:</span><span>${escHtml(qParsed.note || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Category:</span><span>${escHtml(q.category || qParsed.category || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Priority:</span><span>${escHtml(qParsed.priority || '—')}</span></div>
-        ${files.length ? `<div class="detail-line"><span class="detail-label">Files:</span></div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="${escHtml(f.url)}" target="_blank" rel="noopener">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : ''}`;
+        ${files.length ? `<div class="detail-line"><span class="detail-label">Files:</span></div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFilePreview(${JSON.stringify(f.url)},${JSON.stringify(f.name)});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : ''}`;
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
     });
@@ -544,8 +550,8 @@ function renderPendingQuotes(quotes) {
     const votingSection = document.createElement('div');
     votingSection.className = 'voting-section';
 
-    // Vote buttons: committee only, vendor selected, not yet voted
-    if (role === 'committee' && isVoting && selectedQuote) {
+    // Vote buttons: committee only; single quote auto-selected so no selectedQuote required
+    if (role === 'committee' && isVoting && (selectedQuote || isSingle)) {
       const actionTitle = document.createElement('div');
       actionTitle.className = 'section-title';
       actionTitle.innerHTML = '🎯 Action';
@@ -563,8 +569,8 @@ function renderPendingQuotes(quotes) {
         } else {
           btn.onclick = () => {
             const vRow = getUserVoteRow(projectKey);
-            // Block vote if no vendor selected
-            if (!vRow?.selected_quote_id) { showToast('Please select a vendor first', true); return; }
+            // Block vote if no vendor selected (skip for single quote – auto-selected)
+            if (!isSingle && !vRow?.selected_quote_id) { showToast('Please select a vendor first', true); return; }
             // Hard re-check vote lock
             if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); btn.disabled = true; return; }
             doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
@@ -711,7 +717,6 @@ function renderPendingQuotes(quotes) {
       let holdReason = '';
       if (hasTie)        holdReason = ' (Tie)';
       else if (hasConflict)  holdReason = ' (Conflict)';
-      else if (hasDistributed) holdReason = ' (Split votes)';
       resultHTML  = '⏸ RESULT: On Hold' + holdReason;
     }
 
@@ -791,8 +796,9 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
         return;
       }
 
-      // PATCH 3: Voting requires vendor selection
-      if (!current?.selected_quote_id) {
+      // Voting requires vendor selection (skip for single-quote projects)
+      const pGroupForCheck = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+      if (pGroupForCheck.length !== 1 && !current?.selected_quote_id) {
         showToast('Please select a vendor first', true);
         if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = btnOrigText; }
         return;
@@ -838,10 +844,12 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
           const cntAtMax = Object.values(vMap).filter(c => c === maxA && c > 0).length;
           const pDec     = pVoted.filter(v => v.vote === 'decline').length;
           const pHold    = pVoted.filter(v => v.vote === 'hold').length;
-          const pApproved  = maxA >= RULES.approvalsRequired && !(cntAtMax > 1) && !(maxA >= RULES.approvalsRequired && pDec >= RULES.declinesToAutoDecline);
+          const pApproved  = maxA >= RULES.approvalsRequired && !(cntAtMax > 1);
           const pDeclined  = pDec >= RULES.declinesToAutoDecline && !pApproved;
-          const pHoldResult = !pApproved && !pDeclined && (cntAtMax > 1 || (maxA >= RULES.approvalsRequired && pDec >= RULES.declinesToAutoDecline) || pHold >= RULES.holdsToAutoHold);
-          if (pApproved || pDeclined || pHoldResult) {
+          const pConflict  = (pVoted.filter(v=>v.vote==='approve').length >= 4) && pDec >= 4;
+          const pHoldResult = !pApproved && !pDeclined && (cntAtMax > 1 || pConflict || pHold >= RULES.holdsToAutoHold);
+          if ((pApproved || pDeclined || pHoldResult) && !resultEmailSent.has(projectId)) {
+            resultEmailSent.add(projectId);
             const resultLabel = pApproved ? 'Approved' : pDeclined ? 'Declined' : 'On Hold';
             await fetch('/api/send-quote-email', {
               method: 'POST',
@@ -1199,6 +1207,45 @@ function showToast(message, isError = false) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2800);
 }
+
+window.openFilePreview = function(url, name) {
+  if (!url) return;
+  const body  = document.getElementById('filePreviewBody');
+  const title = document.getElementById('filePreviewTitle');
+  if (!body || !title) return;
+  title.textContent = name || 'File Preview';
+  body.innerHTML = '';
+
+  const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+  const isImage = ['png','jpg','jpeg','gif','webp','svg'].includes(ext);
+  const isPdf   = ext === 'pdf';
+
+  if (isImage) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'max-width:100%;max-height:70vh;border-radius:8px;display:block;margin:auto';
+    img.onerror = () => { body.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:40px">Unable to load image</div>'; };
+    body.appendChild(img);
+  } else if (isPdf) {
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.cssText = 'width:100%;height:70vh;border:none;display:block';
+    body.appendChild(iframe);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'text-align:center;padding:40px';
+    wrap.innerHTML = '<div style="font-size:48px;margin-bottom:16px">📎</div><div style="font-size:15px;color:#374151;margin-bottom:20px">' + (name || 'Download File') + '</div>';
+    const dlBtn = document.createElement('a');
+    dlBtn.href = url;
+    dlBtn.download = name || 'file';
+    dlBtn.className = 'btn-pill btn-pill-primary';
+    dlBtn.textContent = '⬇ Download';
+    dlBtn.style.cssText = 'display:inline-block;text-decoration:none';
+    wrap.appendChild(dlBtn);
+    body.appendChild(wrap);
+  }
+  document.getElementById('filePreviewModal').classList.add('open');
+};
 
 init();
 </script>
