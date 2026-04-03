@@ -132,6 +132,47 @@
   .confirm-btn{width:100%}
   .voting-grid{grid-template-columns:1fr}
 }
+/* ── Management Layer ── */
+.summary-bar{display:flex;gap:10px;flex-wrap:wrap;padding:14px 24px 0;margin-bottom:0}
+.summary-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:600}
+.chip-approve{background:#dcfce7;color:#166534}
+.chip-decline{background:#fee2e2;color:#991b1b}
+.chip-hold{background:#fef3c7;color:#92400e}
+.chip-vendor{background:#eff6ff;color:#1e40af}
+.vendor-dist{display:flex;flex-wrap:wrap;gap:6px;padding:0 24px 14px;margin-top:6px}
+.vendor-dist-item{font-size:12px;color:#374151;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:3px 9px}
+.mgmt-panel{border-top:1px solid #e5e7eb;background:#fafafa}
+.mgmt-panel-inner{padding:18px 24px}
+.mgmt-section-title{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin:16px 0 8px}
+.mgmt-section-title:first-child{margin-top:0}
+.mgmt-admin-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.btn-mgmt{padding:7px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-mgmt-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}.btn-mgmt-blue:hover{background:#dbeafe}
+.btn-mgmt-yellow{background:#fefce8;color:#854d0e;border:1px solid #fde68a}.btn-mgmt-yellow:hover{background:#fef9c3}
+.btn-mgmt-green{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}.btn-mgmt-green:hover{background:#dcfce7}
+.btn-mgmt-red{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}.btn-mgmt-red:hover{background:#ffe4e6}
+.mgmt-detail-votes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:900px){.mgmt-detail-votes{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.mgmt-detail-votes{grid-template-columns:repeat(2,1fr)}}
+.mgmt-vote-cell{padding:9px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;font-size:13px}
+.mgmt-vote-name{font-weight:600;color:#1f2937;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgmt-vote-val{font-size:12px;margin-top:2px;display:block;color:#6b7280}
+.mgmt-comments-list{display:flex;flex-direction:column;gap:6px}
+.mgmt-comment-item{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:9px 13px;font-size:13px}
+.mgmt-quotes-list{display:flex;flex-direction:column;gap:6px}
+.mgmt-quote-row{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:9px 13px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.archive-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 4px -1px rgba(0,0,0,0.04)}
+.archive-card-header{padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;cursor:pointer;user-select:none;transition:background 0.15s}
+.archive-card-header:hover{background:#f1f5f9}
+.archive-card-header-left{display:flex;align-items:center;gap:10px}
+.archive-card-header-right{display:flex;align-items:center;gap:8px}
+.archive-chevron{font-size:12px;color:#9ca3af;transition:transform 0.2s}
+.archive-chevron.open{transform:rotate(180deg)}
+.edit-project-form{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:10px}
+.edit-form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.edit-form-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+.edit-form-label{font-size:12px;font-weight:600;color:#374151}
+.edit-form-input,.edit-form-select{padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:#1f2937;background:#fff}
 </style>
 </head>
 <body>
@@ -482,6 +523,23 @@ function renderPendingQuotes(quotes) {
     header.appendChild(headerRight);
     card.appendChild(header);
 
+    // Vote summary bar (visible during voting)
+    if (isVoting) {
+      const sBar = document.createElement('div');
+      sBar.className = 'summary-bar';
+      // Vendor distribution
+      const vDistItems = Object.entries(vendorApproveMap).map(([qid, cnt]) => {
+        const vq = group.find(q => q.id === qid);
+        return vq ? `<span class="vendor-dist-item" style="margin-left:0">${escHtml(vq.vendor)}: ${cnt}</span>` : '';
+      }).join('');
+      sBar.innerHTML = `
+        <span class="summary-chip chip-approve">✅ ${totalApprovals}</span>
+        <span class="summary-chip chip-decline">❌ ${declines}</span>
+        <span class="summary-chip chip-hold">⏸ ${holds}</span>
+        ${!isSingle ? `<span style="font-size:12px;color:#64748b;align-self:center">│</span>${vDistItems}` : ''}`;
+      card.appendChild(sBar);
+    }
+
     // Vendor list
     const vendorList = document.createElement('div');
     vendorList.className = 'vendor-list';
@@ -766,6 +824,13 @@ function renderPendingQuotes(quotes) {
     resultBox.innerHTML = resultHTML;
     votingSection.appendChild(resultBox);
 
+    if (resultDetermined) {
+      const lockNotice = document.createElement('div');
+      lockNotice.style.cssText = 'margin-top:6px;font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:6px';
+      lockNotice.innerHTML = '🔒 Voting Closed';
+      votingSection.appendChild(lockNotice);
+    }
+
     // Confirm button – only when result determined
     if (role === 'admin' && isVoting && resultDetermined) {
       const confirmQuoteId = resultApproved ? (winnerQuoteId || selectedQuote?.id || null) : (selectedQuote?.id || null);
@@ -783,31 +848,303 @@ function renderPendingQuotes(quotes) {
 
 function renderArchiveTable(quotes) {
   const container = document.getElementById('archiveList');
-  const filtered  = archiveFilter === 'all' ? quotes : quotes.filter(q => q.status === archiveFilter);
-  if (!filtered.length) {
+
+  // Group by project_id
+  const projectMap = {};
+  quotes.forEach(q => {
+    const key = q.project_id || q.id;
+    if (!projectMap[key]) projectMap[key] = [];
+    projectMap[key].push(q);
+  });
+
+  // Filter by archiveFilter
+  let groups = Object.values(projectMap);
+  if (archiveFilter !== 'all') {
+    groups = groups.filter(g => {
+      // For onhold: all quotes in group are onhold
+      if (archiveFilter === 'onhold') return g.every(q => q.status === 'onhold');
+      return g.some(q => q.status === archiveFilter);
+    });
+  }
+
+  if (!groups.length) {
     container.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:15px">No archived items</div>';
     return;
   }
-  let html = `<table class="archive-table"><thead><tr>
-    <th>Date</th><th>Status</th><th>Category</th><th>Priority</th><th>Project</th><th>Vendor</th><th>Amount</th><th>Action</th>
-  </tr></thead><tbody>`;
-  filtered.forEach(q => {
-    const parsed    = parseComment(q.comment);
-    const dateStr   = new Date(q.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
-    const canReopen = (q.status === 'onhold' || q.status === 'expired') && role === 'admin';
-    const action    = canReopen ? `<button class="reopen-btn" onclick="resendToVoting('${q.id}','${escHtml(q.project_id || q.id)}')">Reopen</button>` : '—';
-    html += `<tr>
-      <td>${dateStr}</td>
-      <td><span class="status-badge status-${q.status}">${q.status.toUpperCase()}</span></td>
-      <td>${escHtml(q.category || 'General')}</td>
-      <td>${escHtml(parsed.priority || 'Normal')}</td>
-      <td>${escHtml(q.project || q.project_title || '—')}</td>
-      <td>${escHtml(q.vendor || '—')}</td>
-      <td>$${Number(q.amount || 0).toLocaleString('en-AU')}</td>
-      <td>${action}</td></tr>`;
+
+  container.innerHTML = '';
+
+  groups.forEach(group => {
+    const first      = group[0];
+    const projectKey = first.project_id || first.id;
+    const parsed     = parseComment(first.comment);
+
+    // Determine project-level status
+    // HOLD RULE: if ALL quotes are onhold → onhold
+    const allOnHold    = group.every(q => q.status === 'onhold');
+    const anyApproved  = group.some(q => q.status === 'approved');
+    const anyExpired   = group.some(q => q.status === 'expired');
+    const anyOnHold    = group.some(q => q.status === 'onhold');
+    const projectStatus = allOnHold ? 'onhold'
+      : anyApproved  ? 'approved'
+      : anyOnHold    ? 'onhold'
+      : anyExpired   ? 'expired'
+      : 'declined';
+
+    const dateStr = new Date(first.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+
+    // Vote summary for this project
+    const projectVotes = getProjectVotes(projectKey);
+    const votedRows    = projectVotes.filter(v => v.vote && v.vote !== '');
+    const totalA = votedRows.filter(v => v.vote === 'approve').length;
+    const totalD = votedRows.filter(v => v.vote === 'decline').length;
+    const totalH = votedRows.filter(v => v.vote === 'hold').length;
+
+    // Vendor vote distribution
+    const vendorMap = {};
+    group.forEach(q => { vendorMap[q.id] = { name: q.vendor || '—', count: 0 }; });
+    votedRows.forEach(v => {
+      if (v.vote === 'approve' && v.selected_quote_id && vendorMap[v.selected_quote_id]) {
+        vendorMap[v.selected_quote_id].count++;
+      }
+    });
+
+    // Editable: onhold or expired only
+    const canEdit   = (projectStatus === 'onhold' || projectStatus === 'expired') && role === 'admin';
+    const canReopen = (projectStatus === 'onhold' || projectStatus === 'expired') && role === 'admin';
+    const canExpire = projectStatus !== 'expired' && role === 'admin';
+
+    const cardId    = 'arc-' + projectKey;
+    const panelId   = 'arc-panel-' + projectKey;
+    const editFormId = 'arc-editform-' + projectKey;
+
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+    card.id = cardId;
+
+    // ── Card Header ──
+    const header = document.createElement('div');
+    header.className = 'archive-card-header';
+    header.innerHTML = `
+      <div class="archive-card-header-left">
+        <span style="font-size:20px">📁</span>
+        <div>
+          <span style="font-size:15px;font-weight:600;color:#1f2937">${escHtml(first.project || first.project_title || 'Project')}</span>
+          <span style="font-size:13px;color:#64748b;margin-left:8px">${escHtml(first.category || 'General')} | ${escHtml(parsed.priority || 'Normal')}</span>
+        </div>
+      </div>
+      <div class="archive-card-header-right">
+        <span class="status-badge status-${projectStatus}">${projectStatus.toUpperCase()}</span>
+        <span style="font-size:12px;color:#9ca3af">${dateStr}</span>
+        <span class="archive-chevron" id="chev-${projectKey}">▼</span>
+      </div>`;
+    header.onclick = () => {
+      const panel = document.getElementById(panelId);
+      const chev  = document.getElementById('chev-' + projectKey);
+      if (!panel) return;
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      if (chev) chev.classList.toggle('open', !isOpen);
+    };
+    card.appendChild(header);
+
+    // ── Vote Summary Bar ──
+    const summaryBar = document.createElement('div');
+    summaryBar.className = 'summary-bar';
+    summaryBar.innerHTML = `
+      <span class="summary-chip chip-approve">✅ Approve: ${totalA}</span>
+      <span class="summary-chip chip-decline">❌ Decline: ${totalD}</span>
+      <span class="summary-chip chip-hold">⏸ Hold: ${totalH}</span>`;
+    card.appendChild(summaryBar);
+
+    // Vendor distribution
+    const vendorDist = document.createElement('div');
+    vendorDist.className = 'vendor-dist';
+    Object.values(vendorMap).forEach(v => {
+      const item = document.createElement('span');
+      item.className = 'vendor-dist-item';
+      item.textContent = `${v.name}: ${v.count} vote${v.count !== 1 ? 's' : ''}`;
+      vendorDist.appendChild(item);
+    });
+    card.appendChild(vendorDist);
+
+    // ── Collapsible Detail Panel ──
+    const panel = document.createElement('div');
+    panel.className = 'mgmt-panel';
+    panel.id = panelId;
+    panel.style.display = 'none';
+
+    const inner = document.createElement('div');
+    inner.className = 'mgmt-panel-inner';
+
+    // Admin Action Panel
+    if (role === 'admin') {
+      const adminTitle = document.createElement('div');
+      adminTitle.className = 'mgmt-section-title';
+      adminTitle.textContent = '👨‍💼 Admin Actions';
+      inner.appendChild(adminTitle);
+
+      const adminRow = document.createElement('div');
+      adminRow.className = 'mgmt-admin-row';
+
+      // Reopen Voting
+      if (canReopen) {
+        const reopenBtn = document.createElement('button');
+        reopenBtn.className = 'btn-mgmt btn-mgmt-yellow';
+        reopenBtn.textContent = '🔄 Reopen Voting';
+        reopenBtn.onclick = () => {
+          resendToVoting(first.id, projectKey);
+        };
+        adminRow.appendChild(reopenBtn);
+      }
+
+      // Add New Quote (blocked on approved projects)
+      if (projectStatus !== 'approved') {
+        const addQuoteBtn = document.createElement('button');
+        addQuoteBtn.className = 'btn-mgmt btn-mgmt-green';
+        addQuoteBtn.textContent = '➕ Add New Quote';
+        addQuoteBtn.onclick = () => openAddQuoteToProject(projectKey, first.project || first.project_title || '', first.category || 'General', parsed.priority || 'Normal');
+        adminRow.appendChild(addQuoteBtn);
+      }
+
+      // Edit Project
+      if (canEdit) {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-mgmt btn-mgmt-blue';
+        editBtn.textContent = '✏️ Edit Project';
+        editBtn.onclick = () => {
+          const ef = document.getElementById(editFormId);
+          if (ef) ef.style.display = ef.style.display === 'none' ? 'block' : 'none';
+        };
+        adminRow.appendChild(editBtn);
+      }
+
+      // Mark as Expired
+      if (canExpire) {
+        const expireBtn = document.createElement('button');
+        expireBtn.className = 'btn-mgmt btn-mgmt-red';
+        expireBtn.textContent = '🗓 Mark as Expired';
+        expireBtn.onclick = () => markExpired(group, expireBtn);
+        adminRow.appendChild(expireBtn);
+      }
+
+      inner.appendChild(adminRow);
+
+      // Edit Project Form (hidden by default)
+      if (canEdit) {
+        const editForm = document.createElement('div');
+        editForm.className = 'edit-project-form';
+        editForm.id = editFormId;
+        editForm.style.display = 'none';
+        editForm.innerHTML = `
+          <div class="edit-form-row">
+            <div class="edit-form-field">
+              <label class="edit-form-label">Project Title</label>
+              <input class="edit-form-input" id="ef-title-${projectKey}" value="${escHtml(first.project || first.project_title || '')}" placeholder="Project title">
+            </div>
+            <div class="edit-form-field">
+              <label class="edit-form-label">Category</label>
+              <select class="edit-form-select" id="ef-cat-${projectKey}">
+                ${['General','HVAC','Fire','Electrical','Security','Plumbing','Lift','Legal','Other'].map(c =>
+                  `<option value="${c}"${(first.category||'General')===c?' selected':''}>${c}</option>`).join('')}
+              </select>
+            </div>
+            <div class="edit-form-field">
+              <label class="edit-form-label">Priority</label>
+              <select class="edit-form-select" id="ef-pri-${projectKey}">
+                ${['Normal','High','Urgent'].map(p =>
+                  `<option value="${p}"${(parsed.priority||'Normal')===p?' selected':''}>${p}</option>`).join('')}
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:6px">
+              <button class="btn-mgmt btn-mgmt-blue" onclick="saveProjectEdit('${projectKey}', ${JSON.stringify(group.map(q=>q.id))})">💾 Save</button>
+              <button class="btn-mgmt" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="document.getElementById('${editFormId}').style.display='none'">Cancel</button>
+            </div>
+          </div>`;
+        inner.appendChild(editForm);
+      }
+    }
+
+    // All Votes
+    const votesTitle = document.createElement('div');
+    votesTitle.className = 'mgmt-section-title';
+    votesTitle.textContent = '📊 All Votes';
+    inner.appendChild(votesTitle);
+
+    const votesGrid = document.createElement('div');
+    votesGrid.className = 'mgmt-detail-votes';
+    const membersToShow = committeeMembers.length > 0 ? committeeMembers : [...new Map(votedRows.map(v => [v.user_email, { email: v.user_email, name: allProfiles[v.user_email] || v.user_email.split('@')[0] }])).values()];
+    if (membersToShow.length) {
+      membersToShow.forEach(m => {
+        const vRow = projectVotes.find(v => v.user_email === m.email);
+        const cell = document.createElement('div');
+        cell.className = 'mgmt-vote-cell';
+        let vLabel = '—'; let vColor = '#9ca3af';
+        if (vRow?.vote && vRow.vote !== '') {
+          const selQ = vRow.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+          vLabel = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + (vRow.vote === 'approve' ? 'Approve' : vRow.vote === 'hold' ? 'Hold' : 'Decline');
+          vColor = vRow.vote === 'approve' ? '#16a34a' : vRow.vote === 'hold' ? '#ca8a04' : '#dc2626';
+        }
+        cell.innerHTML = `<span class="mgmt-vote-name">${escHtml(m.name)}</span><span class="mgmt-vote-val" style="color:${vColor}">${vLabel}</span>`;
+        votesGrid.appendChild(cell);
+      });
+    } else {
+      votesGrid.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:6px">No votes recorded</div>';
+    }
+    inner.appendChild(votesGrid);
+
+    // All Comments
+    const commentsTitle = document.createElement('div');
+    commentsTitle.className = 'mgmt-section-title';
+    commentsTitle.textContent = '💬 All Comments';
+    inner.appendChild(commentsTitle);
+
+    const commentsList = document.createElement('div');
+    commentsList.className = 'mgmt-comments-list';
+    const commentRows = projectVotes.filter(v => v.comment && v.comment.trim());
+    if (commentRows.length) {
+      commentRows.forEach(v => {
+        const item = document.createElement('div');
+        item.className = 'mgmt-comment-item';
+        const author = allProfiles[v.user_email] || v.user_email.split('@')[0];
+        item.innerHTML = `<span style="font-weight:600;color:#1f2937">${escHtml(author)}:</span><span style="color:#4b5563;margin-left:6px">${escHtml(v.comment)}</span>`;
+        commentsList.appendChild(item);
+      });
+    } else {
+      commentsList.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:4px">No comments</div>';
+    }
+    inner.appendChild(commentsList);
+
+    // Quotes / Files
+    const quotesTitle = document.createElement('div');
+    quotesTitle.className = 'mgmt-section-title';
+    quotesTitle.textContent = '📄 Quotes';
+    inner.appendChild(quotesTitle);
+
+    const quotesList = document.createElement('div');
+    quotesList.className = 'mgmt-quotes-list';
+    group.forEach(q => {
+      const qp    = parseComment(q.comment);
+      const files = Array.isArray(qp.files) ? qp.files : [];
+      const row   = document.createElement('div');
+      row.className = 'mgmt-quote-row';
+      row.innerHTML = `
+        <div>
+          <span style="font-weight:600;color:#1f2937">${escHtml(q.vendor || '—')}</span>
+          <span style="color:#64748b;margin-left:8px">$${Number(q.amount||0).toLocaleString('en-AU')} + GST</span>
+          <span class="status-badge status-${q.status}" style="margin-left:8px">${q.status.toUpperCase()}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${files.map(f => `<a class="detail-file-link" href="#" onclick="openFilePreview(${JSON.stringify(f.url)},${JSON.stringify(f.name)});return false;">📎 ${escHtml(f.name)}</a>`).join('')}
+        </div>`;
+      quotesList.appendChild(row);
+    });
+    inner.appendChild(quotesList);
+
+    panel.appendChild(inner);
+    card.appendChild(panel);
+    container.appendChild(card);
   });
-  html += '</tbody></table>';
-  container.innerHTML = html;
 }
 
 /*
@@ -1005,13 +1342,8 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
       const { error } = await supabase.from('quotes').update({ status: 'declined' }).in('id', allIds);
       if (error) throw error;
     } else if (status === 'onhold') {
-      if (!quoteId) { showToast('Select a vendor first', true); if (triggerBtn) triggerBtn.disabled = false; return; }
-      // selected → onhold, others → declined
-      if (otherIds.length) {
-        const { error } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
-        if (error) throw error;
-      }
-      const { error } = await supabase.from('quotes').update({ status: 'onhold' }).eq('id', quoteId);
+      // ALL quotes in project → onhold (entire project held, nothing declined)
+      const { error } = await supabase.from('quotes').update({ status: 'onhold' }).in('id', allIds);
       if (error) throw error;
     }
     showToast(`Quote set to ${status}`);
@@ -1081,6 +1413,7 @@ window.resendToVoting = async function(quoteId, projectId) {
       .delete()
       .eq('project_id', projectId);
     if (delErr) throw delErr;
+    actionLocks.clear();  // clear all UI locks so voting buttons re-enable
 
     // Reopen all quotes in this project
     const projectQuoteIds = allQuotes.filter(q => (q.project_id || q.id) === projectId).map(q => q.id).filter(Boolean);
@@ -1106,6 +1439,96 @@ window.filterArchive = function(type) {
     btn.classList.toggle('btn-pill-active', btn.dataset.filter === type);
   });
   renderArchiveTable(allQuotes.filter(q => ['draft','onhold','declined','approved','expired'].includes(q.status)));
+};
+
+// Mark all quotes in project as expired (non-destructive)
+window.markExpired = async function(group, btn) {
+  if (!Array.isArray(group) || !group.length) return;
+  if (!confirm('Mark this project as Expired? This will not delete any data.')) return;
+  if (btn) btn.disabled = true;
+  try {
+    const ids = group.map(q => q.id).filter(Boolean);
+    const { error } = await supabase.from('quotes').update({ status: 'expired' }).in('id', ids);
+    if (error) throw error;
+    showToast('Project marked as expired');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('markExpired error:', e);
+    showToast('Failed to mark expired', true);
+    if (btn) btn.disabled = false;
+  }
+};
+
+// Save project edits: title, category, priority
+window.saveProjectEdit = async function(projectKey, quoteIds) {
+  const titleEl = document.getElementById('ef-title-' + projectKey);
+  const catEl   = document.getElementById('ef-cat-'   + projectKey);
+  const priEl   = document.getElementById('ef-pri-'   + projectKey);
+  if (!titleEl || !catEl || !priEl) return;
+
+  const newTitle = titleEl.value.trim();
+  const newCat   = catEl.value;
+  const newPri   = priEl.value;
+  if (!newTitle) { showToast('Project title cannot be empty', true); return; }
+
+  try {
+    // Batch update: single upsert instead of N queries
+    const updatedQuotes = quoteIds.map(qid => {
+      const q = allQuotes.find(x => x.id === qid);
+      if (!q) return null;
+      const parsed    = parseComment(q.comment);
+      parsed.priority = newPri;
+      return {
+        id:            qid,
+        project:       newTitle,
+        project_title: newTitle,
+        category:      newCat,
+        comment:       JSON.stringify(parsed)
+      };
+    }).filter(Boolean);
+    const { error } = await supabase
+      .from('quotes')
+      .upsert(updatedQuotes, { onConflict: 'id' });
+    if (error) throw error;
+    showToast('Project updated');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('saveProjectEdit error:', e);
+    showToast('Failed to update project', true);
+  }
+};
+
+// Open quote create modal pre-filled for existing project
+window.openAddQuoteToProject = function(projectId, projectName, category, priority) {
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  // Add existing project as option and select it
+  const opt = document.createElement('option');
+  opt.value       = projectId;
+  opt.textContent = projectName;
+  sel.appendChild(opt);
+  sel.value = projectId;
+
+  // Pre-fill and lock category / priority
+  document.getElementById('quoteProject').style.display  = 'none';
+  document.getElementById('quoteProject').value          = '';
+  document.getElementById('quoteCategory').value         = category;
+  document.getElementById('quotePriority').value         = priority;
+  document.getElementById('quoteCategory').disabled      = true;
+  document.getElementById('quotePriority').disabled      = true;
+
+  pendingFiles = [];
+  document.getElementById('fileList').innerHTML       = '';
+  document.getElementById('quoteEditId').value        = '';
+  document.getElementById('quoteModalTitle').textContent = 'Add Quote to ' + projectName;
+  document.getElementById('deleteQuoteBtn').style.display = 'none';
+  document.getElementById('quoteVendor').value  = '';
+  document.getElementById('quoteAmount').value  = '';
+  document.getElementById('quoteNotes').value   = '';
+  document.getElementById('quoteInternalNote').value = '';
+  document.getElementById('quoteModal').classList.add('open');
 };
 
 // File upload
@@ -1225,7 +1648,14 @@ window.saveQuote = async function() {
       id: quoteId, project_id: projectId,
       project: projectName, project_title: projectName,
       vendor, amount, category, notes,
-      comment: commentPayload, status: 'draft',
+      comment: commentPayload,
+      status: isNew ? 'draft' : (() => {
+        const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId);
+        if (existing.some(q => q.status === 'voting'))  return 'voting';
+        if (existing.every(q => q.status === 'onhold')) return 'onhold';
+        if (existing.some(q => q.status === 'onhold'))  return 'onhold';
+        return 'draft';
+      })(),
       created_at: new Date().toISOString()
     });
     if (error) throw error;
