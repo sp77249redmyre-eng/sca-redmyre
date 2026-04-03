@@ -353,9 +353,59 @@ function renderPendingQuotes(quotes) {
 
     const projectVotes = getProjectVotes(projectKey);
     const votedRows    = projectVotes.filter(v => v.vote && v.vote !== '');
-    const approvals    = votedRows.filter(v => v.vote === 'approve').length;
-    const declines     = votedRows.filter(v => v.vote === 'decline').length;
-    const holds        = votedRows.filter(v => v.vote === 'hold').length;
+
+    // ── Unified Voting Engine ──────────────────────────────
+    // Per-vendor approve counts (only votes that selected that vendor)
+    const vendorApproveMap = {};
+    group.forEach(q => { vendorApproveMap[q.id] = 0; });
+    votedRows.forEach(v => {
+      if (v.vote === 'approve' && v.selected_quote_id && vendorApproveMap[v.selected_quote_id] !== undefined) {
+        vendorApproveMap[v.selected_quote_id]++;
+      }
+    });
+
+    const totalApprovals = votedRows.filter(v => v.vote === 'approve').length;
+    const declines       = votedRows.filter(v => v.vote === 'decline').length;
+    const holds          = votedRows.filter(v => v.vote === 'hold').length;
+
+    // Max approvals for any single vendor
+    const vendorApproveCounts = Object.values(vendorApproveMap);
+    const maxVendorApprovals  = vendorApproveCounts.length > 0 ? Math.max(...vendorApproveCounts) : 0;
+    // Count vendors tied at the max
+    const vendorsAtMax = vendorApproveCounts.filter(c => c === maxVendorApprovals && c > 0).length;
+
+    // For single-quote projects use total approvals directly
+    const isSingle   = group.length === 1;
+    const approvals  = isSingle ? totalApprovals : maxVendorApprovals;
+
+    // Tie: multiple vendors share highest approval count
+    const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
+
+    // Conflict: someone reaching approve threshold AND decline threshold simultaneously
+    const hasConflict = totalApprovals >= RULES.approvalsRequired && declines >= RULES.declinesToAutoDecline;
+
+    // Distributed: no vendor has majority, votes spread across vendors
+    const hasDistributed = !isSingle && maxVendorApprovals > 0 && maxVendorApprovals < RULES.approvalsRequired
+      && (totalApprovals - maxVendorApprovals) > 0;
+
+    // ── Result determination ───────────────────────────────
+    // Priority: Approved > Declined > Hold > Pending
+    // Hold overrides Approved if tie or conflict
+    const resultApproved = approvals >= RULES.approvalsRequired && !hasTie && !hasConflict;
+    const resultDeclined = declines >= RULES.declinesToAutoDecline && !resultApproved;
+    const resultHold     = !resultApproved && !resultDeclined && (
+      hasTie ||
+      hasConflict ||
+      (holds >= RULES.holdsToAutoHold) ||
+      hasDistributed
+    );
+    const resultDetermined = resultApproved || resultDeclined || resultHold;
+
+    // Winning vendor (for approved result)
+    const winnerQuoteId = resultApproved && !isSingle
+      ? Object.entries(vendorApproveMap).find(([,c]) => c === maxVendorApprovals)?.[0] || null
+      : null;
+    const winnerQuote = winnerQuoteId ? (group.find(q => q.id === winnerQuoteId) ?? selectedQuote) : selectedQuote;
 
     const card = document.createElement('div');
     card.className = 'project-card';
@@ -507,15 +557,15 @@ function renderPendingQuotes(quotes) {
         const btn = document.createElement('button');
         btn.className = `btn-action btn-${type}`;
         btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        if (userAlreadyVoted) {
+        if (userAlreadyVoted || resultDetermined) {
           btn.disabled = true;
-          btn.title = 'You have already voted';
+          btn.title = userAlreadyVoted ? 'You have already voted' : 'Voting is closed – result determined';
         } else {
           btn.onclick = () => {
             const vRow = getUserVoteRow(projectKey);
-            // PATCH 3: block vote if no vendor selected
+            // Block vote if no vendor selected
             if (!vRow?.selected_quote_id) { showToast('Please select a vendor first', true); return; }
-            // PATCH 4: hard re-check vote lock
+            // Hard re-check vote lock
             if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); btn.disabled = true; return; }
             doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
           };
@@ -604,7 +654,7 @@ function renderPendingQuotes(quotes) {
     const voteGrid = document.createElement('div');
     voteGrid.className = 'voting-grid';
 
-    const isFinalized = ['approved','declined','onhold'].includes(group[0]?.status);
+    const isFinalized = ['approved','declined','onhold'].includes(group[0]?.status) || resultDetermined;
 
     // Use full committee list if loaded, otherwise fall back to voters only
     const membersToShow = committeeMembers.length > 0
@@ -644,34 +694,38 @@ function renderPendingQuotes(quotes) {
     }
     votingSection.appendChild(voteGrid);
 
-    // Result
+    // Result box
     const resultBox = document.createElement('div');
-    let resultClass = 'result-pending', resultHTML = '📋 RESULT: PENDING';
-    if (selectedQuote && approvals >= RULES.approvalsRequired) {
+    let resultClass = 'result-pending';
+    let resultHTML  = '📋 RESULT: PENDING';
+
+    if (resultApproved) {
       resultClass = 'result-approved';
-      resultHTML  = `✔ ${escHtml(selectedQuote.vendor)} selected by majority`;
-    } else if (declines >= RULES.declinesToAutoDecline) {
+      const displayVendor = winnerQuote ? escHtml(winnerQuote.vendor) : (selectedQuote ? escHtml(selectedQuote.vendor) : '—');
+      resultHTML  = '✔ ' + displayVendor + ' selected by majority';
+    } else if (resultDeclined) {
       resultClass = 'result-declined';
       resultHTML  = '❌ RESULT: Declined';
-    } else if (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired) {
+    } else if (resultHold) {
       resultClass = 'result-onhold';
-      resultHTML  = '⏸ RESULT: On Hold';
+      let holdReason = '';
+      if (hasTie)        holdReason = ' (Tie)';
+      else if (hasConflict)  holdReason = ' (Conflict)';
+      else if (hasDistributed) holdReason = ' (Split votes)';
+      resultHTML  = '⏸ RESULT: On Hold' + holdReason;
     }
-    resultBox.className = `result-box ${resultClass}`;
+
+    resultBox.className = 'result-box ' + resultClass;
     resultBox.innerHTML = resultHTML;
     votingSection.appendChild(resultBox);
 
-    // Confirm button
-    const thresholdMet =
-      (selectedQuote && approvals >= RULES.approvalsRequired) ||
-      declines >= RULES.declinesToAutoDecline ||
-      (holds >= RULES.holdsToAutoHold && approvals < RULES.approvalsRequired);
-
-    if (role === 'admin' && isVoting && thresholdMet) {
+    // Confirm button – only when result determined
+    if (role === 'admin' && isVoting && resultDetermined) {
+      const confirmQuoteId = resultApproved ? (winnerQuoteId || selectedQuote?.id || null) : (selectedQuote?.id || null);
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'confirm-btn';
       confirmBtn.innerHTML = '✔ Confirm &amp; Send Notification';
-      confirmBtn.onclick = () => confirmSelection(selectedQuote?.id || null, group, confirmBtn);
+      confirmBtn.onclick = () => confirmSelection(confirmQuoteId, group, confirmBtn);
       votingSection.appendChild(confirmBtn);
     }
 
@@ -767,6 +821,42 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
     showToast(msgs[key] || '✔ Saved');
     await loadData();
     renderQuotes();
+
+    // Notify admin when voting result is first determined (non-blocking)
+    if (fields.vote) {
+      try {
+        const pVotes   = getProjectVotes(projectId);
+        const pVoted   = pVotes.filter(v => v.vote && v.vote !== '');
+        const pGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+        if (pGroup.length > 0) {
+          const pFirst   = pGroup[0];
+          const isSingle = pGroup.length === 1;
+          const vMap     = {};
+          pGroup.forEach(q => { vMap[q.id] = 0; });
+          pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && vMap[v.selected_quote_id] !== undefined) vMap[v.selected_quote_id]++; });
+          const maxA     = isSingle ? pVoted.filter(v => v.vote === 'approve').length : Math.max(...Object.values(vMap), 0);
+          const cntAtMax = Object.values(vMap).filter(c => c === maxA && c > 0).length;
+          const pDec     = pVoted.filter(v => v.vote === 'decline').length;
+          const pHold    = pVoted.filter(v => v.vote === 'hold').length;
+          const pApproved  = maxA >= RULES.approvalsRequired && !(cntAtMax > 1) && !(maxA >= RULES.approvalsRequired && pDec >= RULES.declinesToAutoDecline);
+          const pDeclined  = pDec >= RULES.declinesToAutoDecline && !pApproved;
+          const pHoldResult = !pApproved && !pDeclined && (cntAtMax > 1 || (maxA >= RULES.approvalsRequired && pDec >= RULES.declinesToAutoDecline) || pHold >= RULES.holdsToAutoHold);
+          if (pApproved || pDeclined || pHoldResult) {
+            const resultLabel = pApproved ? 'Approved' : pDeclined ? 'Declined' : 'On Hold';
+            await fetch('/api/send-quote-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'result_reached',
+                project: pFirst.project || pFirst.project_title || 'Project',
+                result: resultLabel,
+                quotes: pGroup.map(q => ({ vendor: q.vendor, amount: q.amount || 0 }))
+              })
+            }).catch(e => console.warn('Result email failed:', e));
+          }
+        }
+      } catch(notifyErr) { console.warn('Result notification error:', notifyErr); }
+    }
   } catch(e) {
     console.error('doUpsert error:', JSON.stringify(e));
     showToast('Failed to save. Please try again.', true);
