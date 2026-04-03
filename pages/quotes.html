@@ -1385,7 +1385,10 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
     if (calcResult === 'approved') {
       // Winner → approved, others → declined
       if (!quoteId) { showToast('No vendor selected', true); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = '✔ Confirm & Send Notification'; } return; }
-      const { error: eA } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+      const { error: eA } = await supabase.from('quotes').update({
+        status: 'approved',
+        work_start_date: new Date().toISOString().split('T')[0]
+      }).eq('id', quoteId);
       if (eA) throw eA;
       if (otherIds.length) {
         const { error: eD } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
