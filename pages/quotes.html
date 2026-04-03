@@ -602,11 +602,21 @@ function renderPendingQuotes(quotes) {
           btn.title = userAlreadyVoted ? 'You have already voted' : 'Voting is closed – result determined';
         } else {
           btn.onclick = () => {
+            // Instant UI lock – before any async, prevents double-click & post-result votes
+            btn.disabled = true;
+            actionButtons.querySelectorAll('button').forEach(b => { b.disabled = true; });
             const vRow = getUserVoteRow(projectKey);
+            // Re-check: result may have been determined since last render
+            if (resultDetermined) { showToast('Voting is already closed', true); return; }
             // Block vote if no vendor selected (skip for single quote – auto-selected)
-            if (!isSingle && !vRow?.selected_quote_id) { showToast('Please select a vendor first', true); return; }
+            if (!isSingle && !vRow?.selected_quote_id) {
+              showToast('Please select a vendor first', true);
+              btn.disabled = false;
+              actionButtons.querySelectorAll('button').forEach(b => { b.disabled = false; });
+              return;
+            }
             // Hard re-check vote lock
-            if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); btn.disabled = true; return; }
+            if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); return; }
             doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
           };
         }
@@ -819,11 +829,30 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
 
   try {
-    // PATCH 4: Hard vote lock – re-fetch from local state, block any overwrite
+    // Hard vote lock – re-fetch from local state, block any overwrite
     if (fields.vote !== undefined && fields.vote !== null) {
       const current = getUserVoteRow(projectId);
       if (current?.vote && current.vote !== '') {
         showToast('You have already voted', true);
+        if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
+        return;
+      }
+      // Result-lock guard: recalculate from latest allVotes before allowing vote
+      const guardGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+      const guardVoted   = allVotes.filter(v => v.project_id === projectId && v.vote && v.vote !== '');
+      const guardSingle  = guardGroup.length === 1;
+      const gVMap        = {};
+      guardGroup.forEach(q => { gVMap[q.id] = 0; });
+      guardVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && gVMap[v.selected_quote_id] !== undefined) gVMap[v.selected_quote_id]++; });
+      const gVals        = Object.values(gVMap);
+      const gMaxA        = guardSingle ? guardVoted.filter(v => v.vote === 'approve').length : (gVals.length > 0 ? Math.max(...gVals) : 0);
+      const gCntMax      = gVals.filter(c => c === gMaxA && c > 0).length;
+      const gHasTie      = !guardSingle && gCntMax > 1 && gMaxA > 0;
+      const gDec         = guardVoted.filter(v => v.vote === 'decline').length;
+      const gHold        = guardVoted.filter(v => v.vote === 'hold').length;
+      const gResult      = calculateResult({ approvals: gMaxA, declines: gDec, holds: gHold, hasTie: gHasTie });
+      if (gResult !== 'pending') {
+        showToast('Voting is already closed – result determined', true);
         if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
         return;
       }
