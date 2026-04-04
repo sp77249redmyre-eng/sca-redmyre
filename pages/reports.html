@@ -446,6 +446,9 @@ function renderQuotesList() {
           <div class="detail-label">Attached Files</div>
           ${filesHtml}
         </div>
+        ${role==='admin'?`<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end">
+          <button onclick="archiveReport('${q.id}');event.stopPropagation();" style="padding:7px 18px;background:#fff;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">🗑 Remove from Reports</button>
+        </div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -456,6 +459,19 @@ function renderQuotesList() {
     else { arr.textContent='↕'; arr.className='sort-arrow'; }
   });
 }
+
+window.archiveReport = async function(id) {
+  if (!confirm('Remove this record from Reports? The data will be preserved but hidden.')) return;
+  try {
+    const { error } = await supabase.from('quotes').update({ archived: true }).eq('id', id);
+    if (error) throw error;
+    showToast('Record archived');
+    await loadReport();
+  } catch(e) {
+    console.error('archiveReport error:', e);
+    showToast('Failed to archive', true);
+  }
+};
 
 window.sortQuotes = (key) => {
   if (currentSortKey===key) { currentSortDir=currentSortDir==='asc'?'desc':'asc'; }
