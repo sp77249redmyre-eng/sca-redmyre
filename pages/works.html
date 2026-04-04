@@ -341,15 +341,11 @@ async function loadWorks() {
   const { data } = await supabase
     .from('quotes')
     .select('*')
-    .in('work_status', ['scheduled','in_progress'])
     .is('completion_date', null)
     .eq('archived', false)
     .order('created_at', {ascending: false});
   
-  allWorks = (data || []).map(w => {
-    if (!w.work_status) w.work_status = 'scheduled';
-    return w;
-  });
+  allWorks = data || [];
 
   renderWorks();
 }
@@ -513,7 +509,8 @@ window.moveToReports = async (quoteId) => {
     const { error } = await supabase
       .from('quotes')
       .update({ 
-        completion_date: completionDate
+        completion_date: completionDate,
+        work_status: 'completed'
       })
       .eq('id', quoteId);
 
