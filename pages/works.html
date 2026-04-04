@@ -394,7 +394,7 @@ function workRow(w) {
 function buildAccordion(w) {
   const parsed = parseComment(w.comment);
   const displayStart = new Date(w.work_start_date || w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
-  const updated = displayStart;
+  const updated = w.updated_at ? new Date(w.updated_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}) : new Date(w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
   const ws = w.work_status || 'scheduled';
 
   let descHtml = w.notes ? `
@@ -712,7 +712,8 @@ window.saveEdit = async () => {
         category: category,
         notes: notes,
         comment: updatedComment,
-        work_start_date: workStartDate || null
+        work_start_date: workStartDate || null,
+        updated_at: updatedDate || new Date().toISOString().split('T')[0]
       })
       .eq('id', id);
 

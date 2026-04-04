@@ -1180,10 +1180,12 @@ function renderArchiveTable(quotes) {
         eb.className = 'btn-mgmt btn-mgmt-blue'; eb.textContent = '✏️ Edit';
         eb.onclick = () => editQuote(q.id);
         rowRight.appendChild(eb);
-        const db = document.createElement('button');
-        db.className = 'btn-mgmt btn-mgmt-red'; db.textContent = '🗑 Delete';
-        db.onclick = () => deleteQuoteFromArchive(q.id);
-        rowRight.appendChild(db);
+        if (!q.work_status) {
+          const db = document.createElement('button');
+          db.className = 'btn-mgmt btn-mgmt-red'; db.textContent = '🗑 Delete';
+          db.onclick = () => deleteQuoteFromArchive(q.id);
+          rowRight.appendChild(db);
+        }
       }
       row.appendChild(rowRight);
       quotesList.appendChild(row);
@@ -1489,7 +1491,7 @@ window.resendToVoting = async function(quoteId, projectId) {
     actionLocks.clear();  // clear all UI locks so voting buttons re-enable
 
     // Reopen all quotes in this project
-    const projectQuoteIds = allQuotes.filter(q => (q.project_id || q.id) === projectId).map(q => q.id).filter(Boolean);
+    const projectQuoteIds = allQuotes.filter(q => (q.project_id || q.id) === projectId && q.status !== 'removed').map(q => q.id).filter(Boolean);
     if (projectQuoteIds.length) {
       const { error } = await supabase.from('quotes').update({ status: 'voting', hold_reason: null }).in('id', projectQuoteIds);
       if (error) throw error;
@@ -1538,7 +1540,7 @@ window.editQuote = function(id) {
   document.getElementById('quoteModal').classList.add('open');
 };
 
-// Remove quote from Management (status=removed). Works/Reports data preserved.
+// Delete individual quote (quote-level, not project-level)
 window.deleteQuoteFromArchive = async function(id) {
   if (!confirm('Remove this quote from Management?')) return;
   try {
@@ -1566,7 +1568,7 @@ window.filterArchive = function(type) {
   document.querySelectorAll('#archiveFilterBar button').forEach(btn => {
     btn.classList.toggle('btn-pill-active', btn.dataset.filter === type);
   });
-  renderArchiveTable(allQuotes.filter(q => ['draft','onhold','declined','approved','expired'].includes(q.status)));
+  renderArchiveTable(allQuotes.filter(q => ['draft','onhold','declined','approved','expired'].includes(q.status) && q.status !== 'removed'));
 };
 
 // Mark all quotes in project as expired (non-destructive)
@@ -1775,7 +1777,7 @@ window.saveQuote = async function() {
     // Determine status — block adding to approved project
     let newStatus = 'draft';
     if (!isNew) {
-      const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId);
+      const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId && q.status !== 'removed');
       if (existing.some(q => q.status === 'approved')) {
         showToast('Cannot add quote to an approved project', true);
         btn.disabled = false; btn.textContent = 'Save Quote';
@@ -1794,6 +1796,7 @@ window.saveQuote = async function() {
       comment: commentPayload,
       status: newStatus,
       is_emergency: false,
+      archived: false,
       created_at: new Date().toISOString()
     });
     if (error) throw error;
