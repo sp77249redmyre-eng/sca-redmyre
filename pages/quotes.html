@@ -304,6 +304,17 @@ let user        = null;
 let role        = 'observer';
 let allProfiles = {};
 let committeeMembers = [];
+
+const COMMITTEE_ORDER = [
+  { name: 'Jimmy',    role: 'Chairman'          },
+  { name: 'Michael',  role: 'Treasurer'         },
+  { name: 'Michelle', role: 'Secretary'         },
+  { name: 'Sudesh',   role: 'Committee Member'  },
+  { name: 'Niranjan', role: 'Committee Member'  },
+  { name: 'Sarah',    role: 'Committee Member'  },
+  { name: 'Laura',    role: 'Committee Member'  },
+  { name: 'Eva',      role: 'Committee Member'  }
+];
 let expandedVendors = {};
 let archiveFilter   = 'all';
 let pendingFiles    = [];
@@ -361,7 +372,15 @@ async function init() {
   committeeMembers = [];
   (profiles || []).forEach(p => {
     allProfiles[p.email] = p.full_name || p.email.split('@')[0];
-    if (p.role === 'committee') committeeMembers.push({ email: p.email, name: p.full_name || p.email.split('@')[0] });
+  });
+  // COMMITTEE_ORDER 기준으로 고정 순서 + role 매핑
+  COMMITTEE_ORDER.forEach(member => {
+    const profile = (profiles || []).find(p => (p.full_name || '').trim().toLowerCase().startsWith(member.name.toLowerCase()));
+    committeeMembers.push({
+      email: profile ? profile.email : '',
+      name: member.name,
+      committeeRole: member.role
+    });
   });
   if (role === 'admin') {
     const btn = document.getElementById('createProjectBtn');
@@ -410,8 +429,8 @@ function getProjectVotes(projectId) {
 }
 
 function renderQuotes() {
-  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && q.status !== 'removed' && !q.work_status && !q.completion_date && !q.archived && q.is_emergency !== true);
-  const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status) && q.status !== 'removed' && q.is_emergency !== true);
+  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && q.status !== 'removed' && q.work_status === null && q.completion_date === null && !q.archived && q.is_emergency !== true);
+  const archived = allQuotes.filter(q => ['onhold','declined','expired'].includes(q.status) && q.status !== 'approved' && q.status !== 'removed' && q.is_emergency !== true);
   renderPendingQuotes(active);
   renderArchiveTable(archived);
 }
@@ -798,10 +817,7 @@ function renderPendingQuotes(quotes) {
     // Use full committee list if loaded, otherwise fall back to voters only
     const membersToShow = committeeMembers.length > 0
       ? committeeMembers
-      : [...new Map(
-          projectVotes.filter(v => v.vote && v.vote !== '')
-            .map(v => [v.user_email, { email: v.user_email, name: allProfiles[v.user_email] || v.user_email.split('@')[0] }])
-        ).values()];
+      : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
 
     if (membersToShow.length > 0) {
       membersToShow.forEach(member => {
@@ -822,7 +838,8 @@ function renderPendingQuotes(quotes) {
           valueText = 'Closed';
         }
 
-        cell.innerHTML = '<span class="vote-name">' + escHtml(member.name) + '</span><span class="vote-value ' + valueCls + '">' + valueText + '</span>';
+        const memberLabel = member.committeeRole ? escHtml(member.name) + ' (' + escHtml(member.committeeRole) + ')' : escHtml(member.name);
+        cell.innerHTML = '<span class="vote-name">' + memberLabel + '</span><span class="vote-value ' + valueCls + '">' + valueText + '</span>';
         voteGrid.appendChild(cell);
       });
     } else {
@@ -1104,19 +1121,20 @@ function renderArchiveTable(quotes) {
 
     const votesGrid = document.createElement('div');
     votesGrid.className = 'mgmt-detail-votes';
-    const membersToShow = committeeMembers.length > 0 ? committeeMembers : [...new Map(votedRows.map(v => [v.user_email, { email: v.user_email, name: allProfiles[v.user_email] || v.user_email.split('@')[0] }])).values()];
+    const membersToShow = committeeMembers.length > 0 ? committeeMembers : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
     if (membersToShow.length) {
       membersToShow.forEach(m => {
         const vRow = projectVotes.find(v => v.user_email === m.email);
         const cell = document.createElement('div');
         cell.className = 'mgmt-vote-cell';
-        let vLabel = '—'; let vColor = '#9ca3af';
+        let vLabel = 'Pending'; let vColor = '#9ca3af';
         if (vRow?.vote && vRow.vote !== '') {
           const selQ = vRow.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
           vLabel = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + (vRow.vote === 'approve' ? 'Approve' : vRow.vote === 'hold' ? 'Hold' : 'Decline');
           vColor = vRow.vote === 'approve' ? '#16a34a' : vRow.vote === 'hold' ? '#ca8a04' : '#dc2626';
         }
-        cell.innerHTML = `<span class="mgmt-vote-name">${escHtml(m.name)}</span><span class="mgmt-vote-val" style="color:${vColor}">${vLabel}</span>`;
+        const mLabel = m.committeeRole ? escHtml(m.name) + ' (' + escHtml(m.committeeRole) + ')' : escHtml(m.name);
+        cell.innerHTML = `<span class="mgmt-vote-name">${mLabel}</span><span class="mgmt-vote-val" style="color:${vColor}">${vLabel}</span>`;
         votesGrid.appendChild(cell);
       });
     } else {
@@ -1568,7 +1586,7 @@ window.filterArchive = function(type) {
   document.querySelectorAll('#archiveFilterBar button').forEach(btn => {
     btn.classList.toggle('btn-pill-active', btn.dataset.filter === type);
   });
-  renderArchiveTable(allQuotes.filter(q => ['draft','onhold','declined','approved','expired'].includes(q.status) && q.status !== 'removed'));
+  renderArchiveTable(allQuotes.filter(q => ['onhold','declined','expired'].includes(q.status) && q.status !== 'approved' && q.status !== 'removed'));
 };
 
 // Mark all quotes in project as expired (non-destructive)
