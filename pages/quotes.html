@@ -374,7 +374,7 @@ async function init() {
 async function loadData() {
   try {
     const [qRes, vRes] = await Promise.all([
-      supabase.from('quotes').select('*').eq('archived', false).order('created_at', { ascending: false }),
+      supabase.from('quotes').select('*').eq('archived', false).or('is_emergency.eq.false,is_emergency.is.null').order('created_at', { ascending: false }),
       supabase.from('votes').select('*')
     ]);
     allQuotes = qRes.data || [];
@@ -410,8 +410,8 @@ function getProjectVotes(projectId) {
 }
 
 function renderQuotes() {
-  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && !q.work_status && !q.completion_date && !q.archived);
-  const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status));
+  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && !q.work_status && !q.completion_date && !q.archived && q.is_emergency !== true);
+  const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status) && q.is_emergency !== true);
   renderPendingQuotes(active);
   renderArchiveTable(archived);
 }
@@ -1780,6 +1780,7 @@ window.saveQuote = async function() {
       if (existing.some(q => q.status === 'voting'))   newStatus = 'voting';
       else if (existing.some(q => q.status === 'onhold'))   newStatus = 'voting';
       else if (existing.some(q => q.status === 'declined')) newStatus = 'voting';
+      else if (existing.some(q => q.status === 'expired'))  newStatus = 'voting';
     }
 
     const { error } = await supabase.from('quotes').insert({
@@ -1788,18 +1789,26 @@ window.saveQuote = async function() {
       vendor, amount, category, notes,
       comment: commentPayload,
       status: newStatus,
+      is_emergency: false,
       created_at: new Date().toISOString()
     });
     if (error) throw error;
 
-    // Reopen existing onhold/declined quotes in same project → voting
+    // Reopen existing onhold/declined/expired quotes → voting
+    // votes 먼저 삭제 → 그 다음 status 변경 (순서 중요)
     if (!isNew) {
       const existingIds = allQuotes
-        .filter(q => (q.project_id || q.id) === projectId && ['onhold','declined'].includes(q.status))
+        .filter(q => (q.project_id || q.id) === projectId && ['onhold','declined','expired'].includes(q.status))
         .map(q => q.id).filter(Boolean);
       if (existingIds.length) {
-        await supabase.from('quotes').update({ status: 'voting' }).in('id', existingIds);
+        // 1. votes 먼저 삭제 (기존 결과 완전 제거)
         await supabase.from('votes').delete().eq('project_id', projectId);
+        // 2. status → voting + work_status 초기화 (Works에 안뜨도록)
+        await supabase.from('quotes').update({
+          status: 'voting',
+          work_status: null,
+          completion_date: null
+        }).in('id', existingIds);
       }
     }
     pendingFiles = [];
