@@ -8,39 +8,710 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
 <meta name="theme-color" content="#1e3a8a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<style>
+.content{padding:24px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--blue-600)}
+.badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;display:inline-block}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow-text)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-gray{background:var(--border-light);color:var(--text-2)}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+.works-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.work-row{display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border-light);cursor:pointer}
+.work-row:hover{background:var(--bg)}
+.work-title-text{font-size:13px;font-weight:600}
+.work-meta-text{font-size:11px;color:var(--muted)}
+.work-accordion{display:none;background:var(--bg);border-top:1px solid var(--border-light);padding:18px 20px}
+.work-accordion.open{display:block}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+.inline-viewer{margin:12px 0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;margin-top:6px;cursor:pointer}
+.file-icon{font-size:16px}
+.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-del{color:#ef4444;cursor:pointer;font-size:16px;padding:0 4px}
+.status-select-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px}
+.status-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.status-btn.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+.status-btn:hover{border-color:var(--blue-600)}
+.completion-date-box{background:#ecfdf5;border:1px solid #86efac;border-radius:10px;padding:12px;margin-top:10px}
+
+/* 모바일 최적화 */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .stat-card{padding:12px}
+  .stat-num{font-size:20px}
+  
+  /* 테이블 헤더 숨기기 */
+  .works-card > div:first-child{display:none!important}
+  
+  /* 작업 행을 카드형으로 - 강제 적용 */
+  .work-row{
+    display:block!important;
+    grid-template-columns:none!important;
+    padding:14px!important;
+    border:1px solid var(--border)!important;
+    border-bottom:1px solid var(--border)!important;
+    border-radius:10px!important;
+    margin-bottom:10px!important;
+    background:var(--surface)!important;
+  }
+  .work-row > div{
+    margin-bottom:10px;
+    display:block!important;
+  }
+  .work-row > div:last-child{margin-bottom:0}
+  
+  /* 각 항목에 라벨 추가 */
+  .work-row > div:nth-child(1)::before{content:"Date: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .work-row > div:nth-child(2)::before{content:"Category: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .work-row > div:nth-child(3)::before{content:"Status: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .work-row > div:nth-child(4)::before{content:"Project: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  .work-row > div:nth-child(5)::before{content:"Contractor: ";font-weight:600;color:var(--muted);font-size:11px;display:block;margin-bottom:2px}
+  
+  .work-title-text{font-size:14px;margin-bottom:4px}
+  .work-meta-text{font-size:12px}
+  
+  /* 아코디언 */
+  .work-accordion{padding:14px!important}
+  .status-btn{
+    width:100%!important;
+    padding:10px!important;
+    justify-content:center;
+    font-size:14px;
+    margin-bottom:8px;
+  }
+  .status-select-box{padding:12px}
+  .modal-input{font-size:14px;padding:10px}
+  
+  /* 버튼 */
+  .section-hdr{flex-direction:column;align-items:stretch;gap:10px}
+  #addWorkBtn{width:100%;justify-content:center}
+  .btn-primary, .btn-secondary{
+    width:100%;
+    justify-content:center;
+    padding:10px 16px;
+  }
+  
+  /* Emergency Modal */
+  .modal-box{
+    width:95%;
+    max-width:95%;
+    padding:20px;
+  }
+  .modal-field{margin-bottom:14px}
+  
+  /* 완료 버튼 */
+  .completion-date-box{padding:10px}
+  .completion-date-box input{font-size:14px;padding:10px}
+  .completion-date-box button{width:100%;padding:10px;font-size:14px}
+}
+</style>
 </head>
 <body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+    <div class="section-hdr">
+      <div class="section-title">Ongoing Works</div>
+      <button class="btn-primary" id="addWorkBtn" style="display:none" onclick="openAddEmergencyWork()">+ Emergency Work</button>
+    </div>
 
-<!-- UPDATED VERSION: removed updated_at completely -->
+    <div class="works-card">
+      <div style="display:grid;grid-template-columns:120px 140px 120px 1fr 160px;gap:14px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase">
+        <div>Date</div>
+        <div>Category</div>
+        <div>Status</div>
+        <div>Project</div>
+        <div>Contractor</div>
+      </div>
+      <div id="worksList">
+        <div style="padding:24px;text-align:center;color:var(--muted)">Loading…</div>
+      </div>
+    </div>
+
+<!-- EMERGENCY WORK MODAL -->
+<div class="modal-backdrop" id="emergencyModal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">Emergency Work (No Committee Approval)</div>
+    <div class="modal-field">
+      <label class="modal-label">Project Description</label>
+      <input type="text" class="modal-input" id="emergencyProject" placeholder="e.g., Emergency roof leak repair">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="emergencyVendor" placeholder="Company name">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Amount (AUD) (ex GST)</label>
+      <input type="text" class="modal-input" id="emergencyAmount" placeholder="0.00" oninput="formatAmount(this)">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="emergencyCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Notes</label>
+      <textarea class="modal-textarea" id="emergencyNotes" placeholder="Reason for emergency work"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">📎 Attach Files (Internal Only - Admin/Committee/Observer)</label>
+      <input type="file" id="emergencyFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
+      <button class="btn-secondary" onclick="document.getElementById('emergencyFileInput').click()">+ Choose Files</button>
+      <div id="emergencyFilePreview" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('emergencyModal')">Cancel</button>
+      <button class="btn-primary" id="saveEmergencyBtn" onclick="saveEmergencyWork()">Save Emergency Work →</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT WORK MODAL -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">Edit Work</div>
+    <input type="hidden" id="editWorkId">
+    <div class="modal-field">
+      <label class="modal-label">Project Description</label>
+      <input type="text" class="modal-input" id="editProject">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="editVendor">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Amount (AUD) (ex GST)</label>
+      <input type="text" class="modal-input" id="editAmount" oninput="formatAmount(this)">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="editCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Notes</label>
+      <textarea class="modal-textarea" id="editNotes"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Internal Notes</label>
+      <textarea class="modal-textarea" id="editInternalNotes" style="background:#f0f7ff;border-color:#dbeafe"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Work Start Date</label>
+      <input type="date" class="modal-input" id="editWorkDate">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()">Save Changes →</button>
+    </div>
+  </div>
+</div>
+
+<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeViewer()">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:900px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button onclick="closeViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
+    </div>
+    <div id="viewerContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-const { supabase } = ctx;
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
 
-async function saveEdit(id, data) {
-  const { error } = await supabase
+const privileged = ['admin','committee','observer'];
+const canViewInternal = privileged.includes(role);
+
+if (role === 'admin') {
+  document.getElementById('addWorkBtn').style.display = 'inline-flex';
+}
+
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; 
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block'; 
+  setTimeout(()=>t.style.display='none', 3000);
+};
+
+window.formatAmount = (input) => {
+  let val = input.value.replace(/[^0-9.]/g, '');
+  if (val) input.value = parseFloat(val).toLocaleString('en-AU');
+};
+
+let allWorks = [];
+let openAccordionId = null;
+let emergencyFiles = [];
+let currentWorkStatus = {};
+
+function parseComment(comment) {
+  try {
+    if (!comment) return { note:'', files:[], category:'General', priority:'Normal' };
+    const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
+    let files = Array.isArray(obj?.files) ? obj.files : [];
+    return {
+      note: obj?.note || '',
+      files: files.filter(f => f && f.path),
+      category: obj?.category || 'General',
+      priority: obj?.priority || 'Normal'
+    };
+  } catch(e) { 
+    return { note:'', files:[], category:'General', priority:'Normal' }; 
+  }
+}
+
+async function getSignedUrl(path) {
+  if (!path) return '';
+  const { data, error } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+async function uploadFile(file, quoteId) {
+  const safeName = file.name.replace(/[^\w.\- ]+/g,'_');
+  const path = `${quoteId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('quotes').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  return { path, name: safeName, type: file.type || '', size: file.size };
+}
+
+window.openFileViewer = async function(path, name, type) {
+  try {
+    if (!path) throw new Error('No file path');
+    let url;
+    if (path.startsWith('http')) {
+      url = path;
+    } else {
+      const cleanPath = path.replace(/^quotes\//, '');
+      const { data, error } = await supabase.storage.from('quotes').createSignedUrl(cleanPath, 3600);
+      if (error || !data?.signedUrl) throw new Error('Signed URL failed');
+      url = data.signedUrl;
+    }
+    let html = '';
+    if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
+      html = `<iframe src="${url}" style="width:100%;height:500px;border:none;border-radius:6px"></iframe>`;
+    } else {
+      html = `<img src="${url}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:auto" alt="${name}">`;
+    }
+    document.getElementById('viewerContent').innerHTML = `<div style="font-size:13px;font-weight:600;color:#1f2937;margin-bottom:10px">📎 ${name}</div>` + html;
+    document.getElementById('fileViewerModal').style.display = 'flex';
+  } catch(e) {
+    console.error('openFileViewer failed:', e);
+    alert('Failed to load file');
+  }
+};
+
+window.closeViewer = function() {
+  document.getElementById('fileViewerModal').style.display = 'none';
+  document.getElementById('viewerContent').innerHTML = '';
+};
+
+async function loadWorks() {
+  const { data } = await supabase
     .from('quotes')
-    .update({
-      project: data.project,
-      vendor: data.vendor,
-      amount: data.amount,
-      category: data.category,
-      notes: data.notes,
-      comment: data.comment,
-      work_start_date: data.work_start_date || null
-    })
-    .eq('id', id);
+    .select('*')
+    .is('completion_date', null)
+    .not('work_status', 'is', null)
+    .not('status', 'eq', 'removed')
+    .order('created_at', {ascending: false});
+  
+  allWorks = data || [];
 
-  if (error) {
-    alert('Failed: ' + error.message);
+  renderWorks();
+}
+
+function renderWorks() {
+  const list = document.getElementById('worksList');
+  if (!allWorks.length) {
+    list.innerHTML = `<div class="empty-state"><div style="font-size:48px;margin-bottom:16px">📋</div><div style="font-size:16px;font-weight:600;color:var(--text-2)">No ongoing works</div></div>`;
+    return;
+  }
+  list.innerHTML = allWorks.map(w => workRow(w)).join('');
+}
+
+function workRow(w) {
+  const parsed = parseComment(w.comment);
+  const ws = w.work_status || 'scheduled';
+  let statusBadge = '';
+  if (ws === 'scheduled') statusBadge = '<span class="badge badge-gray">Scheduled</span>';
+  else if (ws === 'in_progress') statusBadge = '<span class="badge badge-blue">In Progress</span>';
+  else if (ws === 'completed') statusBadge = '<span class="badge badge-yellow">Completed</span>';
+  
+  return `
+    <div class="work-row" onclick="toggleAccordion('${w.id}')">
+      <div style="font-size:12px;color:var(--text-2)">${new Date(w.work_start_date || w.created_at).toLocaleDateString('en-AU')}</div>
+      <div class="work-meta-text">${w.category || 'General'}</div>
+      <div>${statusBadge}</div>
+      <div>
+        <div class="work-title-text">${w.project || 'Untitled'}</div>
+      </div>
+      <div class="work-meta-text">${w.vendor || '—'}</div>
+    </div>
+    ${buildAccordion(w)}`;
+}
+
+function buildAccordion(w) {
+  const parsed = parseComment(w.comment);
+  const displayStart = new Date(w.work_start_date || w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const ws = w.work_status || 'scheduled';
+
+  let descHtml = w.notes ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Scope</div>
+      <p style="font-size:13px;color:var(--text-2);line-height:1.7">${w.notes}</p>
+    </div>` : '';
+
+  let privateHtml = canViewInternal && parsed.note ? `
+    <div style="margin-top:12px">
+      <div style="background:#f0f7ff;border:1px solid #dbeafe;border-radius:10px;padding:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--blue-700);text-transform:uppercase;margin-bottom:6px">🔒 Internal Notes</div>
+        <p style="font-size:13px;color:var(--text-2);line-height:1.7">${parsed.note}</p>
+      </div>
+    </div>` : '';
+
+  let filesHtml = '';
+  if (canViewInternal && parsed.files && parsed.files.length > 0) {
+    filesHtml = `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px">📎 Attached Files (Internal Only)</div>`;
+    
+    parsed.files.forEach((f, idx) => {
+      filesHtml += `
+        <div class="file-preview" onclick="openFileViewer('${f.path}','${f.name}','${f.type}'); event.stopPropagation();">
+          <span class="file-icon">📄</span>
+          <span class="file-name">${f.name}</span>
+        </div>
+      `;
+    });
+    filesHtml += `</div>`;
+  }
+
+  let statusControlHtml = role === 'admin' ? `
+    <div class="status-select-box">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Work Status</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="status-btn ${ws === 'scheduled' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'scheduled'); event.stopPropagation();">📅 Scheduled</button>
+        <button class="status-btn ${ws === 'in_progress' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'in_progress'); event.stopPropagation();">🔵 In Progress</button>
+        <button class="status-btn ${ws === 'completed' ? 'active' : ''}" onclick="changeWorkStatus('${w.id}', 'completed'); event.stopPropagation();">✅ Completed</button>
+      </div>
+      ${ws === 'completed' ? `
+        <div class="completion-date-box">
+          <div style="font-size:11px;font-weight:600;color:#166534;margin-bottom:8px">Set Completion Date to Move to Reports</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" class="modal-input" id="complete-date-${w.id}" value="${new Date().toISOString().split('T')[0]}" onclick="event.stopPropagation();">
+            <button class="btn-primary" onclick="moveToReports('${w.id}'); event.stopPropagation();" style="white-space:nowrap">Move to Reports →</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>` : '';
+
+  return `
+    <div class="work-accordion" id="accordion-${w.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${w.project || 'Untitled'}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${role === 'admin' ? `<button class="btn-secondary" onclick="openEditWork('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✏️ Edit</button>` : ''}
+          <button class="btn-secondary" onclick="closeAccordion('${w.id}'); event.stopPropagation();" style="padding:5px 10px;font-size:11px">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Vendor</div><div style="font-size:13px">${w.vendor || '—'}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Work Start Date</div><div style="font-size:13px">${displayStart}</div></div>
+      </div>
+      ${descHtml}
+      ${privateHtml}
+      ${filesHtml}
+      ${statusControlHtml}
+    </div>`;
+}
+
+window.toggleAccordion = (id) => {
+  if (openAccordionId && openAccordionId !== id) closeAccordion(openAccordionId);
+  const acc = document.getElementById(`accordion-${id}`);
+  if (!acc) return;
+  if (acc.classList.contains('open')) { 
+    closeAccordion(id); 
+    return; 
+  }
+  acc.classList.add('open');
+  openAccordionId = id;
+};
+
+window.closeAccordion = (id) => {
+  const acc = document.getElementById(`accordion-${id}`);
+  if (acc) acc.classList.remove('open');
+  if (openAccordionId === id) openAccordionId = null;
+};
+
+window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+window.changeWorkStatus = async (quoteId, newStatus) => {
+  try {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ work_status: newStatus })
+      .eq('id', quoteId);
+
+    if (error) throw error;
+
+    showToast('Status updated');
+    await loadWorks();
+  } catch(e) {
+    console.error('Status change failed:', e);
+    alert('Failed: ' + e.message);
+  }
+};
+
+window.moveToReports = async (quoteId) => {
+  const dateInput = document.getElementById(`complete-date-${quoteId}`);
+  const completionDate = dateInput.value;
+
+  if (!completionDate) {
+    alert('Please select completion date');
     return;
   }
 
-  alert('Saved successfully');
-}
-</script>
+  if (!confirm('Move this work to Reports?')) return;
 
+  try {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ 
+        completion_date: completionDate,
+        work_status: 'completed'
+      })
+      .eq('id', quoteId);
+
+    if (error) throw error;
+
+    showToast('Work moved to Reports');
+    await loadWorks();
+  } catch(e) {
+    console.error('Move to reports failed:', e);
+    alert('Failed: ' + e.message);
+  }
+};
+
+window.openAddEmergencyWork = () => {
+  document.getElementById('emergencyProject').value = '';
+  document.getElementById('emergencyVendor').value = '';
+  document.getElementById('emergencyAmount').value = '';
+  document.getElementById('emergencyCategory').value = 'General';
+  document.getElementById('emergencyNotes').value = '';
+  emergencyFiles = [];
+  document.getElementById('emergencyFilePreview').innerHTML = '';
+  document.getElementById('emergencyModal').classList.add('open');
+};
+
+document.getElementById('emergencyFileInput').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(f => {
+    emergencyFiles.push({ 
+      file: f, 
+      name: f.name, 
+      size: (f.size/1024).toFixed(1)+' KB', 
+      type: f.type
+    });
+  });
+  updateEmergencyFilePreview();
+});
+
+function updateEmergencyFilePreview() {
+  const preview = document.getElementById('emergencyFilePreview');
+  preview.innerHTML = emergencyFiles.map((f,i) => `
+    <div class="file-preview">
+      <span class="file-icon">📄</span>
+      <span class="file-name">${f.name}</span>
+      <span style="font-size:11px;color:var(--muted)">${f.size}</span>
+      <span class="file-del" onclick="removeEmergencyFile(${i});event.stopPropagation()">✕</span>
+    </div>
+  `).join('');
+}
+
+window.removeEmergencyFile = idx => {
+  emergencyFiles.splice(idx, 1);
+  updateEmergencyFilePreview();
+};
+
+window.saveEmergencyWork = async () => {
+  const project = document.getElementById('emergencyProject').value.trim();
+  const vendor = document.getElementById('emergencyVendor').value.trim();
+  let amountStr = document.getElementById('emergencyAmount').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(amountStr) || 0;
+  const category = document.getElementById('emergencyCategory').value;
+  const notes = document.getElementById('emergencyNotes').value.trim();
+
+  if (!project || !vendor || amount <= 0) {
+    alert('Required: Project, Vendor, Amount');
+    return;
+  }
+
+  const saveBtn = document.getElementById('saveEmergencyBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    const quoteId = crypto.randomUUID();
+    const projectId = crypto.randomUUID();
+    const fileData = [];
+
+    for (const f of emergencyFiles) {
+      if (f.file) {
+        const uploaded = await uploadFile(f.file, quoteId);
+        fileData.push({
+          path: uploaded.path,
+          name: uploaded.name,
+          type: uploaded.type,
+          size: uploaded.size,
+          visibility: 'internal'
+        });
+      }
+    }
+
+    const commentPayload = {
+      note: 'Emergency work - no committee approval required',
+      files: fileData,
+      category: category,
+      priority: 'Urgent'
+    };
+
+    const { error } = await supabase.from('quotes').insert({
+      id: quoteId,
+      project_id: projectId,
+      project: project,
+      vendor: vendor,
+      amount: Number(amount),
+      notes: notes,
+      comment: commentPayload,
+      category: category,
+      status: 'approved',
+      work_status: 'scheduled',
+      is_emergency: true,
+      work_start_date: new Date().toISOString().split('T')[0]
+    });
+
+    if (error) throw error;
+
+    showToast('Emergency work saved');
+    closeModal('emergencyModal');
+    await loadWorks();
+  } catch(e) {
+    console.error('Save emergency work failed:', e);
+    alert('Failed: ' + e.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Emergency Work →';
+  }
+};
+
+window.openEditWork = (quoteId) => {
+  const work = allWorks.find(w => w.id === quoteId);
+  if (!work) return;
+  
+  const parsed = parseComment(work.comment);
+  
+  document.getElementById('editWorkId').value = work.id;
+  document.getElementById('editProject').value = work.project || '';
+  document.getElementById('editVendor').value = work.vendor || '';
+  document.getElementById('editAmount').value = work.amount ? Number(work.amount).toLocaleString('en-AU') : '';
+  document.getElementById('editCategory').value = work.category || 'General';
+  document.getElementById('editNotes').value = work.notes || '';
+  document.getElementById('editInternalNotes').value = parsed.note || '';
+  
+  const workStartDate = work.work_start_date
+    ? new Date(work.work_start_date).toISOString().split('T')[0]
+    : new Date(work.created_at).toISOString().split('T')[0];
+  document.getElementById('editWorkDate').value = workStartDate;
+  
+  document.getElementById('editModal').classList.add('open');
+};
+
+window.saveEdit = async () => {
+  const id = document.getElementById('editWorkId').value;
+  const project = document.getElementById('editProject').value.trim();
+  const vendor = document.getElementById('editVendor').value.trim();
+  let amountStr = document.getElementById('editAmount').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(amountStr) || 0;
+  const category = document.getElementById('editCategory').value;
+  const notes = document.getElementById('editNotes').value.trim();
+  const internalNote = document.getElementById('editInternalNotes').value.trim();
+  const workStartDate = document.getElementById('editWorkDate').value;
+
+  if (!project || !vendor || amount <= 0) {
+    alert('Required: Project, Vendor, Amount');
+    return;
+  }
+
+  try {
+    const work = allWorks.find(w => w.id === id);
+    const parsed = parseComment(work.comment);
+    
+    const updatedComment = {
+      ...parsed,
+      note: internalNote,
+      category: category
+    };
+
+    const { error } = await supabase
+      .from('quotes')
+      .update({
+        project: project,
+        vendor: vendor,
+        amount: Number(amount),
+        category: category,
+        notes: notes,
+        comment: updatedComment,
+        work_start_date: workStartDate || null
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    showToast('Work updated');
+    closeModal('editModal');
+    await loadWorks();
+  } catch(e) {
+    console.error('Edit failed:', e);
+    alert('Failed: ' + e.message);
+  }
+};
+
+loadWorks();
+</script>
 </body>
 </html>
