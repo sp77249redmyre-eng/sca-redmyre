@@ -179,6 +179,33 @@
   .completion-date-row{flex-direction:column;align-items:stretch}
   .completion-date-row .btn-primary{width:100%;justify-content:center}
 }
+
+/* ── 모바일 추가 최적화 ── */
+@media(max-width:768px){
+  .top-bar{flex-direction:column;align-items:stretch;gap:10px}
+  .btn-emergency{width:100%;justify-content:center}
+  .work-card{border-radius:12px}
+  .wcard-hdr{flex-wrap:wrap;gap:8px;padding:12px 14px}
+  .wcard-hdr-left{flex:1}
+  .wcard-icon{width:36px;height:36px;font-size:18px}
+  .wcard-title{font-size:14px}
+  .wcard-meta{font-size:11px;gap:4px}
+  .stepper{padding:10px 12px;gap:0}
+  .step-text{display:none}
+  .step-circle{width:24px;height:24px;font-size:11px}
+  .step-line{margin:0 4px}
+  .wcard-body{padding:10px 14px}
+  .work-accordion{padding:14px}
+  .acc-grid{grid-template-columns:1fr}
+  .status-select-box{padding:12px}
+  .status-btn-row{flex-direction:column}
+  .status-btn{width:100%;padding:10px;font-size:13px;justify-content:center}
+  .completion-date-row{flex-direction:column}
+  .completion-date-row .btn-primary{width:100%;justify-content:center;padding:10px}
+  .modal-box{border-radius:14px;padding:20px}
+  .modal-title{font-size:17px}
+  .btn-em-sub{display:none}
+}
 </style>
 </head>
 <body>
@@ -321,10 +348,6 @@ const { supabase, user, role } = ctx;
 const privileged = ['admin','committee','observer'];
 const canViewInternal = privileged.includes(role);
 
-// HTML 인라인 onclick에서 접근 가능하도록 window에 노출
-window._role = role;
-window._canViewInternal = canViewInternal;
-
 if (role === 'admin') {
   document.getElementById('addWorkBtn').style.display = 'inline-flex';
 }
@@ -445,8 +468,6 @@ function workCard(w) {
   const ws = w.work_status || 'scheduled';
   const cat = w.category || 'General';
   const isEmergency = w.is_emergency === true;
-  const _role = window._role;
-  const _canViewInternal = window._canViewInternal;
 
   const icon = CAT_ICON[cat] || '🔧';
   const iconBg = CAT_ICON_BG[cat] || '#f1f5f9';
@@ -494,7 +515,7 @@ function workCard(w) {
 
   // Status control (admin only)
   let statusControlHtml = '';
-  if (_role === 'admin') {
+  if (role === 'admin') {
     statusControlHtml = `
       <div class="status-select-box">
         <div class="status-ctrl-lbl">Work Status</div>
@@ -522,7 +543,7 @@ function workCard(w) {
     </div>` : '';
 
   // Internal notes
-  let privateHtml = _canViewInternal && parsed.note ? `
+  let privateHtml = canViewInternal && parsed.note ? `
     <div class="inote-box">
       <div class="inote-lbl">🔒 Internal Notes</div>
       <div class="inote-txt">${parsed.note}</div>
@@ -530,7 +551,7 @@ function workCard(w) {
 
   // Files
   let filesHtml = '';
-  if (_canViewInternal && parsed.files && parsed.files.length > 0) {
+  if (canViewInternal && parsed.files && parsed.files.length > 0) {
     filesHtml = `<div class="files-lbl">📎 Attached Files (Internal Only)</div>`;
     parsed.files.forEach(f => {
       filesHtml += `<div class="file-preview" onclick="openFileViewer('${f.path}','${f.name}','${f.type}');event.stopPropagation();">
@@ -573,7 +594,7 @@ function workCard(w) {
         <div class="acc-top">
           <div class="acc-title">${w.project||'Untitled'}</div>
           <div class="acc-btns">
-            ${_role==='admin'?`<button class="btn-edit-sm" onclick="openEditWork('${w.id}');event.stopPropagation();">✏️ Edit</button>`:''}
+            ${role==='admin'?`<button class="btn-edit-sm" onclick="openEditWork('${w.id}');event.stopPropagation();">✏️ Edit</button>`:''}
             <button class="btn-close-sm" onclick="closeAccordion('${w.id}');event.stopPropagation();">✕</button>
           </div>
         </div>

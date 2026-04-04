@@ -182,6 +182,48 @@
 .edit-form-label{font-size:12px;font-weight:600;color:#374151}
 .edit-form-input,.edit-form-select{padding:8px 12px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;transition:border-color 0.15s}
 .edit-form-input:focus,.edit-form-select:focus{outline:none;border-color:#2563eb}
+
+/* ── 카테고리별 좌측 컬러 바 ── */
+.project-card[data-cat="General"]    {border-left:5px solid #2563eb}
+.project-card[data-cat="HVAC"]       {border-left:5px solid #d97706}
+.project-card[data-cat="Fire"]       {border-left:5px solid #dc2626}
+.project-card[data-cat="Electrical"] {border-left:5px solid #ca8a04}
+.project-card[data-cat="Security"]   {border-left:5px solid #7c3aed}
+.project-card[data-cat="Plumbing"]   {border-left:5px solid #0891b2}
+.project-card[data-cat="Lift"]       {border-left:5px solid #059669}
+.project-card[data-cat="Legal"]      {border-left:5px solid #db2777}
+.project-card[data-cat="Other"]      {border-left:5px solid #94a3b8}
+/* 번호 뱃지 */
+.pnum{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;flex-shrink:0;white-space:nowrap;margin-right:4px}
+.pnum-blue  {background:#dbeafe;color:#1e40af}
+.pnum-amber {background:#fef3c7;color:#92400e}
+.pnum-red   {background:#fee2e2;color:#991b1b}
+.pnum-yellow{background:#fefce8;color:#854d0e}
+.pnum-purple{background:#ede9fe;color:#5b21b6}
+.pnum-teal  {background:#ecfeff;color:#0e7490}
+.pnum-green {background:#dcfce7;color:#166534}
+.pnum-pink  {background:#fce7f3;color:#9d174d}
+.pnum-gray  {background:#f1f5f9;color:#475569}
+/* Create Project 버튼 D 스타일 */
+.btn-create-project{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:all 0.2s}
+.btn-create-project:hover{box-shadow:0 6px 20px rgba(37,99,235,0.4);transform:translateY(-1px)}
+.btn-create-project-icon{width:24px;height:24px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.btn-create-project-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1}
+.btn-create-project-main{font-size:13px;font-weight:600}
+.btn-create-project-sub{font-size:10px;opacity:0.75;margin-top:2px;font-weight:400}
+/* 모바일 */
+@media(max-width:768px){
+  .btn-create-project-sub{display:none}
+  .project-header{padding:12px 14px}
+  .vendor-list{padding:10px 12px 6px}
+  .vendor-header{padding:10px 12px}
+  .voting-section{padding:14px}
+  .voting-grid{grid-template-columns:repeat(2,1fr)!important}
+  .mgmt-panel-inner{padding:14px}
+  .mgmt-detail-votes{grid-template-columns:repeat(2,1fr)!important}
+  .archive-card-header{padding:12px 14px}
+  .summary-bar{padding:8px 14px}
+}
 </style>
 </head>
 <body>
@@ -191,7 +233,13 @@
   <div class="content">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div class="page-label"><span class="page-label-bar"></span>QUOTE APPROVALS</div>
-      <button class="btn-pill btn-pill-primary" id="createProjectBtn" style="display:none" onclick="openCreateProject()">📁 New Quote</button>
+      <button class="btn-create-project" id="createProjectBtn" style="display:none" onclick="openCreateProject()">
+        <span class="btn-create-project-icon">📁</span>
+        <span class="btn-create-project-label">
+          <span class="btn-create-project-main">Create Project</span>
+          <span class="btn-create-project-sub">New quote group</span>
+        </span>
+      </button>
     </div>
     <div class="rule-info">
       This quote will be decided by a vote of 8 committee members.<br>
@@ -199,12 +247,18 @@
       Admin creates quotes in Draft mode, then sends to committee for voting. Once a vote is submitted it cannot be changed.
     </div>
     <div>
-      <div style="font-size:15px;font-weight:600;color:#64748b;margin-bottom:14px">⏳ PENDING APPROVAL</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:4px;height:20px;border-radius:2px;background:#2563eb;flex-shrink:0"></div>
+      <div style="font-size:16px;font-weight:600;color:#1e293b">Pending Approval</div>
+    </div>
       <div id="pendingList"></div>
     </div>
     <div style="margin-top:60px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div style="font-size:15px;font-weight:600;color:#64748b">📋 MANAGEMENT ARCHIVE</div>
+        <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:4px;height:20px;border-radius:2px;background:#94a3b8;flex-shrink:0"></div>
+        <div style="font-size:16px;font-weight:600;color:#1e293b">Management Archive</div>
+      </div>
         <div class="filter-bar" id="archiveFilterBar">
           <button class="btn-pill btn-pill-active" data-filter="all"      onclick="filterArchive('all')">All</button>
           <button class="btn-pill"                 data-filter="onhold"   onclick="filterArchive('onhold')">On Hold</button>
@@ -459,8 +513,10 @@ function renderPendingQuotes(quotes) {
   });
 
   container.innerHTML = '';
+  let projectIndex = 0;
 
   Object.values(projectMap).forEach(group => {
+    projectIndex++;
     const first      = group[0];
     const parsed     = parseComment(first.comment);
     const projectKey = first.project_id || first.id;
@@ -510,7 +566,6 @@ function renderPendingQuotes(quotes) {
     const resultDeclined   = calcResult === 'declined';
     const resultHold       = calcResult === 'hold';
     const resultDetermined = resultApproved || resultDeclined || resultHold;
-    const isLocked         = resultDetermined;
 
     // Winning vendor (for approved result)
     const winnerQuoteId = resultApproved && !isSingle
@@ -518,8 +573,13 @@ function renderPendingQuotes(quotes) {
       : null;
     const winnerQuote = winnerQuoteId ? (group.find(q => q.id === winnerQuoteId) ?? selectedQuote) : selectedQuote;
 
+    const cat = first.category || parsed.category || 'General';
+    const catNumClass = {'General':'pnum-blue','HVAC':'pnum-amber','Fire':'pnum-red','Electrical':'pnum-yellow','Security':'pnum-purple','Plumbing':'pnum-teal','Lift':'pnum-green','Legal':'pnum-pink','Other':'pnum-gray'}[cat] || 'pnum-gray';
+    const catIcon = {'General':'🏗️','HVAC':'❄️','Fire':'🔥','Electrical':'⚡','Security':'🔒','Plumbing':'💧','Lift':'🛗','Legal':'⚖️','Other':'🔧'}[cat] || '🔧';
+    const projectIndex_str = String(projectIndex).padStart(2,'0');
     const card = document.createElement('div');
     card.className = 'project-card';
+    card.setAttribute('data-cat', cat);
 
     // Header
     const header = document.createElement('div');
@@ -527,10 +587,11 @@ function renderPendingQuotes(quotes) {
     const headerLeft = document.createElement('div');
     headerLeft.className = 'project-header-left';
     headerLeft.innerHTML = `
-      <span style="font-size:22px">📁</span>
+      <span class="pnum ${catNumClass}">${projectIndex_str}</span>
+      <div style="width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${catIcon}</div>
       <div>
         <span class="project-title">${escHtml(first.project || first.project_title || 'Project')}</span>
-        <span class="project-meta">${escHtml(first.category || 'General')} | ${escHtml(parsed.priority || 'Normal')}</span>
+        <span class="project-meta">${escHtml(cat)} · ${escHtml(parsed.priority || 'Normal')} · ${group.length} vendor${group.length!==1?'s':''}</span>
       </div>`;
     header.appendChild(headerLeft);
 
@@ -713,7 +774,7 @@ function renderPendingQuotes(quotes) {
         const btn = document.createElement('button');
         btn.className = `btn-action btn-${type}`;
         btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        if (userAlreadyVoted || resultDetermined) {
+        if (userAlreadyVoted || isFinalized) {
           btn.disabled = true;
           btn.title = userAlreadyVoted ? 'You have already voted' : 'Voting is closed – result determined';
         } else {
@@ -723,7 +784,7 @@ function renderPendingQuotes(quotes) {
             actionButtons.querySelectorAll('button').forEach(b => { b.disabled = true; });
             const vRow = getUserVoteRow(projectKey);
             // Re-check: result may have been determined since last render
-            if (resultDetermined) { showToast('Voting is already closed', true); return; }
+            if (isFinalized) { showToast('Voting is already closed', true); return; }
             // Block vote if no vendor selected (skip for single quote – auto-selected)
             if (!isSingle && !vRow?.selected_quote_id) {
               showToast('Please select a vendor first', true);
@@ -882,7 +943,7 @@ function renderPendingQuotes(quotes) {
     resultBox.innerHTML = resultHTML;
     votingSection.appendChild(resultBox);
 
-    if (resultDetermined) {
+    if (isFinalized) {
       const lockNotice = document.createElement('div');
       lockNotice.style.cssText = 'margin-top:6px;font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:6px';
       lockNotice.innerHTML = '🔒 Voting Closed';
@@ -891,7 +952,22 @@ function renderPendingQuotes(quotes) {
 
     // Confirm button – only when result determined
     if (role === 'admin' && isVoting && resultDetermined) {
-      const confirmQuoteId = resultApproved ? (winnerQuoteId || selectedQuote?.id || null) : (selectedQuote?.id || null);
+      // BUG 1 FIX: winnerQuoteId 없으면 votes에서 직접 재계산
+      let confirmQuoteId = null;
+      if (resultApproved) {
+        if (winnerQuoteId) {
+          confirmQuoteId = winnerQuoteId;
+        } else if (isSingle) {
+          confirmQuoteId = group[0]?.id || null;
+        } else {
+          // votes 기반 재계산
+          const reMap = {};
+          group.forEach(q => { reMap[q.id] = 0; });
+          votedRows.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && reMap[v.selected_quote_id] !== undefined) reMap[v.selected_quote_id]++; });
+          const maxC = Math.max(...Object.values(reMap), 0);
+          confirmQuoteId = maxC > 0 ? Object.entries(reMap).find(([,c]) => c === maxC)?.[0] || null : null;
+        }
+      }
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'confirm-btn';
       confirmBtn.innerHTML = '✔ Confirm &amp; Send Notification';
