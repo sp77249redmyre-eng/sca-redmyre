@@ -230,6 +230,10 @@
       <label class="modal-label">Work Start Date</label>
       <input type="date" class="modal-input" id="editWorkDate">
     </div>
+    <div class="modal-field">
+      <label class="modal-label">Last Updated Date</label>
+      <input type="date" class="modal-input" id="editUpdatedDate">
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
       <button class="btn-primary" onclick="saveEdit()">Save Changes →</button>
@@ -315,8 +319,10 @@ window.openFileViewer = async function(path, name, type) {
     if (!path) throw new Error('No file path');
     let url;
     if (path.startsWith('http')) {
+      // 구버전: 전체 public URL로 저장된 경우
       url = path;
     } else {
+      // 신버전: 상대 경로 — 버킷 prefix 중복 제거
       const cleanPath = path.replace(/^quotes\//, '');
       const { data, error } = await supabase.storage.from('quotes').createSignedUrl(cleanPath, 3600);
       if (error || !data?.signedUrl) throw new Error('Signed URL failed');
@@ -388,6 +394,7 @@ function workRow(w) {
 function buildAccordion(w) {
   const parsed = parseComment(w.comment);
   const displayStart = new Date(w.work_start_date || w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const updated = w.updated_at ? new Date(w.updated_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}) : new Date(w.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
   const ws = w.work_status || 'scheduled';
 
   let descHtml = w.notes ? `
@@ -452,7 +459,7 @@ function buildAccordion(w) {
       </div>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Vendor</div><div style="font-size:13px">${w.vendor || '—'}</div></div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Work Start Date</div><div style="font-size:13px">${displayStart}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase">Last Updated</div><div style="font-size:13px">${updated}</div></div>
       </div>
       ${descHtml}
       ${privateHtml}
@@ -657,6 +664,9 @@ window.openEditWork = (quoteId) => {
     ? new Date(work.work_start_date).toISOString().split('T')[0]
     : new Date(work.created_at).toISOString().split('T')[0];
   document.getElementById('editWorkDate').value = workStartDate;
+
+  const updatedDate = work.updated_at ? new Date(work.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  document.getElementById('editUpdatedDate').value = updatedDate;
   
   document.getElementById('editModal').classList.add('open');
 };
@@ -671,9 +681,15 @@ window.saveEdit = async () => {
   const notes = document.getElementById('editNotes').value.trim();
   const internalNote = document.getElementById('editInternalNotes').value.trim();
   const workStartDate = document.getElementById('editWorkDate').value;
+  const updatedDate = document.getElementById('editUpdatedDate').value;
 
   if (!project || !vendor || amount <= 0) {
     alert('Required: Project, Vendor, Amount');
+    return;
+  }
+
+  if (!updatedDate) {
+    alert('Please select Last Updated date');
     return;
   }
 
@@ -696,7 +712,8 @@ window.saveEdit = async () => {
         category: category,
         notes: notes,
         comment: updatedComment,
-        work_start_date: workStartDate || null
+        work_start_date: workStartDate || null,
+        updated_at: updatedDate || new Date().toISOString().split('T')[0]
       })
       .eq('id', id);
 
