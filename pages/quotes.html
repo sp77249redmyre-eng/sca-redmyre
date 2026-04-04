@@ -210,6 +210,15 @@
   </div>
 </div>
 
+<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeViewer()">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:900px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button onclick="closeViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
+    </div>
+    <div id="viewerContent"></div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="filePreviewModal" onclick="if(event.target===this)closeModal('filePreviewModal')">
   <div class="modal-box" style="max-width:860px;width:96%;padding:0;overflow:hidden">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f8fafc">
@@ -367,7 +376,7 @@ async function init() {
 async function loadData() {
   try {
     const [qRes, vRes] = await Promise.all([
-      supabase.from('quotes').select('*').eq('archived', false).order('created_at', { ascending: false }),
+      supabase.from('quotes').select('*').in('status', ['draft','voting','pending']).is('work_status', null).is('completion_date', null).eq('archived', false).order('created_at', { ascending: false }),
       supabase.from('votes').select('*')
     ]);
     allQuotes = qRes.data || [];
@@ -403,7 +412,7 @@ function getProjectVotes(projectId) {
 }
 
 function renderQuotes() {
-  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && !q.work_status && !q.completion_date);
+  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && !q.work_status && !q.completion_date && !q.archived);
   const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status));
   renderPendingQuotes(active);
   renderArchiveTable(archived);
@@ -622,7 +631,7 @@ function renderPendingQuotes(quotes) {
         <div class="detail-line"><span class="detail-label">Internal:</span><span>${escHtml(qParsed.note || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Category:</span><span>${escHtml(q.category || qParsed.category || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Priority:</span><span>${escHtml(qParsed.priority || '—')}</span></div>
-        ${files.length ? `<div class="detail-line"><span class="detail-label">Files:</span></div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFilePreview(${JSON.stringify(f.url)},${JSON.stringify(f.name)});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : ''}`;
+        ${files.length ? `<div class="detail-line"><span class="detail-label">Files:</span></div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : ''}`;
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
     });
@@ -1135,7 +1144,7 @@ function renderArchiveTable(quotes) {
           <span class="status-badge status-${q.status}" style="margin-left:8px">${q.status.toUpperCase()}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          ${files.map(f => `<a class="detail-file-link" href="#" onclick="openFilePreview(${JSON.stringify(f.url)},${JSON.stringify(f.name)});return false;">📎 ${escHtml(f.name)}</a>`).join('')}
+          ${files.map(f => `<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}
           ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-blue" onclick="editQuote('${q.id}')">✏️ Edit</button>` : ''}
           ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-red" onclick="deleteQuoteFromArchive('${q.id}')">🗑 Delete</button>` : ''}
         </div>`;
@@ -1636,9 +1645,9 @@ async function uploadFiles(quoteId) {
   for (const file of pendingFiles) {
     const ext  = file.name.split('.').pop();
     const path = `quotes/${quoteId}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('quote-files').upload(path, file);
+    const { error } = await supabase.storage.from('quotes').upload(path, file);
     if (error) { console.error('upload error:', error); continue; }
-    const { data } = supabase.storage.from('quote-files').getPublicUrl(path);
+    const { data } = supabase.storage.from('quotes').getPublicUrl(path);
     uploaded.push({ name: file.name, url: data.publicUrl, path });
   }
   return uploaded;
@@ -1779,43 +1788,31 @@ function showToast(message, isError = false) {
   setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-window.openFilePreview = function(url, name) {
-  if (!url) return;
-  const body  = document.getElementById('filePreviewBody');
-  const title = document.getElementById('filePreviewTitle');
-  if (!body || !title) return;
-  title.textContent = name || 'File Preview';
-  body.innerHTML = '';
-
-  const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
-  const isImage = ['png','jpg','jpeg','gif','webp','svg'].includes(ext);
-  const isPdf   = ext === 'pdf';
-
-  if (isImage) {
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'max-width:100%;max-height:70vh;border-radius:8px;display:block;margin:auto';
-    img.onerror = () => { body.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:40px">Unable to load image</div>'; };
-    body.appendChild(img);
-  } else if (isPdf) {
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.cssText = 'width:100%;height:70vh;border:none;display:block';
-    body.appendChild(iframe);
-  } else {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'text-align:center;padding:40px';
-    wrap.innerHTML = '<div style="font-size:48px;margin-bottom:16px">📎</div><div style="font-size:15px;color:#374151;margin-bottom:20px">' + (name || 'Download File') + '</div>';
-    const dlBtn = document.createElement('a');
-    dlBtn.href = url;
-    dlBtn.download = name || 'file';
-    dlBtn.className = 'btn-pill btn-pill-primary';
-    dlBtn.textContent = '⬇ Download';
-    dlBtn.style.cssText = 'display:inline-block;text-decoration:none';
-    wrap.appendChild(dlBtn);
-    body.appendChild(wrap);
+window.openFileViewer = async function(path, name, type) {
+  if (!path) return;
+  try {
+    const { data } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
+    const url = data?.signedUrl;
+    if (!url) throw new Error('No URL');
+    let html = '';
+    if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
+      html = `<iframe src="${url}" style="width:100%;height:500px;border:none;border-radius:6px"></iframe>`;
+    } else if (['png','jpg','jpeg','gif','webp','svg'].some(e => name?.toLowerCase().endsWith('.'+e))) {
+      html = `<img src="${url}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:auto" alt="${name}">`;
+    } else {
+      html = `<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">📎</div><a href="${url}" download="${name}" style="display:inline-block;padding:10px 22px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇ Download ${name}</a></div>`;
+    }
+    document.getElementById('viewerContent').innerHTML = `<div style="font-size:13px;font-weight:600;color:#1f2937;margin-bottom:10px">📎 ${name||''}</div>` + html;
+    document.getElementById('fileViewerModal').style.display = 'flex';
+  } catch(e) {
+    console.error('openFileViewer failed:', e);
+    alert('Failed to load file');
   }
-  document.getElementById('filePreviewModal').classList.add('open');
+};
+
+window.closeViewer = function() {
+  document.getElementById('fileViewerModal').style.display = 'none';
+  document.getElementById('viewerContent').innerHTML = '';
 };
 
 init();
