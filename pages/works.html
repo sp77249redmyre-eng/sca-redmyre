@@ -321,6 +321,10 @@ const { supabase, user, role } = ctx;
 const privileged = ['admin','committee','observer'];
 const canViewInternal = privileged.includes(role);
 
+// HTML 인라인 onclick에서 접근 가능하도록 window에 노출
+window._role = role;
+window._canViewInternal = canViewInternal;
+
 if (role === 'admin') {
   document.getElementById('addWorkBtn').style.display = 'inline-flex';
 }
@@ -441,6 +445,8 @@ function workCard(w) {
   const ws = w.work_status || 'scheduled';
   const cat = w.category || 'General';
   const isEmergency = w.is_emergency === true;
+  const _role = window._role;
+  const _canViewInternal = window._canViewInternal;
 
   const icon = CAT_ICON[cat] || '🔧';
   const iconBg = CAT_ICON_BG[cat] || '#f1f5f9';
@@ -488,7 +494,7 @@ function workCard(w) {
 
   // Status control (admin only)
   let statusControlHtml = '';
-  if (role === 'admin') {
+  if (_role === 'admin') {
     statusControlHtml = `
       <div class="status-select-box">
         <div class="status-ctrl-lbl">Work Status</div>
@@ -516,7 +522,7 @@ function workCard(w) {
     </div>` : '';
 
   // Internal notes
-  let privateHtml = canViewInternal && parsed.note ? `
+  let privateHtml = _canViewInternal && parsed.note ? `
     <div class="inote-box">
       <div class="inote-lbl">🔒 Internal Notes</div>
       <div class="inote-txt">${parsed.note}</div>
@@ -524,7 +530,7 @@ function workCard(w) {
 
   // Files
   let filesHtml = '';
-  if (canViewInternal && parsed.files && parsed.files.length > 0) {
+  if (_canViewInternal && parsed.files && parsed.files.length > 0) {
     filesHtml = `<div class="files-lbl">📎 Attached Files (Internal Only)</div>`;
     parsed.files.forEach(f => {
       filesHtml += `<div class="file-preview" onclick="openFileViewer('${f.path}','${f.name}','${f.type}');event.stopPropagation();">
@@ -567,7 +573,7 @@ function workCard(w) {
         <div class="acc-top">
           <div class="acc-title">${w.project||'Untitled'}</div>
           <div class="acc-btns">
-            ${role==='admin'?`<button class="btn-edit-sm" onclick="openEditWork('${w.id}');event.stopPropagation();">✏️ Edit</button>`:''}
+            ${_role==='admin'?`<button class="btn-edit-sm" onclick="openEditWork('${w.id}');event.stopPropagation();">✏️ Edit</button>`:''}
             <button class="btn-close-sm" onclick="closeAccordion('${w.id}');event.stopPropagation();">✕</button>
           </div>
         </div>
