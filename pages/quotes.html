@@ -410,8 +410,8 @@ function getProjectVotes(projectId) {
 }
 
 function renderQuotes() {
-  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && !q.work_status && !q.completion_date && !q.archived && q.is_emergency !== true);
-  const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status) && q.is_emergency !== true);
+  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && q.status !== 'removed' && !q.work_status && !q.completion_date && !q.archived && q.is_emergency !== true);
+  const archived = allQuotes.filter(q => ['onhold','declined','approved','expired'].includes(q.status) && q.status !== 'removed' && q.is_emergency !== true);
   renderPendingQuotes(active);
   renderArchiveTable(archived);
 }
@@ -1538,22 +1538,26 @@ window.editQuote = function(id) {
   document.getElementById('quoteModal').classList.add('open');
 };
 
-// Delete individual quote (quote-level, not project-level)
+// Remove quote from Management (status=removed). Works/Reports data preserved.
 window.deleteQuoteFromArchive = async function(id) {
-  if (!confirm('Delete this quote permanently? This cannot be undone.')) return;
+  if (!confirm('Remove this quote from Management?')) return;
   try {
     const q = allQuotes.find(x => x.id === id);
     if (!q) return;
+    if (q.work_status) {
+      alert('This item is already in Works and cannot be deleted.');
+      return;
+    }
     const projectId = q.project_id || q.id;
     await supabase.from('votes').delete().eq('project_id', projectId);
-    const { error } = await supabase.from('quotes').delete().eq('id', id);
+    const { error } = await supabase.from('quotes').update({ status: 'removed' }).eq('id', id);
     if (error) throw error;
-    showToast('Quote deleted');
+    showToast('Quote removed');
     await loadData();
     renderQuotes();
   } catch(e) {
     console.error('deleteQuoteFromArchive error:', e);
-    showToast('Delete failed', true);
+    showToast('Remove failed', true);
   }
 };
 
@@ -1826,18 +1830,23 @@ window.saveQuote = async function() {
 
 window.deleteQuote = async function() {
   const editId = document.getElementById('quoteEditId').value;
-  if (!editId || !confirm('Delete this quote?')) return;
+  if (!editId || !confirm('Remove this quote from Management?')) return;
   try {
     const q = allQuotes.find(x => x.id === editId);
-    const projId = q?.project_id || editId;
+    if (!q) return;
+    if (q.work_status) {
+      alert('This item is already in Works and cannot be deleted.');
+      return;
+    }
+    const projId = q.project_id || editId;
     await supabase.from('votes').delete().eq('project_id', projId);
-    const { error } = await supabase.from('quotes').delete().eq('id', editId);
+    const { error } = await supabase.from('quotes').update({ status: 'removed' }).eq('id', editId);
     if (error) throw error;
-    showToast('Quote deleted');
+    showToast('Quote removed');
     closeModal('quoteModal');
     await loadData();
     renderQuotes();
-  } catch(e) { showToast('Failed to delete', true); }
+  } catch(e) { showToast('Failed to remove', true); }
 };
 
 function showToast(message, isError = false) {

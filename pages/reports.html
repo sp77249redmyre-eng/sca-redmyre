@@ -344,7 +344,7 @@ async function loadReport() {
   }
   const periodLabel = period==='alltime'?'All time':period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`:period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'}):'—';
   document.getElementById('statPeriodLabel').textContent=periodLabel;
-  let qQuery=supabase.from('quotes').select('*').not('completion_date','is',null).eq('work_status','completed').eq('archived',false).order('completion_date',{ascending:false});
+  let qQuery=supabase.from('quotes').select('*').not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed').order('completion_date',{ascending:false});
   if (dateFrom) qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
   if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
   if (typeFilter==='regular') qQuery=qQuery.eq('is_emergency',false);
