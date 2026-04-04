@@ -631,7 +631,7 @@ function renderPendingQuotes(quotes) {
         <div class="detail-line"><span class="detail-label">Internal:</span><span>${escHtml(qParsed.note || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Category:</span><span>${escHtml(q.category || qParsed.category || '—')}</span></div>
         <div class="detail-line"><span class="detail-label">Priority:</span><span>${escHtml(qParsed.priority || '—')}</span></div>
-        ${files.length ? `<div class="detail-line"><span class="detail-label">Files:</span></div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : ''}`;
+        <div class="detail-line"><span class="detail-label">Files:</span>${files.length ? `</div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : `<span style="color:#9ca3af;margin-left:4px">No files attached</span></div>`}`;
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
     });
@@ -710,8 +710,9 @@ function renderPendingQuotes(quotes) {
         btn.className = `btn-action ${cls}`;
         btn.textContent = label;
         btn.onclick = () => {
-          if (status !== 'declined' && !selectedQuote) { showToast('Please select a vendor first', true); return; }
-          forceAction(status, selectedQuote?.id || null, group, btn);
+          if (status !== 'declined' && !selectedQuote && group.length > 1) { showToast('Please select a vendor first', true); return; }
+          const targetId = selectedQuote?.id || group[0]?.id || null;
+          forceAction(status, targetId, group, btn);
         };
         adminRow.appendChild(btn);
       });
