@@ -300,10 +300,16 @@ window.deleteFile = async function(quoteId, filePath, fileName) {
     const updatedComment = { ...parsed, files: updatedFiles };
     const { error: updateError } = await supabase.from('quotes').update({ comment: updatedComment }).eq('id', quoteId);
     if (updateError) throw updateError;
-    const { error: storageError } = await supabase.storage.from('quotes').remove([filePath]);
-    if (storageError) console.warn('Storage deletion warning:', storageError);
+    // Storage 경로 정규화 (quotes/ prefix 중복 제거)
+    const cleanPath = filePath.replace(/^quotes\//, '');
+    const { error: storageError } = await supabase.storage.from('quotes').remove([cleanPath]);
+    if (storageError) {
+      console.error('Storage deletion failed:', storageError);
+      alert('파일 DB 제거는 완료됐으나 Storage 삭제 실패: ' + storageError.message);
+      return;
+    }
     await loadReport();
-    alert('✓ 파일이 삭제되었습니다.');
+    alert('✓ 파일이 완전히 삭제되었습니다.');
   } catch(e) {
     console.error('File deletion failed:', e);
     alert('삭제 실패: ' + e.message);

@@ -566,6 +566,7 @@ function renderPendingQuotes(quotes) {
     const resultDeclined   = calcResult === 'declined';
     const resultHold       = calcResult === 'hold';
     const resultDetermined = resultApproved || resultDeclined || resultHold;
+    const isLocked         = resultDetermined;
 
     // Winning vendor (for approved result)
     const winnerQuoteId = resultApproved && !isSingle
@@ -774,7 +775,7 @@ function renderPendingQuotes(quotes) {
         const btn = document.createElement('button');
         btn.className = `btn-action btn-${type}`;
         btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        if (userAlreadyVoted || isFinalized) {
+        if (userAlreadyVoted || resultDetermined) {
           btn.disabled = true;
           btn.title = userAlreadyVoted ? 'You have already voted' : 'Voting is closed – result determined';
         } else {
@@ -784,7 +785,7 @@ function renderPendingQuotes(quotes) {
             actionButtons.querySelectorAll('button').forEach(b => { b.disabled = true; });
             const vRow = getUserVoteRow(projectKey);
             // Re-check: result may have been determined since last render
-            if (isFinalized) { showToast('Voting is already closed', true); return; }
+            if (resultDetermined) { showToast('Voting is already closed', true); return; }
             // Block vote if no vendor selected (skip for single quote – auto-selected)
             if (!isSingle && !vRow?.selected_quote_id) {
               showToast('Please select a vendor first', true);
@@ -943,7 +944,7 @@ function renderPendingQuotes(quotes) {
     resultBox.innerHTML = resultHTML;
     votingSection.appendChild(resultBox);
 
-    if (isFinalized) {
+    if (resultDetermined) {
       const lockNotice = document.createElement('div');
       lockNotice.style.cssText = 'margin-top:6px;font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:6px';
       lockNotice.innerHTML = '🔒 Voting Closed';
@@ -960,7 +961,6 @@ function renderPendingQuotes(quotes) {
         } else if (isSingle) {
           confirmQuoteId = group[0]?.id || null;
         } else {
-          // votes 기반 재계산
           const reMap = {};
           group.forEach(q => { reMap[q.id] = 0; });
           votedRows.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && reMap[v.selected_quote_id] !== undefined) reMap[v.selected_quote_id]++; });
