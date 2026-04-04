@@ -376,7 +376,7 @@ async function init() {
 async function loadData() {
   try {
     const [qRes, vRes] = await Promise.all([
-      supabase.from('quotes').select('*').in('status', ['draft','voting','pending']).is('work_status', null).is('completion_date', null).eq('archived', false).order('created_at', { ascending: false }),
+      supabase.from('quotes').select('*').eq('archived', false).order('created_at', { ascending: false }),
       supabase.from('votes').select('*')
     ]);
     allQuotes = qRes.data || [];
@@ -625,13 +625,36 @@ function renderPendingQuotes(quotes) {
 
       const files = Array.isArray(qParsed.files) ? qParsed.files : [];
       const detailsDiv = document.createElement('div');
-      detailsDiv.className = `vendor-details${expandedVendors[quoteId] ? ' show' : ''}`;
-      detailsDiv.innerHTML = `
-        <div class="detail-line"><span class="detail-label">Notes:</span><span>${escHtml(q.notes || '—')}</span></div>
-        <div class="detail-line"><span class="detail-label">Internal:</span><span>${escHtml(qParsed.note || '—')}</span></div>
-        <div class="detail-line"><span class="detail-label">Category:</span><span>${escHtml(q.category || qParsed.category || '—')}</span></div>
-        <div class="detail-line"><span class="detail-label">Priority:</span><span>${escHtml(qParsed.priority || '—')}</span></div>
-        <div class="detail-line"><span class="detail-label">Files:</span>${files.length ? `</div><div class="detail-files">${files.map(f=>`<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}</div>` : `<span style="color:#9ca3af;margin-left:4px">No files attached</span></div>`}`;
+      detailsDiv.className = 'vendor-details' + (expandedVendors[quoteId] ? ' show' : '');
+      const mkLine = (label, val) => {
+        const d = document.createElement('div'); d.className = 'detail-line';
+        d.innerHTML = '<span class="detail-label">' + label + '</span><span>' + escHtml(val) + '</span>';
+        return d;
+      };
+      detailsDiv.appendChild(mkLine('Notes:', q.notes || '—'));
+      detailsDiv.appendChild(mkLine('Internal:', qParsed.note || '—'));
+      detailsDiv.appendChild(mkLine('Category:', q.category || qParsed.category || '—'));
+      detailsDiv.appendChild(mkLine('Priority:', qParsed.priority || '—'));
+      const filesLine = document.createElement('div'); filesLine.className = 'detail-line';
+      filesLine.innerHTML = '<span class="detail-label">Files:</span>';
+      if (files.length) {
+        const fw = document.createElement('div'); fw.className = 'detail-files';
+        files.forEach(f => {
+          const a = document.createElement('a');
+          a.className = 'detail-file-link'; a.href = '#';
+          a.innerHTML = '📎 ' + escHtml(f.name);
+          a.onclick = (e) => { e.preventDefault(); openFileViewer(f.path || f.url || '', f.name, f.type || ''); };
+          fw.appendChild(a);
+        });
+        detailsDiv.appendChild(filesLine);
+        detailsDiv.appendChild(fw);
+      } else {
+        const ns = document.createElement('span');
+        ns.style.cssText = 'color:#9ca3af;margin-left:4px;font-size:13px';
+        ns.textContent = 'No files attached';
+        filesLine.appendChild(ns);
+        detailsDiv.appendChild(filesLine);
+      }
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
     });
@@ -1138,17 +1161,33 @@ function renderArchiveTable(quotes) {
       const files = Array.isArray(qp.files) ? qp.files : [];
       const row   = document.createElement('div');
       row.className = 'mgmt-quote-row';
-      row.innerHTML = `
-        <div>
-          <span style="font-weight:600;color:#1f2937">${escHtml(q.vendor || '—')}</span>
-          <span style="color:#64748b;margin-left:8px">$${Number(q.amount||0).toLocaleString('en-AU')} + GST</span>
-          <span class="status-badge status-${q.status}" style="margin-left:8px">${q.status.toUpperCase()}</span>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          ${files.map(f => `<a class="detail-file-link" href="#" onclick="openFileViewer(${JSON.stringify(f.path||f.url||'')},${JSON.stringify(f.name)},${JSON.stringify(f.type||'')});return false;">📎 ${escHtml(f.name)}</a>`).join('')}
-          ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-blue" onclick="editQuote('${q.id}')">✏️ Edit</button>` : ''}
-          ${role === 'admin' ? `<button class="btn-mgmt btn-mgmt-red" onclick="deleteQuoteFromArchive('${q.id}')">🗑 Delete</button>` : ''}
-        </div>`;
+      const rowLeft = document.createElement('div');
+      const isNewQ = (Date.now() - new Date(q.created_at).getTime()) < 86400000;
+      rowLeft.innerHTML = '<span style="font-weight:600;color:#1f2937">' + escHtml(q.vendor || '—') + '</span>'
+        + '<span style="color:#64748b;margin-left:8px">$' + Number(q.amount||0).toLocaleString('en-AU') + ' + GST</span>'
+        + '<span class="status-badge status-' + q.status + '" style="margin-left:8px">' + q.status.toUpperCase() + '</span>'
+        + (isNewQ ? '<span style="margin-left:6px;padding:2px 8px;background:#dbeafe;color:#1e40af;border-radius:10px;font-size:11px;font-weight:700">NEW</span>' : '');
+      row.appendChild(rowLeft);
+      const rowRight = document.createElement('div');
+      rowRight.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;align-items:center';
+      files.forEach(f => {
+        const a = document.createElement('a');
+        a.className = 'detail-file-link'; a.href = '#';
+        a.innerHTML = '📎 ' + escHtml(f.name);
+        a.onclick = (e) => { e.preventDefault(); openFileViewer(f.path || f.url || '', f.name, f.type || ''); };
+        rowRight.appendChild(a);
+      });
+      if (role === 'admin') {
+        const eb = document.createElement('button');
+        eb.className = 'btn-mgmt btn-mgmt-blue'; eb.textContent = '✏️ Edit';
+        eb.onclick = () => editQuote(q.id);
+        rowRight.appendChild(eb);
+        const db = document.createElement('button');
+        db.className = 'btn-mgmt btn-mgmt-red'; db.textContent = '🗑 Delete';
+        db.onclick = () => deleteQuoteFromArchive(q.id);
+        rowRight.appendChild(db);
+      }
+      row.appendChild(rowRight);
       quotesList.appendChild(row);
     });
     inner.appendChild(quotesList);
@@ -1342,12 +1381,16 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
 
     if (status === 'approved') {
       if (!quoteId) { showToast('Select a vendor first', true); if (triggerBtn) triggerBtn.disabled = false; return; }
-      // selected → approved, others → declined
+      // selected → approved + work_status=scheduled, others → declined
       if (otherIds.length) {
         const { error } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
         if (error) throw error;
       }
-      const { error } = await supabase.from('quotes').update({ status: 'approved' }).eq('id', quoteId);
+      const { error } = await supabase.from('quotes').update({
+        status: 'approved',
+        work_status: 'scheduled',
+        work_start_date: new Date().toISOString().split('T')[0]
+      }).eq('id', quoteId);
       if (error) throw error;
     } else if (status === 'declined') {
       // ALL → declined
@@ -1395,8 +1438,10 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
     if (calcResult === 'approved') {
       // Winner → approved, others → declined
       if (!quoteId) { showToast('No vendor selected', true); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = '✔ Confirm & Send Notification'; } return; }
+      // Winner → approved + work_status=scheduled (single source of truth: quotes table)
       const { error: eA } = await supabase.from('quotes').update({
         status: 'approved',
+        work_status: 'scheduled',
         work_start_date: new Date().toISOString().split('T')[0]
       }).eq('id', quoteId);
       if (eA) throw eA;
@@ -1404,16 +1449,6 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
         const { error: eD } = await supabase.from('quotes').update({ status: 'declined' }).in('id', otherIds);
         if (eD) throw eD;
       }
-      // Upsert into works
-      try {
-        const projectId = group[0]?.project_id || group[0]?.id || null;
-        if (quoteId && projectId) {
-          await supabase.from('works').upsert(
-            { quote_id: quoteId, project_id: projectId, work_status: 'scheduled', completion_date: null },
-            { onConflict: 'quote_id' }
-          );
-        }
-      } catch(workErr) { console.warn('Works upsert failed (non-critical):', workErr); }
 
     } else if (calcResult === 'hold') {
       // ALL quotes → onhold
@@ -1645,11 +1680,11 @@ async function uploadFiles(quoteId) {
   const uploaded = [];
   for (const file of pendingFiles) {
     const ext  = file.name.split('.').pop();
-    const path = `quotes/${quoteId}/${crypto.randomUUID()}.${ext}`;
+    const safeName = file.name.replace(/[^\w.\-]/g, '_');
+    const path = `${quoteId}/${crypto.randomUUID()}-${safeName}`;
     const { error } = await supabase.storage.from('quotes').upload(path, file);
     if (error) { console.error('upload error:', error); continue; }
-    const { data } = supabase.storage.from('quotes').getPublicUrl(path);
-    uploaded.push({ name: file.name, url: data.publicUrl, path });
+    uploaded.push({ name: file.name, path, type: file.type || '', size: file.size || 0 });
   }
   return uploaded;
 }
@@ -1735,24 +1770,42 @@ window.saveQuote = async function() {
     const uploadedFiles = pendingFiles.length > 0 ? await uploadFiles(quoteId) : [];
     const commentPayload = JSON.stringify({ note: internalNote, files: uploadedFiles, category, priority });
 
+    // Determine status — block adding to approved project
+    let newStatus = 'draft';
+    if (!isNew) {
+      const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId);
+      if (existing.some(q => q.status === 'approved')) {
+        showToast('Cannot add quote to an approved project', true);
+        btn.disabled = false; btn.textContent = 'Save Quote';
+        return;
+      }
+      if (existing.some(q => q.status === 'voting'))   newStatus = 'voting';
+      else if (existing.some(q => q.status === 'onhold'))   newStatus = 'voting';
+      else if (existing.some(q => q.status === 'declined')) newStatus = 'voting';
+    }
+
     const { error } = await supabase.from('quotes').insert({
       id: quoteId, project_id: projectId,
       project: projectName, project_title: projectName,
       vendor, amount, category, notes,
       comment: commentPayload,
-      status: isNew ? 'draft' : (() => {
-        const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId);
-        if (existing.some(q => q.status === 'voting'))  return 'voting';
-        if (existing.every(q => q.status === 'onhold')) return 'onhold';
-        if (existing.some(q => q.status === 'onhold'))  return 'onhold';
-        return 'draft';
-      })(),
+      status: newStatus,
       created_at: new Date().toISOString()
     });
     if (error) throw error;
 
+    // Reopen existing onhold/declined quotes in same project → voting
+    if (!isNew) {
+      const existingIds = allQuotes
+        .filter(q => (q.project_id || q.id) === projectId && ['onhold','declined'].includes(q.status))
+        .map(q => q.id).filter(Boolean);
+      if (existingIds.length) {
+        await supabase.from('quotes').update({ status: 'voting' }).in('id', existingIds);
+        await supabase.from('votes').delete().eq('project_id', projectId);
+      }
+    }
     pendingFiles = [];
-    showToast('Quote created (Draft)');
+    showToast('Quote created');
     closeModal('quoteModal');
     await loadData();
     renderQuotes();
@@ -1792,8 +1845,16 @@ function showToast(message, isError = false) {
 window.openFileViewer = async function(path, name, type) {
   if (!path) return;
   try {
-    const { data } = await supabase.storage.from('quotes').createSignedUrl(path, 3600);
-    const url = data?.signedUrl;
+    // Handle legacy files stored with full public URL instead of path
+    let url;
+    if (path.startsWith('http')) {
+      url = path;
+    } else {
+      // Remove accidental 'quotes/' prefix from old uploads
+      const cleanPath = path.replace(/^quotes\//, '');
+      const { data } = await supabase.storage.from('quotes').createSignedUrl(cleanPath, 3600);
+      url = data?.signedUrl;
+    }
     if (!url) throw new Error('No URL');
     let html = '';
     if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
