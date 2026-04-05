@@ -108,6 +108,20 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
+async function logActivity(action, record_id = null) {
+  try {
+    if (role === 'admin') return;
+    await supabase.from('audit_logs').insert({
+      user_email: user.email,
+      user_role: role,
+      action,
+      record_id,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) {}
+}
+await logActivity('PAGE_ENTER');
+window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
 
 if (role === 'admin') document.getElementById('addAnnBtn').style.display = 'inline-flex';
 
@@ -130,7 +144,7 @@ function renderAnns() {
     return;
   }
   list.innerHTML = filtered.map(a => `
-    <div class="ann-item ${a.pinned?'pinned':''}">
+    <div class="ann-item ${a.pinned?'pinned':''}" onclick="logActivity('ANNOUNCEMENT_VIEWED','${a.id}')">
       <div class="ann-top">
         <div>
           <div class="ann-title">${a.pinned?'📌 ':''}${a.title}</div>

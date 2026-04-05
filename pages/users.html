@@ -71,15 +71,32 @@
 .log-table tbody tr{border-bottom:1px solid var(--border-light);transition:background 0.12s}
 .log-table tbody tr:hover{background:var(--bg)}
 .log-table tbody tr:last-child{border-bottom:none}
-.log-table td{padding:14px 16px;font-size:13px}
-.log-table .log-time{color:var(--muted);font-size:12px;white-space:nowrap}
+.log-table td{padding:12px 16px;font-size:13px}
+.log-table .log-time{color:var(--muted);font-size:12px;white-space:nowrap;min-width:110px}
+.log-time-ago{font-size:12px;font-weight:500;color:var(--text-2)}
+.log-time-abs{font-size:11px;color:var(--muted);margin-top:2px}
 .log-table .log-user-cell{display:flex;align-items:center;gap:8px}
-.log-table .log-user-avatar{width:32px;height:32px;border-radius:50%;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.log-table .log-user-name{font-weight:500}
-.log-table .log-action-icon{font-size:14px;margin-right:4px}
-.log-table .log-action-text{color:var(--text-2)}
-.log-delete-btn{padding:4px 8px;font-size:11px;border:1px solid var(--red);color:var(--red);background:transparent;border-radius:6px;cursor:pointer;transition:all 0.2s}
-.log-delete-btn:hover{background:var(--red);color:white}
+.log-table .log-user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.av-log-committee{background:var(--blue-50);color:var(--blue-700)}
+.av-log-observer{background:var(--green-bg);color:var(--green-text)}
+.av-log-owner{background:var(--border-light);color:var(--text-2)}
+.av-log-tenant{background:var(--border-light);color:var(--text-2)}
+.av-log-default{background:var(--blue-50);color:var(--blue-700)}
+.log-user-name{font-size:13px;font-weight:500;color:var(--text)}
+.log-user-email{font-size:11px;color:var(--muted);margin-top:1px}
+.log-role-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;margin-top:3px}
+.role-badge-committee{background:var(--blue-50);color:var(--blue-700)}
+.role-badge-observer{background:var(--green-bg);color:var(--green-text)}
+.role-badge-owner{background:var(--border-light);color:var(--text-2)}
+.role-badge-tenant{background:var(--border-light);color:var(--text-2)}
+.log-action-cell{display:flex;align-items:flex-start;gap:10px}
+.log-action-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.dot-high{background:#ef4444}
+.dot-medium{background:#3b82f6}
+.dot-low{background:var(--muted)}
+.log-action-label{font-size:13px;font-weight:500;color:var(--text);line-height:1.4}
+.log-action-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:monospace}
+.log-date-group{padding:10px 16px 6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;background:var(--bg);border-bottom:1px solid var(--border-light)}
 .log-empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px}
 .log-load-more{width:100%;padding:12px;margin-top:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s}
 .log-load-more:hover{background:var(--bg)}
@@ -216,16 +233,33 @@
       <div class="log-filters">
         <select id="filterAction">
           <option value="">All Actions</option>
-          <option value="quote_approved">Quote Approved</option>
-          <option value="quote_declined">Quote Declined</option>
-          <option value="quote_held">Quote Held</option>
-          <option value="work_created">Work Created</option>
-          <option value="work_completed">Work Completed</option>
-          <option value="role_changed">Role Changed</option>
-          <option value="password_changed">Password Changed</option>
-          <option value="user_invited">User Invited</option>
-          <option value="user_removed">User Removed</option>
-          <option value="sidebar_permissions_updated">Sidebar Permissions Updated</option>
+          <optgroup label="User Activity">
+            <option value="PAGE_ENTER">Page Visit</option>
+            <option value="QUOTE_VOTED">Voted on Quote</option>
+            <option value="QUOTE_COMMENTED">Commented on Quote</option>
+            <option value="COMPLAINT_CREATED">Created Request</option>
+            <option value="PARKING_REPORTED">Reported Parking</option>
+            <option value="ANNOUNCEMENT_VIEWED">Viewed Announcement</option>
+          </optgroup>
+          <optgroup label="Admin Actions">
+            <option value="quote_approved">Quote Approved</option>
+            <option value="quote_declined">Quote Declined</option>
+            <option value="quote_held">Quote Held</option>
+            <option value="work_created">Work Created</option>
+            <option value="work_completed">Work Completed</option>
+            <option value="role_changed">Role Changed</option>
+            <option value="password_changed">Password Changed</option>
+            <option value="user_invited">User Invited</option>
+            <option value="user_removed">User Removed</option>
+            <option value="sidebar_permissions_updated">Sidebar Permissions Updated</option>
+          </optgroup>
+        </select>
+        <select id="filterRole">
+          <option value="">All Roles</option>
+          <option value="committee">Committee</option>
+          <option value="observer">Observer</option>
+          <option value="owner">Owner</option>
+          <option value="tenant">Tenant</option>
         </select>
         <select id="filterPeriod">
           <option value="7">Last 7 days</option>
@@ -236,9 +270,32 @@
         </select>
       </div>
 
-      <div class="log-count" id="logCount">Loading...</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="log-count" id="logCount">Loading...</div>
+        <div style="display:flex;gap:8px">
+          <button id="inactiveBtn" onclick="toggleInactivePanel()" style="padding:7px 14px;font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.15s">👻 Inactive Users</button>
+          <button class="btn-danger" onclick="clearAllLogs()" style="padding:7px 14px;font-size:13px">🗑️ Clear All Logs</button>
+        </div>
+      </div>
 
-      <button class="btn-danger" onclick="clearAllLogs()" style="margin-bottom:12px;padding:8px 16px;font-size:13px">🗑️ Clear All Logs</button>
+      <!-- Inactive Users Panel -->
+      <div id="inactivePanel" style="display:none;margin-bottom:16px">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border-light)">
+            <div style="font-size:13px;font-weight:600">Inactive Users</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <select id="inactiveDays" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
+                <option value="7">No activity in 7 days</option>
+                <option value="14">No activity in 14 days</option>
+                <option value="30" selected>No activity in 30 days</option>
+                <option value="60">No activity in 60 days</option>
+              </select>
+              <button onclick="loadInactiveUsers()" style="padding:5px 12px;font-size:12px;font-weight:500;border:1px solid var(--blue-600);border-radius:7px;background:var(--blue-50);color:var(--blue-700);cursor:pointer">Refresh</button>
+            </div>
+          </div>
+          <div id="inactiveList" style="padding:16px"><div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Loading…</div></div>
+        </div>
+      </div>
 
       <div class="card">
         <div id="activityList"><div class="log-empty">Loading activity…</div></div>
@@ -744,6 +801,7 @@ let currentOffset = 0;
 const LIMIT = 50;
 let allLogs = [];
 let hasMore = true;
+let quoteProjectMap = {};
 
 async function loadActivityLog(append = false) {
   const filterAction = document.getElementById('filterAction').value;
@@ -758,6 +816,9 @@ async function loadActivityLog(append = false) {
   }
   
   if (filterAction) query = query.eq('action', filterAction);
+  
+  const filterRole = document.getElementById('filterRole')?.value;
+  if (filterRole) query = query.eq('user_role', filterRole);
   
   if (append) {
     query = query.range(currentOffset, currentOffset + LIMIT - 1);
@@ -800,7 +861,36 @@ async function loadActivityLog(append = false) {
   
   countEl.textContent = `${count} ${count === 1 ? 'activity' : 'activities'} found`;
   loadMoreBtn.style.display = hasMore ? 'block' : 'none';
-  
+
+  // Fetch project names for QUOTE_VOTED / QUOTE_COMMENTED logs
+  const quoteIds = [...new Set(allLogs
+    .filter(l => (l.action === 'QUOTE_VOTED' || l.action === 'QUOTE_COMMENTED') && l.record_id)
+    .map(l => l.record_id))];
+  if (quoteIds.length) {
+    const { data: qRows } = await supabase
+      .from('quotes')
+      .select('id, project, project_title, project_id')
+      .in('id', quoteIds);
+    if (qRows) {
+      qRows.forEach(q => { quoteProjectMap[q.id] = q.project || q.project_title || null; });
+    }
+    // Also try project_id matches (vote uses projectKey which may be project_id)
+    const projectIds = [...new Set(allLogs
+      .filter(l => (l.action === 'QUOTE_VOTED' || l.action === 'QUOTE_COMMENTED') && l.record_id)
+      .map(l => l.record_id))];
+    const { data: pRows } = await supabase
+      .from('quotes')
+      .select('project_id, project, project_title')
+      .in('project_id', projectIds);
+    if (pRows) {
+      pRows.forEach(q => {
+        if (q.project_id && !quoteProjectMap[q.project_id]) {
+          quoteProjectMap[q.project_id] = q.project || q.project_title || null;
+        }
+      });
+    }
+  }
+
   renderActivityTable();
 }
 
@@ -815,97 +905,122 @@ function renderActivityTable() {
         (log.action||'').toLowerCase().includes(logQ)
       )
     : allLogs;
-  
-  const actionIcons = {
-    quote_approved: '✅', quote_declined: '❌', quote_held: '⏸️', work_created: '➕', work_completed: '✅',
-    role_changed: '👥', password_changed: '🔐', user_invited: '📧', user_removed: '🗑️', sidebar_permissions_updated: '🔐'
+
+  if (!filteredLogs.length) {
+    list.innerHTML = '<div class="log-empty">No user activity yet</div>';
+    return;
+  }
+
+  // Action config: label, dot priority
+  const ACTION_CONFIG = {
+    // User activity
+    PAGE_ENTER:           { label: 'Visited page',            sub: log => getPageName(log.page || log.record_id || ''),   priority: 'low' },
+    PAGE_EXIT:            { label: 'Left page',               sub: log => getPageName(log.page || log.record_id || ''),   priority: 'low' },
+    QUOTE_VOTED:          { label: 'Voted on quote',          sub: log => log.details?.project || quoteProjectMap[log.record_id] || (log.record_id ? shortId(log.record_id) : ''), priority: 'high' },
+    QUOTE_COMMENTED:      { label: 'Commented on quote',      sub: log => log.details?.project || quoteProjectMap[log.record_id] || (log.record_id ? shortId(log.record_id) : ''), priority: 'medium' },
+    COMPLAINT_CREATED:    { label: 'Created request',         sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'medium' },
+    PARKING_REPORTED:     { label: 'Reported parking issue',  sub: () => '',                                              priority: 'medium' },
+    ANNOUNCEMENT_VIEWED:  { label: 'Viewed announcement',     sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'low' },
+    // Admin actions
+    quote_approved:             { label: 'Approved quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
+    quote_declined:             { label: 'Declined quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
+    quote_held:                 { label: 'Put quote on hold',         sub: () => '',                                      priority: 'high' },
+    work_created:               { label: 'Created work',              sub: () => '',                                      priority: 'medium' },
+    work_completed:             { label: 'Completed work',            sub: () => '',                                      priority: 'medium' },
+    role_changed:               { label: 'Changed user role',         sub: log => log.details?.target_user ? `${log.details.target_user} → ${log.details.new_role}` : '', priority: 'medium' },
+    password_changed:           { label: 'Changed password',          sub: log => log.details?.target_user || '',         priority: 'low' },
+    user_invited:               { label: 'Invited user',              sub: log => log.details?.invited_email || '',       priority: 'medium' },
+    user_removed:               { label: 'Removed user',              sub: log => log.details?.removed_user || '',        priority: 'high' },
+    sidebar_permissions_updated:{ label: 'Updated sidebar permissions',sub: log => log.details?.role ? `for ${log.details.role}` : '', priority: 'low' },
   };
-  
-  const actionLabels = {
-    quote_approved: 'Approved Quote', quote_declined: 'Declined Quote', quote_held: 'Put Quote on Hold',
-    work_created: 'Created Work', work_completed: 'Completed Work', role_changed: 'Changed User Role',
-    password_changed: 'Changed Password', user_invited: 'Invited User', user_removed: 'Removed User',
-    sidebar_permissions_updated: 'Updated Sidebar Permissions'
-  };
-  
-  const tableHTML = `
-    <table class="log-table">
-      <thead>
-        <tr>
-          <th style="width:140px">Time</th>
-          <th style="width:200px">User</th>
-          <th>Action</th>
-          <th style="width:80px;text-align:center">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${filteredLogs.map(log => {
-          const ini = (log.user_name || log.user_email || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-          const timeAgo = formatTimeAgo(new Date(log.created_at));
-          const icon = actionIcons[log.action] || '📝';
-          const label = actionLabels[log.action] || log.action;
-          
-          let details = '';
-          if (log.details) {
-            if (log.details.quote_title) details = ` #${log.details.quote_id}`;
-            if (log.details.new_role) details = ` → ${log.details.target_user} to ${log.details.new_role}`;
-            if (log.details.target_user && log.action === 'password_changed') details = ` for ${log.details.target_user}`;
-            if (log.details.invited_email) details = ` ${log.details.invited_email}`;
-            if (log.details.removed_user) details = ` ${log.details.removed_user}`;
-            if (log.details.role && log.action === 'sidebar_permissions_updated') details = ` for ${log.details.role}`;
-          }
-          
-          return `
-            <tr>
-              <td class="log-time" data-label="Time">${timeAgo}</td>
-              <td data-label="User">
-                <div class="log-user-cell">
-                  <div class="log-user-avatar">${ini}</div>
-                  <span class="log-user-name">${log.user_name || log.user_email}</span>
-                </div>
-              </td>
-              <td data-label="Action">
-                <span class="log-action-icon">${icon}</span>
-                <span class="log-action-text">${label}${details}</span>
-              </td>
-              <td style="text-align:center" data-label="Delete">
-                <button class="log-delete-btn" onclick="deleteLog('${log.id}')">🗑️</button>
-              </td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
-  
-  list.innerHTML = tableHTML;
+
+  const ROLE_AVATAR_CLASS = { committee:'av-log-committee', observer:'av-log-observer', owner:'av-log-owner', tenant:'av-log-tenant' };
+  const ROLE_BADGE_CLASS  = { committee:'role-badge-committee', observer:'role-badge-observer', owner:'role-badge-owner', tenant:'role-badge-tenant' };
+  const DOT_CLASS = { high:'dot-high', medium:'dot-medium', low:'dot-low' };
+
+  function shortId(id) { return id ? id.slice(0,8) : ''; }
+  function getPageName(p) {
+    if (!p) return '';
+    const map = { '/pages/quotes.html':'Quotes', '/pages/works.html':'Works', '/pages/reports.html':'Reports',
+      '/pages/complaints.html':'Requests', '/pages/parking.html':'Parking', '/pages/announcements.html':'Announcements',
+      '/pages/hvac.html':'HVAC', '/pages/building.html':'Overview', '/pages/users.html':'Users' };
+    return map[p] || p.split('/').pop().replace('.html','');
+  }
+
+  // Group by date
+  function dateGroup(d) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (day >= today) return 'Today';
+    if (day >= yesterday) return 'Yesterday';
+    return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function formatAbsTime(d) {
+    return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) + ' ' +
+      d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:false});
+  }
+
+  // Build rows grouped by date
+  let html = '<table class="log-table"><thead><tr><th style="width:120px">Time</th><th style="width:210px">User</th><th>Activity</th></tr></thead><tbody>';
+  let lastGroup = null;
+
+  filteredLogs.forEach(log => {
+    const d = new Date(log.created_at);
+    const group = dateGroup(d);
+    if (group !== lastGroup) {
+      html += `<tr><td colspan="3" class="log-date-group">${group}</td></tr>`;
+      lastGroup = group;
+    }
+
+    const ini = (log.user_email || 'U').split('@')[0].slice(0,2).toUpperCase();
+    const timeAgo = formatTimeAgo(d);
+    const absTime = formatAbsTime(d);
+
+    const cfg = ACTION_CONFIG[log.action] || { label: log.action, sub: () => '', priority: 'low' };
+    const label = cfg.label;
+    const sub = cfg.sub(log);
+    const dotCls = DOT_CLASS[cfg.priority] || 'dot-low';
+
+    const role = log.user_role || '';
+    const avCls = ROLE_AVATAR_CLASS[role] || 'av-log-default';
+    const badgeCls = ROLE_BADGE_CLASS[role] || '';
+    const roleCap = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+
+    html += `
+      <tr>
+        <td class="log-time" data-label="Time">
+          <div class="log-time-ago">${timeAgo}</div>
+          <div class="log-time-abs">${absTime}</div>
+        </td>
+        <td data-label="User">
+          <div class="log-user-cell">
+            <div class="log-user-avatar ${avCls}">${ini}</div>
+            <div>
+              <div class="log-user-name">${log.user_email || '—'}</div>
+              ${roleCap ? `<span class="log-role-badge ${badgeCls}">${roleCap}</span>` : ''}
+            </div>
+          </div>
+        </td>
+        <td data-label="Activity">
+          <div class="log-action-cell">
+            <div class="log-action-dot ${dotCls}"></div>
+            <div>
+              <div class="log-action-label">${label}</div>
+              ${sub ? `<div class="log-action-sub">${sub}</div>` : ''}
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  });
+
+  html += '</tbody></table>';
+  list.innerHTML = html;
 }
 
-window.deleteLog = async (logId) => {
-  if (!confirm('Delete this activity log entry?\nThis action cannot be undone.')) return;
-  
-  try {
-    const { error } = await supabase.from('audit_logs').delete().eq('id', logId);
-    if (error) throw error;
-    
-    showToast('Activity log deleted ✓');
-    
-    // Remove from allLogs array
-    allLogs = allLogs.filter(log => log.id !== logId);
-    currentOffset = allLogs.length;
-    
-    renderActivityTable();
-    
-    // Update count
-    const countEl = document.getElementById('logCount');
-    const currentCount = parseInt(countEl.textContent);
-    countEl.textContent = `${currentCount - 1} ${currentCount - 1 === 1 ? 'activity' : 'activities'} found`;
-    
-  } catch(e) {
-    console.error('Delete log error:', e);
-    showToast('Failed to delete log', true);
-  }
-};
+
 
 window.clearAllLogs = async () => {
   if (!confirm('⚠️ Delete ALL activity logs?\n\nThis will permanently delete all activity history.\nThis action cannot be undone.')) return;
@@ -931,21 +1046,131 @@ window.clearAllLogs = async () => {
 function formatTimeAgo(date) {
   const now = new Date();
   const diff = now - date;
+  const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
   
-  if (minutes < 1) return 'Just now';
+  if (seconds < 60) return 'Just now';
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString('en-AU', { day:'numeric', month:'short' });
 }
 
 document.getElementById('filterAction').addEventListener('change', () => loadActivityLog(false));
+document.getElementById('filterRole').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('filterPeriod').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('loadMoreBtn').addEventListener('click', () => loadActivityLog(true));
 document.getElementById('logSearch').addEventListener('input', () => renderActivityTable());
+document.getElementById('inactiveDays').addEventListener('change', () => loadInactiveUsers());
+
+let inactivePanelOpen = false;
+
+window.toggleInactivePanel = function() {
+  inactivePanelOpen = !inactivePanelOpen;
+  const panel = document.getElementById('inactivePanel');
+  const btn = document.getElementById('inactiveBtn');
+  panel.style.display = inactivePanelOpen ? 'block' : 'none';
+  btn.style.background = inactivePanelOpen ? 'var(--amber-50)' : 'var(--surface)';
+  btn.style.borderColor = inactivePanelOpen ? 'var(--amber-200)' : 'var(--border)';
+  btn.style.color = inactivePanelOpen ? 'var(--amber-900)' : 'var(--text)';
+  if (inactivePanelOpen) loadInactiveUsers();
+};
+
+window.loadInactiveUsers = async function() {
+  const days = parseInt(document.getElementById('inactiveDays').value) || 30;
+  const listEl = document.getElementById('inactiveList');
+  listEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Loading…</div>';
+
+  try {
+    // Get all non-admin profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role')
+      .neq('role', 'admin')
+      .order('role').order('full_name');
+
+    if (!profiles || !profiles.length) {
+      listEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No users found</div>';
+      return;
+    }
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+
+    // Get latest activity per user
+    const { data: recentLogs } = await supabase
+      .from('audit_logs')
+      .select('user_email, created_at')
+      .gte('created_at', cutoff.toISOString())
+      .neq('action', 'PAGE_EXIT');
+
+    const activeEmails = new Set((recentLogs || []).map(l => l.user_email));
+
+    const inactive = profiles.filter(p => !activeEmails.has(p.email));
+
+    if (!inactive.length) {
+      listEl.innerHTML = `<div style="text-align:center;color:var(--green);font-size:13px;padding:24px;font-weight:500">✓ All users active in the last ${days} days</div>`;
+      return;
+    }
+
+    // Get last activity date for each inactive user
+    const inactiveEmails = inactive.map(p => p.email);
+    const { data: lastLogs } = await supabase
+      .from('audit_logs')
+      .select('user_email, created_at')
+      .in('user_email', inactiveEmails)
+      .neq('action', 'PAGE_EXIT')
+      .order('created_at', { ascending: false });
+
+    const lastSeen = {};
+    (lastLogs || []).forEach(l => {
+      if (!lastSeen[l.user_email]) lastSeen[l.user_email] = l.created_at;
+    });
+
+    const ROLE_BADGE = { committee:'role-badge-committee', observer:'role-badge-observer', owner:'role-badge-owner', tenant:'role-badge-tenant' };
+    const ROLE_AV = { committee:'av-log-committee', observer:'av-log-observer', owner:'av-log-owner', tenant:'av-log-tenant' };
+
+    const rows = inactive.map(p => {
+      const ini = (p.email || 'U').split('@')[0].slice(0,2).toUpperCase();
+      const displayName = p.full_name || p.email || '—';
+      const roleCap = p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : '';
+      const avCls = ROLE_AV[p.role] || 'av-log-default';
+      const badgeCls = ROLE_BADGE[p.role] || '';
+      const last = lastSeen[p.email]
+        ? new Date(lastSeen[p.email]).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
+        : 'Never';
+      const neverActive = !lastSeen[p.email];
+
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border-light)">
+          <div class="log-user-avatar ${avCls}" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--text)">${displayName}</div>
+            <div style="font-size:11px;color:var(--muted)">${p.email}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            ${roleCap ? `<div><span class="log-role-badge ${badgeCls}">${roleCap}</span></div>` : ''}
+            <div style="font-size:11px;margin-top:3px;${neverActive ? 'color:var(--red)' : 'color:var(--muted)'}">
+              ${neverActive ? '⚠️ Never active' : `Last seen: ${last}`}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    listEl.innerHTML = `
+      <div style="padding:0 4px 8px;font-size:12px;color:var(--muted)">
+        ${inactive.length} user${inactive.length > 1 ? 's' : ''} with no activity in the last ${days} days
+      </div>
+      ${rows}`;
+
+  } catch(e) {
+    console.error('Inactive users error:', e);
+    listEl.innerHTML = '<div style="text-align:center;color:var(--red);font-size:13px;padding:20px">Failed to load</div>';
+  }
+};
 
 // Invite modal
 document.getElementById('inviteRole').addEventListener('change', () => {

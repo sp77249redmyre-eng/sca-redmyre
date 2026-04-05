@@ -124,6 +124,20 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
+async function logActivity(action, record_id = null) {
+  try {
+    if (role === 'admin') return;
+    await supabase.from('audit_logs').insert({
+      user_email: user.email,
+      user_role: role,
+      action,
+      record_id,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) {}
+}
+await logActivity('PAGE_ENTER');
+window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
 
 const BAYS = {
   entry:  ['Loading Bay 1','Loading Bay 2'],
@@ -182,7 +196,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
   }
 
   try {
-    await supabase.from('parking_reports').insert({ 
+    const { data: prInserted } = await supabase.from('parking_reports').insert({ 
       plate, 
       location:bay||area, 
       violation:selectedVio, 
@@ -192,7 +206,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
       reported_by:user.id, 
       reporter_name:name, 
       status:'active' 
-    });
+    }).select().single();
     
     document.getElementById('plateInput').value='';
     document.getElementById('locationArea').value='';
@@ -202,6 +216,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
     selectedVio=null;
     
+    await logActivity('PARKING_REPORTED', prInserted?.id || null);
     showToast('Report submitted! All residents have been notified 🚨');
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); }

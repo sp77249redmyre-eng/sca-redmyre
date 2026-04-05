@@ -210,6 +210,20 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
+async function logActivity(action, record_id = null) {
+  try {
+    if (role === 'admin') return;
+    await supabase.from('audit_logs').insert({
+      user_email: user.email,
+      user_role: role,
+      action,
+      record_id,
+      created_at: new Date().toISOString()
+    });
+  } catch (e) {}
+}
+await logActivity('PAGE_ENTER');
+window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
 
 const canSubmit   = ['admin','committee','owner','tenant'];
 const canViewAll  = ['admin','committee','observer'];
@@ -376,6 +390,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
     closeModal('complaintModal');
     pendingPhotos = [];
     await loadComplaints();
+    await logActivity('COMPLAINT_CREATED', inserted.id);
     showToast('Request submitted ✓');
   } catch(e) { showToast(e.message||'Failed to submit', true); }
   finally { btn.disabled = false; btn.textContent = 'Submit →'; }

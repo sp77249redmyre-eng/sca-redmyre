@@ -437,6 +437,21 @@ async function init() {
   supabase = layoutResult.supabase;
   user     = layoutResult.user;
   role     = layoutResult.role || 'observer';
+
+  window.logActivity = async function(action, record_id = null) {
+    try {
+      if (role === 'admin') return;
+      await supabase.from('audit_logs').insert({
+        user_email: user.email,
+        user_role: role,
+        action,
+        record_id,
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {}
+  };
+  await window.logActivity('PAGE_ENTER');
+  window.addEventListener('beforeunload', () => { window.logActivity('PAGE_EXIT'); });
   const { data: profiles } = await supabase.from('profiles').select('email, full_name, role');
   committeeMembers = [];
   (profiles || []).forEach(p => {
@@ -814,6 +829,7 @@ function renderPendingQuotes(quotes) {
             }
             // Hard re-check vote lock
             if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); return; }
+            if (window.logActivity) window.logActivity('QUOTE_VOTED', projectKey);
             doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
           };
         }
@@ -887,6 +903,7 @@ function renderPendingQuotes(quotes) {
     submitBtn.onclick = () => {
       const txt = textarea.value.trim();
       if (!txt) { showToast('Please enter a comment', true); return; }
+      if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
       doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
     };
     inputArea.appendChild(textarea);
