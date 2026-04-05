@@ -128,6 +128,7 @@
   .user-row > div:nth-child(5) button{flex:1;min-width:100px}
   
   .perm-header{flex-direction:column;align-items:stretch}
+  .perm-two-col{grid-template-columns:1fr!important}
   .perm-header select{width:100%}
   .perm-section{padding:14px}
   .perm-item{flex-wrap:wrap}
@@ -431,7 +432,7 @@ const PAGE_ICONS = {
   hvac: '❄️',
   emergency: '🚨',
   works: '🔧',
-  dashboard: '📊',
+  'cost-dashboard': '💹',
   history: '🌡️',
   quotes: '📋',
   reports: '💰'
@@ -445,7 +446,7 @@ const PAGE_LABELS = {
   hvac: 'HVAC (A/C 온도)',
   emergency: 'Emergency (긴급 연락처)',
   works: 'Works (진행 작업)',
-  dashboard: 'Dashboard (대시보드)',
+  'cost-dashboard': 'Cost Analysis (비용 분석)',
   history: 'History (온도 히스토리)',
   quotes: 'Quotes (견적 승인)',
   reports: 'Reports (재무 보고)'
@@ -673,30 +674,31 @@ async function loadSidebarPermissions() {
 }
 
 function renderSidebarPermissions(selectedRole) {
-  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'];
+  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'cost-dashboard', 'history', 'quotes', 'reports'];
   
   const html = `
-    <div class="perm-section">
-      <div class="perm-section-title">📱 Sidebar Menu Access</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
-        Select which pages <strong>${selectedRole}</strong> users can access from the sidebar menu.
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div class="perm-section" style="margin-bottom:0">
+        <div class="perm-section-title">📱 Sidebar Menu Access</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Select which pages <strong>${selectedRole}</strong> users can access from the sidebar menu.
+        </div>
+        ${pages.map(page => {
+          const isChecked = currentPermissions[page] !== false;
+          return `
+            <div class="perm-item">
+              <input type="checkbox" class="perm-checkbox" id="perm-${page}" data-page="${page}" ${isChecked ? 'checked' : ''}>
+              <span class="perm-page-icon">${PAGE_ICONS[page]}</span>
+              <label for="perm-${page}" class="perm-label">${PAGE_LABELS[page]}</label>
+            </div>
+          `;
+        }).join('')}
+        <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted)">
+          💡 <strong>Note:</strong> Users page is Admin-only and cannot be modified.
+        </div>
       </div>
-      ${pages.map(page => {
-        const isChecked = currentPermissions[page] !== false;
-        return `
-          <div class="perm-item">
-            <input type="checkbox" class="perm-checkbox" id="perm-${page}" data-page="${page}" ${isChecked ? 'checked' : ''}>
-            <span class="perm-page-icon">${PAGE_ICONS[page]}</span>
-            <label for="perm-${page}" class="perm-label">${PAGE_LABELS[page]}</label>
-          </div>
-        `;
-      }).join('')}
-      <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted)">
-        💡 <strong>Note:</strong> Users page is Admin-only and cannot be modified.
-      </div>
+      <div id="permissionsSummary" style="position:sticky;top:16px"></div>
     </div>
-    
-    <div id="permissionsSummary" style="margin-top:16px"></div>
   `;
   
   document.getElementById('permissionsDisplay').innerHTML = html;
@@ -713,7 +715,7 @@ function renderSidebarPermissions(selectedRole) {
 }
 
 function updatePermissionsSummary(selectedRole) {
-  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'];
+  const pages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'cost-dashboard', 'history', 'quotes', 'reports'];
   
   const allowed = pages.filter(page => currentPermissions[page] !== false);
   const denied = pages.filter(page => currentPermissions[page] === false);
