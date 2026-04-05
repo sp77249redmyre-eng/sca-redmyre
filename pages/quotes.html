@@ -786,8 +786,8 @@ function renderPendingQuotes(quotes) {
             const vRow = getUserVoteRow(projectKey);
             // Re-check: result may have been determined since last render
             if (resultDetermined) { showToast('Voting is already closed', true); return; }
-            // Block vote if no vendor selected (skip for single quote – auto-selected)
-            if (!isSingle && !vRow?.selected_quote_id) {
+            // Block vote if no vendor selected — Approve only (Hold/Decline = project-level, no vendor needed)
+            if (!isSingle && type === 'approve' && !vRow?.selected_quote_id) {
               showToast('Please select a vendor first', true);
               btn.disabled = false;
               actionButtons.querySelectorAll('button').forEach(b => { b.disabled = false; });
@@ -1349,9 +1349,9 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
         return;
       }
 
-      // Voting requires vendor selection (skip for single-quote projects)
+      // Voting requires vendor selection (skip for single-quote projects and hold votes)
       const pGroupForCheck = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
-      if (pGroupForCheck.length !== 1 && !current?.selected_quote_id) {
+      if (pGroupForCheck.length !== 1 && fields.vote !== 'hold' && fields.vote !== 'decline' && !current?.selected_quote_id) {
         showToast('Please select a vendor first', true);
         if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = btnOrigText; }
         return;
