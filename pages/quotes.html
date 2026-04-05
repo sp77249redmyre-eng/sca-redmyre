@@ -1377,14 +1377,25 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
       }
     }
 
-    // PATCH 5: Strip any undefined values from payload
-    const payload = { project_id: projectId, user_email: user.email };
-    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined) payload[k] = v; });
+    // INSERT / UPDATE 분기 — 중복 row 원천 차단
+    const existingRow = getUserVoteRow(projectId);
+    const mergedFields = {};
+    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined) mergedFields[k] = v; });
 
-    // Always upsert – DB enforces UNIQUE(project_id, user_email)
-    const { error } = await supabase
-      .from('votes')
-      .upsert(payload, { onConflict: 'project_id,user_email' });
+    let error;
+    if (existingRow?.id) {
+      // 기존 row → UPDATE (id 기준, 절대 중복 없음)
+      ({ error } = await supabase
+        .from('votes')
+        .update(mergedFields)
+        .eq('id', existingRow.id));
+    } else {
+      // 새 row → INSERT
+      const insertPayload = { project_id: projectId, user_email: user.email, ...mergedFields };
+      ({ error } = await supabase
+        .from('votes')
+        .insert(insertPayload));
+    }
 
     if (error) throw error;
 
@@ -1597,6 +1608,11 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       return;
     }
 
+    // 투표 완료 후 votes 삭제 (프로젝트 완료 시 깨끗하게)
+    const projectIdToClean = group[0]?.project_id || group[0]?.id;
+    if (projectIdToClean) {
+      await supabase.from('votes').delete().eq('project_id', projectIdToClean);
+    }
     showToast('✔ Selection confirmed and notification sent');
     await loadData();
     renderQuotes();
