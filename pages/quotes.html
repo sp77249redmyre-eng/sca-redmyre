@@ -224,6 +224,12 @@
   .archive-card-header{padding:12px 14px}
   .summary-bar{padding:8px 14px}
 }
+
+/* ── Priority 뱃지 ── */
+.badge-priority{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;margin-left:6px}
+.badge-priority-normal{background:#f1f5f9;color:#64748b}
+.badge-priority-high{background:#fef3c7;color:#92400e;border:0.5px solid #fde68a}
+.badge-priority-urgent{background:#fee2e2;color:#991b1b;border:0.5px solid #fca5a5}
 </style>
 </head>
 <body>
@@ -592,7 +598,8 @@ function renderPendingQuotes(quotes) {
       <div style="width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${catIcon}</div>
       <div>
         <span class="project-title">${escHtml(first.project || first.project_title || 'Project')}</span>
-        <span class="project-meta">${escHtml(cat)} · ${escHtml(parsed.priority || 'Normal')} · ${group.length} vendor${group.length!==1?'s':''}</span>
+        <span class="project-meta">${escHtml(cat)} · ${group.length} vendor${group.length!==1?'s':''}</span>
+        ${{Normal:'<span class="badge-priority badge-priority-normal">Normal</span>',High:'<span class="badge-priority badge-priority-high">⚡ High</span>',Urgent:'<span class="badge-priority badge-priority-urgent">🔴 Urgent</span>'}[parsed.priority||'Normal']||''}
       </div>`;
     header.appendChild(headerLeft);
 
@@ -742,6 +749,17 @@ function renderPendingQuotes(quotes) {
         ns.textContent = 'No files attached';
         filesLine.appendChild(ns);
         detailsDiv.appendChild(filesLine);
+      }
+      // Admin Edit 버튼 (voting/draft 상태에서만)
+      if (role === 'admin' && !isFinalized) {
+        const editRow = document.createElement('div');
+        editRow.style.cssText = 'padding:10px 0 4px;display:flex;justify-content:flex-end';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-mgmt btn-mgmt-blue';
+        editBtn.textContent = '✏️ Edit';
+        editBtn.onclick = (e) => { e.stopPropagation(); editQuote(quoteId); };
+        editRow.appendChild(editBtn);
+        detailsDiv.appendChild(editRow);
       }
       vendorItem.appendChild(detailsDiv);
       vendorList.appendChild(vendorItem);
@@ -1880,6 +1898,28 @@ window.saveQuote = async function() {
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
+    const editId = document.getElementById('quoteEditId').value;
+
+    // ── 기존 견적 수정 ──
+    if (editId) {
+      const existing = allQuotes.find(x => x.id === editId);
+      if (!existing) { showToast('Quote not found', true); return; }
+      const existingParsed = parseComment(existing.comment);
+      const uploadedFiles  = pendingFiles.length > 0 ? await uploadFiles(editId) : existingParsed.files || [];
+      const updatedComment = JSON.stringify({ ...existingParsed, note: internalNote, files: uploadedFiles, category, priority });
+      const { error } = await supabase.from('quotes').update({
+        vendor, amount, category, notes,
+        comment: updatedComment
+      }).eq('id', editId);
+      if (error) throw error;
+      pendingFiles = [];
+      showToast('Quote updated ✓');
+      closeModal('quoteModal');
+      await loadData();
+      renderQuotes();
+      return;
+    }
+
     const quoteId   = crypto.randomUUID();
     const projectId = isNew ? crypto.randomUUID() : sel.value;
     const uploadedFiles = pendingFiles.length > 0 ? await uploadFiles(quoteId) : [];
