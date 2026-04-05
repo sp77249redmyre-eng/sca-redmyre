@@ -428,13 +428,13 @@ async function init() {
   if (!session) { showScreen('screenInvalid'); return; }
   currentUser = session.user;
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentRole = profile?.role || currentUser.user_metadata?.role || 'tenant';
+  currentRole = profile?.role || 'tenant';
   
   // Display assigned role and unit (read-only)
   const roleLabel = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
   document.getElementById('assignedRole').textContent = roleLabel;
   
-  const assignedUnit = profile?.unit || currentUser.user_metadata?.unit;
+  const assignedUnit = profile?.unit || null;
   if (assignedUnit) {
     document.getElementById('assignedUnit').textContent = assignedUnit;
   } else {
