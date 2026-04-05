@@ -466,7 +466,7 @@ async function submitName() {
   document.getElementById('nameInput').classList.remove('error');
   btn.disabled=true; spinner.style.display='block'; btnText.textContent='Saving…';
   try {
-    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, role:currentRole });
+    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name });
     await supabase.auth.updateUser({ data:{ full_name:name } });
     showScreen('screenPassword');
   } catch(e) {
@@ -533,7 +533,7 @@ async function submitPassword() {
     const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) throw error;
     const name = document.getElementById('nameInput').value.trim();
-    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, role:currentRole, setup_complete:true });
+    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, setup_complete:true });
     showScreen('screenSuccess');
     document.getElementById('successName').textContent = name;
     const pill = document.getElementById('successRolePill');
