@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Dashboard – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+/* ── Filter Bar ── */
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-select{padding:7px 11px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;color:#475569;transition:border-color 0.15s}
+.filter-select:focus{outline:none;border-color:#2563eb}
+.filter-input{padding:7px 12px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;outline:none;width:140px;transition:border-color 0.15s}
+.filter-input:focus{border-color:#2563eb}
+.btn-refresh{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;box-shadow:0 2px 8px rgba(37,99,235,0.2)}
+.btn-refresh:hover{box-shadow:0 4px 14px rgba(37,99,235,0.3);transform:translateY(-1px)}
+
+/* ── Stats Row ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:14px;padding:20px;transition:box-shadow 0.2s;position:relative;overflow:hidden}
+.stat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.07);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:var(--stat-color,#e2e8f0)}
+.stat-label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px;margin-bottom:4px}
+.stat-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+
+/* ── Section Heading ── */
+.section-heading{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-heading-bar{width:4px;height:18px;border-radius:2px;background:#2563eb;flex-shrink:0}
+.section-heading-text{font-size:15px;font-weight:600;color:#1e293b}
+
+/* ── Category Grid ── */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+.cat-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:12px;padding:16px;border-top:3px solid;transition:all 0.15s}
+.cat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);transform:translateY(-2px)}
+.cat-name{font-size:12px;font-weight:600;color:#475569;margin-bottom:4px}
+.cat-amount{font-size:18px;font-weight:600;margin-bottom:3px}
+.cat-count{font-size:11px;color:#94a3b8;margin-top:3px}
+.cat-bar-wrap{height:4px;background:#f1f5f9;border-radius:100px;margin-top:10px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease}
+
+/* ── Two-column layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.panel{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.panel-header{padding:14px 20px;background:#f8fafc;border-bottom:0.5px solid #f1f5f9;font-size:13px;font-weight:600;color:#1e293b;display:flex;justify-content:space-between;align-items:center}
+.panel-body{padding:4px 0}
+
+/* ── Contractor / Monthly rows ── */
+.rank-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:12px 20px;border-bottom:0.5px solid #f8fafc;transition:background 0.12s}
+.rank-row:last-child{border-bottom:none}
+.rank-row:hover{background:#f8fafc}
+.rank-left{display:flex;flex-direction:column;gap:2px}
+.rank-name{font-size:13px;font-weight:500;color:#1e293b}
+.rank-meta{font-size:11px;color:#94a3b8}
+.rank-bar-wrap{height:3px;background:#f1f5f9;border-radius:100px;margin-top:5px;width:100%;overflow:hidden}
+.rank-bar-fill{height:100%;border-radius:100px;transition:width 0.5s ease}
+.rank-amount{font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap}
+
+/* ── Monthly Table ── */
+.month-row{display:grid;grid-template-columns:90px 1fr 80px 80px;gap:8px;align-items:center;padding:11px 20px;border-bottom:0.5px solid #f8fafc;transition:background 0.12s}
+.month-row:last-child{border-bottom:none}
+.month-row:hover{background:#f8fafc}
+.month-label{font-size:13px;font-weight:500;color:#1e293b}
+.month-bar-wrap{height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden}
+.month-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:100px;transition:width 0.5s ease}
+.month-amount{font-size:12px;font-weight:600;color:#1e293b;text-align:right}
+.month-count{font-size:11px;color:#94a3b8;text-align:right}
+.emg-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#dc2626;margin-left:4px;vertical-align:middle;flex-shrink:0}
+
+/* ── Top Projects ── */
+.projects-panel{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;overflow:hidden;margin-bottom:28px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.proj-row{display:grid;grid-template-columns:28px 1fr 100px 110px 80px;gap:12px;align-items:center;padding:13px 20px;border-bottom:0.5px solid #f8fafc;transition:background 0.12s}
+.proj-row:last-child{border-bottom:none}
+.proj-row:hover{background:#f8fafc}
+.proj-rank{font-size:13px;font-weight:700;color:#94a3b8}
+.proj-rank.top{color:#f59e0b}
+.proj-title{font-size:13px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-vendor{font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-amount{font-size:13px;font-weight:600;color:#1e293b;text-align:right}
+.proj-date{font-size:12px;color:#94a3b8;text-align:right}
+.cat-badge{display:inline-flex;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
+
+/* ── Emergency ratio badge ── */
+.emg-ratio{font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;background:#fee2e2;color:#991b1b;margin-left:6px}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;display:none;z-index:9999;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+
+/* ── 모바일 ── */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card{padding:14px}
+  .stat-num{font-size:20px}
+  .cat-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .cat-card{padding:12px}
+  .cat-amount{font-size:15px}
+  .two-col{grid-template-columns:1fr}
+  .filter-bar{gap:6px}
+  .filter-select,.filter-input{width:100%;padding:10px;font-size:14px}
+  .btn-refresh{width:100%;justify-content:center;padding:10px}
+  .proj-row{grid-template-columns:24px 1fr auto;gap:8px}
+  .proj-vendor,.proj-date{display:none}
+  .month-row{grid-template-columns:80px 1fr 70px}
+  .month-count{display:none}
+}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <select class="filter-select" id="filterPeriod">
+        <option value="thismonth">This Month</option>
+        <option value="lastmonth">Last Month</option>
+        <option value="thisquarter">This Quarter</option>
+        <option value="thisyear" selected>This Year</option>
+        <option value="alltime">All Time</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      <input type="date" class="filter-input" id="dateFrom" style="display:none">
+      <input type="date" class="filter-input" id="dateTo" style="display:none">
+      <button class="btn-refresh" id="refreshBtn">↻ Refresh</button>
+    </div>
+
+    <!-- KPI Stats -->
+    <div class="stats-row">
+      <div class="stat-card" style="--stat-color:#2563eb">
+        <div class="stat-label">Total Spend</div>
+        <div class="stat-num" id="statTotal" style="color:#2563eb">$0</div>
+        <div class="stat-sub" id="statPeriodLabel">—</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#16a34a">
+        <div class="stat-label">Regular Works</div>
+        <div class="stat-num" id="statRegular" style="color:#16a34a">$0</div>
+        <div class="stat-sub" id="statRegularCount">0 works</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#dc2626">
+        <div class="stat-label">Emergency Works</div>
+        <div class="stat-num" id="statEmergency" style="color:#dc2626">$0</div>
+        <div class="stat-sub" id="statEmergencyCount">0 works</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#f59e0b">
+        <div class="stat-label">Avg per Work</div>
+        <div class="stat-num" id="statAvg" style="color:#1e293b">$0</div>
+        <div class="stat-sub" id="statTotalCount">0 completed</div>
+      </div>
+    </div>
+
+    <!-- Section 1: Category Breakdown -->
+    <div class="section-heading">
+      <div class="section-heading-bar"></div>
+      <div class="section-heading-text">Spend by Category</div>
+    </div>
+    <div class="cat-grid" id="catGrid">
+      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
+    </div>
+
+    <!-- Section 2: Contractors + Monthly Summary -->
+    <div class="two-col">
+
+      <!-- Contractor Ranking -->
+      <div>
+        <div class="section-heading">
+          <div class="section-heading-bar"></div>
+          <div class="section-heading-text">Top Contractors by Spend</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span>Contractor</span>
+            <span style="font-size:11px;color:#94a3b8">Amount · Jobs</span>
+          </div>
+          <div class="panel-body" id="contractorList">
+            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Summary -->
+      <div>
+        <div class="section-heading">
+          <div class="section-heading-bar" style="background:#7c3aed"></div>
+          <div class="section-heading-text">Monthly Summary</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span>Month</span>
+            <span style="font-size:11px;color:#94a3b8">Spend · Jobs</span>
+          </div>
+          <div class="panel-body" id="monthlyList">
+            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Section 3: Top Projects -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#f59e0b"></div>
+      <div class="section-heading-text">Top 10 Highest-Cost Projects</div>
+    </div>
+    <div class="projects-panel">
+      <div class="proj-row" style="background:#f8fafc;border-bottom:0.5px solid #f1f5f9">
+        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">#</div>
+        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">Project</div>
+        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">Contractor</div>
+        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;text-align:right">Amount</div>
+        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;text-align:right">Date</div>
+      </div>
+      <div id="topProjectsList">
+        <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Section 4: Emergency vs Normal Bar -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#dc2626"></div>
+      <div class="section-heading-text">Emergency vs Regular Analysis</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px" id="emgAnalysis">
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 3">Loading…</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
+
+if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/building.html';
+
+const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
+const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777','Other':'#94a3b8' };
+const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3','Other':'#f1f5f9' };
+
+const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixed(1)+'k':fmt(v); };
+
+function parseQuoteCategory(q) {
+  try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
+  return q.category||'Other';
+}
+
+function catBadge(cat) {
+  const label=CAT_LABELS[cat]||cat||'Other';
+  const color=CAT_COLORS[cat]||'#94a3b8';
+  const bg=CAT_BG[cat]||'#f1f5f9';
+  return `<span class="cat-badge" style="background:${bg};color:${color};border:0.5px solid ${color}33">${label}</span>`;
+}
+
+let dateFrom=null, dateTo=null;
+
+function updateDateRange() {
+  const period=document.getElementById('filterPeriod').value;
+  const fromEl=document.getElementById('dateFrom');
+  const toEl=document.getElementById('dateTo');
+  if (period==='custom') { fromEl.style.display='block'; toEl.style.display='block'; return; }
+  fromEl.style.display='none'; toEl.style.display='none';
+  const now=new Date(); const y=now.getFullYear(); const m=now.getMonth();
+  if (period==='thismonth')   { dateFrom=new Date(y,m,1); dateTo=new Date(y,m+1,0); }
+  else if (period==='lastmonth')   { dateFrom=new Date(y,m-1,1); dateTo=new Date(y,m,0); }
+  else if (period==='thisquarter') { const q=Math.floor(m/3); dateFrom=new Date(y,q*3,1); dateTo=new Date(y,q*3+3,0); }
+  else if (period==='thisyear')    { dateFrom=new Date(y,0,1); dateTo=new Date(y,11,31); }
+  else { dateFrom=null; dateTo=null; }
+  loadDashboard();
+}
+
+document.getElementById('filterPeriod').addEventListener('change', updateDateRange);
+document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+document.getElementById('dateFrom').addEventListener('change', () => {
+  dateFrom=new Date(document.getElementById('dateFrom').value); loadDashboard();
+});
+document.getElementById('dateTo').addEventListener('change', () => {
+  dateTo=new Date(document.getElementById('dateTo').value); loadDashboard();
+});
+
+async function loadDashboard() {
+  const period=document.getElementById('filterPeriod').value;
+  const periodLabel = period==='alltime'?'All time'
+    :period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`
+    :period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'})
+    :period==='lastmonth'?new Date(new Date().getFullYear(),new Date().getMonth()-1,1).toLocaleString('en-AU',{month:'long',year:'numeric'})
+    :period==='thisquarter'?`Q${Math.floor(new Date().getMonth()/3)+1} ${new Date().getFullYear()}`
+    :'Custom';
+
+  document.getElementById('statPeriodLabel').textContent=periodLabel;
+  ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis'].forEach(id=>{
+    document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
+  });
+
+  let qQuery=supabase.from('quotes').select('*')
+    .not('completion_date','is',null)
+    .eq('work_status','completed')
+    .not('status','eq','removed')
+    .order('completion_date',{ascending:false});
+
+  if (dateFrom) qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
+  if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+
+  const { data:raw } = await qQuery;
+  const data=(raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
+
+  if (!data.length) {
+    ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis'].forEach(id=>{
+      document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data for this period</div>';
+    });
+    ['statTotal','statRegular','statEmergency','statAvg'].forEach(id=>document.getElementById(id).textContent='$0');
+    document.getElementById('statRegularCount').textContent='0 works';
+    document.getElementById('statEmergencyCount').textContent='0 works';
+    document.getElementById('statTotalCount').textContent='0 completed';
+    return;
+  }
+
+  const totalSpend=data.reduce((s,q)=>s+(Number(q.amount)||0),0);
+  const regularData=data.filter(q=>!q.is_emergency);
+  const emergencyData=data.filter(q=>q.is_emergency);
+  const regularSpend=regularData.reduce((s,q)=>s+(Number(q.amount)||0),0);
+  const emergencySpend=emergencyData.reduce((s,q)=>s+(Number(q.amount)||0),0);
+  const avg=data.length?totalSpend/data.length:0;
+
+  document.getElementById('statTotal').textContent=fmt(totalSpend);
+  document.getElementById('statRegular').textContent=fmt(regularSpend);
+  document.getElementById('statRegularCount').textContent=`${regularData.length} work${regularData.length!==1?'s':''}`;
+  document.getElementById('statEmergency').textContent=fmt(emergencySpend);
+  document.getElementById('statEmergencyCount').textContent=`${emergencyData.length} work${emergencyData.length!==1?'s':''}`;
+  document.getElementById('statAvg').textContent=fmt(avg);
+  document.getElementById('statTotalCount').textContent=`${data.length} completed`;
+
+  // ── Section 1: Category ──
+  const catTotals={};
+  data.forEach(q=>{catTotals[q._cat]=(catTotals[q._cat]||0)+(Number(q.amount)||0);});
+  const maxCat=Math.max(...Object.values(catTotals),1);
+  const sortedCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('catGrid').innerHTML=sortedCats.map(([cat,total])=>{
+    const count=data.filter(q=>q._cat===cat).length;
+    const color=CAT_COLORS[cat]||'#2563eb';
+    const pct=totalSpend?Math.round(total/totalSpend*100):0;
+    return `<div class="cat-card" style="border-top-color:${color}">
+      <div class="cat-name">${CAT_LABELS[cat]||cat}</div>
+      <div class="cat-amount" style="color:${color}">${fmt(total)}</div>
+      <div class="cat-count">${count} work${count!==1?'s':''} · ${pct}%</div>
+      <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data</div>';
+
+  // ── Section 2a: Contractor Ranking ──
+  const contractorTotals={};
+  data.forEach(q=>{
+    const name=(q.vendor||'Unknown').trim();
+    if (!contractorTotals[name]) contractorTotals[name]={total:0,count:0,emergency:0};
+    contractorTotals[name].total+=(Number(q.amount)||0);
+    contractorTotals[name].count++;
+    if (q.is_emergency) contractorTotals[name].emergency++;
+  });
+  const sortedContractors=Object.entries(contractorTotals).sort((a,b)=>b[1].total-a[1].total);
+  const maxCon=sortedContractors.length?sortedContractors[0][1].total:1;
+  document.getElementById('contractorList').innerHTML=sortedContractors.slice(0,10).map(([name,d])=>{
+    const pct=Math.round(d.total/maxCon*100);
+    const emgLabel=d.emergency>0?`<span style="font-size:10px;font-weight:700;color:#dc2626;margin-left:4px">${d.emergency} emg</span>`:'';
+    return `<div class="rank-row">
+      <div class="rank-left">
+        <div class="rank-name">${name}${emgLabel}</div>
+        <div class="rank-meta">${d.count} job${d.count!==1?'s':''}</div>
+        <div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${pct}%;background:#2563eb"></div></div>
+      </div>
+      <div class="rank-amount">${fmtShort(d.total)}</div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
+
+  // ── Section 2b: Monthly Summary ──
+  const monthlyTotals={};
+  data.forEach(q=>{
+    if (!q.completion_date) return;
+    const d=new Date(q.completion_date);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!monthlyTotals[key]) monthlyTotals[key]={total:0,count:0,emergency:0,label:d.toLocaleString('en-AU',{month:'short',year:'numeric'})};
+    monthlyTotals[key].total+=(Number(q.amount)||0);
+    monthlyTotals[key].count++;
+    if (q.is_emergency) monthlyTotals[key].emergency++;
+  });
+  const sortedMonths=Object.entries(monthlyTotals).sort((a,b)=>b[0].localeCompare(a[0]));
+  const maxMonth=sortedMonths.length?sortedMonths.reduce((m,e)=>Math.max(m,e[1].total),0):1;
+  document.getElementById('monthlyList').innerHTML=sortedMonths.map(([key,d])=>{
+    const pct=maxMonth?Math.round(d.total/maxMonth*100):0;
+    const emgDot=d.emergency>0?`<span class="emg-dot" title="${d.emergency} emergency"></span>`:'';
+    return `<div class="month-row">
+      <div class="month-label">${d.label}${emgDot}</div>
+      <div class="month-bar-wrap"><div class="month-bar-fill" style="width:${pct}%"></div></div>
+      <div class="month-amount">${fmtShort(d.total)}</div>
+      <div class="month-count">${d.count} job${d.count!==1?'s':''}</div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
+
+  // ── Section 3: Top 10 Projects ──
+  const sortedByAmount=[...data].sort((a,b)=>Number(b.amount||0)-Number(a.amount||0));
+  document.getElementById('topProjectsList').innerHTML=sortedByAmount.slice(0,10).map((q,i)=>{
+    const isTop=i<3;
+    const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
+    const emgBadge=q.is_emergency?'<span style="font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:100px;margin-left:4px;border:0.5px solid #fecaca">EMG</span>':'';
+    return `<div class="proj-row">
+      <div class="proj-rank${isTop?' top':''}">${i+1}</div>
+      <div>
+        <div class="proj-title">${q.project||q.title||'—'}${emgBadge}</div>
+        <div style="margin-top:3px">${catBadge(q._cat)}</div>
+      </div>
+      <div class="proj-vendor">${q.vendor||'—'}</div>
+      <div class="proj-amount">${fmt(q.amount)}</div>
+      <div class="proj-date">${dateStr}</div>
+    </div>`;
+  }).join('') || '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
+
+  // ── Section 4: Emergency Analysis ──
+  const emgRatio=data.length?Math.round(emergencyData.length/data.length*100):0;
+  const emgSpendRatio=totalSpend?Math.round(emergencySpend/totalSpend*100):0;
+  const avgEmg=emergencyData.length?emergencySpend/emergencyData.length:0;
+  const avgReg=regularData.length?regularSpend/regularData.length:0;
+  document.getElementById('emgAnalysis').innerHTML=`
+    <div class="stat-card" style="--stat-color:#dc2626">
+      <div class="stat-label">Emergency Rate (jobs)</div>
+      <div class="stat-num" style="color:${emgRatio>=30?'#dc2626':emgRatio>=15?'#f59e0b':'#16a34a'}">${emgRatio}%</div>
+      <div class="stat-sub">${emergencyData.length} of ${data.length} completed jobs</div>
+    </div>
+    <div class="stat-card" style="--stat-color:#f59e0b">
+      <div class="stat-label">Emergency Spend Ratio</div>
+      <div class="stat-num" style="color:${emgSpendRatio>=40?'#dc2626':emgSpendRatio>=20?'#f59e0b':'#16a34a'}">${emgSpendRatio}%</div>
+      <div class="stat-sub">${fmt(emergencySpend)} of ${fmt(totalSpend)}</div>
+    </div>
+    <div class="stat-card" style="--stat-color:#7c3aed">
+      <div class="stat-label">Avg Cost Comparison</div>
+      <div class="stat-num" style="color:#1e293b;font-size:18px">${fmtShort(avgEmg)} <span style="font-size:13px;color:#94a3b8">emg</span></div>
+      <div class="stat-sub">${fmtShort(avgReg)} avg regular · ${avgReg>0&&avgEmg>0?Math.round(avgEmg/avgReg*10)/10+'× higher':emergencyData.length===0?'No emergencies':'—'}</div>
+    </div>`;
+}
+
+updateDateRange();
+</script>
+</body>
+</html>

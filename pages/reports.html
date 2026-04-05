@@ -144,37 +144,11 @@
       <button class="btn-refresh" id="refreshBtn">↻ Refresh</button>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-card" style="--stat-color:#2563eb">
-        <div class="stat-label">Total Spend</div>
-        <div class="stat-num" id="statTotal" style="color:#2563eb">$0</div>
-        <div class="stat-sub" id="statPeriodLabel">—</div>
-      </div>
-      <div class="stat-card" style="--stat-color:#16a34a">
-        <div class="stat-label">Regular Quotes</div>
-        <div class="stat-num" id="statRegularTotal" style="color:#16a34a">$0</div>
-        <div class="stat-sub" id="statRegularCount">0 quotes</div>
-      </div>
-      <div class="stat-card" style="--stat-color:#dc2626">
-        <div class="stat-label">Emergency Works</div>
-        <div class="stat-num" id="statEmergencyTotal" style="color:#dc2626">$0</div>
-        <div class="stat-sub" id="statEmergencyCount">0 works</div>
-      </div>
-      <div class="stat-card" style="--stat-color:#f59e0b">
-        <div class="stat-label">Largest Expense</div>
-        <div class="stat-num" id="statLargest" style="color:#1e293b">$0</div>
-        <div class="stat-sub" id="statLargestLabel">—</div>
-      </div>
-    </div>
-
-    <!-- Category Grid -->
-    <div class="section-heading">
-      <div class="section-heading-bar"></div>
-      <div class="section-heading-text">Spend by Category</div>
-    </div>
-    <div class="cat-grid" id="catGrid">
-      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
+    <!-- Cost Analysis Link -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+      <a href="/pages/cost-dashboard.html" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;font-size:12px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(37,99,235,0.2);transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 14px rgba(37,99,235,0.35)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(37,99,235,0.2)'">
+        💹 Cost Analysis →
+      </a>
     </div>
 
     <!-- Approved Quotes Table -->
@@ -375,7 +349,7 @@ async function loadReport() {
     if (toVal)   dateTo=new Date(toVal);
   }
   const periodLabel = period==='alltime'?'All time':period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`:period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'}):'—';
-  document.getElementById('statPeriodLabel').textContent=periodLabel;
+  // periodLabel은 footer 표시용으로 보존
 
   let qQuery=supabase.from('quotes').select('*')
     .not('completion_date','is',null)
@@ -391,43 +365,7 @@ async function loadReport() {
   const { data:reportsRaw } = await qQuery;
   const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
   const reportsData=reports||[];
-  const regularData=reportsData.filter(q=>!q.is_emergency);
-  const emergencyData=reportsData.filter(q=>q.is_emergency);
-  const reportTotal=reportsData.reduce((s,q)=>s+Number(q.amount||0),0);
-  const regularTotal=regularData.reduce((s,q)=>s+Number(q.amount||0),0);
-  const emergencyTotal=emergencyData.reduce((s,q)=>s+Number(q.amount||0),0);
-  const grandTotal=reportTotal;
-  const allItems=reportsData.map(q=>({label:q.project||'—',amount:Number(q.amount||0)})).sort((a,b)=>b.amount-a.amount);
-
-  document.getElementById('statTotal').textContent=fmt(grandTotal);
-  document.getElementById('statRegularTotal').textContent=fmt(regularTotal);
-  document.getElementById('statRegularCount').textContent=`${regularData.length} quote${regularData.length!==1?'s':''}`;
-  document.getElementById('statEmergencyTotal').textContent=fmt(emergencyTotal);
-  document.getElementById('statEmergencyCount').textContent=`${emergencyData.length} work${emergencyData.length!==1?'s':''}`;
-  document.getElementById('statLargest').textContent=allItems.length?fmt(allItems[0].amount):'$0';
-  document.getElementById('statLargestLabel').textContent=allItems.length?allItems[0].label.substring(0,30):'—';
-
-  const catTotals={};
-  reportsData.forEach(q=>{const c=q._cat||parseQuoteCategory(q);catTotals[c]=(catTotals[c]||0)+Number(q.amount||0);});
-  const maxCat=Math.max(...Object.values(catTotals),1);
-  const catGrid=document.getElementById('catGrid');
-  const sortedCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
-  if (!sortedCats.length) {
-    catGrid.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data for this period</div>';
-  } else {
-    catGrid.innerHTML=sortedCats.map(([cat,total])=>{
-      const qCount=reportsData.filter(q=>(q._cat||parseQuoteCategory(q))===cat).length;
-      const color=CAT_COLORS[cat]||'#2563eb';
-      const bg=CAT_BG[cat]||'#dbeafe';
-      const pct=Math.round(total/grandTotal*100);
-      return `<div class="cat-card" style="border-top-color:${color}" onclick="filterByCat('${cat}')">
-        <div class="cat-name">${CAT_LABELS[cat]||cat}</div>
-        <div class="cat-amount" style="color:${color}">${fmt(total)}</div>
-        <div class="cat-count">${qCount} report${qCount!==1?'s':''} · ${pct}%</div>
-        <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
-      </div>`;
-    }).join('');
-  }
+  const reportTotal=reportsData.reduce((s,q)=>s+(Number(q.amount)||0),0);
   currentQuotesData=reportsData; currentSortKey='date'; currentSortDir='desc';
   renderQuotesList();
   document.getElementById('quotesTotal').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
