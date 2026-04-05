@@ -121,7 +121,9 @@ async function scanJunkFiles() {
     const { data: quotes, error } = await supabase
       .from('quotes')
       .select('id, status, comment')
-      .in('status', ['declined', 'onhold', 'expired', 'removed']);
+      .in('status', ['declined', 'onhold', 'expired', 'removed'])
+      .is('work_status', null)
+      .is('completion_date', null);
 
     if (error) throw error;
 
