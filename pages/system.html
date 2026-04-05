@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Management – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-header{display:flex;flex-direction:column;gap:4px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
+.card-title{font-size:14px;font-weight:600}
+.card-desc{font-size:12px;color:var(--muted)}
+.section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
+.cleanup-body{padding:20px;display:flex;flex-direction:column;gap:20px}
+.cleanup-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.files-found{font-size:13px;color:var(--muted)}
+.files-found span{font-weight:600;color:var(--text)}
+.status-box{padding:10px 14px;background:var(--bg);border:1px solid var(--border-light);border-radius:8px;font-size:13px;color:var(--muted);font-style:italic;min-height:40px;display:flex;align-items:center}
+.status-box.ready{color:var(--text-2);font-style:normal}
+.status-box.loading{color:var(--blue-700);font-style:normal}
+.status-box.success{color:var(--green);font-style:normal}
+.status-box.error{color:var(--red);font-style:normal}
+.cleanup-footer{font-size:11px;color:var(--muted);padding-top:4px;border-top:1px solid var(--border-light)}
+.divider{height:1px;background:var(--border-light)}
+@media(max-width:768px){
+  .cleanup-row{flex-direction:column;align-items:flex-start}
+  .cleanup-row .btn-primary,.cleanup-row .btn-danger{width:100%}
+}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+
+    <div style="margin-bottom:20px">
+      <div class="section-title">System Management</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Junk Cleanup</div>
+        <div class="card-desc">Remove unused files from declined / on-hold / expired quotes</div>
+      </div>
+      <div class="cleanup-body">
+
+        <div>
+          <div class="section-label">Scan</div>
+          <div class="cleanup-row">
+            <button class="btn-primary" id="scanBtn">Scan Junk Files</button>
+            <div class="files-found">Files found: <span id="fileCount">—</span></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div>
+          <div class="section-label">Delete</div>
+          <button class="btn-danger" id="deleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete Junk Files</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div>
+          <div class="section-label">Status</div>
+          <div class="status-box ready" id="statusBox">Ready</div>
+        </div>
+
+        <div class="cleanup-footer" id="lastCleanup">Last cleanup: —</div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
+
+if (role !== 'admin') { window.location.href = '/pages/building.html'; }
+
+let junkFilePaths = [];
+
+function setStatus(text, type = 'ready') {
+  const box = document.getElementById('statusBox');
+  box.textContent = text;
+  box.className = 'status-box ' + type;
+}
+
+function setDeleteBtn(enabled) {
+  const btn = document.getElementById('deleteBtn');
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '0.45';
+  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+}
+
+async function scanJunkFiles() {
+  const scanBtn = document.getElementById('scanBtn');
+  scanBtn.disabled = true;
+  scanBtn.textContent = 'Scanning…';
+  setStatus('Scanning...', 'loading');
+  setDeleteBtn(false);
+  document.getElementById('fileCount').textContent = '—';
+  junkFilePaths = [];
+
+  try {
+    const { data: quotes, error } = await supabase
+      .from('quotes')
+      .select('id, status, comment')
+      .in('status', ['declined', 'onhold', 'expired', 'removed']);
+
+    if (error) throw error;
+
+    if (!quotes || !quotes.length) {
+      document.getElementById('fileCount').textContent = '0';
+      setStatus('No junk files found.', 'ready');
+      setDeleteBtn(false);
+      return;
+    }
+
+    junkFilePaths = [];
+
+    for (const q of quotes) {
+      if (!q.comment) continue;
+      let parsed = null;
+      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
+      if (!parsed) continue;
+      const files = parsed.files;
+      if (!files || !Array.isArray(files)) continue;
+      for (const f of files) {
+        if (f && typeof f === 'string') junkFilePaths.push(f);
+        else if (f && f.path) junkFilePaths.push(f.path);
+      }
+    }
+
+    document.getElementById('fileCount').textContent = junkFilePaths.length;
+
+    if (junkFilePaths.length === 0) {
+      setStatus('No junk files found.', 'ready');
+      setDeleteBtn(false);
+    } else {
+      setStatus(`${junkFilePaths.length} file${junkFilePaths.length > 1 ? 's' : ''} ready for deletion.`, 'ready');
+      setDeleteBtn(true);
+    }
+
+  } catch (e) {
+    console.error('Scan error:', e);
+    setStatus('Error occurred', 'error');
+    showToast('Scan failed', true);
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.textContent = 'Scan Junk Files';
+  }
+}
+
+async function deleteJunkFiles() {
+  if (!junkFilePaths.length) return;
+  if (!confirm(`Delete ${junkFilePaths.length} junk file${junkFilePaths.length > 1 ? 's' : ''}?\nThis action cannot be undone.`)) return;
+
+  const deleteBtn = document.getElementById('deleteBtn');
+  const scanBtn = document.getElementById('scanBtn');
+  deleteBtn.disabled = true;
+  deleteBtn.style.opacity = '0.45';
+  deleteBtn.style.cursor = 'not-allowed';
+  scanBtn.disabled = true;
+  setStatus('Deleting...', 'loading');
+
+  try {
+    const { error } = await supabase.storage
+      .from('quotes')
+      .remove(junkFilePaths);
+
+    if (error) throw error;
+
+    const now = new Date();
+    document.getElementById('lastCleanup').textContent =
+      'Last cleanup: ' + now.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+    junkFilePaths = [];
+    document.getElementById('fileCount').textContent = '0';
+    setStatus('Cleanup complete ✓', 'success');
+    setDeleteBtn(false);
+    showToast('Junk files deleted ✓');
+
+  } catch (e) {
+    console.error('Delete error:', e);
+    setStatus('Error occurred', 'error');
+    showToast('Delete failed', true);
+    setDeleteBtn(true);
+  } finally {
+    scanBtn.disabled = false;
+  }
+}
+
+document.getElementById('scanBtn').addEventListener('click', scanJunkFiles);
+document.getElementById('deleteBtn').addEventListener('click', deleteJunkFiles);
+</script>
+</body>
+</html>
