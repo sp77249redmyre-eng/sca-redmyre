@@ -154,15 +154,25 @@
       <div class="tab active" data-tab="users">👥 Users</div>
       <div class="tab" data-tab="permissions">🔐 Sidebar Permissions</div>
       <div class="tab" data-tab="activity">📝 Activity Log</div>
-      <div class="tab" data-tab="storage" id="storageTab" style="display:none">🗑️ Storage Cleanup</div>
     </div>
 
     <!-- Tab Content: Users -->
     <div id="tab-users" class="tab-content active">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px">
           <div class="card-title">All Users</div>
-          <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="userSearch" placeholder="Search name or email…" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;width:180px">
+            <select id="userRoleFilter" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
+              <option value="">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="committee">Committee</option>
+              <option value="observer">Observer</option>
+              <option value="owner">Owner</option>
+              <option value="tenant">Tenant</option>
+            </select>
+            <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
+          </div>
         </div>
         <div class="table-head">
           <div></div>
@@ -200,6 +210,9 @@
 
     <!-- Tab Content: Activity Log -->
     <div id="tab-activity" class="tab-content">
+      <div style="margin-bottom:10px">
+        <input type="text" id="logSearch" placeholder="Search by user, email or action…" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;box-sizing:border-box">
+      </div>
       <div class="log-filters">
         <select id="filterAction">
           <option value="">All Actions</option>
@@ -232,60 +245,6 @@
       </div>
       
       <button class="log-load-more" id="loadMoreBtn" style="display:none">Load More...</button>
-    </div>
-
-    <!-- Tab Content: Storage Cleanup (Admin Only) -->
-    <div id="tab-storage" class="tab-content">
-      <div style="background:#fff3cd;border:1px solid #ffc107;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#856404;line-height:1.6">
-        ⚠️ <strong>Admin Only.</strong> This will permanently delete files from Storage for all <strong>declined / on hold / expired / removed</strong> quotes.<br>
-        Approved quotes and their files are <strong>never touched</strong>.
-      </div>
-
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-header">
-          <div class="card-title">🗑️ Junk File Cleanup</div>
-        </div>
-        <div style="padding:20px">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="cleanupStats">
-            <div class="stat-card" style="text-align:center">
-              <div class="stat-num" id="cleanupDeclined" style="color:#dc2626">—</div>
-              <div class="stat-label">Declined</div>
-            </div>
-            <div class="stat-card" style="text-align:center">
-              <div class="stat-num" id="cleanupOnhold" style="color:#d97706">—</div>
-              <div class="stat-label">On Hold</div>
-            </div>
-            <div class="stat-card" style="text-align:center">
-              <div class="stat-num" id="cleanupExpired" style="color:#94a3b8">—</div>
-              <div class="stat-label">Expired</div>
-            </div>
-            <div class="stat-card" style="text-align:center">
-              <div class="stat-num" id="cleanupRemoved" style="color:#64748b">—</div>
-              <div class="stat-label">Removed</div>
-            </div>
-          </div>
-
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:16px">
-            <div style="font-size:13px;color:#475569;margin-bottom:4px">Total junk files found</div>
-            <div style="font-size:28px;font-weight:600;color:#1e293b" id="cleanupTotal">—</div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:4px" id="cleanupSize">Scan to check</div>
-          </div>
-
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn-secondary" id="cleanupScanBtn" onclick="scanJunkFiles()" style="padding:10px 20px;font-size:13px">
-              🔍 Scan Junk Files
-            </button>
-            <button id="cleanupDeleteBtn" onclick="deleteJunkFiles()" style="display:none;padding:10px 20px;font-size:13px;background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(220,38,38,0.3)">
-              🗑️ Delete All Junk Files
-            </button>
-          </div>
-
-          <div id="cleanupLog" style="margin-top:16px;display:none">
-            <div style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Details</div>
-            <div id="cleanupLogContent" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:12px;color:#475569;max-height:200px;overflow-y:auto;line-height:1.8"></div>
-          </div>
-        </div>
-      </div>
     </div>
 
 <!-- INVITE MODAL -->
@@ -449,133 +408,44 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// Admin 전용 Storage Cleanup 탭 표시
-if (role === 'admin') {
-  document.getElementById('storageTab').style.display = '';
-}
-
-// ── Storage Cleanup ──────────────────────────────────────
-const JUNK_STATUSES = ['declined', 'onhold', 'expired', 'removed'];
-let junkFilePaths = [];
-
-window.scanJunkFiles = async function() {
-  const btn = document.getElementById('cleanupScanBtn');
-  btn.disabled = true;
-  btn.textContent = '🔍 Scanning…';
-  document.getElementById('cleanupDeleteBtn').style.display = 'none';
-  document.getElementById('cleanupLog').style.display = 'none';
-  junkFilePaths = [];
-
-  try {
-    const { data: quotes, error } = await supabase
-      .from('quotes')
-      .select('id, project, status, comment')
-      .in('status', JUNK_STATUSES);
-
-    if (error) throw error;
-
-    const counts = { declined:0, onhold:0, expired:0, removed:0 };
-    const logLines = [];
-
-    quotes.forEach(q => {
-      if (counts[q.status] !== undefined) counts[q.status]++;
-      try {
-        const comment = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment;
-        const files = Array.isArray(comment?.files) ? comment.files : [];
-        files.forEach(f => {
-          if (f?.path) {
-            const cleanPath = f.path.replace(/^quotes\//, '');
-            junkFilePaths.push(cleanPath);
-            logLines.push(`[${q.status.toUpperCase()}] ${q.project || 'Unknown'} → ${f.name || cleanPath}`);
-          }
-        });
-      } catch(e) {}
-    });
-
-    document.getElementById('cleanupDeclined').textContent = counts.declined;
-    document.getElementById('cleanupOnhold').textContent   = counts.onhold;
-    document.getElementById('cleanupExpired').textContent  = counts.expired;
-    document.getElementById('cleanupRemoved').textContent  = counts.removed;
-    document.getElementById('cleanupTotal').textContent    = junkFilePaths.length;
-    document.getElementById('cleanupSize').textContent     = `${quotes.length} quotes scanned`;
-
-    if (junkFilePaths.length > 0) {
-      document.getElementById('cleanupDeleteBtn').style.display = 'inline-block';
-      document.getElementById('cleanupLog').style.display = 'block';
-      document.getElementById('cleanupLogContent').innerHTML = logLines.join('<br>') || 'No files found.';
-    } else {
-      document.getElementById('cleanupSize').textContent = '✅ No junk files found — Storage is clean!';
-      document.getElementById('cleanupLog').style.display = 'block';
-      document.getElementById('cleanupLogContent').innerHTML = 'No junk files found.';
-    }
-
-  } catch(e) {
-    showToast('Scan failed: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔍 Scan Junk Files';
-  }
-};
-
-window.deleteJunkFiles = async function() {
-  if (!junkFilePaths.length) { showToast('No files to delete. Run scan first.', true); return; }
-  if (!confirm(`⚠️ ${junkFilePaths.length}개 파일을 Storage에서 영구 삭제합니다.\n\nApproved 견적 파일은 건드리지 않습니다.\n\n계속하시겠습니까?`)) return;
-
-  const btn = document.getElementById('cleanupDeleteBtn');
-  btn.disabled = true;
-  btn.textContent = '🗑️ Deleting…';
-
-  try {
-    // 50개씩 배치 삭제
-    const BATCH = 50;
-    let deleted = 0;
-    for (let i = 0; i < junkFilePaths.length; i += BATCH) {
-      const batch = junkFilePaths.slice(i, i + BATCH);
-      const { error } = await supabase.storage.from('quotes').remove(batch);
-      if (error) console.warn('Batch delete warning:', error);
-      else deleted += batch.length;
-    }
-
-    document.getElementById('cleanupTotal').textContent = '0';
-    document.getElementById('cleanupSize').textContent  = `✅ ${deleted}개 파일 삭제 완료`;
-    document.getElementById('cleanupLogContent').innerHTML = `✅ ${deleted}개 파일이 Storage에서 삭제됐습니다.`;
-    document.getElementById('cleanupDeleteBtn').style.display = 'none';
-    junkFilePaths = [];
-    showToast(`✅ ${deleted}개 파일 삭제 완료`);
-
-  } catch(e) {
-    showToast('Delete failed: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🗑️ Delete All Junk Files';
-  }
-};
-
 // Load users
-async function loadUsers() {
-  const { data:profiles } = await supabase.from('profiles').select('*').order('role').order('full_name');
-  if (!profiles) return;
-  
-  const counts = { admin:0,committee:0,observer:0,owner:0,tenant:0 };
-  profiles.forEach(p=>{ if (counts[p.role]!==undefined) counts[p.role]++; });
-  
-  document.getElementById('statTotal').textContent = profiles.length;
-  document.getElementById('statAdmin').textContent = counts.admin;
-  document.getElementById('statCommittee').textContent = counts.committee;
-  document.getElementById('statObserver').textContent = counts.observer;
-  document.getElementById('statOther').textContent = counts.owner + counts.tenant;
-  document.getElementById('userCountLabel').textContent = `${profiles.length} users`;
-  
+let allProfiles = [];
+
+function filterAndRenderUsers() {
+  const q = document.getElementById('userSearch').value.trim().toLowerCase();
+  const roleFilter = document.getElementById('userRoleFilter').value;
   const list = document.getElementById('userList');
-  if (!profiles.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; return; }
-  
-  list.innerHTML = profiles.map(p => {
+
+  let filtered = allProfiles;
+  if (roleFilter) filtered = filtered.filter(p => p.role === roleFilter);
+  if (q) filtered = filtered.filter(p =>
+    (p.full_name||'').toLowerCase().includes(q) ||
+    (p.email||'').toLowerCase().includes(q)
+  );
+
+  const total = allProfiles.length;
+  const filteredCount = filtered.length;
+  const countLabel = document.getElementById('userCountLabel');
+  if (total !== filteredCount) {
+    countLabel.textContent = `${filteredCount} / ${total} users`;
+  } else {
+    countLabel.textContent = `${total} users`;
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users match the filter.</div>';
+    return;
+  }
+
+  const ROLE_COLORS_f = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
+  const ROLE_BADGES_f = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
+
+  list.innerHTML = filtered.map(p => {
     const displayName = p.full_name||p.email?.split('@')[0]||'—';
     const ini = displayName.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     const isSelf = p.id===user.id;
-    const avClass = ROLE_COLORS[p.role]||'av-owner';
-    const badgeClass = ROLE_BADGES[p.role]||'badge-gray';
-    
+    const avClass = ROLE_COLORS_f[p.role]||'av-owner';
+    const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
     return `
       <div class="user-row">
         <div class="avatar ${avClass}">${ini}</div>
@@ -599,6 +469,29 @@ async function loadUsers() {
         </div>
       </div>`;
   }).join('');
+}
+
+document.getElementById('userSearch').addEventListener('input', filterAndRenderUsers);
+document.getElementById('userRoleFilter').addEventListener('change', filterAndRenderUsers);
+
+async function loadUsers() {
+  const { data:profiles } = await supabase.from('profiles').select('*').order('role').order('full_name');
+  if (!profiles) return;
+  
+  allProfiles = profiles;
+
+  const counts = { admin:0,committee:0,observer:0,owner:0,tenant:0 };
+  profiles.forEach(p=>{ if (counts[p.role]!==undefined) counts[p.role]++; });
+  
+  document.getElementById('statTotal').textContent = profiles.length;
+  document.getElementById('statAdmin').textContent = counts.admin;
+  document.getElementById('statCommittee').textContent = counts.committee;
+  document.getElementById('statObserver').textContent = counts.observer;
+  document.getElementById('statOther').textContent = counts.owner + counts.tenant;
+  const list = document.getElementById('userList');
+  if (!profiles.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users found.</div>'; return; }
+  
+  filterAndRenderUsers();
 }
 
 window.changeRole = async (uid, newRole) => {
@@ -913,6 +806,15 @@ async function loadActivityLog(append = false) {
 
 function renderActivityTable() {
   const list = document.getElementById('activityList');
+  const logQ = (document.getElementById('logSearch')?.value || '').trim().toLowerCase();
+
+  const filteredLogs = logQ
+    ? allLogs.filter(log =>
+        (log.user_name||'').toLowerCase().includes(logQ) ||
+        (log.user_email||'').toLowerCase().includes(logQ) ||
+        (log.action||'').toLowerCase().includes(logQ)
+      )
+    : allLogs;
   
   const actionIcons = {
     quote_approved: '✅', quote_declined: '❌', quote_held: '⏸️', work_created: '➕', work_completed: '✅',
@@ -937,7 +839,7 @@ function renderActivityTable() {
         </tr>
       </thead>
       <tbody>
-        ${allLogs.map(log => {
+        ${filteredLogs.map(log => {
           const ini = (log.user_name || log.user_email || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
           const timeAgo = formatTimeAgo(new Date(log.created_at));
           const icon = actionIcons[log.action] || '📝';
@@ -1043,6 +945,7 @@ function formatTimeAgo(date) {
 document.getElementById('filterAction').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('filterPeriod').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('loadMoreBtn').addEventListener('click', () => loadActivityLog(true));
+document.getElementById('logSearch').addEventListener('input', () => renderActivityTable());
 
 // Invite modal
 document.getElementById('inviteRole').addEventListener('change', () => {
