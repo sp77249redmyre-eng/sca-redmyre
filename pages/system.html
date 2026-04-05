@@ -43,9 +43,14 @@
 .badge-declined{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--red-bg);color:var(--red-text)}
 .badge-expired{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--amber-50);color:var(--amber-900)}
 .badge-removed{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--border-light);color:var(--text-2)}
+.storage-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.storage-stat{background:var(--bg);border:1px solid var(--border-light);border-radius:10px;padding:14px 16px}
+.storage-stat-num{font-size:22px;font-weight:600;letter-spacing:-0.5px;color:var(--text)}
+.storage-stat-label{font-size:11px;color:var(--muted);margin-top:3px}
 @media(max-width:768px){
   .cleanup-row{flex-direction:column;align-items:flex-start}
   .cleanup-row .btn-primary,.cleanup-row .btn-danger{width:100%}
+  .storage-stats{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -59,7 +64,8 @@
       <div class="section-title">System Management</div>
     </div>
 
-    <div class="card">
+    <!-- Junk Cleanup Card -->
+    <div class="card" style="margin-bottom:16px">
       <div class="card-header">
         <div class="card-title">Junk Cleanup</div>
         <div class="card-desc">Remove unused files from declined / expired / removed quotes</div>
@@ -101,6 +107,27 @@
       </div>
     </div>
 
+    <!-- Storage Summary Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Storage Summary</div>
+        <div class="card-desc">Total files stored in the quotes bucket</div>
+      </div>
+      <div class="cleanup-body">
+        <div class="storage-stats">
+          <div class="storage-stat">
+            <div class="storage-stat-num" id="storageFileCount">—</div>
+            <div class="storage-stat-label">Total Files</div>
+          </div>
+          <div class="storage-stat">
+            <div class="storage-stat-num" id="storageTotalSize">—</div>
+            <div class="storage-stat-label">Total Size</div>
+          </div>
+        </div>
+        <div class="status-box ready" id="storageStatus">Loading...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -133,6 +160,12 @@ function setDeleteBtn(enabled) {
 function getFilename(path) {
   if (!path || typeof path !== 'string') return path;
   return path.split('/').pop();
+}
+
+function formatSize(bytes) {
+  const mb = bytes / (1024 * 1024);
+  if (mb < 1024) return mb.toFixed(2) + ' MB';
+  return (mb / 1024).toFixed(2) + ' GB';
 }
 
 function renderPreview(quotes) {
@@ -283,6 +316,7 @@ async function deleteJunkFiles() {
     setStatus('Cleanup complete ✓', 'success');
     setDeleteBtn(false);
     showToast('Cleanup complete ✓');
+    await loadStorageSummary();
 
   } catch (e) {
     console.error('Delete error:', e);
@@ -294,8 +328,62 @@ async function deleteJunkFiles() {
   }
 }
 
+async function loadStorageSummary() {
+  const statusEl = document.getElementById('storageStatus');
+  const countEl = document.getElementById('storageFileCount');
+  const sizeEl = document.getElementById('storageTotalSize');
+
+  statusEl.textContent = 'Loading...';
+  statusEl.className = 'status-box loading';
+
+  try {
+    async function listAllFiles(prefix) {
+      let results = [];
+      let offset = 0;
+      const limit = 1000;
+      while (true) {
+        const listPath = prefix || undefined;
+        const { data, error } = await supabase.storage
+          .from('quotes')
+          .list(listPath, { limit, offset, sortBy: { column: 'name', order: 'asc' } });
+        if (error) throw error;
+        if (!data || !data.length) break;
+        for (const item of data) {
+          const isFile = item.id && item.metadata != null && item.metadata.size != null;
+          if (isFile) {
+            results.push(item);
+          } else {
+            const subPath = prefix ? prefix + '/' + item.name : item.name;
+            const nested = await listAllFiles(subPath);
+            results = results.concat(nested);
+          }
+        }
+        if (data.length < limit) break;
+        offset += limit;
+      }
+      return results;
+    }
+
+    const allFiles = await listAllFiles(null);
+    const totalFiles = allFiles.length;
+    const totalBytes = allFiles.reduce((sum, f) => sum + (f.metadata?.size || 0), 0);
+
+    countEl.textContent = totalFiles.toLocaleString();
+    sizeEl.textContent = formatSize(totalBytes);
+    statusEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString('en-AU');
+    statusEl.className = 'status-box ready';
+
+  } catch (e) {
+    console.error('Storage summary error:', e);
+    statusEl.textContent = 'Failed to load storage info';
+    statusEl.className = 'status-box error';
+  }
+}
+
 document.getElementById('scanBtn').addEventListener('click', scanJunkFiles);
 document.getElementById('deleteBtn').addEventListener('click', deleteJunkFiles);
+
+await loadStorageSummary();
 </script>
 </body>
 </html>
