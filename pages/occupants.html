@@ -276,7 +276,12 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 
-const { supabase, user, role, name } = ctx;
+const { supabase, user, role, name, profile } = ctx;
+const myUnit = profile?.unit || null;
+
+if (!['admin','committee','observer','owner','tenant'].includes(role)) {
+  window.location.href = '/pages/building.html';
+}
 
 let allOccupants = [];
 let currentSuite = 'Ground';
@@ -300,13 +305,19 @@ async function loadOccupants() {
 // Render occupants
 function renderOccupants() {
   const list = document.getElementById('occList');
-  
+
+  // owner/tenant: 본인 unit만
+  let visibleOccupants = allOccupants;
+  if (['owner','tenant'].includes(role) && myUnit) {
+    visibleOccupants = allOccupants.filter(o => o.unit === myUnit);
+  }
+
   // Filter by current suite
   let filtered;
   if (currentSuite === 'Ground') {
-    filtered = allOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1');
+    filtered = visibleOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1');
   } else {
-    filtered = allOccupants.filter(o => o.suite === currentSuite);
+    filtered = visibleOccupants.filter(o => o.suite === currentSuite);
   }
   
   if (!filtered.length) {
@@ -335,7 +346,7 @@ function renderOccupants() {
         </div>
         <div class="occ-actions">
           <button class="btn-secondary" onclick="openViewModal('${o.id}')">👁️ View</button>
-          ${role === 'admin' ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
+          ${(role === 'admin' || ((role === 'committee' || role === 'owner' || role === 'tenant') && o.unit === myUnit)) ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
         </div>
       </div>
     `;
@@ -398,7 +409,8 @@ window.openViewModal = (id) => {
   
   // Show Edit button for admin
   const editBtn = document.getElementById('viewEditBtn');
-  if (role === 'admin') {
+  const canEdit = role === 'admin' || ((role === 'committee' || role === 'owner' || role === 'tenant') && occ.unit === myUnit);
+  if (canEdit) {
     editBtn.style.display = 'inline-flex';
     editBtn.onclick = () => {
       closeModal('viewModal');
@@ -433,6 +445,11 @@ window.openEditModal = (id) => {
   
   // Toggle committee role field
   toggleCommitteeRole();
+  
+  // committee/owner/tenant: 민감 필드 비활성화
+  const isAdmin = role === 'admin';
+  document.getElementById('editIsCommittee').disabled = !isAdmin;
+  document.getElementById('editCommitteeRole').disabled = !isAdmin;
   
   openModal('editModal');
 };
