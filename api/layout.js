@@ -8,11 +8,11 @@ const PAGE_CONFIG = {
   'hvac':          { title: 'A/C Temperature',       allowedRoles: null },
   'emergency':     { title: 'Emergency Contacts',    allowedRoles: null },
   'works':         { title: 'Ongoing Works',         allowedRoles: null },
-  'dashboard':     { title: 'Dashboard',             allowedRoles: null },
+  'cost-dashboard': { title: 'Cost Analysis',        allowedRoles: ['admin', 'committee', 'observer'] },
   'history':       { title: 'Temperature History',   allowedRoles: ['admin'] },
   'quotes':        { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':       { title: 'Financial Reports',     allowedRoles: ['admin', 'committee', 'observer'] },
-  'occupants':     { title: 'Occupants',             allowedRoles: ['admin'] },
+  'occupants':     { title: 'Occupants',             allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
   'users':         { title: 'User Management',       allowedRoles: ['admin'] },
   'system':        { title: 'System Management',     allowedRoles: ['admin'] },
 };
@@ -77,7 +77,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports', 'occupants', 'users', 'system'];
+    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'cost-dashboard', 'history', 'quotes', 'reports', 'occupants', 'users', 'system'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
@@ -91,10 +91,10 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'],
-        observer: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard', 'history', 'quotes', 'reports'],
-        owner: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'dashboard'],
-        tenant: ['building', 'announcements', 'complaints', 'hvac', 'emergency', 'dashboard']
+        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'cost-dashboard', 'history', 'quotes', 'reports'],
+        observer: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'cost-dashboard', 'history', 'quotes', 'reports'],
+        owner: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works'],
+        tenant: ['building', 'announcements', 'complaints', 'hvac', 'emergency']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
@@ -260,13 +260,8 @@ export async function initLayout() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile) {
-    console.error('[layout.js] profile not found for user:', user.id);
-    window.location.href = '/index.html';
-    return null;
-  }
-  const role = profile.role;
-  const name = profile.full_name || user.email.split('@')[0];
+  const role = profile?.role || 'observer';
+  const name = profile?.full_name || user.email.split('@')[0];
 
   checkPageAccess(role);
   await applyRoleMenuControl(role, supabase);
