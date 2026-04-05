@@ -30,6 +30,19 @@
 .status-box.error{color:var(--red);font-style:normal}
 .cleanup-footer{font-size:11px;color:var(--muted);padding-top:4px;border-top:1px solid var(--border-light)}
 .divider{height:1px;background:var(--border-light)}
+.preview-list{display:flex;flex-direction:column;gap:10px}
+.preview-item{background:var(--bg);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
+.preview-item-row{display:flex;gap:6px;font-size:12px;line-height:1.6}
+.preview-item-label{color:var(--muted);min-width:60px;font-weight:500}
+.preview-item-val{color:var(--text);font-weight:500}
+.preview-files{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light)}
+.preview-files-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.preview-file{font-size:11px;color:var(--text-2);padding:2px 0;display:flex;align-items:center;gap:6px}
+.preview-file::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.preview-empty{font-size:13px;color:var(--muted);padding:16px 0;text-align:center}
+.badge-declined{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--red-bg);color:var(--red-text)}
+.badge-expired{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--amber-50);color:var(--amber-900)}
+.badge-removed{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--border-light);color:var(--text-2)}
 @media(max-width:768px){
   .cleanup-row{flex-direction:column;align-items:flex-start}
   .cleanup-row .btn-primary,.cleanup-row .btn-danger{width:100%}
@@ -49,7 +62,7 @@
     <div class="card">
       <div class="card-header">
         <div class="card-title">Junk Cleanup</div>
-        <div class="card-desc">Remove unused files from declined / on-hold / expired quotes</div>
+        <div class="card-desc">Remove unused files from declined / expired / removed quotes</div>
       </div>
       <div class="cleanup-body">
 
@@ -58,6 +71,14 @@
           <div class="cleanup-row">
             <button class="btn-primary" id="scanBtn">Scan Junk Files</button>
             <div class="files-found">Files found: <span id="fileCount">—</span></div>
+          </div>
+        </div>
+
+        <div id="previewSection" style="display:none">
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Junk Quotes</div>
+            <div class="preview-list" id="previewList"></div>
           </div>
         </div>
 
@@ -94,6 +115,7 @@ const { supabase, user, role } = ctx;
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
 let junkFilePaths = [];
+let junkQuoteIds = [];
 
 function setStatus(text, type = 'ready') {
   const box = document.getElementById('statusBox');
@@ -108,6 +130,55 @@ function setDeleteBtn(enabled) {
   btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
+function getFilename(path) {
+  if (!path || typeof path !== 'string') return path;
+  return path.split('/').pop();
+}
+
+function renderPreview(quotes) {
+  const section = document.getElementById('previewSection');
+  const list = document.getElementById('previewList');
+
+  if (!quotes || !quotes.length) {
+    section.style.display = 'block';
+    list.innerHTML = '<div class="preview-empty">No junk quotes found</div>';
+    return;
+  }
+
+  const badgeClass = { declined: 'badge-declined', expired: 'badge-expired', removed: 'badge-removed' };
+
+  list.innerHTML = quotes.map(q => {
+    let parsed = null;
+    try { parsed = q.comment ? (typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment) : null; } catch {}
+    const files = parsed?.files || [];
+    const project = q.project || q.project_title || '—';
+    const vendor = q.vendor || '—';
+    const shortId = q.id ? q.id.slice(0, 8) : '—';
+    const badge = badgeClass[q.status] || 'badge-removed';
+
+    const filesHtml = files.length
+      ? `<div class="preview-files">
+          <div class="preview-files-label">Files</div>
+          ${files.map(f => {
+            const name = getFilename(typeof f === 'string' ? f : f?.path);
+            return `<div class="preview-file">${name || '—'}</div>`;
+          }).join('')}
+        </div>`
+      : `<div class="preview-files"><div class="preview-files-label" style="color:var(--muted)">Files</div><div class="preview-file" style="color:var(--muted)">No files</div></div>`;
+
+    return `
+      <div class="preview-item">
+        <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
+        <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
+        <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:11px">${shortId}</span></div>
+        <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
+        ${filesHtml}
+      </div>`;
+  }).join('');
+
+  section.style.display = 'block';
+}
+
 async function scanJunkFiles() {
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = true;
@@ -115,13 +186,15 @@ async function scanJunkFiles() {
   setStatus('Scanning...', 'loading');
   setDeleteBtn(false);
   document.getElementById('fileCount').textContent = '—';
+  document.getElementById('previewSection').style.display = 'none';
   junkFilePaths = [];
+  junkQuoteIds = [];
 
   try {
     const { data: quotes, error } = await supabase
       .from('quotes')
-      .select('id, status, comment')
-      .in('status', ['declined', 'onhold', 'expired', 'removed'])
+      .select('id, status, comment, work_status, completion_date, project, project_title, vendor')
+      .in('status', ['declined', 'expired', 'removed'])
       .is('work_status', null)
       .is('completion_date', null);
 
@@ -131,12 +204,15 @@ async function scanJunkFiles() {
       document.getElementById('fileCount').textContent = '0';
       setStatus('No junk files found.', 'ready');
       setDeleteBtn(false);
+      renderPreview([]);
       return;
     }
 
     junkFilePaths = [];
+    junkQuoteIds = [];
 
     for (const q of quotes) {
+      junkQuoteIds.push(q.id);
       if (!q.comment) continue;
       let parsed = null;
       try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
@@ -150,12 +226,13 @@ async function scanJunkFiles() {
     }
 
     document.getElementById('fileCount').textContent = junkFilePaths.length;
+    renderPreview(quotes);
 
-    if (junkFilePaths.length === 0) {
-      setStatus('No junk files found.', 'ready');
+    if (junkQuoteIds.length === 0) {
+      setStatus('No junk records found.', 'ready');
       setDeleteBtn(false);
     } else {
-      setStatus(`${junkFilePaths.length} file${junkFilePaths.length > 1 ? 's' : ''} ready for deletion.`, 'ready');
+      setStatus(`${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} (${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}) ready for deletion.`, 'ready');
       setDeleteBtn(true);
     }
 
@@ -170,8 +247,8 @@ async function scanJunkFiles() {
 }
 
 async function deleteJunkFiles() {
-  if (!junkFilePaths.length) return;
-  if (!confirm(`Delete ${junkFilePaths.length} junk file${junkFilePaths.length > 1 ? 's' : ''}?\nThis action cannot be undone.`)) return;
+  if (!junkQuoteIds.length) return;
+  if (!confirm(`Delete ${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} and ${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}?\nThis action cannot be undone.`)) return;
 
   const deleteBtn = document.getElementById('deleteBtn');
   const scanBtn = document.getElementById('scanBtn');
@@ -182,21 +259,30 @@ async function deleteJunkFiles() {
   setStatus('Deleting...', 'loading');
 
   try {
-    const { error } = await supabase.storage
-      .from('quotes')
-      .remove(junkFilePaths);
+    if (junkFilePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('quotes')
+        .remove(junkFilePaths);
+      if (storageError) throw storageError;
+    }
 
-    if (error) throw error;
+    const { error: dbError } = await supabase
+      .from('quotes')
+      .delete()
+      .in('id', junkQuoteIds);
+    if (dbError) throw dbError;
 
     const now = new Date();
     document.getElementById('lastCleanup').textContent =
       'Last cleanup: ' + now.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
     junkFilePaths = [];
+    junkQuoteIds = [];
     document.getElementById('fileCount').textContent = '0';
+    document.getElementById('previewSection').style.display = 'none';
     setStatus('Cleanup complete ✓', 'success');
     setDeleteBtn(false);
-    showToast('Junk files deleted ✓');
+    showToast('Cleanup complete ✓');
 
   } catch (e) {
     console.error('Delete error:', e);
