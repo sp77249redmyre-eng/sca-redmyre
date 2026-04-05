@@ -1893,12 +1893,34 @@ window.saveQuote = async function() {
   const notes       = document.getElementById('quoteNotes').value.trim();
   const internalNote = document.getElementById('quoteInternalNote').value.trim();
 
-  if (!projectName || !vendor || amount <= 0) { showToast('Please fill all required fields', true); return; }
+  if (!vendor || amount <= 0) { showToast('Please fill all required fields', true); return; }
 
   const btn = document.getElementById('saveQuoteBtn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
+    // ── 기존 견적 수정 (editId 있을 때) ──
+    const editId = document.getElementById('quoteEditId').value;
+    if (editId) {
+      const existingQ   = allQuotes.find(x => x.id === editId);
+      if (!existingQ) { showToast('Quote not found', true); btn.disabled=false; btn.textContent='Save Quote'; return; }
+      const existingParsed = parseComment(existingQ.comment);
+      const uploadedNew    = pendingFiles.length > 0 ? await uploadFiles(editId) : [];
+      const mergedFiles    = [...(existingParsed.files||[]), ...uploadedNew];
+      const updatedComment = JSON.stringify({ ...existingParsed, note: internalNote, files: mergedFiles, category, priority });
+      const { error: uErr } = await supabase.from('quotes').update({
+        vendor, amount, category, notes, comment: updatedComment
+      }).eq('id', editId);
+      if (uErr) throw uErr;
+      pendingFiles = [];
+      showToast('Quote updated ✓');
+      closeModal('quoteModal');
+      await loadData();
+      renderQuotes();
+      return;
+    }
+
+    if (!projectName) { showToast('Please fill all required fields', true); btn.disabled=false; btn.textContent='Save Quote'; return; }
     const quoteId   = crypto.randomUUID();
     const projectId = isNew ? crypto.randomUUID() : sel.value;
     const uploadedFiles = pendingFiles.length > 0 ? await uploadFiles(quoteId) : [];
