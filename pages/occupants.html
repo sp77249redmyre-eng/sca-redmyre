@@ -142,6 +142,12 @@
   font-weight: 600;
 }
 
+/* Modal Label Override */
+.modal-label {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
 /* Plate Tag Input UI */
 #plateList {
   display: flex;
@@ -156,20 +162,21 @@
 .plate-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 13px;
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  background: var(--bg);
+  background: #fff;
   color: var(--text);
   text-transform: uppercase;
   letter-spacing: 1px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .plate-input:focus {
-  border-color: var(--blue-600);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 .plate-input.invalid {
   border-color: #ef4444;
@@ -179,9 +186,9 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--muted);
+  border: 1px solid #ef4444;
+  background: #fee2e2;
+  color: #b91c1c;
   cursor: pointer;
   font-size: 14px;
   display: flex;
@@ -191,9 +198,8 @@
   flex-shrink: 0;
 }
 .plate-remove-btn:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
-  color: #ef4444;
+  background: #ef4444;
+  color: #fff;
 }
 .plate-remove-btn:disabled {
   opacity: 0.3;
@@ -559,6 +565,12 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const unit = occ?.unit || '';
   const contactPerson = document.getElementById('editContactPerson').value.trim();
   const businessName = document.getElementById('editBusinessName').value.trim();
+  const ownerName =
+    contactPerson ||
+    businessName ||
+    occ?.contact_person ||
+    occ?.business_name ||
+    '';
 
   const data = {
     business_name: businessName,
@@ -584,7 +596,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   // Sync vehicles via RPC
   const { error: rpcError } = await supabase.rpc('sync_vehicles', {
     p_unit: unit,
-    p_owner_name: contactPerson || businessName || '',
+    p_owner_name: ownerName,
     p_plates: plates
   });
 
@@ -614,8 +626,7 @@ function createPlateRow(value, idx, total) {
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'plate-input';
-  input.maxLength = 8;
-  input.placeholder = 'e.g. ABC123';
+  input.placeholder = 'ABC123 (2~8)';
   input.value = value;
 
   input.addEventListener('input', () => {
