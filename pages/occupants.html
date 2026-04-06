@@ -286,6 +286,27 @@ if (!['admin','committee','observer','owner','tenant'].includes(role)) {
 let allOccupants = [];
 let currentSuite = 'Ground';
 
+// owner/tenant: 본인 suite 탭만 표시
+if (['owner','tenant'].includes(role) && myUnit) {
+  const mySuite = (() => {
+    const match = myUnit.match(/^([0-9]+)([A-H])$/i);
+    if (!match) return null;
+    const letter = match[2].toUpperCase();
+    return 'Suite ' + letter;
+  })();
+  document.querySelectorAll('.suite-tab').forEach(tab => {
+    if (mySuite && tab.dataset.suite !== mySuite) {
+      tab.style.display = 'none';
+    }
+  });
+  if (mySuite) {
+    currentSuite = mySuite;
+    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+    const myTab = document.querySelector(`.suite-tab[data-suite="${mySuite}"]`);
+    if (myTab) myTab.classList.add('active');
+  }
+}
+
 // Load occupants
 async function loadOccupants() {
   const { data, error } = await supabase
@@ -446,10 +467,16 @@ window.openEditModal = (id) => {
   // Toggle committee role field
   toggleCommitteeRole();
   
-  // committee/owner/tenant: 민감 필드 비활성화
+  // role별 필드 제어
   const isAdmin = role === 'admin';
+  const isOwnerTenant = ['owner','tenant'].includes(role);
   document.getElementById('editIsCommittee').disabled = !isAdmin;
   document.getElementById('editCommitteeRole').disabled = !isAdmin;
+  // owner/tenant: Business Name, Business Email, Committee Member 숨기기
+  document.getElementById('editBusinessName').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
+  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
+  document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
+  document.getElementById('committeeRoleField').style.display = 'none';
   
   openModal('editModal');
 };
