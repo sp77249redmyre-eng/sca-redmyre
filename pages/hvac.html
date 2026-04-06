@@ -170,6 +170,21 @@
         </div>
         <div class="card" id="myList"><div class="empty-state">No requests submitted yet</div></div>
       </div>
+      <!-- Observer: read-only view -->
+      <div id="observerPanel" style="display:none">
+        <div class="section-hdr">
+          <div class="section-title">Pending Requests</div>
+          <span id="obsPendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
+        </div>
+        <div class="card" id="obsPendingList"><div class="empty-state">No pending requests 🎉</div></div>
+        <div class="section-hdr" style="margin-top:16px">
+          <div class="section-title">In Progress</div>
+          <span id="obsProgressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span>
+        </div>
+        <div class="card" id="obsProgressList"><div class="empty-state">No requests in progress</div></div>
+        <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
+        <div class="card" id="obsCompletedList"><div class="empty-state">No completed requests yet</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -314,11 +329,18 @@ if (role === 'admin') {
     })
     .subscribe();
     
+} else if (role === 'observer') {
+  document.querySelector('.submit-form').style.display = 'none';
+  document.getElementById('observerPanel').style.display = 'block';
+  await loadObserverData();
+  
+  supabase.channel('observer-hvac-updates')
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
+      loadObserverData();
+    })
+    .subscribe();
 } else {
   document.getElementById('userPanel').style.display = 'block';
-  if (role === 'observer') {
-    document.querySelector('.submit-form').style.display = 'none';
-  }
   await loadMyUnits();
   await loadMyRequests();
   
@@ -474,6 +496,67 @@ async function loadAdminData() {
   
   if (!completed?.length) { 
     cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; 
+  } else {
+    cList.innerHTML = completed.map(r => `
+      <div class="my-req-row">
+        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+        </div>
+        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
+      </div>
+    `).join('');
+  }
+}
+
+async function loadObserverData() {
+  const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
+  const pList = document.getElementById('obsPendingList');
+  const pCount = document.getElementById('obsPendingCount');
+  if (!pending?.length) {
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>';
+    pCount.textContent = '';
+  } else {
+    pCount.textContent = `${pending.length} pending`;
+    pList.innerHTML = pending.map(r => `
+      <div class="req-row">
+        <div style="font-size:22px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div class="req-info">
+          <div class="req-title">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div class="req-meta">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${r.comment ? `<div class="req-comment">"${r.comment}"</div>` : ''}
+        </div>
+        <span class="badge badge-yellow">pending</span>
+      </div>
+    `).join('');
+  }
+
+  const { data: progress } = await supabase.from('hvac_requests').select('*').in('status', ['approved', 'processing']).order('created_at', {ascending: false});
+  const prList = document.getElementById('obsProgressList');
+  const prCount = document.getElementById('obsProgressCount');
+  if (!progress?.length) {
+    prList.innerHTML = '<div class="empty-state">No requests in progress</div>';
+    prCount.textContent = '';
+  } else {
+    prCount.textContent = `${progress.length} in progress`;
+    prList.innerHTML = progress.map(r => `
+      <div class="my-req-row">
+        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${getProgressBar(r.status, r.type)}
+        </div>
+        <span class="badge badge-blue">${r.status}</span>
+      </div>
+    `).join('');
+  }
+
+  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(10);
+  const cList = document.getElementById('obsCompletedList');
+  if (!completed?.length) {
+    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>';
   } else {
     cList.innerHTML = completed.map(r => `
       <div class="my-req-row">
