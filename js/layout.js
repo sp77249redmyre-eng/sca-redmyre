@@ -12,7 +12,7 @@ const PAGE_CONFIG = {
   'history':        { title: 'Temperature History',   allowedRoles: ['admin', 'committee', 'observer'] },
   'quotes':         { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':        { title: 'Completed Works',       allowedRoles: ['admin', 'committee', 'observer'] },
-  'occupants':      { title: 'Occupant Details',      allowedRoles: ['admin', 'committee', 'owner', 'tenant'] },
+  'occupants':      { title: 'Occupant Details',      allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
   'users':          { title: 'User Management',       allowedRoles: ['admin'] },
   'system':         { title: 'System Management',     allowedRoles: ['admin'] },
 };
@@ -92,9 +92,9 @@ async function applyRoleMenuControl(role, supabase) {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
         committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants'],
-        observer:  ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard'],
+        observer:  ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants'],
         owner:     ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants'],
-        tenant:    ['building', 'announcements', 'complaints', 'hvac', 'emergency', 'occupants']
+        tenant:    ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
