@@ -142,6 +142,64 @@
   font-weight: 600;
 }
 
+/* Plate Tag Input UI */
+#plateList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plate-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.plate-input:focus {
+  border-color: var(--blue-600);
+}
+.plate-input.invalid {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+.plate-remove-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.plate-remove-btn:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+.plate-remove-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .suite-tabs { gap: 4px; }
@@ -257,8 +315,8 @@
     </div>
     
     <div class="modal-field">
-      <label class="modal-label">License Plates (one per line)</label>
-      <textarea class="modal-textarea" id="editLicensePlates" placeholder="ABC123&#10;XYZ789&#10;DEF456" style="min-height:100px;font-family:'Courier New',monospace"></textarea>
+      <label class="modal-label">License Plates</label>
+      <div id="plateList"></div>
     </div>
 
     <div class="modal-footer">
@@ -460,9 +518,9 @@ window.openEditModal = (id) => {
   document.getElementById('editIsCommittee').checked = occ.is_committee || false;
   document.getElementById('editCommitteeRole').value = occ.committee_role || 'Member';
   
-  // License plates - one per line
+  // License plates - plate tag UI
   const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
-  document.getElementById('editLicensePlates').value = plates.join('\n');
+  renderPlateList(plates.length ? plates : ['']);
   
   // Toggle committee role field
   toggleCommitteeRole();
@@ -492,15 +550,19 @@ function toggleCommitteeRole() {
 // Save
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const id = document.getElementById('editId').value;
-  
-  // Get license plates - split by newline, trim, filter empty
-  const platesText = document.getElementById('editLicensePlates').value;
-  const plates = platesText.split('\n').map(p => p.trim()).filter(p => p);
+
+  // Collect plates from plate tag UI
+  const plates = collectPlates();
   const platesStr = plates.join(', ');
-  
+
+  const occ = allOccupants.find(o => o.id === id);
+  const unit = occ?.unit || '';
+  const contactPerson = document.getElementById('editContactPerson').value.trim();
+  const businessName = document.getElementById('editBusinessName').value.trim();
+
   const data = {
-    business_name: document.getElementById('editBusinessName').value.trim(),
-    contact_person: document.getElementById('editContactPerson').value.trim(),
+    business_name: businessName,
+    contact_person: contactPerson,
     primary_email: document.getElementById('editPrimaryEmail').value.trim(),
     business_email: document.getElementById('editBusinessEmail').value.trim(),
     phone: document.getElementById('editPhone').value.trim(),
@@ -508,21 +570,118 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     committee_role: document.getElementById('editIsCommittee').checked ? document.getElementById('editCommitteeRole').value : null,
     license_plates: platesStr || null,
   };
-  
+
   const { error } = await supabase
     .from('occupants')
     .update(data)
     .eq('id', id);
-  
+
   if (error) {
     showToast('Failed to save: ' + error.message, true);
     return;
   }
-  
+
+  // Sync vehicles via RPC
+  const { error: rpcError } = await supabase.rpc('sync_vehicles', {
+    p_unit: unit,
+    p_owner_name: contactPerson || businessName || '',
+    p_plates: plates
+  });
+
+  if (rpcError) {
+    showToast('Saved but vehicle sync failed: ' + rpcError.message, true);
+  }
+
   closeModal('editModal');
   await loadOccupants();
   showToast('Occupant updated ✓');
 });
+
+// ── Plate Tag UI ─────────────────────────────────────────────
+function renderPlateList(plates) {
+  const container = document.getElementById('plateList');
+  container.innerHTML = '';
+  const list = plates.length ? plates : [''];
+  list.forEach((plate, idx) => {
+    container.appendChild(createPlateRow(plate, idx, list.length));
+  });
+}
+
+function createPlateRow(value, idx, total) {
+  const row = document.createElement('div');
+  row.className = 'plate-row';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'plate-input';
+  input.maxLength = 8;
+  input.placeholder = 'e.g. ABC123';
+  input.value = value;
+
+  input.addEventListener('input', () => {
+    // Allow A-Z 0-9 only, uppercase
+    const clean = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    input.value = clean;
+    input.classList.toggle('invalid', clean.length > 0 && (clean.length < 2 || clean.length > 8));
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const container = document.getElementById('plateList');
+      const rows = container.querySelectorAll('.plate-row');
+      const currentIdx = Array.from(rows).indexOf(row);
+      // Add new row after current
+      const newRow = createPlateRow('', currentIdx + 1, rows.length + 1);
+      if (currentIdx + 1 < rows.length) {
+        container.insertBefore(newRow, rows[currentIdx + 1]);
+      } else {
+        container.appendChild(newRow);
+      }
+      newRow.querySelector('.plate-input').focus();
+      refreshRemoveButtons();
+    }
+  });
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'plate-remove-btn';
+  btn.textContent = '✕';
+  btn.title = 'Remove';
+  btn.disabled = total <= 1;
+
+  btn.addEventListener('click', () => {
+    const container = document.getElementById('plateList');
+    if (container.querySelectorAll('.plate-row').length > 1) {
+      row.remove();
+      refreshRemoveButtons();
+    }
+  });
+
+  row.appendChild(input);
+  row.appendChild(btn);
+  return row;
+}
+
+function refreshRemoveButtons() {
+  const container = document.getElementById('plateList');
+  const rows = container.querySelectorAll('.plate-row');
+  rows.forEach(r => {
+    const btn = r.querySelector('.plate-remove-btn');
+    if (btn) btn.disabled = rows.length <= 1;
+  });
+}
+
+function collectPlates() {
+  const container = document.getElementById('plateList');
+  const inputs = container.querySelectorAll('.plate-input');
+  const raw = Array.from(inputs)
+    .map(i => i.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))
+    .filter(p => p.length >= 2 && p.length <= 8);
+  // Deduplicate + A-Z sort
+  return [...new Set(raw)].sort();
+}
+// ─────────────────────────────────────────────────────────────
 
 // Initial load
 await loadOccupants();
