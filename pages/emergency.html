@@ -137,10 +137,10 @@
             <div class="person-phone">02 9736 1699</div>
             <div class="person-phone-label">359-361 Concord Rd, Concord West NSW 2138</div>
           </div>
-          <div class="person-email">htopalcik@exclusivre.com.au</div>
+          <div class="person-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ef6eaf1eefff2fdf7f5defbe6fdf2ebedf7e8ecfbb0fdf1f3b0ffeb">[email&#160;protected]</a></div>
           <div class="person-actions">
             <a class="call-btn btn-purple" href="tel:0297361699">📞 Call</a>
-            <a class="call-btn btn-email" href="mailto:htopalcik@exclusivre.com.au">✉️ Email</a>
+            <a class="call-btn btn-email" href="/cdn-cgi/l/email-protection#c0a8b4afb0a1aca3a9ab80a5b8a3acb5b3a9b6b2a5eea3afadeea1b5">✉️ Email</a>
           </div>
         </div>
       </div>
@@ -182,7 +182,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module">
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
@@ -255,6 +255,11 @@ function getServiceIcon(service) {
 
 let contractorsData = [];
 
+// admin/committee/observer만 contractor 섹션 표시
+if (['admin','committee','observer'].includes(role)) {
+  document.getElementById('contractorSection').style.display = 'block';
+}
+
 async function loadContractors() {
   const { data } = await supabase.from('contractors').select('*').order('position');
   contractorsData = data||[];
@@ -270,7 +275,7 @@ async function loadContractors() {
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <div class="cc-service">${c.service}</div>
-            <button onclick="openContractorEdit('${c.id}')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0">✏️ Edit</button>
+            ${role==='admin'?`<button onclick="openContractorEdit('${c.id}')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0">✏️ Edit</button>`:''}
           </div>
           <div class="cc-company">${c.company}</div>
           ${c.contact_name?`<div class="cc-contact">${c.contact_name}</div>`:''}
@@ -330,15 +335,4 @@ document.getElementById('saveContractorBtn').addEventListener('click', async () 
 document.getElementById('contractorDeleteBtn').addEventListener('click', async () => {
   const id=document.getElementById('contractorEditId').value;
   if (!confirm('Delete this contractor?')) return;
-  try { await supabase.from('contractors').delete().eq('id',id); closeModal('contractorModal'); await loadContractors(); showToast('Contractor deleted'); }
-  catch(e) { showToast('Failed to delete', true); }
-});
-
-await renderManagerCard();
-if (role==='admin') {
-  document.getElementById('contractorSection').style.display='block';
-  await loadContractors();
-}
-</script>
-</body>
-</html>
+  try { await supabase.from('contractors').delete().eq('id',id); closeModal('contractorModal'); awa
