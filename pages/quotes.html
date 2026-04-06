@@ -893,22 +893,24 @@ function renderPendingQuotes(quotes) {
     inputTitle.innerHTML = '✏️ Add Your Comment';
     votingSection.appendChild(inputTitle);
 
-    const inputArea = document.createElement('div');
-    inputArea.className = 'input-area';
-    const textarea = document.createElement('textarea');
-    textarea.placeholder = 'Enter your comment...';
-    const submitBtn = document.createElement('button');
-    submitBtn.className = 'submit-btn';
-    submitBtn.textContent = 'Submit';
-    submitBtn.onclick = () => {
-      const txt = textarea.value.trim();
-      if (!txt) { showToast('Please enter a comment', true); return; }
-      if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
-      doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
-    };
-    inputArea.appendChild(textarea);
-    inputArea.appendChild(submitBtn);
-    votingSection.appendChild(inputArea);
+    if (role !== 'observer') {
+      const inputArea = document.createElement('div');
+      inputArea.className = 'input-area';
+      const textarea = document.createElement('textarea');
+      textarea.placeholder = 'Enter your comment...';
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'submit-btn';
+      submitBtn.textContent = 'Submit';
+      submitBtn.onclick = () => {
+        const txt = textarea.value.trim();
+        if (!txt) { showToast('Please enter a comment', true); return; }
+        if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
+        doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
+      };
+      inputArea.appendChild(textarea);
+      inputArea.appendChild(submitBtn);
+      votingSection.appendChild(inputArea);
+    }
 
     // Voting status – full committee grid
     const voteTitle = document.createElement('div');
