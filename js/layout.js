@@ -242,7 +242,7 @@ function initNotification(supabase) {
     const rawData = atob(base64);
     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
   }
-  let notifEnabled = false;
+  let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
   function updateNotifUI() {
     const btn = document.getElementById('notifToggleBtn');
     if (!btn) return;
@@ -252,10 +252,11 @@ function initNotification(supabase) {
     btn.style.borderColor = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--border)';
     btn.style.color       = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--muted)';
   }
+  updateNotifUI();
   window.toggleNotification = async function () {
     if (!notifEnabled) {
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { notifEnabled = false; updateNotifUI(); return; }
+      if (permission !== 'granted') { notifEnabled = false; localStorage.setItem('notifEnabled', 'false'); updateNotifUI(); return; }
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         const sub = await reg.pushManager.subscribe({
@@ -265,9 +266,11 @@ function initNotification(supabase) {
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('push_subscriptions').insert({ user_id: user.id, subscription: sub });
         notifEnabled = true;
-      } catch(e) { notifEnabled = false; }
+        localStorage.setItem('notifEnabled', 'true');
+      } catch(e) { notifEnabled = false; localStorage.setItem('notifEnabled', 'false'); }
     } else {
       notifEnabled = false;
+      localStorage.setItem('notifEnabled', 'false');
     }
     updateNotifUI();
   };
