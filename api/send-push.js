@@ -9,35 +9,53 @@ webpush.setVapidDetails(
 
 module.exports = async (req, res) => {
 
-  const auth = req.headers['authorization'] || '';
-  if (!auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
-
-  const token = auth.replace('Bearer ', '');
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { data: { user } } = await supabase.auth.getUser(token);
+  const { title, message, target_role, user_id } = req.body;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
+  let query = supabase
+    .from('push_subscriptions')
+    .select('user_id, subscription');
 
-  if (!profile || profile.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: Admin only' });
+  if (user_id) {
+    query = query.eq('user_id', user_id);
+  } else if (target_role) {
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', target_role)
+      .eq('push_enabled', true);
+
+    const ids = users?.map(u => u.id) || [];
+
+    if (ids.length === 0) {
+      return res.status(200).json({ success: true, sent: 0 });
+    }
+
+    query = query.in('user_id', ids);
+  } else {
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('push_enabled', true);
+
+    const ids = users?.map(u => u.id) || [];
+
+    if (ids.length === 0) {
+      return res.status(200).json({ success: true, sent: 0 });
+    }
+
+    query = query.in('user_id', ids);
   }
 
-  const { title, message } = req.body;
-
-  const { data: subscriptions } = await supabase
-    .from('push_subscriptions')
-    .select('id, subscription');
+  const { data: subscriptions } = await query;
 
   let sent = 0;
 
@@ -45,7 +63,10 @@ module.exports = async (req, res) => {
     try {
       await webpush.sendNotification(
         row.subscription,
-        JSON.stringify({ title, body: message })
+        JSON.stringify({
+          title,
+          body: message
+        })
       );
       sent++;
     } catch {}
