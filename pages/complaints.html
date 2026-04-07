@@ -187,6 +187,13 @@
       </div>
     </div>
 
+    <div id="existingResponseWrap" style="display:none;margin-top:12px">
+      <div style="background:var(--green-bg);border:1px solid #a7f3d0;border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em">Response from Management</div>
+        <div style="font-size:13px;color:var(--green-text);line-height:1.6;white-space:pre-wrap" id="existingResponseText">—</div>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-danger" id="deleteComplaintBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
@@ -425,7 +432,12 @@ window.openDetail = async (id) => {
       }).join('');
     } else { photosWrap.style.display = 'none'; }
   } else { photosWrap.style.display = 'none'; }
+  const existingWrap = document.getElementById('existingResponseWrap');
   const adminWrap = document.getElementById('adminResponseWrap');
+  if (c.admin_response) {
+    existingWrap.style.display = 'block';
+    document.getElementById('existingResponseText').textContent = c.admin_response;
+  } else { existingWrap.style.display = 'none'; }
   if (role === 'admin') {
     adminWrap.style.display = 'block';
     document.getElementById('adminResponse').value = c.admin_response || '';
