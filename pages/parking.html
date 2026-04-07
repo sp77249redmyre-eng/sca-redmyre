@@ -221,6 +221,30 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     selectedVio=null;
     
     await logActivity('PARKING_REPORTED', prInserted?.id || null);
+
+    try {
+      const cooldownMins = 15;
+      const cutoff = new Date(Date.now() - cooldownMins * 60 * 1000).toISOString();
+      const { data: recentReports } = await supabase
+        .from('parking_reports')
+        .select('id')
+        .eq('plate', plate)
+        .gte('created_at', cutoff)
+        .neq('id', prInserted.id);
+
+      if (!recentReports || recentReports.length === 0) {
+        const { data: { session: pushSession } } = await supabase.auth.getSession();
+        await fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({
+            title: '🚨 Illegal Parking Reported',
+            message: `Plate: ${plate} — ${bay||area}`
+          })
+        });
+      }
+    } catch(pushErr) {}
+
     showToast('Report submitted! All residents have been notified 🚨');
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); }
