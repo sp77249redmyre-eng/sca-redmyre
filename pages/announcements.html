@@ -120,6 +120,7 @@ async function logActivity(action, record_id = null) {
     });
   } catch (e) {}
 }
+window.logActivity = logActivity;
 await logActivity('PAGE_ENTER');
 window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
 
@@ -227,7 +228,7 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
         await fetch('/api/send-push', {
           method:'POST',
           headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ target_role:'all', title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
+          body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
         });
       } catch(pushErr){}
     }
