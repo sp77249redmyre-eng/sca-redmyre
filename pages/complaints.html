@@ -391,6 +391,14 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
     pendingPhotos = [];
     await loadComplaints();
     await logActivity('COMPLAINT_CREATED', inserted.id);
+    try {
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ target_role: 'admin', title: '📬 New Resident Request', message: `${title} — ${CAT_LABEL[category]||category}` })
+      });
+    } catch(pushErr) {}
     showToast('Request submitted ✓');
   } catch(e) { showToast(e.message||'Failed to submit', true); }
   finally { btn.disabled = false; btn.textContent = 'Submit →'; }
@@ -445,6 +453,17 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
   const status   = document.getElementById('adminStatusSelect').value;
   try {
     await supabase.from('complaints').update({ admin_response: response||null, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+    try {
+      const c = allComplaints.find(x => x.id === currentComplaintId);
+      if (c?.user_id) {
+        const { data: { session: pushSession } } = await supabase.auth.getSession();
+        await fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ user_id: c.user_id, title: '📬 Your Request has been Updated', message: `Status: ${STATUS_MAP[status]?.label || status}` })
+        });
+      }
+    } catch(pushErr) {}
     closeModal('detailModal');
     await loadComplaints();
     showToast('Response saved ✓');
