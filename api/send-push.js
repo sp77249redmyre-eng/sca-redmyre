@@ -2,9 +2,9 @@ const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
 
 webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || 'mailto:admin@redmyre.com.au',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
+  process.env.VAPI_SUBJECT || 'mailto:admin@redmyre.com.au',
+  process.env.VAPI_PUBLIC_KEY,
+  process.env.VAPI_PRIVATE_KEY
 );
 
 module.exports = async (req, res) => {
