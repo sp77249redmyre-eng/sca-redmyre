@@ -20,7 +20,7 @@ self.addEventListener('push', e => {
     icon: '/icon-192-v3.png',
     badge: '/favicon-32-v3.png',
     tag: data.tag || 'redmyre-notification',
-    data: { url: data.url || '/announcements.html' },
+    data: { url: data.url || 'https://sca-redmyre.vercel.app/pages/announcements.html' },
     requireInteraction: false,
   };
 
@@ -29,7 +29,7 @@ self.addEventListener('push', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const url = e.notification.data?.url || '/announcements.html';
+  const url = e.notification.data?.url || 'https://sca-redmyre.vercel.app/pages/announcements.html';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
