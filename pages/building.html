@@ -12,10 +12,8 @@
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- 공통 CSS -->
 <link rel="stylesheet" href="/css/style.css">
 <style>
-/* ── building.html 전용 스타일 ── */
 .systems-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -42,8 +40,8 @@
 /* ── View Popup ── */
 .view-backdrop {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(15,23,42,0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(15,23,42,0.5);
+  backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none;
   transition: opacity 0.2s;
@@ -51,62 +49,66 @@
 .view-backdrop.open { opacity: 1; pointer-events: all; }
 .view-box {
   background: #fff;
-  border-radius: 20px;
-  width: 100%; max-width: 420px;
+  border-radius: 22px;
+  width: 100%; max-width: 400px;
   margin: 16px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+  box-shadow: 0 32px 72px rgba(0,0,0,0.22);
   overflow: hidden;
-  transform: translateY(12px) scale(0.98);
-  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
 }
 .view-backdrop.open .view-box { transform: translateY(0) scale(1); }
 .view-header {
-  padding: 22px 22px 16px;
-  display: flex; align-items: flex-start; justify-content: space-between;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 20px 20px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.view-title-row { display: flex; align-items: center; gap: 12px; }
-.view-icon { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-.view-name { font-size: 20px; font-weight: 700; color: #0f172a; }
+.view-header-left { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.view-icon {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.view-name {
+  font-size: 18px; font-weight: 700; color: #0f172a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .view-close {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: none; background: #f1f5f9; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  border: none; background: rgba(0,0,0,0.06); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; color: #64748b; flex-shrink: 0;
+  font-size: 14px; color: #64748b;
   transition: background 0.15s;
 }
-.view-close:hover { background: #e2e8f0; }
-.view-body { padding: 20px 22px 24px; }
-.view-status-row { margin-bottom: 18px; }
-.view-status-badge {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 7px 14px; border-radius: 100px;
-  font-size: 13px; font-weight: 600;
+.view-close:hover { background: rgba(0,0,0,0.12); }
+.view-status-banner {
+  margin: 0 20px 18px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
 }
-.view-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.view-detail-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.view-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.view-status-label { font-size: 14px; font-weight: 700; }
+.view-divider { height: 1px; background: #f1f5f9; margin: 0 20px 18px; }
+.view-detail-wrap { padding: 0 20px 24px; }
+.view-detail-label {
+  font-size: 10px; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+}
 .view-detail-text {
-  font-size: 14px; color: #1e293b; line-height: 1.65;
-  background: #f8fafc; border-radius: 12px; padding: 14px 16px;
-  min-height: 60px;
+  font-size: 14px; color: #1e293b; line-height: 1.7;
+  background: #f8fafc; border-radius: 12px;
+  padding: 14px 16px; min-height: 56px;
 }
-
 </style>
 </head>
 <body>
 
-<!-- ① Sidebar 플레이스홀더 — layout.js가 자동 삽입 -->
 <div id="sidebarPlaceholder"></div>
 
-<!-- ② Main 영역 -->
 <div class="main">
-
-  <!-- ③ Topbar 플레이스홀더 — layout.js가 자동 삽입 -->
   <div id="topbarPlaceholder"></div>
 
   <div class="content" style="display:flex;flex-direction:column;gap:24px">
 
-    <!-- OVERVIEW CARDS -->
     <div>
       <div class="section-hdr">
         <div class="section-title">Overview</div>
@@ -132,13 +134,13 @@
         </a>
 
         <a href="/pages/emergency.html" class="sys-card" style="text-decoration:none;color:inherit">
-  <div class="sys-top">
-    <div class="sys-icon" style="background:#fef2f2">🚨</div>
-    <span class="badge badge-red">Emergency</span>
-  </div>
-  <div class="sys-name">Emergency Contacts</div>
-  <div class="sys-note">Tap to view emergency contacts</div>
-</a>
+          <div class="sys-top">
+            <div class="sys-icon" style="background:#fef2f2">🚨</div>
+            <span class="badge badge-red">Emergency</span>
+          </div>
+          <div class="sys-name">Emergency Contacts</div>
+          <div class="sys-note">Tap to view emergency contacts</div>
+        </a>
 
         <a href="/pages/works.html" class="sys-card" style="text-decoration:none;color:inherit">
           <div class="sys-top">
@@ -152,7 +154,6 @@
       </div>
     </div>
 
-    <!-- BUILDING SYSTEMS -->
     <div>
       <div class="section-hdr">
         <div class="section-title">Building Systems</div>
@@ -166,7 +167,7 @@
   </div>
 </div>
 
-<!-- SYSTEM CARD MODAL -->
+<!-- SYSTEM CARD MODAL (admin) -->
 <div class="modal-backdrop" id="cardModal">
   <div class="modal-box">
     <div class="modal-title" id="cardModalTitle">Edit System</div>
@@ -216,22 +217,20 @@
 <div class="view-backdrop" id="viewPopup" onclick="closeViewPopup(event)">
   <div class="view-box">
     <div class="view-header">
-      <div class="view-title-row">
+      <div class="view-header-left">
         <div class="view-icon" id="vpIcon"></div>
         <div class="view-name" id="vpName"></div>
       </div>
       <button class="view-close" onclick="document.getElementById('viewPopup').classList.remove('open')">✕</button>
     </div>
-    <div class="view-body">
-      <div class="view-status-row">
-        <div class="view-status-badge" id="vpBadge">
-          <div class="view-status-dot" id="vpDot"></div>
-          <span id="vpStatusLabel"></span>
-        </div>
-      </div>
+    <div class="view-status-banner" id="vpBanner">
+      <div class="view-status-dot" id="vpDot"></div>
+      <span class="view-status-label" id="vpStatusLabel"></span>
+    </div>
+    <div class="view-divider"></div>
+    <div class="view-detail-wrap">
       <div class="view-detail-label">Details</div>
       <div class="view-detail-text" id="vpNote"></div>
-
     </div>
   </div>
 </div>
@@ -241,26 +240,23 @@
 <script type="module">
 import { initLayout } from '/js/layout.js';
 
-// layout.js 초기화 (sidebar + topbar + auth + role 제어 모두 처리)
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 
 const { supabase, role } = ctx;
 
-/* ── Admin 버튼 ── */
 if (role === 'admin') {
   document.getElementById('addCardBtn').style.display = 'inline-flex';
 }
 
-/* ── Status Map ── */
 const STATUS_MAP = {
-  normal:      { label:'Normal',        bg:'var(--green-bg)', c:'var(--green-text)', dot:'var(--green)' },
-  inprog:      { label:'In Progress',   bg:'var(--blue-50)',  c:'var(--blue-700)',   dot:'var(--blue-600)' },
-  monitor:     { label:'Monitoring',    bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)' },
-  pending:     { label:'Pending',       bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)' },
-  investigation:{ label:'Investigation',bg:'#ede9fe',         c:'#5b21b6',           dot:'#8b5cf6' },
-  urgent:      { label:'Urgent',        bg:'var(--red-bg)',   c:'var(--red-text)',   dot:'var(--red)' },
-  done:        { label:'Completed',     bg:'var(--green-bg)', c:'var(--green-text)', dot:'var(--green)' },
+  normal:       { label:'Normal',        bg:'#ecfdf5', c:'#065f46', dot:'#10b981' },
+  inprog:       { label:'In Progress',   bg:'#eff6ff', c:'#1e40af', dot:'#3b82f6' },
+  monitor:      { label:'Monitoring',    bg:'#fffbeb', c:'#92400e', dot:'#f59e0b' },
+  pending:      { label:'Pending',       bg:'#fffbeb', c:'#92400e', dot:'#f59e0b' },
+  investigation:{ label:'Investigation', bg:'#ede9fe', c:'#5b21b6', dot:'#8b5cf6' },
+  urgent:       { label:'Urgent',        bg:'#fef2f2', c:'#991b1b', dot:'#ef4444' },
+  done:         { label:'Completed',     bg:'#ecfdf5', c:'#065f46', dot:'#10b981' },
 };
 
 const SYSTEM_ICONS = {
@@ -284,7 +280,6 @@ const DEFAULT_CARDS = [
 let cardsData = [];
 let editingCardIdx = null;
 
-/* ── Overview Cards ── */
 async function loadOverviewCards() {
   try {
     const { data: anns } = await supabase.from('announcements').select('*').order('created_at',{ascending:false}).limit(1);
@@ -332,7 +327,6 @@ async function loadOverviewCards() {
   } catch(e){}
 }
 
-/* ── Building System Cards ── */
 async function loadCards() {
   const grid = document.getElementById('systemsGrid');
   try {
@@ -368,17 +362,17 @@ async function loadCards() {
   }).join('');
 }
 
-/* ── View Popup (non-admin) ── */
 window.openViewCard = (i) => {
   const c = cardsData[i];
   const st = STATUS_MAP[c.status] || STATUS_MAP.normal;
   document.getElementById('vpIcon').textContent = c.icon || '🔧';
   document.getElementById('vpIcon').style.background = c.icon_bg || '#f1f5f9';
   document.getElementById('vpName').textContent = c.name;
-  document.getElementById('vpBadge').style.background = st.bg;
-  document.getElementById('vpBadge').style.color = st.c;
+  const banner = document.getElementById('vpBanner');
+  banner.style.background = st.bg;
   document.getElementById('vpDot').style.background = st.dot;
   document.getElementById('vpStatusLabel').textContent = st.label;
+  document.getElementById('vpStatusLabel').style.color = st.c;
   document.getElementById('vpNote').textContent = c.note || 'No details available.';
   document.getElementById('viewPopup').classList.add('open');
 };
@@ -389,7 +383,6 @@ window.closeViewPopup = (e) => {
   }
 };
 
-/* ── Card CRUD ── */
 window.openAddCard = () => {
   editingCardIdx = null;
   document.getElementById('cardModalTitle').textContent = 'Add System';
@@ -425,8 +418,8 @@ document.getElementById('saveCardBtn').addEventListener('click', async () => {
     status:   status,
     note:     document.getElementById('cardNote').value.trim(),
     position: editingCardIdx !== null
-  ? editingCardIdx
-  : Date.now(),
+      ? cardsData[editingCardIdx].position
+      : Date.now(),
   };
   if (!data.name) { showToast('Please enter a system name', true); return; }
   try {
@@ -451,7 +444,6 @@ document.getElementById('deleteCardBtn').addEventListener('click', async () => {
   showToast('Card deleted');
 });
 
-/* ── Init ── */
 await loadOverviewCards();
 await loadCards();
 </script>
