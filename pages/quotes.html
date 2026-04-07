@@ -66,13 +66,13 @@
 .btn-approve{background:linear-gradient(135deg,#16a34a,#22c55e)}.btn-approve:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,0.3)}
 .btn-hold{background:linear-gradient(135deg,#ca8a04,#eab308)}.btn-hold:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(234,179,8,0.3)}
 .btn-decline{background:linear-gradient(135deg,#dc2626,#ef4444)}.btn-decline:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(239,68,68,0.3)}
-.comments-box{padding:12px 14px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:10px;margin-bottom:4px;font-size:13px;min-height:200px;max-height:400px;overflow-y:auto}
+.comments-box{padding:12px 14px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:10px;margin-bottom:4px;font-size:13px;max-height:140px;overflow-y:auto}
 .comment-item{margin-bottom:8px;line-height:1.5;padding-bottom:8px;border-bottom:0.5px solid #f1f5f9}
 .comment-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
 .comment-author{font-weight:600;color:#1e293b}
 .comment-text{color:#475569;margin-left:4px}
 .input-area{display:flex;gap:10px;align-items:flex-end;margin-bottom:4px}
-.input-area textarea{flex:1;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;min-height:100px;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box;transition:border-color 0.15s}
+.input-area textarea{flex:1;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;min-height:48px;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box;transition:border-color 0.15s}
 .input-area textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
 .submit-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:11px 22px;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;box-shadow:0 2px 8px rgba(37,99,235,0.25)}
 .submit-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,0.35)}
@@ -512,7 +512,7 @@ function getProjectVotes(projectId) {
   return allVotes.filter(v => v.project_id === projectId);
 }
 
-async function renderQuotes() {
+function renderQuotes() {
   const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && q.status !== 'removed' && q.work_status === null && q.completion_date === null && !q.archived && q.is_emergency !== true);
   const archived = allQuotes.filter(q => ['onhold','declined','expired'].includes(q.status) && q.status !== 'approved' && q.status !== 'removed' && q.is_emergency !== true);
   renderPendingQuotes(active);
@@ -873,15 +873,11 @@ function renderPendingQuotes(quotes) {
 
     const commBox = document.createElement('div');
     commBox.className = 'comments-box';
+    commBox.style.minHeight = '200px';
+    commBox.style.maxHeight = '400px';
     commBox.id = `commBox_${projectKey}`;
 
-    const { data: qComments } = await supabase
-      .from('quote_comments')
-      .select('*')
-      .eq('project_id', projectKey)
-      .order('created_at', { ascending: true });
-
-    function renderComments(comments) {
+    function renderQComments(comments) {
       if (!comments || comments.length === 0) {
         commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
         return;
@@ -898,7 +894,10 @@ function renderPendingQuotes(quotes) {
         </div>`;
       }).join('');
     }
-    renderComments(qComments);
+
+    supabase.from('quote_comments').select('*').eq('project_id', projectKey).order('created_at', { ascending: true })
+      .then(({ data }) => renderQComments(data));
+
     votingSection.appendChild(commBox);
 
     // Comment input
@@ -912,6 +911,7 @@ function renderPendingQuotes(quotes) {
       inputArea.className = 'input-area';
       const textarea = document.createElement('textarea');
       textarea.placeholder = 'Enter your comment...';
+      textarea.style.minHeight = '100px';
       const submitBtn = document.createElement('button');
       submitBtn.className = 'submit-btn';
       submitBtn.textContent = 'Submit';
@@ -928,12 +928,8 @@ function renderPendingQuotes(quotes) {
             comment: txt
           });
           textarea.value = '';
-          const { data: updated } = await supabase
-            .from('quote_comments')
-            .select('*')
-            .eq('project_id', projectKey)
-            .order('created_at', { ascending: true });
-          renderComments(updated);
+          const { data: updated } = await supabase.from('quote_comments').select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
+          renderQComments(updated);
           showToast('Comment submitted ✓');
         } catch(e) { showToast('Failed to submit', true); }
         finally { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
