@@ -1,12 +1,8 @@
-<!-- ============================================================
-     Redmyre BMS — Shared Topbar Component
-     /components/topbar.html
-     ============================================================ -->
-
 <div class="main-topbar">
   <div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <div id="topbarGreeting" style="font-size:15px;font-weight:600"></div>
+
       <button id="notifToggleBtn" onclick="toggleNotification()" style="
         display:inline-flex;align-items:center;gap:5px;
         padding:3px 10px;
@@ -22,38 +18,54 @@
         <span id="notifLabel">ON</span>
       </button>
     </div>
+
     <div id="topbarDate" style="font-size:12px;color:var(--muted);"></div>
   </div>
 
   <script>
     let notifEnabled = true;
-    function toggleNotification() {
-      notifEnabled = !notifEnabled;
-      if (notifEnabled) {
-        Notification.requestPermission().then(permission => {
-          if (permission !== 'granted') notifEnabled = false;
-          const btn = document.getElementById('notifToggleBtn');
-          document.getElementById('notifIcon').textContent  = notifEnabled ? '🔔' : '🔕';
-          document.getElementById('notifLabel').textContent = notifEnabled ? 'ON'  : 'OFF';
-          btn.style.background     = notifEnabled ? 'var(--accent-soft, rgba(99,102,241,0.1))' : 'transparent';
-          btn.style.borderColor    = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--border)';
-          btn.style.color          = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--muted)';
-        });
-        return;
-      }
+
+    function updateNotifUI() {
       const btn = document.getElementById('notifToggleBtn');
-      document.getElementById('notifIcon').textContent  = '🔕';
-      document.getElementById('notifLabel').textContent = 'OFF';
-      btn.style.background     = 'transparent';
-      btn.style.borderColor    = 'var(--border)';
-      btn.style.color          = 'var(--muted)';
+      document.getElementById('notifIcon').textContent  = notifEnabled ? '🔔' : '🔕';
+      document.getElementById('notifLabel').textContent = notifEnabled ? 'ON'  : 'OFF';
+
+      btn.style.background  = notifEnabled
+        ? 'var(--accent-soft, rgba(99,102,241,0.1))'
+        : 'transparent';
+
+      btn.style.borderColor = notifEnabled
+        ? 'var(--accent, #6366f1)'
+        : 'var(--border)';
+
+      btn.style.color = notifEnabled
+        ? 'var(--accent, #6366f1)'
+        : 'var(--muted)';
+    }
+
+    async function toggleNotification() {
+      if (!notifEnabled) {
+        const permission = await Notification.requestPermission();
+
+        if (permission === 'granted') {
+          notifEnabled = true;
+        } else {
+          notifEnabled = false;
+        }
+      } else {
+        notifEnabled = false;
+      }
+
+      updateNotifUI();
     }
   </script>
+
   <div class="tb-right">
     <div class="role-chip">
       <div class="role-dot"></div>
       <span class="role-label" id="topbarRole">—</span>
     </div>
+
     <div class="user-chip">
       <div class="u-avatar" id="topAvatar">?</div>
       <div>
@@ -61,6 +73,7 @@
         <div class="u-role" id="topRole">—</div>
       </div>
     </div>
+
     <button onclick="handleLogout()" style="
       display:flex;align-items:center;gap:6px;
       padding:7px 14px;
