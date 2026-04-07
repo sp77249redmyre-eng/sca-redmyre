@@ -64,6 +64,36 @@
       <div class="section-title">System Management</div>
     </div>
 
+    <!-- Complaint Messages Cleanup -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Complaint Messages</div>
+        <div class="card-desc">Delete all messages from resident requests</div>
+      </div>
+      <div class="cleanup-body">
+        <div class="cleanup-row">
+          <div class="files-found">Total: <span id="complaintMsgCount">—</span></div>
+          <button class="btn-danger" id="deleteComplaintMsgsBtn">Delete All Messages</button>
+        </div>
+        <div class="status-box ready" id="complaintMsgStatus">Ready</div>
+      </div>
+    </div>
+
+    <!-- Quote Comments Cleanup -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Quote Comments</div>
+        <div class="card-desc">Delete all comments from quote approvals</div>
+      </div>
+      <div class="cleanup-body">
+        <div class="cleanup-row">
+          <div class="files-found">Total: <span id="quoteCommentCount">—</span></div>
+          <button class="btn-danger" id="deleteQuoteCommentsBtn">Delete All Comments</button>
+        </div>
+        <div class="status-box ready" id="quoteCommentStatus">Ready</div>
+      </div>
+    </div>
+
     <!-- Junk Cleanup Card -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
@@ -383,6 +413,46 @@ async function loadStorageSummary() {
 document.getElementById('scanBtn').addEventListener('click', scanJunkFiles);
 document.getElementById('deleteBtn').addEventListener('click', deleteJunkFiles);
 
+// Complaint Messages
+async function loadComplaintMsgCount() {
+  const { count } = await supabase.from('complaint_messages').select('*', { count: 'exact', head: true });
+  document.getElementById('complaintMsgCount').textContent = count ?? '0';
+}
+
+document.getElementById('deleteComplaintMsgsBtn').addEventListener('click', async () => {
+  const count = document.getElementById('complaintMsgCount').textContent;
+  if (!confirm(`Delete all ${count} complaint messages? This cannot be undone.`)) return;
+  const status = document.getElementById('complaintMsgStatus');
+  status.textContent = 'Deleting...'; status.className = 'status-box loading';
+  try {
+    await supabase.from('complaint_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    status.textContent = 'Deleted ✓'; status.className = 'status-box success';
+    showToast('Complaint messages deleted ✓');
+    await loadComplaintMsgCount();
+  } catch(e) { status.textContent = 'Error'; status.className = 'status-box error'; showToast('Failed', true); }
+});
+
+// Quote Comments
+async function loadQuoteCommentCount() {
+  const { count } = await supabase.from('quote_comments').select('*', { count: 'exact', head: true });
+  document.getElementById('quoteCommentCount').textContent = count ?? '0';
+}
+
+document.getElementById('deleteQuoteCommentsBtn').addEventListener('click', async () => {
+  const count = document.getElementById('quoteCommentCount').textContent;
+  if (!confirm(`Delete all ${count} quote comments? This cannot be undone.`)) return;
+  const status = document.getElementById('quoteCommentStatus');
+  status.textContent = 'Deleting...'; status.className = 'status-box loading';
+  try {
+    await supabase.from('quote_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    status.textContent = 'Deleted ✓'; status.className = 'status-box success';
+    showToast('Quote comments deleted ✓');
+    await loadQuoteCommentCount();
+  } catch(e) { status.textContent = 'Error'; status.className = 'status-box error'; showToast('Failed', true); }
+});
+
+await loadComplaintMsgCount();
+await loadQuoteCommentCount();
 await loadStorageSummary();
 </script>
 </body>
