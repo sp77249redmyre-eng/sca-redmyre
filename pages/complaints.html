@@ -190,6 +190,14 @@
       </div>
     </div>
 
+    <div id="requesterMessageWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Add Message</div>
+      <textarea class="modal-textarea" id="requesterMessage" placeholder="Add more details or follow up…" style="min-height:100px;border-radius:10px"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <button class="btn-primary" id="saveRequesterMessageBtn">Send →</button>
+      </div>
+    </div>
+
     <div class="modal-footer" style="padding:14px 24px;border-top:1px solid var(--border-light)">
       <button class="btn-danger" id="deleteComplaintBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
@@ -459,13 +467,16 @@ window.openDetail = async (id) => {
   await loadMessageThread(id);
 
   const adminWrap = document.getElementById('adminResponseWrap');
+  const requesterWrap = document.getElementById('requesterMessageWrap');
   if (role === 'admin') {
     adminWrap.style.display = 'block';
+    requesterWrap.style.display = 'none';
     document.getElementById('adminResponse').value = '';
     document.getElementById('adminStatusSelect').value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
   } else {
     adminWrap.style.display = 'none';
+    requesterWrap.style.display = 'block';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
   }
   document.getElementById('detailModal').classList.add('open');
@@ -507,6 +518,23 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
     await loadComplaints();
     showToast('Response saved & sent ✓');
   } catch(e) { showToast('Failed to save', true); }
+});
+
+document.getElementById('saveRequesterMessageBtn').addEventListener('click', async () => {
+  const message = document.getElementById('requesterMessage').value.trim();
+  if (!message) { showToast('Please enter a message', true); return; }
+  try {
+    await supabase.from('complaint_messages').insert({
+      complaint_id: currentComplaintId,
+      user_id: user.id,
+      sender_name: name,
+      sender_role: role,
+      message
+    });
+    document.getElementById('requesterMessage').value = '';
+    await loadMessageThread(currentComplaintId);
+    showToast('Message sent ✓');
+  } catch(e) { showToast('Failed to send', true); }
 });
 
 document.getElementById('deleteComplaintBtn').addEventListener('click', async () => {
