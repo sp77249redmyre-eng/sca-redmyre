@@ -1452,6 +1452,18 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
           if (pCalcResult !== 'pending' && !resultEmailSent.has(projectId)) {
             resultEmailSent.add(projectId);
             const resultLabel = pCalcResult === 'approved' ? 'Approved' : pCalcResult === 'declined' ? 'Declined' : 'On Hold';
+            // Push to Jacob (admin) only
+            try {
+              const { data: adminProfiles } = await supabase.from('profiles').select('id').eq('role', 'admin').single();
+              if (adminProfiles?.id) {
+                const { data: { session: pushSession } } = await supabase.auth.getSession();
+                await fetch('/api/send-push', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+                  body: JSON.stringify({ user_id: adminProfiles.id, title: `🗳 Voting Complete — ${resultLabel}`, message: `${pFirst.project || pFirst.project_title || 'Project'} — Please confirm`, url: '/pages/quotes.html' })
+                });
+              }
+            } catch(pushErr) {}
             await fetch('/api/send-quote-email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1514,6 +1526,19 @@ async function sendToCommittee(group, btn, projectKey) {
       console.warn('Email notification failed (non-critical):', emailErr);
     }
     showToast('Quotes sent to committee');
+    try {
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '🗳 Voting Started', message: `${group[0].project || group[0].project_title || 'Project'} — Please cast your vote`, url: '/pages/quotes.html' })
+      });
+      await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', quotes: group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
+      });
+    } catch(pushErr) {}
     await loadData();
     renderQuotes();
     // button stays disabled – re-render replaces draft card with voting badge
@@ -1633,6 +1658,19 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await supabase.from('votes').delete().eq('project_id', projectIdToClean);
     }
     showToast('✔ Selection confirmed and notification sent');
+    try {
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '✔ Quote Confirmed', message: `${group[0].project || group[0].project_title || 'Project'} — ${calcResult === 'approved' ? 'Approved' : calcResult === 'declined' ? 'Declined' : 'On Hold'}`, url: '/pages/quotes.html' })
+      });
+      await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
+      });
+    } catch(pushErr) {}
     await loadData();
     renderQuotes();
   } catch(e) {
