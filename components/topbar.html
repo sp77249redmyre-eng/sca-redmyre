@@ -29,12 +29,24 @@
     let notifEnabled = true;
     function toggleNotification() {
       notifEnabled = !notifEnabled;
+      if (notifEnabled) {
+        Notification.requestPermission().then(permission => {
+          if (permission !== 'granted') notifEnabled = false;
+          const btn = document.getElementById('notifToggleBtn');
+          document.getElementById('notifIcon').textContent  = notifEnabled ? '🔔' : '🔕';
+          document.getElementById('notifLabel').textContent = notifEnabled ? 'ON'  : 'OFF';
+          btn.style.background     = notifEnabled ? 'var(--accent-soft, rgba(99,102,241,0.1))' : 'transparent';
+          btn.style.borderColor    = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--border)';
+          btn.style.color          = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--muted)';
+        });
+        return;
+      }
       const btn = document.getElementById('notifToggleBtn');
-      document.getElementById('notifIcon').textContent  = notifEnabled ? '🔔' : '🔕';
-      document.getElementById('notifLabel').textContent = notifEnabled ? 'ON'  : 'OFF';
-      btn.style.background     = notifEnabled ? 'var(--accent-soft, rgba(99,102,241,0.1))' : 'transparent';
-      btn.style.borderColor    = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--border)';
-      btn.style.color          = notifEnabled ? 'var(--accent, #6366f1)' : 'var(--muted)';
+      document.getElementById('notifIcon').textContent  = '🔕';
+      document.getElementById('notifLabel').textContent = 'OFF';
+      btn.style.background     = 'transparent';
+      btn.style.borderColor    = 'var(--border)';
+      btn.style.color          = 'var(--muted)';
     }
   </script>
   <div class="tb-right">
