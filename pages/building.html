@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="/css/style.css">
 <style>
 .systems-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.sys-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:.15s}
+.sys-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .sys-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.07)}
 .sys-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .sys-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
@@ -108,41 +108,105 @@
 </div>
 </div>
 
-<!-- 기존 EDIT MODAL 그대로 유지 -->
+<!-- SYSTEM CARD MODAL (기존 유지) -->
 <div class="modal-backdrop" id="cardModal">
-<div class="modal-box">
-<div class="modal-title" id="cardModalTitle">Edit System</div>
-<input type="hidden" id="cardEditId">
-<div class="modal-field">
-<label class="modal-label">System Name</label>
-<select class="modal-select" id="cardName">...</select>
-</div>
-<div class="modal-field">
-<label class="modal-label">Status</label>
-<select class="modal-select" id="cardStatus">...</select>
-</div>
-<div class="modal-field">
-<label class="modal-label">Note</label>
-<textarea class="modal-textarea" id="cardNote"></textarea>
-</div>
-<div class="modal-footer">
-<button class="btn-danger" id="deleteCardBtn" style="display:none;margin-right:auto">Delete</button>
-<button class="btn-secondary" onclick="closeModal('cardModal')">Cancel</button>
-<button class="btn-primary" id="saveCardBtn">Save</button>
-</div>
-</div>
+  <div class="modal-box">
+    <div class="modal-title" id="cardModalTitle">Edit System</div>
+    <input type="hidden" id="cardEditId">
+    <div class="modal-field">
+      <label class="modal-label">System Name</label>
+      <select class="modal-select" id="cardName">
+        <option value="">Select system…</option>
+        <option value="Lift">🛗 Lift</option>
+        <option value="HVAC">❄️ HVAC</option>
+        <option value="Fire Safety (AFSS)">🔥 Fire Safety (AFSS)</option>
+        <option value="Electrical">⚡ Electrical</option>
+        <option value="Garage / Car Park">🚗 Garage / Car Park</option>
+        <option value="Plumbing">💧 Plumbing</option>
+        <option value="Stormwater / Drainage">🌊 Stormwater / Drainage</option>
+        <option value="CCTV / Security">📹 CCTV / Security</option>
+        <option value="Access Control">🚪 Access Control</option>
+        <option value="Common Area Lighting">💡 Common Area Lighting</option>
+        <option value="Waste Management">♻️ Waste Management</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Status</label>
+      <select class="modal-select" id="cardStatus">
+        <option value="normal">Normal ✅</option>
+        <option value="inprog">In Progress 🔵</option>
+        <option value="monitor">Monitoring ⚠️</option>
+        <option value="pending">Pending 🟡</option>
+        <option value="urgent">Urgent 🔴</option>
+        <option value="investigation">Investigation 🟣</option>
+        <option value="done">Completed ✅</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Note</label>
+      <textarea class="modal-textarea" id="cardNote" style="min-height:100px"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="deleteCardBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('cardModal')">Cancel</button>
+      <button class="btn-primary" id="saveCardBtn">Save →</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
+
 const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+
 const { supabase, role } = ctx;
+
+if (role === 'admin') {
+  document.getElementById('addCardBtn').style.display = 'inline-flex';
+}
+
+const STATUS_MAP = {
+  normal:{label:'Normal',bg:'var(--green-bg)',c:'var(--green-text)',dot:'var(--green)'},
+  inprog:{label:'In Progress',bg:'var(--blue-50)',c:'var(--blue-700)',dot:'var(--blue-600)'},
+  monitor:{label:'Monitoring',bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)'},
+  pending:{label:'Pending',bg:'var(--yellow-bg)',c:'var(--yellow-text)',dot:'var(--yellow)'},
+  investigation:{label:'Investigation',bg:'#ede9fe',c:'#5b21b6',dot:'#8b5cf6'},
+  urgent:{label:'Urgent',bg:'var(--red-bg)',c:'var(--red-text)',dot:'var(--red)'},
+  done:{label:'Completed',bg:'var(--green-bg)',c:'var(--green-text)',dot:'var(--green)'}
+};
+
+let cardsData = [];
+let editingCardIdx = null;
+
+async function loadCards() {
+  const { data } = await supabase.from('building_cards').select('*').order('position');
+  cardsData = data || [];
+
+  const grid = document.getElementById('systemsGrid');
+  grid.innerHTML = cardsData.map((c,i)=>{
+    const st = STATUS_MAP[c.status] || STATUS_MAP.normal;
+    return `
+    <div class="sys-card" onclick="openViewCard(${i})">
+      <div class="sys-top">
+        <div class="sys-icon">${c.icon||'🔧'}</div>
+        <div style="display:flex;gap:5px;align-items:center">
+          <div style="width:8px;height:8px;border-radius:50%;background:${st.dot}"></div>
+          <span style="font-size:11px;font-weight:600;color:${st.c}">${st.label}</span>
+        </div>
+      </div>
+      <div class="sys-name">${c.name}</div>
+      <div class="sys-status" style="background:${st.bg};color:${st.c}">${st.label}</div>
+      <div class="sys-note">${c.note||''}</div>
+    </div>`;
+  }).join('');
+}
 
 window.openViewCard = (i) => {
   const c = cardsData[i];
-  const st = STATUS_MAP[c.status];
+  const st = STATUS_MAP[c.status] || STATUS_MAP.normal;
 
   document.getElementById('viewTitle').textContent = c.name;
   document.getElementById('viewStatus').textContent = st.label;
@@ -163,6 +227,20 @@ window.openViewCard = (i) => {
 
   document.getElementById('viewModal').classList.add('open');
 };
+
+window.openEditCard = (i) => {
+  if (role !== 'admin') return;
+  editingCardIdx = i;
+  const c = cardsData[i];
+  document.getElementById('cardEditId').value = c.id||'';
+  document.getElementById('cardName').value = c.name||'';
+  document.getElementById('cardStatus').value = c.status||'normal';
+  document.getElementById('cardNote').value = c.note||'';
+  document.getElementById('deleteCardBtn').style.display = 'inline-flex';
+  document.getElementById('cardModal').classList.add('open');
+};
+
+await loadCards();
 </script>
 </body>
 </html>
