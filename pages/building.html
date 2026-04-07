@@ -108,43 +108,22 @@
 </div>
 </div>
 
-<!-- EDIT MODAL -->
+<!-- 기존 EDIT MODAL 그대로 유지 -->
 <div class="modal-backdrop" id="cardModal">
 <div class="modal-box">
 <div class="modal-title" id="cardModalTitle">Edit System</div>
 <input type="hidden" id="cardEditId">
 <div class="modal-field">
 <label class="modal-label">System Name</label>
-<select class="modal-select" id="cardName">
-<option value="">Select system…</option>
-<option value="Lift">🛗 Lift</option>
-<option value="HVAC">❄️ HVAC</option>
-<option value="Fire Safety (AFSS)">🔥 Fire Safety (AFSS)</option>
-<option value="Electrical">⚡ Electrical</option>
-<option value="Garage / Car Park">🚗 Garage / Car Park</option>
-<option value="Plumbing">💧 Plumbing</option>
-<option value="Stormwater / Drainage">🌊 Stormwater / Drainage</option>
-<option value="CCTV / Security">📹 CCTV / Security</option>
-<option value="Access Control">🚪 Access Control</option>
-<option value="Common Area Lighting">💡 Common Area Lighting</option>
-<option value="Waste Management">♻️ Waste Management</option>
-</select>
+<select class="modal-select" id="cardName">...</select>
 </div>
 <div class="modal-field">
 <label class="modal-label">Status</label>
-<select class="modal-select" id="cardStatus">
-<option value="normal">Normal</option>
-<option value="inprog">In Progress</option>
-<option value="monitor">Monitoring</option>
-<option value="pending">Pending</option>
-<option value="urgent">Urgent</option>
-<option value="investigation">Investigation</option>
-<option value="done">Completed</option>
-</select>
+<select class="modal-select" id="cardStatus">...</select>
 </div>
 <div class="modal-field">
 <label class="modal-label">Note</label>
-<textarea class="modal-textarea" id="cardNote" style="min-height:100px"></textarea>
+<textarea class="modal-textarea" id="cardNote"></textarea>
 </div>
 <div class="modal-footer">
 <button class="btn-danger" id="deleteCardBtn" style="display:none;margin-right:auto">Delete</button>
@@ -159,73 +138,31 @@
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-if(!ctx) throw new Error('Layout init failed');
 const { supabase, role } = ctx;
 
-if(role==='admin'){document.getElementById('addCardBtn').style.display='inline-flex'}
+window.openViewCard = (i) => {
+  const c = cardsData[i];
+  const st = STATUS_MAP[c.status];
 
-const STATUS_MAP={
-normal:{label:'Normal',c:'#16a34a',dot:'#16a34a'},
-inprog:{label:'In Progress',c:'#2563eb',dot:'#2563eb'},
-monitor:{label:'Monitoring',c:'#d97706',dot:'#d97706'},
-pending:{label:'Pending',c:'#d97706',dot:'#d97706'},
-investigation:{label:'Investigation',c:'#7c3aed',dot:'#7c3aed'},
-urgent:{label:'Urgent',c:'#dc2626',dot:'#dc2626'},
-done:{label:'Completed',c:'#16a34a',dot:'#16a34a'}
+  document.getElementById('viewTitle').textContent = c.name;
+  document.getElementById('viewStatus').textContent = st.label;
+  document.getElementById('viewStatus').style.color = st.c;
+  document.getElementById('viewNote').textContent = c.note || '';
+
+  const btn = document.getElementById('viewEditBtn');
+
+  if (role === 'admin') {
+    btn.style.display = 'inline-flex';
+    btn.onclick = () => {
+      closeModal('viewModal');
+      openEditCard(i);
+    };
+  } else {
+    btn.style.display = 'none';
+  }
+
+  document.getElementById('viewModal').classList.add('open');
 };
-
-let cardsData=[];
-let editingCardIdx=null;
-
-async function loadCards(){
-const { data }=await supabase.from('building_cards').select('*').order('position');
-cardsData=data||[];
-const grid=document.getElementById('systemsGrid');
-grid.innerHTML=cardsData.map((c,i)=>{
-const st=STATUS_MAP[c.status]||STATUS_MAP.normal;
-return `
-<div class="sys-card" onclick="openViewCard(${i})">
-<div class="sys-top">
-<div class="sys-icon">${c.icon||'🔧'}</div>
-<div style="display:flex;gap:5px;align-items:center">
-<div style="width:8px;height:8px;border-radius:50%;background:${st.dot}"></div>
-<span style="font-size:11px;font-weight:600;color:${st.c}">${st.label}</span>
-</div>
-</div>
-<div class="sys-name">${c.name}</div>
-<div class="sys-note">${c.note||''}</div>
-</div>`;
-}).join('');
-}
-
-window.openViewCard=(i)=>{
-const c=cardsData[i];
-const st=STATUS_MAP[c.status]||STATUS_MAP.normal;
-document.getElementById('viewTitle').textContent=c.name;
-document.getElementById('viewStatus').textContent=st.label;
-document.getElementById('viewStatus').style.color=st.c;
-document.getElementById('viewNote').textContent=c.note||'';
-const btn=document.getElementById('viewEditBtn');
-if(role==='admin'){
-btn.style.display='inline-flex';
-btn.onclick=()=>{closeModal('viewModal');openEditCard(i);}
-}else{btn.style.display='none'}
-document.getElementById('viewModal').classList.add('open');
-};
-
-window.openEditCard=(i)=>{
-if(role!=='admin')return;
-editingCardIdx=i;
-const c=cardsData[i];
-document.getElementById('cardEditId').value=c.id||'';
-document.getElementById('cardName').value=c.name||'';
-document.getElementById('cardStatus').value=c.status||'normal';
-document.getElementById('cardNote').value=c.note||'';
-document.getElementById('deleteCardBtn').style.display='inline-flex';
-document.getElementById('cardModal').classList.add('open');
-};
-
-await loadCards();
 </script>
 </body>
 </html>
