@@ -155,46 +155,42 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-backdrop" id="detailModal">
-  <div class="modal-box" style="max-width:680px;min-height:600px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div class="modal-title" style="margin-bottom:0" id="detailModalTitle">Request Detail</div>
+  <div class="modal-box" style="max-width:680px;min-height:600px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;padding:0">
+
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <div class="modal-title" style="margin-bottom:4px" id="detailModalTitle">Request Detail</div>
+        <div style="font-size:12px;color:var(--muted)" id="detailSubmitter">—</div>
+      </div>
       <span class="badge" id="detailStatusBadge"></span>
     </div>
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px">Submitted by</div>
-      <div style="font-size:13px;color:var(--text)" id="detailSubmitter">—</div>
+
+    <div style="padding:16px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-shrink:0">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Details</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap" id="detailBody">—</div>
     </div>
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px">Details</div>
-      <div style="font-size:13px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:12px 14px" id="detailBody">—</div>
-    </div>
-    <div id="detailPhotosWrap" style="margin-bottom:14px;display:none">
+
+    <div id="detailPhotosWrap" style="padding:12px 24px;border-bottom:1px solid var(--border-light);display:none;flex-shrink:0">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
       <div class="photo-gallery" id="detailPhotoGallery"></div>
     </div>
-    <div id="adminResponseWrap" style="display:none;flex:1;display:flex;flex-direction:column">
-      <div style="border-top:1px solid var(--border-light);padding-top:16px;margin-top:4px">
-        <div style="font-size:11px;font-weight:600;color:#166534;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Response</div>
-        <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="flex:1;min-height:240px;border-color:#bbf7d0;background:#f0fdf4;border-radius:10px;border-width:1.5px"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px">
-            <option value="open">🔴 Open</option>
-            <option value="inprog">🟡 In Progress</option>
-            <option value="resolved">✅ Resolved</option>
-          </select>
-          <button class="btn-primary" id="saveAdminResponseBtn" style="background:#166534">Save & Send Response →</button>
-        </div>
+
+    <div id="messageThread" style="padding:16px 24px;display:flex;flex-direction:column;gap:12px;flex:1"></div>
+
+    <div id="adminResponseWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
+      <div style="font-size:11px;font-weight:600;color:#166534;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Response</div>
+      <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="min-height:120px;border-color:#bbf7d0;background:#f0fdf4;border-radius:10px;border-width:1.5px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px">
+          <option value="open">🔴 Open</option>
+          <option value="inprog">🟡 In Progress</option>
+          <option value="resolved">✅ Resolved</option>
+        </select>
+        <button class="btn-primary" id="saveAdminResponseBtn" style="background:#166534">Save & Send Response →</button>
       </div>
     </div>
 
-    <div id="existingResponseWrap" style="display:none;margin-top:12px">
-      <div style="background:var(--green-bg);border:1px solid #a7f3d0;border-radius:10px;padding:14px 16px">
-        <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em">Response from Management</div>
-        <div style="font-size:13px;color:var(--green-text);line-height:1.6;white-space:pre-wrap" id="existingResponseText">—</div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
+    <div class="modal-footer" style="padding:14px 24px;border-top:1px solid var(--border-light)">
       <button class="btn-danger" id="deleteComplaintBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
     </div>
@@ -407,6 +403,33 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
 });
 
 // Detail modal
+async function loadMessageThread(complaintId) {
+  const thread = document.getElementById('messageThread');
+  const { data: messages } = await supabase
+    .from('complaint_messages')
+    .select('*')
+    .eq('complaint_id', complaintId)
+    .order('created_at', { ascending: true });
+
+  if (!messages || messages.length === 0) {
+    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
+    return;
+  }
+
+  thread.innerHTML = messages.map(m => {
+    const isAdmin = m.sender_role === 'admin';
+    const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `
+      <div style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· Management' : ''}</div>
+          <div style="font-size:11px;color:var(--muted)">${date}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap">${m.message}</div>
+      </div>`;
+  }).join('');
+}
+
 window.openDetail = async (id) => {
   const c = allComplaints.find(x => x.id === id);
   if (!c) return;
@@ -432,15 +455,13 @@ window.openDetail = async (id) => {
       }).join('');
     } else { photosWrap.style.display = 'none'; }
   } else { photosWrap.style.display = 'none'; }
-  const existingWrap = document.getElementById('existingResponseWrap');
+
+  await loadMessageThread(id);
+
   const adminWrap = document.getElementById('adminResponseWrap');
-  if (c.admin_response) {
-    existingWrap.style.display = 'block';
-    document.getElementById('existingResponseText').textContent = c.admin_response;
-  } else { existingWrap.style.display = 'none'; }
   if (role === 'admin') {
     adminWrap.style.display = 'block';
-    document.getElementById('adminResponse').value = c.admin_response || '';
+    document.getElementById('adminResponse').value = '';
     document.getElementById('adminStatusSelect').value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
   } else {
@@ -453,8 +474,16 @@ window.openDetail = async (id) => {
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
   const response = document.getElementById('adminResponse').value.trim();
   const status   = document.getElementById('adminStatusSelect').value;
+  if (!response) { showToast('Please enter a response', true); return; }
   try {
-    await supabase.from('complaints').update({ admin_response: response||null, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+    await supabase.from('complaints').update({ admin_response: response, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+    await supabase.from('complaint_messages').insert({
+      complaint_id: currentComplaintId,
+      user_id: user.id,
+      sender_name: name,
+      sender_role: role,
+      message: response
+    });
     try {
       const c = allComplaints.find(x => x.id === currentComplaintId);
       if (c?.user_id) {
@@ -464,22 +493,17 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
           body: JSON.stringify({ user_id: c.user_id, title: '📬 Your Request has been Updated', message: `Status: ${STATUS_MAP[status]?.label || status}`, url: '/pages/complaints.html' })
         });
-      }
-      // 이메일 발송
-      if (response && c?.user_id) {
-        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({
-            complaint_title: c.title,
-            complaint_body: c.body,
-            admin_response: response,
-            requester_user_id: c.user_id
-          })
-        });
+        if (c?.user_id) {
+          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ complaint_title: c.title, complaint_body: c.body, admin_response: response, requester_user_id: c.user_id })
+          });
+        }
       }
     } catch(pushErr) {}
-    closeModal('detailModal');
+    document.getElementById('adminResponse').value = '';
+    await loadMessageThread(currentComplaintId);
     await loadComplaints();
     showToast('Response saved & sent ✓');
   } catch(e) { showToast('Failed to save', true); }
