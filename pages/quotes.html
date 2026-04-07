@@ -865,7 +865,7 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(adminRow);
     }
 
-    // Comments – all project votes, always visible
+    // Comments – from quote_comments table
     const commTitle = document.createElement('div');
     commTitle.className = 'section-title';
     commTitle.innerHTML = '💬 Committee Comments';
@@ -873,21 +873,35 @@ function renderPendingQuotes(quotes) {
 
     const commBox = document.createElement('div');
     commBox.className = 'comments-box';
-    const commentRows = projectVotes.filter(v => v.comment && v.comment.trim());
-    if (commentRows.length) {
-      commentRows.forEach(v => {
-        const item = document.createElement('div');
-        item.className = 'comment-item';
-        const author = allProfiles[v.user_email] || v.user_email.split('@')[0];
-        item.innerHTML = `<span class="comment-author">${escHtml(author)}:</span><span class="comment-text"> ${escHtml(v.comment)}</span>`;
-        commBox.appendChild(item);
-      });
-    } else {
-      commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
+    commBox.id = `commBox_${projectKey}`;
+
+    const { data: qComments } = await supabase
+      .from('quote_comments')
+      .select('*')
+      .eq('project_id', projectKey)
+      .order('created_at', { ascending: true });
+
+    function renderComments(comments) {
+      if (!comments || comments.length === 0) {
+        commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
+        return;
+      }
+      commBox.innerHTML = comments.map(c => {
+        const date = new Date(c.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        const isMe = c.user_id === user.id;
+        return `<div style="margin-bottom:10px;padding:10px 12px;border-radius:10px;${isMe ? 'background:#eff6ff;border:0.5px solid #bfdbfe;' : 'background:#f8fafc;border:0.5px solid #e2e8f0;'}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:600;color:${isMe ? '#1d4ed8' : '#1e293b'}">${escHtml(c.sender_name || '—')}</span>
+            <span style="font-size:11px;color:#94a3b8">${date}</span>
+          </div>
+          <div style="font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap">${escHtml(c.comment)}</div>
+        </div>`;
+      }).join('');
     }
+    renderComments(qComments);
     votingSection.appendChild(commBox);
 
-    // Comment input – always available
+    // Comment input
     const inputTitle = document.createElement('div');
     inputTitle.className = 'section-title';
     inputTitle.innerHTML = '✏️ Add Your Comment';
@@ -901,11 +915,28 @@ function renderPendingQuotes(quotes) {
       const submitBtn = document.createElement('button');
       submitBtn.className = 'submit-btn';
       submitBtn.textContent = 'Submit';
-      submitBtn.onclick = () => {
+      submitBtn.onclick = async () => {
         const txt = textarea.value.trim();
         if (!txt) { showToast('Please enter a comment', true); return; }
-        if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
-        doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
+        submitBtn.disabled = true; submitBtn.textContent = '…';
+        try {
+          await supabase.from('quote_comments').insert({
+            project_id: projectKey,
+            user_id: user.id,
+            sender_name: name,
+            sender_role: role,
+            comment: txt
+          });
+          textarea.value = '';
+          const { data: updated } = await supabase
+            .from('quote_comments')
+            .select('*')
+            .eq('project_id', projectKey)
+            .order('created_at', { ascending: true });
+          renderComments(updated);
+          showToast('Comment submitted ✓');
+        } catch(e) { showToast('Failed to submit', true); }
+        finally { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
       };
       inputArea.appendChild(textarea);
       inputArea.appendChild(submitBtn);
