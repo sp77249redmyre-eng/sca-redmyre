@@ -155,7 +155,7 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-backdrop" id="detailModal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:680px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div class="modal-title" style="margin-bottom:0" id="detailModalTitle">Request Detail</div>
       <span class="badge" id="detailStatusBadge"></span>
@@ -166,7 +166,7 @@
     </div>
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px">Details</div>
-      <div style="font-size:13px;color:var(--text-2);line-height:1.6;white-space:pre-wrap" id="detailBody">—</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:12px 14px" id="detailBody">—</div>
     </div>
     <div id="detailPhotosWrap" style="margin-bottom:14px;display:none">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
@@ -174,15 +174,15 @@
     </div>
     <div id="adminResponseWrap" style="display:none">
       <div style="border-top:1px solid var(--border-light);padding-top:16px;margin-top:4px">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Admin Response</div>
-        <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="min-height:80px"></textarea>
+        <div style="font-size:11px;font-weight:600;color:#166534;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Response</div>
+        <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="min-height:160px;border-color:#bbf7d0;background:#f0fdf4;border-radius:10px;border-width:1.5px"></textarea>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
           <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px">
             <option value="open">🔴 Open</option>
             <option value="inprog">🟡 In Progress</option>
             <option value="resolved">✅ Resolved</option>
           </select>
-          <button class="btn-primary" id="saveAdminResponseBtn">Save Response →</button>
+          <button class="btn-primary" id="saveAdminResponseBtn" style="background:#166534">Save & Send Response →</button>
         </div>
       </div>
     </div>
@@ -463,10 +463,23 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
           body: JSON.stringify({ user_id: c.user_id, title: '📬 Your Request has been Updated', message: `Status: ${STATUS_MAP[status]?.label || status}`, url: '/pages/complaints.html' })
         });
       }
+      // 이메일 발송
+      if (response && c?.user_id) {
+        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({
+            complaint_title: c.title,
+            complaint_body: c.body,
+            admin_response: response,
+            requester_user_id: c.user_id
+          })
+        });
+      }
     } catch(pushErr) {}
     closeModal('detailModal');
     await loadComplaints();
-    showToast('Response saved ✓');
+    showToast('Response saved & sent ✓');
   } catch(e) { showToast('Failed to save', true); }
 });
 
