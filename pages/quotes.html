@@ -371,6 +371,7 @@ let allVotes    = [];
 let supabase    = null;
 let user        = null;
 let role        = 'observer';
+let name        = '—';
 let allProfiles = {};
 let committeeMembers = [];
 
@@ -437,7 +438,8 @@ async function init() {
   supabase = layoutResult.supabase;
   user     = layoutResult.user;
   role     = layoutResult.role || 'observer';
-  const name = layoutResult.name || user?.email?.split('@')[0] || '—';
+  const { data: myProfile } = await supabase.from('profiles').select('full_name').eq('id', layoutResult.user.id).single();
+  name     = myProfile?.full_name || layoutResult.name || user?.email?.split('@')[0] || '—';
 
   window.logActivity = async function(action, record_id = null) {
     try {
