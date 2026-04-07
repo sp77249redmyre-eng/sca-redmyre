@@ -446,6 +446,13 @@ document.getElementById('deleteCardBtn').addEventListener('click', async () => {
 
 await loadOverviewCards();
 await loadCards();
+
+/* ── Realtime ── */
+supabase.channel('building_cards_changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'building_cards' }, () => {
+    loadCards();
+  })
+  .subscribe();
 </script>
 </body>
 </html>
