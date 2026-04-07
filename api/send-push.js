@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { title, message, target_role, user_id } = req.body;
+  const { title, message, target_role, target_roles, user_id } = req.body;
 
   let query = supabase
     .from('push_subscriptions')
@@ -26,6 +26,16 @@ module.exports = async (req, res) => {
 
   if (user_id) {
     query = query.eq('user_id', user_id);
+  } else if (target_roles && Array.isArray(target_roles)) {
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('role', target_roles)
+      .eq('push_enabled', true);
+
+    const ids = users?.map(u => u.id) || [];
+    if (ids.length === 0) return res.status(200).json({ success: true, sent: 0 });
+    query = query.in('user_id', ids);
   } else if (target_role) {
     const { data: users } = await supabase
       .from('profiles')
