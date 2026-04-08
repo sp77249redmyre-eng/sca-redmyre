@@ -1092,7 +1092,7 @@ window.loadInactiveUsers = async function() {
     // Get all non-admin profiles
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role')
+      .select('id, email, full_name, role, last_sign_in_at')
       .neq('role', 'admin')
       .order('role').order('full_name');
 
@@ -1104,34 +1104,19 @@ window.loadInactiveUsers = async function() {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
 
-    // Get latest activity per user
-    const { data: recentLogs } = await supabase
-      .from('audit_logs')
-      .select('user_email, created_at')
-      .gte('created_at', cutoff.toISOString())
-      .neq('action', 'PAGE_EXIT');
-
-    const activeEmails = new Set((recentLogs || []).map(l => l.user_email));
-
-    const inactive = profiles.filter(p => !activeEmails.has(p.email));
+    const inactive = profiles.filter(p => {
+      if (!p.last_sign_in_at) return true;
+      return new Date(p.last_sign_in_at) < cutoff;
+    });
 
     if (!inactive.length) {
       listEl.innerHTML = `<div style="text-align:center;color:var(--green);font-size:13px;padding:24px;font-weight:500">✓ All users active in the last ${days} days</div>`;
       return;
     }
 
-    // Get last activity date for each inactive user
-    const inactiveEmails = inactive.map(p => p.email);
-    const { data: lastLogs } = await supabase
-      .from('audit_logs')
-      .select('user_email, created_at')
-      .in('user_email', inactiveEmails)
-      .neq('action', 'PAGE_EXIT')
-      .order('created_at', { ascending: false });
-
     const lastSeen = {};
-    (lastLogs || []).forEach(l => {
-      if (!lastSeen[l.user_email]) lastSeen[l.user_email] = l.created_at;
+    inactive.forEach(p => {
+      if (p.last_sign_in_at) lastSeen[p.email] = p.last_sign_in_at;
     });
 
     const ROLE_BADGE = { committee:'role-badge-committee', observer:'role-badge-observer', owner:'role-badge-owner', tenant:'role-badge-tenant' };
