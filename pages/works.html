@@ -689,6 +689,22 @@ window.moveToReports = async (quoteId) => {
 
     if (error) throw error;
 
+    // 완료 알림 — 전체 입주자
+    try {
+      const { data: q } = await supabase.from('quotes').select('project, project_title, vendor').eq('id', quoteId).single();
+      const projectName = q?.project || q?.project_title || 'A work item';
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({
+          title: '✅ Work Completed',
+          message: `${projectName} has been completed.`,
+          url: '/pages/works.html'
+        })
+      });
+    } catch(pushErr) {}
+
     showToast('Work moved to Reports');
     await loadWorks();
   } catch(e) {
