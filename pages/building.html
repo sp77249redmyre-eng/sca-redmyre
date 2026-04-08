@@ -48,7 +48,7 @@
 }
 .view-backdrop.open { opacity: 1; pointer-events: all; }
 .view-box {
-  width: 100%; max-width: 420px;
+  width: 100%; max-width: 600px;
   margin: 16px;
   background: #fff;
   border-radius: 24px;
@@ -57,6 +57,7 @@
   transform: translateY(20px) scale(0.96);
   transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
+@media(max-width:768px) { .view-box { width: 95%; } }
 .view-backdrop.open .view-box { transform: translateY(0) scale(1); }
 .view-band { padding: 28px 26px 22px; }
 .view-band-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
@@ -90,6 +91,7 @@
   background: #f8fafc; border-radius: 14px;
   padding: 16px 18px; min-height: 64px;
   border: 1px solid #e8edf2; margin-bottom: 22px;
+  white-space: pre-line;
 }
 .view-footer { display: flex; gap: 10px; }
 .view-btn-edit {
@@ -401,7 +403,9 @@ window.openViewCard = (i) => {
   pill.style.color = st.c;
   document.getElementById('vpDot').style.background = st.dot;
   document.getElementById('vpStatusLabel').textContent = st.label;
-  document.getElementById('vpNote').textContent = c.note || 'No details available.';
+  let noteText = c.note || 'No details available.';
+  noteText = noteText.replace(/ Next:/g, '\nNext:').replace(/ Contractor:/g, '\nContractor:');
+  document.getElementById('vpNote').textContent = noteText;
   const editBtn = document.getElementById('vpEditBtn');
   editBtn.style.display = role === 'admin' ? 'flex' : 'none';
   editBtn._idx = i;
