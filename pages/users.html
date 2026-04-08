@@ -180,7 +180,11 @@
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
           <div class="card-title">All Users</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="text" id="userSearch" placeholder="Search name or email…" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;width:180px">
+            <div style="position:relative">
+              <input type="text" id="userSearch" placeholder="Search name or email…" autocomplete="off" style="padding:6px 32px 6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;width:200px">
+              <button id="userSearchClear" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0;line-height:1">✕</button>
+              <div id="userSearchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;max-height:200px;overflow-y:auto;margin-top:4px"></div>
+            </div>
             <select id="userRoleFilter" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
               <option value="">All Roles</option>
               <option value="admin">Admin</option>
@@ -531,7 +535,62 @@ function filterAndRenderUsers() {
   }).join('');
 }
 
-document.getElementById('userSearch').addEventListener('input', filterAndRenderUsers);
+document.getElementById('userSearch').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const clearBtn = document.getElementById('userSearchClear');
+  const dropdown = document.getElementById('userSearchDropdown');
+
+  clearBtn.style.display = q ? 'block' : 'none';
+
+  if (q.length < 1) {
+    dropdown.style.display = 'none';
+    filterAndRenderUsers();
+    return;
+  }
+
+  const matches = allProfiles.filter(p =>
+    (p.full_name||'').toLowerCase().includes(q) ||
+    (p.email||'').toLowerCase().includes(q)
+  ).slice(0, 6);
+
+  if (!matches.length) {
+    dropdown.style.display = 'none';
+    filterAndRenderUsers();
+    return;
+  }
+
+  const ROLE_COLORS_d = { admin:'av-admin', committee:'av-committee', observer:'av-observer', owner:'av-owner', tenant:'av-tenant' };
+  dropdown.innerHTML = matches.map(p => {
+    const name = p.full_name || p.email?.split('@')[0] || '—';
+    const ini = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const avCls = ROLE_COLORS_d[p.role] || 'av-owner';
+    return `<div onclick="document.getElementById('userSearch').value='${name}';document.getElementById('userSearchDropdown').style.display='none';document.getElementById('userSearchClear').style.display='block';filterAndRenderUsers();"
+      style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;transition:background 0.1s"
+      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <div class="avatar ${avCls}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${ini}</div>
+      <div>
+        <div style="font-weight:500;color:var(--text)">${name}</div>
+        <div style="font-size:11px;color:var(--muted)">${p.email||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  dropdown.style.display = 'block';
+  filterAndRenderUsers();
+});
+
+document.getElementById('userSearchClear').addEventListener('click', function() {
+  document.getElementById('userSearch').value = '';
+  this.style.display = 'none';
+  document.getElementById('userSearchDropdown').style.display = 'none';
+  filterAndRenderUsers();
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#userSearch') && !e.target.closest('#userSearchDropdown')) {
+    document.getElementById('userSearchDropdown').style.display = 'none';
+  }
+});
+
 document.getElementById('userRoleFilter').addEventListener('change', filterAndRenderUsers);
 
 async function loadUsers() {
