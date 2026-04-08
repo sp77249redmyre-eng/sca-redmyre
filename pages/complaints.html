@@ -138,12 +138,18 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Photos (optional)</label>
-      <div class="photo-upload-area" id="photoUploadArea">
-        <div style="font-size:22px;margin-bottom:6px">📷</div>
-        <div style="font-size:13px;color:var(--muted)">Click to add photos</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Max 5MB per photo</div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button type="button" id="cpCameraBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:22px">📷</span>
+          <span>Camera</span>
+        </button>
+        <button type="button" id="cpFileBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:22px">📁</span>
+          <span>Browse File</span>
+        </button>
       </div>
-      <input type="file" id="complaintPhotoInput" accept="image/*" multiple style="display:none">
+      <input type="file" id="complaintPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
+      <input type="file" id="complaintPhotoInputFile" accept="image/*" multiple style="display:none">
       <div class="photo-preview-grid" id="photoPreviewGrid"></div>
     </div>
     <div class="modal-footer">
@@ -187,14 +193,6 @@
           <option value="resolved">✅ Resolved</option>
         </select>
         <button class="btn-primary" id="saveAdminResponseBtn" style="background:#166534">Save & Send Response →</button>
-      </div>
-    </div>
-
-    <div id="requesterMessageWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Add Message</div>
-      <textarea class="modal-textarea" id="requesterMessage" placeholder="Add more details or follow up…" style="min-height:100px;border-radius:10px"></textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px">
-        <button class="btn-primary" id="saveRequesterMessageBtn">Send →</button>
       </div>
     </div>
 
@@ -289,8 +287,8 @@ function renderComplaints() {
           </div>
           <span class="badge ${st.cls}">${st.label}</span>
         </div>
-        
-        
+        <div class="cc-body">${c.body?.length>150?c.body.substring(0,150)+'…':c.body||''}</div>
+        ${c.admin_response?`<div style="background:var(--green-bg);border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:2px">Response</div><div style="font-size:12px;color:var(--green-text)">${c.admin_response.length>100?c.admin_response.substring(0,100)+'…':c.admin_response}</div></div>`:''}
         <div class="cc-footer">
           <div class="cc-submitter">${canViewAll.includes(role)&&!isOwn?`👤 ${c.submitter_name||'Unknown'}`:isOwn?'👤 You':''}</div>
           ${c.has_photos?'<span style="font-size:11px;color:var(--muted)">📷 Photos attached</span>':''}
@@ -309,8 +307,10 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 });
 
 // Photo preview
-document.getElementById('photoUploadArea').addEventListener('click', () => document.getElementById('complaintPhotoInput').click());
-document.getElementById('complaintPhotoInput').addEventListener('change', (e) => previewPhotos(e.target.files));
+document.getElementById('cpCameraBtn').addEventListener('click', () => document.getElementById('complaintPhotoInputCamera').click());
+document.getElementById('cpFileBtn').addEventListener('click', () => document.getElementById('complaintPhotoInputFile').click());
+document.getElementById('complaintPhotoInputCamera').addEventListener('change', (e) => previewPhotos(e.target.files));
+document.getElementById('complaintPhotoInputFile').addEventListener('change', (e) => previewPhotos(e.target.files));
 
 window.previewPhotos = (files) => {
   const grid = document.getElementById('photoPreviewGrid');
@@ -328,7 +328,8 @@ window.previewPhotos = (files) => {
     };
     reader.readAsDataURL(file);
   }
-  document.getElementById('complaintPhotoInput').value = '';
+  document.getElementById('complaintPhotoInputCamera').value = '';
+  document.getElementById('complaintPhotoInputFile').value = '';
 };
 
 window.removePreviewPhoto = (idx) => {
@@ -467,16 +468,13 @@ window.openDetail = async (id) => {
   await loadMessageThread(id);
 
   const adminWrap = document.getElementById('adminResponseWrap');
-  const requesterWrap = document.getElementById('requesterMessageWrap');
   if (role === 'admin') {
     adminWrap.style.display = 'block';
-    requesterWrap.style.display = 'none';
     document.getElementById('adminResponse').value = '';
     document.getElementById('adminStatusSelect').value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
   } else {
     adminWrap.style.display = 'none';
-    requesterWrap.style.display = 'block';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
   }
   document.getElementById('detailModal').classList.add('open');
@@ -518,23 +516,6 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
     await loadComplaints();
     showToast('Response saved & sent ✓');
   } catch(e) { showToast('Failed to save', true); }
-});
-
-document.getElementById('saveRequesterMessageBtn').addEventListener('click', async () => {
-  const message = document.getElementById('requesterMessage').value.trim();
-  if (!message) { showToast('Please enter a message', true); return; }
-  try {
-    await supabase.from('complaint_messages').insert({
-      complaint_id: currentComplaintId,
-      user_id: user.id,
-      sender_name: name,
-      sender_role: role,
-      message
-    });
-    document.getElementById('requesterMessage').value = '';
-    await loadMessageThread(currentComplaintId);
-    showToast('Message sent ✓');
-  } catch(e) { showToast('Failed to send', true); }
 });
 
 document.getElementById('deleteComplaintBtn').addEventListener('click', async () => {

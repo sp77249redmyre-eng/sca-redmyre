@@ -94,7 +94,24 @@
       </div>
       <div class="form-field">
         <label class="form-label">Photo (optional)</label>
-        <input type="file" id="photoInput" accept="image/*" capture="environment" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg)">
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button type="button" id="pkCameraBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:22px">📷</span>
+            <span>Camera</span>
+          </button>
+          <button type="button" id="pkFileBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:22px">📁</span>
+            <span>Browse File</span>
+          </button>
+        </div>
+        <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="photoInputFile" accept="image/*" style="display:none">
+        <div id="pkPhotoPreview" style="margin-top:8px;display:none">
+          <div style="position:relative;display:inline-block">
+            <img id="pkPreviewImg" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:cover">
+            <button type="button" onclick="document.getElementById('pkPhotoPreview').style.display='none';document.getElementById('photoInputCamera').value='';document.getElementById('photoInputFile').value='';window._pkSelectedFile=null;" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+          </div>
+        </div>
       </div>
       <button class="btn-report" id="submitReportBtn">🚨 Report Now</button>
     </div>
@@ -171,14 +188,30 @@ document.querySelectorAll('.vio-btn').forEach(btn => {
   });
 });
 
+window._pkSelectedFile = null;
+function pkHandleFile(file) {
+  if (!file) return;
+  window._pkSelectedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('pkPreviewImg').src = e.target.result;
+    document.getElementById('pkPhotoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('pkCameraBtn').addEventListener('click', () => document.getElementById('photoInputCamera').click());
+document.getElementById('pkFileBtn').addEventListener('click', () => document.getElementById('photoInputFile').click());
+document.getElementById('photoInputCamera').addEventListener('change', e => pkHandleFile(e.target.files[0]));
+document.getElementById('photoInputFile').addEventListener('change', e => pkHandleFile(e.target.files[0]));
+
 document.getElementById('submitReportBtn').addEventListener('click', async () => {
   let plateInput = document.getElementById('plateInput').value.trim();
   const plate = plateInput.replace(/\s/g,'').toUpperCase();
   const area     = document.getElementById('locationArea').value;
   const bay      = document.getElementById('baySelect').value||'';
   const comment  = document.getElementById('pkComment').value.trim();
-  const fileInput = document.getElementById('photoInput');
-  const file = fileInput.files[0];
+  const fileInput = document.getElementById('photoInputCamera').files[0] ? document.getElementById('photoInputCamera') : document.getElementById('photoInputFile');
+  const file = window._pkSelectedFile || null;
 
   if (!plate)      { showToast('Please enter a number plate', true); return; }
   if (!area)       { showToast('Please select a location', true); return; }
@@ -216,7 +249,10 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     document.getElementById('locationArea').value='';
     document.getElementById('bayField').style.display='none';
     document.getElementById('pkComment').value='';
-    document.getElementById('photoInput').value = '';
+    document.getElementById('photoInputCamera').value = '';
+    document.getElementById('photoInputFile').value = '';
+    window._pkSelectedFile = null;
+    document.getElementById('pkPhotoPreview').style.display = 'none';
     document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
     selectedVio=null;
     
