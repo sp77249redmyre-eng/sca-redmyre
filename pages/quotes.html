@@ -1494,11 +1494,10 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
                 });
               }
             } catch(pushErr) {}
-            await fetch('/api/send-quote-email', {
+            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
               body: JSON.stringify({
-                type: 'result_reached',
                 project: pFirst.project || pFirst.project_title || 'Project',
                 result: resultLabel,
                 quotes: pGroup.map(q => ({ vendor: q.vendor, amount: q.amount || 0 }))
@@ -1543,7 +1542,7 @@ async function sendToCommittee(group, btn, projectKey) {
       const first = group[0];
       const quotesPayload = group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 }));
       if (quotesPayload.length > 0) {
-        await fetch('/api/send-quote-email', {
+        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
