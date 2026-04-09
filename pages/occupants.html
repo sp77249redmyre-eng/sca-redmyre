@@ -564,6 +564,7 @@ if (!ctx) throw new Error('Layout init failed');
 
 const { supabase, user, role, name, profile } = ctx;
 const myUnit = profile?.unit || null;
+const myEmail = user?.email || null;
 
 if (!['admin','committee','observer','owner','tenant'].includes(role)) {
   window.location.href = '/pages/building.html';
@@ -571,6 +572,7 @@ if (!['admin','committee','observer','owner','tenant'].includes(role)) {
 
 let allOccupants = [];
 let currentSuite = 'Ground';
+let myOwnedUnits = new Set(); // primary_email 기준 본인 소유 유닛들
 
 // owner/tenant: 본인 suite 탭만 표시
 if (['owner','tenant'].includes(role) && myUnit) {
@@ -606,6 +608,14 @@ async function loadOccupants() {
   }
   
   allOccupants = data || [];
+
+  // primary_email 기준 본인 소유 유닛 세팅 (committee/owner)
+  if (myEmail && ['admin','committee','owner'].includes(role)) {
+    myOwnedUnits = new Set(
+      allOccupants.filter(o => o.primary_email?.toLowerCase() === myEmail.toLowerCase()).map(o => o.unit)
+    );
+  }
+
   renderOccupants();
 }
 
@@ -653,7 +663,7 @@ function renderOccupants() {
         </div>
         <div class="occ-actions">
           <button class="btn-secondary" onclick="openViewModal('${o.id}')">👁️ View</button>
-          ${(role === 'admin' || ((role === 'committee' || role === 'owner' || role === 'tenant') && o.unit === myUnit)) ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
+          ${(role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit)) ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
         </div>
       </div>
     `;
@@ -723,7 +733,7 @@ window.openViewModal = (id) => {
   
   // Show Edit button for admin
   const editBtn = document.getElementById('viewEditBtn');
-  const canEdit = role === 'admin' || ((role === 'committee' || role === 'owner' || role === 'tenant') && occ.unit === myUnit);
+  const canEdit = role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit);
   if (canEdit) {
     editBtn.style.display = 'inline-flex';
     editBtn.onclick = () => {
