@@ -460,6 +460,7 @@
       <div class="admin-search-header">
         <div class="admin-search-title">🔍 Quick Search</div>
         <button onclick="exportOccupants()" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📥 Export Excel</button>
+        <button onclick="openBulkInvite()" style="padding:7px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📧 Bulk Invite</button>
         <div class="admin-search-bar">
           <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Search unit, name, email, plate…" autocomplete="off">
           <button id="adminSearchClear" class="admin-search-clear">✕</button>
@@ -550,6 +551,20 @@
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
       <button class="btn-primary" id="saveBtn">Save →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK INVITE MODAL -->
+<div class="modal-backdrop" id="bulkInviteModal">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title">📧 Bulk Invite Preview</div>
+    <p style="font-size:13px;color:var(--muted);margin:-8px 0 16px">Review the list below before sending. Committee members and existing accounts are excluded.</p>
+    <div id="bulkInviteList" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:16px"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="bulkInviteSummary"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('bulkInviteModal')">Cancel</button>
+      <button class="btn-primary" id="sendBulkInviteBtn">Send All Invites →</button>
     </div>
   </div>
 </div>
@@ -1164,6 +1179,136 @@ async function savePlates(id, occ, plates) {
 // ─────────────────────────────────────────────────────────────
 
 // Export to Excel
+// ── Bulk Invite ───────────────────────────────────────────────
+let bulkInviteList = [];
+
+window.openBulkInvite = async () => {
+  const listEl = document.getElementById('bulkInviteList');
+  const summaryEl = document.getElementById('bulkInviteSummary');
+  const sendBtn = document.getElementById('sendBulkInviteBtn');
+  listEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Loading...</div>';
+  summaryEl.textContent = '';
+  sendBtn.disabled = true;
+  openModal('bulkInviteModal');
+
+  // 현재 profiles 이메일 (이미 계정 있는 사람)
+  const { data: profiles } = await supabase.from('profiles').select('email');
+  const existingEmails = new Set((profiles || []).map(p => p.email?.toLowerCase()).filter(Boolean));
+
+  bulkInviteList = [];
+
+  for (const occ of allOccupants) {
+    // committee 스킵
+    if (occ.is_committee) continue;
+
+    // primary_email → owner
+    if (occ.primary_email) {
+      const email = occ.primary_email.trim().toLowerCase();
+      if (email && !existingEmails.has(email)) {
+        bulkInviteList.push({
+          email: occ.primary_email.trim(),
+          name: occ.contact_person || occ.business_name || '',
+          role: 'owner',
+          unit: occ.unit,
+          status: 'pending'
+        });
+      }
+    }
+
+    // business_email → tenant (콤마 구분 여러 명)
+    if (occ.business_email) {
+      const emails = occ.business_email.split(',').map(e => e.trim()).filter(Boolean);
+      for (const email of emails) {
+        if (!existingEmails.has(email.toLowerCase())) {
+          bulkInviteList.push({
+            email,
+            name: '',
+            role: 'tenant',
+            unit: occ.unit,
+            status: 'pending'
+          });
+        }
+      }
+    }
+  }
+
+  // 중복 이메일 제거
+  const seen = new Set();
+  bulkInviteList = bulkInviteList.filter(item => {
+    if (seen.has(item.email.toLowerCase())) return false;
+    seen.add(item.email.toLowerCase());
+    return true;
+  });
+
+  if (!bulkInviteList.length) {
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No new users to invite</div>';
+    summaryEl.textContent = '';
+    return;
+  }
+
+  const ownerCount = bulkInviteList.filter(i => i.role === 'owner').length;
+  const tenantCount = bulkInviteList.filter(i => i.role === 'tenant').length;
+  summaryEl.textContent = `${bulkInviteList.length} invites ready — ${ownerCount} owners · ${tenantCount} tenants`;
+
+  listEl.innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--bg)">
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:left;border-bottom:1px solid var(--border)">Unit</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:left;border-bottom:1px solid var(--border)">Email</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:left;border-bottom:1px solid var(--border)">Name</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:left;border-bottom:1px solid var(--border)">Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${bulkInviteList.map((item, i) => `
+          <tr style="border-bottom:1px solid var(--border-light)" id="bulk-row-${i}">
+            <td style="padding:9px 14px;font-size:13px;font-weight:700;color:var(--blue-600)">${item.unit}</td>
+            <td style="padding:9px 14px;font-size:13px;color:var(--text)">${item.email}</td>
+            <td style="padding:9px 14px;font-size:13px;color:var(--muted)">${item.name || '—'}</td>
+            <td style="padding:9px 14px">
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;${item.role==='owner'?'background:#dbeafe;color:#1d4ed8':'background:#dcfce7;color:#15803d'}">${item.role}</span>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  sendBtn.disabled = false;
+};
+
+document.getElementById('sendBulkInviteBtn').addEventListener('click', async () => {
+  const sendBtn = document.getElementById('sendBulkInviteBtn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+
+  let sent = 0, failed = 0;
+
+  for (let i = 0; i < bulkInviteList.length; i++) {
+    const item = bulkInviteList[i];
+    const rowEl = document.getElementById(`bulk-row-${i}`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/send-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ email: item.email, full_name: item.name || '', role: item.role, unit: item.unit })
+      });
+      if (!res.ok) throw new Error();
+      if (rowEl) rowEl.style.background = '#f0fdf4';
+      sent++;
+    } catch {
+      if (rowEl) rowEl.style.background = '#fef2f2';
+      failed++;
+    }
+  }
+
+  sendBtn.textContent = 'Done!';
+  document.getElementById('bulkInviteSummary').textContent = `✅ ${sent} sent${failed > 0 ? ` · ❌ ${failed} failed` : ''}`;
+  showToast(`${sent} invites sent!`);
+});
+
+// ─────────────────────────────────────────────────────────────
+
 window.exportOccupants = () => {
   const rows = allOccupants.map(o => ({
     'Unit': o.unit || '',
