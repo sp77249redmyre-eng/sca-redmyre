@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 .content { padding: 24px; max-width: 1100px; }
 
@@ -458,6 +459,7 @@
       <div style="height:1px;background:var(--border);margin-bottom:28px"></div>
       <div class="admin-search-header">
         <div class="admin-search-title">🔍 Quick Search</div>
+        <button onclick="exportOccupants()" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📥 Export Excel</button>
         <div class="admin-search-bar">
           <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Search unit, name, email, plate…" autocomplete="off">
           <button id="adminSearchClear" class="admin-search-clear">✕</button>
@@ -1132,6 +1134,30 @@ async function savePlates(id, occ, plates) {
   }
 }
 // ─────────────────────────────────────────────────────────────
+
+// Export to Excel
+window.exportOccupants = () => {
+  const rows = allOccupants.map(o => ({
+    'Unit': o.unit || '',
+    'Business Name': o.business_name || '',
+    'Contact Person': o.contact_person || '',
+    'Primary Email': o.primary_email || '',
+    'Business Email': o.business_email || '',
+    'Phone': o.phone || '',
+    'Committee': o.is_committee ? 'Yes' : 'No',
+    'Committee Role': o.committee_role || '',
+    'License Plates': (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', '),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:8},{wch:22},{wch:22},{wch:28},{wch:28},{wch:16},{wch:10},{wch:14},{wch:20}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Occupants');
+  const date = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `Redmyre_Occupants_${date}.xlsx`);
+};
 
 // Initial load
 await loadOccupants();
