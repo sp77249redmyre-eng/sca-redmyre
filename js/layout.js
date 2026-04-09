@@ -15,6 +15,8 @@ const PAGE_CONFIG = {
   'occupants':      { title: 'Occupant Details',      allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
   'users':          { title: 'User Management',       allowedRoles: ['admin'] },
   'system':         { title: 'System Management',     allowedRoles: ['admin'] },
+  'guide-resident': { title: 'User Guide',            allowedRoles: null },
+  'guide-committee':{ title: 'Committee Guide',       allowedRoles: ['admin', 'committee', 'observer'] },
 };
 
 function getCurrentPage() {
@@ -77,7 +79,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'users', 'system'];
+    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'users', 'system', 'guide-resident', 'guide-committee'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
@@ -91,10 +93,10 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants'],
-        observer:  ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants'],
-        owner:     ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants'],
-        tenant:    ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants']
+        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
+        observer:  ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
+        owner:     ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident'],
+        tenant:    ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
