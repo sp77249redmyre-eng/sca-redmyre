@@ -94,6 +94,22 @@
         </label>
       </div>
     </div>
+    <div class="modal-field">
+      <label class="modal-label">Attachments (optional)</label>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button type="button" id="annCameraBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:12px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:20px">📷</span><span>Camera</span>
+        </button>
+        <button type="button" id="annFileBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:12px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-size:20px">📁</span><span>Browse File</span>
+        </button>
+      </div>
+      <input type="file" id="annInputCamera" accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="annInputFile" accept="image/*,application/pdf" multiple style="display:none">
+      <div id="annAttachPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+      <div id="annAttachCount" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-danger" id="deleteAnnBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('annModal')">Cancel</button>
@@ -154,6 +170,13 @@ function renderAnns() {
         <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
       </div>
       <div class="ann-body">${a.content}</div>
+      ${a.attachments && a.attachments.length ? `
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+          ${a.attachments.map(att => att.type === 'application/pdf'
+            ? `<a href="${att.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);text-decoration:none;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">📄 ${att.name}</a>`
+            : `<a href="${att.url}" target="_blank"><img src="${att.url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);transition:opacity 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></a>`
+          ).join('')}
+        </div>` : ''}
       ${role==='admin'?`
         <div class="ann-footer">
           <span style="font-size:11px;color:var(--muted)">${a.pinned?'📌 Pinned':''}</span>
@@ -192,6 +215,7 @@ document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('pinToggle').classList.remove('on');
   document.getElementById('pinLabel').textContent = 'Pin this announcement';
   document.getElementById('deleteAnnBtn').style.display = 'none';
+  annFiles = []; annUpdatePreview(); annUpdateButtons();
   document.getElementById('annModal').classList.add('open');
 });
 
@@ -208,6 +232,61 @@ window.openEditAnn = (a) => {
   document.getElementById('annModal').classList.add('open');
 };
 
+// Attachments
+const ANN_MAX_FILES = 5;
+const ANN_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+let annFiles = [];
+
+function annUpdatePreview() {
+  const grid = document.getElementById('annAttachPreview');
+  const countEl = document.getElementById('annAttachCount');
+  grid.innerHTML = '';
+  annFiles.forEach((file, idx) => {
+    const isPdf = file.type === 'application/pdf';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;max-width:180px';
+    if (isPdf) {
+      wrap.innerHTML = `<span style="font-size:16px">📄</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${file.name}</span><button type="button" data-idx="${idx}" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;font-weight:700;padding:0;flex-shrink:0">✕</button>`;
+    } else {
+      const reader = new FileReader();
+      reader.onload = e => {
+        wrap.innerHTML = `<img src="${e.target.result}" style="width:48px;height:48px;object-fit:cover;border-radius:6px"><button type="button" data-idx="${idx}" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>`;
+        wrap.querySelector('button').addEventListener('click', () => { annFiles.splice(idx,1); annUpdatePreview(); annUpdateButtons(); });
+      };
+      reader.readAsDataURL(file);
+    }
+    if (isPdf) wrap.querySelector('button').addEventListener('click', () => { annFiles.splice(idx,1); annUpdatePreview(); annUpdateButtons(); });
+    grid.appendChild(wrap);
+  });
+  if (annFiles.length > 0) {
+    countEl.textContent = `${annFiles.length} / ${ANN_MAX_FILES} file${annFiles.length>1?'s':''} attached`;
+    countEl.style.display = 'block';
+  } else { countEl.style.display = 'none'; }
+}
+
+function annUpdateButtons() {
+  const disabled = annFiles.length >= ANN_MAX_FILES;
+  document.getElementById('annCameraBtn').style.opacity = disabled ? '0.4' : '1';
+  document.getElementById('annFileBtn').style.opacity = disabled ? '0.4' : '1';
+  document.getElementById('annCameraBtn').disabled = disabled;
+  document.getElementById('annFileBtn').disabled = disabled;
+}
+
+function annHandleFiles(files) {
+  for (const file of files) {
+    if (annFiles.length >= ANN_MAX_FILES) { showToast(`Max ${ANN_MAX_FILES} files allowed`, true); break; }
+    if (file.size > ANN_MAX_SIZE) { showToast(`${file.name} exceeds 10MB`, true); continue; }
+    annFiles.push(file);
+  }
+  annUpdatePreview();
+  annUpdateButtons();
+}
+
+document.getElementById('annCameraBtn').addEventListener('click', () => { if (annFiles.length < ANN_MAX_FILES) document.getElementById('annInputCamera').click(); });
+document.getElementById('annFileBtn').addEventListener('click', () => { if (annFiles.length < ANN_MAX_FILES) document.getElementById('annInputFile').click(); });
+document.getElementById('annInputCamera').addEventListener('change', e => { annHandleFiles(e.target.files); e.target.value=''; });
+document.getElementById('annInputFile').addEventListener('change', e => { annHandleFiles(e.target.files); e.target.value=''; });
+
 document.getElementById('saveAnnBtn').addEventListener('click', async () => {
   const id = document.getElementById('annEditId').value;
   const data = {
@@ -218,7 +297,23 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
     author_id: user.id,
   };
   if (!data.title||!data.content) { showToast('Please fill in all fields', true); return; }
+
+  const btn = document.getElementById('saveAnnBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
   try {
+    // Upload attachments
+    let attachments = [];
+    for (const file of annFiles) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const fileName = `ann_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('announcements').upload(fileName, file, { upsert: true });
+      if (upErr) { showToast('File upload failed', true); btn.disabled=false; btn.textContent='Save →'; return; }
+      const { data: urlData } = supabase.storage.from('announcements').getPublicUrl(fileName);
+      attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type });
+    }
+    if (attachments.length > 0) data.attachments = attachments;
+
     if (id) {
       await supabase.from('announcements').update(data).eq('id', id);
     } else {
@@ -237,10 +332,17 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
         });
       } catch(pushErr){}
     }
+
+    // Reset attachments
+    annFiles = [];
+    annUpdatePreview();
+    annUpdateButtons();
+
     closeModal('annModal');
     await loadAnnouncements();
     showToast(id ? 'Announcement updated ✓' : 'Announcement posted ✓');
   } catch(e) { showToast(e.message||'Failed to save', true); }
+  finally { btn.disabled=false; btn.textContent='Save →'; }
 });
 
 window.confirmDeleteAnn = async (id) => {
