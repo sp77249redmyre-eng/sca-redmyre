@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { title, message, target_role, target_roles, user_id } = req.body;
+  const { title, message, target_role, target_roles, user_id, url } = req.body;
 
   let query = supabase
     .from('push_subscriptions')
@@ -75,7 +75,8 @@ module.exports = async (req, res) => {
         row.subscription,
         JSON.stringify({
           title,
-          body: message
+          body: message,
+          url: url || '/'
         })
       );
       sent++;
