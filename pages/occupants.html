@@ -1115,14 +1115,9 @@ function renderSearchResults(results) {
         ${activeCols.has('business_email') ? `<td><div class="edit-cell ${!o.business_email?'empty':''}" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)">${o.business_email || 'Add email…'}</div></td>` : ''}
         ${activeCols.has('phone') ? `<td><div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">${o.phone || 'Add phone…'}</div></td>` : ''}
         ${activeCols.has('role') ? `<td>${(() => {
-            const email = (o.primary_email || '').toLowerCase();
-            const r = window._profileRoleMap?.[email];
             if (o.is_committee) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>';
-            if (r === 'admin') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#991b1b">admin</span>';
-            if (r === 'owner') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>';
-            if (r === 'observer') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f1f5f9;color:#475569">observer</span>';
-            const hasBiz = (o.business_email || '').trim().length > 0;
-            if (hasBiz) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
+            if (o.primary_email) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>';
+            if ((o.business_email||'').trim()) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
             return '<span style="font-size:11px;color:var(--muted)">—</span>';
           })()}</td>` : ''}
         ${activeCols.has('vehicles') ? `<td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>` : ''}
@@ -1415,9 +1410,7 @@ window.exportOccupants = () => {
     if (activeCols.has('business_email')) row['Business Email'] = o.business_email || '';
     if (activeCols.has('phone')) row['Phone'] = o.phone || '';
     if (activeCols.has('role')) {
-      const email = (o.primary_email || '').toLowerCase();
-      const r = window._profileRoleMap?.[email];
-      row['Role'] = o.is_committee ? 'committee' : r || ((o.business_email||'').trim() ? 'tenant' : '');
+      row['Role'] = o.is_committee ? 'committee' : o.primary_email ? 'owner' : (o.business_email||'').trim() ? 'tenant' : '';
     }
     if (activeCols.has('vehicles')) row['License Plates'] = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', ');
     return row;
