@@ -1116,9 +1116,10 @@ function renderSearchResults(results) {
         ${activeCols.has('phone') ? `<td><div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">${o.phone || 'Add phone…'}</div></td>` : ''}
         ${activeCols.has('role') ? `<td>${(() => {
             if (o.is_committee) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>';
-            if (o.primary_email) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>';
-            if ((o.business_email||'').trim()) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
-            return '<span style="font-size:11px;color:var(--muted)">—</span>';
+            const parts = [];
+            if (o.primary_email) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>');
+            if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>');
+            return parts.length ? parts.join(' ') : '<span style="font-size:11px;color:var(--muted)">—</span>';
           })()}</td>` : ''}
         ${activeCols.has('vehicles') ? `<td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>` : ''}
         <td><button class="btn-secondary" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="openEditModal('${o.id}')">✏️ Edit</button></td>
