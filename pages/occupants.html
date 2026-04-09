@@ -17,6 +17,12 @@
 <style>
 .content { padding: 24px; max-width: 100%; }
 .search-table-wrap { overflow-x: auto; }
+/* Column toggle */
+.col-toggle-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }
+.col-toggle-label { font-size:11px; font-weight:700; color:var(--muted); margin-right:2px; }
+.col-toggle-btn { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:600; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.col-toggle-btn.on { background:var(--blue-600); color:#fff; border-color:var(--blue-600); }
+.col-toggle-btn.on::before { content:'✓ '; }
 
 /* Suite Tabs */
 .suite-tabs {
@@ -495,6 +501,17 @@
         <button class="filter-chip" data-filter="F" onclick="applyFilter('F')">F</button>
         <button class="filter-chip" data-filter="G" onclick="applyFilter('G')">G</button>
         <button class="filter-chip" data-filter="H" onclick="applyFilter('H')">H</button>
+      </div>
+      <!-- Column Toggle -->
+      <div class="col-toggle-bar" id="colToggleBar">
+        <span class="col-toggle-label">Columns:</span>
+        <button class="col-toggle-btn on" data-col="business_name" onclick="toggleCol(this)">Business Name</button>
+        <button class="col-toggle-btn on" data-col="contact" onclick="toggleCol(this)">Contact</button>
+        <button class="col-toggle-btn on" data-col="primary_email" onclick="toggleCol(this)">Primary Email</button>
+        <button class="col-toggle-btn on" data-col="business_email" onclick="toggleCol(this)">Business Email</button>
+        <button class="col-toggle-btn on" data-col="phone" onclick="toggleCol(this)">Phone</button>
+        <button class="col-toggle-btn on" data-col="role" onclick="toggleCol(this)">Role</button>
+        <button class="col-toggle-btn on" data-col="vehicles" onclick="toggleCol(this)">Vehicles</button>
       </div>
       <div id="adminSearchResults"></div>
     </div>
@@ -1019,6 +1036,24 @@ if (role === 'admin') {
   });
 }
 
+// ── Column Toggle ─────────────────────────────────────────────
+const ALL_COLS = ['business_name','contact','primary_email','business_email','phone','role','vehicles'];
+let activeCols = new Set(ALL_COLS);
+
+window.toggleCol = (btn) => {
+  const col = btn.dataset.col;
+  if (activeCols.has(col)) {
+    if (activeCols.size <= 1) return; // 최소 1개는 유지
+    activeCols.delete(col);
+    btn.classList.remove('on');
+  } else {
+    activeCols.add(col);
+    btn.classList.add('on');
+  }
+  // 현재 결과 다시 렌더
+  if (window._lastSearchResults) renderSearchResults(window._lastSearchResults);
+};
+
 // ── Filter Chips ──────────────────────────────────────────────
 window.applyFilter = (filter) => {
   // 검색창 초기화
@@ -1074,54 +1109,24 @@ function renderSearchResults(results) {
     return `
       <tr data-id="${o.id}">
         <td><span class="unit-badge">${o.unit}</span></td>
-        <td>
-          <div class="edit-cell ${!o.business_name?'empty':''}" data-field="business_name" data-id="${o.id}" onclick="startInlineEdit(this)">
-            ${o.business_name || 'Add name…'}
-          </div>
-        </td>
-        <td>
-          <div class="edit-cell ${!o.contact_person?'empty':''}" data-field="contact_person" data-id="${o.id}" onclick="startInlineEdit(this)">
-            ${o.contact_person || 'Add name…'}
-          </div>
-        </td>
-        <td>
-          <div class="edit-cell ${!o.primary_email?'empty':''}" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)">
-            ${o.primary_email || 'Add email…'}
-          </div>
-        </td>
-        <td>
-          <div class="edit-cell ${!o.business_email?'empty':''}" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)">
-            ${o.business_email || 'Add email…'}
-          </div>
-        </td>
-        <td>
-          <div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">
-            ${o.phone || 'Add phone…'}
-          </div>
-        </td>
-        <td>
-          ${(() => {
+        ${activeCols.has('business_name') ? `<td><div class="edit-cell ${!o.business_name?'empty':''}" data-field="business_name" data-id="${o.id}" onclick="startInlineEdit(this)">${o.business_name || 'Add name…'}</div></td>` : ''}
+        ${activeCols.has('contact') ? `<td><div class="edit-cell ${!o.contact_person?'empty':''}" data-field="contact_person" data-id="${o.id}" onclick="startInlineEdit(this)">${o.contact_person || 'Add name…'}</div></td>` : ''}
+        ${activeCols.has('primary_email') ? `<td><div class="edit-cell ${!o.primary_email?'empty':''}" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)">${o.primary_email || 'Add email…'}</div></td>` : ''}
+        ${activeCols.has('business_email') ? `<td><div class="edit-cell ${!o.business_email?'empty':''}" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)">${o.business_email || 'Add email…'}</div></td>` : ''}
+        ${activeCols.has('phone') ? `<td><div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">${o.phone || 'Add phone…'}</div></td>` : ''}
+        ${activeCols.has('role') ? `<td>${(() => {
             const email = (o.primary_email || '').toLowerCase();
             const r = window._profileRoleMap?.[email];
             if (o.is_committee) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>';
             if (r === 'admin') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#991b1b">admin</span>';
             if (r === 'owner') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>';
             if (r === 'observer') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f1f5f9;color:#475569">observer</span>';
-            const bizEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase());
-            const hasTenant = bizEmails.some(e => window._profileRoleMap?.[e] === 'tenant');
-            if (hasTenant) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
+            const hasBiz = (o.business_email || '').trim().length > 0;
+            if (hasBiz) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
             return '<span style="font-size:11px;color:var(--muted)">—</span>';
-          })()}
-        </td>
-        <td>
-          <div class="plate-badges" id="plates-${o.id}">
-            ${plateBadges}
-            <button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button>
-          </div>
-        </td>
-        <td>
-          <button class="btn-secondary" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="openEditModal('${o.id}')">✏️ Edit</button>
-        </td>
+          })()}</td>` : ''}
+        ${activeCols.has('vehicles') ? `<td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>` : ''}
+        <td><button class="btn-secondary" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="openEditModal('${o.id}')">✏️ Edit</button></td>
       </tr>`;
   }).join('');
 
@@ -1131,13 +1136,13 @@ function renderSearchResults(results) {
         <thead>
           <tr>
             <th>Unit</th>
-            <th>Business Name</th>
-            <th>Contact</th>
-            <th>Primary Email</th>
-            <th>Business Email</th>
-            <th>Phone</th>
-            <th>Role</th>
-            <th>Vehicles</th>
+            ${activeCols.has('business_name') ? '<th>Business Name</th>' : ''}
+            ${activeCols.has('contact') ? '<th>Contact</th>' : ''}
+            ${activeCols.has('primary_email') ? '<th>Primary Email</th>' : ''}
+            ${activeCols.has('business_email') ? '<th>Business Email</th>' : ''}
+            ${activeCols.has('phone') ? '<th>Phone</th>' : ''}
+            ${activeCols.has('role') ? '<th>Role</th>' : ''}
+            ${activeCols.has('vehicles') ? '<th>Vehicles</th>' : ''}
             <th>Actions</th>
           </tr>
         </thead>
@@ -1401,23 +1406,24 @@ document.getElementById('sendBulkInviteBtn').addEventListener('click', async () 
 
 window.exportOccupants = () => {
   const data = (window._lastSearchResults && window._lastSearchResults.length) ? window._lastSearchResults : allOccupants;
-  const isFiltered = window._lastSearchResults && window._lastSearchResults.length && window._lastSearchResults.length !== allOccupants.length;
-  const rows = data.map(o => ({
-    'Unit': o.unit || '',
-    'Business Name': o.business_name || '',
-    'Contact Person': o.contact_person || '',
-    'Primary Email': o.primary_email || '',
-    'Business Email': o.business_email || '',
-    'Phone': o.phone || '',
-    'Committee': o.is_committee ? 'Yes' : 'No',
-    'Committee Role': o.committee_role || '',
-    'License Plates': (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', '),
-  }));
+
+  const rows = data.map(o => {
+    const row = { 'Unit': o.unit || '' };
+    if (activeCols.has('business_name')) row['Business Name'] = o.business_name || '';
+    if (activeCols.has('contact')) row['Contact Person'] = o.contact_person || '';
+    if (activeCols.has('primary_email')) row['Primary Email'] = o.primary_email || '';
+    if (activeCols.has('business_email')) row['Business Email'] = o.business_email || '';
+    if (activeCols.has('phone')) row['Phone'] = o.phone || '';
+    if (activeCols.has('role')) {
+      const email = (o.primary_email || '').toLowerCase();
+      const r = window._profileRoleMap?.[email];
+      row['Role'] = o.is_committee ? 'committee' : r || ((o.business_email||'').trim() ? 'tenant' : '');
+    }
+    if (activeCols.has('vehicles')) row['License Plates'] = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', ');
+    return row;
+  });
 
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    {wch:8},{wch:22},{wch:22},{wch:28},{wch:28},{wch:16},{wch:10},{wch:14},{wch:20}
-  ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Occupants');
   const date = new Date().toISOString().split('T')[0];
