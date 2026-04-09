@@ -215,6 +215,12 @@
   display: none;
 }
 .admin-search-section.visible { display: block; }
+/* Filter chips */
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.filter-chip { padding: 5px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.filter-chip:hover { border-color: var(--blue-600); color: var(--blue-600); }
+.filter-chip.active { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+.filter-chip-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-right: 2px; }
 .admin-search-header {
   display: flex;
   align-items: center;
@@ -466,6 +472,28 @@
           <button id="adminSearchClear" class="admin-search-clear">✕</button>
         </div>
         <div class="admin-search-count" id="adminSearchCount"></div>
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-chips" id="filterChips">
+        <span class="filter-chip-label">Quick:</span>
+        <button class="filter-chip" data-filter="all" onclick="applyFilter('all')">All</button>
+        <button class="filter-chip" data-filter="Ground" onclick="applyFilter('Ground')">Ground</button>
+        <button class="filter-chip" data-filter="1" onclick="applyFilter('1')">L1</button>
+        <button class="filter-chip" data-filter="2" onclick="applyFilter('2')">L2</button>
+        <button class="filter-chip" data-filter="3" onclick="applyFilter('3')">L3</button>
+        <button class="filter-chip" data-filter="4" onclick="applyFilter('4')">L4</button>
+        <button class="filter-chip" data-filter="5" onclick="applyFilter('5')">L5</button>
+        <button class="filter-chip" data-filter="6" onclick="applyFilter('6')">L6</button>
+        <span class="filter-chip-label" style="margin-left:6px">Suite:</span>
+        <button class="filter-chip" data-filter="A" onclick="applyFilter('A')">A</button>
+        <button class="filter-chip" data-filter="B" onclick="applyFilter('B')">B</button>
+        <button class="filter-chip" data-filter="C" onclick="applyFilter('C')">C</button>
+        <button class="filter-chip" data-filter="D" onclick="applyFilter('D')">D</button>
+        <button class="filter-chip" data-filter="E" onclick="applyFilter('E')">E</button>
+        <button class="filter-chip" data-filter="F" onclick="applyFilter('F')">F</button>
+        <button class="filter-chip" data-filter="G" onclick="applyFilter('G')">G</button>
+        <button class="filter-chip" data-filter="H" onclick="applyFilter('H')">H</button>
       </div>
       <div id="adminSearchResults"></div>
     </div>
@@ -958,8 +986,20 @@ if (role === 'admin') {
   searchInput.addEventListener('input', () => {
     const q = searchInput.value.trim().toLowerCase();
     searchClear.style.display = q ? 'block' : 'none';
+    // 필터 칩 해제
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
     if (!q) { searchResults.innerHTML = ''; searchCount.textContent = ''; return; }
-    renderSearchResults(q);
+    renderSearchResults(allOccupants.filter(o => {
+      const plates = (o.license_plates || '').toLowerCase();
+      return (
+        (o.unit || '').toLowerCase().includes(q) ||
+        (o.business_name || '').toLowerCase().includes(q) ||
+        (o.contact_person || '').toLowerCase().includes(q) ||
+        (o.primary_email || '').toLowerCase().includes(q) ||
+        (o.business_email || '').toLowerCase().includes(q) ||
+        plates.includes(q)
+      );
+    }));
   });
 
   searchClear.addEventListener('click', () => {
@@ -967,21 +1007,42 @@ if (role === 'admin') {
     searchClear.style.display = 'none';
     searchResults.innerHTML = '';
     searchCount.textContent = '';
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
   });
 }
 
-function renderSearchResults(q) {
-  const results = allOccupants.filter(o => {
-    const plates = (o.license_plates || '').toLowerCase();
-    return (
-      (o.unit || '').toLowerCase().includes(q) ||
-      (o.business_name || '').toLowerCase().includes(q) ||
-      (o.contact_person || '').toLowerCase().includes(q) ||
-      (o.primary_email || '').toLowerCase().includes(q) ||
-      (o.business_email || '').toLowerCase().includes(q) ||
-      plates.includes(q)
-    );
+// ── Filter Chips ──────────────────────────────────────────────
+window.applyFilter = (filter) => {
+  // 검색창 초기화
+  const searchInput = document.getElementById('adminSearchInput');
+  searchInput.value = '';
+  document.getElementById('adminSearchClear').style.display = 'none';
+
+  // 칩 활성화
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.filter === filter);
   });
+
+  if (filter === 'all') {
+    renderSearchResults(allOccupants);
+    return;
+  }
+
+  const results = allOccupants.filter(o => {
+    const unit = (o.unit || '').toUpperCase();
+    if (filter === 'Ground') return o.level === 'Ground' || o.unit === 'Unit 1';
+    // Level (숫자) — unit이 "1A", "2B" 등
+    if (/^\d$/.test(filter)) return unit.startsWith(filter);
+    // Suite (알파벳) — unit이 "1A", "2A" 등 끝자리
+    if (/^[A-H]$/.test(filter)) return unit.endsWith(filter);
+    return false;
+  });
+
+  renderSearchResults(results);
+};
+
+function renderSearchResults(results) {
+  window._lastSearchResults = results;
 
   const countEl = document.getElementById('adminSearchCount');
   const resultsEl = document.getElementById('adminSearchResults');
@@ -1310,7 +1371,9 @@ document.getElementById('sendBulkInviteBtn').addEventListener('click', async () 
 // ─────────────────────────────────────────────────────────────
 
 window.exportOccupants = () => {
-  const rows = allOccupants.map(o => ({
+  const data = (window._lastSearchResults && window._lastSearchResults.length) ? window._lastSearchResults : allOccupants;
+  const isFiltered = window._lastSearchResults && window._lastSearchResults.length && window._lastSearchResults.length !== allOccupants.length;
+  const rows = data.map(o => ({
     'Unit': o.unit || '',
     'Business Name': o.business_name || '',
     'Contact Person': o.contact_person || '',
@@ -1329,7 +1392,10 @@ window.exportOccupants = () => {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Occupants');
   const date = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Redmyre_Occupants_${date}.xlsx`);
+  const activeChip = document.querySelector('.filter-chip.active');
+  const filterLabel = activeChip ? activeChip.dataset.filter : '';
+  const suffix = filterLabel && filterLabel !== 'all' ? `_${filterLabel}` : '';
+  XLSX.writeFile(wb, `Redmyre_Occupants${suffix}_${date}.xlsx`);
 };
 
 // Initial load
