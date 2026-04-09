@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ── Filter Bar ── */
 .filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
@@ -91,8 +92,25 @@
 /* ── Emergency ratio badge ── */
 .emg-ratio{font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;background:#fee2e2;color:#991b1b;margin-left:6px}
 
-/* Toast */
+/* ── Toast */
 .toast{position:fixed;bottom:28px;right:28px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;display:none;z-index:9999;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+
+/* ── Quarterly ── */
+.quarterly-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.q-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center;position:relative;overflow:hidden}
+.q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--q-color,#2563eb)}
+.q-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.q-amount{font-size:20px;font-weight:700;letter-spacing:-0.5px;color:#1e293b;margin-bottom:4px}
+.q-sub{font-size:11px;color:#94a3b8}
+.q-bar-wrap{height:4px;background:#f1f5f9;border-radius:100px;margin-top:10px;overflow:hidden}
+.q-bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease}
+
+/* ── Category filter chips ── */
+.cat-filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.cat-chip{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.cat-chip:hover{border-color:#2563eb;color:#2563eb}
+.cat-chip.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.cat-chip-label{font-size:11px;color:#94a3b8;font-weight:600;margin-right:4px}
 
 /* ── 모바일 ── */
 @media(max-width:768px){
@@ -132,6 +150,13 @@
       <input type="date" class="filter-input" id="dateFrom" style="display:none">
       <input type="date" class="filter-input" id="dateTo" style="display:none">
       <button class="btn-refresh" id="refreshBtn">↻ Refresh</button>
+      <button class="btn-refresh" id="exportBtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);margin-left:4px">📥 Export Excel</button>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="cat-filter-bar" id="catFilterBar" style="display:none">
+      <span class="cat-chip-label">Filter:</span>
+      <button class="cat-chip active" data-cat="all">All</button>
     </div>
 
     <!-- KPI Stats -->
@@ -224,6 +249,15 @@
       </div>
     </div>
 
+    <!-- Section 5: Quarterly Summary -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#0891b2"></div>
+      <div class="section-heading-text">Quarterly Summary</div>
+    </div>
+    <div class="quarterly-grid" id="quarterlyGrid">
+      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
+    </div>
+
     <!-- Section 4: Emergency vs Normal Bar -->
     <div class="section-heading">
       <div class="section-heading-bar" style="background:#dc2626"></div>
@@ -249,6 +283,7 @@ if (!['admin','committee','observer'].includes(role)) window.location.href='/pag
 const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
 const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777','Other':'#94a3b8' };
 const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3','Other':'#f1f5f9' };
+const Q_COLORS = ['#2563eb','#16a34a','#f59e0b','#7c3aed'];
 
 const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixed(1)+'k':fmt(v); };
@@ -266,6 +301,8 @@ function catBadge(cat) {
 }
 
 let dateFrom=null, dateTo=null;
+let allData = [];
+let activeCat = 'all';
 
 function updateDateRange() {
   const period=document.getElementById('filterPeriod').value;
@@ -291,17 +328,95 @@ document.getElementById('dateTo').addEventListener('change', () => {
   dateTo=new Date(document.getElementById('dateTo').value); loadDashboard();
 });
 
+// ── Category Filter ──────────────────────────────────────────
+function buildCatFilter(data) {
+  const cats = [...new Set(data.map(q => q._cat))].sort();
+  const bar = document.getElementById('catFilterBar');
+  bar.style.display = 'flex';
+  bar.innerHTML = `<span class="cat-chip-label">Category:</span>
+    <button class="cat-chip ${activeCat==='all'?'active':''}" data-cat="all">All</button>
+    ${cats.map(c => `<button class="cat-chip ${activeCat===c?'active':''}" data-cat="${c}" style="${activeCat===c?`background:${CAT_COLORS[c]||'#2563eb'};border-color:${CAT_COLORS[c]||'#2563eb'};color:#fff`:''}">
+      ${CAT_LABELS[c]||c}
+    </button>`).join('')}`;
+
+  bar.querySelectorAll('.cat-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCat = btn.dataset.cat;
+      renderDashboard(activeCat === 'all' ? allData : allData.filter(q => q._cat === activeCat));
+      buildCatFilter(allData);
+    });
+  });
+}
+
+// ── Export Excel ─────────────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const data = activeCat === 'all' ? allData : allData.filter(q => q._cat === activeCat);
+  if (!data.length) { showToast('No data to export', true); return; }
+
+  const rows = data.map(q => ({
+    'Date': q.completion_date ? new Date(q.completion_date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '—',
+    'Project': q.project || q.title || '—',
+    'Contractor': q.vendor || '—',
+    'Category': CAT_LABELS[q._cat] || q._cat || '—',
+    'Amount (ex GST)': Number(q.amount || 0),
+    'Type': q.is_emergency ? 'Emergency' : 'Regular',
+  }));
+
+  // Total row
+  const total = data.reduce((s, q) => s + Number(q.amount || 0), 0);
+  rows.push({ 'Date': '', 'Project': '', 'Contractor': '', 'Category': 'TOTAL', 'Amount (ex GST)': total, 'Type': '' });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:36},{wch:22},{wch:14},{wch:16},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  const period = document.getElementById('filterPeriod').value;
+  XLSX.utils.book_append_sheet(wb, ws, 'Financial');
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `Redmyre_Financial_${period}_${dateStr}.xlsx`);
+});
+
+// ── Quarterly Summary ─────────────────────────────────────────
+function renderQuarterly(data) {
+  const year = new Date().getFullYear();
+  const quarters = [
+    { label: 'Q1', months: [0,1,2], range: 'Jan–Mar' },
+    { label: 'Q2', months: [3,4,5], range: 'Apr–Jun' },
+    { label: 'Q3', months: [6,7,8], range: 'Jul–Sep' },
+    { label: 'Q4', months: [9,10,11], range: 'Oct–Dec' },
+  ];
+
+  const qData = quarters.map(q => {
+    const items = data.filter(d => {
+      if (!d.completion_date) return false;
+      const m = new Date(d.completion_date).getMonth();
+      return q.months.includes(m);
+    });
+    return {
+      ...q,
+      total: items.reduce((s, d) => s + Number(d.amount || 0), 0),
+      count: items.length,
+      emergency: items.filter(d => d.is_emergency).length,
+    };
+  });
+
+  const maxQ = Math.max(...qData.map(q => q.total), 1);
+
+  document.getElementById('quarterlyGrid').innerHTML = qData.map((q, i) => {
+    const color = Q_COLORS[i];
+    const pct = Math.round(q.total / maxQ * 100);
+    return `<div class="q-card" style="--q-color:${color}">
+      <div class="q-label">${q.label} · ${q.range}</div>
+      <div class="q-amount" style="color:${q.total>0?color:'#94a3b8'}">${q.total>0?fmt(q.total):'—'}</div>
+      <div class="q-sub">${q.count} job${q.count!==1?'s':''}${q.emergency>0?` · ${q.emergency} emg`:''}</div>
+      <div class="q-bar-wrap"><div class="q-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
 async function loadDashboard() {
   const period=document.getElementById('filterPeriod').value;
-  const periodLabel = period==='alltime'?'All time'
-    :period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`
-    :period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'})
-    :period==='lastmonth'?new Date(new Date().getFullYear(),new Date().getMonth()-1,1).toLocaleString('en-AU',{month:'long',year:'numeric'})
-    :period==='thisquarter'?`Q${Math.floor(new Date().getMonth()/3)+1} ${new Date().getFullYear()}`
-    :'Custom';
 
-  document.getElementById('statPeriodLabel').textContent=periodLabel;
-  ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis'].forEach(id=>{
+  ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis','quarterlyGrid'].forEach(id=>{
     document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
   });
 
@@ -315,10 +430,26 @@ async function loadDashboard() {
   if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
 
   const { data:raw } = await qQuery;
-  const data=(raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
+  allData = (raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
+  activeCat = 'all';
+
+  buildCatFilter(allData);
+  renderDashboard(allData);
+}
+
+function renderDashboard(data) {
+  const period=document.getElementById('filterPeriod').value;
+  const periodLabel = period==='alltime'?'All time'
+    :period==='thisyear'?`Jan–Dec ${new Date().getFullYear()}`
+    :period==='thismonth'?new Date().toLocaleString('en-AU',{month:'long',year:'numeric'})
+    :period==='lastmonth'?new Date(new Date().getFullYear(),new Date().getMonth()-1,1).toLocaleString('en-AU',{month:'long',year:'numeric'})
+    :period==='thisquarter'?`Q${Math.floor(new Date().getMonth()/3)+1} ${new Date().getFullYear()}`
+    :'Custom';
+
+  document.getElementById('statPeriodLabel').textContent=periodLabel;
 
   if (!data.length) {
-    ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis'].forEach(id=>{
+    ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis','quarterlyGrid'].forEach(id=>{
       document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data for this period</div>';
     });
     ['statTotal','statRegular','statEmergency','statAvg'].forEach(id=>document.getElementById(id).textContent='$0');
@@ -343,7 +474,7 @@ async function loadDashboard() {
   document.getElementById('statAvg').textContent=fmt(avg);
   document.getElementById('statTotalCount').textContent=`${data.length} completed`;
 
-  // ── Section 1: Category ──
+  // Category
   const catTotals={};
   data.forEach(q=>{catTotals[q._cat]=(catTotals[q._cat]||0)+(Number(q.amount)||0);});
   const maxCat=Math.max(...Object.values(catTotals),1);
@@ -360,7 +491,7 @@ async function loadDashboard() {
     </div>`;
   }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data</div>';
 
-  // ── Section 2a: Contractor Ranking ──
+  // Contractors
   const contractorTotals={};
   data.forEach(q=>{
     const name=(q.vendor||'Unknown').trim();
@@ -384,7 +515,7 @@ async function loadDashboard() {
     </div>`;
   }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
 
-  // ── Section 2b: Monthly Summary ──
+  // Monthly
   const monthlyTotals={};
   data.forEach(q=>{
     if (!q.completion_date) return;
@@ -408,7 +539,7 @@ async function loadDashboard() {
     </div>`;
   }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
 
-  // ── Section 3: Top 10 Projects ──
+  // Top 10 Projects
   const sortedByAmount=[...data].sort((a,b)=>Number(b.amount||0)-Number(a.amount||0));
   document.getElementById('topProjectsList').innerHTML=sortedByAmount.slice(0,10).map((q,i)=>{
     const isTop=i<3;
@@ -426,7 +557,10 @@ async function loadDashboard() {
     </div>`;
   }).join('') || '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
 
-  // ── Section 4: Emergency Analysis ──
+  // Quarterly
+  renderQuarterly(allData);
+
+  // Emergency Analysis
   const emgRatio=data.length?Math.round(emergencyData.length/data.length*100):0;
   const emgSpendRatio=totalSpend?Math.round(emergencySpend/totalSpend*100):0;
   const avgEmg=emergencyData.length?emergencySpend/emergencyData.length:0;
