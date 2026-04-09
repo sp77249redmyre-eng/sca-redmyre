@@ -61,7 +61,7 @@
       <div class="form-sub">All residents will be notified immediately.</div>
       <div class="form-field">
         <label class="form-label">Number Plate</label>
-        <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value = this.value.replace(/\s/g,'').toUpperCase()">
+        <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()">
       </div>
       <div class="form-field">
         <label class="form-label">Location</label>
@@ -93,7 +93,7 @@
         <textarea class="form-textarea" id="pkComment" placeholder="Any additional details…"></textarea>
       </div>
       <div class="form-field">
-        <label class="form-label">Photo (optional)</label>
+        <label class="form-label">Photos (optional, max 3)</label>
         <div style="display:flex;gap:10px;margin-top:4px">
           <button type="button" id="pkCameraBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
             <span style="font-size:22px">📷</span>
@@ -105,13 +105,9 @@
           </button>
         </div>
         <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
-        <input type="file" id="photoInputFile" accept="image/*" style="display:none">
-        <div id="pkPhotoPreview" style="margin-top:8px;display:none">
-          <div style="position:relative;display:inline-block">
-            <img id="pkPreviewImg" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:cover">
-            <button type="button" onclick="document.getElementById('pkPhotoPreview').style.display='none';document.getElementById('photoInputCamera').value='';document.getElementById('photoInputFile').value='';window._pkSelectedFile=null;" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-          </div>
-        </div>
+        <input type="file" id="photoInputFile" accept="image/*" multiple style="display:none">
+        <div id="pkPhotoPreviewGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+        <div id="pkPhotoCount" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
       </div>
       <button class="btn-report" id="submitReportBtn">🚨 Report Now</button>
     </div>
@@ -188,21 +184,61 @@ document.querySelectorAll('.vio-btn').forEach(btn => {
   });
 });
 
-window._pkSelectedFile = null;
-function pkHandleFile(file) {
-  if (!file) return;
-  window._pkSelectedFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('pkPreviewImg').src = e.target.result;
-    document.getElementById('pkPhotoPreview').style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+const MAX_PHOTOS = 3;
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+window._pkFiles = [];
+
+function pkUpdatePreview() {
+  const grid = document.getElementById('pkPhotoPreviewGrid');
+  const countEl = document.getElementById('pkPhotoCount');
+  grid.innerHTML = '';
+  window._pkFiles.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0';
+      wrap.innerHTML = `
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">
+        <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
+      wrap.querySelector('button').addEventListener('click', () => {
+        window._pkFiles.splice(idx, 1);
+        pkUpdatePreview();
+        pkUpdateButtons();
+      });
+      grid.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+  if (window._pkFiles.length > 0) {
+    countEl.textContent = `${window._pkFiles.length} / ${MAX_PHOTOS} photo${window._pkFiles.length > 1 ? 's' : ''} selected`;
+    countEl.style.display = 'block';
+  } else {
+    countEl.style.display = 'none';
+  }
 }
-document.getElementById('pkCameraBtn').addEventListener('click', () => document.getElementById('photoInputCamera').click());
-document.getElementById('pkFileBtn').addEventListener('click', () => document.getElementById('photoInputFile').click());
-document.getElementById('photoInputCamera').addEventListener('change', e => pkHandleFile(e.target.files[0]));
-document.getElementById('photoInputFile').addEventListener('change', e => pkHandleFile(e.target.files[0]));
+
+function pkUpdateButtons() {
+  const disabled = window._pkFiles.length >= MAX_PHOTOS;
+  document.getElementById('pkCameraBtn').style.opacity = disabled ? '0.4' : '1';
+  document.getElementById('pkFileBtn').style.opacity = disabled ? '0.4' : '1';
+  document.getElementById('pkCameraBtn').disabled = disabled;
+  document.getElementById('pkFileBtn').disabled = disabled;
+}
+
+function pkHandleFiles(files) {
+  for (const file of files) {
+    if (window._pkFiles.length >= MAX_PHOTOS) { showToast(`Max ${MAX_PHOTOS} photos allowed`, true); break; }
+    if (file.size > MAX_SIZE) { showToast(`${file.name} exceeds 5MB`, true); continue; }
+    window._pkFiles.push(file);
+  }
+  pkUpdatePreview();
+  pkUpdateButtons();
+}
+
+document.getElementById('pkCameraBtn').addEventListener('click', () => { if (window._pkFiles.length < MAX_PHOTOS) document.getElementById('photoInputCamera').click(); });
+document.getElementById('pkFileBtn').addEventListener('click', () => { if (window._pkFiles.length < MAX_PHOTOS) document.getElementById('photoInputFile').click(); });
+document.getElementById('photoInputCamera').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
+document.getElementById('photoInputFile').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
 
 document.getElementById('submitReportBtn').addEventListener('click', async () => {
   let plateInput = document.getElementById('plateInput').value.trim();
@@ -210,26 +246,28 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
   const area     = document.getElementById('locationArea').value;
   const bay      = document.getElementById('baySelect').value||'';
   const comment  = document.getElementById('pkComment').value.trim();
-  const fileInput = document.getElementById('photoInputCamera').files[0] ? document.getElementById('photoInputCamera') : document.getElementById('photoInputFile');
-  const file = window._pkSelectedFile || null;
 
   if (!plate)      { showToast('Please enter a number plate', true); return; }
   if (!area)       { showToast('Please select a location', true); return; }
   if (!selectedVio){ showToast('Please select a violation type', true); return; }
 
+  const btn = document.getElementById('submitReportBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  let image_urls = [];
   let image_url = null;
-  if (file) {
-    const fileExt = file.name.split('.').pop().toLowerCase();
-    const fileName = `parking_${Date.now()}_${plate}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-      .from('parking-images')
-      .upload(fileName, file, { upsert: true });
-    if (uploadError) {
-      showToast('Image upload failed. Report not submitted.', true);
-      return;
+
+  if (window._pkFiles.length > 0) {
+    for (const file of window._pkFiles) {
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const safePlate = plate.replace(/[^A-Z0-9]/g, '') || 'unknown';
+      const fileName = `parking_${Date.now()}_${safePlate}_${Math.random().toString(36).slice(2,6)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('parking-images').upload(fileName, file, { upsert: true });
+      if (uploadError) { showToast('Image upload failed', true); btn.disabled=false; btn.textContent='🚨 Report Now'; return; }
+      const { data: urlData } = supabase.storage.from('parking-images').getPublicUrl(fileName);
+      image_urls.push(urlData.publicUrl);
     }
-    const { data: urlData } = supabase.storage.from('parking-images').getPublicUrl(fileName);
-    image_url = urlData.publicUrl;
+    image_url = image_urls[0];
   }
 
   try {
@@ -239,6 +277,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
       violation:selectedVio, 
       comment, 
       image_url,
+      image_urls,
       user_id: user.id,
       reported_by:user.id, 
       reporter_name:name, 
@@ -251,10 +290,13 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     document.getElementById('pkComment').value='';
     document.getElementById('photoInputCamera').value = '';
     document.getElementById('photoInputFile').value = '';
-    window._pkSelectedFile = null;
-    document.getElementById('pkPhotoPreview').style.display = 'none';
+    window._pkFiles = [];
+    document.getElementById('pkPhotoPreviewGrid').innerHTML = '';
+    document.getElementById('pkPhotoCount').style.display = 'none';
     document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
     selectedVio=null;
+    btn.disabled=false; btn.textContent='🚨 Report Now';
+    pkUpdateButtons();
     
     await logActivity('PARKING_REPORTED', prInserted?.id || null);
 
@@ -284,7 +326,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
 
     showToast('Report submitted! All residents have been notified 🚨');
     await loadReports();
-  } catch(e) { showToast(e.message||'Failed to submit', true); }
+  } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.textContent='🚨 Report Now'; }
 });
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
