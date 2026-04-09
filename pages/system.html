@@ -14,43 +14,241 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.card-header{display:flex;flex-direction:column;gap:4px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
-.card-title{font-size:14px;font-weight:600}
-.card-desc{font-size:12px;color:var(--muted)}
-.section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
-.cleanup-body{padding:20px;display:flex;flex-direction:column;gap:20px}
-.cleanup-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.files-found{font-size:13px;color:var(--muted)}
-.files-found span{font-weight:600;color:var(--text)}
-.status-box{padding:10px 14px;background:var(--bg);border:1px solid var(--border-light);border-radius:8px;font-size:13px;color:var(--muted);font-style:italic;min-height:40px;display:flex;align-items:center}
-.status-box.ready{color:var(--text-2);font-style:normal}
-.status-box.loading{color:var(--blue-700);font-style:normal}
-.status-box.success{color:var(--green);font-style:normal}
-.status-box.error{color:var(--red);font-style:normal}
-.cleanup-footer{font-size:11px;color:var(--muted);padding-top:4px;border-top:1px solid var(--border-light)}
-.divider{height:1px;background:var(--border-light)}
-.preview-list{display:flex;flex-direction:column;gap:10px}
-.preview-item{background:var(--bg);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
-.preview-item-row{display:flex;gap:6px;font-size:12px;line-height:1.6}
-.preview-item-label{color:var(--muted);min-width:60px;font-weight:500}
-.preview-item-val{color:var(--text);font-weight:500}
-.preview-files{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light)}
-.preview-files-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
-.preview-file{font-size:11px;color:var(--text-2);padding:2px 0;display:flex;align-items:center;gap:6px}
-.preview-file::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.preview-empty{font-size:13px;color:var(--muted);padding:16px 0;text-align:center}
-.badge-declined{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--red-bg);color:var(--red-text)}
-.badge-expired{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--amber-50);color:var(--amber-900)}
-.badge-removed{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--border-light);color:var(--text-2)}
-.storage-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.storage-stat{background:var(--bg);border:1px solid var(--border-light);border-radius:10px;padding:14px 16px}
-.storage-stat-num{font-size:22px;font-weight:600;letter-spacing:-0.5px;color:var(--text)}
-.storage-stat-label{font-size:11px;color:var(--muted);margin-top:3px}
-@media(max-width:768px){
-  .cleanup-row{flex-direction:column;align-items:flex-start}
-  .cleanup-row .btn-primary,.cleanup-row .btn-danger{width:100%}
-  .storage-stats{grid-template-columns:1fr 1fr}
+.sys-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.sys-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.card.full { grid-column: 1 / -1; }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.card-icon.blue { background: #eff6ff; }
+.card-icon.green { background: #f0fdf4; }
+.card-icon.amber { background: #fffbeb; }
+.card-icon.red { background: #fef2f2; }
+.card-icon.purple { background: #faf5ff; }
+.card-icon.slate { background: #f8fafc; }
+.card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.card-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.card-body { padding: 16px 20px; }
+
+/* Health */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.health-item {
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.health-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.health-val { font-size: 18px; font-weight: 700; color: var(--text); }
+.health-val.ok { color: #16a34a; }
+.health-val.warn { color: #d97706; }
+.health-val.err { color: #dc2626; }
+.health-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  margin-right: 6px;
+  position: relative;
+}
+.pulse.offline { background: #dc2626; }
+.pulse::after {
+  content: '';
+  position: absolute;
+  top: -3px; left: -3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(22,163,74,0.2);
+  animation: pulse 2s infinite;
+}
+.pulse.offline::after { background: rgba(220,38,38,0.2); }
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Stats grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat-item {
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.stat-num { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* DB Table rows */
+.db-table { width: 100%; border-collapse: collapse; }
+.db-table th {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0 0 8px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+.db-table td {
+  padding: 9px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.db-table tbody tr:last-child td { border-bottom: none; }
+.db-table .tbl-name { color: var(--text); font-weight: 500; }
+.db-table .tbl-count { font-weight: 700; color: var(--blue-600); text-align: right; }
+.db-bar-wrap { height: 5px; background: var(--border-light); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.db-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #1e3a8a, #2563eb); transition: width 0.6s ease; }
+
+/* Bucket rows */
+.bucket-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 12px;
+}
+.bucket-row:last-child { border-bottom: none; }
+.bucket-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.bucket-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.bucket-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  white-space: nowrap;
+}
+
+/* Push */
+.push-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+.push-row:last-child { border-bottom: none; }
+.push-role { font-weight: 600; color: var(--text); }
+.push-count { font-weight: 700; color: var(--blue-600); }
+
+/* Junk Cleanup */
+.cleanup-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.files-found { font-size: 13px; color: var(--muted); }
+.files-found span { font-weight: 700; color: var(--text); }
+.status-box {
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+.status-box.ready { color: var(--text-2); font-style: normal; }
+.status-box.loading { color: var(--blue-700); font-style: normal; }
+.status-box.success { color: #16a34a; font-style: normal; }
+.status-box.error { color: #dc2626; font-style: normal; }
+.divider { height: 1px; background: var(--border-light); margin: 14px 0; }
+.preview-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.preview-item { background: var(--bg); border: 1px solid var(--border-light); border-radius: 10px; padding: 12px 14px; }
+.preview-item-row { display: flex; gap: 6px; font-size: 12px; line-height: 1.6; }
+.preview-item-label { color: var(--muted); min-width: 60px; font-weight: 500; }
+.preview-item-val { color: var(--text); font-weight: 500; }
+.preview-files { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light); }
+.preview-files-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.preview-file { font-size: 11px; color: var(--text-2); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.preview-file::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.preview-empty { font-size: 13px; color: var(--muted); padding: 16px 0; text-align: center; }
+.badge-declined { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: #fef2f2; color: #dc2626; }
+.badge-expired { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: #fffbeb; color: #92400e; }
+.badge-removed { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--border-light); color: var(--text-2); }
+
+/* Orphan */
+.orphan-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 12px;
+  gap: 10px;
+}
+.orphan-path { color: var(--text-2); font-family: monospace; word-break: break-all; flex: 1; }
+
+/* Cache */
+.cache-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.cache-label { color: var(--muted); font-size: 12px; }
+.cache-val { font-weight: 700; color: var(--text); font-size: 13px; }
+
+.section-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.cleanup-footer { font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+@media(max-width:768px) {
+  .sys-grid, .sys-grid-3 { grid-template-columns: 1fr; }
+  .card.full { grid-column: auto; }
+  .health-grid { grid-template-columns: 1fr 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -64,97 +262,224 @@
       <div class="section-title">System Management</div>
     </div>
 
-    <!-- Complaint Messages Cleanup -->
-    <div class="card" style="margin-bottom:16px">
+    <!-- Row 1: System Health (full width) -->
+    <div class="card full" style="margin-bottom:16px">
       <div class="card-header">
-        <div class="card-title">Complaint Messages</div>
-        <div class="card-desc">Delete all messages from resident requests</div>
-      </div>
-      <div class="cleanup-body">
-        <div class="cleanup-row">
-          <div class="files-found">Total: <span id="complaintMsgCount">—</span></div>
-          <button class="btn-danger" id="deleteComplaintMsgsBtn">Delete All Messages</button>
-        </div>
-        <div class="status-box ready" id="complaintMsgStatus">Ready</div>
-      </div>
-    </div>
-
-    <!-- Quote Comments Cleanup -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header">
-        <div class="card-title">Quote Comments</div>
-        <div class="card-desc">Delete all comments from quote approvals</div>
-      </div>
-      <div class="cleanup-body">
-        <div class="cleanup-row">
-          <div class="files-found">Total: <span id="quoteCommentCount">—</span></div>
-          <button class="btn-danger" id="deleteQuoteCommentsBtn">Delete All Comments</button>
-        </div>
-        <div class="status-box ready" id="quoteCommentStatus">Ready</div>
-      </div>
-    </div>
-
-    <!-- Junk Cleanup Card -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header">
-        <div class="card-title">Junk Cleanup</div>
-        <div class="card-desc">Remove unused files from declined / expired / removed quotes</div>
-      </div>
-      <div class="cleanup-body">
-
+        <div class="card-icon green">🟢</div>
         <div>
-          <div class="section-label">Scan</div>
-          <div class="cleanup-row">
-            <button class="btn-primary" id="scanBtn">Scan Junk Files</button>
-            <div class="files-found">Files found: <span id="fileCount">—</span></div>
+          <div class="card-title">System Health</div>
+          <div class="card-desc">Live connection status and response time</div>
+        </div>
+        <button class="btn-secondary" id="healthRefreshBtn" style="margin-left:auto;font-size:12px;padding:6px 14px">↻ Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="health-grid" id="healthGrid">
+          <div class="health-item">
+            <div class="health-label">DB Status</div>
+            <div class="health-val" id="healthDbStatus">—</div>
+            <div class="health-sub" id="healthDbSub">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Response Time</div>
+            <div class="health-val" id="healthResponseTime">—</div>
+            <div class="health-sub">milliseconds</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Auth Status</div>
+            <div class="health-val" id="healthAuthStatus">—</div>
+            <div class="health-sub" id="healthAuthSub">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Storage Status</div>
+            <div class="health-val" id="healthStorageStatus">—</div>
+            <div class="health-sub" id="healthStorageSub">Checking...</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Last Checked</div>
+            <div class="health-val" id="healthLastChecked" style="font-size:13px">—</div>
+            <div class="health-sub">Auto on load</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Overall</div>
+            <div class="health-val" id="healthOverall">—</div>
+            <div class="health-sub" id="healthOverallSub">—</div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div id="previewSection" style="display:none">
-          <div class="divider"></div>
+    <!-- Row 2: DB Summary + Push Subscriptions -->
+    <div class="sys-grid">
+
+      <!-- DB Summary -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon blue">🗄️</div>
           <div>
+            <div class="card-title">Database Summary</div>
+            <div class="card-desc">Record count per table</div>
+          </div>
+          <button class="btn-secondary" id="dbRefreshBtn" style="margin-left:auto;font-size:12px;padding:6px 14px">↻</button>
+        </div>
+        <div class="card-body">
+          <div id="dbSummaryContent">
+            <div style="color:var(--muted);font-size:13px">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Push Subscriptions -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon purple">🔔</div>
+          <div>
+            <div class="card-title">Push Subscriptions</div>
+            <div class="card-desc">Users with push notifications enabled</div>
+          </div>
+          <button class="btn-secondary" id="pushRefreshBtn" style="margin-left:auto;font-size:12px;padding:6px 14px">↻</button>
+        </div>
+        <div class="card-body">
+          <div class="stat-grid" style="margin-bottom:14px">
+            <div class="stat-item">
+              <div class="stat-num" id="pushTotalSubs">—</div>
+              <div class="stat-label">Active Subscriptions</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-num" id="pushEnabledUsers">—</div>
+              <div class="stat-label">Push Enabled Users</div>
+            </div>
+          </div>
+          <div id="pushByRole"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Row 3: Storage per Bucket (full width) -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon amber">🪣</div>
+        <div>
+          <div class="card-title">Storage Buckets</div>
+          <div class="card-desc">File count and size per bucket</div>
+        </div>
+        <button class="btn-secondary" id="storageRefreshBtn" style="margin-left:auto;font-size:12px;padding:6px 14px">↻ Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="margin-bottom:16px">
+          <div class="stat-item">
+            <div class="stat-num" id="storageTotalFiles">—</div>
+            <div class="stat-label">Total Files (All Buckets)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num" id="storageTotalSize">—</div>
+            <div class="stat-label">Total Storage Used</div>
+          </div>
+        </div>
+        <div id="bucketList">
+          <div style="color:var(--muted);font-size:13px">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Orphan Files + Cache Control -->
+    <div class="sys-grid">
+
+      <!-- Orphan Files -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon red">👻</div>
+          <div>
+            <div class="card-title">Orphan File Check</div>
+            <div class="card-desc">Storage files not linked to any quote</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn-primary" id="orphanScanBtn">Scan Orphans</button>
+            <div class="files-found">Found: <span id="orphanCount">—</span></div>
+          </div>
+          <div class="status-box ready" id="orphanStatus">Ready to scan</div>
+          <div id="orphanList" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto"></div>
+          <div style="margin-top:12px" id="orphanDeleteWrap" style="display:none">
+            <button class="btn-danger" id="orphanDeleteBtn" style="display:none">Delete Orphan Files</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cache Control -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon slate">⚙️</div>
+          <div>
+            <div class="card-title">Cache Control</div>
+            <div class="card-desc">Service worker and browser cache management</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="cache-info">
+            <div>
+              <div class="cache-label">Current Cache Version</div>
+              <div class="cache-val" id="cacheVersion">—</div>
+            </div>
+          </div>
+          <div class="cache-info">
+            <div>
+              <div class="cache-label">Service Worker</div>
+              <div class="cache-val" id="swStatus">—</div>
+            </div>
+          </div>
+          <div class="cache-info">
+            <div>
+              <div class="cache-label">Cached Items</div>
+              <div class="cache-val" id="cacheItemCount">—</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button class="btn-danger" id="clearCacheBtn">🗑️ Clear Cache</button>
+            <button class="btn-secondary" id="forceUpdateBtn">↻ Force Update</button>
+          </div>
+          <div class="status-box ready" id="cacheStatus" style="margin-top:12px">Ready</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Row 5: Junk Cleanup (full width) -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon red">🗑️</div>
+        <div>
+          <div class="card-title">Junk File Cleanup</div>
+          <div class="card-desc">Remove unused files from declined / expired / removed quotes</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div class="section-label">Scan</div>
+            <div class="cleanup-row">
+              <button class="btn-primary" id="scanBtn">Scan Junk Files</button>
+              <div class="files-found">Files found: <span id="fileCount">—</span></div>
+            </div>
+          </div>
+          <div id="previewSection" style="display:none">
+            <div class="divider"></div>
             <div class="section-label">Junk Quotes</div>
             <div class="preview-list" id="previewList"></div>
           </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div>
-          <div class="section-label">Delete</div>
-          <button class="btn-danger" id="deleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete Junk Files</button>
-        </div>
-
-        <div class="divider"></div>
-
-        <div>
-          <div class="section-label">Status</div>
-          <div class="status-box ready" id="statusBox">Ready</div>
-        </div>
-
-        <div class="cleanup-footer" id="lastCleanup">Last cleanup: —</div>
-
-      </div>
-    </div>
-
-    <!-- Storage Summary Card -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Storage Summary</div>
-        <div class="card-desc">Total files stored in the quotes bucket</div>
-      </div>
-      <div class="cleanup-body">
-        <div class="storage-stats">
-          <div class="storage-stat">
-            <div class="storage-stat-num" id="storageFileCount">—</div>
-            <div class="storage-stat-label">Total Files</div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Delete</div>
+            <button class="btn-danger" id="deleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete Junk Files</button>
           </div>
-          <div class="storage-stat">
-            <div class="storage-stat-num" id="storageTotalSize">—</div>
-            <div class="storage-stat-label">Total Size</div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Status</div>
+            <div class="status-box ready" id="statusBox">Ready</div>
           </div>
+          <div class="cleanup-footer" id="lastCleanup">Last cleanup: —</div>
         </div>
-        <div class="status-box ready" id="storageStatus">Loading...</div>
       </div>
     </div>
 
@@ -171,15 +496,364 @@ const { supabase, user, role } = ctx;
 
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
-let junkFilePaths = [];
-let junkQuoteIds = [];
-
-function setStatus(text, type = 'ready') {
-  const box = document.getElementById('statusBox');
+// ─── HELPERS ─────────────────────────────────────────────────
+function formatSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const mb = bytes / (1024 * 1024);
+  if (mb < 1) return (bytes / 1024).toFixed(1) + ' KB';
+  if (mb < 1024) return mb.toFixed(2) + ' MB';
+  return (mb / 1024).toFixed(2) + ' GB';
+}
+function getFilename(path) {
+  if (!path || typeof path !== 'string') return path;
+  return path.split('/').pop();
+}
+function setStatus(id, text, type = 'ready') {
+  const box = document.getElementById(id);
+  if (!box) return;
   box.textContent = text;
   box.className = 'status-box ' + type;
 }
 
+// ─── 1. SYSTEM HEALTH ────────────────────────────────────────
+async function loadHealth() {
+  const t0 = performance.now();
+  let dbOk = false, authOk = false, storageOk = false;
+
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    dbOk = !error;
+  } catch {}
+  const responseTime = Math.round(performance.now() - t0);
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    authOk = !!session;
+  } catch {}
+
+  try {
+    const { error } = await supabase.storage.from('quotes').list('', { limit: 1 });
+    storageOk = !error;
+  } catch {}
+
+  const dbEl = document.getElementById('healthDbStatus');
+  dbEl.innerHTML = `<span class="pulse ${dbOk ? '' : 'offline'}"></span>${dbOk ? 'Online' : 'Offline'}`;
+  dbEl.className = 'health-val ' + (dbOk ? 'ok' : 'err');
+  document.getElementById('healthDbSub').textContent = dbOk ? 'Connected' : 'Connection failed';
+
+  const rtEl = document.getElementById('healthResponseTime');
+  rtEl.textContent = responseTime + ' ms';
+  rtEl.className = 'health-val ' + (responseTime < 300 ? 'ok' : responseTime < 800 ? 'warn' : 'err');
+
+  const authEl = document.getElementById('healthAuthStatus');
+  authEl.innerHTML = `<span class="pulse ${authOk ? '' : 'offline'}"></span>${authOk ? 'Active' : 'No Session'}`;
+  authEl.className = 'health-val ' + (authOk ? 'ok' : 'warn');
+  document.getElementById('healthAuthSub').textContent = authOk ? 'Session valid' : 'No active session';
+
+  const storEl = document.getElementById('healthStorageStatus');
+  storEl.innerHTML = `<span class="pulse ${storageOk ? '' : 'offline'}"></span>${storageOk ? 'Online' : 'Offline'}`;
+  storEl.className = 'health-val ' + (storageOk ? 'ok' : 'err');
+  document.getElementById('healthStorageSub').textContent = storageOk ? 'Accessible' : 'Access failed';
+
+  document.getElementById('healthLastChecked').textContent = new Date().toLocaleTimeString('en-AU');
+
+  const allOk = dbOk && authOk && storageOk;
+  const overallEl = document.getElementById('healthOverall');
+  overallEl.innerHTML = `<span class="pulse ${allOk ? '' : 'offline'}"></span>${allOk ? 'All Good' : 'Issues Found'}`;
+  overallEl.className = 'health-val ' + (allOk ? 'ok' : 'err');
+  document.getElementById('healthOverallSub').textContent = allOk ? 'All systems operational' : 'Check above';
+}
+document.getElementById('healthRefreshBtn').addEventListener('click', loadHealth);
+
+// ─── 2. DB SUMMARY ───────────────────────────────────────────
+const DB_TABLES = [
+  { key: 'quotes', label: 'Quotes' },
+  { key: 'complaints', label: 'Complaints' },
+  { key: 'parking_reports', label: 'Parking Reports' },
+  { key: 'hvac_requests', label: 'HVAC Requests' },
+  { key: 'occupants', label: 'Occupants' },
+  { key: 'announcements', label: 'Announcements' },
+  { key: 'audit_logs', label: 'Audit Logs' },
+  { key: 'push_subscriptions', label: 'Push Subscriptions' },
+  { key: 'profiles', label: 'Profiles' },
+];
+
+async function loadDbSummary() {
+  const el = document.getElementById('dbSummaryContent');
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px">Loading...</div>';
+
+  const counts = [];
+  for (const t of DB_TABLES) {
+    try {
+      const { count } = await supabase.from(t.key).select('*', { count: 'exact', head: true });
+      counts.push({ label: t.label, count: count ?? 0 });
+    } catch {
+      counts.push({ label: t.label, count: '—' });
+    }
+  }
+
+  const maxCount = Math.max(...counts.map(c => typeof c.count === 'number' ? c.count : 0));
+
+  el.innerHTML = `
+    <table class="db-table">
+      <thead><tr><th>Table</th><th></th><th style="text-align:right">Records</th></tr></thead>
+      <tbody>
+        ${counts.map(c => {
+          const pct = maxCount > 0 && typeof c.count === 'number' ? Math.round((c.count / maxCount) * 100) : 0;
+          return `<tr>
+            <td class="tbl-name" style="width:140px">${c.label}</td>
+            <td style="padding:9px 12px">
+              <div class="db-bar-wrap" style="width:100%;min-width:60px">
+                <div class="db-bar" style="width:${pct}%"></div>
+              </div>
+            </td>
+            <td class="tbl-count">${typeof c.count === 'number' ? c.count.toLocaleString() : c.count}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+document.getElementById('dbRefreshBtn').addEventListener('click', loadDbSummary);
+
+// ─── 3. PUSH SUBSCRIPTIONS ───────────────────────────────────
+async function loadPushStats() {
+  try {
+    const { count: totalSubs } = await supabase.from('push_subscriptions').select('*', { count: 'exact', head: true });
+    document.getElementById('pushTotalSubs').textContent = (totalSubs ?? 0).toLocaleString();
+
+    const { count: enabledUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('push_enabled', true);
+    document.getElementById('pushEnabledUsers').textContent = (enabledUsers ?? 0).toLocaleString();
+
+    const roles = ['admin', 'committee', 'observer', 'owner', 'tenant'];
+    const roleRows = [];
+    for (const r of roles) {
+      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', r).eq('push_enabled', true);
+      roleRows.push({ role: r, count: count ?? 0 });
+    }
+
+    document.getElementById('pushByRole').innerHTML = roleRows.map(r => `
+      <div class="push-row">
+        <span class="push-role">${r.role.charAt(0).toUpperCase() + r.role.slice(1)}</span>
+        <span class="push-count">${r.count} enabled</span>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('pushByRole').innerHTML = '<div style="color:var(--muted);font-size:13px">Failed to load</div>';
+  }
+}
+document.getElementById('pushRefreshBtn').addEventListener('click', loadPushStats);
+
+// ─── 4. STORAGE PER BUCKET ───────────────────────────────────
+const BUCKETS = ['quotes', 'parking-images', 'complaint-images', 'announcements'];
+
+async function listAllFiles(bucket, prefix) {
+  let results = [];
+  let offset = 0;
+  const limit = 1000;
+  while (true) {
+    const { data, error } = await supabase.storage.from(bucket).list(prefix || '', { limit, offset, sortBy: { column: 'name', order: 'asc' } });
+    if (error || !data || !data.length) break;
+    for (const item of data) {
+      const isFile = item.id && item.metadata?.size != null;
+      if (isFile) results.push(item);
+      else {
+        const subPath = prefix ? prefix + '/' + item.name : item.name;
+        const nested = await listAllFiles(bucket, subPath);
+        results = results.concat(nested);
+      }
+    }
+    if (data.length < limit) break;
+    offset += limit;
+  }
+  return results;
+}
+
+async function loadStorageBuckets() {
+  document.getElementById('bucketList').innerHTML = '<div style="color:var(--muted);font-size:13px">Loading...</div>';
+  document.getElementById('storageTotalFiles').textContent = '—';
+  document.getElementById('storageTotalSize').textContent = '—';
+
+  let grandFiles = 0, grandBytes = 0;
+  const bucketData = [];
+
+  for (const b of BUCKETS) {
+    try {
+      const files = await listAllFiles(b, '');
+      const totalBytes = files.reduce((s, f) => s + (f.metadata?.size || 0), 0);
+      grandFiles += files.length;
+      grandBytes += totalBytes;
+      bucketData.push({ name: b, files: files.length, bytes: totalBytes });
+    } catch {
+      bucketData.push({ name: b, files: '—', bytes: 0 });
+    }
+  }
+
+  document.getElementById('storageTotalFiles').textContent = grandFiles.toLocaleString();
+  document.getElementById('storageTotalSize').textContent = formatSize(grandBytes);
+
+  document.getElementById('bucketList').innerHTML = bucketData.map(b => `
+    <div class="bucket-row">
+      <div>
+        <div class="bucket-name">📦 ${b.name}</div>
+        <div class="bucket-meta">${typeof b.files === 'number' ? b.files.toLocaleString() + ' files' : '—'} · ${formatSize(b.bytes)}</div>
+      </div>
+      <span class="bucket-badge">${formatSize(b.bytes)}</span>
+    </div>`).join('');
+}
+document.getElementById('storageRefreshBtn').addEventListener('click', loadStorageBuckets);
+
+// ─── 5. ORPHAN FILES ─────────────────────────────────────────
+let orphanPaths = [];
+
+async function scanOrphans() {
+  const btn = document.getElementById('orphanScanBtn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  setStatus('orphanStatus', 'Scanning storage...', 'loading');
+  document.getElementById('orphanList').innerHTML = '';
+  document.getElementById('orphanDeleteBtn').style.display = 'none';
+  document.getElementById('orphanCount').textContent = '—';
+  orphanPaths = [];
+
+  try {
+    const allFiles = await listAllFiles('quotes', '');
+    const storagePaths = allFiles.map(f => {
+      return f._path || f.name;
+    });
+
+    const { data: quotes } = await supabase.from('quotes').select('id, comment');
+    const dbPaths = new Set();
+    for (const q of quotes || []) {
+      if (!q.comment) continue;
+      let parsed = null;
+      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
+      for (const f of parsed?.files || []) {
+        const p = typeof f === 'string' ? f : f?.path;
+        if (p) dbPaths.add(p);
+      }
+      dbPaths.add(q.id);
+    }
+
+    const { data: storageItems } = await supabase.storage.from('quotes').list('', { limit: 1000 });
+    const folderIds = new Set((storageItems || []).filter(i => !i.metadata).map(i => i.name));
+
+    orphanPaths = [];
+    for (const folderId of folderIds) {
+      if (!dbPaths.has(folderId)) {
+        const files = await listAllFiles('quotes', folderId);
+        for (const f of files) {
+          orphanPaths.push(folderId + '/' + f.name);
+        }
+        if (files.length === 0) orphanPaths.push(folderId + '/');
+      }
+    }
+
+    document.getElementById('orphanCount').textContent = orphanPaths.length;
+
+    if (!orphanPaths.length) {
+      setStatus('orphanStatus', '✓ No orphan files found', 'success');
+      document.getElementById('orphanList').innerHTML = '';
+    } else {
+      setStatus('orphanStatus', `${orphanPaths.length} orphan file(s) found`, 'ready');
+      document.getElementById('orphanList').innerHTML = orphanPaths.map(p => `
+        <div class="orphan-file">
+          <span class="orphan-path">${p}</span>
+        </div>`).join('');
+      document.getElementById('orphanDeleteBtn').style.display = 'inline-flex';
+    }
+  } catch(e) {
+    setStatus('orphanStatus', 'Scan failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scan Orphans';
+  }
+}
+
+async function deleteOrphans() {
+  if (!orphanPaths.length) return;
+  if (!confirm(`Delete ${orphanPaths.length} orphan file(s)? This cannot be undone.`)) return;
+  setStatus('orphanStatus', 'Deleting...', 'loading');
+  try {
+    const { error } = await supabase.storage.from('quotes').remove(orphanPaths.filter(p => !p.endsWith('/')));
+    if (error) throw error;
+    orphanPaths = [];
+    document.getElementById('orphanCount').textContent = '0';
+    document.getElementById('orphanList').innerHTML = '';
+    document.getElementById('orphanDeleteBtn').style.display = 'none';
+    setStatus('orphanStatus', '✓ Orphan files deleted', 'success');
+    showToast('Orphan files deleted ✓');
+    await loadStorageBuckets();
+  } catch(e) {
+    setStatus('orphanStatus', 'Delete failed: ' + e.message, 'error');
+  }
+}
+
+document.getElementById('orphanScanBtn').addEventListener('click', scanOrphans);
+document.getElementById('orphanDeleteBtn').addEventListener('click', deleteOrphans);
+
+// ─── 6. CACHE CONTROL ────────────────────────────────────────
+async function loadCacheInfo() {
+  const CACHE_NAME = 'redmyre-bms-v5';
+  document.getElementById('cacheVersion').textContent = CACHE_NAME;
+
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.getRegistration();
+    document.getElementById('swStatus').textContent = reg ? (reg.active ? 'Active' : 'Registered') : 'Not registered';
+  } else {
+    document.getElementById('swStatus').textContent = 'Not supported';
+  }
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    let total = 0;
+    for (const key of keys) {
+      const cache = await caches.open(key);
+      const items = await cache.keys();
+      total += items.length;
+    }
+    document.getElementById('cacheItemCount').textContent = total + ' items';
+  } else {
+    document.getElementById('cacheItemCount').textContent = 'N/A';
+  }
+}
+
+document.getElementById('clearCacheBtn').addEventListener('click', async () => {
+  setStatus('cacheStatus', 'Clearing cache...', 'loading');
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    setStatus('cacheStatus', '✓ Cache cleared', 'success');
+    showToast('Cache cleared ✓');
+    await loadCacheInfo();
+  } catch(e) {
+    setStatus('cacheStatus', 'Failed: ' + e.message, 'error');
+  }
+});
+
+document.getElementById('forceUpdateBtn').addEventListener('click', async () => {
+  setStatus('cacheStatus', 'Forcing update...', 'loading');
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+    setStatus('cacheStatus', '✓ Update triggered — reloading...', 'success');
+    setTimeout(() => window.location.reload(true), 1200);
+  } catch(e) {
+    setStatus('cacheStatus', 'Failed: ' + e.message, 'error');
+  }
+});
+
+// ─── 7. JUNK CLEANUP ─────────────────────────────────────────
+let junkFilePaths = [];
+let junkQuoteIds = [];
+
+function setJunkStatus(text, type = 'ready') {
+  const box = document.getElementById('statusBox');
+  box.textContent = text;
+  box.className = 'status-box ' + type;
+}
 function setDeleteBtn(enabled) {
   const btn = document.getElementById('deleteBtn');
   btn.disabled = !enabled;
@@ -187,29 +861,15 @@ function setDeleteBtn(enabled) {
   btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
-function getFilename(path) {
-  if (!path || typeof path !== 'string') return path;
-  return path.split('/').pop();
-}
-
-function formatSize(bytes) {
-  const mb = bytes / (1024 * 1024);
-  if (mb < 1024) return mb.toFixed(2) + ' MB';
-  return (mb / 1024).toFixed(2) + ' GB';
-}
-
 function renderPreview(quotes) {
   const section = document.getElementById('previewSection');
   const list = document.getElementById('previewList');
-
   if (!quotes || !quotes.length) {
     section.style.display = 'block';
     list.innerHTML = '<div class="preview-empty">No junk quotes found</div>';
     return;
   }
-
   const badgeClass = { declined: 'badge-declined', expired: 'badge-expired', removed: 'badge-removed' };
-
   list.innerHTML = quotes.map(q => {
     let parsed = null;
     try { parsed = q.comment ? (typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment) : null; } catch {}
@@ -218,242 +878,108 @@ function renderPreview(quotes) {
     const vendor = q.vendor || '—';
     const shortId = q.id ? q.id.slice(0, 8) : '—';
     const badge = badgeClass[q.status] || 'badge-removed';
-
     const filesHtml = files.length
-      ? `<div class="preview-files">
-          <div class="preview-files-label">Files</div>
-          ${files.map(f => {
-            const name = getFilename(typeof f === 'string' ? f : f?.path);
-            return `<div class="preview-file">${name || '—'}</div>`;
-          }).join('')}
-        </div>`
-      : `<div class="preview-files"><div class="preview-files-label" style="color:var(--muted)">Files</div><div class="preview-file" style="color:var(--muted)">No files</div></div>`;
-
-    return `
-      <div class="preview-item">
-        <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
-        <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
-        <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:11px">${shortId}</span></div>
-        <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
-        ${filesHtml}
-      </div>`;
+      ? `<div class="preview-files"><div class="preview-files-label">Files</div>${files.map(f => `<div class="preview-file">${getFilename(typeof f === 'string' ? f : f?.path) || '—'}</div>`).join('')}</div>`
+      : `<div class="preview-files"><div class="preview-files-label" style="color:var(--muted)">No files</div></div>`;
+    return `<div class="preview-item">
+      <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
+      <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
+      <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:11px">${shortId}</span></div>
+      <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
+      ${filesHtml}
+    </div>`;
   }).join('');
-
   section.style.display = 'block';
 }
 
-async function scanJunkFiles() {
+document.getElementById('scanBtn').addEventListener('click', async () => {
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = true;
   scanBtn.textContent = 'Scanning…';
-  setStatus('Scanning...', 'loading');
+  setJunkStatus('Scanning...', 'loading');
   setDeleteBtn(false);
   document.getElementById('fileCount').textContent = '—';
   document.getElementById('previewSection').style.display = 'none';
   junkFilePaths = [];
   junkQuoteIds = [];
-
   try {
-    const { data: quotes, error } = await supabase
-      .from('quotes')
-      .select('id, status, comment, work_status, completion_date, project, project_title, vendor')
-      .in('status', ['declined', 'expired', 'removed'])
-      .is('work_status', null)
-      .is('completion_date', null);
-
+    const { data: quotes, error } = await supabase.from('quotes').select('id, status, comment, work_status, completion_date, project, project_title, vendor').in('status', ['declined', 'expired', 'removed']).is('work_status', null).is('completion_date', null);
     if (error) throw error;
-
     if (!quotes || !quotes.length) {
       document.getElementById('fileCount').textContent = '0';
-      setStatus('No junk files found.', 'ready');
-      setDeleteBtn(false);
+      setJunkStatus('No junk files found.', 'ready');
       renderPreview([]);
       return;
     }
-
-    junkFilePaths = [];
-    junkQuoteIds = [];
-
     for (const q of quotes) {
       junkQuoteIds.push(q.id);
       if (!q.comment) continue;
       let parsed = null;
       try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
-      if (!parsed) continue;
-      const files = parsed.files;
-      if (!files || !Array.isArray(files)) continue;
-      for (const f of files) {
+      for (const f of parsed?.files || []) {
         if (f && typeof f === 'string') junkFilePaths.push(f);
         else if (f && f.path) junkFilePaths.push(f.path);
       }
     }
-
     document.getElementById('fileCount').textContent = junkFilePaths.length;
     renderPreview(quotes);
-
     if (junkQuoteIds.length === 0) {
-      setStatus('No junk records found.', 'ready');
-      setDeleteBtn(false);
+      setJunkStatus('No junk records found.', 'ready');
     } else {
-      setStatus(`${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} (${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}) ready for deletion.`, 'ready');
+      setJunkStatus(`${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} (${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}) ready for deletion.`, 'ready');
       setDeleteBtn(true);
     }
-
-  } catch (e) {
-    console.error('Scan error:', e);
-    setStatus('Error occurred', 'error');
+  } catch(e) {
+    setJunkStatus('Error occurred', 'error');
     showToast('Scan failed', true);
   } finally {
     scanBtn.disabled = false;
     scanBtn.textContent = 'Scan Junk Files';
   }
-}
+});
 
-async function deleteJunkFiles() {
+document.getElementById('deleteBtn').addEventListener('click', async () => {
   if (!junkQuoteIds.length) return;
-  if (!confirm(`Delete ${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} and ${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}?\nThis action cannot be undone.`)) return;
-
+  if (!confirm(`Delete ${junkQuoteIds.length} quote(s) and ${junkFilePaths.length} file(s)?\nThis cannot be undone.`)) return;
   const deleteBtn = document.getElementById('deleteBtn');
   const scanBtn = document.getElementById('scanBtn');
   deleteBtn.disabled = true;
   deleteBtn.style.opacity = '0.45';
-  deleteBtn.style.cursor = 'not-allowed';
   scanBtn.disabled = true;
-  setStatus('Deleting...', 'loading');
-
+  setJunkStatus('Deleting...', 'loading');
   try {
     if (junkFilePaths.length > 0) {
-      const { error: storageError } = await supabase.storage
-        .from('quotes')
-        .remove(junkFilePaths);
-      if (storageError) throw storageError;
+      const { error } = await supabase.storage.from('quotes').remove(junkFilePaths);
+      if (error) throw error;
     }
-
-    const { error: dbError } = await supabase
-      .from('quotes')
-      .delete()
-      .in('id', junkQuoteIds);
+    const { error: dbError } = await supabase.from('quotes').delete().in('id', junkQuoteIds);
     if (dbError) throw dbError;
-
-    const now = new Date();
-    document.getElementById('lastCleanup').textContent =
-      'Last cleanup: ' + now.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-
+    document.getElementById('lastCleanup').textContent = 'Last cleanup: ' + new Date().toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
     junkFilePaths = [];
     junkQuoteIds = [];
     document.getElementById('fileCount').textContent = '0';
     document.getElementById('previewSection').style.display = 'none';
-    setStatus('Cleanup complete ✓', 'success');
+    setJunkStatus('Cleanup complete ✓', 'success');
     setDeleteBtn(false);
     showToast('Cleanup complete ✓');
-    await loadStorageSummary();
-
-  } catch (e) {
-    console.error('Delete error:', e);
-    setStatus('Error occurred', 'error');
+    await loadStorageBuckets();
+  } catch(e) {
+    setJunkStatus('Error occurred', 'error');
     showToast('Delete failed', true);
     setDeleteBtn(true);
   } finally {
     scanBtn.disabled = false;
   }
-}
-
-async function loadStorageSummary() {
-  const statusEl = document.getElementById('storageStatus');
-  const countEl = document.getElementById('storageFileCount');
-  const sizeEl = document.getElementById('storageTotalSize');
-
-  statusEl.textContent = 'Loading...';
-  statusEl.className = 'status-box loading';
-
-  try {
-    async function listAllFiles(prefix) {
-      let results = [];
-      let offset = 0;
-      const limit = 1000;
-      while (true) {
-        const listPath = prefix || undefined;
-        const { data, error } = await supabase.storage
-          .from('quotes')
-          .list(listPath, { limit, offset, sortBy: { column: 'name', order: 'asc' } });
-        if (error) throw error;
-        if (!data || !data.length) break;
-        for (const item of data) {
-          const isFile = item.id && item.metadata != null && item.metadata.size != null;
-          if (isFile) {
-            results.push(item);
-          } else {
-            const subPath = prefix ? prefix + '/' + item.name : item.name;
-            const nested = await listAllFiles(subPath);
-            results = results.concat(nested);
-          }
-        }
-        if (data.length < limit) break;
-        offset += limit;
-      }
-      return results;
-    }
-
-    const allFiles = await listAllFiles(null);
-    const totalFiles = allFiles.length;
-    const totalBytes = allFiles.reduce((sum, f) => sum + (f.metadata?.size || 0), 0);
-
-    countEl.textContent = totalFiles.toLocaleString();
-    sizeEl.textContent = formatSize(totalBytes);
-    statusEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString('en-AU');
-    statusEl.className = 'status-box ready';
-
-  } catch (e) {
-    console.error('Storage summary error:', e);
-    statusEl.textContent = 'Failed to load storage info';
-    statusEl.className = 'status-box error';
-  }
-}
-
-document.getElementById('scanBtn').addEventListener('click', scanJunkFiles);
-document.getElementById('deleteBtn').addEventListener('click', deleteJunkFiles);
-
-// Complaint Messages
-async function loadComplaintMsgCount() {
-  const { count } = await supabase.from('complaint_messages').select('*', { count: 'exact', head: true });
-  document.getElementById('complaintMsgCount').textContent = count ?? '0';
-}
-
-document.getElementById('deleteComplaintMsgsBtn').addEventListener('click', async () => {
-  const count = document.getElementById('complaintMsgCount').textContent;
-  if (!confirm(`Delete all ${count} complaint messages? This cannot be undone.`)) return;
-  const status = document.getElementById('complaintMsgStatus');
-  status.textContent = 'Deleting...'; status.className = 'status-box loading';
-  try {
-    await supabase.from('complaint_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    status.textContent = 'Deleted ✓'; status.className = 'status-box success';
-    showToast('Complaint messages deleted ✓');
-    await loadComplaintMsgCount();
-  } catch(e) { status.textContent = 'Error'; status.className = 'status-box error'; showToast('Failed', true); }
 });
 
-// Quote Comments
-async function loadQuoteCommentCount() {
-  const { count } = await supabase.from('quote_comments').select('*', { count: 'exact', head: true });
-  document.getElementById('quoteCommentCount').textContent = count ?? '0';
-}
-
-document.getElementById('deleteQuoteCommentsBtn').addEventListener('click', async () => {
-  const count = document.getElementById('quoteCommentCount').textContent;
-  if (!confirm(`Delete all ${count} quote comments? This cannot be undone.`)) return;
-  const status = document.getElementById('quoteCommentStatus');
-  status.textContent = 'Deleting...'; status.className = 'status-box loading';
-  try {
-    await supabase.from('quote_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    status.textContent = 'Deleted ✓'; status.className = 'status-box success';
-    showToast('Quote comments deleted ✓');
-    await loadQuoteCommentCount();
-  } catch(e) { status.textContent = 'Error'; status.className = 'status-box error'; showToast('Failed', true); }
-});
-
-await loadComplaintMsgCount();
-await loadQuoteCommentCount();
-await loadStorageSummary();
+// ─── INIT ─────────────────────────────────────────────────────
+await Promise.all([
+  loadHealth(),
+  loadDbSummary(),
+  loadPushStats(),
+  loadStorageBuckets(),
+  loadCacheInfo(),
+]);
 </script>
 </body>
 </html>
