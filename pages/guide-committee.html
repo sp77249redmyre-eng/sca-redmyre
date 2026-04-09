@@ -686,12 +686,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
 <button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 function goTo(id){
   const el=document.getElementById(id);
   if(!el)return;
   const top=el.getBoundingClientRect().top+window.scrollY-60;
   window.scrollTo({top,behavior:'smooth'});
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const btn=document.querySelector(`.nav-item[onclick="goTo('${id}')"]`);
+  if(btn)btn.classList.add('active');
 }
 const sections=['cover','roles','login','announcements','parking','complaints','hvac','history','emergency','works','occupants','quotes','reports','cost','faq'];
 window.addEventListener('scroll',()=>{
@@ -699,4 +702,13 @@ window.addEventListener('scroll',()=>{
   sections.forEach(id=>{
     const el=document.getElementById(id);
     if(el&&pos>=el.offsetTop){
-      documen
+      document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+      const btn=document.querySelector(`.nav-item[onclick="goTo('${id}')"]`);
+      if(btn)btn.classList.add('active');
+    }
+  });
+});
+
+</script>
+</body>
+</html>

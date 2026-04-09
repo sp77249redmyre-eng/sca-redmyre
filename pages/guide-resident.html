@@ -1199,8 +1199,29 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
 <button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-function scrollTo(id){
+<script>
+function scrollToSection(id){
   const el=document.getElementById(id);
-  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
-  document.querySelectorAll('.nav-item').forEach(i=>i.classList.
+  if(!el)return;
+  const top=el.getBoundingClientRect().top+window.scrollY-60;
+  window.scrollTo({top,behavior:'smooth'});
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const btn=document.querySelector(`.nav-item[onclick="scrollToSection('${id}')"]`);
+  if(btn)btn.classList.add('active');
+}
+const sections=['cover','why','login','dashboard','announcements','parking','complaints','hvac','emergency','works','occupants','faq'];
+window.addEventListener('scroll',()=>{
+  const pos=window.scrollY+120;
+  sections.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&pos>=el.offsetTop){
+      document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+      const btn=document.querySelector(`.nav-item[onclick="scrollToSection('${id}')"]`);
+      if(btn)btn.classList.add('active');
+    }
+  });
+});
+
+</script>
+</body>
+</html>
