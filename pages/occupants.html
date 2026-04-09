@@ -15,7 +15,8 @@
 <link rel="stylesheet" href="/css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-.content { padding: 24px; max-width: 1100px; }
+.content { padding: 24px; max-width: 100%; }
+.search-table-wrap { overflow-x: auto; }
 
 /* Suite Tabs */
 .suite-tabs {
@@ -652,6 +653,13 @@ async function loadOccupants() {
   
   allOccupants = data || [];
 
+  // profiles email → role 맵 생성
+  const { data: profilesData } = await supabase.from('profiles').select('email, role');
+  window._profileRoleMap = {};
+  (profilesData || []).forEach(p => {
+    if (p.email) window._profileRoleMap[p.email.toLowerCase()] = p.role;
+  });
+
   // primary_email 기준 본인 소유 유닛 세팅 (committee/owner)
   if (myEmail && ['admin','committee','owner'].includes(role)) {
     myOwnedUnits = new Set(
@@ -1082,9 +1090,28 @@ function renderSearchResults(results) {
           </div>
         </td>
         <td>
+          <div class="edit-cell ${!o.business_email?'empty':''}" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)">
+            ${o.business_email || 'Add email…'}
+          </div>
+        </td>
+        <td>
           <div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">
             ${o.phone || 'Add phone…'}
           </div>
+        </td>
+        <td>
+          ${(() => {
+            const email = (o.primary_email || '').toLowerCase();
+            const r = window._profileRoleMap?.[email];
+            if (o.is_committee) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>';
+            if (r === 'admin') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#991b1b">admin</span>';
+            if (r === 'owner') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>';
+            if (r === 'observer') return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f1f5f9;color:#475569">observer</span>';
+            const bizEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase());
+            const hasTenant = bizEmails.some(e => window._profileRoleMap?.[e] === 'tenant');
+            if (hasTenant) return '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>';
+            return '<span style="font-size:11px;color:var(--muted)">—</span>';
+          })()}
         </td>
         <td>
           <div class="plate-badges" id="plates-${o.id}">
@@ -1107,7 +1134,9 @@ function renderSearchResults(results) {
             <th>Business Name</th>
             <th>Contact</th>
             <th>Primary Email</th>
+            <th>Business Email</th>
             <th>Phone</th>
+            <th>Role</th>
             <th>Vehicles</th>
             <th>Actions</th>
           </tr>
