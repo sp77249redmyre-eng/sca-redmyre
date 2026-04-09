@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Committee Guide – Redmyre House BMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c8102e;
+  --blue-900:#0f2456;
+  --blue-800:#1e3a8a;
+  --blue-600:#2563eb;
+  --blue-50:#eff6ff;
+  --bg:#f0f4f8;
+  --surface:#fff;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --text-2:#475569;
+  --muted:#94a3b8;
+  --green:#10b981;
+  --yellow:#f59e0b;
+  --purple:#7c3aed;
+  --purple-bg:#ede9fe;
+  --sidebar-w:240px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.guide-nav{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#0a1628;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.nav-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo-box{background:#fff;border-radius:10px;padding:10px 16px;display:inline-block;margin-bottom:12px}
+.nav-badge{display:inline-block;padding:4px 12px;border-radius:20px;background:rgba(124,58,237,0.2);color:#a78bfa;font-size:11px;font-weight:600;letter-spacing:0.05em}
+.nav-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;padding:20px 20px 8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);text-decoration:none;transition:all 0.15s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover,.nav-item.active{color:#fff;background:rgba(255,255,255,0.07)}
+.nav-item.active{border-left:3px solid var(--purple);color:#fff}
+.nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.nav-new{display:inline-block;padding:2px 7px;border-radius:10px;background:rgba(124,58,237,0.3);color:#c4b5fd;font-size:10px;font-weight:700;margin-left:auto}
+.nav-footer{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08)}
+.nav-footer-text{font-size:11px;color:rgba(255,255,255,0.3);line-height:1.6}
+
+.guide-main{margin-left:var(--sidebar-w);min-height:100vh}
+
+.cover{background:linear-gradient(160deg,#0a1628 0%,#1e1458 50%,#3730a3 100%);padding:80px 60px;position:relative;overflow:hidden}
+.cover::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;border:1px solid rgba(255,255,255,0.05);top:-200px;right:-200px}
+.cover-inner{position:relative;z-index:1;max-width:700px}
+.cover-logo{background:#fff;border-radius:12px;padding:12px 20px;display:inline-block;margin-bottom:28px}
+.cover-tag{display:inline-block;padding:6px 16px;border-radius:20px;background:rgba(167,139,250,0.2);color:#c4b5fd;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:20px}
+.cover-title{font-family:'DM Serif Display',serif;font-size:52px;color:#fff;line-height:1.1;margin-bottom:16px;letter-spacing:-1px}
+.cover-sub{font-size:17px;color:rgba(255,255,255,0.7);line-height:1.7;margin-bottom:40px;max-width:560px}
+.cover-cards{display:flex;gap:16px;flex-wrap:wrap}
+.cover-card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.cover-card-icon{font-size:24px}
+.cover-card-text{font-size:13px;color:rgba(255,255,255,0.9);font-weight:500}
+
+.section{padding:56px 60px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:var(--purple-bg);color:var(--purple);font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:16px}
+.section-title{font-family:'DM Serif Display',serif;font-size:34px;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px}
+.section-sub{font-size:15px;color:var(--text-2);line-height:1.7;max-width:680px;margin-bottom:40px}
+
+.page-header{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border)}
+.page-icon-wrap{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.page-name{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.page-desc{font-size:13px;color:var(--text-2);line-height:1.5}
+.page-url{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--blue-600);text-decoration:none;font-weight:600;margin-top:6px}
+.page-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-bottom:28px}
+
+.bms-mock{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.bms-mock-header{background:linear-gradient(135deg,var(--blue-900),var(--blue-800));padding:10px 16px;display:flex;align-items:center;gap:8px}
+.bms-mock-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.8)}
+.bms-mock-body{padding:16px}
+
+.callout{display:flex;gap:14px;padding:18px 20px;border-radius:12px;margin:20px 0}
+.callout.tip{background:#f0fdf4;border:1px solid #bbf7d0}
+.callout.info{background:var(--blue-50);border:1px solid #bfdbfe}
+.callout.warn{background:#fffbeb;border:1px solid #fde68a}
+.callout.purple{background:var(--purple-bg);border:1px solid #ddd6fe}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.callout-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.callout-text{font-size:13px;color:var(--text-2);line-height:1.6}
+
+.feat-table{width:100%;border-collapse:collapse;margin:20px 0}
+.feat-table th{background:var(--bg);padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border)}
+.feat-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-2);vertical-align:top}
+.feat-table tr:last-child td{border-bottom:none}
+.feat-table td:first-child{font-weight:600;color:var(--text);width:200px}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-yellow{background:#fef9c3;color:#a16207}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-gray{background:#f1f5f9;color:#475569}
+.badge-purple{background:var(--purple-bg);color:var(--purple)}
+
+.scenario{background:linear-gradient(135deg,#faf5ff,var(--purple-bg));border:1px solid #ddd6fe;border-radius:14px;padding:24px;margin:20px 0}
+.scenario-label{font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px}
+.scenario-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
+.scenario-steps{display:flex;flex-direction:column;gap:8px}
+.sc-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-2);line-height:1.6}
+.sc-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;background:var(--purple);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+
+.vote-result-box{border-radius:12px;padding:20px;margin:16px 0;text-align:center}
+.vote-result-box.approved{background:#f0fdf4;border:2px solid #86efac}
+.vote-result-box.declined{background:#fef2f2;border:2px solid #fca5a5}
+.vote-result-box.hold{background:#fffbeb;border:2px solid #fde68a}
+.vote-result-num{font-size:32px;font-weight:800;margin-bottom:4px}
+.vote-result-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+
+.card-mock{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+.card-mock-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-mock-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-mock-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.card-mock-body{font-size:12px;color:var(--text-2);line-height:1.6}
+
+.filter-mock{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
+.filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:var(--surface)}
+.filter-chip.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+
+.fm-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px}
+.fm-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);background:var(--bg)}
+.fm-btn{padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;color:#fff;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));display:inline-flex;align-items:center;justify-content:center;gap:6px}
+
+.role-only-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:var(--purple-bg);color:var(--purple);font-size:11px;font-weight:700;margin-bottom:16px}
+
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.faq-q{padding:18px 20px;font-size:14px;font-weight:600;color:var(--text)}
+.faq-a{padding:0 20px 18px;font-size:13px;color:var(--text-2);line-height:1.7;border-top:1px solid var(--border);padding-top:14px}
+
+.print-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;margin-top:8px}
+.scroll-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;border-radius:50%;background:var(--purple);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:50}
+
+@media(max-width:900px){.guide-nav{display:none}.guide-main{margin-left:0}.cover{padding:40px 24px}.cover-title{font-size:36px}.section{padding:40px 24px}.page-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAV -->
+<nav class="guide-nav">
+  <div class="nav-logo">
+    <div class="logo-box">
+      <svg width="130" height="42" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+        <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+        <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+        <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+      </svg>
+    </div>
+    <div><span class="nav-badge">📗 Committee Guide</span></div>
+  </div>
+
+  <div class="nav-title">Getting Started</div>
+  <button class="nav-item" onclick="goTo('cover')"><span class="nav-icon">🏠</span>Welcome</button>
+  <button class="nav-item" onclick="goTo('roles')"><span class="nav-icon">👥</span>Roles explained</button>
+  <button class="nav-item" onclick="goTo('login')"><span class="nav-icon">🔐</span>Logging in</button>
+
+  <div class="nav-title">All Pages</div>
+  <button class="nav-item" onclick="goTo('announcements')"><span class="nav-icon">📢</span>Announcements</button>
+  <button class="nav-item" onclick="goTo('parking')"><span class="nav-icon">🚗</span>Parking / Towing</button>
+  <button class="nav-item" onclick="goTo('complaints')"><span class="nav-icon">📬</span>Resident Requests</button>
+  <button class="nav-item" onclick="goTo('hvac')"><span class="nav-icon">❄️</span>A/C Temperature</button>
+  <button class="nav-item" onclick="goTo('history')"><span class="nav-icon">🌡️</span>Temperature History</button>
+  <button class="nav-item" onclick="goTo('emergency')"><span class="nav-icon">📞</span>Emergency Contacts</button>
+  <button class="nav-item" onclick="goTo('works')"><span class="nav-icon">🔧</span>Ongoing Works</button>
+  <button class="nav-item" onclick="goTo('occupants')"><span class="nav-icon">🏢</span>Occupant Details</button>
+
+  <div class="nav-title">Committee Only</div>
+  <button class="nav-item" onclick="goTo('quotes')"><span class="nav-icon">💰</span>Quote Approvals <span class="nav-new">KEY</span></button>
+  <button class="nav-item" onclick="goTo('reports')"><span class="nav-icon">📊</span>Completed Works</button>
+  <button class="nav-item" onclick="goTo('cost')"><span class="nav-icon">💹</span>Cost Analysis</button>
+
+  <div class="nav-title">Help</div>
+  <button class="nav-item" onclick="goTo('faq')"><span class="nav-icon">❓</span>FAQ</button>
+
+  <div class="nav-footer">
+    <div class="nav-footer-text">SCA Facility Management<br>Redmyre House · SP 77249<br>9–13 Redmyre Rd, Strathfield</div>
+  </div>
+</nav>
+
+<main class="guide-main">
+
+  <!-- COVER -->
+  <div class="cover" id="cover">
+    <div class="cover-inner">
+      <div class="cover-logo">
+        <svg width="160" height="52" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+          <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+          <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+          <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+        </svg>
+      </div>
+      <div class="cover-tag">📗 Committee &amp; Observer Guide</div>
+      <h1 class="cover-title">Committee<br>Member Guide</h1>
+      <p class="cover-sub">This guide covers everything committee members need to know — from reviewing resident requests to voting on quotes and tracking building costs. This is a restricted guide for committee and observer access only.</p>
+      <div class="cover-cards">
+        <div class="cover-card"><div class="cover-card-icon">🏢</div><div class="cover-card-text">Redmyre House<br><span style="opacity:0.7;font-size:11px">SP 77249 · Strathfield</span></div></div>
+        <div class="cover-card"><div class="cover-card-icon">🔒</div><div class="cover-card-text">Committee &amp; Observer Only<br><span style="opacity:0.7;font-size:11px">Restricted access</span></div></div>
+        <div class="cover-card"><div class="cover-card-icon">🗳️</div><div class="cover-card-text">Includes Quote Voting<br><span style="opacity:0.7;font-size:11px">Approve · Decline · Hold</span></div></div>
+      </div>
+      <div style="margin-top:28px">
+        <button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLES -->
+  <div class="section" id="roles">
+    <div class="section-tag">👥 Roles</div>
+    <h2 class="section-title">Understanding roles</h2>
+    <p class="section-sub">The BMS has different roles with different access levels. Here's what each role can do.</p>
+    <table class="feat-table">
+      <thead><tr><th>Role</th><th>Who</th><th>Can vote on quotes?</th><th>Can see Cost Analysis?</th><th>Can manage users?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-red">Admin</span></td>
+          <td>Building Manager (Jacob)</td>
+          <td>✅ Yes</td><td>✅ Yes</td><td>✅ Yes — full control</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">Committee</span></td>
+          <td>Elected committee members</td>
+          <td>✅ Yes — Approve / Decline / Hold</td><td>✅ Yes</td><td>❌ No</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-gray">Observer</span></td>
+          <td>Observers / Advisors</td>
+          <td>👁️ View only (no vote)</td><td>✅ Yes</td><td>❌ No</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Owner</span></td>
+          <td>Unit owners</td>
+          <td>❌ No</td><td>❌ No</td><td>❌ No</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-gray">Tenant</span></td>
+          <td>Tenants / Business occupants</td>
+          <td>❌ No</td><td>❌ No</td><td>❌ No</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout purple">
+      <div class="callout-icon">🔒</div>
+      <div>
+        <div class="callout-title">Observer note</div>
+        <div class="callout-text">Observers can see all committee pages but <strong>cannot cast votes</strong> on quote approvals. Everything else is the same as committee access.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="section" id="login">
+    <div class="section-tag">🔐 Access</div>
+    <h2 class="section-title">Logging in</h2>
+    <p class="section-sub">Committee members are invited manually by the building manager. Your access is set up with committee-level permissions from the start.</p>
+    <div class="callout info">
+      <div class="callout-icon">📧</div>
+      <div>
+        <div class="callout-title">Invitation process</div>
+        <div class="callout-text">You'll receive a direct invitation from Jacob Kim. Contact him at <strong>0478 705 406</strong> if you haven't received yours. Committee accounts are set up manually — not via the bulk invite system.</div>
+      </div>
+    </div>
+    <div class="callout tip">
+      <div class="callout-icon">💡</div>
+      <div>
+        <div class="callout-title">Enable push notifications</div>
+        <div class="callout-text">As a committee member, you'll receive push and email notifications when voting starts and when quotes are confirmed. Enable notifications via the 🔕 button in the top bar after logging in.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARED PAGES HEADER -->
+  <div class="section" id="shared-pages">
+    <div class="section-tag">📄 All Pages</div>
+    <h2 class="section-title">Pages you share with residents</h2>
+    <p class="section-sub">Committee members have access to all resident pages plus committee-exclusive pages. The resident pages work the same way — refer to the Resident Guide for full details. Below is a quick summary.</p>
+  </div>
+
+  <!-- ANNOUNCEMENTS -->
+  <div class="section" id="announcements" style="padding-top:0;border-top:none">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#fef9c3">📢</div>
+      <div>
+        <div class="page-name">Announcements</div>
+        <div class="page-desc">Read all building announcements — same as residents</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/announcements.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">Committee members can read all announcements. Only the Admin (Jacob) can post new announcements.</p>
+  </div>
+
+  <!-- PARKING -->
+  <div class="section" id="parking">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#fee2e2">🚗</div>
+      <div>
+        <div class="page-name">Parking / Towing</div>
+        <div class="page-desc">Report and view unauthorised parking incidents</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/parking.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">Same as resident access. You can report illegal parking and view all active and resolved incidents.</p>
+  </div>
+
+  <!-- COMPLAINTS -->
+  <div class="section" id="complaints">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#dbeafe">📬</div>
+      <div>
+        <div class="page-name">Resident Requests</div>
+        <div class="page-desc">View all resident maintenance requests and complaints</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/complaints.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:16px">Committee members can view all requests from all residents. This gives you full visibility on building issues. Only Admin can respond to requests.</p>
+    <div class="callout info">
+      <div class="callout-icon">👁️</div>
+      <div>
+        <div class="callout-title">View all requests</div>
+        <div class="callout-text">Unlike residents who only see their own requests, committee members can see every request submitted by any resident in the building.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HVAC -->
+  <div class="section" id="hvac">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#dbeafe">❄️</div>
+      <div>
+        <div class="page-name">A/C Temperature Request</div>
+        <div class="page-desc">View all temperature requests from residents</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/hvac.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">You can view all HVAC requests. Only Admin can approve or decline them.</p>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="history">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#ede9fe">🌡️</div>
+      <div>
+        <div class="page-name">Temperature History</div>
+        <div class="page-desc">View historical HVAC temperature logs for the building</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/history.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <div class="role-only-tag">🔒 Committee &amp; Observer only</div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">This page shows a historical log of all temperature readings and adjustments in the building. Useful for understanding patterns and tracking HVAC performance over time.</p>
+  </div>
+
+  <!-- EMERGENCY -->
+  <div class="section" id="emergency">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#fee2e2">📞</div>
+      <div>
+        <div class="page-name">Emergency Contacts</div>
+        <div class="page-desc">Building emergency contact directory</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/emergency.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">All critical emergency contacts for the building. Always available — no login required in an emergency.</p>
+  </div>
+
+  <!-- WORKS -->
+  <div class="section" id="works">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#dcfce7">🔧</div>
+      <div>
+        <div class="page-name">Ongoing Works</div>
+        <div class="page-desc">View all current building works and maintenance</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/works.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7">Same as resident view — see all active works including status, vendor, timeline, and notes. Admin can update statuses and mark jobs as complete.</p>
+  </div>
+
+  <!-- OCCUPANTS -->
+  <div class="section" id="occupants">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#ede9fe">🏢</div>
+      <div>
+        <div class="page-name">Occupant Details</div>
+        <div class="page-desc">Building directory and unit information</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/occupants.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:16px">Committee members can view the full building directory including all unit details and contact emails. You can also edit details for units you own.</p>
+    <div class="callout info">
+      <div class="callout-icon">✏️</div>
+      <div>
+        <div class="callout-title">Edit your own units</div>
+        <div class="callout-text">You can edit the details (business name, contact, email, vehicles) for units where your email is registered as the primary email (owner). You cannot edit other units.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMITTEE ONLY SECTION DIVIDER -->
+  <div class="section" style="background:linear-gradient(135deg,#faf5ff,var(--purple-bg));border:none">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="width:48px;height:48px;border-radius:14px;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">🔒</div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Committee &amp; Observer Exclusive</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">The following pages are only visible to committee members and observers.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUOTES -->
+  <div class="section" id="quotes">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#ede9fe">💰</div>
+      <div>
+        <div class="page-name">Quote Approvals</div>
+        <div class="page-desc">Review and vote on contractor quotes for building works</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/quotes.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <div class="role-only-tag">🔒 Committee &amp; Observer only</div>
+
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:24px">
+      This is the most important page for committee members. When the building manager obtains quotes for a project, they are submitted here for committee review and voting. Each committee member votes to <strong>Approve</strong>, <strong>Decline</strong>, or <strong>Hold</strong> each vendor's quote.
+    </p>
+
+    <div class="page-grid">
+      <div>
+        <div class="bms-mock">
+          <div class="bms-mock-header"><span style="font-size:14px">💰</span><span class="bms-mock-title">Quote Approvals</span></div>
+          <div class="bms-mock-body">
+            <div class="filter-mock">
+              <div class="filter-chip active">Voting</div>
+              <div class="filter-chip">Pending</div>
+              <div class="filter-chip">Approved</div>
+              <div class="filter-chip">Archived</div>
+            </div>
+            <div class="card-mock" style="border-color:#ddd6fe;background:linear-gradient(135deg,#faf5ff,#f5f3ff)">
+              <div class="card-mock-top">
+                <div>
+                  <div class="card-mock-title">🗳️ Lobby Carpet Replacement</div>
+                  <div class="card-mock-meta">3 quotes · Voting open</div>
+                </div>
+                <span class="badge badge-purple">Voting</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <div style="flex:1;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:16px;font-weight:800;color:#15803d">5</div>
+                  <div style="font-size:10px;color:#166534">Approve</div>
+                </div>
+                <div style="flex:1;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:16px;font-weight:800;color:#b91c1c">1</div>
+                  <div style="font-size:10px;color:#991b1b">Decline</div>
+                </div>
+                <div style="flex:1;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:16px;font-weight:800;color:#a16207">1</div>
+                  <div style="font-size:10px;color:#92400e">Hold</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">How voting works</h3>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Admin starts voting</div><div style="font-size:12px;color:var(--text-2)">You receive an email + push notification that voting has started for a project.</div></div>
+          </div>
+          <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Review the quotes</div><div style="font-size:12px;color:var(--text-2)">Click on the project to see all vendor quotes, amounts, and attached files.</div></div>
+          </div>
+          <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Cast your vote</div><div style="font-size:12px;color:var(--text-2)">For each vendor, select ✅ Approve, ❌ Decline, or ⏸ Hold. Add a comment if needed.</div></div>
+          </div>
+          <div style="display:flex;gap:14px;padding:16px 0">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Result is auto-calculated</div><div style="font-size:12px;color:var(--text-2)">The system calculates the result automatically when enough votes are in.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;margin-top:8px">Voting rules — how results are determined</h3>
+    <table class="feat-table">
+      <thead><tr><th>Result</th><th>Condition</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-green">✅ Approved</span></td>
+          <td>5 or more Approve votes</td>
+          <td>Quote is approved — admin will proceed with the vendor</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-red">❌ Declined</span></td>
+          <td>4 or more Decline votes</td>
+          <td>Quote is declined — vendor will not be engaged</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-yellow">⏸ On Hold</span></td>
+          <td>3 or more Hold votes, or a tie</td>
+          <td>Quote is put on hold — further discussion needed</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-yellow">⚠️ Conflict</span></td>
+          <td>Both Approve &amp; Decline thresholds reached</td>
+          <td>Conflict detected — automatically becomes Hold for review</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <div class="callout-icon">⚠️</div>
+      <div>
+        <div class="callout-title">Observer note — Read only</div>
+        <div class="callout-text">If your role is Observer, you can see all voting activity and results but <strong>cannot cast a vote</strong>. Your vote buttons will not be available.</div>
+      </div>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-label">📋 Example</div>
+      <div class="scenario-title">Voting on carpet replacement quotes</div>
+      <div class="scenario-steps">
+        <div class="sc-step"><div class="sc-dot">1</div>You receive an email: "🗳️ Quote Voting Started — Lobby Carpet Replacement"</div>
+        <div class="sc-step"><div class="sc-dot">2</div>Go to Quote Approvals and click on the project</div>
+        <div class="sc-step"><div class="sc-dot">3</div>Review 3 vendor quotes (ABC Flooring $12,500 / XYZ Carpets $9,800 / Best Floors $11,200)</div>
+        <div class="sc-step"><div class="sc-dot">4</div>Vote ✅ Approve on XYZ Carpets (best value), ❌ Decline on others</div>
+        <div class="sc-step"><div class="sc-dot">5</div>Once 5+ committee members approve — result is confirmed automatically</div>
+        <div class="sc-step"><div class="sc-dot">6</div>Everyone receives an email: "✅ Quote Confirmed — XYZ Carpets approved"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="section" id="reports">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#dcfce7">📊</div>
+      <div>
+        <div class="page-name">Completed Works</div>
+        <div class="page-desc">Full history of all completed building works and projects</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/reports.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <div class="role-only-tag">🔒 Committee &amp; Observer only</div>
+
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+      This page is an archive of every completed job in the building — with vendor details, costs, completion dates, and attached documentation. It's your record of what has been done and how much was spent.
+    </p>
+
+    <table class="feat-table">
+      <thead><tr><th>Information shown</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Project name</td><td>What the work was</td></tr>
+        <tr><td>Vendor / Contractor</td><td>Who did the work</td></tr>
+        <tr><td>Final cost</td><td>Actual amount paid (ex GST)</td></tr>
+        <tr><td>Completion date</td><td>When the job was finished</td></tr>
+        <tr><td>Category</td><td>Type of work (plumbing, electrical, general, etc.)</td></tr>
+        <tr><td>Attachments</td><td>Invoices, reports, and photos</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- COST DASHBOARD -->
+  <div class="section" id="cost">
+    <div class="page-header">
+      <div class="page-icon-wrap" style="background:#dbeafe">💹</div>
+      <div>
+        <div class="page-name">Cost Analysis</div>
+        <div class="page-desc">Financial overview of all building expenditure</div>
+        <a class="page-url" href="https://sca-redmyre.vercel.app/pages/cost-dashboard.html" target="_blank">🔗 Open this page</a>
+      </div>
+    </div>
+    <div class="role-only-tag">🔒 Committee &amp; Observer only</div>
+
+    <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+      The Cost Analysis dashboard gives you a complete financial picture of building expenditure. Filter by date range and category, view quarterly breakdowns, and export data to Excel.
+    </p>
+
+    <div class="page-grid">
+      <div>
+        <div class="bms-mock">
+          <div class="bms-mock-header"><span style="font-size:14px">💹</span><span class="bms-mock-title">Cost Analysis Dashboard</span></div>
+          <div class="bms-mock-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <div style="background:linear-gradient(135deg,var(--blue-900),var(--blue-800));border-radius:10px;padding:12px">
+                <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:4px">Total YTD</div>
+                <div style="font-size:18px;font-weight:800;color:#fff">$48,250</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:4px">This Month</div>
+                <div style="font-size:18px;font-weight:800;color:var(--text)">$6,800</div>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">By Category</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:11px;color:var(--text-2);width:80px">Plumbing</div>
+                <div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden"><div style="width:60%;height:100%;background:var(--blue-600);border-radius:3px"></div></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text)">$18,500</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:11px;color:var(--text-2);width:80px">Electrical</div>
+                <div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden"><div style="width:40%;height:100%;background:var(--green);border-radius:3px"></div></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text)">$12,200</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:11px;color:var(--text-2);width:80px">General</div>
+                <div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden"><div style="width:25%;height:100%;background:var(--yellow);border-radius:3px"></div></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text)">$8,750</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <table class="feat-table">
+          <thead><tr><th>Feature</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Date filter</td><td>Filter by year, quarter, or custom date range</td></tr>
+            <tr><td>Category filter</td><td>Filter by work type (Plumbing, Electrical, Cleaning, etc.)</td></tr>
+            <tr><td>Total summary cards</td><td>See total spend YTD, this month, and per category</td></tr>
+            <tr><td>Quarterly summary</td><td>Q1–Q4 breakdown with bar chart</td></tr>
+            <tr><td>📥 Export Excel</td><td>Download current filtered data as an Excel spreadsheet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section" id="faq">
+    <div class="section-tag">❓ Help</div>
+    <h2 class="section-title">FAQ — Committee</h2>
+
+    <div class="faq-item">
+      <div class="faq-q">I received a "Voting Started" email. What do I do?</div>
+      <div class="faq-a">Go to <strong>Quote Approvals</strong>, find the project marked "Voting", open it, review each vendor's quote and attached documents, then cast your vote (Approve / Decline / Hold) for each vendor.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I change my vote after submitting?</div>
+      <div class="faq-a">Yes. While voting is still open, you can go back into the quote and change your vote. Once the result is confirmed (enough votes reached), votes are locked.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">As an Observer, why can't I vote?</div>
+      <div class="faq-a">Observer accounts have read-only access to the voting system. You can view all quotes and vote tallies but cannot submit a vote. This is by design — only elected committee members vote.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What happens when there's a conflict in votes?</div>
+      <div class="faq-a">If both the Approve threshold (5+) and Decline threshold (4+) are reached for the same quote, or there's a tie, the system automatically sets the result to "Hold" for further discussion with the building manager.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How do I export cost data for the strata meeting?</div>
+      <div class="faq-a">Go to Cost Analysis, set your date and category filters, then click the "📥 Export Excel" button. The file will download with all currently visible data.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Who do I contact for system issues?</div>
+      <div class="faq-a">Contact Jacob Kim directly: <strong>M 0478 705 406</strong> · <strong>T 1300 785 007</strong> · <strong>sp77249.redmyre@gmail.com</strong></div>
+    </div>
+
+    <div style="margin-top:48px;background:linear-gradient(135deg,#0a1628,#1e1458);border-radius:16px;padding:36px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:8px">Building Management</div>
+        <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px">Jacob Kim</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.8">
+          SCA Facility Management Pty Ltd<br>
+          Redmyre House · 9–13 Redmyre Road, Strathfield NSW 2135<br>
+          M 0478 705 406 · T 1300 785 007
+        </div>
+      </div>
+      <div>
+        <div style="background:#fff;border-radius:10px;padding:10px 16px;display:inline-block">
+          <svg width="120" height="40" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+            <text x="41" y="44" font-family="Arial" font-size="34" font-weight="900" fill="#fff" text-anchor="middle">Red</text>
+            <text x="90" y="28" font-family="Arial" font-size="16" font-weight="900" fill="#111827" letter-spacing="3">HOUSE</text>
+            <text x="88" y="58" font-family="Arial" font-size="34" font-weight="900" fill="#c8102e">myre</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function goTo(id){
+  const el=document.getElementById(id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+const sections=['cover','roles','login','announcements','parking','complaints','hvac','history','emergency','works','occupants','quotes','reports','cost','faq'];
+window.addEventListener('scroll',()=>{
+  const pos=window.scrollY+120;
+  sections.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&pos>=el.offsetTop){
+      document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+      const btn=document.querySelector(`.nav-item[onclick="goTo('${id}')"]`);
+      if(btn)btn.classList.add('active');
+    }
+  });
+});
+</script>
+</body>
+</html>
