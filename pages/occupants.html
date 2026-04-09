@@ -531,7 +531,7 @@
     
     <div class="modal-field">
       <label class="modal-label">License Plates</label>
-      <div id="plateList"></div>
+      <div class="plate-badges" id="plateList" style="min-height:36px;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--bg)"></div>
     </div>
 
     <div class="modal-footer">
@@ -818,88 +818,75 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   showToast('Occupant updated ✓');
 });
 
-// ── Plate Tag UI ─────────────────────────────────────────────
+// ── Plate Badge UI (Modal) ────────────────────────────────────
 function renderPlateList(plates) {
   const container = document.getElementById('plateList');
   container.innerHTML = '';
-  const list = plates.length ? plates : [''];
-  list.forEach((plate, idx) => {
-    container.appendChild(createPlateRow(plate, idx, list.length));
-  });
+  plates.forEach(p => { if (p) container.appendChild(createModalPlateBadge(p)); });
+  container.appendChild(createModalAddBtn());
 }
 
-function createPlateRow(value, idx, total) {
-  const row = document.createElement('div');
-  row.className = 'plate-row';
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'plate-input';
-  input.placeholder = 'ABC123 (2~8)';
-  input.value = value;
-
-  input.addEventListener('input', () => {
-    // Allow A-Z 0-9 only, uppercase
-    const clean = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    input.value = clean;
-    input.classList.toggle('invalid', clean.length > 0 && (clean.length < 2 || clean.length > 8));
+function createModalPlateBadge(plate) {
+  const span = document.createElement('span');
+  span.className = 'plate-badge';
+  span.dataset.plate = plate;
+  span.innerHTML = `${plate} <button type="button" class="plate-badge-remove" title="Remove">✕</button>`;
+  span.querySelector('.plate-badge-remove').addEventListener('click', () => {
+    span.remove();
+    refreshModalAddBtn();
   });
+  return span;
+}
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const container = document.getElementById('plateList');
-      const rows = container.querySelectorAll('.plate-row');
-      const currentIdx = Array.from(rows).indexOf(row);
-      // Add new row after current
-      const newRow = createPlateRow('', currentIdx + 1, rows.length + 1);
-      if (currentIdx + 1 < rows.length) {
-        container.insertBefore(newRow, rows[currentIdx + 1]);
-      } else {
-        container.appendChild(newRow);
-      }
-      newRow.querySelector('.plate-input').focus();
-      refreshRemoveButtons();
-    }
-  });
-
+function createModalAddBtn() {
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'plate-remove-btn';
-  btn.textContent = '✕';
-  btn.title = 'Remove';
-  btn.disabled = total <= 1;
-
+  btn.className = 'plate-add-btn';
+  btn.id = 'modalPlateAddBtn';
+  btn.textContent = '+ Add';
   btn.addEventListener('click', () => {
     const container = document.getElementById('plateList');
-    if (container.querySelectorAll('.plate-row').length > 1) {
-      row.remove();
-      refreshRemoveButtons();
-    }
-  });
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'plate-add-input';
+    inp.placeholder = 'ABC123';
+    inp.maxLength = 8;
+    container.insertBefore(inp, btn);
+    inp.focus();
 
-  row.appendChild(input);
-  row.appendChild(btn);
-  return row;
+    const confirm = () => {
+      const val = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      inp.remove();
+      if (val.length >= 2) {
+        const existing = collectPlates();
+        if (!existing.includes(val)) {
+          container.insertBefore(createModalPlateBadge(val), btn);
+        }
+      }
+    };
+    inp.addEventListener('blur', confirm);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+      if (e.key === 'Escape') inp.remove();
+      inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+    inp.addEventListener('input', () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  });
+  return btn;
 }
 
-function refreshRemoveButtons() {
+function refreshModalAddBtn() {
   const container = document.getElementById('plateList');
-  const rows = container.querySelectorAll('.plate-row');
-  rows.forEach(r => {
-    const btn = r.querySelector('.plate-remove-btn');
-    if (btn) btn.disabled = rows.length <= 1;
-  });
+  if (!container.querySelector('#modalPlateAddBtn')) {
+    container.appendChild(createModalAddBtn());
+  }
 }
 
 function collectPlates() {
   const container = document.getElementById('plateList');
-  const inputs = container.querySelectorAll('.plate-input');
-  const raw = Array.from(inputs)
-    .map(i => i.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))
-    .filter(p => p.length >= 2 && p.length <= 8);
-  // Deduplicate + A-Z sort
-  return [...new Set(raw)].sort();
+  return Array.from(container.querySelectorAll('.plate-badge'))
+    .map(b => b.dataset.plate)
+    .filter(p => p && p.length >= 2);
 }
 // ─────────────────────────────────────────────────────────────
 
