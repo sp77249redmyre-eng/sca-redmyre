@@ -762,17 +762,23 @@ window.openEditModal = (id) => {
   
   // role별 필드 제어
   const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
   const isOwnerTenant = ['owner','tenant'].includes(role);
   document.getElementById('editIsCommittee').disabled = !isAdmin;
   document.getElementById('editCommitteeRole').disabled = !isAdmin;
-  // owner/tenant: Business Name, Business Email, Committee Member 숨기기
-  document.getElementById('editBusinessName').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
-  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
+  // Committee Member: admin만
   document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
   document.getElementById('committeeRoleField').style.display = 'none';
-  // 이메일: admin + 본인 owner/tenant만
-  document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = (isAdmin || isOwnerTenant) ? '' : 'none';
-  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = isAdmin ? '' : 'none';
+  // Business Name, Business Email: 전체 수정 가능
+  document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
+  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = '';
+  // Contact Person: tenant는 disabled (오너 정보)
+  document.getElementById('editContactPerson').disabled = isTenant;
+  document.getElementById('editContactPerson').style.opacity = isTenant ? '0.5' : '1';
+  // Primary Email: tenant는 disabled (오너 이메일)
+  document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = '';
+  document.getElementById('editPrimaryEmail').disabled = isTenant;
+  document.getElementById('editPrimaryEmail').style.opacity = isTenant ? '0.5' : '1';
   // 전화번호: admin만
   document.getElementById('editPhone').closest('.modal-field').style.display = isAdmin ? '' : 'none';
   
