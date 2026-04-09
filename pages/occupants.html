@@ -691,17 +691,22 @@ window.openViewModal = (id) => {
       <div class="modal-info-value">${occ.committee_role}</div>
     ` : ''}
     
-    <div class="modal-info-label">Primary Email:</div>
-    <div class="modal-info-value">${occ.primary_email || '—'}</div>
-    
-    ${occ.business_email ? `
-      <div class="modal-info-label">Business Email:</div>
-      <div class="modal-info-value">${occ.business_email}</div>
-    ` : ''}
-    
     ${role === 'admin' ? `
-    <div class="modal-info-label">Phone:</div>
-    <div class="modal-info-value">${occ.phone || '—'}</div>
+      <div class="modal-info-label">Primary Email:</div>
+      <div class="modal-info-value">${occ.primary_email || '—'}</div>
+      ${occ.business_email ? `
+        <div class="modal-info-label">Business Email:</div>
+        <div class="modal-info-value">${occ.business_email}</div>
+      ` : ''}
+      <div class="modal-info-label">Phone:</div>
+      <div class="modal-info-value">${occ.phone || '—'}</div>
+    ` : (['owner','tenant'].includes(role) && occ.unit === myUnit) ? `
+      <div class="modal-info-label">Primary Email:</div>
+      <div class="modal-info-value">${occ.primary_email || '—'}</div>
+      ${occ.business_email ? `
+        <div class="modal-info-label">Business Email:</div>
+        <div class="modal-info-value">${occ.business_email}</div>
+      ` : ''}
     ` : ''}
     
     <div class="modal-info-label">Vehicles:</div>
@@ -765,7 +770,10 @@ window.openEditModal = (id) => {
   document.getElementById('editBusinessEmail').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
   document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
   document.getElementById('committeeRoleField').style.display = 'none';
-  // admin 아닌 경우 전화번호 필드 숨기기
+  // 이메일: admin + 본인 owner/tenant만
+  document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = (isAdmin || isOwnerTenant) ? '' : 'none';
+  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = isAdmin ? '' : 'none';
+  // 전화번호: admin만
   document.getElementById('editPhone').closest('.modal-field').style.display = isAdmin ? '' : 'none';
   
   openModal('editModal');
