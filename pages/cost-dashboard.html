@@ -121,6 +121,7 @@
   .cat-card{padding:12px}
   .cat-amount{font-size:15px}
   .two-col{grid-template-columns:1fr}
+  #section2Grid{grid-template-columns:1fr !important}
   .filter-bar{gap:6px}
   .filter-select,.filter-input{width:100%;padding:10px;font-size:14px}
   .btn-refresh{width:100%;justify-content:center;padding:10px}
@@ -207,8 +208,7 @@
       <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
     </div>
 
-    <!-- Section 2: Contractors + Monthly Summary -->
-    <div class="two-col">
+    <!-- Section 2: Contractors + Monthly Summary + Pie Chart -->\n    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px" id="section2Grid">
 
       <!-- Contractor Ranking -->
       <div>
@@ -241,6 +241,23 @@
           <div class="panel-body" id="monthlyList">
             <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Category Pie Chart -->
+      <div>
+        <div class="section-heading">
+          <div class="section-heading-bar" style="background:#0891b2"></div>
+          <div class="section-heading-text">Spend by Category</div>
+        </div>
+        <div class="panel" style="padding:20px">
+          <div style="display:flex;justify-content:center;align-items:center;margin-bottom:16px">
+            <div style="position:relative;width:160px;height:160px">
+              <canvas id="categoryPieChart" width="160" height="160"></canvas>
+              <div id="pieTooltip" style="display:none;position:absolute;background:#0f172a;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.6"></div>
+            </div>
+          </div>
+          <div id="pieLegend" style="display:flex;flex-direction:column;gap:6px"></div>
         </div>
       </div>
 
@@ -562,6 +579,9 @@ function renderDashboard(data) {
     </div>`;
   }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
 
+  // Pie Chart
+  renderPieChart(data);
+
   // Top 10 Projects
   const sortedByAmount=[...data].sort((a,b)=>Number(b.amount||0)-Number(a.amount||0));
   document.getElementById('topProjectsList').innerHTML=sortedByAmount.slice(0,10).map((q,i)=>{
@@ -607,6 +627,98 @@ function renderDashboard(data) {
 }
 
 updateDateRange();
+
+function renderPieChart(data) {
+  const canvas = document.getElementById('categoryPieChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 160, H = 160, cx = W/2, cy = H/2, r = 68, inner = 38;
+
+  // 카테고리별 합산
+  const totals = {};
+  data.forEach(q => {
+    const cat = q._cat || 'Other';
+    totals[cat] = (totals[cat] || 0) + Number(q.amount || 0);
+  });
+  const total = Object.values(totals).reduce((s,v)=>s+v, 0);
+  if (!total) return;
+
+  const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const slices = [];
+  let startAngle = -Math.PI / 2;
+
+  sorted.forEach(([cat, val]) => {
+    const angle = (val / total) * Math.PI * 2;
+    slices.push({ cat, val, startAngle, endAngle: startAngle + angle, color: CAT_COLORS[cat] || '#94a3b8' });
+    startAngle += angle;
+  });
+
+  function draw(hovered = -1) {
+    ctx.clearRect(0, 0, W, H);
+    slices.forEach((s, i) => {
+      const offset = i === hovered ? 6 : 0;
+      const midAngle = (s.startAngle + s.endAngle) / 2;
+      const ox = Math.cos(midAngle) * offset;
+      const oy = Math.sin(midAngle) * offset;
+      ctx.beginPath();
+      ctx.moveTo(cx + ox, cy + oy);
+      ctx.arc(cx + ox, cy + oy, r, s.startAngle, s.endAngle);
+      ctx.lineTo(cx + ox, cy + oy);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    // 도넛 구멍
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+  }
+
+  draw();
+
+  // 호버
+  const tooltip = document.getElementById('pieTooltip');
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left - cx;
+    const my = e.clientY - rect.top - cy;
+    const dist = Math.sqrt(mx*mx + my*my);
+    if (dist < inner || dist > r) {
+      draw(); tooltip.style.display = 'none'; return;
+    }
+    let angle = Math.atan2(my, mx);
+    if (angle < -Math.PI/2) angle += Math.PI*2;
+    const idx = slices.findIndex(s => angle >= s.startAngle && angle < s.endAngle);
+    if (idx >= 0) {
+      draw(idx);
+      const s = slices[idx];
+      const pct = Math.round(s.val / total * 100);
+      tooltip.innerHTML = `${CAT_LABELS[s.cat]||s.cat}<br>${fmt(s.val)}<br>${pct}%`;
+      tooltip.style.display = 'block';
+    } else {
+      draw(); tooltip.style.display = 'none';
+    }
+  };
+  canvas.onmouseleave = () => { draw(); tooltip.style.display = 'none'; };
+
+  // 범례
+  document.getElementById('pieLegend').innerHTML = sorted.map(([cat, val]) => {
+    const pct = Math.round(val / total * 100);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
+        <span style="font-size:11px;color:#475569">${CAT_LABELS[cat]||cat}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;font-weight:600;color:#1e293b">${fmtShort(val)}</span>
+        <span style="font-size:10px;color:#94a3b8">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
