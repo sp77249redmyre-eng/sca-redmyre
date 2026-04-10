@@ -644,12 +644,21 @@ if (['owner','tenant'].includes(role) && myUnit) {
     const letter = match[2].toUpperCase();
     return 'Suite ' + letter;
   })();
-  document.querySelectorAll('.suite-tab').forEach(tab => {
-    if (mySuite && tab.dataset.suite !== mySuite && tab.dataset.suite !== 'External') {
-      tab.style.display = 'none';
-    }
-  });
-  if (mySuite) {
+  if (!mySuite) {
+    // Lot 50 등 External 유닛 — External 탭만 보이게
+    document.querySelectorAll('.suite-tab').forEach(tab => {
+      if (tab.dataset.suite !== 'External') tab.style.display = 'none';
+    });
+    currentSuite = 'External';
+    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+    const extTab = document.querySelector('.suite-tab[data-suite="External"]');
+    if (extTab) extTab.classList.add('active');
+  } else {
+    document.querySelectorAll('.suite-tab').forEach(tab => {
+      if (tab.dataset.suite !== mySuite && tab.dataset.suite !== 'External') {
+        tab.style.display = 'none';
+      }
+    });
     currentSuite = mySuite;
     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
     const myTab = document.querySelector(`.suite-tab[data-suite="${mySuite}"]`);
