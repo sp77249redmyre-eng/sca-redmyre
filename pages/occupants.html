@@ -460,6 +460,7 @@
       <button class="suite-tab" data-suite="Suite F">Suite F</button>
       <button class="suite-tab" data-suite="Suite G">Suite G</button>
       <button class="suite-tab" data-suite="Suite H">Suite H</button>
+      <button class="suite-tab" data-suite="External">External</button>
     </div>
 
     <!-- Occupant List -->
@@ -644,7 +645,7 @@ if (['owner','tenant'].includes(role) && myUnit) {
     return 'Suite ' + letter;
   })();
   document.querySelectorAll('.suite-tab').forEach(tab => {
-    if (mySuite && tab.dataset.suite !== mySuite) {
+    if (mySuite && tab.dataset.suite !== mySuite && tab.dataset.suite !== 'External') {
       tab.style.display = 'none';
     }
   });
@@ -701,6 +702,8 @@ function renderOccupants() {
   let filtered;
   if (currentSuite === 'Ground') {
     filtered = visibleOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1');
+  } else if (currentSuite === 'External') {
+    filtered = visibleOccupants.filter(o => o.level === 'External');
   } else {
     filtered = visibleOccupants.filter(o => o.suite === currentSuite);
   }
