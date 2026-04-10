@@ -345,13 +345,13 @@ async function loadOverviewCards() {
   } catch(e){}
 
   try {
-    const { data: works } = await supabase.from('works').select('status,title');
-    const active = works?.filter(w=>w.status!=='done') || [];
-    const urgent = active.filter(w=>w.status==='urgent');
-    document.getElementById('worksCardBadge').className = urgent.length ? 'badge badge-red' : active.length ? 'badge badge-yellow' : 'badge badge-green';
-    document.getElementById('worksCardBadge').textContent = urgent.length ? `${urgent.length} Urgent` : `${active.length} Active`;
+    const { data: works } = await supabase.from('quotes').select('id,work_status').not('work_status','is',null).is('completion_date',null).neq('status','removed');
+    const active = works || [];
+    const inProg = active.filter(w=>w.work_status==='in_progress');
+    document.getElementById('worksCardBadge').className = inProg.length ? 'badge badge-blue' : active.length ? 'badge badge-yellow' : 'badge badge-green';
+    document.getElementById('worksCardBadge').textContent = inProg.length ? `${inProg.length} In Progress` : `${active.length} Active`;
     document.getElementById('worksCardNote').textContent = active.length
-      ? `${active.length} work${active.length!==1?'s':''} in progress`
+      ? `${active.length} work${active.length!==1?'s':''} ongoing`
       : 'All works completed ✓';
   } catch(e){}
 }
