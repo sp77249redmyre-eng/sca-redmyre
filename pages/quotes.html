@@ -883,74 +883,6 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(adminRow);
     }
 
-    // project_comments – 대화형 스레드
-    const commTitle = document.createElement('div');
-    commTitle.className = 'section-title';
-    commTitle.innerHTML = '💬 Discussion';
-    votingSection.appendChild(commTitle);
-
-    const thread = document.createElement('div');
-    thread.className = 'pc-thread';
-    thread.id = 'pcThread_' + projectKey;
-    votingSection.appendChild(thread);
-
-    // 코멘트 로드 함수
-    const loadProjectComments = async () => {
-      const { data: pcs } = await supabase.from('project_comments')
-        .select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
-      thread.innerHTML = '';
-      if (!pcs || !pcs.length) {
-        thread.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px">No comments yet</div>';
-        return;
-      }
-      pcs.forEach((pc, idx) => {
-        const isOwn = pc.user_email === user.email;
-        const isEven = idx % 2 === 0;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'pc-msg ' + (isEven ? 'pc-msg-committee' : 'pc-msg-admin');
-        const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
-        const nameColor = isEven ? '#2563eb' : '#166534';
-        const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}${isOwn ? '<span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div></div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
-        thread.appendChild(msgDiv);
-      });
-      thread.scrollTop = thread.scrollHeight;
-    }
-    loadProjectComments();
-
-    // Comment input
-    const inputTitle = document.createElement('div');
-    inputTitle.className = 'section-title';
-    inputTitle.innerHTML = '✏️ Add Comment';
-    votingSection.appendChild(inputTitle);
-
-    if (role !== 'observer') {
-      const inputArea = document.createElement('div');
-      inputArea.className = 'input-area';
-      const textarea = document.createElement('textarea');
-      textarea.placeholder = 'Type your comment...';
-      const submitBtn = document.createElement('button');
-      submitBtn.className = 'submit-btn';
-      submitBtn.textContent = 'Send';
-      submitBtn.onclick = async () => {
-        const txt = textarea.value.trim();
-        if (!txt) { showToast('Please enter a comment', true); return; }
-        submitBtn.disabled = true;
-        const { error } = await supabase.from('project_comments').insert({
-          project_id: projectKey,
-          user_email: user.email,
-          user_name: allProfiles[user.email] || user.email?.split('@')[0] || '',
-          comment: txt
-        });
-        if (error) { showToast('Failed to send', true); }
-        else { textarea.value = ''; await loadProjectComments(); }
-        submitBtn.disabled = false;
-      };
-      inputArea.appendChild(textarea);
-      inputArea.appendChild(submitBtn);
-      votingSection.appendChild(inputArea);
-    }
-
     // Voting status – full committee grid
     const voteTitle = document.createElement('div');
     voteTitle.className = 'section-title';
@@ -960,10 +892,7 @@ function renderPendingQuotes(quotes) {
     const voteGrid = document.createElement('div');
     voteGrid.className = 'voting-grid';
 
-    // BUG 2 FIX: isLocked는 DB status 기준 (계산 결과로 조기 잠금 방지)
     const isFinalized = group.some(q => ['approved','declined','onhold','force_approved'].includes(q.status));
-
-    // Use full committee list if loaded, otherwise fall back to voters only
     const membersToShow = committeeMembers.length > 0
       ? committeeMembers
       : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
@@ -998,6 +927,73 @@ function renderPendingQuotes(quotes) {
       voteGrid.appendChild(empty);
     }
     votingSection.appendChild(voteGrid);
+
+    // Discussion
+    const commTitle = document.createElement('div');
+    commTitle.className = 'section-title';
+    commTitle.innerHTML = '💬 Discussion';
+    votingSection.appendChild(commTitle);
+
+    const thread = document.createElement('div');
+    thread.className = 'pc-thread';
+    thread.id = 'pcThread_' + projectKey;
+    votingSection.appendChild(thread);
+
+    const loadProjectComments = async () => {
+      const { data: pcs } = await supabase.from('project_comments')
+        .select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
+      thread.innerHTML = '';
+      if (!pcs || !pcs.length) {
+        thread.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px">No comments yet</div>';
+        return;
+      }
+      pcs.forEach((pc, idx) => {
+        const isOwn = pc.user_email === user.email;
+        const isEven = idx % 2 === 0;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'pc-msg ' + (isEven ? 'pc-msg-committee' : 'pc-msg-admin');
+        const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
+        const nameColor = isEven ? '#2563eb' : '#166534';
+        const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}${isOwn ? '<span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div></div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
+        thread.appendChild(msgDiv);
+      });
+      thread.scrollTop = thread.scrollHeight;
+    }
+    loadProjectComments();
+
+    // Add Comment
+    const inputTitle = document.createElement('div');
+    inputTitle.className = 'section-title';
+    inputTitle.innerHTML = '✏️ Add Comment';
+    votingSection.appendChild(inputTitle);
+
+    if (role !== 'observer') {
+      const inputArea = document.createElement('div');
+      inputArea.className = 'input-area';
+      const textarea = document.createElement('textarea');
+      textarea.placeholder = 'Type your comment...';
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'submit-btn';
+      submitBtn.textContent = 'Send';
+      submitBtn.onclick = async () => {
+        const txt = textarea.value.trim();
+        if (!txt) { showToast('Please enter a comment', true); return; }
+        submitBtn.disabled = true;
+        const { error } = await supabase.from('project_comments').insert({
+          project_id: projectKey,
+          user_email: user.email,
+          user_name: allProfiles[user.email] || user.email?.split('@')[0] || '',
+          comment: txt
+        });
+        if (error) { showToast('Failed to send', true); }
+        else { textarea.value = ''; await loadProjectComments(); }
+        submitBtn.disabled = false;
+      };
+      inputArea.appendChild(textarea);
+      inputArea.appendChild(submitBtn);
+      votingSection.appendChild(inputArea);
+    }
 
     // Result box
     const resultBox = document.createElement('div');
