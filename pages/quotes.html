@@ -903,13 +903,15 @@ function renderPendingQuotes(quotes) {
         thread.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px">No comments yet</div>';
         return;
       }
-      pcs.forEach(pc => {
-        const isAdmin = pc.user_email === user.email && role === 'admin';
+      pcs.forEach((pc, idx) => {
         const isOwn = pc.user_email === user.email;
+        const isEven = idx % 2 === 0;
         const msgDiv = document.createElement('div');
-        msgDiv.className = 'pc-msg ' + (role === 'admin' && isAdmin ? 'pc-msg-admin' : 'pc-msg-committee');
+        msgDiv.className = 'pc-msg ' + (isEven ? 'pc-msg-committee' : 'pc-msg-admin');
+        const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
+        const nameColor = isEven ? '#475569' : '#166534';
         const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        msgDiv.innerHTML = `<div class="pc-msg-name ${isAdmin ? 'pc-msg-name-admin' : 'pc-msg-name-committee'}">${escHtml(pc.user_name)}${isOwn ? '<span class="pc-del" data-id="${pc.id}" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-body">${escHtml(pc.comment)}</div><div class="pc-msg-time">${dt}</div>`;
+        msgDiv.innerHTML = `<div class="pc-msg-name" style="color:${nameColor}">${escHtml(displayName)}${isOwn ? '<span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-body">${escHtml(pc.comment)}</div><div class="pc-msg-time">${dt}</div>`;
         thread.appendChild(msgDiv);
       });
       thread.scrollTop = thread.scrollHeight;
@@ -937,7 +939,7 @@ function renderPendingQuotes(quotes) {
         const { error } = await supabase.from('project_comments').insert({
           project_id: projectKey,
           user_email: user.email,
-          user_name: name,
+          user_name: allProfiles[user.email] || user.email?.split('@')[0] || '',
           comment: txt
         });
         if (error) { showToast('Failed to send', true); }
