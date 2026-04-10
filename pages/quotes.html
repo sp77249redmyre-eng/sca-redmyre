@@ -827,26 +827,21 @@ function renderPendingQuotes(quotes) {
         const btn = document.createElement('button');
         btn.className = `btn-action btn-${type}`;
         btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        if (userAlreadyVoted || resultDetermined) {
+        if (resultDetermined) {
           btn.disabled = true;
-          btn.title = userAlreadyVoted ? 'You have already voted' : 'Voting is closed – result determined';
+          btn.title = 'Voting is closed – result determined';
         } else {
           btn.onclick = () => {
-            // Instant UI lock – before any async, prevents double-click & post-result votes
             btn.disabled = true;
             actionButtons.querySelectorAll('button').forEach(b => { b.disabled = true; });
             const vRow = getUserVoteRow(projectKey);
-            // Re-check: result may have been determined since last render
             if (resultDetermined) { showToast('Voting is already closed', true); return; }
-            // Block vote if no vendor selected (skip for single quote – auto-selected)
             if (!isSingle && type === 'approve' && !vRow?.selected_quote_id) {
               showToast('Please select a vendor first', true);
               btn.disabled = false;
               actionButtons.querySelectorAll('button').forEach(b => { b.disabled = false; });
               return;
             }
-            // Hard re-check vote lock
-            if (vRow?.vote && vRow.vote !== '') { showToast('You have already voted', true); return; }
             if (window.logActivity) window.logActivity('QUOTE_VOTED', projectKey);
             doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
           };
@@ -1397,11 +1392,6 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
     // Hard vote lock – re-fetch from local state, block any overwrite
     if (fields.vote !== undefined && fields.vote !== null) {
       const current = getUserVoteRow(projectId);
-      if (current?.vote && current.vote !== '') {
-        showToast('You have already voted', true);
-        if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
-        return;
-      }
       // Result-lock guard: recalculate from latest allVotes before allowing vote
       const guardGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
       const guardVoted   = allVotes.filter(v => v.project_id === projectId && v.vote && v.vote !== '');
