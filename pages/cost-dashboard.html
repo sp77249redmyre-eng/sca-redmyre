@@ -171,19 +171,30 @@
         </div>
       </div>
       <div class="stat-card" style="--stat-color:#16a34a">
-        <div class="stat-label">Regular Works</div>
+        <div class="stat-label">Regular Works (ex GST)</div>
         <div class="stat-num" id="statRegular" style="color:#16a34a">$0</div>
         <div class="stat-sub" id="statRegularCount">0 works</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statRegularGST" style="font-weight:600">$0</span></div>
+          <div style="font-size:12px;font-weight:700;color:#16a34a">inc GST: <span id="statRegularInc">$0</span></div>
+        </div>
       </div>
       <div class="stat-card" style="--stat-color:#dc2626">
-        <div class="stat-label">Emergency Works</div>
+        <div class="stat-label">Emergency Works (ex GST)</div>
         <div class="stat-num" id="statEmergency" style="color:#dc2626">$0</div>
         <div class="stat-sub" id="statEmergencyCount">0 works</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statEmergencyGST" style="font-weight:600">$0</span></div>
+          <div style="font-size:12px;font-weight:700;color:#dc2626">inc GST: <span id="statEmergencyInc">$0</span></div>
+        </div>
       </div>
       <div class="stat-card" style="--stat-color:#f59e0b">
-        <div class="stat-label">Avg per Work</div>
+        <div class="stat-label">Avg per Work (ex GST)</div>
         <div class="stat-num" id="statAvg" style="color:#1e293b">$0</div>
         <div class="stat-sub" id="statTotalCount">0 completed</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+          <div style="font-size:12px;font-weight:700;color:#f59e0b">inc GST: <span id="statAvgInc">$0</span></div>
+        </div>
       </div>
     </div>
 
@@ -474,10 +485,15 @@ function renderDashboard(data) {
   document.getElementById('statTotalGST').textContent=fmt(totalSpend*0.1);
   document.getElementById('statTotalInc').textContent=fmt(totalSpend*1.1);
   document.getElementById('statRegular').textContent=fmt(regularSpend);
+  document.getElementById('statRegularGST').textContent=fmt(regularSpend*0.1);
+  document.getElementById('statRegularInc').textContent=fmt(regularSpend*1.1);
   document.getElementById('statRegularCount').textContent=`${regularData.length} work${regularData.length!==1?'s':''}`;
   document.getElementById('statEmergency').textContent=fmt(emergencySpend);
+  document.getElementById('statEmergencyGST').textContent=fmt(emergencySpend*0.1);
+  document.getElementById('statEmergencyInc').textContent=fmt(emergencySpend*1.1);
   document.getElementById('statEmergencyCount').textContent=`${emergencyData.length} work${emergencyData.length!==1?'s':''}`;
   document.getElementById('statAvg').textContent=fmt(avg);
+  document.getElementById('statAvgInc').textContent=fmt(avg*1.1);
   document.getElementById('statTotalCount').textContent=`${data.length} completed`;
 
   // Category
@@ -493,6 +509,7 @@ function renderDashboard(data) {
       <div class="cat-name">${CAT_LABELS[cat]||cat}</div>
       <div class="cat-amount" style="color:${color}">${fmt(total)}</div>
       <div class="cat-count">${count} work${count!==1?'s':''} · ${pct}%</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">inc GST: <span style="font-weight:600;color:${color}">${fmt(total*1.1)}</span></div>
       <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
     </div>`;
   }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data</div>';
