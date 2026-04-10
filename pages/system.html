@@ -483,6 +483,30 @@
     </div>
 
 
+    <!-- Audit Logs Cleanup -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon" style="background:#fef2f2">📋</div>
+        <div>
+          <div class="card-title">Audit Log Cleanup</div>
+          <div class="card-desc">Clear all user activity logs from the system</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div class="section-label">Clear All Logs</div>
+            <button class="btn-danger" id="clearAllLogsBtn">🗑️ Clear All Logs</button>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Status</div>
+            <div class="status-box ready" id="auditLogStatus">Ready</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 5: Junk Cleanup (full width) -->
     <div class="card full" style="margin-bottom:16px">
       <div class="card-header">
@@ -1095,6 +1119,27 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
   }
 });
 
+
+// ─── AUDIT LOG CLEANUP ───────────────────────────────────────
+document.getElementById('clearAllLogsBtn').addEventListener('click', async () => {
+  if (!confirm('Clear ALL audit logs? This cannot be undone.')) return;
+  const btn = document.getElementById('clearAllLogsBtn');
+  const status = document.getElementById('auditLogStatus');
+  btn.disabled = true; btn.textContent = 'Clearing…';
+  status.textContent = 'Clearing…'; status.className = 'status-box scanning';
+  const { error } = await supabase.from('audit_logs').delete().neq('id', 0);
+  if (error) {
+    status.textContent = 'Failed to clear logs';
+    status.className = 'status-box error';
+    showToast('Failed to clear logs', true);
+    btn.disabled = false; btn.textContent = '🗑️ Clear All Logs';
+  } else {
+    status.textContent = 'All logs cleared ✓';
+    status.className = 'status-box ok';
+    showToast('Audit logs cleared ✓');
+    btn.disabled = false; btn.textContent = '🗑️ Clear All Logs';
+  }
+});
 
 // ─── INIT ─────────────────────────────────────────────────────
 await Promise.all([
