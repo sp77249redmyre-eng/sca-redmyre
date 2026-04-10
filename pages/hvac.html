@@ -172,7 +172,7 @@
       </div>
       <!-- Observer: read-only view -->
       <div id="observerPanel" style="display:none">
-        <div class="section-hdr">
+        <div class="section-hdr" style="margin-top:4px">
           <div class="section-title">Pending Requests</div>
           <span id="obsPendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
         </div>
@@ -312,6 +312,8 @@ function renderMyRequests() {
         <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
         ${r.comment ? `<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>` : ''}
         ${['pending', 'approved', 'processing'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
+        ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
+        ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
       </div>
       <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
     </div>
@@ -520,6 +522,8 @@ async function loadAdminData() {
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
+          ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
         </div>
         <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
       </div>
@@ -581,6 +585,8 @@ async function loadObserverData() {
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
+          ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
         </div>
         <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
       </div>
@@ -618,8 +624,10 @@ window.approveReq = async (id, type, level, tenancy) => {
 };
 
 window.rejectReq = async (id) => {
-  if (!confirm('Reject this request?')) return;
-  await supabase.from('hvac_requests').update({status: 'rejected'}).eq('id', id);
+  const reason = prompt('Reason for rejection (required):');
+  if (reason === null) return;
+  if (!reason.trim()) { showToast('Please enter a reason', true); return; }
+  await supabase.from('hvac_requests').update({status: 'rejected', admin_comment: reason.trim()}).eq('id', id);
   try {
     const { data: req } = await supabase.from('hvac_requests').select('user_id').eq('id', id).single();
     if (req?.user_id) {
@@ -627,7 +635,7 @@ window.rejectReq = async (id) => {
       await fetch('/api/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ user_id: req.user_id, title: '❄️ HVAC Request Rejected', message: 'Your temperature request has been rejected.', url: '/pages/hvac.html' })
+        body: JSON.stringify({ user_id: req.user_id, title: '❄️ HVAC Request Rejected', message: `Rejected: ${reason.trim()}`, url: '/pages/hvac.html' })
       });
     }
   } catch(pushErr) {}
