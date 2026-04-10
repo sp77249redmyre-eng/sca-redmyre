@@ -216,11 +216,9 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   let level, tenancy;
   
   if (selectedUnit) {
-    // Use selected unit
     level = selectedUnit.level;
     tenancy = selectedUnit.suite.replace('Suite', 'Tenancy');
   } else {
-    // Manual selection
     level = document.getElementById('hvacLevel').value;
     tenancy = document.getElementById('hvacTenancy').value;
     if (!level||!tenancy) { showToast('Please select floor and tenancy', true); return; }
@@ -330,7 +328,6 @@ if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
   await loadAdminData();
   
-  // Admin realtime subscription
   supabase.channel('admin-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadAdminData();
@@ -352,13 +349,12 @@ if (role === 'admin') {
   await loadMyUnits();
   await loadMyRequests();
   
-  // User realtime subscription
+  // User realtime - filter 제거 (Supabase Free 플랜 호환)
   supabase.channel('user-hvac-updates')
     .on('postgres_changes', {
-      event: 'UPDATE', 
-      schema: 'public', 
-      table: 'hvac_requests',
-      filter: `user_id=eq.${user.id}`
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'hvac_requests'
     }, () => {
       loadMyRequests();
     })
@@ -368,14 +364,12 @@ if (role === 'admin') {
 // Load user's units from occupants table
 async function loadMyUnits() {
   try {
-    // 전체 occupants 가져오기
     const { data, error } = await supabase
       .from('occupants')
       .select('*');
     
     if (error) throw error;
     
-    // 이메일 정확히 매칭 (콤마/세미콜론으로 구분된 이메일 처리)
     const userEmail = user.email.toLowerCase();
     myUnits = (data || []).filter(occ => {
       const primaryEmails = (occ.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
@@ -404,13 +398,11 @@ function renderUnitSelection() {
   suiteField.style.display = 'none';
   
   if (myUnits.length === 1) {
-    // Single unit - auto select
     selectedUnit = myUnits[0];
     document.getElementById('unitAutoUnit').textContent = `Unit ${selectedUnit.unit}`;
     document.getElementById('unitAutoDetail').textContent = `${selectedUnit.level}, ${selectedUnit.suite}${selectedUnit.business_name ? ' — ' + selectedUnit.business_name : ''}`;
     autoBox.style.display = 'block';
   } else if (myUnits.length > 1) {
-    // Multiple units - show radio selection
     const list = document.getElementById('unitRadioList');
     list.innerHTML = myUnits.map((u, idx) => `
       <label class="unit-radio-item" data-idx="${idx}">
@@ -436,7 +428,6 @@ function renderUnitSelection() {
     document.querySelector('.unit-radio-item').classList.add('selected');
     radioBox.style.display = 'block';
   } else {
-    // No units - manual selection
     selectedUnit = null;
     floorField.style.display = 'block';
     suiteField.style.display = 'block';
