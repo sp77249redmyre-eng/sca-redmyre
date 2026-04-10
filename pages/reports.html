@@ -168,7 +168,11 @@
       </div>
       <div class="tbl-footer">
         <span style="font-size:12px;color:#64748b" id="quotesTotal">—</span>
-        <span style="font-size:14px;font-weight:600;color:#1e293b" id="quotesTotalAmount">$0.00</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+          <span style="font-size:12px;color:#64748b">ex GST: <span id="quotesTotalExGST" style="font-weight:600;color:#1e293b">$0.00</span></span>
+          <span style="font-size:12px;color:#64748b">GST (10%): <span id="quotesTotalGST" style="font-weight:600;color:#1e293b">$0.00</span></span>
+          <span style="font-size:14px;font-weight:700;color:#1e293b">inc GST: <span id="quotesTotalAmount">$0.00</span></span>
+        </div>
       </div>
     </div>
 
@@ -368,7 +372,9 @@ async function loadReport() {
   currentQuotesData=reportsData; currentSortKey='date'; currentSortDir='desc';
   renderQuotesList();
   document.getElementById('quotesTotal').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
-  document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal);
+  document.getElementById('quotesTotalExGST').textContent=fmt(reportTotal);
+  document.getElementById('quotesTotalGST').textContent=fmt(reportTotal*0.1);
+  document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal*1.1);
 }
 
 function renderQuotesList() {
