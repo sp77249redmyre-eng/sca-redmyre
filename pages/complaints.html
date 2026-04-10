@@ -18,18 +18,17 @@
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
-.complaint-list{display:flex;flex-direction:column;gap:10px}
-.complaint-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:box-shadow 0.12s;cursor:pointer}
-.complaint-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
-.complaint-card.status-open{border-left:3px solid var(--red)}
-.complaint-card.status-inprog{border-left:3px solid var(--yellow)}
-.complaint-card.status-resolved{border-left:3px solid var(--green);opacity:0.75}
-.cc-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
-.cc-title{font-size:14px;font-weight:600}
-.cc-meta{font-size:11px;color:var(--muted);margin-top:3px}
-.cc-body{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:10px;white-space:pre-wrap}
-.cc-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border-light);flex-wrap:wrap;gap:8px}
-.cc-submitter{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.complaint-list{width:100%}
+.ct{width:100%;border-collapse:collapse;font-size:13px}
+.ct th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.ct td{padding:11px 12px;border-bottom:1px solid var(--border-light);color:var(--text);vertical-align:middle}
+.ct tr:hover td{background:var(--surface);cursor:pointer}
+.ct tr.status-resolved td{opacity:0.6}
+.ct-title{font-size:13px;font-weight:500;color:var(--text)}
+.ct-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;flex-shrink:0}
+.ct-dot.open{background:var(--red)}
+.ct-dot.inprog{background:var(--yellow)}
+.ct-dot.resolved{background:var(--green)}
 .photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--bg)}
 .photo-upload-area:hover{border-color:var(--blue-600);background:var(--blue-50)}
 .photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:8px}
@@ -272,29 +271,26 @@ function renderComplaints() {
     list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${currentFilter==='all'?'No Requests yet':'No '+currentFilter+' requests'}</div><div style="font-size:13px;color:var(--muted)">${canSubmit.includes(role)?'Click "+ New Request" to submit one.':'Check back later.'}</div></div>`;
     return;
   }
-  list.innerHTML = filtered.map(c => {
+  const showSubmitter = canViewAll.includes(role);
+  const rows = filtered.map(c => {
     const st = STATUS_MAP[c.status] || STATUS_MAP.open;
     const emoji = CAT_EMOJI[c.category] || '📝';
     const catLabel = CAT_LABEL[c.category] || c.category;
     const date = new Date(c.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
     const isOwn = c.user_id === user.id;
-    return `
-      <div class="complaint-card status-${c.status}" onclick="openDetail('${c.id}')">
-        <div class="cc-header">
-          <div>
-            <div class="cc-title">${emoji} ${c.title}</div>
-            <div class="cc-meta">${catLabel} · ${date}</div>
-          </div>
-          <span class="badge ${st.cls}">${st.label}</span>
-        </div>
-        <div class="cc-body">${c.body?.length>150?c.body.substring(0,150)+'…':c.body||''}</div>
-        ${c.admin_response?`<div style="background:var(--green-bg);border-radius:8px;padding:8px 12px;margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:2px">Response</div><div style="font-size:12px;color:var(--green-text)">${c.admin_response.length>100?c.admin_response.substring(0,100)+'…':c.admin_response}</div></div>`:''}
-        <div class="cc-footer">
-          <div class="cc-submitter">${canViewAll.includes(role)&&!isOwn?`👤 ${c.submitter_name||'Unknown'}`:isOwn?'👤 You':''}</div>
-          ${c.has_photos?'<span style="font-size:11px;color:var(--muted)">📷 Photos attached</span>':''}
-        </div>
-      </div>`;
+    const submitterCol = showSubmitter ? `<td style="font-size:12px;color:var(--muted)">${isOwn?'You':c.submitter_name||'Unknown'}</td>` : '';
+    const photoIcon = c.has_photos ? '📷' : '';
+    return `<tr class="status-${c.status}" onclick="openDetail('${c.id}')">
+      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${catLabel}</td>
+      ${submitterCol}
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${date}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td style="font-size:13px">${photoIcon}</td>
+    </tr>`;
   }).join('');
+  const submitterHeader = showSubmitter ? '<th>Submitted by</th>' : '';
+  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
