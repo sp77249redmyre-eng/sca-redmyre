@@ -600,7 +600,7 @@ function renderPieChart(data) {
   document.getElementById('pieLegend').innerHTML=sorted.map(([cat,val],i)=>{
     const pct=Math.round(val/total*100);
     const color=CAT_COLORS[cat]||'#94a3b8';
-    const items=data.filter(q=>()===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+    const items=data.filter(q=>(q._cat||'General')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
     const detailRows=items.map((q,j)=>{
       const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
       const emg=q.is_emergency?`<span style="font-size:9px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 5px;border-radius:8px;margin-left:4px">EMG</span>`:'';
@@ -732,7 +732,7 @@ function renderCategoryAccordion(data, selectedCat) {
   const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
 
   accordion.innerHTML = sorted.map(([cat, total]) => {
-    const items = data.filter(q=>()===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+    const items = data.filter(q=>(q._cat||'General')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
     const isOpen = cat === selectedCat;
     const color = CAT_COLORS[cat]||'#94a3b8';
 
