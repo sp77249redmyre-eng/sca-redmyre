@@ -334,14 +334,16 @@ if (role === 'admin') {
     })
     .subscribe();
     
-} else if (role === 'observer') {
-  document.querySelector('.submit-form').style.display = 'none';
+} else if (role === 'observer' || role === 'committee') {
+  if (role === 'observer') document.querySelector('.submit-form').style.display = 'none';
   document.getElementById('observerPanel').style.display = 'block';
   await loadObserverData();
-  
+  if (role === 'committee') await loadMyRequests();
+
   supabase.channel('observer-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadObserverData();
+      if (role === 'committee') loadMyRequests();
     })
     .subscribe();
 } else {
