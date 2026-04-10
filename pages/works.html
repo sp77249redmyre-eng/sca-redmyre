@@ -113,7 +113,7 @@
 
 .scope-box{padding:12px 14px;background:#fff;border:0.5px solid #e2e8f0;border-radius:10px;margin-bottom:12px}
 .scope-lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:5px}
-.scope-txt{font-size:13px;color:#475569;line-height:1.7}
+.scope-txt{font-size:13px;color:#475569;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
 
 .inote-box{padding:12px 14px;background:#f0f7ff;border:0.5px solid #dbeafe;border-radius:10px;margin-bottom:12px}
 .inote-lbl{font-size:11px;color:#1e40af;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:5px}
@@ -380,7 +380,15 @@ window.showToast = (msg, isError=false) => {
 
 window.formatAmount = (input) => {
   let val = input.value.replace(/[^0-9.]/g, '');
-  if (val) input.value = parseFloat(val).toLocaleString('en-AU');
+  const parts = val.split('.');
+  if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+  if (parts.length === 2) {
+    const decimals = parts[1].slice(0, 2);
+    const intPart = parseInt(parts[0] || '0', 10).toLocaleString('en-AU');
+    input.value = intPart + '.' + decimals;
+  } else if (val) {
+    input.value = parseInt(val, 10).toLocaleString('en-AU');
+  }
 };
 
 let allWorks = [];

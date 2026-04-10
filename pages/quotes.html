@@ -51,8 +51,9 @@
 .badge-x{color:#ef4444;font-size:20px;font-weight:700;line-height:1}
 .vendor-details{display:none;padding:12px 16px 14px;background:#f8fafc;border-top:0.5px solid #e2e8f0;font-size:13px;color:#374151;line-height:1.6}
 .vendor-details.show{display:block}
-.detail-line{margin-bottom:8px;display:flex;gap:8px}
+.detail-line{margin-bottom:8px;display:flex;gap:8px;align-items:flex-start}
 .detail-label{font-weight:600;color:#1e293b;min-width:88px;flex-shrink:0;font-size:12px}
+.detail-line span:last-child{font-size:12px;color:#475569;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
 .detail-files{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
 .detail-file-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#fff;border:0.5px solid #dbeafe;border-radius:7px;font-size:12px;color:#2563eb;text-decoration:none;transition:background 0.15s}
 .detail-file-link:hover{background:#eff6ff}
@@ -1982,7 +1983,18 @@ window.closeModal = function(id) {
   if (el) el.classList.remove('open');
 };
 
-window.formatAmount = function(input) { input.value = input.value.replace(/[^0-9.]/g, ''); };
+window.formatAmount = function(input) {
+  let val = input.value.replace(/[^0-9.]/g, '');
+  const parts = val.split('.');
+  if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+  if (parts.length === 2) {
+    const decimals = parts[1].slice(0, 2);
+    const intPart = parseInt(parts[0] || '0', 10).toLocaleString('en-AU');
+    input.value = intPart + '.' + decimals;
+  } else if (val) {
+    input.value = parseInt(val, 10).toLocaleString('en-AU');
+  }
+};
 
 window.saveQuote = async function() {
   const sel         = document.getElementById('projectSelect');
