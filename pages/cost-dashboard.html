@@ -209,8 +209,8 @@
       <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
     </div>
 
-    <!-- Section 2: Contractors + Monthly Summary + Pie Chart -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px" id="section2Grid">
+    <!-- Section 2: Contractors + Monthly Summary (2컬럼) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px" id="section2Grid">
 
       <!-- Contractor Ranking -->
       <div>
@@ -246,21 +246,21 @@
         </div>
       </div>
 
-      <!-- Category Pie Chart -->
-      <div>
-        <div class="section-heading">
-          <div class="section-heading-bar" style="background:#0891b2"></div>
-          <div class="section-heading-text">Spend by Category</div>
-        </div>
-        <div class="panel" style="padding:20px;display:flex;flex-direction:column;align-items:center">
-          <div style="position:relative;width:200px;height:200px;margin-bottom:16px">
-            <canvas id="categoryPieChart" width="200" height="200"></canvas>
-            <div id="pieTooltip" style="display:none;position:absolute;background:#0f172a;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.6"></div>
-          </div>
-          <div id="pieLegend" style="width:100%;display:flex;flex-direction:column;gap:7px"></div>
-        </div>
-      </div>
+    </div>
 
+    <!-- Category Pie Chart (전체 너비, 크게) -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#0891b2"></div>
+      <div class="section-heading-text">Spend by Category</div>
+    </div>
+    <div class="panel" style="padding:40px;margin-bottom:28px">
+      <div style="display:grid;grid-template-columns:360px 1fr;gap:60px;align-items:center" id="pieGrid">
+        <div style="position:relative;width:360px;height:360px;margin:0 auto">
+          <canvas id="categoryPieChart" width="360" height="360"></canvas>
+          <div id="pieTooltip" style="display:none;position:absolute;background:#0f172a;color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:10px;pointer-events:none;white-space:nowrap;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.8"></div>
+        </div>
+        <div id="pieLegend" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
     </div>
 
     <!-- Section 3: Top Projects -->
@@ -632,7 +632,7 @@ function renderPieChart(data) {
   const canvas = document.getElementById('categoryPieChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = 200, H = 200, cx = W/2, cy = H/2, r = 88, inner = 48;
+  const W = 360, H = 360, cx = W/2, cy = H/2, r = 158, inner = 80;
 
   // 카테고리별 합산
   const totals = {};
@@ -707,14 +707,14 @@ function renderPieChart(data) {
   // 범례
   document.getElementById('pieLegend').innerHTML = sorted.map(([cat, val]) => {
     const pct = Math.round(val / total * 100);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:7px">
-        <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
-        <span style="font-size:12px;font-weight:600;color:#1e293b">${CAT_LABELS[cat]||cat}</span>
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:14px;height:14px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
+        <span style="font-size:15px;font-weight:600;color:#1e293b">${CAT_LABELS[cat]||cat}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:12px;font-weight:700;color:#1e293b">${fmtShort(val)}</span>
-        <span style="font-size:10px;font-weight:700;color:#fff;background:${CAT_COLORS[cat]||'#94a3b8'};padding:1px 6px;border-radius:20px">${pct}%</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:15px;font-weight:700;color:#1e293b">${fmt(val)}</span>
+        <span style="font-size:12px;font-weight:700;color:#fff;background:${CAT_COLORS[cat]||'#94a3b8'};padding:3px 10px;border-radius:20px;min-width:44px;text-align:center">${pct}%</span>
       </div>
     </div>`;
   }).join('');
