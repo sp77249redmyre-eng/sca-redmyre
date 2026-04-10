@@ -182,16 +182,16 @@
 
     <div id="messageThread" style="padding:16px 24px;display:flex;flex-direction:column;gap:12px;flex:1"></div>
 
-    <div id="adminResponseWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
-      <div style="font-size:11px;font-weight:600;color:#166534;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Response</div>
-      <textarea class="modal-textarea" id="adminResponse" placeholder="Add a response or note for the resident…" style="min-height:120px;border-color:#bbf7d0;background:#f0fdf4;border-radius:10px;border-width:1.5px"></textarea>
+    <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
+      <textarea class="modal-textarea" id="adminResponse" placeholder="Type your reply…" style="min-height:100px;border-radius:10px;border-width:1.5px"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px">
+        <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px;display:none">
           <option value="open">🔴 Open</option>
           <option value="inprog">🟡 In Progress</option>
           <option value="resolved">✅ Resolved</option>
         </select>
-        <button class="btn-primary" id="saveAdminResponseBtn" style="background:#166534">Save & Send Response →</button>
+        <button class="btn-primary" id="saveAdminResponseBtn">Send Reply →</button>
       </div>
     </div>
 
@@ -463,14 +463,26 @@ window.openDetail = async (id) => {
 
   await loadMessageThread(id);
 
-  const adminWrap = document.getElementById('adminResponseWrap');
+  const replyWrap = document.getElementById('replyWrap');
+  const statusSel = document.getElementById('adminStatusSelect');
+  document.getElementById('adminResponse').value = '';
   if (role === 'admin') {
-    adminWrap.style.display = 'block';
-    document.getElementById('adminResponse').value = '';
-    document.getElementById('adminStatusSelect').value = c.status;
+    replyWrap.style.display = 'block';
+    replyWrap.style.background = '#f0fdf4';
+    document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
+    document.getElementById('adminResponse').style.background = '#f0fdf4';
+    statusSel.style.display = 'block';
+    statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
+  } else if (canSubmit.includes(role) && c.user_id === user.id) {
+    replyWrap.style.display = 'block';
+    replyWrap.style.background = '';
+    document.getElementById('adminResponse').style.borderColor = '';
+    document.getElementById('adminResponse').style.background = '';
+    statusSel.style.display = 'none';
+    document.getElementById('deleteComplaintBtn').style.display = 'none';
   } else {
-    adminWrap.style.display = 'none';
+    replyWrap.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
   }
   document.getElementById('detailModal').classList.add('open');
@@ -478,10 +490,12 @@ window.openDetail = async (id) => {
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
   const response = document.getElementById('adminResponse').value.trim();
-  const status   = document.getElementById('adminStatusSelect').value;
-  if (!response) { showToast('Please enter a response', true); return; }
+  const status   = document.getElementById('adminStatusSelect').value || null;
+  if (!response) { showToast('Please enter a reply', true); return; }
   try {
-    await supabase.from('complaints').update({ admin_response: response, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+    if (role === 'admin' && status) {
+      await supabase.from('complaints').update({ admin_response: response, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+    }
     await supabase.from('complaint_messages').insert({
       complaint_id: currentComplaintId,
       user_id: user.id,
@@ -491,26 +505,35 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
     });
     try {
       const c = allComplaints.find(x => x.id === currentComplaintId);
-      if (c?.user_id) {
-        const { data: { session: pushSession } } = await supabase.auth.getSession();
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      if (role === 'admin' && c?.user_id) {
         await fetch('/api/send-push', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ user_id: c.user_id, title: '📬 Your Request has been Updated', message: `Status: ${STATUS_MAP[status]?.label || status}`, url: '/pages/complaints.html' })
+          body: JSON.stringify({ user_id: c.user_id, title: '📬 New Reply from Management', message: response.substring(0, 80), url: '/pages/complaints.html' })
         });
-        if (c?.user_id) {
-          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ complaint_title: c.title, complaint_body: c.body, admin_response: response, requester_user_id: c.user_id })
-          });
-        }
+        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ complaint_title: c.title, complaint_body: c.body, admin_response: response, requester_user_id: c.user_id, sender_role: 'admin', sender_name: name })
+        });
+      } else if (role !== 'admin' && c?.user_id) {
+        await fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ target_role: 'admin', title: '📬 Resident Replied', message: `${name}: ${response.substring(0, 60)}`, url: '/pages/complaints.html' })
+        });
+        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ complaint_title: c.title, complaint_body: c.body, admin_response: response, requester_user_id: c.user_id, sender_role: role, sender_name: name })
+        });
       }
     } catch(pushErr) {}
     document.getElementById('adminResponse').value = '';
     await loadMessageThread(currentComplaintId);
     await loadComplaints();
-    showToast('Response saved & sent ✓');
+    showToast('Reply sent ✓');
   } catch(e) { showToast('Failed to save', true); }
 });
 
