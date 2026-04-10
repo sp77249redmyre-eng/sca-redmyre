@@ -490,6 +490,12 @@ async function init() {
   }
   await loadData();
   renderQuotes();
+
+  supabase.channel('quotes-realtime')
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'quotes'}, async () => { await loadData(); renderQuotes(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'votes'}, async () => { await loadData(); renderQuotes(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'project_comments'}, async () => { await loadData(); renderQuotes(); })
+    .subscribe();
 }
 
 async function loadData() {

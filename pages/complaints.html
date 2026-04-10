@@ -197,6 +197,7 @@
 
     <div class="modal-footer" style="padding:14px 24px;border-top:1px solid var(--border-light)">
       <button class="btn-danger" id="deleteComplaintBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" id="editComplaintBtn" style="display:none" onclick="openEditComplaint()">✏️ Edit</button>
       <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
     </div>
   </div>
@@ -373,36 +374,47 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
   
   btn.disabled = true; btn.textContent = 'Submitting…';
   try {
-    const { data: inserted, error } = await supabase.from('complaints').insert({
-      title, body, category,
-      user_id: user.id,
-      submitter_name: name,
-      submitter_role: role,
-      unit: unitInfo,
-      status: 'open',
-      has_photos: pendingPhotos.length > 0,
-    }).select().single();
-    if (error) throw error;
-    if (pendingPhotos.length > 0) {
-      for (const file of pendingPhotos) {
-        const ext = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
-        await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
+    const editId = document.getElementById('complaintEditId').value;
+    if (editId) {
+      const { error } = await supabase.from('complaints').update({
+        title, body, category, updated_at: new Date().toISOString()
+      }).eq('id', editId).eq('user_id', user.id);
+      if (error) throw error;
+      closeModal('complaintModal');
+      await loadComplaints();
+      showToast('Request updated ✓');
+    } else {
+      const { data: inserted, error } = await supabase.from('complaints').insert({
+        title, body, category,
+        user_id: user.id,
+        submitter_name: name,
+        submitter_role: role,
+        unit: unitInfo,
+        status: 'open',
+        has_photos: pendingPhotos.length > 0,
+      }).select().single();
+      if (error) throw error;
+      if (pendingPhotos.length > 0) {
+        for (const file of pendingPhotos) {
+          const ext = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+          await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
+        }
       }
+      closeModal('complaintModal');
+      pendingPhotos = [];
+      await loadComplaints();
+      await logActivity('COMPLAINT_CREATED', inserted.id);
+      try {
+        const { data: { session: pushSession } } = await supabase.auth.getSession();
+        await fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ target_role: 'admin', title: '📬 New Resident Request', message: `${title} — ${CAT_LABEL[category]||category}`, url: '/pages/complaints.html' })
+        });
+      } catch(pushErr) {}
+      showToast('Request submitted ✓');
     }
-    closeModal('complaintModal');
-    pendingPhotos = [];
-    await loadComplaints();
-    await logActivity('COMPLAINT_CREATED', inserted.id);
-    try {
-      const { data: { session: pushSession } } = await supabase.auth.getSession();
-      await fetch('/api/send-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ target_role: 'admin', title: '📬 New Resident Request', message: `${title} — ${CAT_LABEL[category]||category}`, url: '/pages/complaints.html' })
-      });
-    } catch(pushErr) {}
-    showToast('Request submitted ✓');
   } catch(e) { showToast(e.message||'Failed to submit', true); }
   finally { btn.disabled = false; btn.textContent = 'Submit →'; }
 });
@@ -474,6 +486,7 @@ window.openDetail = async (id) => {
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
+    document.getElementById('editComplaintBtn').style.display = 'none';
   } else if (canSubmit.includes(role) && c.user_id === user.id) {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '';
@@ -481,9 +494,11 @@ window.openDetail = async (id) => {
     document.getElementById('adminResponse').style.background = '';
     statusSel.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
+    document.getElementById('editComplaintBtn').style.display = c.status !== 'resolved' ? 'inline-flex' : 'none';
   } else {
     replyWrap.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
+    document.getElementById('editComplaintBtn').style.display = 'none';
   }
   document.getElementById('detailModal').classList.add('open');
 };
@@ -551,6 +566,22 @@ document.getElementById('deleteComplaintBtn').addEventListener('click', async ()
 
 window.openLightbox  = (url) => { document.getElementById('lightboxImg').src = url; document.getElementById('photoLightbox').classList.add('open'); };
 window.closeLightbox = ()    => document.getElementById('photoLightbox').classList.remove('open');
+
+window.openEditComplaint = () => {
+  const c = allComplaints.find(x => x.id === currentComplaintId);
+  if (!c || c.user_id !== user.id) return;
+  document.getElementById('complaintModalTitle').textContent = 'Edit Request';
+  document.getElementById('complaintEditId').value = c.id;
+  document.getElementById('complaintCategory').value = c.category || 'other';
+  document.getElementById('complaintTitle').value = c.title || '';
+  document.getElementById('complaintBody').value = c.body || '';
+  document.getElementById('photoPreviewGrid').innerHTML = '';
+  pendingPhotos = [];
+  document.getElementById('unitAutoBox').style.display = 'none';
+  document.getElementById('unitRadioBox').style.display = 'none';
+  closeModal('detailModal');
+  document.getElementById('complaintModal').classList.add('open');
+};
 
 // Load user's units from occupants table
 async function loadMyUnits() {
@@ -623,6 +654,13 @@ function renderUnitSelection() {
 
 if (canSubmit.includes(role)) await loadMyUnits();
 await loadComplaints();
+
+supabase.channel('complaints-realtime')
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => { await loadComplaints(); })
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async () => {
+    if (currentComplaintId) await loadMessageThread(currentComplaintId);
+  })
+  .subscribe();
 </script>
 </body>
 </html>
