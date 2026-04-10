@@ -482,6 +482,43 @@
       </div>
     </div>
 
+    <!-- Row 5b: Discussion Comments Cleanup -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon" style="background:#eff6ff">💬</div>
+        <div>
+          <div class="card-title">Discussion Comments Cleanup</div>
+          <div class="card-desc">Remove discussion comments from completed / declined / expired projects</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div class="section-label">Scan</div>
+            <div class="cleanup-row">
+              <button class="btn-primary" id="pcScanBtn">Scan Comments</button>
+              <div class="files-found">Projects found: <span id="pcCount">—</span></div>
+            </div>
+          </div>
+          <div id="pcPreviewSection" style="display:none">
+            <div class="divider"></div>
+            <div class="section-label">Projects with comments</div>
+            <div class="preview-list" id="pcPreviewList"></div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Delete</div>
+            <button class="btn-danger" id="pcDeleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete Comments</button>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div class="section-label">Status</div>
+            <div class="status-box ready" id="pcStatusBox">Ready</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 5: Junk Cleanup (full width) -->
     <div class="card full" style="margin-bottom:16px">
       <div class="card-header">
@@ -1083,6 +1120,80 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
     document.getElementById('pcStatusBox').textContent = 'Delete failed';
     document.getElementById('pcStatusBox').className = 'status-box error';
     showToast('Delete failed', true);
+  } else {
+    document.getElementById('pcCount').textContent = '0';
+    document.getElementById('pcPreviewSection').style.display = 'none';
+    document.getElementById('pcStatusBox').textContent = 'Comments deleted ✓';
+    document.getElementById('pcStatusBox').className = 'status-box ok';
+    pcProjectIds = [];
+    btn.disabled = true; btn.style.opacity = '0.45'; btn.textContent = 'Delete Comments';
+    showToast('Discussion comments cleaned up ✓');
+  }
+});
+
+// ─── PROJECT COMMENTS CLEANUP ────────────────────────────────
+let pcProjectIds = [];
+
+document.getElementById('pcScanBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('pcScanBtn');
+  btn.disabled = true; btn.textContent = 'Scanning…';
+  document.getElementById('pcStatusBox').textContent = 'Scanning…';
+  document.getElementById('pcStatusBox').className = 'status-box scanning';
+  pcProjectIds = [];
+
+  const { data: quotes } = await supabase.from('quotes')
+    .select('id, title, status')
+    .in('status', ['approved','declined','expired','removed','archived']);
+
+  if (!quotes || !quotes.length) {
+    document.getElementById('pcCount').textContent = '0';
+    document.getElementById('pcPreviewSection').style.display = 'none';
+    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
+    document.getElementById('pcStatusBox').className = 'status-box ready';
+    btn.disabled = false; btn.textContent = 'Scan Comments'; return;
+  }
+
+  const { data: comments } = await supabase.from('project_comments')
+    .select('project_id').in('project_id', quotes.map(q => q.id));
+
+  if (!comments || !comments.length) {
+    document.getElementById('pcCount').textContent = '0';
+    document.getElementById('pcPreviewSection').style.display = 'none';
+    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
+    document.getElementById('pcStatusBox').className = 'status-box ready';
+    btn.disabled = false; btn.textContent = 'Scan Comments'; return;
+  }
+
+  pcProjectIds = [...new Set(comments.map(c => c.project_id))];
+  document.getElementById('pcCount').textContent = pcProjectIds.length;
+  const list = document.getElementById('pcPreviewList');
+  list.innerHTML = '';
+  pcProjectIds.forEach(pid => {
+    const q = quotes.find(q => q.id === pid);
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.textContent = (q?.title || pid) + ' — ' + (q?.status || '');
+    list.appendChild(item);
+  });
+  document.getElementById('pcPreviewSection').style.display = 'block';
+  const deleteBtn = document.getElementById('pcDeleteBtn');
+  deleteBtn.disabled = false; deleteBtn.style.opacity = '1'; deleteBtn.style.cursor = 'pointer';
+  document.getElementById('pcStatusBox').textContent = pcProjectIds.length + ' project(s) with comments found';
+  document.getElementById('pcStatusBox').className = 'status-box warning';
+  btn.disabled = false; btn.textContent = 'Scan Comments';
+});
+
+document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
+  if (!pcProjectIds.length) return;
+  if (!confirm('Delete all discussion comments from completed projects?')) return;
+  const btn = document.getElementById('pcDeleteBtn');
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  const { error } = await supabase.from('project_comments').delete().in('project_id', pcProjectIds);
+  if (error) {
+    document.getElementById('pcStatusBox').textContent = 'Delete failed';
+    document.getElementById('pcStatusBox').className = 'status-box error';
+    showToast('Delete failed', true);
+    btn.disabled = false; btn.textContent = 'Delete Comments';
   } else {
     document.getElementById('pcCount').textContent = '0';
     document.getElementById('pcPreviewSection').style.display = 'none';
