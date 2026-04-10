@@ -290,13 +290,16 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     .not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed')
     .gte('completion_date',`${thisYear}-01-01`).lte('completion_date',new Date().toISOString().split('T')[0]);
 
-  const prevTotal = (prevRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
+  const prevDbTotal = (prevRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
+  const prevFinal = prevDbTotal > 0 ? prevDbTotal : 125002;
+  const prevNotes = prevDbTotal > 0 ? 'Jan '+lastYear+' – Dec '+lastYear : 'Jan '+lastYear+' – Dec '+lastYear+' (AGM Audited)';
+  const prevWorks = prevDbTotal > 0 ? (prevRaw||[]).length : 'AGM';
   const currTotal = (currRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
-  const variance = currTotal - prevTotal;
-  const variancePct = prevTotal ? ((variance/prevTotal)*100).toFixed(1)+'%' : 'N/A';
+  const variance = currTotal - prevFinal;
+  const variancePct = ((variance/prevFinal)*100).toFixed(1)+'%';
 
   const compRows = [
-    { 'Period': `${lastYear} Full Year`, 'Amount (ex GST)': prevTotal, 'Works': (prevRaw||[]).length, 'Notes': `Jan ${lastYear} – Dec ${lastYear}` },
+    { 'Period': lastYear+' Full Year', 'Amount (ex GST)': prevFinal, 'Works': prevWorks, 'Notes': prevNotes },
     { 'Period': `${thisYear} YTD`, 'Amount (ex GST)': currTotal, 'Works': (currRaw||[]).length, 'Notes': `Jan ${thisYear} – present` },
     { 'Period': 'Variance', 'Amount (ex GST)': variance, 'Works': '', 'Notes': variancePct+' vs last year' },
   ];
