@@ -181,9 +181,11 @@
       <div class="section-heading-bar" style="background:#7c3aed"></div>
       <div class="section-heading-text">Monthly Spend</div>
     </div>
-    <div class="panel" style="padding:32px;margin-bottom:28px">
-      <canvas id="monthlyBarChart" style="width:100%;height:320px;display:block"></canvas>
+    <div class="panel" style="padding:32px;margin-bottom:0;border-radius:16px 16px 0 0">
+      <canvas id="monthlyBarChart" style="width:100%;height:380px;display:block"></canvas>
     </div>
+    <div id="monthDetail" style="display:none;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;overflow:hidden;margin-bottom:28px"></div>
+    <div style="margin-bottom:28px"></div>
 
     <!-- 3. Top Contractors -->
     <div class="section-heading">
@@ -381,55 +383,170 @@ function renderDashboard(data) {
   }).join('')||'<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
 }
 
+// 월별 바 차트 슬라이스 정보 저장
+window._monthSlices = [];
+
 function renderMonthlyBarChart(sortedMonths) {
   const canvas=document.getElementById('monthlyBarChart');
   if (!canvas||!sortedMonths.length) return;
   const dpr=window.devicePixelRatio||1;
   const W=canvas.offsetWidth||800;
-  const H=320;
+  const H=380;
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
   const maxVal=Math.max(...sortedMonths.map(([,d])=>d.total),1);
   const n=sortedMonths.length;
-  const padL=56,padR=20,padT=50,padB=60;
+  const padL=72,padR=24,padT=60,padB=70;
   const chartW=W-padL-padR;
   const chartH=H-padT-padB;
-  const barW=Math.min(Math.floor(chartW/n)-8,60);
+  const barW=Math.min(Math.floor(chartW/n)-12,80);
   const gap=(chartW-barW*n)/(n+1);
 
-  // 그리드
-  for (let i=0;i<=4;i++) {
-    const y=padT+chartH-(chartH/4)*i;
-    ctx.strokeStyle='#f1f5f9'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
-    ctx.fillStyle='#94a3b8'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
-    ctx.fillText(fmtShort(maxVal/4*i),padL-6,y+4);
+  window._monthSlices = [];
+  let selectedMonth = window._selectedMonth||null;
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+
+    // 그리드
+    for (let i=0;i<=4;i++) {
+      const y=padT+chartH-(chartH/4)*i;
+      ctx.strokeStyle='#f1f5f9'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
+      ctx.fillStyle='#94a3b8'; ctx.font='12px DM Sans,sans-serif'; ctx.textAlign='right';
+      ctx.fillText(fmtShort(maxVal/4*i),padL-8,y+4);
+    }
+
+    sortedMonths.forEach(([key,d],i)=>{
+      const x=padL+gap+i*(barW+gap);
+      const bH=Math.max((d.total/maxVal)*chartH,4);
+      const y=padT+chartH-bH;
+      const isSelected = selectedMonth===key;
+
+      window._monthSlices[i]={x,y:padT,w:barW,h:chartH+padB,key,d};
+
+      // 바
+      const grad=ctx.createLinearGradient(x,y,x,y+bH);
+      if (isSelected) {
+        grad.addColorStop(0,'#f59e0b'); grad.addColorStop(1,'#d97706');
+      } else {
+        grad.addColorStop(0,'#3b82f6'); grad.addColorStop(1,'#1e3a8a');
+      }
+      ctx.fillStyle=grad;
+      ctx.beginPath(); ctx.roundRect(x,y,barW,bH,[8,8,0,0]); ctx.fill();
+
+      // 선택된 바 테두리
+      if (isSelected) {
+        ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.roundRect(x-1,y-1,barW+2,bH+1,[8,8,0,0]); ctx.stroke();
+      }
+
+      // inc GST (크게)
+      ctx.fillStyle=isSelected?'#d97706':'#1e293b';
+      ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-24);
+      // ex GST
+      ctx.fillStyle='#94a3b8'; ctx.font='11px DM Sans,sans-serif';
+      ctx.fillText(fmtShort(d.total),x+barW/2,y-10);
+      // 월 라벨 (크게)
+      ctx.fillStyle=isSelected?'#d97706':'#475569';
+      ctx.font=`${isSelected?'bold ':''}13px DM Sans,sans-serif`;
+      ctx.fillText(d.label,x+barW/2,padT+chartH+20);
+      // job 수
+      ctx.fillStyle='#94a3b8'; ctx.font='11px DM Sans,sans-serif';
+      ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+38);
+    });
+
+    // X축
+    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(padL,padT+chartH); ctx.lineTo(padL+chartW,padT+chartH); ctx.stroke();
   }
 
-  sortedMonths.forEach(([key,d],i)=>{
-    const x=padL+gap+i*(barW+gap);
-    const bH=Math.max((d.total/maxVal)*chartH,2);
-    const y=padT+chartH-bH;
-    const grad=ctx.createLinearGradient(x,y,x,y+bH);
-    grad.addColorStop(0,'#3b82f6'); grad.addColorStop(1,'#1e3a8a');
-    ctx.fillStyle=grad;
-    ctx.beginPath(); ctx.roundRect(x,y,barW,bH,[6,6,0,0]); ctx.fill();
-    // inc GST 위
-    ctx.fillStyle='#1e293b'; ctx.font='bold 10px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-20);
-    // ex GST
-    ctx.fillStyle='#94a3b8'; ctx.font='9px DM Sans,sans-serif';
-    ctx.fillText(fmtShort(d.total),x+barW/2,y-8);
-    // 월 라벨
-    ctx.fillStyle='#475569'; ctx.font='10px DM Sans,sans-serif';
-    ctx.fillText(d.label,x+barW/2,padT+chartH+16);
-    ctx.fillStyle='#94a3b8'; ctx.font='9px DM Sans,sans-serif';
-    ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+30);
-  });
-  ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(padL,padT+chartH); ctx.lineTo(padL+chartW,padT+chartH); ctx.stroke();
+  draw();
+  window._redrawMonthlyBar = draw;
+
+  // 클릭
+  canvas.onclick=(e)=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(W/rect.width);
+    const my=(e.clientY-rect.top)*(H/rect.height);
+    let clicked=null;
+    window._monthSlices.forEach(s=>{
+      if (mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h) clicked=s;
+    });
+    if (!clicked) return;
+    if (window._selectedMonth===clicked.key) {
+      window._selectedMonth=null;
+      document.getElementById('monthDetail').style.display='none';
+    } else {
+      window._selectedMonth=clicked.key;
+      renderMonthDetail(clicked.key, clicked.d);
+    }
+    draw();
+  };
+
+  // 호버 커서
+  canvas.onmousemove=(e)=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(W/rect.width);
+    const my=(e.clientY-rect.top)*(H/rect.height);
+    let hit=false;
+    window._monthSlices.forEach(s=>{
+      if (mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h) hit=true;
+    });
+    canvas.style.cursor=hit?'pointer':'default';
+  };
+}
+
+function renderMonthDetail(key, d) {
+  const detail=document.getElementById('monthDetail');
+  const items=(_currentPieData||[]).filter(q=>{
+    if (!q.completion_date) return false;
+    const dt=new Date(q.completion_date);
+    const k=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+    return k===key;
+  }).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+
+  const rows=items.map((q,i)=>{
+    const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
+    const emg=q.is_emergency?'<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:8px;margin-left:6px">EMG</span>':'';
+    const catColor=CAT_COLORS[q._cat||'Other']||'#94a3b8';
+    return `<div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
+      <div style="font-size:12px;color:#64748b">${dateStr}</div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px">${q.vendor||'—'}</div>
+      </div>
+      <div style="text-align:center"><span style="font-size:11px;font-weight:600;color:${catColor};background:${catColor}18;padding:3px 10px;border-radius:20px">${CAT_LABELS[q._cat||'Other']||q._cat||'—'}</span></div>
+      <div style="text-align:right;font-size:14px;font-weight:600;color:#1e293b">${fmt(Number(q.amount||0))}</div>
+      <div style="text-align:right;font-size:14px;font-weight:700;color:#2563eb">${fmt(Number(q.amount||0)*1.1)}</div>
+    </div>`;
+  }).join('');
+
+  detail.style.display='block';
+  detail.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#0f2456,#1e3a8a);border-radius:12px 12px 0 0">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">${d.label}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:2px">${items.length} works &nbsp;·&nbsp; ex GST: ${fmt(d.total)} &nbsp;·&nbsp; inc GST: <span style="color:#93c5fd;font-weight:700">${fmt(d.total*1.1)}</span></div>
+      </div>
+      <button onclick="window._selectedMonth=null;document.getElementById('monthDetail').style.display='none';if(window._redrawMonthlyBar)window._redrawMonthlyBar();" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600">✕ Close</button>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:10px 20px;background:#f8fafc;border-bottom:2px solid #e2e8f0">
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Date</div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Project / Contractor</div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:center">Category</div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">ex GST</div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">inc GST</div>
+    </div>
+    ${rows}
+    <div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:linear-gradient(135deg,#0f2456,#1e3a8a);border-radius:0 0 12px 12px">
+      <div></div><div></div><div></div>
+      <div style="text-align:right;font-size:14px;font-weight:700;color:#fff">${fmt(d.total)}</div>
+      <div style="text-align:right;font-size:14px;font-weight:700;color:#93c5fd">${fmt(d.total*1.1)}</div>
+    </div>`;
 }
 
 function renderPieChart(data) {
