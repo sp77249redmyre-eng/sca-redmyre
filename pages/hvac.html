@@ -156,6 +156,10 @@
         </div>
         <div class="card" id="progressList"><div class="empty-state">No requests in progress</div></div>
         <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="form-select" id="adminFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select>
+          <select class="form-select" id="adminFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select>
+        </div>
         <div class="card" id="completedList"><div class="empty-state">No completed requests yet</div></div>
       </div>
       <!-- Non-admin: my requests -->
@@ -183,6 +187,10 @@
         </div>
         <div class="card" id="obsProgressList"><div class="empty-state">No requests in progress</div></div>
         <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="form-select" id="obsFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select>
+          <select class="form-select" id="obsFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select>
+        </div>
         <div class="card" id="obsCompletedList"><div class="empty-state">No completed requests yet</div></div>
       </div>
     </div>
@@ -510,13 +518,16 @@ async function loadAdminData() {
     `).join('');
   }
   
-  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(10);
+  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('completedList');
-  
-  if (!completed?.length) { 
-    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; 
-  } else {
-    cList.innerHTML = completed.map(r => `
+  window._adminCompleted = completed || [];
+
+  function renderAdminCompleted() {
+    const t = document.getElementById('adminFilterTenancy').value;
+    const l = document.getElementById('adminFilterLevel').value;
+    const filtered = window._adminCompleted.filter(r => (!t || r.tenancy === t) && (!l || r.level === l));
+    if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
+    cList.innerHTML = filtered.map(r => `
       <div class="my-req-row">
         <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
         <div style="flex:1">
@@ -529,9 +540,9 @@ async function loadAdminData() {
       </div>
     `).join('');
   }
-}
-
-async function loadObserverData() {
+  renderAdminCompleted();
+  document.getElementById('adminFilterTenancy').onchange = renderAdminCompleted;
+  document.getElementById('adminFilterLevel').onchange = renderAdminCompleted;
   const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
   const pList = document.getElementById('obsPendingList');
   const pCount = document.getElementById('obsPendingCount');
@@ -574,12 +585,16 @@ async function loadObserverData() {
     `).join('');
   }
 
-  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(10);
+  const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('obsCompletedList');
-  if (!completed?.length) {
-    cList.innerHTML = '<div class="empty-state">No completed requests yet</div>';
-  } else {
-    cList.innerHTML = completed.map(r => `
+  window._obsCompleted = completed || [];
+
+  function renderObsCompleted() {
+    const t = document.getElementById('obsFilterTenancy').value;
+    const l = document.getElementById('obsFilterLevel').value;
+    const filtered = window._obsCompleted.filter(r => (!t || r.tenancy === t) && (!l || r.level === l));
+    if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
+    cList.innerHTML = filtered.map(r => `
       <div class="my-req-row">
         <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
         <div style="flex:1">
@@ -592,6 +607,9 @@ async function loadObserverData() {
       </div>
     `).join('');
   }
+  renderObsCompleted();
+  document.getElementById('obsFilterTenancy').onchange = renderObsCompleted;
+  document.getElementById('obsFilterLevel').onchange = renderObsCompleted;
 }
 
 document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
