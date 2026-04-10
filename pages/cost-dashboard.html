@@ -529,7 +529,7 @@ function renderPieChart(data) {
   const ctx=canvas.getContext('2d');
   const W=360,H=360,cx=W/2,cy=H/2,r=158,inner=90;
   const totals={};
-  data.forEach(q=>{ const cat=; totals[cat]=(totals[cat]||0)+Number(q.amount||0); });
+  data.forEach(q=>{ const cat=q._cat||'General'; totals[cat]=(totals[cat]||0)+Number(q.amount||0); });
   const total=Object.values(totals).reduce((s,v)=>s+v,0);
   if (!total) return;
   const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
@@ -728,7 +728,7 @@ function toggleCategoryAccordion(cat) {
 function renderCategoryAccordion(data, selectedCat) {
   const accordion = document.getElementById('categoryAccordion');
   const catTotals = {};
-  data.forEach(q => { const c=; catTotals[c]=(catTotals[c]||0)+Number(q.amount||0); });
+  data.forEach(q => { const c=q._cat||'General'; catTotals[c]=(catTotals[c]||0)+Number(q.amount||0); });
   const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
 
   accordion.innerHTML = sorted.map(([cat, total]) => {
