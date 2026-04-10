@@ -153,6 +153,25 @@
 
     <!-- Category Filter -->
 
+    <!-- Year Comparison Cards -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#16a34a"></div>
+      <div class="section-heading-text">Year-on-Year Comparison</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
+      <div class="stat-card" style="--stat-color:#2563eb">
+        <div class="stat-label">2025 Actual</div>
+        <div class="stat-num" style="color:#2563eb">$125,002</div>
+        <div class="stat-sub">ex GST &nbsp;·&nbsp; Sep 2024 – Aug 2025</div>
+        <div class="stat-sub" style="margin-top:6px;font-size:10px;color:#94a3b8">Source: AGM Audited Financial Report</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#16a34a">
+        <div class="stat-label">2026 YTD</div>
+        <div class="stat-num" style="color:#16a34a" id="ytd2026Num">—</div>
+        <div class="stat-sub">ex GST &nbsp;·&nbsp; Jan 2026 – present</div>
+        <div class="stat-sub" style="margin-top:6px;font-size:10px;color:#94a3b8" id="ytd2026Count">Loading...</div>
+      </div>
+    </div>
 
     <!-- 1. Pie Chart -->
     <div class="section-heading">
@@ -281,6 +300,19 @@ async function loadDashboard() {
 
   const { data:raw } = await qQuery;
   allData = (raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
+
+  // 2026 YTD — always Jan 2026 to today regardless of filter
+  const { data:ytdRaw } = await supabase.from('quotes').select('amount')
+    .not('completion_date','is',null)
+    .eq('work_status','completed')
+    .not('status','eq','removed')
+    .gte('completion_date','2026-01-01')
+    .lte('completion_date',new Date().toISOString().split('T')[0]);
+
+  const ytdTotal = (ytdRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
+  const ytdCount = (ytdRaw||[]).length;
+  document.getElementById('ytd2026Num').textContent = '$'+ytdTotal.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('ytd2026Count').textContent = ytdCount+' completed work'+(ytdCount!==1?'s':'');
 
   renderDashboard(allData);
 }
