@@ -215,9 +215,9 @@ const { supabase, user, role } = ctx;
 
 if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/building.html';
 
-const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
-const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777','Other':'#94a3b8' };
-const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3','Other':'#f1f5f9' };
+const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal', };
+const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777', };
+const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3', };
 const Q_COLORS = ['#2563eb','#16a34a','#f59e0b','#7c3aed'];
 
 const MONTH_COLORS = ['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#16a34a','#ea580c','#6366f1','#0e7490','#9333ea'];
@@ -226,12 +226,10 @@ const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixe
 
 function parseQuoteCategory(q) {
   try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
-  return q.category||'Other';
-}
+  }
 
 function catBadge(cat) {
-  const label=CAT_LABELS[cat]||cat||'Other';
-  const color=CAT_COLORS[cat]||'#94a3b8';
+    const color=CAT_COLORS[cat]||'#94a3b8';
   const bg=CAT_BG[cat]||'#f1f5f9';
   return `<span class="cat-badge" style="background:${bg};color:${color};border:0.5px solid ${color}33">${label}</span>`;
 }
@@ -487,14 +485,14 @@ function renderMonthDetail(key, d, color) {
   const rows=items.map((q,i)=>{
     const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
     const emg=q.is_emergency?'<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:8px;margin-left:6px">EMG</span>':'';
-    const catColor=CAT_COLORS[q._cat||'Other']||'#94a3b8';
+    const catColor=CAT_COLORS[]||'#94a3b8';
     return `<div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
       <div style="font-size:13px;color:#64748b">${dateStr}</div>
       <div>
         <div style="font-size:15px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
         <div style="font-size:13px;color:#94a3b8;margin-top:2px">${q.vendor||'—'}</div>
       </div>
-      <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${catColor};background:${catColor}18;padding:3px 10px;border-radius:20px">${CAT_LABELS[q._cat||'Other']||q._cat||'—'}</span></div>
+      <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${catColor};background:${catColor}18;padding:3px 10px;border-radius:20px">${CAT_LABELS[]||q._cat||'—'}</span></div>
       <div style="text-align:right;font-size:15px;font-weight:600;color:#1e293b">${fmt(Number(q.amount||0))}</div>
       <div style="text-align:right;font-size:15px;font-weight:700;color:#2563eb">${fmt(Number(q.amount||0)*1.1)}</div>
     </div>`;
@@ -532,7 +530,7 @@ function renderPieChart(data) {
   const ctx=canvas.getContext('2d');
   const W=360,H=360,cx=W/2,cy=H/2,r=158,inner=90;
   const totals={};
-  data.forEach(q=>{ const cat=q._cat||'Other'; totals[cat]=(totals[cat]||0)+Number(q.amount||0); });
+  data.forEach(q=>{ const cat=; totals[cat]=(totals[cat]||0)+Number(q.amount||0); });
   const total=Object.values(totals).reduce((s,v)=>s+v,0);
   if (!total) return;
   const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
@@ -603,7 +601,7 @@ function renderPieChart(data) {
   document.getElementById('pieLegend').innerHTML=sorted.map(([cat,val],i)=>{
     const pct=Math.round(val/total*100);
     const color=CAT_COLORS[cat]||'#94a3b8';
-    const items=data.filter(q=>(q._cat||'Other')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+    const items=data.filter(q=>()===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
     const detailRows=items.map((q,j)=>{
       const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
       const emg=q.is_emergency?`<span style="font-size:9px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 5px;border-radius:8px;margin-left:4px">EMG</span>`:'';
@@ -731,11 +729,11 @@ function toggleCategoryAccordion(cat) {
 function renderCategoryAccordion(data, selectedCat) {
   const accordion = document.getElementById('categoryAccordion');
   const catTotals = {};
-  data.forEach(q => { const c=q._cat||'Other'; catTotals[c]=(catTotals[c]||0)+Number(q.amount||0); });
+  data.forEach(q => { const c=; catTotals[c]=(catTotals[c]||0)+Number(q.amount||0); });
   const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
 
   accordion.innerHTML = sorted.map(([cat, total]) => {
-    const items = data.filter(q=>(q._cat||'Other')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+    const items = data.filter(q=>()===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
     const isOpen = cat === selectedCat;
     const color = CAT_COLORS[cat]||'#94a3b8';
 

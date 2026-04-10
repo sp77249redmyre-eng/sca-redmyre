@@ -134,8 +134,7 @@
         <option value="Lift">Lift</option>
         <option value="General">General</option>
         <option value="Legal">Legal</option>
-        <option value="Other">Other</option>
-      </select>
+              </select>
       <select class="filter-select" id="filterType">
         <option value="all">All Works</option>
         <option value="regular">Regular Quotes</option>
@@ -169,11 +168,7 @@
       </div>
       <div class="tbl-footer">
         <span style="font-size:12px;color:#64748b" id="quotesTotal">—</span>
-        <div style="text-align:right;display:flex;flex-direction:column;gap:3px">
-          <div style="font-size:12px;color:#64748b">Subtotal (ex GST): <span style="font-weight:600;color:#1e293b" id="quotesTotalAmount">$0.00</span></div>
-          <div style="font-size:12px;color:#64748b">GST (10%): <span style="font-weight:600;color:#64748b" id="quotesTotalGST">$0.00</span></div>
-          <div style="font-size:14px;font-weight:700;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:3px">Total (inc GST): <span id="quotesTotalInc">$0.00</span></div>
-        </div>
+        <span style="font-size:14px;font-weight:600;color:#1e293b" id="quotesTotalAmount">$0.00</span>
       </div>
     </div>
 
@@ -213,15 +208,15 @@ window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
 
 if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/building.html';
 
-const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal','Other':'Other' };
-const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777','Other':'#94a3b8' };
-const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3','Other':'#f1f5f9' };
+const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal', };
+const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777', };
+const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3', };
 
 const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
 
 function parseQuoteCategory(q) {
   try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
-  return q.category||'Other';
+  return q.category||'General';
 }
 
 function catBadge(cat) {
@@ -370,14 +365,10 @@ async function loadReport() {
   const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
   const reportsData=reports||[];
   const reportTotal=reportsData.reduce((s,q)=>s+(Number(q.amount)||0),0);
-  const reportGST=reportTotal*0.1;
-  const reportInc=reportTotal+reportGST;
   currentQuotesData=reportsData; currentSortKey='date'; currentSortDir='desc';
   renderQuotesList();
   document.getElementById('quotesTotal').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
   document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal);
-  document.getElementById('quotesTotalGST').textContent=fmt(reportGST);
-  document.getElementById('quotesTotalInc').textContent=fmt(reportInc);
 }
 
 function renderQuotesList() {
@@ -437,7 +428,7 @@ function renderQuotesList() {
             <div class="detail-value">${new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
           </div>
         </div>
-        ${q.notes?`<div style="margin-bottom:12px"><div class="detail-label" style="margin-bottom:5px">Notes</div><div class="detail-value" style="color:#475569;line-height:1.6;white-space:pre-wrap;word-break:break-word">${q.notes}</div></div>`:''}
+        ${q.notes?`<div style="margin-bottom:12px"><div class="detail-label" style="margin-bottom:5px">Notes</div><div class="detail-value" style="color:#475569;line-height:1.6">${q.notes}</div></div>`:''}
         ${parsed.note?`<div style="margin-bottom:12px"><div class="detail-label" style="margin-bottom:5px">Internal Note</div><div class="detail-value" style="font-style:italic;color:#64748b">${parsed.note}</div></div>`:''}
         <div>
           <div class="detail-label" style="margin-bottom:6px">Attached Files</div>

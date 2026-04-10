@@ -51,9 +51,8 @@
 .badge-x{color:#ef4444;font-size:20px;font-weight:700;line-height:1}
 .vendor-details{display:none;padding:12px 16px 14px;background:#f8fafc;border-top:0.5px solid #e2e8f0;font-size:13px;color:#374151;line-height:1.6}
 .vendor-details.show{display:block}
-.detail-line{margin-bottom:8px;display:flex;gap:8px;align-items:flex-start}
+.detail-line{margin-bottom:8px;display:flex;gap:8px}
 .detail-label{font-weight:600;color:#1e293b;min-width:88px;flex-shrink:0;font-size:12px}
-.detail-line span:last-child{font-size:12px;color:#475569;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
 .detail-files{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
 .detail-file-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#fff;border:0.5px solid #dbeafe;border-radius:7px;font-size:12px;color:#2563eb;text-decoration:none;transition:background 0.15s}
 .detail-file-link:hover{background:#eff6ff}
@@ -328,8 +327,7 @@
         <option value="Plumbing">Plumbing</option>
         <option value="Lift">Lift</option>
         <option value="Legal">Legal</option>
-        <option value="Other">Other</option>
-      </select>
+              </select>
     </div>
     <div class="modal-field">
       <label class="modal-label">Priority</label>
@@ -372,7 +370,6 @@ let allVotes    = [];
 let supabase    = null;
 let user        = null;
 let role        = 'observer';
-let name        = '—';
 let allProfiles = {};
 let committeeMembers = [];
 
@@ -439,8 +436,6 @@ async function init() {
   supabase = layoutResult.supabase;
   user     = layoutResult.user;
   role     = layoutResult.role || 'observer';
-  const { data: myProfile } = await supabase.from('profiles').select('full_name').eq('id', layoutResult.user.id).single();
-  name     = myProfile?.full_name || layoutResult.name || user?.email?.split('@')[0] || '—';
 
   window.logActivity = async function(action, record_id = null) {
     try {
@@ -869,7 +864,7 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(adminRow);
     }
 
-    // Comments – from quote_comments table
+    // Comments – all project votes, always visible
     const commTitle = document.createElement('div');
     commTitle.className = 'section-title';
     commTitle.innerHTML = '💬 Committee Comments';
@@ -877,34 +872,21 @@ function renderPendingQuotes(quotes) {
 
     const commBox = document.createElement('div');
     commBox.className = 'comments-box';
-    commBox.style.minHeight = '200px';
-    commBox.style.maxHeight = '400px';
-    commBox.id = `commBox_${projectKey}`;
-
-    function renderQComments(comments) {
-      if (!comments || comments.length === 0) {
-        commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
-        return;
-      }
-      commBox.innerHTML = comments.map(c => {
-        const date = new Date(c.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        const isMe = c.user_id === user.id;
-        return `<div style="margin-bottom:10px;padding:10px 12px;border-radius:10px;${isMe ? 'background:#eff6ff;border:0.5px solid #bfdbfe;' : 'background:#f8fafc;border:0.5px solid #e2e8f0;'}">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:600;color:${isMe ? '#1d4ed8' : '#1e293b'}">${escHtml(c.sender_name || '—')}</span>
-            <span style="font-size:11px;color:#94a3b8">${date}</span>
-          </div>
-          <div style="font-size:13px;color:#475569;line-height:1.6;white-space:pre-wrap">${escHtml(c.comment)}</div>
-        </div>`;
-      }).join('');
+    const commentRows = projectVotes.filter(v => v.comment && v.comment.trim());
+    if (commentRows.length) {
+      commentRows.forEach(v => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        const author = allProfiles[v.user_email] || v.user_email.split('@')[0];
+        item.innerHTML = `<span class="comment-author">${escHtml(author)}:</span><span class="comment-text"> ${escHtml(v.comment)}</span>`;
+        commBox.appendChild(item);
+      });
+    } else {
+      commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
     }
-
-    supabase.from('quote_comments').select('*').eq('project_id', projectKey).order('created_at', { ascending: true })
-      .then(({ data }) => renderQComments(data));
-
     votingSection.appendChild(commBox);
 
-    // Comment input
+    // Comment input – always available
     const inputTitle = document.createElement('div');
     inputTitle.className = 'section-title';
     inputTitle.innerHTML = '✏️ Add Your Comment';
@@ -915,28 +897,14 @@ function renderPendingQuotes(quotes) {
       inputArea.className = 'input-area';
       const textarea = document.createElement('textarea');
       textarea.placeholder = 'Enter your comment...';
-      textarea.style.minHeight = '100px';
       const submitBtn = document.createElement('button');
       submitBtn.className = 'submit-btn';
       submitBtn.textContent = 'Submit';
-      submitBtn.onclick = async () => {
+      submitBtn.onclick = () => {
         const txt = textarea.value.trim();
         if (!txt) { showToast('Please enter a comment', true); return; }
-        submitBtn.disabled = true; submitBtn.textContent = '…';
-        try {
-          await supabase.from('quote_comments').insert({
-            project_id: projectKey,
-            user_id: user.id,
-            sender_name: allProfiles[user.email] || user.email.split('@')[0],
-            sender_role: role,
-            comment: txt
-          });
-          textarea.value = '';
-          const { data: updated } = await supabase.from('quote_comments').select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
-          renderQComments(updated);
-          showToast('Comment submitted ✓');
-        } catch(e) { showToast('Failed to submit', true); }
-        finally { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
+        if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
+        doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
       };
       inputArea.appendChild(textarea);
       inputArea.appendChild(submitBtn);
@@ -1495,10 +1463,11 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
                 });
               }
             } catch(pushErr) {}
-            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
+            await fetch('/api/send-quote-email', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                type: 'result_reached',
                 project: pFirst.project || pFirst.project_title || 'Project',
                 result: resultLabel,
                 quotes: pGroup.map(q => ({ vendor: q.vendor, amount: q.amount || 0 }))
@@ -1543,7 +1512,7 @@ async function sendToCommittee(group, btn, projectKey) {
       const first = group[0];
       const quotesPayload = group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 }));
       if (quotesPayload.length > 0) {
-        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
+        await fetch('/api/send-quote-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1983,18 +1952,7 @@ window.closeModal = function(id) {
   if (el) el.classList.remove('open');
 };
 
-window.formatAmount = function(input) {
-  let val = input.value.replace(/[^0-9.]/g, '');
-  const parts = val.split('.');
-  if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
-  if (parts.length === 2) {
-    const decimals = parts[1].slice(0, 2);
-    const intPart = parseInt(parts[0] || '0', 10).toLocaleString('en-AU');
-    input.value = intPart + '.' + decimals;
-  } else if (val) {
-    input.value = parseInt(val, 10).toLocaleString('en-AU');
-  }
-};
+window.formatAmount = function(input) { input.value = input.value.replace(/[^0-9.]/g, ''); };
 
 window.saveQuote = async function() {
   const sel         = document.getElementById('projectSelect');
