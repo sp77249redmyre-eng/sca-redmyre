@@ -485,6 +485,7 @@ function renderPieChart(data) {
     }
   }
   draw();
+  window._drawPie = draw;
 
   canvas.onmousemove=(e)=>{
     const rect=canvas.getBoundingClientRect();
@@ -513,12 +514,12 @@ function renderPieChart(data) {
     }
   };
 
-  document.getElementById('pieLegend').innerHTML=sorted.map(([cat,val])=>{
+  document.getElementById('pieLegend').innerHTML=sorted.map(([cat,val],i)=>{
     const pct=Math.round(val/total*100);
-    return `<div data-cat="${cat}" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid #f1f5f9;cursor:pointer;transition:all 0.15s"
-      onmouseover="this.style.background='${(CAT_COLORS[cat]||'#94a3b8')}18';this.style.borderColor='${CAT_COLORS[cat]||'#94a3b8'}'"
-      onmouseout="if(!this.classList.contains('selected')){this.style.background='#f8fafc';this.style.borderColor='#f1f5f9'}"
-      onclick="handleLegendClick('${cat}')">
+    return `<div data-cat="${cat}" data-idx="${i}" style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid #f1f5f9;cursor:pointer;transition:all 0.15s"
+      onmouseover="this.style.background='${(CAT_COLORS[cat]||'#94a3b8')}18';this.style.borderColor='${CAT_COLORS[cat]||'#94a3b8'}';if(window._drawPie)window._drawPie(${i});"
+      onmouseout="if(!this.classList.contains('selected')){this.style.background='#f8fafc';this.style.borderColor='#f1f5f9';}if(window._drawPie)window._drawPie(window._selectedSlice!=null?window._selectedSlice:-1);"
+      onclick="handleLegendClick('${cat}',${i})">
       <div style="width:14px;height:14px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
       <div style="flex:1">
         <div style="font-size:14px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
@@ -546,7 +547,9 @@ updateDateRange();
 
 let _currentPieData = [];
 
-window.handleLegendClick = function(cat) {
+window.handleLegendClick = function(cat, idx) {
+  window._selectedSlice = (window._selectedSlice === idx) ? -1 : idx;
+  if (window._drawPie) window._drawPie(window._selectedSlice);
   toggleCategoryAccordion(cat);
 };
 
