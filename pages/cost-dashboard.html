@@ -307,6 +307,26 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   XLSX.writeFile(wb, `Redmyre_Financial_${period}_${dateStr}.xlsx`);
 });
 
+async function loadDashboard() {
+  document.getElementById('contractorList').innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
+
+  let qQuery=supabase.from('quotes').select('*')
+    .not('completion_date','is',null)
+    .eq('work_status','completed')
+    .not('status','eq','removed')
+    .order('completion_date',{ascending:false});
+
+  if (dateFrom) qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
+  if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+
+  const { data:raw } = await qQuery;
+  allData = (raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
+  activeCat = 'all';
+
+  buildCatFilter(allData);
+  renderDashboard(allData);
+}
+
 function renderDashboard(data) {
   if (!data.length) {
     document.getElementById('contractorList').innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">No data for this period</div>';
