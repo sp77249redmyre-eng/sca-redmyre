@@ -521,7 +521,6 @@ async function loadAdminData() {
   const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('completedList');
   window._adminCompleted = completed || [];
-
   function renderAdminCompleted() {
     const t = document.getElementById('adminFilterTenancy').value;
     const l = document.getElementById('adminFilterLevel').value;
@@ -543,6 +542,9 @@ async function loadAdminData() {
   renderAdminCompleted();
   document.getElementById('adminFilterTenancy').onchange = renderAdminCompleted;
   document.getElementById('adminFilterLevel').onchange = renderAdminCompleted;
+}
+
+async function loadObserverData() {
   const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
   const pList = document.getElementById('obsPendingList');
   const pCount = document.getElementById('obsPendingCount');
@@ -588,7 +590,6 @@ async function loadAdminData() {
   const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('obsCompletedList');
   window._obsCompleted = completed || [];
-
   function renderObsCompleted() {
     const t = document.getElementById('obsFilterTenancy').value;
     const l = document.getElementById('obsFilterLevel').value;
