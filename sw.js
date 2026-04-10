@@ -17,8 +17,8 @@ self.addEventListener('push', e => {
   const title = data.title || 'Redmyre House';
   const options = {
     body: data.body || '',
-    icon: '/icon-192-v3.png',
-    badge: '/favicon-32-v3.png',
+    icon: '/icon-192-v4.png',
+    badge: '/favicon-32-v4.png',
     tag: data.tag || 'redmyre-notification',
     data: { url: data.url || 'https://sca-redmyre.vercel.app/pages/announcements.html' },
     requireInteraction: false,
