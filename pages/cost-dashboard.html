@@ -51,7 +51,7 @@
 /* ── Two-column layout ── */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
 .panel{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
-.panel-header{padding:14px 20px;background:#f8fafc;border-bottom:0.5px solid #f1f5f9;font-size:13px;font-weight:600;color:#1e293b;display:flex;justify-content:space-between;align-items:center}
+.panel-header{padding:14px 20px;background:#f8fafc;border-bottom:0.5px solid #f1f5f9;font-size:15px;font-weight:600;color:#1e293b;display:flex;justify-content:space-between;align-items:center}
 .panel-body{padding:4px 0}
 
 /* ── Contractor / Monthly rows ── */
@@ -60,7 +60,7 @@
 .rank-row:hover{background:#f8fafc}
 .rank-left{display:flex;flex-direction:column;gap:2px}
 .rank-name{font-size:13px;font-weight:500;color:#1e293b}
-.rank-meta{font-size:11px;color:#94a3b8}
+.rank-meta{font-size:13px;color:#94a3b8}
 .rank-bar-wrap{height:3px;background:#f1f5f9;border-radius:100px;margin-top:5px;width:100%;overflow:hidden}
 .rank-bar-fill{height:100%;border-radius:100px;transition:width 0.5s ease}
 .rank-amount{font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap}
@@ -157,10 +157,7 @@
     </div>
 
     <!-- Category Filter -->
-    <div class="cat-filter-bar" id="catFilterBar" style="display:none">
-      <span class="cat-chip-label">Filter:</span>
-      <button class="cat-chip active" data-cat="all">All</button>
-    </div>
+
 
     <!-- 1. Pie Chart -->
     <div class="section-heading">
@@ -223,6 +220,7 @@ const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','S
 const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3','Other':'#f1f5f9' };
 const Q_COLORS = ['#2563eb','#16a34a','#f59e0b','#7c3aed'];
 
+const MONTH_COLORS = ['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#16a34a','#ea580c','#6366f1','#0e7490','#9333ea'];
 const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixed(1)+'k':fmt(v); };
 
@@ -240,7 +238,6 @@ function catBadge(cat) {
 
 let dateFrom=null, dateTo=null;
 let allData = [];
-let activeCat = 'all';
 
 function updateDateRange() {
   const period=document.getElementById('filterPeriod').value;
@@ -267,28 +264,9 @@ document.getElementById('dateTo').addEventListener('change', () => {
 });
 
 // ── Category Filter ──────────────────────────────────────────
-function buildCatFilter(data) {
-  const cats = [...new Set(data.map(q => q._cat))].sort();
-  const bar = document.getElementById('catFilterBar');
-  bar.style.display = 'flex';
-  bar.innerHTML = `<span class="cat-chip-label">Category:</span>
-    <button class="cat-chip ${activeCat==='all'?'active':''}" data-cat="all">All</button>
-    ${cats.map(c => `<button class="cat-chip ${activeCat===c?'active':''}" data-cat="${c}" style="${activeCat===c?`background:${CAT_COLORS[c]||'#2563eb'};border-color:${CAT_COLORS[c]||'#2563eb'};color:#fff`:''}">
-      ${CAT_LABELS[c]||c}
-    </button>`).join('')}`;
-
-  bar.querySelectorAll('.cat-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeCat = btn.dataset.cat;
-      renderDashboard(activeCat === 'all' ? allData : allData.filter(q => q._cat === activeCat));
-      buildCatFilter(allData);
-    });
-  });
-}
-
 // ── Export Excel ─────────────────────────────────────────────
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const data = activeCat === 'all' ? allData : allData.filter(q => q._cat === activeCat);
+  const data = allData;
   if (!data.length) { showToast('No data to export', true); return; }
 
   const rows = data.map(q => ({
@@ -327,9 +305,7 @@ async function loadDashboard() {
 
   const { data:raw } = await qQuery;
   allData = (raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
-  activeCat = 'all';
 
-  buildCatFilter(allData);
   renderDashboard(allData);
 }
 
@@ -377,7 +353,7 @@ function renderDashboard(data) {
         <div style="font-size:11px;color:#94a3b8;margin-top:2px">${d.count} job${d.count!==1?'s':''}</div>
       </div>
       <div style="text-align:right;font-size:14px;font-weight:600;color:#1e293b">${fmt(d.total)}</div>
-      <div style="text-align:right;font-size:14px;font-weight:700;color:#2563eb">${fmt(d.total*1.1)}</div>
+      <div style="text-align:right;font-size:15px;font-weight:700;color:#2563eb">${fmt(d.total*1.1)}</div>
       <div style="text-align:center;font-size:14px;font-weight:700;color:#475569">${d.count}</div>
     </div>`;
   }).join('')||'<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
@@ -424,16 +400,14 @@ function renderMonthlyBarChart(sortedMonths) {
       const bH=Math.max((d.total/maxVal)*chartH,4);
       const y=padT+chartH-bH;
       const isSelected = selectedMonth===key;
+      const monthColor = MONTH_COLORS[i % MONTH_COLORS.length];
 
-      window._monthSlices[i]={x,y:padT,w:barW,h:chartH+padB,key,d};
+      window._monthSlices[i]={x,y:padT,w:barW,h:chartH+padB,key,d,color:monthColor};
 
       // 바
       const grad=ctx.createLinearGradient(x,y,x,y+bH);
-      if (isSelected) {
-        grad.addColorStop(0,'#f59e0b'); grad.addColorStop(1,'#d97706');
-      } else {
-        grad.addColorStop(0,'#3b82f6'); grad.addColorStop(1,'#1e3a8a');
-      }
+      grad.addColorStop(0, isSelected ? '#f59e0b' : monthColor);
+      grad.addColorStop(1, isSelected ? '#d97706' : monthColor+'99');
       ctx.fillStyle=grad;
       ctx.beginPath(); ctx.roundRect(x,y,barW,bH,[8,8,0,0]); ctx.fill();
 
@@ -445,18 +419,18 @@ function renderMonthlyBarChart(sortedMonths) {
 
       // inc GST (크게)
       ctx.fillStyle=isSelected?'#d97706':'#1e293b';
-      ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='center';
-      ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-24);
+      ctx.font='bold 14px DM Sans,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-26);
       // ex GST
-      ctx.fillStyle='#94a3b8'; ctx.font='11px DM Sans,sans-serif';
-      ctx.fillText(fmtShort(d.total),x+barW/2,y-10);
+      ctx.fillStyle='#64748b'; ctx.font='12px DM Sans,sans-serif';
+      ctx.fillText(fmtShort(d.total),x+barW/2,y-11);
       // 월 라벨 (크게)
-      ctx.fillStyle=isSelected?'#d97706':'#475569';
-      ctx.font=`${isSelected?'bold ':''}13px DM Sans,sans-serif`;
-      ctx.fillText(d.label,x+barW/2,padT+chartH+20);
+      ctx.fillStyle=isSelected?'#d97706':monthColor;
+      ctx.font=`bold 13px DM Sans,sans-serif`;
+      ctx.fillText(d.label,x+barW/2,padT+chartH+22);
       // job 수
-      ctx.fillStyle='#94a3b8'; ctx.font='11px DM Sans,sans-serif';
-      ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+38);
+      ctx.fillStyle='#94a3b8'; ctx.font='12px DM Sans,sans-serif';
+      ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+40);
     });
 
     // X축
@@ -482,7 +456,7 @@ function renderMonthlyBarChart(sortedMonths) {
       document.getElementById('monthDetail').style.display='none';
     } else {
       window._selectedMonth=clicked.key;
-      renderMonthDetail(clicked.key, clicked.d);
+      renderMonthDetail(clicked.key, clicked.d, clicked.color);
     }
     draw();
   };
@@ -500,7 +474,8 @@ function renderMonthlyBarChart(sortedMonths) {
   };
 }
 
-function renderMonthDetail(key, d) {
+function renderMonthDetail(key, d, color) {
+  color = color || '#2563eb';
   const detail=document.getElementById('monthDetail');
   const items=(_currentPieData||[]).filter(q=>{
     if (!q.completion_date) return false;
@@ -514,20 +489,20 @@ function renderMonthDetail(key, d) {
     const emg=q.is_emergency?'<span style="font-size:10px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 6px;border-radius:8px;margin-left:6px">EMG</span>':'';
     const catColor=CAT_COLORS[q._cat||'Other']||'#94a3b8';
     return `<div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
-      <div style="font-size:12px;color:#64748b">${dateStr}</div>
+      <div style="font-size:13px;color:#64748b">${dateStr}</div>
       <div>
-        <div style="font-size:14px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:2px">${q.vendor||'—'}</div>
+        <div style="font-size:15px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
+        <div style="font-size:13px;color:#94a3b8;margin-top:2px">${q.vendor||'—'}</div>
       </div>
       <div style="text-align:center"><span style="font-size:11px;font-weight:600;color:${catColor};background:${catColor}18;padding:3px 10px;border-radius:20px">${CAT_LABELS[q._cat||'Other']||q._cat||'—'}</span></div>
-      <div style="text-align:right;font-size:14px;font-weight:600;color:#1e293b">${fmt(Number(q.amount||0))}</div>
-      <div style="text-align:right;font-size:14px;font-weight:700;color:#2563eb">${fmt(Number(q.amount||0)*1.1)}</div>
+      <div style="text-align:right;font-size:15px;font-weight:600;color:#1e293b">${fmt(Number(q.amount||0))}</div>
+      <div style="text-align:right;font-size:15px;font-weight:700;color:#2563eb">${fmt(Number(q.amount||0)*1.1)}</div>
     </div>`;
   }).join('');
 
   detail.style.display='block';
   detail.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#0f2456,#1e3a8a);border-radius:12px 12px 0 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,${color}dd,${color});border-radius:12px 12px 0 0">
       <div>
         <div style="font-size:16px;font-weight:700;color:#fff">${d.label}</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:2px">${items.length} works &nbsp;·&nbsp; ex GST: ${fmt(d.total)} &nbsp;·&nbsp; inc GST: <span style="color:#93c5fd;font-weight:700">${fmt(d.total*1.1)}</span></div>
@@ -663,13 +638,13 @@ function renderPieChart(data) {
         onclick="handleLegendClick('${cat}',${i})">
         <div style="width:14px;height:14px;border-radius:50%;background:${color};flex-shrink:0"></div>
         <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:2px">ex GST: ${fmt(val)} &nbsp;|&nbsp; inc GST: <span style="color:#2563eb;font-weight:600">${fmt(val*1.1)}</span></div>
+          <div style="font-size:16px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
+          <div style="font-size:13px;color:#94a3b8;margin-top:2px">ex GST: ${fmt(val)} &nbsp;|&nbsp; inc GST: <span style="color:#2563eb;font-weight:600">${fmt(val*1.1)}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
           <div style="text-align:right">
-            <div style="font-size:18px;font-weight:800;color:#1e293b">${pct}%</div>
-            <div style="font-size:11px;color:#94a3b8">of total</div>
+            <div style="font-size:20px;font-weight:800;color:#1e293b">${pct}%</div>
+            <div style="font-size:13px;color:#94a3b8">of total</div>
           </div>
           <div class="leg-arrow" style="font-size:18px;color:#94a3b8;transition:transform 0.2s">›</div>
         </div>
@@ -792,7 +767,7 @@ function renderCategoryAccordion(data, selectedCat) {
           const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
           const emg=q.is_emergency?'<span style="font-size:9px;font-weight:700;color:#dc2626;background:#fee2e2;padding:1px 5px;border-radius:8px;margin-left:4px">EMG</span>':'';
           return `<div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;gap:0;padding:12px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
-            <div style="font-size:12px;color:#64748b">${dateStr}</div>
+            <div style="font-size:13px;color:#64748b">${dateStr}</div>
             <div style="font-size:13px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
             <div style="font-size:12px;color:#475569">${q.vendor||'—'}</div>
             <div style="font-size:13px;font-weight:600;color:#1e293b;text-align:right">${fmt(Number(q.amount||0))}</div>
