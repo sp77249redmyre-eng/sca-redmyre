@@ -71,6 +71,17 @@
 .comment-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
 .comment-author{font-weight:600;color:#1e293b}
 .comment-text{color:#475569;margin-left:4px}
+.pc-thread{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;max-height:200px;overflow-y:auto}
+.pc-msg{border-radius:9px;padding:9px 13px;font-size:13px;line-height:1.5}
+.pc-msg-admin{background:#f0fdf4;border:0.5px solid #bbf7d0}
+.pc-msg-committee{background:#f8fafc;border:0.5px solid #e2e8f0}
+.pc-msg-name{font-size:11px;font-weight:600;margin-bottom:3px}
+.pc-msg-name-admin{color:#166534}
+.pc-msg-name-committee{color:#475569}
+.pc-msg-time{font-size:10px;color:#94a3b8;margin-top:3px}
+.pc-msg-body{color:#1e293b}
+.pc-del{margin-left:8px;font-size:11px;color:#ef4444;cursor:pointer;opacity:0.7}
+.pc-del:hover{opacity:1}
 .input-area{display:flex;gap:10px;align-items:flex-end;margin-bottom:4px}
 .input-area textarea{flex:1;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;min-height:48px;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box;transition:border-color 0.15s}
 .input-area textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
@@ -363,6 +374,14 @@
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
+
+window.deletePc = async function(id, el) {
+  if (!confirm('Delete this comment?')) return;
+  const { error } = await supabase.from('project_comments').delete().eq('id', id);
+  if (error) { showToast('Failed to delete', true); return; }
+  const msg = el.closest('.pc-msg');
+  if (msg) msg.remove();
+};
 import { getSupabase } from '/js/auth.js';
 
 let allQuotes   = [];
@@ -864,47 +883,66 @@ function renderPendingQuotes(quotes) {
       votingSection.appendChild(adminRow);
     }
 
-    // Comments – all project votes, always visible
+    // project_comments – 대화형 스레드
     const commTitle = document.createElement('div');
     commTitle.className = 'section-title';
-    commTitle.innerHTML = '💬 Committee Comments';
+    commTitle.innerHTML = '💬 Discussion';
     votingSection.appendChild(commTitle);
 
-    const commBox = document.createElement('div');
-    commBox.className = 'comments-box';
-    const commentRows = projectVotes.filter(v => v.comment && v.comment.trim());
-    if (commentRows.length) {
-      commentRows.forEach(v => {
-        const item = document.createElement('div');
-        item.className = 'comment-item';
-        const author = allProfiles[v.user_email] || v.user_email.split('@')[0];
-        item.innerHTML = `<span class="comment-author">${escHtml(author)}:</span><span class="comment-text"> ${escHtml(v.comment)}</span>`;
-        commBox.appendChild(item);
-      });
-    } else {
-      commBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px">No comments yet</div>';
-    }
-    votingSection.appendChild(commBox);
+    const thread = document.createElement('div');
+    thread.className = 'pc-thread';
+    thread.id = 'pcThread_' + projectKey;
+    votingSection.appendChild(thread);
 
-    // Comment input – always available
+    // 코멘트 로드 함수
+    async function loadProjectComments() {
+      const { data: pcs } = await supabase.from('project_comments')
+        .select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
+      thread.innerHTML = '';
+      if (!pcs || !pcs.length) {
+        thread.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px">No comments yet</div>';
+        return;
+      }
+      pcs.forEach(pc => {
+        const isAdmin = pc.user_email === user.email && role === 'admin';
+        const isOwn = pc.user_email === user.email;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'pc-msg ' + (role === 'admin' && isAdmin ? 'pc-msg-admin' : 'pc-msg-committee');
+        const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        msgDiv.innerHTML = `<div class="pc-msg-name ${isAdmin ? 'pc-msg-name-admin' : 'pc-msg-name-committee'}">${escHtml(pc.user_name)}${isOwn ? '<span class="pc-del" data-id="${pc.id}" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-body">${escHtml(pc.comment)}</div><div class="pc-msg-time">${dt}</div>`;
+        thread.appendChild(msgDiv);
+      });
+      thread.scrollTop = thread.scrollHeight;
+    }
+    await loadProjectComments();
+
+    // Comment input
     const inputTitle = document.createElement('div');
     inputTitle.className = 'section-title';
-    inputTitle.innerHTML = '✏️ Add Your Comment';
+    inputTitle.innerHTML = '✏️ Add Comment';
     votingSection.appendChild(inputTitle);
 
     if (role !== 'observer') {
       const inputArea = document.createElement('div');
       inputArea.className = 'input-area';
       const textarea = document.createElement('textarea');
-      textarea.placeholder = 'Enter your comment...';
+      textarea.placeholder = 'Type your comment...';
       const submitBtn = document.createElement('button');
       submitBtn.className = 'submit-btn';
-      submitBtn.textContent = 'Submit';
-      submitBtn.onclick = () => {
+      submitBtn.textContent = 'Send';
+      submitBtn.onclick = async () => {
         const txt = textarea.value.trim();
         if (!txt) { showToast('Please enter a comment', true); return; }
-        if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
-        doUpsert(projectKey, { comment: txt }, submitBtn, 'Submit', () => { textarea.value = ''; });
+        submitBtn.disabled = true;
+        const { error } = await supabase.from('project_comments').insert({
+          project_id: projectKey,
+          user_email: user.email,
+          user_name: name,
+          comment: txt
+        });
+        if (error) { showToast('Failed to send', true); }
+        else { textarea.value = ''; await loadProjectComments(); }
+        submitBtn.disabled = false;
       };
       inputArea.appendChild(textarea);
       inputArea.appendChild(submitBtn);
