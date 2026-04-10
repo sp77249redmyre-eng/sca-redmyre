@@ -169,7 +169,11 @@
       </div>
       <div class="tbl-footer">
         <span style="font-size:12px;color:#64748b" id="quotesTotal">—</span>
-        <span style="font-size:14px;font-weight:600;color:#1e293b" id="quotesTotalAmount">$0.00</span>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:3px">
+          <div style="font-size:12px;color:#64748b">Subtotal (ex GST): <span style="font-weight:600;color:#1e293b" id="quotesTotalAmount">$0.00</span></div>
+          <div style="font-size:12px;color:#64748b">GST (10%): <span style="font-weight:600;color:#64748b" id="quotesTotalGST">$0.00</span></div>
+          <div style="font-size:14px;font-weight:700;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:3px">Total (inc GST): <span id="quotesTotalInc">$0.00</span></div>
+        </div>
       </div>
     </div>
 
@@ -366,10 +370,14 @@ async function loadReport() {
   const reports=(reportsRaw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)})).filter(q=>catFilter==='all'||q._cat===catFilter);
   const reportsData=reports||[];
   const reportTotal=reportsData.reduce((s,q)=>s+(Number(q.amount)||0),0);
+  const reportGST=reportTotal*0.1;
+  const reportInc=reportTotal+reportGST;
   currentQuotesData=reportsData; currentSortKey='date'; currentSortDir='desc';
   renderQuotesList();
   document.getElementById('quotesTotal').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
   document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal);
+  document.getElementById('quotesTotalGST').textContent=fmt(reportGST);
+  document.getElementById('quotesTotalInc').textContent=fmt(reportInc);
 }
 
 function renderQuotesList() {

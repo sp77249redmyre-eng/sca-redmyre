@@ -162,9 +162,13 @@
     <!-- KPI Stats -->
     <div class="stats-row">
       <div class="stat-card" style="--stat-color:#2563eb">
-        <div class="stat-label">Total Spend</div>
+        <div class="stat-label">Total Spend (ex GST)</div>
         <div class="stat-num" id="statTotal" style="color:#2563eb">$0</div>
         <div class="stat-sub" id="statPeriodLabel">—</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statTotalGST" style="font-weight:600">$0</span></div>
+          <div style="font-size:12px;font-weight:700;color:#2563eb">inc GST: <span id="statTotalInc">$0</span></div>
+        </div>
       </div>
       <div class="stat-card" style="--stat-color:#16a34a">
         <div class="stat-label">Regular Works</div>
@@ -467,6 +471,8 @@ function renderDashboard(data) {
   const avg=data.length?totalSpend/data.length:0;
 
   document.getElementById('statTotal').textContent=fmt(totalSpend);
+  document.getElementById('statTotalGST').textContent=fmt(totalSpend*0.1);
+  document.getElementById('statTotalInc').textContent=fmt(totalSpend*1.1);
   document.getElementById('statRegular').textContent=fmt(regularSpend);
   document.getElementById('statRegularCount').textContent=`${regularData.length} work${regularData.length!==1?'s':''}`;
   document.getElementById('statEmergency').textContent=fmt(emergencySpend);
