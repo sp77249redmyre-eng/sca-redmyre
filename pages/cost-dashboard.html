@@ -161,53 +161,21 @@
       <button class="cat-chip active" data-cat="all">All</button>
     </div>
 
-    <!-- KPI Stats -->
-    <div class="stats-row">
-      <div class="stat-card" style="--stat-color:#2563eb">
-        <div class="stat-label">Total Spend (ex GST)</div>
-        <div class="stat-num" id="statTotal" style="color:#2563eb">$0</div>
-        <div class="stat-sub" id="statPeriodLabel">—</div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statTotalGST" style="font-weight:600">$0</span></div>
-          <div style="font-size:12px;font-weight:700;color:#2563eb">inc GST: <span id="statTotalInc">$0</span></div>
+    <!-- Category Pie Chart (전체 너비, 크게) -->
+    <div class="section-heading">
+      <div class="section-heading-bar" style="background:#0891b2"></div>
+      <div class="section-heading-text">Spend by Category</div>
+    </div>
+    <div class="panel" style="padding:40px;margin-bottom:28px">
+      <div style="display:grid;grid-template-columns:360px 1fr;gap:60px;align-items:center" id="pieGrid">
+        <div style="position:relative;width:360px;height:360px;margin:0 auto">
+          <canvas id="categoryPieChart" width="360" height="360"></canvas>
+          <div id="pieTooltip" style="display:none;position:absolute;background:#0f172a;color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:10px;pointer-events:none;white-space:nowrap;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.8"></div>
         </div>
-      </div>
-      <div class="stat-card" style="--stat-color:#16a34a">
-        <div class="stat-label">Regular Works (ex GST)</div>
-        <div class="stat-num" id="statRegular" style="color:#16a34a">$0</div>
-        <div class="stat-sub" id="statRegularCount">0 works</div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statRegularGST" style="font-weight:600">$0</span></div>
-          <div style="font-size:12px;font-weight:700;color:#16a34a">inc GST: <span id="statRegularInc">$0</span></div>
-        </div>
-      </div>
-      <div class="stat-card" style="--stat-color:#dc2626">
-        <div class="stat-label">Emergency Works (ex GST)</div>
-        <div class="stat-num" id="statEmergency" style="color:#dc2626">$0</div>
-        <div class="stat-sub" id="statEmergencyCount">0 works</div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-          <div style="font-size:11px;color:#94a3b8">GST (10%): <span id="statEmergencyGST" style="font-weight:600">$0</span></div>
-          <div style="font-size:12px;font-weight:700;color:#dc2626">inc GST: <span id="statEmergencyInc">$0</span></div>
-        </div>
-      </div>
-      <div class="stat-card" style="--stat-color:#f59e0b">
-        <div class="stat-label">Avg per Work (ex GST)</div>
-        <div class="stat-num" id="statAvg" style="color:#1e293b">$0</div>
-        <div class="stat-sub" id="statTotalCount">0 completed</div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0">
-          <div style="font-size:12px;font-weight:700;color:#f59e0b">inc GST: <span id="statAvgInc">$0</span></div>
-        </div>
+        <div id="pieLegend" style="display:flex;flex-direction:column;gap:12px"></div>
       </div>
     </div>
 
-    <!-- Section 1: Category Breakdown -->
-    <div class="section-heading">
-      <div class="section-heading-bar"></div>
-      <div class="section-heading-text">Spend by Category</div>
-    </div>
-    <div class="cat-grid" id="catGrid">
-      <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
-    </div>
 
     <!-- Section 2: Contractors + Monthly Summary (2컬럼) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px" id="section2Grid">
@@ -248,39 +216,6 @@
 
     </div>
 
-    <!-- Category Pie Chart (전체 너비, 크게) -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#0891b2"></div>
-      <div class="section-heading-text">Spend by Category</div>
-    </div>
-    <div class="panel" style="padding:40px;margin-bottom:28px">
-      <div style="display:grid;grid-template-columns:360px 1fr;gap:60px;align-items:center" id="pieGrid">
-        <div style="position:relative;width:360px;height:360px;margin:0 auto">
-          <canvas id="categoryPieChart" width="360" height="360"></canvas>
-          <div id="pieTooltip" style="display:none;position:absolute;background:#0f172a;color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:10px;pointer-events:none;white-space:nowrap;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1.8"></div>
-        </div>
-        <div id="pieLegend" style="display:flex;flex-direction:column;gap:12px"></div>
-      </div>
-    </div>
-
-    <!-- Section 3: Top Projects -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#f59e0b"></div>
-      <div class="section-heading-text">Top 10 Highest-Cost Projects</div>
-    </div>
-    <div class="projects-panel">
-      <div class="proj-row" style="background:#f8fafc;border-bottom:0.5px solid #f1f5f9">
-        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">#</div>
-        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">Project</div>
-        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em">Contractor</div>
-        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;text-align:right">Amount</div>
-        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;text-align:right">Date</div>
-      </div>
-      <div id="topProjectsList">
-        <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>
-      </div>
-    </div>
-
     <!-- Section 5: Quarterly Summary -->
     <div class="section-heading">
       <div class="section-heading-bar" style="background:#0891b2"></div>
@@ -290,14 +225,7 @@
       <div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">Loading…</div>
     </div>
 
-    <!-- Section 4: Emergency vs Normal Bar -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#dc2626"></div>
-      <div class="section-heading-text">Emergency vs Regular Analysis</div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px" id="emgAnalysis">
-      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 3">Loading…</div>
-    </div>
+
 
   </div>
 </div>
@@ -448,7 +376,7 @@ function renderQuarterly(data) {
 async function loadDashboard() {
   const period=document.getElementById('filterPeriod').value;
 
-  ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis','quarterlyGrid'].forEach(id=>{
+  ['contractorList','monthlyList','quarterlyGrid'].forEach(id=>{
     document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
   });
 
@@ -478,17 +406,12 @@ function renderDashboard(data) {
     :period==='thisquarter'?`Q${Math.floor(new Date().getMonth()/3)+1} ${new Date().getFullYear()}`
     :'Custom';
 
-  document.getElementById('statPeriodLabel').textContent=periodLabel;
 
   if (!data.length) {
-    ['catGrid','contractorList','monthlyList','topProjectsList','emgAnalysis','quarterlyGrid'].forEach(id=>{
+    ['contractorList','monthlyList','quarterlyGrid'].forEach(id=>{
       document.getElementById(id).innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data for this period</div>';
     });
-    ['statTotal','statRegular','statEmergency','statAvg'].forEach(id=>document.getElementById(id).textContent='$0');
-    document.getElementById('statRegularCount').textContent='0 works';
-    document.getElementById('statEmergencyCount').textContent='0 works';
-    document.getElementById('statTotalCount').textContent='0 completed';
-    return;
+        return;
   }
 
   const totalSpend=data.reduce((s,q)=>s+(Number(q.amount)||0),0);
@@ -498,39 +421,12 @@ function renderDashboard(data) {
   const emergencySpend=emergencyData.reduce((s,q)=>s+(Number(q.amount)||0),0);
   const avg=data.length?totalSpend/data.length:0;
 
-  document.getElementById('statTotal').textContent=fmt(totalSpend);
-  document.getElementById('statTotalGST').textContent=fmt(totalSpend*0.1);
-  document.getElementById('statTotalInc').textContent=fmt(totalSpend*1.1);
-  document.getElementById('statRegular').textContent=fmt(regularSpend);
-  document.getElementById('statRegularGST').textContent=fmt(regularSpend*0.1);
-  document.getElementById('statRegularInc').textContent=fmt(regularSpend*1.1);
-  document.getElementById('statRegularCount').textContent=`${regularData.length} work${regularData.length!==1?'s':''}`;
-  document.getElementById('statEmergency').textContent=fmt(emergencySpend);
-  document.getElementById('statEmergencyGST').textContent=fmt(emergencySpend*0.1);
-  document.getElementById('statEmergencyInc').textContent=fmt(emergencySpend*1.1);
-  document.getElementById('statEmergencyCount').textContent=`${emergencyData.length} work${emergencyData.length!==1?'s':''}`;
-  document.getElementById('statAvg').textContent=fmt(avg);
-  document.getElementById('statAvgInc').textContent=fmt(avg*1.1);
-  document.getElementById('statTotalCount').textContent=`${data.length} completed`;
 
   // Category
   const catTotals={};
   data.forEach(q=>{catTotals[q._cat]=(catTotals[q._cat]||0)+(Number(q.amount)||0);});
   const maxCat=Math.max(...Object.values(catTotals),1);
   const sortedCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
-  document.getElementById('catGrid').innerHTML=sortedCats.map(([cat,total])=>{
-    const count=data.filter(q=>q._cat===cat).length;
-    const color=CAT_COLORS[cat]||'#2563eb';
-    const pct=totalSpend?Math.round(total/totalSpend*100):0;
-    return `<div class="cat-card" style="border-top-color:${color}">
-      <div class="cat-name">${CAT_LABELS[cat]||cat}</div>
-      <div class="cat-amount" style="color:${color}">${fmt(total)}</div>
-      <div class="cat-count">${count} work${count!==1?'s':''} · ${pct}%</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">inc GST: <span style="font-weight:600;color:${color}">${fmt(total*1.1)}</span></div>
-      <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
-    </div>`;
-  }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;grid-column:span 4">No data</div>';
-
   // Contractors
   const contractorTotals={};
   data.forEach(q=>{
@@ -584,25 +480,6 @@ function renderDashboard(data) {
 
   // Top 10 Projects
   const sortedByAmount=[...data].sort((a,b)=>Number(b.amount||0)-Number(a.amount||0));
-  document.getElementById('topProjectsList').innerHTML=sortedByAmount.slice(0,10).map((q,i)=>{
-    const isTop=i<3;
-    const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
-    const emgBadge=q.is_emergency?'<span style="font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:100px;margin-left:4px;border:0.5px solid #fecaca">EMG</span>':'';
-    return `<div class="proj-row">
-      <div class="proj-rank${isTop?' top':''}">${i+1}</div>
-      <div>
-        <div class="proj-title">${q.project||q.title||'—'}${emgBadge}</div>
-        <div style="margin-top:3px">${catBadge(q._cat)}</div>
-      </div>
-      <div class="proj-vendor">${q.vendor||'—'}</div>
-      <div class="proj-amount">${fmt(q.amount)}</div>
-      <div class="proj-date">${dateStr}</div>
-    </div>`;
-  }).join('') || '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px">No data</div>';
-
-  // Quarterly
-  renderQuarterly(allData);
-
   // Emergency Analysis
   const emgRatio=data.length?Math.round(emergencyData.length/data.length*100):0;
   const emgSpendRatio=totalSpend?Math.round(emergencySpend/totalSpend*100):0;
@@ -632,9 +509,8 @@ function renderPieChart(data) {
   const canvas = document.getElementById('categoryPieChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = 360, H = 360, cx = W/2, cy = H/2, r = 158, inner = 80;
+  const W = 360, H = 360, cx = W/2, cy = H/2, r = 158, inner = 90;
 
-  // 카테고리별 합산
   const totals = {};
   data.forEach(q => {
     const cat = q._cat || 'Other';
@@ -646,17 +522,36 @@ function renderPieChart(data) {
   const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
   const slices = [];
   let startAngle = -Math.PI / 2;
-
   sorted.forEach(([cat, val]) => {
     const angle = (val / total) * Math.PI * 2;
     slices.push({ cat, val, startAngle, endAngle: startAngle + angle, color: CAT_COLORS[cat] || '#94a3b8' });
     startAngle += angle;
   });
 
+  function drawCenter(label1, label2, label3) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    // Total 라벨
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 12px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label1, cx, cy - 22);
+    // ex GST 금액
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 15px DM Sans, sans-serif';
+    ctx.fillText(label2, cx, cy);
+    // inc GST 금액
+    ctx.fillStyle = '#2563eb';
+    ctx.font = '700 13px DM Sans, sans-serif';
+    ctx.fillText(label3, cx, cy + 20);
+  }
+
   function draw(hovered = -1) {
     ctx.clearRect(0, 0, W, H);
     slices.forEach((s, i) => {
-      const offset = i === hovered ? 6 : 0;
+      const offset = i === hovered ? 8 : 0;
       const midAngle = (s.startAngle + s.endAngle) / 2;
       const ox = Math.cos(midAngle) * offset;
       const oy = Math.sin(midAngle) * offset;
@@ -667,57 +562,59 @@ function renderPieChart(data) {
       ctx.fillStyle = s.color;
       ctx.fill();
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.stroke();
     });
-    // 도넛 구멍
-    ctx.beginPath();
-    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
+    if (hovered >= 0) {
+      const s = slices[hovered];
+      const pct = Math.round(s.val / total * 100);
+      drawCenter(CAT_LABELS[s.cat]||s.cat, fmt(s.val), `inc GST: ${fmt(s.val*1.1)}`);
+    } else {
+      drawCenter('Total (ex GST)', fmt(total), `inc GST: ${fmt(total*1.1)}`);
+    }
   }
 
   draw();
 
   // 호버
-  const tooltip = document.getElementById('pieTooltip');
   canvas.onmousemove = (e) => {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left - cx;
     const my = e.clientY - rect.top - cy;
     const dist = Math.sqrt(mx*mx + my*my);
-    if (dist < inner || dist > r) {
-      draw(); tooltip.style.display = 'none'; return;
-    }
+    if (dist < inner || dist > r) { draw(); return; }
     let angle = Math.atan2(my, mx);
     if (angle < -Math.PI/2) angle += Math.PI*2;
     const idx = slices.findIndex(s => angle >= s.startAngle && angle < s.endAngle);
-    if (idx >= 0) {
-      draw(idx);
-      const s = slices[idx];
-      const pct = Math.round(s.val / total * 100);
-      tooltip.innerHTML = `${CAT_LABELS[s.cat]||s.cat}<br>${fmt(s.val)}<br>${pct}%`;
-      tooltip.style.display = 'block';
-    } else {
-      draw(); tooltip.style.display = 'none';
-    }
+    idx >= 0 ? draw(idx) : draw();
   };
-  canvas.onmouseleave = () => { draw(); tooltip.style.display = 'none'; };
+  canvas.onmouseleave = () => draw();
 
-  // 범례
+  // 범례 — ex GST + inc GST 표시
   document.getElementById('pieLegend').innerHTML = sorted.map(([cat, val]) => {
     const pct = Math.round(val / total * 100);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:14px;height:14px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
-        <span style="font-size:15px;font-weight:600;color:#1e293b">${CAT_LABELS[cat]||cat}</span>
+    const inc = val * 1.1;
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid #f1f5f9;cursor:pointer;transition:all 0.15s"
+      onmouseover="this.style.background='${CAT_COLORS[cat]||'#94a3b8'}18';this.style.borderColor='${CAT_COLORS[cat]||'#94a3b8'}'"
+      onmouseout="this.style.background='#f8fafc';this.style.borderColor='#f1f5f9'">
+      <div style="width:16px;height:16px;border-radius:50%;background:${CAT_COLORS[cat]||'#94a3b8'};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px">ex GST: ${fmt(val)}&nbsp;&nbsp;|&nbsp;&nbsp;inc GST: <span style="color:#2563eb;font-weight:600">${fmt(inc)}</span></div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:15px;font-weight:700;color:#1e293b">${fmt(val)}</span>
-        <span style="font-size:12px;font-weight:700;color:#fff;background:${CAT_COLORS[cat]||'#94a3b8'};padding:3px 10px;border-radius:20px;min-width:44px;text-align:center">${pct}%</span>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:16px;font-weight:800;color:#1e293b">${pct}%</div>
+        <div style="font-size:11px;color:#94a3b8">of total</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#0f2456,#1e3a8a);margin-top:8px">
+      <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.8)">Total</div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:rgba(255,255,255,0.6)">ex GST: ${fmt(total)}</div>
+        <div style="font-size:16px;font-weight:800;color:#fff">inc GST: ${fmt(total*1.1)}</div>
+      </div>
+    </div>`;
 }
 </script>
 </body>
