@@ -239,24 +239,14 @@
         <select id="filterAction">
           <option value="">All Actions</option>
           <optgroup label="User Activity">
+            <option value="LOGIN">Login</option>
             <option value="PAGE_ENTER">Page Visit</option>
             <option value="QUOTE_VOTED">Voted on Quote</option>
             <option value="QUOTE_COMMENTED">Commented on Quote</option>
-            <option value="COMPLAINT_CREATED">Created Request</option>
+            <option value="COMPLAINT_CREATED">Request Submitted</option>
             <option value="PARKING_REPORTED">Reported Parking</option>
             <option value="ANNOUNCEMENT_VIEWED">Viewed Announcement</option>
-          </optgroup>
-          <optgroup label="Admin Actions">
-            <option value="quote_approved">Quote Approved</option>
-            <option value="quote_declined">Quote Declined</option>
-            <option value="quote_held">Quote Held</option>
-            <option value="work_created">Work Created</option>
-            <option value="work_completed">Work Completed</option>
-            <option value="role_changed">Role Changed</option>
-            <option value="password_changed">Password Changed</option>
-            <option value="user_invited">User Invited</option>
-            <option value="user_removed">User Removed</option>
-            <option value="sidebar_permissions_updated">Sidebar Permissions Updated</option>
+            <option value="HVAC_REQUESTED">HVAC Requested</option>
           </optgroup>
         </select>
         <select id="filterRole">
@@ -988,17 +978,8 @@ function renderActivityTable() {
     COMPLAINT_CREATED:    { label: 'Created request',         sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'medium' },
     PARKING_REPORTED:     { label: 'Reported parking issue',  sub: () => '',                                              priority: 'medium' },
     ANNOUNCEMENT_VIEWED:  { label: 'Viewed announcement',     sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'low' },
-    // Admin actions
-    quote_approved:             { label: 'Approved quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
-    quote_declined:             { label: 'Declined quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
-    quote_held:                 { label: 'Put quote on hold',         sub: () => '',                                      priority: 'high' },
-    work_created:               { label: 'Created work',              sub: () => '',                                      priority: 'medium' },
-    work_completed:             { label: 'Completed work',            sub: () => '',                                      priority: 'medium' },
-    role_changed:               { label: 'Changed user role',         sub: log => log.details?.target_user ? `${log.details.target_user} → ${log.details.new_role}` : '', priority: 'medium' },
-    password_changed:           { label: 'Changed password',          sub: log => log.details?.target_user || '',         priority: 'low' },
-    user_invited:               { label: 'Invited user',              sub: log => log.details?.invited_email || '',       priority: 'medium' },
-    user_removed:               { label: 'Removed user',              sub: log => log.details?.removed_user || '',        priority: 'high' },
-    sidebar_permissions_updated:{ label: 'Updated sidebar permissions',sub: log => log.details?.role ? `for ${log.details.role}` : '', priority: 'low' },
+    LOGIN:                { label: 'Logged in',                sub: () => '',                                              priority: 'medium' },
+    HVAC_REQUESTED:       { label: 'HVAC temperature request', sub: log => log.details?.temperature ? `${log.details.temperature}°C` : '', priority: 'medium' },
   };
 
   const ROLE_AVATAR_CLASS = { committee:'av-log-committee', observer:'av-log-observer', owner:'av-log-owner', tenant:'av-log-tenant' };
