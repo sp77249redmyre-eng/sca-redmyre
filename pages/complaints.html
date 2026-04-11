@@ -20,11 +20,11 @@
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
 .complaint-list{width:100%}
 .ct{width:100%;border-collapse:collapse;font-size:13px}
-.ct th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.ct th{text-align:left;font-size:12px;font-weight:600;color:var(--text);padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
 .ct td{padding:11px 12px;border-bottom:1px solid var(--border-light);color:var(--text);vertical-align:middle}
 .ct tr:hover td{background:var(--surface);cursor:pointer}
 .ct tr.status-resolved td{opacity:0.6}
-.ct-title{font-size:13px;font-weight:500;color:var(--text)}
+.ct-title{font-size:14px;font-weight:600;color:var(--text)}
 .ct-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;flex-shrink:0}
 .ct-dot.open{background:var(--red)}
 .ct-dot.inprog{background:var(--yellow)}
@@ -165,25 +165,25 @@
     <div style="padding:20px 24px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div>
         <div class="modal-title" style="margin-bottom:4px" id="detailModalTitle">Request Detail</div>
-        <div style="font-size:12px;color:var(--muted)" id="detailSubmitter">—</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text)" id="detailSubmitter">—</div>
       </div>
       <span class="badge" id="detailStatusBadge"></span>
     </div>
 
     <div style="padding:16px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-shrink:0">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Details</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Details</div>
       <div style="font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap" id="detailBody">—</div>
     </div>
 
     <div id="detailPhotosWrap" style="padding:12px 24px;border-bottom:1px solid var(--border-light);display:none;flex-shrink:0">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
       <div class="photo-gallery" id="detailPhotoGallery"></div>
     </div>
 
     <div id="messageThread" style="padding:16px 24px;display:flex;flex-direction:column;gap:12px;flex:1"></div>
 
     <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
       <textarea class="modal-textarea" id="adminResponse" placeholder="Type your reply…" style="min-height:100px;border-radius:10px;border-width:1.5px"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px;display:none">
@@ -279,13 +279,13 @@ function renderComplaints() {
     const catLabel = CAT_LABEL[c.category] || c.category;
     const date = new Date(c.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
     const isOwn = c.user_id === user.id;
-    const submitterCol = showSubmitter ? `<td style="font-size:12px;color:var(--muted)">${isOwn?'You':c.submitter_name||'Unknown'}</td>` : '';
+    const submitterCol = showSubmitter ? `<td style="font-size:13px;color:var(--text)">${isOwn?'You':c.submitter_name||'Unknown'}</td>` : '';
     const photoIcon = c.has_photos ? '📷' : '';
     return `<tr class="status-${c.status}" onclick="openDetail('${c.id}')">
       <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span></td>
-      <td style="font-size:12px;color:var(--muted)">${catLabel}</td>
+      <td style="font-size:13px;color:var(--text)">${catLabel}</td>
       ${submitterCol}
-      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${date}</td>
+      <td style="font-size:13px;color:var(--text);white-space:nowrap">${date}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
       <td style="font-size:13px">${photoIcon}</td>
     </tr>`;
@@ -376,9 +376,11 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
   try {
     const editId = document.getElementById('complaintEditId').value;
     if (editId) {
-      const { error } = await supabase.from('complaints').update({
+      let query = supabase.from('complaints').update({
         title, body, category, updated_at: new Date().toISOString()
-      }).eq('id', editId).eq('user_id', user.id);
+      }).eq('id', editId);
+      if (role !== 'admin') query = query.eq('user_id', user.id);
+      const { error } = await query;
       if (error) throw error;
       closeModal('complaintModal');
       await loadComplaints();
@@ -439,8 +441,8 @@ async function loadMessageThread(complaintId) {
     return `
       <div style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· Management' : ''}</div>
-          <div style="font-size:11px;color:var(--muted)">${date}</div>
+          <div style="font-size:13px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· Management' : ''}</div>
+          <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
         <div style="font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap">${m.message}</div>
       </div>`;
@@ -486,7 +488,7 @@ window.openDetail = async (id) => {
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
-    document.getElementById('editComplaintBtn').style.display = 'none';
+    document.getElementById('editComplaintBtn').style.display = 'inline-flex';
   } else if (canSubmit.includes(role) && c.user_id === user.id) {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '';
@@ -569,7 +571,8 @@ window.closeLightbox = ()    => document.getElementById('photoLightbox').classLi
 
 window.openEditComplaint = () => {
   const c = allComplaints.find(x => x.id === currentComplaintId);
-  if (!c || c.user_id !== user.id) return;
+  if (!c) return;
+  if (role !== 'admin' && c.user_id !== user.id) return;
   document.getElementById('complaintModalTitle').textContent = 'Edit Request';
   document.getElementById('complaintEditId').value = c.id;
   document.getElementById('complaintCategory').value = c.category || 'other';
