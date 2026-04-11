@@ -234,6 +234,7 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   
   try {
     await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
+    try { await supabase.from('audit_logs').insert({ user_id:user.id, action:'HVAC_REQUESTED', details:{ type:selectedType, level, tenancy } }); } catch(e) {}
     try {
       const { data: { session: pushSession } } = await supabase.auth.getSession();
       await fetch('/api/send-push', {
