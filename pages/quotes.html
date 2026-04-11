@@ -667,13 +667,24 @@ function renderPendingQuotes(quotes) {
     card.appendChild(header);
 
     // Vote summary bar (visible during voting)
+    const VENDOR_COLORS = [
+      { bg: '#f0f7ff', border: '#bfdbfe', dot: '#3b82f6' },
+      { bg: '#f0fdf4', border: '#bbf7d0', dot: '#22c55e' },
+      { bg: '#fefce8', border: '#fde68a', dot: '#eab308' },
+      { bg: '#fdf2f8', border: '#fbcfe8', dot: '#ec4899' },
+      { bg: '#f5f3ff', border: '#c4b5fd', dot: '#8b5cf6' },
+    ];
+    const vendorColorMap = {};
+    group.forEach((q, idx) => { vendorColorMap[q.id] = VENDOR_COLORS[idx % VENDOR_COLORS.length]; });
+
     if (isVoting) {
       const sBar = document.createElement('div');
       sBar.className = 'summary-bar';
       // Vendor distribution
       const vDistItems = Object.entries(vendorApproveMap).map(([qid, cnt]) => {
         const vq = group.find(q => q.id === qid);
-        return vq ? `<span class="vendor-dist-item" style="margin-left:0">${escHtml(vq.vendor)}: ${cnt}</span>` : '';
+        const vc = vendorColorMap[qid] || VENDOR_COLORS[0];
+        return vq ? `<span class="vendor-dist-item" style="margin-left:0;background:${vc.bg};border-color:${vc.border};color:#1e293b"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${vc.dot};margin-right:4px"></span>${escHtml(vq.vendor)}: ${cnt}</span>` : '';
       }).join('');
       sBar.innerHTML = `
         <span class="summary-chip chip-approve">✅ ${totalApprovals}</span>
@@ -697,14 +708,18 @@ function renderPendingQuotes(quotes) {
       const vendorItem = document.createElement('div');
       vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}`;
       vendorItem.id = `vendor-${quoteId}`;
+      const vColor = vendorColorMap[quoteId];
+      if (vColor && !isSelected) vendorItem.style.background = vColor.bg;
 
       const vendorHeader = document.createElement('div');
       vendorHeader.className = `vendor-header${isSelected ? ' hdr-selected' : ''}`;
+      if (vColor && !isSelected) vendorHeader.style.background = vColor.bg;
 
       const vendorContent = document.createElement('div');
       vendorContent.className = 'vendor-content';
+      const vDot = vColor ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${vColor.dot};margin-right:6px;flex-shrink:0"></span>` : '';
       vendorContent.innerHTML = `
-        <div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
+        ${vDot}<div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
         <div class="vendor-amount">$${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>`;
       vendorHeader.appendChild(vendorContent);
 
