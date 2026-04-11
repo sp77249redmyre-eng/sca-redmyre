@@ -263,6 +263,14 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
   const btn = document.getElementById('submitReportBtn');
   btn.disabled = true; btn.textContent = 'Submitting…';
 
+  if (role !== 'admin') {
+    try {
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const { count } = await supabase.from('parking_reports').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', todayStart.toISOString());
+      if (count >= 5) { showToast('Daily report limit reached (max 5 per day)', true); btn.disabled=false; btn.textContent='🚨 Report Now'; return; }
+    } catch(e) {}
+  }
+
   let image_urls = [];
   let image_url = null;
 
