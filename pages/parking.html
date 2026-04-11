@@ -33,21 +33,30 @@
 .vio-icon{font-size:20px;margin-bottom:4px;display:block}
 .btn-report{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
 .notice-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.parking-card{background:var(--surface);border:2px solid var(--red);border-radius:14px;margin-bottom:12px;overflow:hidden}
-.parking-card.resolved{border-color:var(--border);opacity:0.75}
-.pk-header{background:var(--red);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
-.pk-header.resolved{background:var(--border-light)}
-.pk-plate{font-size:20px;font-weight:700;color:#fff;letter-spacing:0.15em;font-family:monospace}
-.pk-plate.resolved{color:var(--text-2)}
-.pk-time{font-size:11px;color:rgba(255,255,255,0.8)}
+.parking-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
+.parking-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.parking-card.resolved{opacity:0.7}
+.pk-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.12s;gap:12px;flex-wrap:wrap}
+.pk-header:hover{background:var(--bg)}
+.pk-header.resolved{background:var(--bg)}
+.pk-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.pk-plate{font-size:16px;font-weight:700;color:var(--text);letter-spacing:0.1em;font-family:monospace;flex-shrink:0}
+.pk-plate.resolved{color:var(--muted)}
+.pk-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text)}
+.pk-time{font-size:12px;color:var(--text-2);text-align:right;flex-shrink:0}
 .pk-time.resolved{color:var(--muted)}
-.pk-body{padding:14px 16px}
-.pk-location{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px}
-.pk-violation{display:inline-block;margin-bottom:8px}
-.pk-reporter{font-size:11px;color:var(--muted);margin-bottom:8px}
-.pk-comment{font-size:13px;color:var(--text-2);background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.5}
-.pk-actions{display:flex;gap:8px;flex-wrap:wrap}
-.pk-image{width:100%;max-height:220px;object-fit:cover;border-radius:8px;margin:8px 0;cursor:pointer}
+.pk-body{display:none;padding:18px;background:var(--bg);border-top:0.5px solid var(--border-light)}
+.pk-body.open{display:block}
+.pk-location{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.pk-violation{display:inline-block;margin-bottom:10px}
+.pk-reporter{font-size:12px;color:var(--text-2);margin-bottom:10px}
+.pk-comment{font-size:13px;color:var(--text-2);background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-wrap}
+.pk-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pk-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:12px 0}
+.pk-image{width:100%;border-radius:10px;cursor:pointer;transition:transform 0.15s;object-fit:cover;max-height:300px}
+.pk-image:hover{transform:scale(1.02)}
+.pk-chevron{font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0}
+.pk-chevron.open{transform:rotate(180deg)}
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 </style>
 </head>
@@ -357,6 +366,19 @@ window.showImage = function(url) {
   document.getElementById('imageModal').style.display = 'flex';
 };
 
+window.togglePk = function(id) {
+  const body = document.getElementById('body-' + id);
+  const chev = document.getElementById('chev-' + id);
+  if (!body) return;
+  const isOpen = body.classList.contains('open');
+  document.querySelectorAll('.pk-body.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.pk-chevron.open').forEach(c => c.classList.remove('open'));
+  if (!isOpen) {
+    body.classList.add('open');
+    if (chev) chev.classList.add('open');
+  }
+};
+
 document.getElementById('imageModal').addEventListener('click', function(e) {
   if (e.target === this) this.style.display = 'none';
 });
@@ -421,45 +443,45 @@ async function loadReports() {
 
     const normPlate = (r.plate || '').replace(/\s/g,'').toUpperCase();
     const vehicle = vehicleMap[normPlate];
-    const ownerInfo = vehicle ? `${vehicle.unit || ''} • ${vehicle.owner_name || ''}` : '';
 
     const isInternal = !!vehicle;
     const isExternal = !vehicle;
     const suite = vehicle?.unit || '';
     const isRepeat = offenderMap[normPlate] >= 3;
 
+    const tagInternal = isInternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
+    const tagExternal = isExternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
+    const tagRepeat = isRepeat ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600">🔴 Repeat</span>` : '';
+
+    const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
+    const imagesHtml = allImages.length ? `<div class="pk-images">${allImages.map(url => `<img src="${url}" class="pk-image" onclick="showImage('${url}')">`).join('')}</div>` : '';
+
     return `
-      <div class="parking-card ${isResolved?'resolved':''}">
-        <div class="pk-header ${isResolved?'resolved':''}">
-          <div class="pk-plate ${isResolved?'resolved':''}" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;line-height:1.2;">
-            ${r.plate || '—'}
-            ${isInternal ? `
-              <span style="font-size:10px;white-space:nowrap;margin-left:6px;padding:2px 5px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600;">
-                🏢 Suite ${suite || 'Unknown'}
-              </span>
-            ` : ''}
-            ${isExternal ? `
-              <span style="font-size:10px;white-space:nowrap;margin-left:6px;padding:2px 5px;border-radius:6px;background:#f3f4f6;color:#92400e;font-weight:600;">
-                ⚠️ External
-              </span>
-            ` : ''}
-            ${isRepeat ? `
-              <span style="font-size:10px;white-space:nowrap;margin-left:6px;padding:2px 5px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600;">
-                🔴 Repeat
-              </span>
-            ` : ''}
+      <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}">
+        <div class="pk-header ${isResolved?'resolved':''}" onclick="togglePk('${r.id}')">
+          <div class="pk-header-left">
+            <span class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</span>
+            <div class="pk-info">
+              <span>📍 ${r.location || '—'}</span>
+              <span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
+              ${tagInternal}${tagExternal}${tagRepeat}
+            </div>
           </div>
-          <div class="pk-time ${isResolved?'resolved':''}">${timeAgo}<br><span style="font-size:10px">${absTime}</span></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pk-time ${isResolved?'resolved':''}">${timeAgo} · ${absTime}</div>
+            <span class="pk-chevron" id="chev-${r.id}">▼</span>
+          </div>
         </div>
-        <div class="pk-body">
+        <div class="pk-body" id="body-${r.id}">
           <div class="pk-location">📍 ${r.location || '—'}</div>
-          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
-          ${r.image_url ? `<img src="${r.image_url}" class="pk-image" onclick="showImage('${r.image_url}')">` : ''}
+          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 14px">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
+          <div class="pk-reporter">Reported by ${r.reporter_name||'Unknown'} · ${absTime}</div>
+          ${imagesHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
-            ${isResolved?`<span style="font-size:11px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
+            ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
           </div>
         </div>
       </div>`;
