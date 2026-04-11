@@ -533,7 +533,7 @@ async function submitPassword() {
     const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) throw error;
     const name = document.getElementById('nameInput').value.trim();
-    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name, setup_complete:true });
+    await supabase.from('profiles').update({ full_name:name, setup_complete:true }).eq('id', currentUser.id);
     showScreen('screenSuccess');
     document.getElementById('successName').textContent = name;
     const pill = document.getElementById('successRolePill');
