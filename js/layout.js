@@ -308,6 +308,11 @@ export async function initLayout() {
   const role = profile?.role || 'observer';
   const name = profile?.full_name || user.email.split('@')[0];
 
+  if (!profile?.setup_complete && getCurrentPage() !== 'setup') {
+    window.location.href = '/pages/setup.html';
+    return null;
+  }
+
   checkPageAccess(role);
   await applyRoleMenuControl(role, supabase);
   setActiveMenu();
