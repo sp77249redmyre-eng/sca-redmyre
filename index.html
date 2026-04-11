@@ -307,8 +307,10 @@ async function handleLogin() {
   errorMsg.classList.remove('show');
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    
+    try { await supabase.from('audit_logs').insert({ user_id: data.user.id, action: 'LOGIN', details: {} }); } catch(e) {}
     
     // 로그인 성공 시 바로 Overview (Building) 페이지로 이동
     window.location.href = '/pages/building.html';
