@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quote Approvals – Redmyre House</title>
 <link rel="manifest" href="/manifest.webmanifest?v=5">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v3.png?v=5">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v3.png?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
 <meta name="theme-color" content="#1e3a8a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
@@ -736,7 +737,7 @@ function renderPendingQuotes(quotes) {
           badge.className = 'badge-selected';
           badge.textContent = '✔ Selected';
           statusDiv.appendChild(badge);
-          if (!userAlreadyVoted) {
+          if (!userAlreadyVoted && role === 'committee') {
             const deselBtn = document.createElement('button');
             deselBtn.className = 'deselect-btn';
             deselBtn.textContent = 'Change';
@@ -748,7 +749,7 @@ function renderPendingQuotes(quotes) {
           }
         } else if (hasSelection) {
           statusDiv.innerHTML = '<span class="badge-x">✕</span>';
-        } else {
+        } else if (role === 'committee') {
           const btn = document.createElement('button');
           btn.className = 'select-btn';
           btn.textContent = 'Select';
@@ -1542,11 +1543,6 @@ async function sendToCommittee(group, btn, projectKey) {
     if (!ids.length) throw new Error('No valid quote IDs');
     const { error } = await supabase.from('quotes').update({ status: 'voting' }).in('id', ids);
     if (error) throw error;
-    // Email trigger – once per project, non-blocking
-    try {
-    } catch(emailErr) {
-      console.warn('Email notification failed (non-critical):', emailErr);
-    }
     showToast('Quotes sent to committee');
     try {
       const { data: { session: pushSession } } = await supabase.auth.getSession();
