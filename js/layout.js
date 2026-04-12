@@ -308,6 +308,11 @@ export async function initLayout() {
   const role = profile?.role || 'observer';
   const name = profile?.full_name || user.email.split('@')[0];
 
+  if (!profile?.setup_complete && getCurrentPage() !== 'setup') {
+    window.location.href = '/pages/setup.html';
+    return null;
+  }
+
   checkPageAccess(role);
   await applyRoleMenuControl(role, supabase);
   setActiveMenu();
@@ -317,6 +322,10 @@ export async function initLayout() {
   initNotification(supabase);
   initMobileMenu();
   initBadges(supabase, user, role);
+
+  if (role !== 'admin') {
+    try { await supabase.from('audit_logs').insert({ user_id: user.id, user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
+  }
 
   return { supabase, user, profile, role, name };
 }
