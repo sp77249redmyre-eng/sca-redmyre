@@ -46,6 +46,20 @@
 .photo-lightbox-close{position:fixed;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1001}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
 
+/* Complaint Progress Bar */
+.cpl-progress{display:flex;align-items:center;gap:0;margin-top:6px}
+.cpl-step{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.cpl-step-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.cpl-step.done .cpl-step-icon{background:#dcfce7;color:#166534}
+.cpl-step.active .cpl-step-icon{background:#dbeafe;color:#1e40af;box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
+.cpl-step.idle .cpl-step-icon{background:#f1f5f9;color:#94a3b8}
+.cpl-step.done .cpl-step-label{color:#166534}
+.cpl-step.active .cpl-step-label{color:#1e40af}
+.cpl-step.idle .cpl-step-label{color:#94a3b8}
+.cpl-line{width:20px;height:2px;border-radius:1px;margin:0 2px}
+.cpl-line.done{background:#22c55e}
+.cpl-line.idle{background:#e2e8f0}
+
 /* Unit Selection Styles */
 .unit-auto-box{padding:14px 16px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;margin-bottom:14px}
 .unit-auto-label{font-size:11px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
@@ -280,8 +294,20 @@ function renderComplaints() {
     const isOwn = c.user_id === user.id;
     const submitterCol = showSubmitter ? `<td style="font-size:13px;color:var(--text)">${isOwn?'You':c.submitter_name||'Unknown'}</td>` : '';
     const photoIcon = c.has_photos ? '📷' : '';
+    const s1 = c.status==='open'?'active':c.status==='inprog'||c.status==='resolved'?'done':'idle';
+    const s2 = c.status==='inprog'?'active':c.status==='resolved'?'done':'idle';
+    const s3 = c.status==='resolved'?'done':'idle';
+    const l1 = s1==='done'?'done':'idle';
+    const l2 = s2==='done'?'done':'idle';
+    const progressBar = `<div class="cpl-progress">
+      <div class="cpl-step ${s1}"><div class="cpl-step-icon">${s1==='done'?'✓':'📝'}</div><div class="cpl-step-label">Open</div></div>
+      <div class="cpl-line ${l1}"></div>
+      <div class="cpl-step ${s2}"><div class="cpl-step-icon">${s2==='done'?'✓':s2==='active'?'●':'○'}</div><div class="cpl-step-label">In Progress</div></div>
+      <div class="cpl-line ${l2}"></div>
+      <div class="cpl-step ${s3}"><div class="cpl-step-icon">${s3==='done'?'✅':'○'}</div><div class="cpl-step-label">Resolved</div></div>
+    </div>`;
     return `<tr class="status-${c.status}" onclick="openDetail('${c.id}')">
-      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span></td>
+      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${progressBar}</td>
       <td style="font-size:13px;color:var(--text)">${catLabel}</td>
       ${submitterCol}
       <td style="font-size:13px;color:var(--text);white-space:nowrap">${date}</td>
