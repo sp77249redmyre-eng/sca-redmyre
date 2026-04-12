@@ -308,11 +308,6 @@ export async function initLayout() {
   const role = profile?.role || 'observer';
   const name = profile?.full_name || user.email.split('@')[0];
 
-  if (!profile?.setup_complete && getCurrentPage() !== 'setup') {
-    window.location.href = '/pages/setup.html';
-    return null;
-  }
-
   checkPageAccess(role);
   await applyRoleMenuControl(role, supabase);
   setActiveMenu();
@@ -323,60 +318,64 @@ export async function initLayout() {
   initMobileMenu();
   initBadges(supabase, user, role);
 
-  if (role !== 'admin') {
-    try { await supabase.from('audit_logs').insert({ user_id: user.id, user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
-  }
-
   return { supabase, user, profile, role, name };
 }
 
 function initBadges(supabase, user, role) {
   const currentPage = getCurrentPage();
   try {
-    const lastSeenAnn = localStorage.getItem('lastSeen_announcements') || '2000-01-01T00:00:00Z';
-    const lastSeenComp = localStorage.getItem('lastSeen_complaints') || '2000-01-01T00:00:00Z';
-    const lastSeenQuotes = localStorage.getItem('lastSeen_quotes') || '2000-01-01T00:00:00Z';
-    const lastSeenHvac = localStorage.getItem('lastSeen_hvac') || '2000-01-01T00:00:00Z';
-
     if (currentPage === 'announcements') localStorage.setItem('lastSeen_announcements', new Date().toISOString());
     if (currentPage === 'complaints') localStorage.setItem('lastSeen_complaints', new Date().toISOString());
     if (currentPage === 'quotes') localStorage.setItem('lastSeen_quotes', new Date().toISOString());
     if (currentPage === 'hvac') localStorage.setItem('lastSeen_hvac', new Date().toISOString());
 
-    supabase.from('announcements').select('id', { count: 'exact', head: true }).gt('created_at', lastSeenAnn).then(({ count }) => {
-      const el = document.getElementById('badgeAnnouncements');
-      if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
-    });
+    const lastSeenAnn = localStorage.getItem('lastSeen_announcements') || '2000-01-01T00:00:00Z';
+    const lastSeenComp = localStorage.getItem('lastSeen_complaints') || '2000-01-01T00:00:00Z';
+    const lastSeenQuotes = localStorage.getItem('lastSeen_quotes') || '2000-01-01T00:00:00Z';
+    const lastSeenHvac = localStorage.getItem('lastSeen_hvac') || '2000-01-01T00:00:00Z';
 
-    if (['admin','committee','observer'].includes(role)) {
-      supabase.from('complaints').select('id', { count: 'exact', head: true }).gt('updated_at', lastSeenComp).then(({ count }) => {
-        const el = document.getElementById('badgeComplaints');
-        if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
-      });
-    } else {
-      supabase.from('complaints').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gt('updated_at', lastSeenComp).then(({ count }) => {
-        const el = document.getElementById('badgeComplaints');
+    if (currentPage !== 'announcements') {
+      supabase.from('announcements').select('id', { count: 'exact', head: true }).gt('created_at', lastSeenAnn).then(({ count }) => {
+        const el = document.getElementById('badgeAnnouncements');
         if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
       });
     }
 
-    if (['admin','committee','observer'].includes(role)) {
-      supabase.from('quotes').select('id', { count: 'exact', head: true }).eq('status', 'voting').gt('created_at', lastSeenQuotes).then(({ count }) => {
-        const el = document.getElementById('badgeQuotes');
-        if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
-      });
+    if (currentPage !== 'complaints') {
+      if (['admin','committee','observer'].includes(role)) {
+        supabase.from('complaints').select('id', { count: 'exact', head: true }).gt('updated_at', lastSeenComp).then(({ count }) => {
+          const el = document.getElementById('badgeComplaints');
+          if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
+        });
+      } else {
+        supabase.from('complaints').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gt('updated_at', lastSeenComp).then(({ count }) => {
+          const el = document.getElementById('badgeComplaints');
+          if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
+        });
+      }
     }
 
-    if (role === 'admin') {
-      supabase.from('hvac_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending').then(({ count }) => {
-        const el = document.getElementById('badgeHvac');
-        if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
-      });
-    } else {
-      supabase.from('hvac_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['completed','failed','rejected']).gt('completed_at', lastSeenHvac).then(({ count }) => {
-        const el = document.getElementById('badgeHvac');
-        if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
-      });
+    if (currentPage !== 'quotes') {
+      if (['admin','committee','observer'].includes(role)) {
+        supabase.from('quotes').select('id', { count: 'exact', head: true }).eq('status', 'voting').gt('created_at', lastSeenQuotes).then(({ count }) => {
+          const el = document.getElementById('badgeQuotes');
+          if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
+        });
+      }
+    }
+
+    if (currentPage !== 'hvac') {
+      if (role === 'admin') {
+        supabase.from('hvac_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending').then(({ count }) => {
+          const el = document.getElementById('badgeHvac');
+          if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
+        });
+      } else {
+        supabase.from('hvac_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['completed','failed','rejected']).gt('completed_at', lastSeenHvac).then(({ count }) => {
+          const el = document.getElementById('badgeHvac');
+          if (el && count > 0) { el.textContent = count > 9 ? '9+' : count; el.style.display = 'flex'; }
+        });
+      }
     }
   } catch(e) {}
 }
