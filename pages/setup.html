@@ -466,7 +466,7 @@ async function submitName() {
   document.getElementById('nameInput').classList.remove('error');
   btn.disabled=true; spinner.style.display='block'; btnText.textContent='Saving…';
   try {
-    await supabase.from('profiles').upsert({ id:currentUser.id, email:currentUser.email, full_name:name });
+    await supabase.from('profiles').update({ full_name:name }).eq('id', currentUser.id);
     await supabase.auth.updateUser({ data:{ full_name:name } });
     showScreen('screenPassword');
   } catch(e) {

@@ -342,21 +342,6 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
-async function logActivity(action, record_id = null) {
-  try {
-    if (role === 'admin') return;
-    await supabase.from('audit_logs').insert({
-      user_email: user.email,
-      user_role: role,
-      action,
-      record_id,
-      created_at: new Date().toISOString()
-    });
-  } catch (e) {}
-}
-await logActivity('PAGE_ENTER');
-window.addEventListener('beforeunload', () => { logActivity('PAGE_EXIT'); });
-
 const privileged = ['admin','committee','observer'];
 const canViewInternal = privileged.includes(role);
 
