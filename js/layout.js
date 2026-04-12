@@ -266,6 +266,7 @@ function initNotification(supabase) {
           applicationServerKey: urlBase64ToUint8Array('BNyzSuyh9RRzRLNiPq1mngiuEH35QX3smFJoYQGWdOSdu_4koNy4s65I8WUpI1gxanRgJLNU0gDJfhW1PUdxQrI')
         });
         const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from('push_subscriptions').delete().eq('user_id', user.id);
         await supabase.from('push_subscriptions').insert({ user_id: user.id, subscription: sub });
         await supabase.from('profiles').update({ push_enabled: true }).eq('id', user.id);
         notifEnabled = true;
