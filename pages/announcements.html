@@ -120,6 +120,24 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<div class="modal-backdrop" id="viewedModal" onclick="if(event.target===this)closeModal('viewedModal')">
+  <div class="modal-box" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0">👀 Read Status</div>
+      <button onclick="closeModal('viewedModal')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">&times;</button>
+    </div>
+    <div id="viewedAnnTitle" style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px;padding:10px 14px;background:var(--bg);border-radius:8px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn-pill btn-pill-active" id="viewedTabNotRead" onclick="switchViewedTab('notread')">🔴 Not Read</button>
+      <button class="btn-pill" id="viewedTabRead" onclick="switchViewedTab('read')">✅ Read</button>
+    </div>
+    <div id="viewedList" style="max-height:340px;overflow-y:auto"></div>
+    <div id="viewedReminderWrap" style="margin-top:14px;display:none">
+      <button class="btn-primary" id="sendReminderBtn" onclick="sendReminder()" style="width:100%">🔔 Send Reminder to Unread Users</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
@@ -145,10 +163,28 @@ const CAT_BADGE = { urgent:'badge-red',maintenance:'badge-yellow',meeting:'badge
 const CAT_EMOJI = { urgent:'🚨',maintenance:'🔧',meeting:'📅',reminder:'🔔',general:'📌' };
 let allAnns = [];
 let currentFilter = 'all';
+let allProfilesList = [];
+let viewedMap = {}; // { annId: Set of emails }
+let currentViewedAnnId = null;
+let currentViewedTab = 'notread';
 
 async function loadAnnouncements() {
   const { data } = await supabase.from('announcements').select('*').order('pinned',{ascending:false}).order('created_at',{ascending:false});
   allAnns = data || [];
+
+  if (role === 'admin') {
+    const { data: profiles } = await supabase.from('profiles').select('email, full_name, role').neq('role', 'admin');
+    allProfilesList = profiles || [];
+
+    const { data: logs } = await supabase.from('audit_logs').select('user_email, record_id').eq('action', 'ANNOUNCEMENT_VIEWED').not('record_id', 'is', null);
+    viewedMap = {};
+    (logs || []).forEach(l => {
+      if (!l.record_id) return;
+      if (!viewedMap[l.record_id]) viewedMap[l.record_id] = new Set();
+      viewedMap[l.record_id].add(l.user_email);
+    });
+  }
+
   renderAnns();
 }
 
@@ -178,7 +214,10 @@ function renderAnns() {
         </div>` : ''}
       ${role==='admin'?`
         <div class="ann-footer">
-          <span style="font-size:11px;color:var(--muted)">${a.pinned?'📌 Pinned':''}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:var(--muted)">${a.pinned?'📌 Pinned':''}</span>
+            <button onclick="openViewedModal('${a.id}');event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;border:0.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#475569'">👀 ${viewedMap[a.id]?viewedMap[a.id].size:0}/${allProfilesList.length} read</button>
+          </div>
           <div class="ann-actions">
             <button class="btn-secondary" onclick="resendAnnouncement('${a.id}');event.stopPropagation();">📨 Resend</button>
             <button class="btn-secondary" onclick="openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')})">✏️ Edit</button>
@@ -378,6 +417,83 @@ document.getElementById('deleteAnnBtn').addEventListener('click', async () => {
   await window.confirmDeleteAnn(id);
   closeModal('annModal');
 });
+
+// Viewed status modal
+window.openViewedModal = function(annId) {
+  currentViewedAnnId = annId;
+  currentViewedTab = 'notread';
+  const a = allAnns.find(x => x.id === annId);
+  document.getElementById('viewedAnnTitle').textContent = a ? '📢 ' + a.title : '';
+  document.getElementById('viewedTabNotRead').className = 'btn-pill btn-pill-active';
+  document.getElementById('viewedTabRead').className = 'btn-pill';
+  renderViewedList();
+  document.getElementById('viewedModal').classList.add('open');
+};
+
+window.switchViewedTab = function(tab) {
+  currentViewedTab = tab;
+  document.getElementById('viewedTabNotRead').className = 'btn-pill' + (tab==='notread'?' btn-pill-active':'');
+  document.getElementById('viewedTabRead').className = 'btn-pill' + (tab==='read'?' btn-pill-active':'');
+  renderViewedList();
+};
+
+function renderViewedList() {
+  const list = document.getElementById('viewedList');
+  const reminderWrap = document.getElementById('viewedReminderWrap');
+  const viewed = viewedMap[currentViewedAnnId] || new Set();
+  const readUsers = allProfilesList.filter(p => viewed.has(p.email));
+  const notReadUsers = allProfilesList.filter(p => !viewed.has(p.email));
+  const items = currentViewedTab === 'read' ? readUsers : notReadUsers;
+
+  if (!items.length) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">${currentViewedTab==='read'?'No one has read this yet':'Everyone has read this! 🎉'}</div>`;
+    reminderWrap.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = items.map(p => {
+    const initials = (p.full_name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const roleLabel = p.role.charAt(0).toUpperCase() + p.role.slice(1);
+    const dotColor = currentViewedTab==='read' ? '#22c55e' : '#ef4444';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:0.5px solid var(--border-light)">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text);flex-shrink:0">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.full_name||p.email}</div>
+        <div style="font-size:11px;color:var(--muted)">${roleLabel}</div>
+      </div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0"></div>
+    </div>`;
+  }).join('');
+
+  reminderWrap.style.display = currentViewedTab==='notread' && notReadUsers.length > 0 ? 'block' : 'none';
+}
+
+window.sendReminder = async function() {
+  const a = allAnns.find(x => x.id === currentViewedAnnId);
+  if (!a) return;
+  const viewed = viewedMap[currentViewedAnnId] || new Set();
+  const notReadUsers = allProfilesList.filter(p => !viewed.has(p.email));
+  if (!notReadUsers.length) { showToast('Everyone has read this!'); return; }
+  if (!confirm(`Send reminder push to ${notReadUsers.length} user(s) who haven't read this?`)) return;
+  const btn = document.getElementById('sendReminderBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const { data: notReadProfiles } = await supabase.from('profiles').select('id').in('email', notReadUsers.map(u=>u.email));
+    const ids = (notReadProfiles||[]).map(p=>p.id);
+    if (ids.length) {
+      const { data:{ session: pushSession } } = await supabase.auth.getSession();
+      for (const uid of ids) {
+        await fetch('/api/send-push', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ user_id: uid, title:'📢 Reminder: ' + a.title, message:'Please check the latest announcement', url:'/pages/announcements.html' })
+        });
+      }
+    }
+    showToast(`Reminder sent to ${notReadUsers.length} user(s) ✓`);
+  } catch(e) { showToast('Failed to send reminder', true); }
+  finally { btn.disabled = false; btn.textContent = '🔔 Send Reminder to Unread Users'; }
+};
 
 // Push Notifications
 const VAPID_PUBLIC_KEY = 'BNyzSuyh9RRzRLNiPq1mngiuEH35QX3smFJoYQGWdOSdu_4koNy4s65I8WUpI1gxanRgJLNU0gDJfhW1PUdxQrI';
