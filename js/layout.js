@@ -267,10 +267,18 @@ function initNotification(supabase) {
         });
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('push_subscriptions').insert({ user_id: user.id, subscription: sub });
+        await supabase.from('profiles').update({ push_enabled: true }).eq('id', user.id);
         notifEnabled = true;
         localStorage.setItem('notifEnabled', 'true');
       } catch(e) { notifEnabled = false; localStorage.setItem('notifEnabled', 'false'); }
     } else {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('push_subscriptions').delete().eq('user_id', user.id);
+          await supabase.from('profiles').update({ push_enabled: false }).eq('id', user.id);
+        }
+      } catch(e) { console.warn('Failed to clean push subscription:', e); }
       notifEnabled = false;
       localStorage.setItem('notifEnabled', 'false');
     }
