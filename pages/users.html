@@ -136,6 +136,10 @@
   .log-filters{flex-direction:column}
   .log-filters select{width:100%}
   
+  #statsCards{grid-template-columns:repeat(2,1fr)!important}
+  #tab-statistics .card{overflow:hidden}
+  #tab-statistics [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}
+
   .log-table thead{display:none}
   .log-table,.log-table tbody,.log-table tr{display:block;width:100%}
   .log-table tr{margin-bottom:12px;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
@@ -172,6 +176,7 @@
       <div class="tab active" data-tab="users">👥 Users</div>
       <div class="tab" data-tab="permissions">🔐 Sidebar Permissions</div>
       <div class="tab" data-tab="activity">📝 Activity Log</div>
+      <div class="tab" data-tab="statistics">📊 Statistics</div>
     </div>
 
     <!-- Tab Content: Users -->
@@ -239,14 +244,24 @@
         <select id="filterAction">
           <option value="">All Actions</option>
           <optgroup label="User Activity">
-            <option value="LOGIN">Login</option>
             <option value="PAGE_ENTER">Page Visit</option>
             <option value="QUOTE_VOTED">Voted on Quote</option>
             <option value="QUOTE_COMMENTED">Commented on Quote</option>
-            <option value="COMPLAINT_CREATED">Request Submitted</option>
+            <option value="COMPLAINT_CREATED">Created Request</option>
             <option value="PARKING_REPORTED">Reported Parking</option>
             <option value="ANNOUNCEMENT_VIEWED">Viewed Announcement</option>
-            <option value="HVAC_REQUESTED">HVAC Requested</option>
+          </optgroup>
+          <optgroup label="Admin Actions">
+            <option value="quote_approved">Quote Approved</option>
+            <option value="quote_declined">Quote Declined</option>
+            <option value="quote_held">Quote Held</option>
+            <option value="work_created">Work Created</option>
+            <option value="work_completed">Work Completed</option>
+            <option value="role_changed">Role Changed</option>
+            <option value="password_changed">Password Changed</option>
+            <option value="user_invited">User Invited</option>
+            <option value="user_removed">User Removed</option>
+            <option value="sidebar_permissions_updated">Sidebar Permissions Updated</option>
           </optgroup>
         </select>
         <select id="filterRole">
@@ -297,6 +312,68 @@
       </div>
       
       <button class="log-load-more" id="loadMoreBtn" style="display:none">Load More...</button>
+    </div>
+
+    <!-- Tab Content: Statistics -->
+    <div id="tab-statistics" class="tab-content">
+      <!-- Period Selector -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:15px;font-weight:600;color:var(--text)">📊 Activity Dashboard</div>
+        <select id="statsPeriod" style="padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+      </div>
+
+      <!-- Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px" id="statsCards">
+        <div class="card" style="padding:20px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--blue-600)" id="statTotalActions">-</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Total Actions</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#16a34a" id="statActiveUsers">-</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Active Users</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#ca8a04" id="statTotalVotes">-</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Votes Cast</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#dc2626" id="statTotalRequests">-</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Requests / Reports</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <!-- Daily Activity Chart -->
+        <div class="card" style="padding:20px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:16px">Daily Activity</div>
+          <div id="dailyChart" style="height:200px;position:relative"></div>
+        </div>
+        <!-- Page Popularity Chart -->
+        <div class="card" style="padding:20px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:16px">Most Visited Pages</div>
+          <div id="pageChart" style="height:200px;position:relative"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Top Active Users -->
+        <div class="card">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:13px;font-weight:600">🏆 Most Active Users</div>
+          <div id="topUsersList" style="padding:12px 20px"></div>
+        </div>
+        <!-- Action Breakdown -->
+        <div class="card">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:13px;font-weight:600">⚡ Action Breakdown</div>
+          <div id="actionBreakdown" style="padding:12px 20px"></div>
+        </div>
+      </div>
     </div>
 
 <!-- INVITE MODAL -->
@@ -463,6 +540,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     
     if (targetTab === 'activity') loadActivityLog();
     if (targetTab === 'permissions') loadSidebarPermissions();
+    if (targetTab === 'statistics') loadStatistics();
   });
 });
 
@@ -971,15 +1049,24 @@ function renderActivityTable() {
   // Action config: label, dot priority
   const ACTION_CONFIG = {
     // User activity
-    PAGE_ENTER:           { label: 'Visited page',            sub: log => getPageName(log.page || log.record_id || ''),   priority: 'low' },
+    PAGE_ENTER:           { label: 'Visited page',            sub: log => getPageName(log.details?.page || log.page || log.record_id || ''),   priority: 'low' },
     PAGE_EXIT:            { label: 'Left page',               sub: log => getPageName(log.page || log.record_id || ''),   priority: 'low' },
     QUOTE_VOTED:          { label: 'Voted on quote',          sub: log => log.details?.project || quoteProjectMap[log.record_id] || (log.record_id ? shortId(log.record_id) : ''), priority: 'high' },
     QUOTE_COMMENTED:      { label: 'Commented on quote',      sub: log => log.details?.project || quoteProjectMap[log.record_id] || (log.record_id ? shortId(log.record_id) : ''), priority: 'medium' },
     COMPLAINT_CREATED:    { label: 'Created request',         sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'medium' },
     PARKING_REPORTED:     { label: 'Reported parking issue',  sub: () => '',                                              priority: 'medium' },
     ANNOUNCEMENT_VIEWED:  { label: 'Viewed announcement',     sub: log => log.record_id ? shortId(log.record_id) : '',   priority: 'low' },
-    LOGIN:                { label: 'Logged in',                sub: () => '',                                              priority: 'medium' },
-    HVAC_REQUESTED:       { label: 'HVAC temperature request', sub: log => log.details?.temperature ? `${log.details.temperature}°C` : '', priority: 'medium' },
+    // Admin actions
+    quote_approved:             { label: 'Approved quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
+    quote_declined:             { label: 'Declined quote',            sub: log => log.details?.quote_title || '',         priority: 'high' },
+    quote_held:                 { label: 'Put quote on hold',         sub: () => '',                                      priority: 'high' },
+    work_created:               { label: 'Created work',              sub: () => '',                                      priority: 'medium' },
+    work_completed:             { label: 'Completed work',            sub: () => '',                                      priority: 'medium' },
+    role_changed:               { label: 'Changed user role',         sub: log => log.details?.target_user ? `${log.details.target_user} → ${log.details.new_role}` : '', priority: 'medium' },
+    password_changed:           { label: 'Changed password',          sub: log => log.details?.target_user || '',         priority: 'low' },
+    user_invited:               { label: 'Invited user',              sub: log => log.details?.invited_email || '',       priority: 'medium' },
+    user_removed:               { label: 'Removed user',              sub: log => log.details?.removed_user || '',        priority: 'high' },
+    sidebar_permissions_updated:{ label: 'Updated sidebar permissions',sub: log => log.details?.role ? `for ${log.details.role}` : '', priority: 'low' },
   };
 
   const ROLE_AVATAR_CLASS = { committee:'av-log-committee', observer:'av-log-observer', owner:'av-log-owner', tenant:'av-log-tenant' };
@@ -1263,6 +1350,158 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
 });
 
 await loadUsers();
+
+// ===== STATISTICS =====
+document.getElementById('statsPeriod').addEventListener('change', () => loadStatistics());
+
+async function loadStatistics() {
+  const days = parseInt(document.getElementById('statsPeriod').value);
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+
+  const { data: logs } = await supabase.from('audit_logs').select('*').gte('created_at', since).order('created_at', { ascending: true });
+  if (!logs || !logs.length) {
+    document.getElementById('statTotalActions').textContent = '0';
+    document.getElementById('statActiveUsers').textContent = '0';
+    document.getElementById('statTotalVotes').textContent = '0';
+    document.getElementById('statTotalRequests').textContent = '0';
+    document.getElementById('dailyChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px">No data yet</div>';
+    document.getElementById('pageChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px">No data yet</div>';
+    document.getElementById('topUsersList').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No data yet</div>';
+    document.getElementById('actionBreakdown').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No data yet</div>';
+    return;
+  }
+
+  // Summary cards
+  const uniqueUsers = new Set(logs.map(l => l.user_email)).size;
+  const votes = logs.filter(l => l.action === 'QUOTE_VOTED').length;
+  const requests = logs.filter(l => ['COMPLAINT_CREATED','PARKING_REPORTED','HVAC_REQUESTED'].includes(l.action)).length;
+  animateNumber('statTotalActions', logs.length);
+  animateNumber('statActiveUsers', uniqueUsers);
+  animateNumber('statTotalVotes', votes);
+  animateNumber('statTotalRequests', requests);
+
+  // Daily activity chart
+  const dailyMap = {};
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    dailyMap[d.toISOString().slice(0,10)] = 0;
+  }
+  logs.forEach(l => {
+    const d = l.created_at.slice(0,10);
+    if (dailyMap[d] !== undefined) dailyMap[d]++;
+  });
+  renderBarChart('dailyChart', dailyMap);
+
+  // Page popularity
+  const pageMap = {};
+  const pgNameMap = { '/pages/building.html':'Overview', '/pages/quotes.html':'Quotes', '/pages/works.html':'Works', '/pages/reports.html':'Reports', '/pages/complaints.html':'Requests', '/pages/parking.html':'Parking', '/pages/announcements.html':'Announcements', '/pages/hvac.html':'HVAC', '/pages/users.html':'Users', '/pages/occupants.html':'Occupants', '/pages/emergency.html':'Emergency', '/pages/cost-dashboard.html':'Cost Analysis', '/pages/history.html':'Temp History', '/pages/guide-resident.html':'Resident Guide', '/pages/guide-committee.html':'Committee Guide' };
+  logs.filter(l => l.action === 'PAGE_ENTER').forEach(l => {
+    const pg = l.details?.page || l.page || '';
+    const name = pgNameMap[pg] || pg.split('/').pop()?.replace('.html','') || 'Unknown';
+    pageMap[name] = (pageMap[name] || 0) + 1;
+  });
+  const sortedPages = Object.entries(pageMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  renderHorizBar('pageChart', sortedPages);
+
+  // Top active users
+  const userMap = {};
+  logs.forEach(l => {
+    const e = l.user_email || 'Unknown';
+    userMap[e] = (userMap[e] || 0) + 1;
+  });
+  const sortedUsers = Object.entries(userMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const maxU = sortedUsers[0]?.[1] || 1;
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('topUsersList').innerHTML = sortedUsers.map(([email, count], i) => {
+    const pct = Math.round(count / maxU * 100);
+    const prof = allProfiles.find(p => p.email === email);
+    const name = prof?.full_name || email.split('@')[0];
+    const medal = i < 3 ? medals[i] : `<span style="color:var(--muted);font-size:11px;width:18px;display:inline-block;text-align:center">${i+1}</span>`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+      <span style="font-size:16px;width:24px;text-align:center">${medal}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+        <div style="height:6px;background:var(--border-light);border-radius:3px;margin-top:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--blue-600),var(--blue-400));border-radius:3px;transition:width 0.8s ease"></div>
+        </div>
+      </div>
+      <span style="font-size:12px;font-weight:600;color:var(--blue-600);min-width:36px;text-align:right">${count}</span>
+    </div>`;
+  }).join('');
+
+  // Action breakdown
+  const actionMap = {};
+  const actionLabels = { PAGE_ENTER:'Page Visit', LOGIN:'Login', QUOTE_VOTED:'Vote', QUOTE_COMMENTED:'Comment', COMPLAINT_CREATED:'Request', PARKING_REPORTED:'Parking Report', ANNOUNCEMENT_VIEWED:'Viewed Notice', HVAC_REQUESTED:'HVAC Request' };
+  const actionColors = { PAGE_ENTER:'#60a5fa', LOGIN:'#34d399', QUOTE_VOTED:'#fbbf24', QUOTE_COMMENTED:'#a78bfa', COMPLAINT_CREATED:'#f87171', PARKING_REPORTED:'#fb923c', ANNOUNCEMENT_VIEWED:'#2dd4bf', HVAC_REQUESTED:'#818cf8' };
+  logs.forEach(l => { actionMap[l.action] = (actionMap[l.action] || 0) + 1; });
+  const sortedActions = Object.entries(actionMap).sort((a,b) => b[1] - a[1]);
+  const totalActions = logs.length;
+  document.getElementById('actionBreakdown').innerHTML = sortedActions.map(([action, count]) => {
+    const pct = Math.round(count / totalActions * 100);
+    const label = actionLabels[action] || action;
+    const color = actionColors[action] || '#94a3b8';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:500">${label}</span>
+          <span style="font-size:11px;color:var(--muted)">${count} (${pct}%)</span>
+        </div>
+        <div style="height:6px;background:var(--border-light);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.8s ease"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function animateNumber(id, target) {
+  const el = document.getElementById(id);
+  let current = 0;
+  const step = Math.max(1, Math.ceil(target / 30));
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = current.toLocaleString();
+  }, 25);
+}
+
+function renderBarChart(containerId, dataMap) {
+  const entries = Object.entries(dataMap);
+  const max = Math.max(...entries.map(e => e[1]), 1);
+  const barW = Math.max(4, Math.floor((100 / entries.length) - 1));
+  const container = document.getElementById(containerId);
+  container.innerHTML = `
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;height:170px;padding-top:10px;gap:1px">
+      ${entries.map(([date, count]) => {
+        const h = Math.max(2, (count / max) * 150);
+        const day = new Date(date).getDate();
+        const isToday = date === new Date().toISOString().slice(0,10);
+        return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">${count || ''}</div>
+          <div style="width:80%;height:${h}px;background:${isToday ? 'linear-gradient(180deg,var(--blue-600),var(--blue-400))' : 'linear-gradient(180deg,#93c5fd,#dbeafe)'};border-radius:3px 3px 0 0;transition:height 0.6s ease"></div>
+          <div style="font-size:8px;color:var(--muted);margin-top:3px">${day}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderHorizBar(containerId, entries) {
+  const max = entries[0]?.[1] || 1;
+  const container = document.getElementById(containerId);
+  const colors = ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#eff6ff','#f0f4f8','#f8fafc'];
+  container.innerHTML = entries.map(([name, count], i) => {
+    const pct = Math.round(count / max * 100);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+      <span style="font-size:11px;font-weight:500;width:80px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${name}</span>
+      <div style="flex:1;height:18px;background:var(--border-light);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${colors[i] || colors[0]};border-radius:4px;transition:width 0.8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px">
+          <span style="font-size:9px;font-weight:600;color:${i < 3 ? '#fff' : 'var(--text)'}">${count}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
