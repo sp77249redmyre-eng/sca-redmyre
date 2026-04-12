@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   let query = supabase
     .from('push_subscriptions')
-    .select('user_id, subscription');
+    .select('id, user_id, subscription');
 
   if (user_id) {
     query = query.eq('user_id', user_id);
@@ -80,7 +80,11 @@ module.exports = async (req, res) => {
         })
       );
       sent++;
-    } catch {}
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        try { await supabase.from('push_subscriptions').delete().eq('id', row.id); } catch {}
+      }
+    }
   }
 
   return res.status(200).json({ success: true, sent });
