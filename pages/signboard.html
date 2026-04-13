@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signboard Manager — Redmyre BMS</title>
+<link rel="icon" href="/favicon.ico?v=4">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+.main-content{background:#111!important;min-height:100vh}
+.sb-wrap{padding:24px;max-width:1500px;margin:0 auto}
+.sb-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.sb-title{font-size:22px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
+.sb-sub{font-size:13px;color:#777;margin-top:3px}
+.sb-top-btns{display:flex;gap:10px}
+.sb-btn{padding:9px 20px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:all .2s}
+.sb-btn-green{background:transparent;border:1.5px solid #22c55e;color:#22c55e}
+.sb-btn-green:hover{background:rgba(34,197,94,.1);box-shadow:0 0 12px rgba(34,197,94,.15)}
+.sb-btn-red{background:#dc2626;color:#fff}
+.sb-btn-red:hover{background:#b91c1c;box-shadow:0 2px 16px rgba(220,38,38,.3)}
+.sb-tabs{display:flex;gap:0;margin-bottom:24px;flex-wrap:wrap}
+.sb-tab{padding:11px 22px;font-size:13px;font-weight:600;color:#666;cursor:pointer;border:1.5px solid #2a2a2a;background:#1a1a1a;font-family:'DM Sans',sans-serif;transition:all .2s}
+.sb-tab:first-child{border-radius:10px 0 0 10px}
+.sb-tab:last-child{border-radius:0 10px 10px 0}
+.sb-tab+.sb-tab{border-left:none}
+.sb-tab.active{background:#dc2626;color:#fff;border-color:#dc2626;box-shadow:0 2px 12px rgba(220,38,38,.25)}
+.sb-tab:hover:not(.active){color:#aaa;background:#222}
+.sb-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:1000px){.sb-grid{grid-template-columns:1fr}}
+.sb-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.sb-entry{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0;gap:12px}
+.sb-entry:last-child{border-bottom:none}
+.sb-floor-badge{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;font-family:'DM Sans',sans-serif}
+.fb-g{color:#666;background:#f5f5f5;border:1px solid #e0e0e0}
+.fb-l1{color:#dc2626;background:#fef2f2;border:1px solid #fecaca}
+.fb-l2{color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe}
+.fb-l3{color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe}
+.fb-l4{color:#059669;background:#ecfdf5;border:1px solid #a7f3d0}
+.fb-l5{color:#d97706;background:#fffbeb;border:1px solid #fde68a}
+.fb-l6{color:#0891b2;background:#ecfeff;border:1px solid #a5f3fc}
+.sb-entry-info{flex:1;min-width:0}
+.sb-entry-biz{font-size:13px;font-weight:600;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-entry-alt{font-size:12px;color:#999;margin-left:4px}
+.sb-entry-meta{font-size:11px;color:#999;margin-top:2px}
+.sb-entry-actions{display:flex;gap:4px;flex-shrink:0}
+.sb-btn-e{padding:5px 14px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #ddd;background:#fff;color:#555;transition:all .12s}
+.sb-btn-e:hover{background:#f5f5f5;color:#222}
+.sb-btn-e.del{color:#dc2626;border-color:#fecaca}
+.sb-btn-e.del:hover{background:#fef2f2}
+.sb-right-label{font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;font-family:'DM Sans',sans-serif}
+.sb-preview-wrap{background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.sb-jpeg-row{display:flex;justify-content:flex-end;margin-top:10px}
+.sb-btn-jpeg{padding:7px 18px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:#222;color:#fff;transition:all .15s}
+.sb-btn-jpeg:hover{background:#333}
+.pv-frame{background:#fff;width:100%;position:relative;padding:40px 50px 80px;font-family:'Calibri','Arial',sans-serif;overflow:hidden}
+.pv-logo{text-align:center;margin-bottom:20px}
+.pv-logo img{height:80px}
+.pv-floor{font-size:16px;font-weight:700;color:#000;margin:16px 0 4px}
+.pv-row{display:flex;justify-content:space-between;padding:1px 0 1px 40px;font-size:13px;line-height:1.6}
+.pv-biz{font-weight:700;color:#000}
+.pv-alt{font-weight:700;color:#000;margin-left:6px}
+.pv-sub{padding-left:40px;font-size:12px;color:#333;line-height:1.4}
+.pv-unit{color:#000;text-align:right;min-width:80px;font-size:13px}
+.pv-footer{margin-top:30px;text-align:center}
+.pv-page-num{font-size:12px;color:#333;margin-bottom:10px}
+.pv-footer-bar{display:flex;align-items:center;justify-content:center;gap:12px}
+.pv-footer-bar img{height:40px}
+.pv-footer-text{font-size:11px;color:#333;text-align:left}
+.pv-footer-text a{color:#1a4b8c;text-decoration:none}
+.pv-footer-text .blue{color:#1a4b8c;font-weight:700}
+.sb-notice-editor{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.sb-notice-label{font-size:12px;font-weight:600;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+.sb-notice-body{width:100%;min-height:300px;padding:14px;font-size:14px;font-family:'Calibri','Arial',sans-serif;border:1px solid #ddd;border-radius:8px;resize:vertical;color:#222;line-height:1.6}
+.sb-notice-body:focus{outline:none;border-color:#dc2626}
+.sb-notice-hint{font-size:11px;color:#999;margin-top:6px}
+.sb-modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
+.sb-modal-bg.open{display:flex}
+.sb-modal{background:#fff;border-radius:14px;width:440px;max-width:95vw;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.sb-modal h3{font-size:16px;font-weight:700;color:#222;margin-bottom:16px;font-family:'DM Sans',sans-serif}
+.sb-modal label{font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:4px;margin-top:12px}
+.sb-modal input,.sb-modal select,.sb-modal textarea{width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222}
+.sb-modal input:focus,.sb-modal select:focus,.sb-modal textarea:focus{outline:none;border-color:#dc2626}
+.sb-modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.sb-modal-btns .sb-btn{padding:8px 20px;font-size:13px}
+.sb-btn-cancel{background:#f5f5f5;color:#555;border:1px solid #ddd}
+.sb-btn-cancel:hover{background:#eee}
+.sb-btn-save{background:#dc2626;color:#fff}
+.sb-btn-save:hover{background:#b91c1c}
+#toast{display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;z-index:99999;font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div id="topbarPlaceholder"></div>
+<div class="main-content">
+<div class="sb-wrap">
+  <div class="sb-top">
+    <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & notice board management</div></div>
+    <div class="sb-top-btns">
+      <button class="sb-btn sb-btn-green" onclick="openAddModal()">+ Add entry</button>
+      <button class="sb-btn sb-btn-red" onclick="downloadAllJPEG()">Download all JPEG</button>
+    </div>
+  </div>
+  <div class="sb-tabs" id="tabBar"></div>
+  <div class="sb-grid">
+    <div id="leftPanel"></div>
+    <div id="rightPanel"></div>
+  </div>
+</div>
+</div>
+<div class="sb-modal-bg" id="entryModal">
+  <div class="sb-modal">
+    <h3 id="modalTitle">Add Entry</h3>
+    <input type="hidden" id="editId">
+    <label>Page</label>
+    <select id="fPage"><option value="1">Page 1 · G~L3</option><option value="2">Page 2 · L4~L6</option></select>
+    <label>Floor</label>
+    <select id="fFloor">
+      <option value="GROUND">GROUND</option>
+      <option value="LEVEL 1">LEVEL 1</option><option value="LEVEL 2">LEVEL 2</option><option value="LEVEL 3">LEVEL 3</option>
+      <option value="LEVEL 4">LEVEL 4</option><option value="LEVEL 5">LEVEL 5</option><option value="LEVEL 6">LEVEL 6</option>
+    </select>
+    <label>Business Name</label>
+    <input type="text" id="fBiz" placeholder="e.g. Redmyre Medical Centre">
+    <label>Display Name (Korean/Chinese) — optional</label>
+    <input type="text" id="fAlt" placeholder="e.g. 윤중병원">
+    <label>Sub Info (doctors, etc.) — optional</label>
+    <textarea id="fSub" rows="2" placeholder="Use || for line breaks"></textarea>
+    <label>Unit Display</label>
+    <input type="text" id="fUnit" placeholder="e.g. 1A, 1B & 1C">
+    <label>Sort Order</label>
+    <input type="number" id="fSort" value="1" min="1">
+    <div class="sb-modal-btns">
+      <button class="sb-btn sb-btn-cancel" onclick="closeEntryModal()">Cancel</button>
+      <button class="sb-btn sb-btn-save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script type="module">
+import { getSupabase } from '/js/auth.js';
+const { supabase, user, profile } = await getSupabase();
+if (!profile || profile.role !== 'admin') { window.location.href = '/pages/building.html'; }
+
+const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
+const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 3':'fb-l3','LEVEL 4':'fb-l4','LEVEL 5':'fb-l5','LEVEL 6':'fb-l6'};
+const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
+
+let allEntries = [];
+let activeTab = 1;
+let noticeBody = '';
+
+async function loadEntries() {
+  const { data } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
+  allEntries = data || [];
+  render();
+}
+
+function render() {
+  renderTabs();
+  const maxPage = allEntries.length ? Math.max(...allEntries.map(e => e.page)) : 1;
+  const noticeTab = maxPage + 1;
+  if (activeTab <= maxPage) { renderEntryList(); renderPreview(); }
+  else { renderNoticeEditor(); renderNoticePreview(); }
+}
+
+function renderTabs() {
+  const maxPage = allEntries.length ? Math.max(...allEntries.map(e => e.page)) : 1;
+  const noticeTab = maxPage + 1;
+  let html = '';
+  for (let p = 1; p <= maxPage; p++) {
+    const label = p === 1 ? 'Page 1 · G~L3' : p === 2 ? 'Page 2 · L4~L6' : `Page ${p}`;
+    html += `<button class="sb-tab ${activeTab===p?'active':''}" onclick="setTab(${p})">${label}</button>`;
+  }
+  html += `<button class="sb-tab ${activeTab===noticeTab?'active':''}" onclick="setTab(${noticeTab})">Page ${noticeTab} · Notice</button>`;
+  document.getElementById('tabBar').innerHTML = html;
+}
+
+function renderEntryList() {
+  const entries = allEntries.filter(e => e.page === activeTab);
+  const grouped = {};
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+  let html = '<div class="sb-card">';
+  FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
+    grouped[floor].forEach(e => {
+      const badge = FLOOR_BADGE[floor]||'fb-g';
+      const short = FLOOR_SHORT[floor]||'?';
+      const alt = e.display_name_alt ? `<span class="sb-entry-alt">${e.display_name_alt}</span>` : '';
+      const sub = e.sub_info ? e.sub_info.split('||')[0] : '';
+      const meta = [e.unit_display, sub].filter(Boolean).join(' · ');
+      html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${e.business_name}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
+    });
+  });
+  html += '</div>';
+  document.getElementById('leftPanel').innerHTML = html;
+}
+
+function renderPreview() {
+  const entries = allEntries.filter(e => e.page === activeTab);
+  const grouped = {};
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+  const totalPages = Math.max(...allEntries.map(e => e.page), 1);
+  let rows = '';
+  FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
+    rows += `<div class="pv-floor">${floor}</div>`;
+    grouped[floor].forEach(e => {
+      const alt = e.display_name_alt ? `<span class="pv-alt">${e.display_name_alt}</span>` : '';
+      rows += `<div class="pv-row"><div><span class="pv-biz">${e.business_name}</span>${alt}</div><span class="pv-unit">${e.unit_display}</span></div>`;
+      if (e.sub_info) e.sub_info.split('||').forEach(line => { rows += `<div class="pv-sub">${line.trim()}</div>`; });
+    });
+  });
+  document.getElementById('rightPanel').innerHTML = `<div class="sb-right-label">Preview</div><div class="sb-preview-wrap"><div class="pv-frame" id="pvFrame"><div class="pv-logo"><img src="/redmyre_logo.png" alt="Redmyre House"></div>${rows}<div class="pv-footer"><div class="pv-page-num">${activeTab}/${totalPages}</div><div class="pv-footer-bar"><img src="/sca-logo.png" alt="SCA"><div class="pv-footer-text">Building Managers Phone: <span class="blue">0478 705 406</span><br>Email: <a href="mailto:sp77249.redmyre@gmail.com">sp77249.redmyre@gmail.com</a></div></div></div></div><div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG</button></div></div>`;
+}
+
+function renderNoticeEditor() {
+  document.getElementById('leftPanel').innerHTML = `<div class="sb-notice-editor"><div class="sb-notice-label">Notice Content</div><textarea class="sb-notice-body" id="noticeBody" oninput="updateNoticePreview()" placeholder="Enter notice content here...&#10;&#10;Supports basic HTML for formatting.">${noticeBody}</textarea><div class="sb-notice-hint">HTML supported: &lt;b&gt;bold&lt;/b&gt;, &lt;span style="color:red"&gt;red text&lt;/span&gt;, &lt;br&gt; line break</div></div>`;
+}
+
+function renderNoticePreview() {
+  document.getElementById('rightPanel').innerHTML = `<div class="sb-right-label">Preview</div><div class="sb-preview-wrap"><div class="pv-frame" id="pvFrame" style="display:flex;flex-direction:column;min-height:500px;"><div class="pv-logo"><img src="/redmyre_logo.png" alt="Redmyre House"></div><div style="flex:1;width:100%;padding:20px 10px;font-family:'Calibri','Arial',sans-serif;font-size:14px;line-height:1.7;color:#000;" id="noticePreviewBody">${noticeBody||'<span style="color:#ccc;font-style:italic;">Notice preview will appear here...</span>'}</div><div class="pv-footer" style="margin-top:auto;"><div class="pv-footer-bar"><img src="/sca-logo.png" alt="SCA"><div class="pv-footer-text">Building Managers Phone: <span class="blue">0478 705 406</span><br>Email: <a href="mailto:sp77249.redmyre@gmail.com">sp77249.redmyre@gmail.com</a></div></div></div></div><div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG</button></div></div>`;
+}
+
+window.setTab = (t) => { activeTab = t; render(); };
+window.updateNoticePreview = () => {
+  noticeBody = document.getElementById('noticeBody').value;
+  const el = document.getElementById('noticePreviewBody');
+  if (el) el.innerHTML = noticeBody || '<span style="color:#ccc;font-style:italic;">Notice preview will appear here...</span>';
+};
+
+window.openAddModal = () => {
+  document.getElementById('modalTitle').textContent = 'Add Entry';
+  document.getElementById('editId').value = '';
+  document.getElementById('fPage').value = activeTab <= 2 ? activeTab : 1;
+  document.getElementById('fFloor').value = 'GROUND';
+  document.getElementById('fBiz').value = '';
+  document.getElementById('fAlt').value = '';
+  document.getElementById('fSub').value = '';
+  document.getElementById('fUnit').value = '';
+  document.getElementById('fSort').value = '1';
+  document.getElementById('entryModal').classList.add('open');
+};
+
+window.openEditModal = (id) => {
+  const e = allEntries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('modalTitle').textContent = 'Edit Entry';
+  document.getElementById('editId').value = e.id;
+  document.getElementById('fPage').value = e.page;
+  document.getElementById('fFloor').value = e.floor;
+  document.getElementById('fBiz').value = e.business_name;
+  document.getElementById('fAlt').value = e.display_name_alt || '';
+  document.getElementById('fSub').value = e.sub_info || '';
+  document.getElementById('fUnit').value = e.unit_display;
+  document.getElementById('fSort').value = e.sort_order;
+  document.getElementById('entryModal').classList.add('open');
+};
+
+window.closeEntryModal = () => { document.getElementById('entryModal').classList.remove('open'); };
+
+window.saveEntry = async () => {
+  const id = document.getElementById('editId').value;
+  const obj = {
+    page: parseInt(document.getElementById('fPage').value),
+    floor: document.getElementById('fFloor').value,
+    business_name: document.getElementById('fBiz').value.trim(),
+    display_name_alt: document.getElementById('fAlt').value.trim() || null,
+    sub_info: document.getElementById('fSub').value.trim() || null,
+    unit_display: document.getElementById('fUnit').value.trim(),
+    sort_order: parseInt(document.getElementById('fSort').value),
+    updated_at: new Date().toISOString()
+  };
+  if (!obj.business_name || !obj.unit_display) { showToast('Business Name and Unit are required', true); return; }
+  let error;
+  if (id) { ({ error } = await supabase.from('signboard_entries').update(obj).eq('id', id)); }
+  else { ({ error } = await supabase.from('signboard_entries').insert(obj)); }
+  if (error) { showToast('Error: ' + error.message, true); return; }
+  closeEntryModal();
+  showToast(id ? 'Entry updated' : 'Entry added');
+  await loadEntries();
+};
+
+window.deleteEntry = async (id) => {
+  if (!confirm('Delete this entry?')) return;
+  const { error } = await supabase.from('signboard_entries').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message, true); return; }
+  showToast('Entry deleted');
+  await loadEntries();
+};
+
+window.downloadJPEG = async () => {
+  const frame = document.getElementById('pvFrame');
+  if (!frame) return;
+  showToast('Generating JPEG...');
+  try {
+    const canvas = await html2canvas(frame, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+    const link = document.createElement('a');
+    link.download = `Signboard_Page${activeTab}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    showToast('JPEG downloaded!');
+  } catch (e) { showToast('Download failed: ' + e.message, true); }
+};
+
+window.downloadAllJPEG = async () => {
+  const totalPages = Math.max(...allEntries.map(e => e.page), 1);
+  showToast('Generating all JPEGs...');
+  for (let p = 1; p <= totalPages; p++) {
+    activeTab = p;
+    render();
+    await new Promise(r => setTimeout(r, 500));
+    await window.downloadJPEG();
+    await new Promise(r => setTimeout(r, 300));
+  }
+  showToast('All JPEGs downloaded!');
+};
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+await loadEntries();
+</script>
+</body>
+</html>
