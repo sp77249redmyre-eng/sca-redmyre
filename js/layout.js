@@ -333,7 +333,7 @@ export async function initLayout() {
   initBadges(supabase, user, role);
 
   if (role !== 'admin') {
-    try { await supabase.from('audit_logs').insert({ user_id: user.id, user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
+    try { await supabase.from('audit_logs').insert({ user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
   }
 
   return { supabase, user, profile, role, name };
