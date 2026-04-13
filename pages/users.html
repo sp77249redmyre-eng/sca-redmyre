@@ -260,6 +260,9 @@
           <option value="owner">Owner</option>
           <option value="tenant">Tenant</option>
         </select>
+        <select id="filterUser" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
+          <option value="">All Users</option>
+        </select>
         <select id="filterPeriod">
           <option value="7">Last 7 days</option>
           <option value="30">Last 30 days</option>
@@ -944,6 +947,9 @@ async function loadActivityLog(append = false) {
   const filterRole = document.getElementById('filterRole')?.value;
   if (filterRole) query = query.eq('user_role', filterRole);
   
+  const filterUser = document.getElementById('filterUser')?.value;
+  if (filterUser) query = query.eq('user_email', filterUser);
+  
   if (append) {
     query = query.range(currentOffset, currentOffset + LIMIT - 1);
   } else {
@@ -1176,10 +1182,24 @@ function formatTimeAgo(date) {
 
 document.getElementById('filterAction').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('filterRole').addEventListener('change', () => loadActivityLog(false));
+document.getElementById('filterUser').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('filterPeriod').addEventListener('change', () => loadActivityLog(false));
 document.getElementById('loadMoreBtn').addEventListener('click', () => loadActivityLog(true));
 document.getElementById('logSearch').addEventListener('input', () => renderActivityTable());
 document.getElementById('inactiveDays').addEventListener('change', () => loadInactiveUsers());
+
+// 유저 필터 드롭다운 채우기
+(async function populateUserFilter() {
+  const { data: profs } = await supabase.from('profiles').select('full_name, email, role').order('full_name');
+  const sel = document.getElementById('filterUser');
+  if (!profs || !sel) return;
+  profs.filter(p => p.role !== 'admin').forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.email;
+    opt.textContent = `${p.full_name || p.email.split('@')[0]} (${p.email})`;
+    sel.appendChild(opt);
+  });
+})();
 
 let inactivePanelOpen = false;
 
