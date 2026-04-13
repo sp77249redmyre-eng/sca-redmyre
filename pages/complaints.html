@@ -266,7 +266,15 @@ let pendingPhotos = [];
 
 async function loadComplaints() {
   let query = supabase.from('complaints').select('*').order('created_at',{ascending:false});
-  if (!canViewAll.includes(role)) query = query.eq('user_id', user.id);
+  if (!canViewAll.includes(role)) {
+    const { data: occ } = await supabase.from('occupants')
+      .select('unit')
+      .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`)
+      .limit(1)
+      .single();
+    if (occ?.unit) query = query.eq('unit', occ.unit);
+    else query = query.eq('user_id', user.id);
+  }
   const { data } = await query;
   allComplaints = data || [];
   if (canViewAll.includes(role)) {
