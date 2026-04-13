@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <style>
 .content{padding:24px;display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start}
 .report-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
@@ -365,6 +366,9 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     } catch(pushErr) {}
 
     showToast('Report submitted! All residents have been notified 🚨');
+    if (confirm('Print warning notice for this vehicle?')) {
+      generateWarningPDF(plate, selectedVio, bay||area);
+    }
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.textContent='🚨 Report Now'; }
 });
@@ -407,6 +411,128 @@ window.showImage = function(url) {
     img.style.display = 'block';
   }
   modal.style.display = 'flex';
+};
+
+window.generateWarningPDF = function(plate, violation, location) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ format: 'a5', unit: 'mm' });
+  const w = 148; const h = 210;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
+  const timeStr = now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+  const vioLabel = VIO_LABELS[violation] || violation || 'Parking violation';
+
+  // Red banner
+  doc.setFillColor(220, 38, 38);
+  doc.rect(0, 0, w, 28, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PARKING WARNING', w/2, 12, { align: 'center' });
+  doc.setFontSize(8);
+  doc.text('UNAUTHORISED VEHICLE — IMMEDIATE ACTION REQUIRED', w/2, 19, { align: 'center' });
+
+  // Building info
+  doc.setTextColor(30, 58, 138);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Redmyre House', 12, 38);
+  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('9-13 Redmyre Road, Strathfield NSW 2135', 12, 44);
+  doc.text('Strata Plan 77249', 12, 49);
+
+  // Divider
+  doc.setDrawColor(226, 232, 240);
+  doc.line(12, 53, w - 12, 53);
+
+  // Vehicle details
+  let y = 62;
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Vehicle Registration:', 12, y);
+  doc.setTextColor(220, 38, 38);
+  doc.setFontSize(16);
+  doc.text(plate, 65, y);
+
+  y += 10;
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Violation:', 12, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.text(vioLabel, 65, y);
+
+  y += 8;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Location:', 12, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.text(location || '—', 65, y);
+
+  y += 8;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Date / Time:', 12, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(55, 65, 81);
+  doc.text(`${dateStr}, ${timeStr}`, 65, y);
+
+  // Divider
+  y += 8;
+  doc.setDrawColor(226, 232, 240);
+  doc.line(12, y, w - 12, y);
+
+  // Warning box
+  y += 6;
+  doc.setFillColor(254, 242, 242);
+  doc.setDrawColor(254, 202, 202);
+  doc.roundedRect(12, y, w - 24, 32, 3, 3, 'FD');
+  doc.setTextColor(153, 27, 27);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('NOTICE:', 16, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Your vehicle has been parked in violation of the building', 16, y + 12);
+  doc.text('by-laws. This area is NOT available for general parking.', 16, y + 17);
+  doc.text('Repeated offences may result in wheel clamping, towing', 16, y + 23);
+  doc.text("at the owner's expense, or further action under strata law.", 16, y + 28);
+
+  // Visitor parking box
+  y += 38;
+  doc.setFillColor(239, 246, 255);
+  doc.setDrawColor(191, 219, 254);
+  doc.roundedRect(12, y, w - 24, 20, 3, 3, 'FD');
+  doc.setTextColor(30, 64, 175);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('VISITOR PARKING:', 16, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(30, 58, 138);
+  doc.text('This building does NOT have visitor parking.', 16, y + 12);
+  doc.text('Please use the adjacent Strathfield Plaza car park.', 16, y + 17);
+
+  // Footer
+  y += 26;
+  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(7.5);
+  doc.text('Building Manager: Jacob Kim', 12, y);
+  doc.text('SCA Facility Management Pty Ltd', 12, y + 5);
+  doc.text('M 0478 705 406  |  T 1300 785 007', 12, y + 10);
+
+  doc.setTextColor(220, 38, 38);
+  doc.setFont('helvetica', 'bold');
+  doc.text('This area is monitored by CCTV', w - 12, y + 5, { align: 'right' });
+
+  const safePlate = plate.replace(/\s/g, '');
+  doc.save(`Warning_${safePlate}_${now.toISOString().slice(0,10)}.pdf`);
+  showToast('Warning notice downloaded ✓');
 };
 
 window.togglePk = function(id) {
@@ -531,6 +657,7 @@ async function loadReports() {
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
+            ${!isResolved?`<button onclick="generateWarningPDF('${r.plate||''}','${r.violation||''}','${r.location||''}')" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
             ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
