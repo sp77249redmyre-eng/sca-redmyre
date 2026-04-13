@@ -340,6 +340,7 @@
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
+import { parseComment } from '/js/common.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
@@ -354,7 +355,13 @@ if (role === 'admin') {
   document.getElementById('addWorkBtn').style.display = 'inline-flex';
 }
 
-
+window.showToast = (msg, isError=false) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; 
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block'; 
+  setTimeout(()=>t.style.display='none', 3000);
+};
 
 window.formatAmount = (input) => {
   let val = input.value.replace(/[^0-9.]/g, '');
@@ -366,21 +373,7 @@ let openAccordionId = null;
 let emergencyFiles = [];
 let currentWorkStatus = {};
 
-function parseComment(comment) {
-  try {
-    if (!comment) return { note:'', files:[], category:'General', priority:'Normal' };
-    const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
-    let files = Array.isArray(obj?.files) ? obj.files : [];
-    return {
-      note: obj?.note || '',
-      files: files.filter(f => f && f.path),
-      category: obj?.category || 'General',
-      priority: obj?.priority || 'Normal'
-    };
-  } catch(e) { 
-    return { note:'', files:[], category:'General', priority:'Normal' }; 
-  }
-}
+
 
 async function getSignedUrl(path) {
   if (!path) return '';
