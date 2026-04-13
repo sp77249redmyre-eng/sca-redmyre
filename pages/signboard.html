@@ -3,12 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Signboard Manager — Redmyre BMS</title>
-<link rel="icon" href="/favicon.ico?v=4">
+<title>Signboard Manager – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-.main-content{background:#111!important;min-height:100vh}
+.content{background:#111!important}
 .sb-wrap{padding:24px;max-width:1500px;margin:0 auto}
 .sb-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
 .sb-title{font-size:22px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif}
@@ -87,28 +95,32 @@
 .sb-btn-cancel:hover{background:#eee}
 .sb-btn-save{background:#dc2626;color:#fff}
 .sb-btn-save:hover{background:#b91c1c}
-#toast{display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;z-index:99999;font-family:'DM Sans',sans-serif}
 </style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
-<div id="topbarPlaceholder"></div>
-<div class="main-content">
-<div class="sb-wrap">
-  <div class="sb-top">
-    <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & notice board management</div></div>
-    <div class="sb-top-btns">
-      <button class="sb-btn sb-btn-green" onclick="openAddModal()">+ Add entry</button>
-      <button class="sb-btn sb-btn-red" onclick="downloadAllJPEG()">Download all JPEG</button>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+
+    <div class="sb-wrap">
+      <div class="sb-top">
+        <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & notice board management</div></div>
+        <div class="sb-top-btns">
+          <button class="sb-btn sb-btn-green" onclick="openAddModal()">+ Add entry</button>
+          <button class="sb-btn sb-btn-red" onclick="downloadAllJPEG()">Download all JPEG</button>
+        </div>
+      </div>
+      <div class="sb-tabs" id="tabBar"></div>
+      <div class="sb-grid">
+        <div id="leftPanel"></div>
+        <div id="rightPanel"></div>
+      </div>
     </div>
-  </div>
-  <div class="sb-tabs" id="tabBar"></div>
-  <div class="sb-grid">
-    <div id="leftPanel"></div>
-    <div id="rightPanel"></div>
+
   </div>
 </div>
-</div>
+
 <div class="sb-modal-bg" id="entryModal">
   <div class="sb-modal">
     <h3 id="modalTitle">Add Entry</h3>
@@ -137,12 +149,15 @@
     </div>
   </div>
 </div>
-<div id="toast"></div>
+
+<div class="toast" id="toast"></div>
+
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
-
+if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
+
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
 const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
@@ -162,7 +177,6 @@ async function loadEntries() {
 function render() {
   renderTabs();
   const maxPage = allEntries.length ? Math.max(...allEntries.map(e => e.page)) : 1;
-  const noticeTab = maxPage + 1;
   if (activeTab <= maxPage) { renderEntryList(); renderPreview(); }
   else { renderNoticeEditor(); renderNoticePreview(); }
 }
