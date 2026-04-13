@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resident Guide – Redmyre House BMS</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c8102e;
+  --blue-900:#0f2456;
+  --blue-800:#1e3a8a;
+  --blue-600:#2563eb;
+  --blue-50:#eff6ff;
+  --bg:#f0f4f8;
+  --surface:#fff;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --text-2:#475569;
+  --muted:#94a3b8;
+  --green:#10b981;
+  --yellow:#f59e0b;
+  --sidebar-w:240px;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── NAV ── */
+.guide-nav{
+  position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;
+  background:var(--blue-900);
+  display:flex;flex-direction:column;
+  z-index:100;overflow-y:auto;
+}
+.nav-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo-box{background:#fff;border-radius:10px;padding:10px 16px;display:inline-block;margin-bottom:12px}
+.nav-badge{
+  display:inline-block;padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);
+  font-size:11px;font-weight:600;letter-spacing:0.05em;
+}
+.nav-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.4);
+  text-transform:uppercase;letter-spacing:0.1em;padding:20px 20px 8px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;font-size:13px;font-weight:500;
+  color:rgba(255,255,255,0.6);text-decoration:none;
+  transition:all 0.15s;cursor:pointer;border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover,.nav-item.active{color:#fff;background:rgba(255,255,255,0.08)}
+.nav-item.active{border-left:3px solid var(--blue-600);color:#fff}
+.nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.nav-footer{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08)}
+.nav-footer-text{font-size:11px;color:rgba(255,255,255,0.3);line-height:1.6}
+
+/* ── MAIN ── */
+.guide-main{margin-left:var(--sidebar-w);min-height:100vh}
+
+/* ── COVER ── */
+.cover{
+  background:linear-gradient(160deg,var(--blue-900) 0%,var(--blue-800) 50%,var(--blue-600) 100%);
+  padding:80px 60px;position:relative;overflow:hidden;
+}
+.cover::before{
+  content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  border:1px solid rgba(255,255,255,0.05);top:-200px;right:-200px;
+}
+.cover::after{
+  content:'';position:absolute;width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,0.25) 0%,transparent 70%);
+  bottom:-100px;left:-100px;
+}
+.cover-inner{position:relative;z-index:1;max-width:700px}
+.cover-logo{background:#fff;border-radius:12px;padding:12px 20px;display:inline-block;margin-bottom:28px}
+.cover-tag{
+  display:inline-block;padding:6px 16px;border-radius:20px;
+  background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);
+  font-size:12px;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:20px;
+}
+.cover-title{font-family:'DM Serif Display',serif;font-size:52px;color:#fff;line-height:1.1;margin-bottom:16px;letter-spacing:-1px}
+.cover-sub{font-size:17px;color:rgba(255,255,255,0.7);line-height:1.7;margin-bottom:40px;max-width:560px}
+.cover-cards{display:flex;gap:16px;flex-wrap:wrap}
+.cover-card{
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+  border-radius:14px;padding:16px 20px;
+  display:flex;align-items:center;gap:12px;
+  backdrop-filter:blur(10px);
+}
+.cover-card-icon{font-size:24px}
+.cover-card-text{font-size:13px;color:rgba(255,255,255,0.9);font-weight:500}
+
+/* ── SECTION ── */
+.section{padding:56px 60px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.section-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:20px;
+  background:var(--blue-50);color:var(--blue-600);
+  font-size:12px;font-weight:700;letter-spacing:0.05em;
+  text-transform:uppercase;margin-bottom:16px;
+}
+.section-title{font-family:'DM Serif Display',serif;font-size:34px;color:var(--text);letter-spacing:-0.5px;margin-bottom:10px}
+.section-sub{font-size:15px;color:var(--text-2);line-height:1.7;max-width:680px;margin-bottom:40px}
+
+/* ── WHY SECTION ── */
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.why-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:28px;
+  transition:box-shadow 0.2s;
+}
+.why-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.07)}
+.why-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin-bottom:16px;
+}
+.why-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.why-text{font-size:13px;color:var(--text-2);line-height:1.7}
+
+/* ── HOW TO LOGIN ── */
+.login-steps{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.steps-list{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--border)}
+.step-item:last-child{border-bottom:none}
+.step-num{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue-800),var(--blue-600));
+  color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.step-desc{font-size:13px;color:var(--text-2);line-height:1.6}
+
+/* ── MOCKUP ── */
+.mockup-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);
+}
+.mockup-bar{
+  background:var(--bg);border-bottom:1px solid var(--border);
+  padding:10px 16px;display:flex;align-items:center;gap:8px;
+}
+.mockup-dots{display:flex;gap:6px}
+.mockup-dot{width:10px;height:10px;border-radius:50%}
+.mockup-url{
+  flex:1;background:#fff;border:1px solid var(--border);
+  border-radius:6px;padding:5px 12px;font-size:11px;color:var(--muted);
+  margin:0 8px;
+}
+.mockup-body{padding:0}
+
+/* ── LOGIN MOCKUP ── */
+.lm-wrap{display:flex;min-height:320px}
+.lm-left{
+  width:42%;background:linear-gradient(160deg,#0f2456,#1e3a8a,#2563eb);
+  display:flex;align-items:center;justify-content:center;padding:32px;
+}
+.lm-right{flex:1;padding:32px;display:flex;flex-direction:column;justify-content:center}
+.lm-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--blue-600);text-transform:uppercase;margin-bottom:8px}
+.lm-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.lm-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+.lm-field{margin-bottom:12px}
+.lm-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:5px}
+.lm-input{
+  width:100%;padding:10px 12px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:13px;color:var(--text-2);background:var(--bg);
+}
+.lm-input.focus{border-color:var(--blue-600);background:#fff}
+.lm-btn{
+  width:100%;padding:12px;border-radius:8px;
+  background:linear-gradient(135deg,var(--blue-800),var(--blue-600));
+  border:none;color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:4px;
+}
+
+/* ── PAGE SECTION ── */
+.page-section{margin-bottom:56px}
+.page-section:last-child{margin-bottom:0}
+.page-header{
+  display:flex;align-items:center;gap:16px;margin-bottom:28px;
+  padding-bottom:20px;border-bottom:2px solid var(--border);
+}
+.page-icon-wrap{
+  width:56px;height:56px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;flex-shrink:0;
+}
+.page-name{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.page-desc{font-size:13px;color:var(--text-2);line-height:1.5}
+.page-url{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;font-size:11px;color:var(--blue-600);
+  text-decoration:none;font-weight:600;margin-top:6px;
+}
+
+.page-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-bottom:28px}
+.page-grid.single{grid-template-columns:1fr}
+
+/* ── BMS MOCKUPS ── */
+.bms-mock{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  position:relative;
+}
+.bms-mock-header{
+  background:linear-gradient(135deg,var(--blue-900),var(--blue-800));
+  padding:10px 16px;display:flex;align-items:center;gap:8px;
+}
+.bms-mock-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.8)}
+.bms-mock-body{padding:16px}
+
+/* ── CALLOUT ── */
+.callout{
+  display:flex;gap:14px;padding:18px 20px;
+  border-radius:12px;margin:20px 0;
+}
+.callout.tip{background:#f0fdf4;border:1px solid #bbf7d0}
+.callout.info{background:var(--blue-50);border:1px solid #bfdbfe}
+.callout.warn{background:#fffbeb;border:1px solid #fde68a}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.callout-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.callout-text{font-size:13px;color:var(--text-2);line-height:1.6}
+
+/* ── FEATURE TABLE ── */
+.feat-table{width:100%;border-collapse:collapse;margin:20px 0}
+.feat-table th{
+  background:var(--bg);padding:10px 16px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.05em;
+  border-bottom:2px solid var(--border);
+}
+.feat-table td{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  font-size:13px;color:var(--text-2);vertical-align:top;
+}
+.feat-table tr:last-child td{border-bottom:none}
+.feat-table td:first-child{font-weight:600;color:var(--text);width:200px}
+
+/* ── ANNOTATION ── */
+.annotation{
+  position:relative;margin:20px 0;
+}
+.ann-arrow{
+  display:flex;align-items:center;gap:8px;
+  margin:6px 0;padding:6px 12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;font-size:12px;color:var(--text-2);
+}
+.ann-arrow::before{content:'→';color:var(--blue-600);font-weight:700;font-size:14px}
+.ann-number{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--blue-600);color:#fff;font-size:10px;font-weight:700;
+  flex-shrink:0;
+}
+
+/* ── SCENARIO ── */
+.scenario{
+  background:linear-gradient(135deg,#f8faff,var(--blue-50));
+  border:1px solid #bfdbfe;border-radius:14px;padding:24px;margin:20px 0;
+}
+.scenario-label{
+  font-size:10px;font-weight:700;color:var(--blue-600);
+  text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;
+}
+.scenario-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
+.scenario-steps{display:flex;flex-direction:column;gap:8px}
+.sc-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-2);line-height:1.6}
+.sc-dot{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  background:var(--blue-600);color:#fff;font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;
+}
+
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:12px}
+.faq-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.faq-q{
+  padding:18px 20px;font-size:14px;font-weight:600;color:var(--text);
+  display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;
+}
+.faq-q::after{content:'＋';font-size:16px;color:var(--blue-600);font-weight:400}
+.faq-a{
+  padding:0 20px 18px;font-size:13px;color:var(--text-2);
+  line-height:1.7;border-top:1px solid var(--border);padding-top:14px;
+}
+
+/* ── BADGE ── */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;
+}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-yellow{background:#fef9c3;color:#a16207}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-gray{background:#f1f5f9;color:#475569}
+
+/* ── FILTER BAR MOCK ── */
+.filter-mock{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
+.filter-chip{
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  border:1.5px solid var(--border);color:var(--muted);background:var(--surface);
+}
+.filter-chip.active{
+  background:var(--blue-600);color:#fff;border-color:var(--blue-600);
+}
+
+/* ── CARD MOCK ── */
+.card-mock{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px;margin-bottom:10px;
+}
+.card-mock-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-mock-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-mock-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.card-mock-body{font-size:12px;color:var(--text-2);line-height:1.6}
+
+/* ── FORM MOCK ── */
+.form-mock{display:flex;flex-direction:column;gap:12px}
+.fm-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:4px}
+.fm-input{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:12px;color:var(--text-2);background:var(--bg);
+}
+.fm-btn{
+  padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;
+  border:none;color:#fff;
+  background:linear-gradient(135deg,var(--blue-800),var(--blue-600));
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.fm-btn.red{background:linear-gradient(135deg,#7f1d1d,#dc2626)}
+
+/* ── TOPBAR MOCK ── */
+.topbar-mock{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.tb-greeting{font-size:13px;font-weight:600;color:var(--text)}
+.tb-date{font-size:11px;color:var(--muted)}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue-800),var(--blue-600));
+  color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.tb-role{
+  padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  background:var(--blue-50);color:var(--blue-600);border:1px solid #bfdbfe;
+}
+
+/* ── SIDEBAR MOCK INLINE ── */
+.sidebar-mock{
+  width:200px;flex-shrink:0;background:var(--blue-900);border-radius:12px;
+  padding:16px 0;
+}
+.sb-nav-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;font-size:11px;color:rgba(255,255,255,0.6);
+}
+.sb-nav-item.active{
+  color:#fff;background:rgba(255,255,255,0.1);
+  border-left:2px solid var(--blue-600);
+}
+.sb-nav-icon{font-size:14px;width:18px;text-align:center}
+
+/* ── SCROLL TO TOP ── */
+.scroll-top{
+  position:fixed;bottom:32px;right:32px;
+  width:44px;height:44px;border-radius:50%;
+  background:var(--blue-800);color:#fff;
+  border:none;cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transition:opacity 0.2s;
+  z-index:50;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .guide-nav{display:none}
+  .guide-main{margin-left:0}
+  .cover{padding:40px 24px}
+  .cover-title{font-size:36px}
+  .section{padding:40px 24px}
+  .why-grid{grid-template-columns:1fr}
+  .login-steps,.page-grid{grid-template-columns:1fr}
+}
+
+/* ── PRINT ── */
+.print-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:8px;
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;margin-top:8px;
+}
+.print-btn:hover{background:rgba(255,255,255,0.25)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAV -->
+<nav class="guide-nav">
+  <div class="nav-logo">
+    <div class="logo-box">
+      <svg width="130" height="42" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+        <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+        <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+        <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+      </svg>
+    </div>
+    <div><span class="nav-badge">📘 Resident Guide</span></div>
+  </div>
+
+  <div class="nav-title">Getting Started</div>
+  <button class="nav-item" onclick="scrollToSection('cover')"><span class="nav-icon">🏠</span>Welcome</button>
+  <button class="nav-item" onclick="scrollToSection('why')"><span class="nav-icon">💡</span>Why this system?</button>
+  <button class="nav-item" onclick="scrollToSection('login')"><span class="nav-icon">🔐</span>How to log in</button>
+  <button class="nav-item" onclick="scrollToSection('dashboard')"><span class="nav-icon">🗺️</span>Your dashboard</button>
+
+  <div class="nav-title">Pages</div>
+  <button class="nav-item" onclick="scrollToSection('announcements')"><span class="nav-icon">📢</span>Announcements</button>
+  <button class="nav-item" onclick="scrollToSection('parking')"><span class="nav-icon">🚗</span>Parking / Towing</button>
+  <button class="nav-item" onclick="scrollToSection('complaints')"><span class="nav-icon">📬</span>Resident Requests</button>
+  <button class="nav-item" onclick="scrollToSection('hvac')"><span class="nav-icon">❄️</span>A/C Temperature</button>
+  <button class="nav-item" onclick="scrollToSection('emergency')"><span class="nav-icon">📞</span>Emergency Contacts</button>
+  <button class="nav-item" onclick="scrollToSection('works')"><span class="nav-icon">🔧</span>Ongoing Works</button>
+  <button class="nav-item" onclick="scrollToSection('occupants')"><span class="nav-icon">🏢</span>Occupant Details</button>
+
+  <div class="nav-title">Help</div>
+  <button class="nav-item" onclick="scrollToSection('faq')"><span class="nav-icon">❓</span>FAQ</button>
+
+  <div class="nav-footer">
+    <div class="nav-footer-text">
+      SCA Facility Management<br>
+      Redmyre House · SP 77249<br>
+      9–13 Redmyre Rd, Strathfield
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="guide-main">
+
+  <!-- COVER -->
+  <div class="cover" id="cover">
+    <div class="cover-inner">
+      <div class="cover-logo">
+        <svg width="160" height="52" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+          <text x="41" y="44" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Red</text>
+          <text x="90" y="28" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+          <text x="88" y="58" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start" letter-spacing="-1">myre</text>
+        </svg>
+      </div>
+      <div class="cover-tag">📘 Resident User Guide</div>
+      <h1 class="cover-title">Welcome to<br>Redmyre BMS</h1>
+      <p class="cover-sub">This guide will show you everything you need to know to use the Redmyre House Building Management System — from logging in to submitting requests and staying informed.</p>
+      <div class="cover-cards">
+        <div class="cover-card">
+          <div class="cover-card-icon">🏢</div>
+          <div class="cover-card-text">Redmyre House<br><span style="opacity:0.7;font-size:11px">9–13 Redmyre Rd, Strathfield</span></div>
+        </div>
+        <div class="cover-card">
+          <div class="cover-card-icon">👥</div>
+          <div class="cover-card-text">For Owners &amp; Tenants<br><span style="opacity:0.7;font-size:11px">All 52 units</span></div>
+        </div>
+        <div class="cover-card">
+          <div class="cover-card-icon">🌐</div>
+          <div class="cover-card-text">Redmyre BMS<br><span style="opacity:0.7;font-size:11px">Web &amp; mobile friendly</span></div>
+        </div>
+      </div>
+      <div style="margin-top:28px">
+        <button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHY -->
+  <div class="section" id="why">
+    <div class="section-tag">💡 About This System</div>
+    <h2 class="section-title">Why do we use this?</h2>
+    <p class="section-sub">The Redmyre BMS is a digital platform designed to make building management easier, faster, and more transparent for everyone in the building. Instead of calling, texting, or emailing for every issue — everything is done here.</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon" style="background:#fef3c7">📢</div>
+        <div class="why-title">Stay Informed</div>
+        <div class="why-text">Important notices, maintenance updates, and building news are posted here first. You'll never miss an announcement again.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="background:#dcfce7">📬</div>
+        <div class="why-title">Submit Requests Easily</div>
+        <div class="why-text">Need to report a problem? Request a temperature change? It takes less than 2 minutes — and management will be notified instantly.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="background:#dbeafe">🔧</div>
+        <div class="why-title">Track What's Happening</div>
+        <div class="why-text">See all ongoing works in the building so you're never surprised by noise or access restrictions.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="background:#fce7f3">🚗</div>
+        <div class="why-title">Report Parking Issues</div>
+        <div class="why-text">Found a car in your spot? Report it in seconds and all residents are notified immediately.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="background:#ede9fe">📞</div>
+        <div class="why-title">Emergency Contacts</div>
+        <div class="why-text">All building emergency contacts are always available in one place — plumber, electrician, security and more.</div>
+      </div>
+      <div class="why-card">
+        <div class="why-icon" style="background:#fff7ed">🏢</div>
+        <div class="why-title">Know Your Neighbours</div>
+        <div class="why-text">View occupant details for your unit and the building directory — all in one place.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="section" id="login">
+    <div class="section-tag">🔐 Getting Started</div>
+    <h2 class="section-title">How to log in</h2>
+    <p class="section-sub">You'll receive an invitation email from management. Here's what to do next.</p>
+
+    <div class="login-steps">
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Check your email</div>
+            <div class="step-desc">Look for an invitation email from <strong>noreply@mail.app.supabase.io</strong> with the subject "You're invited!" — check your spam/junk folder too.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Click "Accept Invitation"</div>
+            <div class="step-desc">Click the blue button in the email. This will take you to the BMS setup page. The link expires in 24 hours.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-title">Set your password</div>
+            <div class="step-desc">Choose a password (minimum 8 characters). Use a mix of letters and numbers for security.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div>
+            <div class="step-title">Log in anytime</div>
+            <div class="step-desc">Open the BMS link from your invitation email and enter your email and password. Save it to your bookmarks!</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div>
+            <div class="step-title">Forgot your password?</div>
+            <div class="step-desc">Click "Forgot password" on the login page. A reset link will be sent to your email.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="mockup-wrap">
+          <div class="mockup-bar">
+            <div class="mockup-dots">
+              <div class="mockup-dot" style="background:#ff5f57"></div>
+              <div class="mockup-dot" style="background:#febc2e"></div>
+              <div class="mockup-dot" style="background:#28c840"></div>
+            </div>
+            <div class="mockup-url">Redmyre BMS</div>
+          </div>
+          <div class="lm-wrap">
+            <div class="lm-left">
+              <div style="text-align:center">
+                <div style="background:#fff;border-radius:10px;padding:10px 16px;margin-bottom:16px">
+                  <svg width="120" height="40" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+                    <text x="41" y="44" font-family="Arial" font-size="34" font-weight="900" fill="#fff" text-anchor="middle">Red</text>
+                    <text x="90" y="28" font-family="Arial" font-size="16" font-weight="900" fill="#111827" text-anchor="start" letter-spacing="4">HOUSE</text>
+                    <text x="88" y="58" font-family="Arial" font-size="34" font-weight="900" fill="#c8102e" text-anchor="start">myre</text>
+                  </svg>
+                </div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:0.1em">BUILDING MANAGEMENT SYSTEM</div>
+              </div>
+            </div>
+            <div class="lm-right">
+              <div class="lm-eyebrow">Resident Portal</div>
+              <div class="lm-title">Sign in</div>
+              <div class="lm-sub">Enter your credentials to continue</div>
+              <div class="lm-field">
+                <label class="lm-label">Email address</label>
+                <div class="lm-input" style="color:var(--muted)">your@email.com</div>
+              </div>
+              <div class="lm-field">
+                <label class="lm-label">Password</label>
+                <div class="lm-input" style="color:var(--muted)">••••••••</div>
+              </div>
+              <div class="lm-btn">Sign In →</div>
+              <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Forgot password? <span style="color:var(--blue-600)">Reset here</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout tip" style="margin-top:16px">
+          <div class="callout-icon">💡</div>
+          <div>
+            <div class="callout-title">Pro Tip</div>
+            <div class="callout-text">Add the BMS to your phone's home screen for quick access — tap the share icon in your browser and select "Add to Home Screen".</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section" id="dashboard">
+    <div class="section-tag">🗺️ Navigation</div>
+    <h2 class="section-title">Your dashboard</h2>
+    <p class="section-sub">Once logged in, you'll see your personalised dashboard. Here's how to navigate the system.</p>
+
+    <div class="mockup-wrap" style="margin-bottom:28px">
+      <div class="mockup-bar">
+        <div class="mockup-dots">
+          <div class="mockup-dot" style="background:#ff5f57"></div>
+          <div class="mockup-dot" style="background:#febc2e"></div>
+          <div class="mockup-dot" style="background:#28c840"></div>
+        </div>
+        <div class="mockup-url">your BMS dashboard</div>
+      </div>
+      <div style="display:flex;min-height:340px">
+        <!-- sidebar mock -->
+        <div style="width:200px;background:var(--blue-900);flex-shrink:0;padding:16px 0">
+          <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:8px">
+            <div style="background:#fff;border-radius:8px;padding:6px 10px;display:inline-block;margin-bottom:8px">
+              <svg width="90" height="28" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+                <text x="41" y="44" font-family="Arial" font-size="34" font-weight="900" fill="#fff" text-anchor="middle">Red</text>
+                <text x="90" y="28" font-family="Arial" font-size="16" font-weight="900" fill="#111827" letter-spacing="3">HOUSE</text>
+                <text x="88" y="58" font-family="Arial" font-size="34" font-weight="900" fill="#c8102e">myre</text>
+              </svg>
+            </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5)">Redmyre House</div>
+          </div>
+          <div class="sb-nav-item active"><span class="sb-nav-icon">🏠</span>Overview</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">📢</span>Announcements</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">🚗</span>Parking / Towing</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">📬</span>Resident Requests</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">❄️</span>A/C Temperature</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">🔧</span>Ongoing Works</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">🏢</span>Occupant Details</div>
+          <div class="sb-nav-item"><span class="sb-nav-icon">📞</span>Emergency Contacts</div>
+        </div>
+        <!-- main area -->
+        <div style="flex:1;background:var(--bg)">
+          <div class="topbar-mock">
+            <div>
+              <div class="tb-greeting">Good morning, John 👋</div>
+              <div class="tb-date">Friday, 10 April 2025</div>
+            </div>
+            <div class="tb-right">
+              <div class="tb-role">Owner</div>
+              <div class="tb-avatar">JD</div>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">Building Overview</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:20px;margin-bottom:6px">🔥</div>
+                <div style="font-size:11px;font-weight:600;color:var(--text)">Hot Water</div>
+                <div style="font-size:10px;color:var(--green);margin-top:2px">● Operational</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px">
+                <div style="font-size:20px;margin-bottom:6px">🛗</div>
+                <div style="font-size:11px;font-weight:600;color:var(--text)">Elevator</div>
+                <div style="font-size:10px;color:var(--green);margin-top:2px">● Operational</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="why-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="callout info">
+        <div class="callout-icon">🗂️</div>
+        <div>
+          <div class="callout-title">Left sidebar = Navigation menu</div>
+          <div class="callout-text">Click any item on the left menu to go to that page. The active page is highlighted in blue.</div>
+        </div>
+      </div>
+      <div class="callout info">
+        <div class="callout-icon">👤</div>
+        <div>
+          <div class="callout-title">Top bar = Your account</div>
+          <div class="callout-text">The top bar shows your name, role, and has the log out button. You can also turn push notifications on/off here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGES -->
+  <div class="section" id="pages">
+    <div class="section-tag">📄 Pages</div>
+    <h2 class="section-title">Page-by-page guide</h2>
+    <p class="section-sub">Here's a detailed walkthrough of every page available to you as a resident.</p>
+  </div>
+
+  <!-- ANNOUNCEMENTS -->
+  <div class="section" id="announcements" style="padding-top:0;border-top:none">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#fef9c3">📢</div>
+        <div>
+          <div class="page-name">Announcements</div>
+          <div class="page-desc">Official notices and updates from building management</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        This is where all <strong>official building notices</strong> are posted. This includes maintenance schedules, building updates, meeting notices, and urgent alerts. You should check this page regularly or enable push notifications to be alerted automatically.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <div class="bms-mock">
+            <div class="bms-mock-header">
+              <span style="font-size:14px">📢</span>
+              <span class="bms-mock-title">Announcements</span>
+            </div>
+            <div class="bms-mock-body">
+              <div class="filter-mock">
+                <div class="filter-chip active">All</div>
+                <div class="filter-chip">🚨 Urgent</div>
+                <div class="filter-chip">🔧 Maintenance</div>
+                <div class="filter-chip">📅 Meeting</div>
+              </div>
+              <div class="card-mock" style="border-color:#bfdbfe;background:linear-gradient(135deg,#f0f9ff,#eff6ff)">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">📌 Water Interruption — Level 3 &amp; 4</div>
+                    <div class="card-mock-meta">Monday, 7 April 2025</div>
+                  </div>
+                  <span class="badge badge-yellow">🔧 Maintenance</span>
+                </div>
+                <div class="card-mock-body">Water will be shut off from 9am–12pm for pipe maintenance. Please store water beforehand.</div>
+              </div>
+              <div class="card-mock">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">AGM Notice — May 2025</div>
+                    <div class="card-mock-meta">Wednesday, 2 April 2025</div>
+                  </div>
+                  <span class="badge badge-blue">📅 Meeting</span>
+                </div>
+                <div class="card-mock-body">Annual General Meeting scheduled for 15 May at 7pm in the common room.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>Feature</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Filter buttons</td><td>Filter announcements by type: All, Urgent, Maintenance, Meeting, Reminder, General</td></tr>
+              <tr><td>📌 Pinned</td><td>Important notices stay at the top with a blue background</td></tr>
+              <tr><td>Attachments</td><td>Some announcements may have files or images you can view</td></tr>
+              <tr><td>🔔 Notifications</td><td>Enable push notifications to be alerted when new announcements are posted</td></tr>
+            </tbody>
+          </table>
+          <div class="scenario">
+            <div class="scenario-label">📋 Example</div>
+            <div class="scenario-title">You want to know about upcoming maintenance</div>
+            <div class="scenario-steps">
+              <div class="sc-step"><div class="sc-dot">1</div>Go to Announcements</div>
+              <div class="sc-step"><div class="sc-dot">2</div>Click "🔧 Maintenance" filter</div>
+              <div class="sc-step"><div class="sc-dot">3</div>Read the relevant notice</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARKING -->
+  <div class="section" id="parking">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#fee2e2">🚗</div>
+        <div>
+          <div class="page-name">Parking / Towing</div>
+          <div class="page-desc">Report unauthorised vehicles in your parking space</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        If someone has parked in your allocated spot or in a no-parking area, use this page to report it. All residents will be notified immediately, giving the owner a chance to move their car before towing is called.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <div class="bms-mock">
+            <div class="bms-mock-header">
+              <span style="font-size:14px">🚗</span>
+              <span class="bms-mock-title">Report Illegal Parking</span>
+            </div>
+            <div class="bms-mock-body">
+              <div class="form-mock">
+                <div>
+                  <label class="fm-label">Number Plate</label>
+                  <div class="fm-input" style="font-family:monospace;font-weight:700;font-size:14px;color:var(--text)">ABC 123</div>
+                </div>
+                <div>
+                  <label class="fm-label">Location</label>
+                  <div class="fm-input">Basement — Bay 12 (my spot)</div>
+                </div>
+                <div>
+                  <label class="fm-label">Photo (optional)</label>
+                  <div style="border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;font-size:12px;color:var(--muted)">📷 Take photo or browse file</div>
+                </div>
+                <div class="fm-btn red">🚨 Report — Notify All Residents</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>Field</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td>Number Plate</td><td>Enter the offending vehicle's plate number (letters and numbers only)</td></tr>
+              <tr><td>Location</td><td>Describe where the car is parked (e.g. Basement Bay 12)</td></tr>
+              <tr><td>Photo</td><td>Optional — attach up to 3 photos as evidence (📷 Camera or 📁 Browse File)</td></tr>
+              <tr><td>Report button</td><td>Sends an instant push notification to ALL residents</td></tr>
+            </tbody>
+          </table>
+          <div class="callout warn">
+            <div class="callout-icon">⚠️</div>
+            <div>
+              <div class="callout-title">15-minute cooldown</div>
+              <div class="callout-text">To prevent spam, you can only submit one report every 15 minutes for the same plate.</div>
+            </div>
+          </div>
+          <div class="scenario">
+            <div class="scenario-label">📋 Example</div>
+            <div class="scenario-title">Someone parked in your spot</div>
+            <div class="scenario-steps">
+              <div class="sc-step"><div class="sc-dot">1</div>Go to Parking / Towing</div>
+              <div class="sc-step"><div class="sc-dot">2</div>Enter the plate number and location</div>
+              <div class="sc-step"><div class="sc-dot">3</div>Take a photo (optional but helpful)</div>
+              <div class="sc-step"><div class="sc-dot">4</div>Tap "Report" — all residents notified</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLAINTS -->
+  <div class="section" id="complaints">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#dbeafe">📬</div>
+        <div>
+          <div class="page-name">Resident Requests</div>
+          <div class="page-desc">Submit maintenance requests, complaints, or any building-related issues</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        Use this page to report any issue in your unit or the common areas — a leaking pipe, noisy neighbour, broken light, etc. Management will be notified immediately and will respond via this page and email.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <div class="bms-mock">
+            <div class="bms-mock-header">
+              <span style="font-size:14px">📬</span>
+              <span class="bms-mock-title">Resident Requests</span>
+            </div>
+            <div class="bms-mock-body">
+              <div style="margin-bottom:12px">
+                <div class="fm-btn" style="width:100%;justify-content:center;padding:10px">+ Submit a Request</div>
+              </div>
+              <div class="card-mock">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">💧 Leaking tap in bathroom</div>
+                    <div class="card-mock-meta">Submitted 3 Apr 2025</div>
+                  </div>
+                  <span class="badge badge-yellow">Pending</span>
+                </div>
+                <div class="card-mock-body">The tap in the main bathroom has been dripping constantly for 2 days.</div>
+              </div>
+              <div class="card-mock">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">🔊 Noise from upstairs</div>
+                    <div class="card-mock-meta">Submitted 28 Mar 2025</div>
+                  </div>
+                  <span class="badge badge-green">Resolved</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>Category</th><th>Use for</th></tr></thead>
+            <tbody>
+              <tr><td>🔊 Noise</td><td>Noise disturbances from neighbours</td></tr>
+              <tr><td>💧 Leak / Plumbing</td><td>Water leaks, blocked drains, plumbing issues</td></tr>
+              <tr><td>🧹 Cleaning</td><td>Common area cleaning issues</td></tr>
+              <tr><td>🚗 Parking</td><td>Parking-related complaints</td></tr>
+              <tr><td>❄️ HVAC</td><td>Air conditioning / heating issues</td></tr>
+              <tr><td>🔒 Access</td><td>Door / key / intercom problems</td></tr>
+              <tr><td>📝 Other</td><td>Anything else</td></tr>
+            </tbody>
+          </table>
+          <div class="callout tip">
+            <div class="callout-icon">✉️</div>
+            <div>
+              <div class="callout-title">You'll get an email reply</div>
+              <div class="callout-text">When management responds to your request, you'll receive an email notification with their response.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HVAC -->
+  <div class="section" id="hvac">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#dbeafe">❄️</div>
+        <div>
+          <div class="page-name">A/C Temperature Request</div>
+          <div class="page-desc">Request a temperature adjustment for your unit or common areas</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        If your unit is too hot or too cold, submit a temperature request here. Building management will review and adjust the HVAC system. You'll be notified when your request is approved or declined.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <div class="bms-mock">
+            <div class="bms-mock-header">
+              <span style="font-size:14px">❄️</span>
+              <span class="bms-mock-title">A/C Temperature Request</span>
+            </div>
+            <div class="bms-mock-body">
+              <div class="form-mock">
+                <div>
+                  <label class="fm-label">Preference</label>
+                  <div class="fm-input">Too Hot — please cool down</div>
+                </div>
+                <div>
+                  <label class="fm-label">Requested Temperature</label>
+                  <div class="fm-input">22°C</div>
+                </div>
+                <div>
+                  <label class="fm-label">Notes (optional)</label>
+                  <div class="fm-input" style="height:50px">The office feels very warm in the afternoons.</div>
+                </div>
+                <div class="fm-btn">Submit Request</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-yellow">Pending</span></td><td>Your request has been submitted — management will review</td></tr>
+              <tr><td><span class="badge badge-green">Approved</span></td><td>Approved — temperature will be adjusted</td></tr>
+              <tr><td><span class="badge badge-red">Declined</span></td><td>Declined — you'll be notified with a reason</td></tr>
+            </tbody>
+          </table>
+          <div class="callout info">
+            <div class="callout-icon">📲</div>
+            <div>
+              <div class="callout-title">Push notification on decision</div>
+              <div class="callout-text">You'll receive a push notification when management approves or declines your request.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY -->
+  <div class="section" id="emergency">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#fee2e2">📞</div>
+        <div>
+          <div class="page-name">Emergency Contacts</div>
+          <div class="page-desc">Important contact numbers for building emergencies</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        If you experience a building emergency — such as flooding, power outage, or a security issue — contact the building manager directly. This page provides the building manager's contact details and availability for urgent situations.
+      </p>
+
+      <div class="callout warn">
+        <div class="callout-icon">🚨</div>
+        <div>
+          <div class="callout-title">In a life-threatening emergency, always call 000 first.</div>
+          <div class="callout-text">For building-specific issues (flooding, power outage, locked out, etc.), contact the building manager using the details on this page.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKS -->
+  <div class="section" id="works">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#dcfce7">🔧</div>
+        <div>
+          <div class="page-name">Ongoing Works</div>
+          <div class="page-desc">View all current maintenance and construction happening in the building</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        This page shows all active works in the building — scheduled maintenance, repairs, or construction. You can see the status, expected timeline, and any notes. You'll be notified via push notification when a job is completed.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <div class="bms-mock">
+            <div class="bms-mock-header">
+              <span style="font-size:14px">🔧</span>
+              <span class="bms-mock-title">Ongoing Works</span>
+            </div>
+            <div class="bms-mock-body">
+              <div class="card-mock">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">Lobby Carpet Replacement</div>
+                    <div class="card-mock-meta">Started: 5 Apr 2025</div>
+                  </div>
+                  <span class="badge badge-blue">In Progress</span>
+                </div>
+                <div class="card-mock-body">Carpet removal and replacement in ground floor lobby and Level 1 corridor.</div>
+              </div>
+              <div class="card-mock">
+                <div class="card-mock-top">
+                  <div>
+                    <div class="card-mock-title">Elevator Maintenance</div>
+                    <div class="card-mock-meta">Scheduled: 12 Apr 2025</div>
+                  </div>
+                  <span class="badge badge-yellow">Scheduled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-blue">In Progress</span></td><td>Work is currently underway</td></tr>
+              <tr><td><span class="badge badge-yellow">Scheduled</span></td><td>Work is planned for a future date</td></tr>
+              <tr><td><span class="badge badge-red">🚨 Emergency</span></td><td>Urgent repair — no prior approval required</td></tr>
+              <tr><td><span class="badge badge-green">Completed</span></td><td>Job finished — moved to Completed Works</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OCCUPANTS -->
+  <div class="section" id="occupants">
+    <div class="page-section">
+      <div class="page-header">
+        <div class="page-icon-wrap" style="background:#ede9fe">🏢</div>
+        <div>
+          <div class="page-name">Occupant Details</div>
+          <div class="page-desc">View your unit information and building directory</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:20px">
+        This page shows the building directory — all units and their occupant information. You can view and edit your own unit details, including business name, contact, email, and registered vehicles.
+      </p>
+
+      <div class="page-grid">
+        <div>
+          <table class="feat-table">
+            <thead><tr><th>What you can do</th><th>Details</th></tr></thead>
+            <tbody>
+              <tr><td>View your unit</td><td>See your own unit's information</td></tr>
+              <tr><td>Edit your details</td><td>Update business name, contact email, vehicles</td></tr>
+              <tr><td>View directory</td><td>See other units (limited info for privacy)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="callout info">
+            <div class="callout-icon">🔒</div>
+            <div>
+              <div class="callout-title">Privacy protected</div>
+              <div class="callout-text">You can only see your own unit's full details. Other units' contact information is not visible to residents.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section" id="faq">
+    <div class="section-tag">❓ Help</div>
+    <h2 class="section-title">Frequently Asked Questions</h2>
+    <p class="section-sub">Common questions from residents.</p>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">I didn't receive my invitation email. What should I do?</div>
+        <div class="faq-a">Check your spam or junk folder first. If it's not there, contact building management at <strong>sp77249.redmyre@gmail.com</strong> or call Jacob Kim on <strong>0478 705 406</strong> to resend the invitation.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">I forgot my password. How do I reset it?</div>
+        <div class="faq-a">Open the BMS and click "Forgot password?" on the login page. Enter your email and you'll receive a reset link within a few minutes.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I use this on my phone?</div>
+        <div class="faq-a">Yes! The BMS works on all devices — phone, tablet, and computer. For the best experience, add it to your home screen: in your browser, tap the Share icon and select "Add to Home Screen".</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I turn on push notifications?</div>
+        <div class="faq-a">Once logged in, click the 🔕 OFF button in the top bar and select "Enable Notifications" when prompted. You'll then receive instant alerts for announcements, parking reports, and request updates.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">I submitted a request but haven't heard back. What do I do?</div>
+        <div class="faq-a">Requests are typically reviewed within 1-2 business days. If it's urgent, contact Jacob Kim directly on <strong>0478 705 406</strong>.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Some pages I see in this guide are not available to me. Why?</div>
+        <div class="faq-a">Your access depends on your role (Owner or Tenant). Some pages are only available to committee members and administrators. This is normal.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Who do I contact for system support?</div>
+        <div class="faq-a">Contact building manager Jacob Kim: <strong>M 0478 705 406</strong> · <strong>T 1300 785 007</strong> · <strong>sp77249.redmyre@gmail.com</strong></div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;background:linear-gradient(135deg,var(--blue-900),var(--blue-800));border-radius:16px;padding:36px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:8px">Building Management</div>
+        <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px">Jacob Kim</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.8">
+          SCA Facility Management Pty Ltd<br>
+          Redmyre House · 9–13 Redmyre Road, Strathfield NSW 2135<br>
+          M 0478 705 406 · T 1300 785 007
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="background:#fff;border-radius:10px;padding:10px 16px;display:inline-block">
+          <svg width="120" height="40" viewBox="0 0 200 64" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="74" height="56" rx="6" fill="#c8102e"/>
+            <text x="41" y="44" font-family="Arial" font-size="34" font-weight="900" fill="#fff" text-anchor="middle">Red</text>
+            <text x="90" y="28" font-family="Arial" font-size="16" font-weight="900" fill="#111827" letter-spacing="3">HOUSE</text>
+            <text x="88" y="58" font-family="Arial" font-size="34" font-weight="900" fill="#c8102e">myre</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function scrollToSection(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const top=el.getBoundingClientRect().top+window.scrollY-60;
+  window.scrollTo({top,behavior:'smooth'});
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const btn=document.querySelector(`.nav-item[onclick="scrollToSection('${id}')"]`);
+  if(btn)btn.classList.add('active');
+}
+const sections=['cover','why','login','dashboard','announcements','parking','complaints','hvac','emergency','works','occupants','faq'];
+window.addEventListener('scroll',()=>{
+  const pos=window.scrollY+120;
+  sections.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&pos>=el.offsetTop){
+      document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+      const btn=document.querySelector(`.nav-item[onclick="scrollToSection('${id}')"]`);
+      if(btn)btn.classList.add('active');
+    }
+  });
+});
+
+// FAQ toggle
+document.querySelectorAll('.faq-q').forEach(q=>{
+  const a=q.nextElementSibling;
+  a.style.display='none';
+  q.addEventListener('click',()=>{
+    const open=a.style.display==='block';
+    document.querySelectorAll('.faq-a').forEach(x=>x.style.display='none');
+    document.querySelectorAll('.faq-q').forEach(x=>x.classList.remove('open'));
+    if(!open){a.style.display='block';q.classList.add('open');}
+  });
+});
+</script>
+<style>
+.faq-q::after{content:'＋';font-size:16px;color:var(--blue-600);font-weight:400}
+.faq-q.open::after{content:'−'}
+.faq-q{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+@media print{.guide-nav,.scroll-top,.print-btn{display:none!important}.guide-main{margin-left:0!important}.cover{padding:40px 24px}.section{padding:30px 24px}}
+</style>
+</body>
+</html>
+  a.style.dis
