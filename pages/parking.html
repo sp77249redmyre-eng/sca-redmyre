@@ -208,10 +208,25 @@ function pkUpdatePreview() {
   const countEl = document.getElementById('pkPhotoCount');
   grid.innerHTML = '';
   window._pkFiles.forEach((file, idx) => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0';
+    if (isPdf) {
+      wrap.innerHTML = `
+        <div style="width:100%;height:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+          <span style="font-size:24px">📄</span>
+          <span style="font-size:9px;color:var(--muted);text-align:center;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${file.name.length>10?file.name.slice(0,8)+'..':file.name}</span>
+        </div>
+        <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
+      wrap.querySelector('button').addEventListener('click', () => {
+        window._pkFiles.splice(idx, 1);
+        pkUpdatePreview();
+        pkUpdateButtons();
+      });
+      grid.appendChild(wrap);
+    } else {
     const reader = new FileReader();
     reader.onload = e => {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0';
       wrap.innerHTML = `
         <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">
         <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
@@ -223,6 +238,7 @@ function pkUpdatePreview() {
       grid.appendChild(wrap);
     };
     reader.readAsDataURL(file);
+    }
   });
   if (window._pkFiles.length > 0) {
     countEl.textContent = `${window._pkFiles.length} / ${MAX_PHOTOS} photo${window._pkFiles.length > 1 ? 's' : ''} selected`;
@@ -468,7 +484,10 @@ async function loadReports() {
     const tagRepeat = isRepeat ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600">🔴 Repeat</span>` : '';
 
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
-    const imagesHtml = allImages.length ? `<div class="pk-images">${allImages.map(url => `<img src="${url}" class="pk-image" onclick="showImage('${url}')">`).join('')}</div>` : '';
+    const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
+    const pdfFiles = allImages.filter(url => url.toLowerCase().endsWith('.pdf'));
+    const imagesHtml = imageFiles.length ? `<div class="pk-images">${imageFiles.map(url => `<img src="${url}" class="pk-image" onclick="showImage('${url}')">`).join('')}</div>` : '';
+    const pdfsHtml = pdfFiles.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => { const fname = decodeURIComponent(url.split('/').pop()); return `<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--blue-600);text-decoration:none;font-weight:500"><span style="font-size:16px">📄</span>${fname.length>30?fname.slice(0,27)+'...':fname}</a>`; }).join('')}</div>` : '';
 
     return `
       <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}">
@@ -491,6 +510,7 @@ async function loadReports() {
           <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 14px">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
           <div class="pk-reporter">Reported by ${r.reporter_name||'Unknown'} · ${absTime}</div>
           ${imagesHtml}
+          ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
