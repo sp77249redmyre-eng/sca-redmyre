@@ -78,6 +78,23 @@ export const COMPLAINT_CAT_EMOJI = {
   other:    '📝',
 };
 
+/* ── Quote comment 파싱 ── */
+export function parseComment(comment) {
+  try {
+    if (!comment) return { note: '', files: [], category: 'General', priority: 'Normal' };
+    const obj = typeof comment === 'string' ? JSON.parse(comment) : comment;
+    const files = Array.isArray(obj?.files) ? obj.files : [];
+    return {
+      note: obj?.note || '',
+      files: files.filter(f => f && f.path),
+      category: obj?.category || 'General',
+      priority: obj?.priority || 'Normal'
+    };
+  } catch(e) {
+    return { note: '', files: [], category: 'General', priority: 'Normal' };
+  }
+}
+
 export const COMPLAINT_CAT_LABEL = {
   noise:    'Noise / Vibration',
   leak:     'Leak / Plumbing',
