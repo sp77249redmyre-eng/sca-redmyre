@@ -139,9 +139,11 @@
 </div>
 <div id="toast"></div>
 <script type="module">
-import { getSupabase } from '/js/auth.js';
-const { supabase, user, profile } = await getSupabase();
-if (!profile || profile.role !== 'admin') { window.location.href = '/pages/building.html'; }
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+
+const { supabase, user, role } = ctx;
+if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
 const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
 const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 3':'fb-l3','LEVEL 4':'fb-l4','LEVEL 5':'fb-l5','LEVEL 6':'fb-l6'};
