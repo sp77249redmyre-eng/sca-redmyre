@@ -476,6 +476,7 @@
         <div class="admin-search-title">🔍 Quick Search</div>
         <button onclick="exportOccupants()" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📥 Export Excel</button>
         <button onclick="openBulkInvite()" style="padding:7px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📧 Bulk Invite</button>
+        <button id="signboardBtn" onclick="toggleSignboard()" style="display:none;padding:7px 16px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📺 Signboard</button>
         <div class="admin-search-bar">
           <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Search unit, name, email, plate…" autocomplete="off">
           <button id="adminSearchClear" class="admin-search-clear">✕</button>
@@ -524,6 +525,27 @@
 </div>
 
 <!-- VIEW MODAL -->
+
+<!-- SIGNBOARD PREVIEW -->
+<div id="signboardPreview" style="display:none;padding:24px;max-width:1200px;margin:0 auto;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:16px;font-weight:700;color:var(--text);">📺 Signboard Preview</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="downloadSignboard(1)" style="padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">⬇️ Page 1 JPEG</button>
+      <button onclick="downloadSignboard(2)" style="padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">⬇️ Page 2 JPEG</button>
+      <button onclick="toggleSignboard()" style="padding:7px 16px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✕ Close</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <canvas id="signboardCanvas1" width="540" height="960" style="width:360px;height:640px;display:block;"></canvas>
+    </div>
+    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <canvas id="signboardCanvas2" width="540" height="960" style="width:360px;height:640px;display:block;"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="viewModal">
   <div class="modal-box">
     <div class="modal-title" id="viewModalTitle">Unit Details</div>
@@ -553,6 +575,15 @@
     <div class="modal-field">
       <label class="modal-label">Business Name</label>
       <input class="modal-input" id="editBusinessName" placeholder="Business or tenant name">
+    </div>
+
+    <div class="modal-field" id="signboardFieldsWrap" style="display:none">
+      <label class="modal-label">📺 Display Name (Korean/Chinese)</label>
+      <input class="modal-input" id="editDisplayNameAlt" placeholder="e.g. 윤중병원, 曾維斌會計師事務所">
+    </div>
+    <div class="modal-field" id="signboardSubInfoWrap" style="display:none">
+      <label class="modal-label">📺 Sub Info (Doctors, etc)</label>
+      <input class="modal-input" id="editSubInfo" placeholder="e.g. Dr. Kris Park, Dr Jeff Ahn">
     </div>
     
     <div class="modal-field">
@@ -839,6 +870,11 @@ window.openEditModal = (id) => {
   document.getElementById('editId').value = occ.id;
   document.getElementById('editUnit').value = occ.unit;
   document.getElementById('editBusinessName').value = occ.business_name || '';
+  document.getElementById('editDisplayNameAlt').value = occ.display_name_alt || '';
+  document.getElementById('editSubInfo').value = occ.sub_info || '';
+  // Show signboard fields for admin only
+  document.getElementById('signboardFieldsWrap').style.display = role === 'admin' ? '' : 'none';
+  document.getElementById('signboardSubInfoWrap').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('editContactPerson').value = occ.contact_person || '';
   document.getElementById('editPrimaryEmail').value = occ.primary_email || '';
   document.getElementById('editBusinessEmail').value = occ.business_email || '';
@@ -914,6 +950,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     is_committee: document.getElementById('editIsCommittee').checked,
     committee_role: document.getElementById('editIsCommittee').checked ? document.getElementById('editCommitteeRole').value : null,
     license_plates: platesStr || null,
+    display_name_alt: document.getElementById('editDisplayNameAlt').value.trim() || null,
+    sub_info: document.getElementById('editSubInfo').value.trim() || null,
   };
 
   const { error } = await supabase
@@ -1446,6 +1484,218 @@ window.exportOccupants = () => {
   const suffix = filterLabel && filterLabel !== 'all' ? `_${filterLabel}` : '';
   XLSX.writeFile(wb, `Redmyre_Occupants${suffix}_${date}.xlsx`);
 };
+
+// ── Signboard ─────────────────────────────────────────────────
+if (role === 'admin') {
+  document.getElementById('signboardBtn').style.display = 'flex';
+}
+
+let signboardOpen = false;
+function toggleSignboard() {
+  signboardOpen = !signboardOpen;
+  document.getElementById('signboardPreview').style.display = signboardOpen ? '' : 'none';
+  if (signboardOpen) renderSignboard();
+}
+
+function getSignboardData() {
+  const levels = {};
+  const occupants = allOccupants.filter(o => o.level && o.level !== 'External' && o.show_on_signboard !== false);
+  occupants.forEach(o => {
+    const lvl = o.level === 'Ground' ? 'GROUND' : o.level.toUpperCase().replace('LEVEL ', 'LEVEL ');
+    if (!levels[lvl]) levels[lvl] = [];
+    levels[lvl].push(o);
+  });
+  return levels;
+}
+
+function buildSignboardGroups(levels) {
+  // Merge same-business units (e.g. 1A,1B,1C = Redmyre Medical Centre)
+  const page1Floors = ['GROUND', 'LEVEL 1', 'LEVEL 2', 'LEVEL 3'];
+  const page2Floors = ['LEVEL 4', 'LEVEL 5', 'LEVEL 6'];
+
+  function mergeFloor(occList) {
+    const merged = [];
+    const seen = {};
+    occList.sort((a, b) => a.unit.localeCompare(b.unit, undefined, {numeric: true}));
+    occList.forEach(o => {
+      const bName = (o.business_name || '').trim();
+      if (!bName) return;
+      const key = bName.toLowerCase();
+      if (seen[key]) {
+        seen[key].units.push(o.unit);
+        if (o.display_name_alt && !seen[key].display_name_alt) seen[key].display_name_alt = o.display_name_alt;
+        if (o.sub_info && !seen[key].sub_info) seen[key].sub_info = o.sub_info;
+      } else {
+        const entry = {
+          business_name: bName,
+          display_name_alt: o.display_name_alt || '',
+          sub_info: o.sub_info || '',
+          units: [o.unit]
+        };
+        seen[key] = entry;
+        merged.push(entry);
+      }
+    });
+    return merged;
+  }
+
+  function buildPage(floors, levels) {
+    const result = [];
+    floors.forEach(f => {
+      if (levels[f]) result.push({ floor: f, tenants: mergeFloor(levels[f]) });
+    });
+    return result;
+  }
+  return { page1: buildPage(page1Floors, levels), page2: buildPage(page2Floors, levels) };
+}
+
+function formatUnits(units) {
+  const nums = units.map(u => u.replace(/^Unit\s*/i, ''));
+  if (nums.length <= 2) return nums.join(' & ');
+  return nums.slice(0, -1).join(', ') + ' & ' + nums[nums.length - 1];
+}
+
+function renderSignboard() {
+  const levels = getSignboardData();
+  const { page1, page2 } = buildSignboardGroups(levels);
+  drawSignboardPage(document.getElementById('signboardCanvas1'), page1, '1/2');
+  drawSignboardPage(document.getElementById('signboardCanvas2'), page2, '2/2');
+}
+
+function drawSignboardPage(canvas, floors, pageNum) {
+  const ctx2 = canvas.getContext('2d');
+  const W = 540, H = 960;
+  ctx2.clearRect(0, 0, W, H);
+  ctx2.fillStyle = '#ffffff';
+  ctx2.fillRect(0, 0, W, H);
+
+  let y = 18;
+
+  // Logo placeholder
+  const logoImg = new Image();
+  logoImg.onload = () => {
+    ctx2.drawImage(logoImg, W/2 - 75, y, 150, 52);
+    y += 62;
+    // Divider
+    ctx2.strokeStyle = '#999';
+    ctx2.lineWidth = 1;
+    ctx2.beginPath();
+    ctx2.moveTo(30, y);
+    ctx2.lineTo(W - 30, y);
+    ctx2.stroke();
+    y += 10;
+    drawFloors(ctx2, floors, y, W, H, pageNum);
+  };
+  logoImg.onerror = () => {
+    // Draw text fallback
+    ctx2.font = 'bold 22px Arial';
+    ctx2.fillStyle = '#c00';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('Redmyre', W/2, y + 35);
+    ctx2.fillStyle = '#000';
+    ctx2.font = 'bold 14px Arial';
+    ctx2.fillText('HOUSE', W/2 + 50, y + 18);
+    ctx2.textAlign = 'left';
+    y += 62;
+    ctx2.strokeStyle = '#999';
+    ctx2.lineWidth = 1;
+    ctx2.beginPath();
+    ctx2.moveTo(30, y);
+    ctx2.lineTo(W - 30, y);
+    ctx2.stroke();
+    y += 10;
+    drawFloors(ctx2, floors, y, W, H, pageNum);
+  };
+  logoImg.src = '/redmyre_logo.png';
+}
+
+function drawFloors(ctx2, floors, startY, W, H, pageNum) {
+  let y = startY;
+  const LEFT = 35;
+  const INDENT = 55;
+  const RIGHT = W - 35;
+
+  floors.forEach(floor => {
+    // Floor title
+    ctx2.font = 'bold 15px Arial';
+    ctx2.fillStyle = '#000';
+    ctx2.textAlign = 'left';
+    ctx2.fillText(floor.floor, LEFT, y + 14);
+    y += 22;
+
+    floor.tenants.forEach(t => {
+      const unitStr = formatUnits(t.units);
+      const nameStr = t.display_name_alt ? `${t.business_name} ${t.display_name_alt}` : t.business_name;
+
+      // Tenant name (left) + unit (right)
+      ctx2.font = 'bold 12px Arial';
+      ctx2.fillStyle = '#000';
+      ctx2.textAlign = 'left';
+      ctx2.fillText(nameStr, INDENT, y + 12);
+      ctx2.textAlign = 'right';
+      ctx2.font = '12px Arial';
+      ctx2.fillText(unitStr, RIGHT, y + 12);
+      y += 17;
+
+      // Sub info
+      if (t.sub_info) {
+        ctx2.font = '11px Arial';
+        ctx2.fillStyle = '#333';
+        ctx2.textAlign = 'left';
+        // Split long sub_info into lines
+        const maxW = RIGHT - INDENT - 60;
+        const words = t.sub_info.split(', ');
+        let line = '';
+        words.forEach((w, i) => {
+          const test = line ? line + ', ' + w : w;
+          if (ctx2.measureText(test).width > maxW && line) {
+            ctx2.fillText(line, INDENT + 10, y + 11);
+            y += 14;
+            line = w;
+          } else {
+            line = test;
+          }
+        });
+        if (line) {
+          ctx2.fillText(line, INDENT + 10, y + 11);
+          y += 14;
+        }
+        ctx2.fillStyle = '#000';
+      }
+    });
+    y += 8;
+  });
+
+  // Page number
+  ctx2.font = '12px Arial';
+  ctx2.fillStyle = '#000';
+  ctx2.textAlign = 'center';
+  ctx2.fillText(pageNum, W / 2, H - 62);
+
+  // Footer - SCA logo placeholder + contact
+  ctx2.font = '11px Arial';
+  ctx2.fillStyle = '#000';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('Building Managers Phone: 0478 705 406', W / 2 + 20, H - 30);
+  ctx2.fillStyle = '#1a0dab';
+  ctx2.fillText('Email: sp77249.redmyre@gmail.com', W / 2 + 20, H - 14);
+
+  // SCA logo
+  const scaImg = new Image();
+  scaImg.onload = () => {
+    ctx2.drawImage(scaImg, 30, H - 50, 50, 35);
+  };
+  scaImg.src = '/sca-logo.png';
+}
+
+function downloadSignboard(page) {
+  const canvas = document.getElementById(`signboardCanvas${page}`);
+  const link = document.createElement('a');
+  const date = new Date().toISOString().split('T')[0];
+  link.download = `Redmyre_Signboard_Page${page}_${date}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
+  link.click();
+}
 
 // Initial load
 await loadOccupants();
