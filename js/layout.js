@@ -13,6 +13,7 @@ const PAGE_CONFIG = {
   'quotes':         { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':        { title: 'Completed Works',       allowedRoles: ['admin', 'committee', 'observer'] },
   'occupants':      { title: 'Occupant Details',      allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
+  'signboard':      { title: 'Signboard Manager',     allowedRoles: ['admin'] },
   'users':          { title: 'User Management',       allowedRoles: ['admin'] },
   'system':         { title: 'System Management',     allowedRoles: ['admin'] },
   'guide-resident': { title: 'User Guide',            allowedRoles: null },
@@ -79,7 +80,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'users', 'system', 'guide-resident', 'guide-committee'];
+    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
