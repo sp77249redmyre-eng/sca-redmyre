@@ -331,7 +331,24 @@ function renderMyRequests() {
 }
 
 async function loadMyRequests() {
-  const { data } = await supabase.from('hvac_requests').select('*').eq('user_id', user.id).order('created_at', {ascending: false}).limit(20);
+  const { data: occs } = await supabase.from('occupants')
+    .select('unit')
+    .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`);
+  const unitList = [...new Set((occs || []).map(o => o.unit).filter(Boolean))];
+  const hvacUnits = unitList.map(u => {
+    const match = u.match(/^(\d+)([A-H])$/i);
+    if (!match) return null;
+    return { level: `Level ${match[1]}`, tenancy: `Tenancy ${match[2].toUpperCase()}` };
+  }).filter(Boolean);
+
+  let query = supabase.from('hvac_requests').select('*').order('created_at', {ascending: false}).limit(50);
+  if (hvacUnits.length) {
+    const filters = hvacUnits.map(u => `and(level.eq.${u.level},tenancy.eq.${u.tenancy})`).join(',');
+    query = query.or(`user_id.eq.${user.id},${filters}`);
+  } else {
+    query = query.eq('user_id', user.id);
+  }
+  const { data } = await query;
   allMyRequests = data || [];
   renderMyRequests();
 }
