@@ -114,7 +114,7 @@
 
 <!-- ADD MODAL -->
 <div class="modal-backdrop" id="complaintModal">
-  <div class="modal-box" style="max-width:640px;width:92%;max-height:90vh;overflow-y:auto">
+  <div class="modal-box" style="max-width:640px;width:95%;max-height:92vh;overflow-y:auto">
     <div class="modal-title" id="complaintModalTitle">New Request</div>
     <input type="hidden" id="complaintEditId">
     <div class="modal-field">
@@ -182,7 +182,7 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-backdrop" id="detailModal">
-  <div class="modal-box" style="max-width:680px;min-height:600px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;padding:0">
+  <div class="modal-box" style="max-width:720px;width:95%;min-height:600px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;padding:0">
 
     <div style="padding:20px 24px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div>
@@ -229,6 +229,21 @@
   <div class="photo-lightbox-close" onclick="closeLightbox()">✕</div>
   <img id="lightboxImg" src="" alt="">
 </div>
+
+<div class="modal-backdrop" id="editMsgModal">
+  <div class="modal-box" style="max-width:640px;width:95%">
+    <div class="modal-title">Edit Message</div>
+    <input type="hidden" id="editMsgId">
+    <div class="modal-field">
+      <textarea class="modal-textarea" id="editMsgText" style="min-height:180px;font-size:14px;line-height:1.7"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('editMsgModal')">Cancel</button>
+      <button class="btn-primary" id="saveEditMsgBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -494,16 +509,25 @@ async function loadMessageThread(complaintId) {
 window.editMessage = async function(msgId) {
   const textEl = document.getElementById('msgText-' + msgId);
   if (!textEl) return;
-  const current = textEl.textContent;
-  const newText = prompt('Edit your message:', current);
-  if (newText === null || newText.trim() === '' || newText.trim() === current) return;
+  document.getElementById('editMsgId').value = msgId;
+  document.getElementById('editMsgText').value = textEl.textContent;
+  document.getElementById('editMsgModal').classList.add('open');
+  setTimeout(() => document.getElementById('editMsgText').focus(), 100);
+};
+
+document.getElementById('saveEditMsgBtn').addEventListener('click', async () => {
+  const msgId = document.getElementById('editMsgId').value;
+  const newText = document.getElementById('editMsgText').value.trim();
+  const textEl = document.getElementById('msgText-' + msgId);
+  if (!newText || (textEl && newText === textEl.textContent)) { closeModal('editMsgModal'); return; }
   try {
-    const { error } = await supabase.from('complaint_messages').update({ message: newText.trim() }).eq('id', msgId).eq('user_id', user.id);
+    const { error } = await supabase.from('complaint_messages').update({ message: newText }).eq('id', msgId).eq('user_id', user.id);
     if (error) throw error;
+    closeModal('editMsgModal');
     await loadMessageThread(currentComplaintId);
     showToast('Message updated ✓');
   } catch(e) { showToast('Failed to update message', true); }
-};
+});
 
 window.deleteMessage = async function(msgId) {
   if (!confirm('Delete this message?')) return;
