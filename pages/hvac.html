@@ -79,6 +79,16 @@
 .unit-radio-detail{font-size:12px;color:var(--muted)}
 
 @media(max-width:900px){.content{grid-template-columns:1fr}}
+
+/* Cooldown Modal */
+.cooldown-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+.cooldown-overlay.show{display:flex}
+.cooldown-box{background:#fff;border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.cooldown-icon{font-size:48px;margin-bottom:16px}
+.cooldown-title{font-size:18px;font-weight:700;color:#dc2626;margin-bottom:8px}
+.cooldown-msg{font-size:14px;color:#374151;line-height:1.6;margin-bottom:20px}
+.cooldown-time{font-size:28px;font-weight:800;color:#dc2626;margin-bottom:20px}
+.cooldown-close{padding:10px 28px;border-radius:10px;background:#dc2626;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 @media(max-width:768px){
   .content{padding:16px;gap:14px}
   .submit-form{padding:16px}
@@ -256,7 +266,8 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
       if (recent && recent.length > 0) {
         const lastTime = new Date(recent[0].created_at);
         const remaining = Math.ceil((30 * 60 * 1000 - (Date.now() - lastTime.getTime())) / 60000);
-        showToast(`This tenancy already requested within 30 minutes. Please try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
+        document.getElementById('cooldownTime').textContent = `${remaining} minute${remaining !== 1 ? 's' : ''} remaining`;
+        document.getElementById('cooldownModal').classList.add('show');
         return;
       }
     } catch(e) { showToast('Unable to verify cooldown. Please try again.', true); return; }
@@ -710,5 +721,16 @@ window.rejectReq = async (id) => {
   await loadAdminData();
 };
 </script>
+<!-- Cooldown Modal -->
+<div class="cooldown-overlay" id="cooldownModal">
+  <div class="cooldown-box">
+    <div class="cooldown-icon">⏳</div>
+    <div class="cooldown-title">Too many requests!</div>
+    <div class="cooldown-msg">This tenancy has already submitted a temperature request. Please wait before trying again.</div>
+    <div class="cooldown-time" id="cooldownTime"></div>
+    <button class="cooldown-close" onclick="document.getElementById('cooldownModal').classList.remove('show')">OK, I understand</button>
+  </div>
+</div>
+
 </body>
 </html>
