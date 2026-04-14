@@ -595,6 +595,7 @@ async function loadAdminData() {
           ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
         </div>
         <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
+        <button onclick="deleteHvacRequest('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Delete">🗑️</button>
       </div>
     `).join('');
   }
@@ -718,6 +719,14 @@ window.rejectReq = async (id) => {
     }
   } catch(pushErr) {}
   showToast('Request rejected');
+  await loadAdminData();
+};
+
+window.deleteHvacRequest = async (id) => {
+  if (!confirm('Delete this request? This cannot be undone.')) return;
+  const { error } = await supabase.from('hvac_requests').delete().eq('id', id);
+  if (error) { showToast('Failed to delete', true); return; }
+  showToast('Request deleted ✓');
   await loadAdminData();
 };
 </script>
