@@ -247,17 +247,20 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
     if (!level||!tenancy) { showToast('Please select floor and tenancy', true); return; }
   }
 
-  // 30-min cooldown check per tenancy
-  try {
-    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-    const { data: recent } = await supabase.from('hvac_requests').select('created_at').eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
-    if (recent && recent.length > 0) {
-      const lastTime = new Date(recent[0].created_at);
-      const remaining = Math.ceil((30 * 60 * 1000 - (Date.now() - lastTime.getTime())) / 60000);
-      showToast(`This tenancy already requested within 30 minutes. Please try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
-      return;
-    }
-  } catch(e) {}
+  // 30-min cooldown check per tenancy (admin bypass)
+  if (role !== 'admin') {
+    try {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data: recent, error: coolErr } = await supabase.from('hvac_requests').select('created_at').eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
+      if (coolErr) { showToast('Unable to verify cooldown. Please try again.', true); return; }
+      if (recent && recent.length > 0) {
+        const lastTime = new Date(recent[0].created_at);
+        const remaining = Math.ceil((30 * 60 * 1000 - (Date.now() - lastTime.getTime())) / 60000);
+        showToast(`This tenancy already requested within 30 minutes. Please try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
+        return;
+      }
+    } catch(e) { showToast('Unable to verify cooldown. Please try again.', true); return; }
+  }
   
   try {
     await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
