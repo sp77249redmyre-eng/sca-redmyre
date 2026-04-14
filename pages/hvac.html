@@ -145,6 +145,7 @@
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
       </div>
+      <p style="color:#dc2626;font-size:12px;font-weight:700;margin:12px 0 8px;line-height:1.5">⚠️ Temperature adjustments are limited to once every 30 minutes per tenancy. The system cannot process frequent changes.</p>
       <button class="btn-submit" id="submitHvacBtn">Submit Request →</button>
     </div>
 
@@ -245,6 +246,18 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
     tenancy = document.getElementById('hvacTenancy').value;
     if (!level||!tenancy) { showToast('Please select floor and tenancy', true); return; }
   }
+
+  // 30-min cooldown check per tenancy
+  try {
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: recent } = await supabase.from('hvac_requests').select('created_at').eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
+    if (recent && recent.length > 0) {
+      const lastTime = new Date(recent[0].created_at);
+      const remaining = Math.ceil((30 * 60 * 1000 - (Date.now() - lastTime.getTime())) / 60000);
+      showToast(`This tenancy already requested within 30 minutes. Please try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
+      return;
+    }
+  } catch(e) {}
   
   try {
     await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
