@@ -413,7 +413,21 @@ window.showImage = function(url) {
   modal.style.display = 'flex';
 };
 
-window.generateWarningPDF = function(plate, violation, location) {
+window.generateWarningPDF = async function(plate, violation, location) {
+  if (!window.jspdf) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    } catch(e) {
+      showToast('PDF library failed to load', true);
+      return;
+    }
+  }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ format: 'a5', unit: 'mm' });
   const w = 148; const h = 210;
@@ -531,8 +545,30 @@ window.generateWarningPDF = function(plate, violation, location) {
   doc.text('This area is monitored by CCTV', w - 12, y + 5, { align: 'right' });
 
   const safePlate = plate.replace(/\s/g, '');
-  doc.save(`Warning_${safePlate}_${now.toISOString().slice(0,10)}.pdf`);
-  showToast('Warning notice downloaded ✓');
+  const fileName = `Warning_${safePlate}_${now.toISOString().slice(0,10)}.pdf`;
+  try {
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      const w2 = window.open(url, '_blank');
+      if (!w2) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } else {
+      doc.save(fileName);
+    }
+    showToast('Warning notice ready ✓');
+  } catch(e) {
+    doc.save(fileName);
+    showToast('Warning notice downloaded ✓');
+  }
 };
 
 window.togglePk = function(id) {
