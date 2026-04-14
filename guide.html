@@ -295,9 +295,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 }
 .faq-q::after{content:'＋';font-size:16px;color:var(--blue-600);font-weight:400}
 .faq-a{
-  padding:0 20px 18px;font-size:13px;color:var(--text-2);
-  line-height:1.7;border-top:1px solid var(--border);padding-top:14px;
+  padding:0 20px;font-size:13px;color:var(--text-2);
+  line-height:1.7;max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s ease;
 }
+.faq-item.open .faq-a{
+  padding:14px 20px 18px;max-height:300px;border-top:1px solid var(--border);
+}
+.faq-item.open .faq-q::after{content:'−'}
 
 /* ── BADGE ── */
 .badge{
@@ -1611,6 +1615,12 @@ window.addEventListener('scroll',()=>{
     }
   });
   document.querySelector('.scroll-top').style.opacity=window.scrollY>400?'1':'0';
+});
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item=q.parentElement;
+    item.classList.toggle('open');
+  });
 });
 </script>
 </body>
