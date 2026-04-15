@@ -575,8 +575,7 @@ async function loadReports() {
   let vehicleMap = {};
   try {
     const { data: vehicles } = await supabase
-      .from('vehicles')
-      .select('plate, unit, owner_name');
+      .rpc('lookup_vehicle_plates');
     (vehicles || []).forEach(v => {
       if (!v?.plate) return;
       const normalized = v.plate.replace(/\s/g,'').toUpperCase();
