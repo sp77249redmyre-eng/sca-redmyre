@@ -421,6 +421,11 @@ window.generateWarningPDF = function(plate, violation, location) {
 
   const modal = document.createElement('div');
   modal.id = 'warningModal';
+  modal.dataset.plate = plate;
+  modal.dataset.vio = vioLabel;
+  modal.dataset.loc = location || '—';
+  modal.dataset.date = dateStr;
+  modal.dataset.time = timeStr;
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
@@ -474,10 +479,60 @@ window.generateWarningPDF = function(plate, violation, location) {
 };
 
 window.printWarning = function() {
-  const content = document.getElementById('warningContent');
-  if (!content) return;
-  const printWin = window.open('', '_blank', 'width=800,height=1000');
-  printWin.document.write(`<!DOCTYPE html><html><head><title>Parking Warning</title><style>@page{size:A4;margin:20mm}*{box-sizing:border-box}body{margin:0;padding:0;font-family:Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;width:100%}body>div{max-width:100%!important;width:100%!important}table{width:100%!important}td{padding:8px 0}hr{border:none;border-top:1px solid #e2e8f0;margin:16px 0}div[style*="background:#dc2626"]{padding:24px 28px!important}div[style*="padding:20px"]{padding:28px!important}</style></head><body>${content.innerHTML}</body></html>`);
+  const modal = document.getElementById('warningModal');
+  if (!modal) return;
+  const plate = modal.dataset.plate || '';
+  const vio = modal.dataset.vio || '';
+  const loc = modal.dataset.loc || '';
+  const date = modal.dataset.date || '';
+  const time = modal.dataset.time || '';
+
+  const printWin = window.open('', '_blank', 'width=560,height=800');
+  printWin.document.write(`<!DOCTYPE html><html><head><title>Parking Warning</title>
+<style>
+@page{size:148mm 210mm;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:148mm;height:210mm;font-family:Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.banner{background:#dc2626;padding:14mm 12mm 10mm;text-align:center}
+.banner h1{color:#fff;font-size:18pt;font-weight:bold;letter-spacing:0.5mm}
+.banner p{color:rgba(255,255,255,0.85);font-size:7pt;margin-top:2mm;letter-spacing:0.5mm}
+.body{padding:8mm 12mm}
+.bldg{font-size:12pt;font-weight:bold;color:#1e3a8a}
+.addr{font-size:9pt;color:#64748b;margin-top:1mm;line-height:1.5}
+hr{border:none;border-top:0.5pt solid #e2e8f0;margin:4mm 0}
+table{width:100%;border-collapse:collapse}
+table td{padding:2mm 0;font-size:10pt;vertical-align:top}
+.lbl{font-weight:bold;color:#0f172a;width:35mm}
+.plate{font-size:16pt;font-weight:bold;color:#dc2626;letter-spacing:1mm;font-family:monospace}
+.val{color:#374151}
+.box{border-radius:3mm;padding:4mm 5mm;margin-bottom:4mm}
+.notice{background:#fef2f2;border:0.5pt solid #fecaca}
+.notice h3{font-size:9pt;font-weight:bold;color:#991b1b;margin-bottom:1.5mm}
+.notice p{font-size:8pt;color:#991b1b;line-height:1.6}
+.visitor{background:#eff6ff;border:0.5pt solid #bfdbfe}
+.visitor h3{font-size:9pt;font-weight:bold;color:#1e40af;margin-bottom:1.5mm}
+.visitor p{font-size:8pt;color:#1e3a8a;line-height:1.6}
+.footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:5mm}
+.footer .left{font-size:7.5pt;color:#64748b;line-height:1.8}
+.footer .right{font-size:7.5pt;font-weight:bold;color:#dc2626;text-align:right}
+</style></head><body>
+<div class="banner"><h1>PARKING WARNING</h1><p>UNAUTHORISED VEHICLE — IMMEDIATE ACTION REQUIRED</p></div>
+<div class="body">
+<div class="bldg">Redmyre House</div>
+<div class="addr">9-13 Redmyre Road, Strathfield NSW 2135<br>Strata Plan 77249</div>
+<hr>
+<table>
+<tr><td class="lbl">Vehicle Registration:</td><td class="plate">${plate}</td></tr>
+<tr><td class="lbl">Violation:</td><td class="val">${vio}</td></tr>
+<tr><td class="lbl">Location:</td><td class="val">${loc}</td></tr>
+<tr><td class="lbl">Date / Time:</td><td class="val">${date}, ${time}</td></tr>
+</table>
+<hr>
+<div class="box notice"><h3>NOTICE:</h3><p>Your vehicle has been parked in violation of the building by-laws. This area is NOT available for general parking. Repeated offences may result in wheel clamping, towing at the owner's expense, or further action under strata law.</p></div>
+<div class="box visitor"><h3>VISITOR PARKING:</h3><p>This building does NOT have visitor parking. Please use the adjacent Strathfield Plaza car park.</p></div>
+<div class="footer"><div class="left">Building Manager: Jacob Kim<br>SCA Facility Management Pty Ltd<br>M 0478 705 406 &nbsp;|&nbsp; T 1300 785 007</div><div class="right">This area is monitored<br>by CCTV</div></div>
+</div>
+</body></html>`);
   printWin.document.close();
   printWin.focus();
   setTimeout(() => { printWin.print(); printWin.close(); }, 300);
