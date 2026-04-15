@@ -177,8 +177,8 @@
         <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total Users</div></div>
         <div class="stat-card"><div class="stat-num" id="statAdmin" style="color:var(--purple)">—</div><div class="stat-label">Admin</div></div>
         <div class="stat-card"><div class="stat-num" id="statCommittee" style="color:var(--blue-600)">—</div><div class="stat-label">Committee</div></div>
-        <div class="stat-card"><div class="stat-num" id="statObserver" style="color:var(--green)">—</div><div class="stat-label">Observer</div></div>
-        <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--muted)">—</div><div class="stat-label">Owner / Tenant</div></div>
+        <div class="stat-card"><div class="stat-num" id="statObserver" style="color:var(--green)">—</div><div class="stat-label">Observer (Strata)</div></div>
+        <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--muted)">—</div><div class="stat-label">Owner / Tenant (Staff)</div></div>
       </div>
       <div class="card">
         <div class="card-header" style="flex-wrap:wrap;gap:10px">
@@ -193,9 +193,9 @@
               <option value="">All Roles</option>
               <option value="admin">Admin</option>
               <option value="committee">Committee</option>
-              <option value="observer">Observer</option>
+              <option value="observer">Observer (Strata)</option>
               <option value="owner">Owner</option>
-              <option value="tenant">Tenant</option>
+              <option value="tenant">Tenant (Staff)</option>
             </select>
             <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
           </div>
@@ -217,9 +217,9 @@
         <label style="font-size:13px;font-weight:500;color:var(--text)">Select Role:</label>
         <select id="permRoleSelect">
           <option value="committee">Committee</option>
-          <option value="observer">Observer</option>
+          <option value="observer">Observer (Strata)</option>
           <option value="owner">Owner</option>
-          <option value="tenant">Tenant</option>
+          <option value="tenant">Tenant (Staff)</option>
           <option value="admin">Admin (View Only)</option>
         </select>
       </div>
@@ -256,9 +256,9 @@
         <select id="filterRole">
           <option value="">All Roles</option>
           <option value="committee">Committee</option>
-          <option value="observer">Observer</option>
+          <option value="observer">Observer (Strata)</option>
           <option value="owner">Owner</option>
-          <option value="tenant">Tenant</option>
+          <option value="tenant">Tenant (Staff)</option>
         </select>
         <select id="filterUser" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
           <option value="">All Users</option>
@@ -382,9 +382,9 @@
       <select class="modal-select" id="inviteRole">
         <option value="">Select role…</option>
         <option value="committee">Committee</option>
-        <option value="observer">Observer</option>
+        <option value="observer">Observer (Strata)</option>
         <option value="owner">Owner</option>
-        <option value="tenant">Tenant</option>
+        <option value="tenant">Tenant (Staff)</option>
       </select>
       <div class="role-hint" id="roleHint"></div>
     </div>
@@ -482,9 +482,9 @@ if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
 const ROLE_HINTS = {
   committee:'Can view all quotes with amounts and vote to approve or decline.',
-  observer: 'Read-only access to quotes. Can see everything but cannot vote.',
+  observer: 'Read-only access to quotes. Can see everything but cannot vote. (Strata Manager)',
   owner:    'Can view announcements, works and building status. No quote access.',
-  tenant:   'Basic access — announcements, HVAC temperature requests only.'
+  tenant:   'Basic access — announcements, HVAC temperature requests only. (Staff/Business)'
 };
 
 const ROLE_COLORS = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
@@ -587,9 +587,9 @@ function filterAndRenderUsers() {
         <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
           <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
           <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
-          <option value="observer"  ${p.role==='observer'?'selected':''}>Observer</option>
+          <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
           <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
-          <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant</option>
+          <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
         </select>
         <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
         <div style="display:flex;gap:6px;justify-content:flex-end">
