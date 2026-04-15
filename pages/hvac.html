@@ -113,8 +113,8 @@
       <div class="form-title">Report a Temperature Issue</div>
       <div class="form-sub">Select your issue and location. Building management will review and adjust.</div>
       <div class="type-btns">
-        <button class="type-btn" id="btnHot" data-type="hot"><div class="type-icon">🥵</div><div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered</div></button>
-        <button class="type-btn" id="btnCold" data-type="cold"><div class="type-icon">🥶</div><div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised</div></button>
+        <button class="type-btn" id="btnHot" data-type="hot"><div class="type-icon">🥵</div><div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered by 0.5°C</div></button>
+        <button class="type-btn" id="btnCold" data-type="cold"><div class="type-icon">🥶</div><div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised by 0.5°C</div></button>
       </div>
       
       <!-- Unit Auto Selection (Single Unit) -->
@@ -155,7 +155,7 @@
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
       </div>
-      <p style="color:#dc2626;font-size:12px;font-weight:700;margin:12px 0 8px;line-height:1.5">⚠️ Temperature adjustments are limited to once every 30 minutes per tenancy. The system cannot process frequent changes.</p>
+      <p style="color:#dc2626;font-size:12px;font-weight:700;margin:12px 0 8px;line-height:1.5">⚠️ Temperature is adjusted by 0.5°C per request to protect the HVAC system. Adjustments are limited to once every 30 minutes per tenancy.</p>
       <button class="btn-submit" id="submitHvacBtn">Submit Request →</button>
     </div>
 
@@ -685,7 +685,7 @@ document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
 });
 
 window.approveReq = async (id, type, level, tenancy) => {
-  if (!confirm(`Approve?\n${type === 'hot' ? '🥵 Too Hot → -1°C' : '🥶 Too Cold → +1°C'}\n${level}, ${tenancy}`)) return;
+  if (!confirm(`Approve?\n${type === 'hot' ? '🥵 Too Hot → -0.5°C' : '🥶 Too Cold → +0.5°C'}\n${level}, ${tenancy}`)) return;
   await supabase.from('hvac_requests').update({status: 'approved', approved_at: new Date().toISOString()}).eq('id', id);
   try {
     const { data: req } = await supabase.from('hvac_requests').select('user_id').eq('id', id).single();
