@@ -1133,12 +1133,12 @@ function renderSearchResults(results) {
         ${activeCols.has('role') ? `<td>${(() => {
             if (o.is_committee) {
               const parts = ['<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>'];
-              if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>');
+              if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
               return parts.join(' ');
             }
             const parts = [];
             if (o.primary_email) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>');
-            if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant</span>');
+            if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
             return parts.length ? parts.join(' ') : '<span style="font-size:11px;color:var(--muted)">—</span>';
           })()}</td>` : ''}
         ${activeCols.has('vehicles') ? `<td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>` : ''}
@@ -1359,7 +1359,7 @@ window.openBulkInvite = async () => {
 
   const ownerCount = bulkInviteList.filter(i => i.role === 'owner').length;
   const tenantCount = bulkInviteList.filter(i => i.role === 'tenant').length;
-  summaryEl.textContent = `${bulkInviteList.length} invites ready — ${ownerCount} owners · ${tenantCount} tenants`;
+  summaryEl.textContent = `${bulkInviteList.length} invites ready — ${ownerCount} owners · ${tenantCount} tenants (staff)`;
 
   listEl.innerHTML = `
     <table style="width:100%;border-collapse:collapse">
@@ -1431,7 +1431,7 @@ window.exportOccupants = () => {
     if (activeCols.has('business_email')) row['Business Email'] = o.business_email || '';
     if (activeCols.has('phone')) row['Phone'] = o.phone || '';
     if (activeCols.has('role')) {
-      row['Role'] = o.is_committee ? ('committee' + ((o.business_email||'').trim() ? ' + tenant' : '')) : o.primary_email ? 'owner' : (o.business_email||'').trim() ? 'tenant' : '';
+      row['Role'] = o.is_committee ? ('committee' + ((o.business_email||'').trim() ? ' + tenant (staff)' : '')) : o.primary_email ? 'owner' : (o.business_email||'').trim() ? 'tenant (staff)' : '';
     }
     if (activeCols.has('vehicles')) row['License Plates'] = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', ');
     return row;
