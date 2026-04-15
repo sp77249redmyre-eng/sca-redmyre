@@ -23,7 +23,7 @@
 .ann-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px }
 .ann-title { font-size:15px;font-weight:600 }
 .ann-meta { font-size:12px;color:var(--muted);margin-top:3px }
-.ann-body { font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap }
+.ann-body { font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap }
 .ann-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light) }
 .ann-actions { display:flex;gap:6px }
 .pin-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s }
@@ -36,7 +36,7 @@
   .content{padding:16px}
   .ann-item{padding:14px}
   .ann-title{font-size:14px}
-  .ann-body{font-size:12px}
+  .ann-body{font-size:13px}
   .ann-footer{flex-direction:column;gap:10px;align-items:flex-start}
   .ann-actions{width:100%;flex-wrap:wrap}
   .ann-actions button{flex:1;min-width:0;font-size:11px;padding:6px 8px}
@@ -374,11 +374,6 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
           headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
           body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
         });
-        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString() })
-        });
       } catch(pushErr){}
     }
 
@@ -412,11 +407,6 @@ window.resendAnnouncement = async (id) => {
       method:'POST',
       headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
       body: JSON.stringify({ title:`📢 Redmyre House — ${a.title}`, message:a.content.length>100?a.content.substring(0,100)+'…':a.content, url:'/pages/announcements.html' })
-    });
-    await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-      body: JSON.stringify({ title: a.title, content: a.content, created_at: new Date().toISOString() })
     });
     await loadAnnouncements();
     showToast('Announcement resent — read status reset ✓');
