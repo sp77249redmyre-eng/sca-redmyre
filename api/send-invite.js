@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
 
   const { email, full_name, role, unit } = req.body;
 
-  if (!email || !full_name || !role) {
+  if (!email || !role) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
