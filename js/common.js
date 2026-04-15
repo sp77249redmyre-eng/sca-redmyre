@@ -50,7 +50,8 @@ export function formatCurrency(amount) {
 
 /* ── Role 레이블 ── */
 export function getRoleLabel(role) {
-  return (role || 'observer').charAt(0).toUpperCase() + (role || 'observer').slice(1);
+  const labels = { admin:'Admin', committee:'Committee', observer:'Observer (Strata)', owner:'Owner', tenant:'Tenant (Staff)' };
+  return labels[role] || labels.observer;
 }
 
 /* ── Status 색상 매핑 (Works) ── */
