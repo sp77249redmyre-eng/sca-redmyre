@@ -800,6 +800,8 @@ window.openViewModal = (id) => {
         <div class="modal-info-label">Business Email:</div>
         <div class="modal-info-value">${occ.business_email}</div>
       ` : ''}
+      <div class="modal-info-label">Phone:</div>
+      <div class="modal-info-value">${occ.phone || '—'}</div>
     ` : ''}
     
     <div class="modal-info-label">Vehicles:</div>
@@ -872,8 +874,9 @@ window.openEditModal = (id) => {
   document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = '';
   document.getElementById('editPrimaryEmail').disabled = isTenant;
   document.getElementById('editPrimaryEmail').style.opacity = isTenant ? '0.5' : '1';
-  // 전화번호: admin만
-  document.getElementById('editPhone').closest('.modal-field').style.display = isAdmin ? '' : 'none';
+  // 전화번호: admin + 본인 유닛
+  const canSeePhone = isAdmin || ((['owner','tenant'].includes(role)) && occ.unit === myUnit);
+  document.getElementById('editPhone').closest('.modal-field').style.display = canSeePhone ? '' : 'none';
   
   openModal('editModal');
 };
