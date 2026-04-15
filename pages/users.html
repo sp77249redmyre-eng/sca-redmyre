@@ -577,12 +577,14 @@ function filterAndRenderUsers() {
     const isSelf = p.id===user.id;
     const avClass = ROLE_COLORS_f[p.role]||'av-owner';
     const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
+    const unitDisplay = p.unit || '—';
     return `
       <div class="user-row">
         <div class="avatar ${avClass}">${ini}</div>
         <div>
-          <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
+          <div class="user-name" style="cursor:pointer;display:flex;align-items:center;gap:4px" onclick="inlineEditName('${p.id}',this)" title="Click to edit name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
           <div class="user-email">${p.email||'—'}</div>
+          <div style="font-size:11px;color:var(--blue-600);cursor:pointer;margin-top:2px;display:flex;align-items:center;gap:4px" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:9px;color:var(--muted)">✏️</span></div>
         </div>
         <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
           <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
@@ -694,6 +696,58 @@ window.changeRole = async (uid, newRole) => {
     showToast(`Role updated to ${newRole} ✓`); 
     await loadUsers(); 
   } catch(e) { showToast('Failed to update role', true); }
+};
+
+window.inlineEditName = (uid, el) => {
+  const current = el.textContent.replace('(You)','').replace('✏️','').trim();
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current === '—' ? '' : current;
+  input.placeholder = 'Enter name…';
+  input.style.cssText = 'font-size:13px;font-weight:600;padding:4px 8px;border:1.5px solid var(--blue-600);border-radius:6px;outline:none;width:180px;font-family:inherit;';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  const save = async () => {
+    const newName = input.value.trim();
+    if (!newName) { await loadUsers(); return; }
+    if (newName === current) { await loadUsers(); return; }
+    try {
+      await supabase.from('profiles').update({ full_name: newName }).eq('id', uid);
+      showToast(`Name updated to ${newName} ✓`);
+      await loadUsers();
+    } catch(e) { showToast('Failed to update name', true); await loadUsers(); }
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { loadUsers(); } });
+};
+
+window.inlineEditUnit = (uid, el) => {
+  const units = ['','Unit 1','1A','1B','1C','1D','1E','1F','1G','1H','2A','2B','2C','2D','2E','2F','2G','2H','3A','3B','3C','3D','3E','3F','3G','3H','4A','4B','4C','4D','4E','4F','4G','4H','5A','5B','5C','5D','5E','5F','5G','5H','6A','6B','6C','6D','6E','6F','6G','6H','Lot 50'];
+  const current = el.textContent.replace('📍','').replace('✏️','').trim();
+  const select = document.createElement('select');
+  select.style.cssText = 'font-size:12px;padding:4px 8px;border:1.5px solid var(--blue-600);border-radius:6px;outline:none;font-family:inherit;';
+  units.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = u || 'No unit';
+    if (u === current || (!u && current === '—')) opt.selected = true;
+    select.appendChild(opt);
+  });
+  el.replaceWith(select);
+  select.focus();
+  const save = async () => {
+    const newUnit = select.value || null;
+    const displayCurrent = current === '—' ? null : current;
+    if (newUnit === displayCurrent) { await loadUsers(); return; }
+    try {
+      await supabase.from('profiles').update({ unit: newUnit }).eq('id', uid);
+      showToast(`Unit updated to ${newUnit || 'None'} ✓`);
+      await loadUsers();
+    } catch(e) { showToast('Failed to update unit', true); await loadUsers(); }
+  };
+  select.addEventListener('change', save);
+  select.addEventListener('blur', save);
 };
 
 let currentPasswordUserId = null;
