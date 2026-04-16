@@ -523,9 +523,25 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
   try {
     const editId = document.getElementById('complaintEditId').value;
     if (editId) {
+      const newIsPublic = document.getElementById('complaintIsPublic').checked;
+      
+      // 비공개 → 공개 전환 시 경고
+      const original = allComplaints.find(x => x.id === editId);
+      if (original && !original.is_public && newIsPublic) {
+        btn.disabled = false; btn.textContent = 'Submit →';
+        const confirmed = confirm(
+          '⚠️ WARNING: Making this request public\n\n' +
+          'All previous messages (your comments and management responses) will become visible to other residents.\n\n' +
+          'Please make sure no sensitive information is included.\n\n' +
+          'Continue?'
+        );
+        if (!confirmed) return;
+        btn.disabled = true; btn.textContent = 'Submitting…';
+      }
+      
       let query = supabase.from('complaints').update({
         title, body, category,
-        is_public: document.getElementById('complaintIsPublic').checked,
+        is_public: newIsPublic,
         updated_at: new Date().toISOString()
       }).eq('id', editId);
       if (role !== 'admin') query = query.eq('user_id', user.id);
@@ -691,6 +707,7 @@ window.openDetail = async (id) => {
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = 'none';
   }
+  
   document.getElementById('detailModal').classList.add('open');
 };
 
@@ -810,13 +827,8 @@ window.openPublicDetail = async (id) => {
     } else { photosWrap.style.display = 'none'; }
   } else { photosWrap.style.display = 'none'; }
   
-  // 대화 스레드: 본인이면 로드, 아니면 "private" 메시지
-  const thread = document.getElementById('messageThread');
-  if (isOwn) {
-    await loadMessageThread(id);
-  } else {
-    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px;font-style:italic">💬 Conversation is private between the resident and management.</div>';
-  }
+  // 공개 요청: 대화 스레드 전체 공개 (Admin 답변 + 요청자 댓글 모두)
+  await loadPublicMessageThread(id, isOwn);
   
   // Reply/Edit/Delete는 본인만
   document.getElementById('replyWrap').style.display = isOwn ? 'block' : 'none';
@@ -834,6 +846,51 @@ window.openPublicDetail = async (id) => {
   
   document.getElementById('detailModal').classList.add('open');
 };
+
+// 공개 요청용 대화 스레드 로드 (SECURITY DEFINER 함수 사용, RLS 우회)
+async function loadPublicMessageThread(complaintId, isOwn) {
+  const thread = document.getElementById('messageThread');
+  const { data: messages, error } = await supabase.rpc('get_public_complaint_messages', { p_complaint_id: complaintId });
+  
+  if (error) {
+    console.error('Failed to load public messages:', error);
+    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">Unable to load messages</div>';
+    return;
+  }
+  
+  if (!messages || messages.length === 0) {
+    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
+    return;
+  }
+  
+  thread.innerHTML = messages.map(m => {
+    const isAdmin = m.sender_role === 'admin';
+    const isMine = m.user_id === user.id;
+    const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    
+    // 공개 요청: 요청자 이름은 "A Resident"로 익명화 (본인이 아닐 때)
+    let senderName;
+    if (isAdmin) {
+      senderName = m.sender_name || 'Management';
+    } else if (isMine) {
+      senderName = `${m.sender_name || 'You'} (You)`;
+    } else {
+      senderName = 'A Resident';
+    }
+    
+    const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
+    
+    return `
+      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${senderName} ${isAdmin ? '· Management' : ''}</div>
+          <div style="font-size:12px;color:var(--text-2)">${date}</div>
+        </div>
+        <div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap">${m.message}</div>
+        ${editBtns}
+      </div>`;
+  }).join('');
+}
 
 // Load user's units from occupants table
 async function loadMyUnits() {
