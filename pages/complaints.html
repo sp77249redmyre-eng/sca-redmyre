@@ -20,11 +20,14 @@
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
 .complaint-list{width:100%}
-.ct{width:100%;border-collapse:collapse;font-size:13px}
-.ct th{text-align:left;font-size:12px;font-weight:600;color:var(--text);padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
-.ct td{padding:11px 12px;border-bottom:1px solid var(--border-light);color:var(--text);vertical-align:middle}
-.ct tr:hover td{background:var(--surface);cursor:pointer}
-.ct tr.status-resolved td{opacity:0.6}
+.ct{width:100%;border-collapse:separate;border-spacing:0 10px;font-size:13px}
+.ct th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:4px 14px;white-space:nowrap;letter-spacing:0.02em}
+.ct tbody tr{background:var(--surface);transition:box-shadow 0.15s,transform 0.15s;cursor:pointer}
+.ct tbody tr:hover{box-shadow:0 4px 14px rgba(0,0,0,0.06);transform:translateY(-1px)}
+.ct td{padding:14px 14px;color:var(--text);vertical-align:middle;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ct td:first-child{border-left:1px solid var(--border);border-top-left-radius:12px;border-bottom-left-radius:12px}
+.ct td:last-child{border-right:1px solid var(--border);border-top-right-radius:12px;border-bottom-right-radius:12px}
+.ct tr.status-resolved td{opacity:0.7}
 .ct-title{font-size:14px;font-weight:600;color:var(--text)}
 .ct-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;flex-shrink:0}
 .ct-dot.open{background:var(--red)}
@@ -47,10 +50,10 @@
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .ct thead{display:none}
+  .ct{border-spacing:0 8px}
   .ct,.ct tbody,.ct tr{display:block;width:100%}
-  .ct tr{margin-bottom:10px;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
-  .ct td{display:block;padding:4px 0;border:none}
-  .ct tr:hover td{background:transparent}
+  .ct tr{margin-bottom:0;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+  .ct td{display:block;padding:4px 0;border:none !important;border-radius:0 !important}
 }
 
 /* Complaint Progress Bar */
@@ -223,6 +226,8 @@
       <span class="badge" id="detailStatusBadge"></span>
     </div>
 
+    <div id="detailProgressWrap" style="padding:14px 24px;border-bottom:1px solid var(--border-light);flex-shrink:0"></div>
+
     <div style="padding:16px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Details</div>
       <div style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap" id="detailBody">—</div>
@@ -370,6 +375,21 @@ async function loadPublicComplaints() {
   renderComplaints();
 }
 
+function buildProgressBar(status) {
+  const s1 = status==='open'?'active':status==='inprog'||status==='resolved'?'done':'idle';
+  const s2 = status==='inprog'?'active':status==='resolved'?'done':'idle';
+  const s3 = status==='resolved'?'done':'idle';
+  const l1 = s1==='done'?'done':'idle';
+  const l2 = s2==='done'?'done':'idle';
+  return `<div class="cpl-progress">
+    <div class="cpl-step ${s1}"><div class="cpl-step-icon">${s1==='done'?'✓':'📝'}</div><div class="cpl-step-label">Open</div></div>
+    <div class="cpl-line ${l1}"></div>
+    <div class="cpl-step ${s2}"><div class="cpl-step-icon">${s2==='done'?'✓':s2==='active'?'●':'○'}</div><div class="cpl-step-label">In Progress</div></div>
+    <div class="cpl-line ${l2}"></div>
+    <div class="cpl-step ${s3}"><div class="cpl-step-icon">${s3==='done'?'✅':'○'}</div><div class="cpl-step-label">Resolved</div></div>
+  </div>`;
+}
+
 function renderComplaints() {
   const list = document.getElementById('complaintList');
   const isAdmin = canViewAll.includes(role);
@@ -412,18 +432,7 @@ function renderComplaints() {
     const yoursIndicator = (isPublicTab && isOwn) ? '<span class="yours-badge">YOURS</span>' : '';
     
     const photoIcon = c.has_photos ? '📷' : '';
-    const s1 = c.status==='open'?'active':c.status==='inprog'||c.status==='resolved'?'done':'idle';
-    const s2 = c.status==='inprog'?'active':c.status==='resolved'?'done':'idle';
-    const s3 = c.status==='resolved'?'done':'idle';
-    const l1 = s1==='done'?'done':'idle';
-    const l2 = s2==='done'?'done':'idle';
-    const progressBar = `<div class="cpl-progress">
-      <div class="cpl-step ${s1}"><div class="cpl-step-icon">${s1==='done'?'✓':'📝'}</div><div class="cpl-step-label">Open</div></div>
-      <div class="cpl-line ${l1}"></div>
-      <div class="cpl-step ${s2}"><div class="cpl-step-icon">${s2==='done'?'✓':s2==='active'?'●':'○'}</div><div class="cpl-step-label">In Progress</div></div>
-      <div class="cpl-line ${l2}"></div>
-      <div class="cpl-step ${s3}"><div class="cpl-step-icon">${s3==='done'?'✅':'○'}</div><div class="cpl-step-label">Resolved</div></div>
-    </div>`;
+    const progressBar = buildProgressBar(c.status);
     
     const clickHandler = isPublicTab ? `openPublicDetail('${c.id}')` : `openDetail('${c.id}')`;
     
@@ -665,6 +674,7 @@ window.openDetail = async (id) => {
   document.getElementById('detailStatusBadge').textContent = st.label;
   document.getElementById('detailSubmitter').textContent = `${c.submitter_name||'Unknown'} · ${catLabel} · ${date}`;
   document.getElementById('detailBody').textContent = c.body || '—';
+  document.getElementById('detailProgressWrap').innerHTML = buildProgressBar(c.status);
   const photosWrap = document.getElementById('detailPhotosWrap');
   const gallery    = document.getElementById('detailPhotoGallery');
   if (c.has_photos) {
@@ -812,6 +822,7 @@ window.openPublicDetail = async (id) => {
   document.getElementById('detailSubmitter').textContent = `${displayName} · ${catLabel} · ${date}`;
   
   document.getElementById('detailBody').textContent = c.body || '—';
+  document.getElementById('detailProgressWrap').innerHTML = buildProgressBar(c.status);
   
   // Photos
   const photosWrap = document.getElementById('detailPhotosWrap');
