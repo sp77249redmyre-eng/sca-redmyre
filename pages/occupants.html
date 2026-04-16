@@ -641,15 +641,18 @@ let myOwnedUnits = new Set(); // primary_email 기준 본인 소유 유닛들
 
 // owner/tenant: 본인 suite 탭만 표시
 if (['owner','tenant'].includes(role) && myUnit) {
-  const mySuite = (() => {
-    if (myUnit === 'Unit 1') return 'Ground';
-    const match = myUnit.match(/^([0-9]+)([A-H])$/i);
-    if (!match) return null;
-    const letter = match[2].toUpperCase();
-    return 'Suite ' + letter;
-  })();
-  if (!mySuite) {
-    // Lot 50 등 External 유닛 — External 탭만 보이게
+  // owner: myOwnedUnits 기준으로 필요한 탭 계산
+  const unitList = (role === 'owner' && myOwnedUnits.size > 0) ? [...myOwnedUnits] : [myUnit];
+  const mySuites = new Set();
+  unitList.forEach(u => {
+    if (u === 'Unit 1') { mySuites.add('Ground'); return; }
+    const match = u.match(/^([0-9]+)([A-H])$/i);
+    if (!match) return;
+    mySuites.add('Suite ' + match[2].toUpperCase());
+  });
+
+  if (mySuites.size === 0) {
+    // Lot 50 등 External 유닛
     document.querySelectorAll('.suite-tab').forEach(tab => {
       if (tab.dataset.suite !== 'External') tab.style.display = 'none';
     });
@@ -659,13 +662,14 @@ if (['owner','tenant'].includes(role) && myUnit) {
     if (extTab) extTab.classList.add('active');
   } else {
     document.querySelectorAll('.suite-tab').forEach(tab => {
-      if (tab.dataset.suite !== mySuite) {
+      if (!mySuites.has(tab.dataset.suite)) {
         tab.style.display = 'none';
       }
     });
-    currentSuite = mySuite;
+    const firstSuite = [...mySuites][0];
+    currentSuite = firstSuite;
     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
-    const myTab = document.querySelector(`.suite-tab[data-suite="${mySuite}"]`);
+    const myTab = document.querySelector(`.suite-tab[data-suite="${firstSuite}"]`);
     if (myTab) myTab.classList.add('active');
   }
 }
@@ -698,6 +702,26 @@ async function loadOccupants() {
     );
   }
 
+  // owner 다중 유닛 탭 업데이트
+  if (role === 'owner' && myOwnedUnits.size > 1) {
+    const mySuites = new Set();
+    myOwnedUnits.forEach(u => {
+      if (u === 'Unit 1') { mySuites.add('Ground'); return; }
+      const match = u.match(/^([0-9]+)([A-H])$/i);
+      if (match) mySuites.add('Suite ' + match[2].toUpperCase());
+    });
+    document.querySelectorAll('.suite-tab').forEach(tab => {
+      tab.style.display = mySuites.has(tab.dataset.suite) ? '' : 'none';
+    });
+    const firstSuite = [...mySuites][0];
+    if (firstSuite && firstSuite !== currentSuite) {
+      currentSuite = firstSuite;
+      document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+      const myTab = document.querySelector(`.suite-tab[data-suite="${firstSuite}"]`);
+      if (myTab) myTab.classList.add('active');
+    }
+  }
+
   renderOccupants();
 }
 
@@ -707,7 +731,11 @@ function renderOccupants() {
 
   // owner/tenant: 본인 unit만
   let visibleOccupants = allOccupants;
-  if (['owner','tenant'].includes(role) && myUnit) {
+  if (role === 'owner' && myOwnedUnits.size > 0) {
+    visibleOccupants = allOccupants.filter(o => myOwnedUnits.has(o.unit));
+  } else if (role === 'tenant' && myUnit) {
+    visibleOccupants = allOccupants.filter(o => o.unit === myUnit);
+  } else if (role === 'owner' && myUnit) {
     visibleOccupants = allOccupants.filter(o => o.unit === myUnit);
   }
 
