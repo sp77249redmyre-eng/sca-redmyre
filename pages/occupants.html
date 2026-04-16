@@ -822,7 +822,7 @@ window.openViewModal = (id) => {
       ` : ''}
       <div class="modal-info-label">Phone:</div>
       <div class="modal-info-value">${occ.phone || '—'}</div>
-    ` : (['owner','tenant'].includes(role) && occ.unit === myUnit) ? `
+    ` : ((role === 'owner' && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit)) ? `
       <div class="modal-info-label">Primary Email:</div>
       <div class="modal-info-value">${occ.primary_email || '—'}</div>
       ${occ.business_email ? `
@@ -904,7 +904,7 @@ window.openEditModal = (id) => {
   document.getElementById('editPrimaryEmail').disabled = isTenant;
   document.getElementById('editPrimaryEmail').style.opacity = isTenant ? '0.5' : '1';
   // 전화번호: admin + 본인 유닛
-  const canSeePhone = isAdmin || ((['owner','tenant'].includes(role)) && occ.unit === myUnit);
+  const canSeePhone = isAdmin || (role === 'owner' && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit);
   document.getElementById('editPhone').closest('.modal-field').style.display = canSeePhone ? '' : 'none';
   
   openModal('editModal');
