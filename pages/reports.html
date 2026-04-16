@@ -55,9 +55,8 @@
 .th:hover{color:#2563eb}
 .sort-arrow{font-size:10px;opacity:0.5;margin-left:2px}
 .sort-arrow.asc,.sort-arrow.desc{opacity:1;color:#2563eb}
-.table-row{display:grid;gap:10px;padding:14px 20px;border-bottom:0.5px solid #f8fafc;align-items:center;transition:background 0.12s;cursor:pointer}
-.table-row:last-child{border-bottom:none}
-.table-row:hover{background:#f8fafc}
+.table-row{display:grid;gap:10px;padding:14px 20px;border:1px solid #e2e8f0;border-radius:12px;margin:8px 12px;align-items:center;transition:all 0.12s;cursor:pointer;background:#fff}
+.table-row:hover{background:#f8fafc;box-shadow:0 2px 8px rgba(0,0,0,0.04);transform:translateY(-1px)}
 .r-date{font-size:12px;color:#64748b}
 .r-title{font-size:13px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .r-vendor{font-size:12px;color:#64748b}
@@ -155,6 +154,14 @@
     <div class="section-heading">
       <div class="section-heading-bar"></div>
       <div class="section-heading-text">Approved Quotes</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 20px;margin-bottom:14px">
+      <span style="font-size:13px;font-weight:600;color:#64748b" id="quotesTotalCount">—</span>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:12px;color:#64748b">ex GST: <span id="quotesTotalExGST2" style="font-weight:600;color:#1e293b">$0.00</span></span>
+        <span style="font-size:12px;color:#64748b">GST: <span id="quotesTotalGST2" style="font-weight:600;color:#1e293b">$0.00</span></span>
+        <span style="font-size:14px;font-weight:700;color:#1e3a8a">Total: <span id="quotesTotalAmount2">$0.00</span></span>
+      </div>
     </div>
     <div class="reports-card">
       <div class="table-head" style="grid-template-columns:110px 1fr 1fr 110px 100px">
@@ -348,6 +355,10 @@ async function loadReport() {
   document.getElementById('quotesTotalExGST').textContent=fmt(reportTotal);
   document.getElementById('quotesTotalGST').textContent=fmt(reportTotal*0.1);
   document.getElementById('quotesTotalAmount').textContent=fmt(reportTotal*1.1);
+  document.getElementById('quotesTotalCount').textContent=`${reportsData.length} report${reportsData.length!==1?'s':''}`;
+  document.getElementById('quotesTotalExGST2').textContent=fmt(reportTotal);
+  document.getElementById('quotesTotalGST2').textContent=fmt(reportTotal*0.1);
+  document.getElementById('quotesTotalAmount2').textContent=fmt(reportTotal*1.1);
 }
 
 function renderQuotesList() {
