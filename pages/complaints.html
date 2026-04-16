@@ -81,6 +81,23 @@
 .unit-radio-info{flex:1}
 .unit-radio-unit{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
 .unit-radio-detail{font-size:12px;color:var(--muted)}
+
+/* View Tabs */
+.view-tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab-btn{padding:10px 18px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.tab-btn:hover{border-color:var(--blue-400);color:var(--text)}
+.tab-btn.active{background:var(--blue-50);border-color:var(--blue-600);color:var(--blue-600)}
+
+/* Public Checkbox */
+.public-checkbox{display:flex;align-items:center;gap:10px;padding:12px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;cursor:pointer}
+.public-checkbox input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--blue-600)}
+.public-checkbox-label{flex:1}
+.public-checkbox-title{font-size:13px;font-weight:600;color:var(--text)}
+.public-checkbox-desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Public Badge */
+.public-badge{display:inline-block;font-size:10px;font-weight:600;background:var(--blue-50);color:var(--blue-600);padding:2px 6px;border-radius:4px;margin-left:6px}
+.yours-badge{display:inline-block;font-size:10px;font-weight:600;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;margin-left:6px}
 </style>
 </head>
 <body>
@@ -99,6 +116,11 @@
         <div class="stat-card"><div class="stat-num" id="statInprog" style="color:var(--yellow)">—</div><div class="stat-label">In Progress</div></div>
         <div class="stat-card"><div class="stat-num" id="statResolved" style="color:var(--green)">—</div><div class="stat-label">Resolved</div></div>
       </div>
+    </div>
+    <!-- View Tabs (hidden for admin/committee/observer) -->
+    <div class="view-tabs" id="viewTabs" style="display:none">
+      <button class="tab-btn active" data-tab="mine">📋 My Requests</button>
+      <button class="tab-btn" data-tab="public">🌐 Community Requests</button>
     </div>
     <div class="filter-bar" id="filterBar">
       <button class="filter-btn active" data-filter="all">All</button>
@@ -172,6 +194,15 @@
       <input type="file" id="complaintPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
       <input type="file" id="complaintPhotoInputFile" accept="image/*" multiple style="display:none">
       <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+    </div>
+    <div class="modal-field">
+      <label class="public-checkbox">
+        <input type="checkbox" id="complaintIsPublic">
+        <div class="public-checkbox-label">
+          <div class="public-checkbox-title">🌐 Share with other residents</div>
+          <div class="public-checkbox-desc">Your name will be hidden. Other residents will only see "A Resident".</div>
+        </div>
+      </label>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('complaintModal')">Cancel</button>
@@ -271,6 +302,25 @@ const privileged  = ['admin','committee','observer'];
 if (canSubmit.includes(role))  document.getElementById('addComplaintBtn').style.display = 'inline-flex';
 if (canViewAll.includes(role)) document.getElementById('statsWrap').style.display = 'block';
 
+// 탭 표시 (admin/committee/observer는 기존대로 전체 보기 유지)
+if (!canViewAll.includes(role)) {
+  document.getElementById('viewTabs').style.display = 'flex';
+}
+
+// 탭 클릭 이벤트
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    if (currentTab === 'public') {
+      await loadPublicComplaints();
+    } else {
+      renderComplaints();
+    }
+  });
+});
+
 const STATUS_MAP = {
   open:     { label:'Open',        cls:'badge-red' },
   inprog:   { label:'In Progress', cls:'badge-yellow' },
@@ -280,7 +330,9 @@ const CAT_EMOJI = { noise:'🔊',leak:'💧',cleaning:'🧹',parking:'🚗',elev
 const CAT_LABEL = { noise:'Noise / Vibration',leak:'Leak / Plumbing',cleaning:'Cleaning',parking:'Parking',elevator:'Elevator',access:'Access / Security',hvac:'HVAC / Temperature',common:'Common Area',other:'Other' };
 
 let allComplaints = [];
+let publicComplaints = [];
 let currentFilter = 'all';
+let currentTab = 'mine';
 let myUnits = [];
 let selectedUnit = null;
 let currentComplaintId = null;
@@ -307,21 +359,58 @@ async function loadComplaints() {
   renderComplaints();
 }
 
+async function loadPublicComplaints() {
+  const { data, error } = await supabase.rpc('get_public_complaints');
+  if (error) {
+    console.error('Failed to load public complaints:', error);
+    publicComplaints = [];
+  } else {
+    publicComplaints = data || [];
+  }
+  renderComplaints();
+}
+
 function renderComplaints() {
   const list = document.getElementById('complaintList');
-  const filtered = currentFilter==='all' ? allComplaints : allComplaints.filter(c=>c.status===currentFilter);
+  const isAdmin = canViewAll.includes(role);
+  const isPublicTab = !isAdmin && currentTab === 'public';
+  const sourceData = isPublicTab ? publicComplaints : allComplaints;
+  const filtered = currentFilter==='all' ? sourceData : sourceData.filter(c=>c.status===currentFilter);
+  
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${currentFilter==='all'?'No Requests yet':'No '+currentFilter+' requests'}</div><div style="font-size:13px;color:var(--muted)">${canSubmit.includes(role)?'Click "+ New Request" to submit one.':'Check back later.'}</div></div>`;
+    const emptyTitle = isPublicTab 
+      ? 'No Community Requests yet'
+      : (currentFilter==='all' ? 'No Requests yet' : 'No '+currentFilter+' requests');
+    const emptyDesc = isPublicTab
+      ? 'Public requests from other residents will appear here.'
+      : (canSubmit.includes(role) ? 'Click "+ New Request" to submit one.' : 'Check back later.');
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${emptyTitle}</div><div style="font-size:13px;color:var(--muted)">${emptyDesc}</div></div>`;
     return;
   }
-  const showSubmitter = canViewAll.includes(role);
+  
+  const showSubmitter = isAdmin || isPublicTab;
   const rows = filtered.map(c => {
     const st = STATUS_MAP[c.status] || STATUS_MAP.open;
     const emoji = CAT_EMOJI[c.category] || '📝';
     const catLabel = CAT_LABEL[c.category] || c.category;
     const date = new Date(c.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
     const isOwn = c.user_id === user.id;
-    const submitterCol = showSubmitter ? `<td style="font-size:13px;color:var(--text)">${isOwn?'You':c.submitter_name||'Unknown'}</td>` : '';
+    
+    // Public 탭에서는 완전 익명 ("A Resident"), Admin은 실제 이름
+    let displayName;
+    if (isPublicTab) {
+      displayName = isOwn ? 'You' : 'A Resident';
+    } else if (isAdmin) {
+      displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
+    } else {
+      displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
+    }
+    const submitterCol = showSubmitter ? `<td style="font-size:13px;color:var(--text)">${displayName}</td>` : '';
+    
+    // 공개 요청 표시용 배지 (My Requests 탭에서 내 공개 요청 표시)
+    const publicIndicator = (!isPublicTab && c.is_public) ? '<span class="public-badge">🌐 Public</span>' : '';
+    const yoursIndicator = (isPublicTab && isOwn) ? '<span class="yours-badge">YOURS</span>' : '';
+    
     const photoIcon = c.has_photos ? '📷' : '';
     const s1 = c.status==='open'?'active':c.status==='inprog'||c.status==='resolved'?'done':'idle';
     const s2 = c.status==='inprog'?'active':c.status==='resolved'?'done':'idle';
@@ -335,8 +424,11 @@ function renderComplaints() {
       <div class="cpl-line ${l2}"></div>
       <div class="cpl-step ${s3}"><div class="cpl-step-icon">${s3==='done'?'✅':'○'}</div><div class="cpl-step-label">Resolved</div></div>
     </div>`;
-    return `<tr class="status-${c.status}" onclick="openDetail('${c.id}')">
-      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${progressBar}</td>
+    
+    const clickHandler = isPublicTab ? `openPublicDetail('${c.id}')` : `openDetail('${c.id}')`;
+    
+    return `<tr class="status-${c.status}" onclick="${clickHandler}">
+      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${yoursIndicator}${progressBar}</td>
       <td style="font-size:13px;color:var(--text)">${catLabel}</td>
       ${submitterCol}
       <td style="font-size:13px;color:var(--text);white-space:nowrap">${date}</td>
@@ -344,7 +436,7 @@ function renderComplaints() {
       <td style="font-size:13px">${photoIcon}</td>
     </tr>`;
   }).join('');
-  const submitterHeader = showSubmitter ? '<th>Submitted by</th>' : '';
+  const submitterHeader = showSubmitter ? (isPublicTab ? '<th>From</th>' : '<th>Submitted by</th>') : '';
   list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
@@ -407,6 +499,7 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
   document.getElementById('complaintBody').value = '';
+  document.getElementById('complaintIsPublic').checked = false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   renderUnitSelection();
@@ -431,13 +524,16 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
     const editId = document.getElementById('complaintEditId').value;
     if (editId) {
       let query = supabase.from('complaints').update({
-        title, body, category, updated_at: new Date().toISOString()
+        title, body, category,
+        is_public: document.getElementById('complaintIsPublic').checked,
+        updated_at: new Date().toISOString()
       }).eq('id', editId);
       if (role !== 'admin') query = query.eq('user_id', user.id);
       const { error } = await query;
       if (error) throw error;
       closeModal('complaintModal');
       await loadComplaints();
+      if (currentTab === 'public') await loadPublicComplaints();
       showToast('Request updated ✓');
     } else {
       const { data: inserted, error } = await supabase.from('complaints').insert({
@@ -448,6 +544,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
         unit: unitInfo,
         status: 'open',
         has_photos: pendingPhotos.length > 0,
+        is_public: document.getElementById('complaintIsPublic').checked,
       }).select().single();
       if (error) throw error;
       if (pendingPhotos.length > 0) {
@@ -670,12 +767,72 @@ window.openEditComplaint = () => {
   document.getElementById('complaintCategory').value = c.category || 'other';
   document.getElementById('complaintTitle').value = c.title || '';
   document.getElementById('complaintBody').value = c.body || '';
+  document.getElementById('complaintIsPublic').checked = c.is_public || false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   document.getElementById('unitAutoBox').style.display = 'none';
   document.getElementById('unitRadioBox').style.display = 'none';
   closeModal('detailModal');
   document.getElementById('complaintModal').classList.add('open');
+};
+
+window.openPublicDetail = async (id) => {
+  const c = publicComplaints.find(x => x.id === id);
+  if (!c) return;
+  currentComplaintId = id;
+  const st = STATUS_MAP[c.status] || STATUS_MAP.open;
+  const emoji = CAT_EMOJI[c.category] || '📝';
+  const catLabel = CAT_LABEL[c.category] || c.category;
+  const date = new Date(c.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const isOwn = c.user_id === user.id;
+  
+  document.getElementById('detailModalTitle').textContent = `${emoji} ${c.title}`;
+  document.getElementById('detailStatusBadge').className = `badge ${st.cls}`;
+  document.getElementById('detailStatusBadge').textContent = st.label;
+  
+  // 공개 요청: 본인이면 이름, 아니면 "A Resident"
+  const displayName = isOwn ? `${c.submitter_name} (You)` : 'A Resident';
+  document.getElementById('detailSubmitter').textContent = `${displayName} · ${catLabel} · ${date}`;
+  
+  document.getElementById('detailBody').textContent = c.body || '—';
+  
+  // Photos
+  const photosWrap = document.getElementById('detailPhotosWrap');
+  const gallery = document.getElementById('detailPhotoGallery');
+  if (c.has_photos) {
+    const { data: files } = await supabase.storage.from('complaint-images').list(id);
+    if (files && files.length > 0) {
+      photosWrap.style.display = 'block';
+      gallery.innerHTML = files.map(f => {
+        const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
+        return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
+      }).join('');
+    } else { photosWrap.style.display = 'none'; }
+  } else { photosWrap.style.display = 'none'; }
+  
+  // 대화 스레드: 본인이면 로드, 아니면 "private" 메시지
+  const thread = document.getElementById('messageThread');
+  if (isOwn) {
+    await loadMessageThread(id);
+  } else {
+    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px;font-style:italic">💬 Conversation is private between the resident and management.</div>';
+  }
+  
+  // Reply/Edit/Delete는 본인만
+  document.getElementById('replyWrap').style.display = isOwn ? 'block' : 'none';
+  document.getElementById('editComplaintBtn').style.display = (isOwn && c.status !== 'resolved') ? 'inline-flex' : 'none';
+  document.getElementById('deleteComplaintBtn').style.display = 'none';
+  document.getElementById('adminStatusSelect').style.display = 'none';
+  
+  // 본인 공개 요청이면 Edit 시 allComplaints에도 있어야 하므로 개별 찾기용 fallback
+  if (isOwn) {
+    // openEditComplaint가 allComplaints에서 찾으니까 없으면 추가
+    if (!allComplaints.find(x => x.id === id)) {
+      allComplaints.push(c);
+    }
+  }
+  
+  document.getElementById('detailModal').classList.add('open');
 };
 
 // Load user's units from occupants table
@@ -751,7 +908,10 @@ if (canSubmit.includes(role)) await loadMyUnits();
 await loadComplaints();
 
 supabase.channel('complaints-realtime')
-  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => { await loadComplaints(); })
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => { 
+    await loadComplaints();
+    if (currentTab === 'public') await loadPublicComplaints();
+  })
   .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async () => {
     if (currentComplaintId) await loadMessageThread(currentComplaintId);
   })
