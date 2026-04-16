@@ -193,9 +193,41 @@ async function loadAnnouncements() {
       if (!viewedMap[l.record_id]) viewedMap[l.record_id] = new Set();
       viewedMap[l.record_id].add(l.user_email);
     });
+  } else {
+    // Non-admin: 페이지 로드 시 모든 공지 자동 읽음 처리 (중복 방지)
+    await autoMarkAsRead();
   }
 
   renderAnns();
+}
+
+async function autoMarkAsRead() {
+  if (!allAnns.length) return;
+  
+  // 이미 읽음 처리된 공지 확인
+  const annIds = allAnns.map(a => a.id);
+  const { data: existingLogs } = await supabase
+    .from('audit_logs')
+    .select('record_id')
+    .eq('action', 'ANNOUNCEMENT_VIEWED')
+    .eq('user_email', user.email)
+    .in('record_id', annIds);
+  
+  const alreadyRead = new Set((existingLogs || []).map(l => l.record_id));
+  const unread = allAnns.filter(a => !alreadyRead.has(a.id));
+  
+  if (!unread.length) return;
+  
+  // 아직 안 읽은 공지만 일괄 insert
+  const inserts = unread.map(a => ({
+    user_email: user.email,
+    user_role: role,
+    action: 'ANNOUNCEMENT_VIEWED',
+    record_id: a.id,
+    created_at: new Date().toISOString()
+  }));
+  
+  await supabase.from('audit_logs').insert(inserts);
 }
 
 function renderAnns() {
