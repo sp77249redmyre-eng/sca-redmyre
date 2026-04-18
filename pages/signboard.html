@@ -74,7 +74,6 @@
   width:540px;
   height:960px;
   position:relative;
-  padding:24px 26px;
   font-family:'Calibri','Arial',sans-serif;
   overflow:hidden;
   box-sizing:border-box;
@@ -84,22 +83,6 @@
 .pv-frame.fullpage{
   padding:0;
 }
-.pv-logo{text-align:center;margin-bottom:12px}
-.pv-logo img{height:58px}
-.pv-content{flex:1;overflow:hidden}
-.pv-floor{font-size:13px;font-weight:700;color:#000;margin:8px 0 2px}
-.pv-row{display:flex;justify-content:space-between;padding:0.5px 0 0.5px 20px;font-size:10.5px;line-height:1.4}
-.pv-biz{font-weight:700;color:#000}
-.pv-alt{font-weight:700;color:#000;margin-left:4px}
-.pv-sub{padding-left:20px;font-size:9.5px;color:#333;line-height:1.3}
-.pv-unit{color:#000;text-align:right;min-width:55px;font-size:10.5px}
-.pv-footer{margin-top:auto;padding-top:8px;text-align:center}
-.pv-page-num{font-size:9px;color:#333;margin-bottom:6px}
-.pv-footer-bar{display:flex;align-items:center;justify-content:center;gap:8px}
-.pv-footer-bar img{height:26px}
-.pv-footer-text{font-size:8.5px;color:#333;text-align:left;line-height:1.4}
-.pv-footer-text a{color:#1a4b8c;text-decoration:none}
-.pv-footer-text .blue{color:#1a4b8c;font-weight:700}
 
 .sb-jpeg-row{display:flex;justify-content:flex-end;margin-top:10px;width:540px}
 .sb-btn-jpeg{padding:7px 18px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:#222;color:#fff;transition:all .15s}
@@ -120,9 +103,6 @@
 .sb-btn-save:disabled{background:#666;cursor:not-allowed}
 .sb-btn-clear{padding:9px 22px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #555;background:transparent;color:#aaa;transition:all .15s}
 .sb-btn-clear:hover{background:#2a2a2a;color:#fff}
-
-/* Size info */
-.sb-size-info{font-size:11px;color:#888;margin-top:6px;text-align:right}
 
 .sb-modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
 .sb-modal-bg.open{display:flex}
@@ -147,7 +127,7 @@
 
     <div class="sb-wrap">
       <div class="sb-top">
-        <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & notice board · 540 × 960 (전광판 규격)</div></div>
+        <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & fullpage board · 540 × 960 (전광판 규격)</div></div>
         <div class="sb-top-btns">
           <button class="sb-btn sb-btn-green" onclick="openAddModal()">+ Add entry</button>
           <button class="sb-btn sb-btn-red" onclick="downloadAllJPEG()">Download all JPEG</button>
@@ -168,7 +148,11 @@
     <h3 id="modalTitle">Add Entry</h3>
     <input type="hidden" id="editId">
     <label>Page</label>
-    <select id="fPage"><option value="1">Page 1 · G~L3</option><option value="2">Page 2 · L4~L6</option></select>
+    <select id="fPage">
+      <option value="1">Page 1 · G~L2</option>
+      <option value="2">Page 2 · L3~L4</option>
+      <option value="3">Page 3 · L5~L6</option>
+    </select>
     <label>Floor</label>
     <select id="fFloor"><option value="GROUND">GROUND</option><option value="LEVEL 1">LEVEL 1</option><option value="LEVEL 2">LEVEL 2</option><option value="LEVEL 3">LEVEL 3</option><option value="LEVEL 4">LEVEL 4</option><option value="LEVEL 5">LEVEL 5</option><option value="LEVEL 6">LEVEL 6</option></select>
     <label>Business Name</label>
@@ -203,29 +187,19 @@ const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 
 const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
 
 // 페이지 구성:
-// 1, 2 = 디렉토리 (DB signboard_entries)
-// 3    = Notice (DB signboard_notice)
-// 4    = Fullpage 자유HTML (DB signboard_fullpage)
-const NOTICE_PAGE = 3;
+// 1, 2, 3 = 디렉토리 (DB signboard_entries)
+// 4       = Fullpage 자유HTML (DB signboard_fullpage) - 비상연락망
 const FULLPAGE_PAGE = 4;
+const TOTAL_DIRECTORY_PAGES = 3;
 
 let allEntries = [];
 let activeTab = 1;
-let noticeBody = '';
-let savedNoticeBody = '';
 let fullpageBody = '';
 let savedFullpageBody = '';
 
 async function loadEntries() {
   const { data } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
   allEntries = data || [];
-  
-  // Notice 로드
-  const { data: noticeData } = await supabase.from('signboard_notice').select('content').eq('id', 1).maybeSingle();
-  if (noticeData) {
-    noticeBody = noticeData.content || '';
-    savedNoticeBody = noticeBody;
-  }
   
   // Fullpage 로드
   const { data: fullData } = await supabase.from('signboard_fullpage').select('content').eq('id', 1).maybeSingle();
@@ -239,12 +213,9 @@ async function loadEntries() {
 
 function render() {
   renderTabs();
-  if (activeTab === 1 || activeTab === 2) {
+  if (activeTab >= 1 && activeTab <= TOTAL_DIRECTORY_PAGES) {
     renderEntryList();
     renderDirectoryPreview();
-  } else if (activeTab === NOTICE_PAGE) {
-    renderNoticeEditor();
-    renderNoticePreview();
   } else if (activeTab === FULLPAGE_PAGE) {
     renderFullpageEditor();
     renderFullpagePreview();
@@ -253,14 +224,14 @@ function render() {
 
 function renderTabs() {
   let html = '';
-  html += `<button class="sb-tab ${activeTab===1?'active':''}" onclick="setTab(1)">Page 1 · G~L3</button>`;
-  html += `<button class="sb-tab ${activeTab===2?'active':''}" onclick="setTab(2)">Page 2 · L4~L6</button>`;
-  html += `<button class="sb-tab ${activeTab===NOTICE_PAGE?'active':''}" onclick="setTab(${NOTICE_PAGE})">Page 3 · Notice</button>`;
+  html += `<button class="sb-tab ${activeTab===1?'active':''}" onclick="setTab(1)">Page 1 · G~L2</button>`;
+  html += `<button class="sb-tab ${activeTab===2?'active':''}" onclick="setTab(2)">Page 2 · L3~L4</button>`;
+  html += `<button class="sb-tab ${activeTab===3?'active':''}" onclick="setTab(3)">Page 3 · L5~L6</button>`;
   html += `<button class="sb-tab ${activeTab===FULLPAGE_PAGE?'active':''}" onclick="setTab(${FULLPAGE_PAGE})">Page 4 · Fullpage</button>`;
   document.getElementById('tabBar').innerHTML = html;
 }
 
-/* ===== Directory (Page 1, 2) ===== */
+/* ===== Directory (Page 1, 2, 3) ===== */
 
 function renderEntryList() {
   const entries = allEntries.filter(e => e.page === activeTab);
@@ -288,19 +259,19 @@ function renderDirectoryPreview() {
   
   let rows = '';
   FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
-    rows += `<div style="margin-top:16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:18px;font-weight:900;letter-spacing:1.5px;color:#fbbf24;text-transform:uppercase;">${floor}</div>
+    rows += `<div style="margin-top:18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:22px;font-weight:900;letter-spacing:2px;color:#fbbf24;text-transform:uppercase;">${floor}</div>
       <div style="flex:1;height:2px;background:linear-gradient(90deg,#fbbf24 0%,rgba(251,191,36,0.1) 100%);"></div>
     </div>`;
     grouped[floor].forEach(e => {
-      const alt = e.display_name_alt ? `<span style="color:rgba(255,255,255,0.9);margin-left:4px;font-weight:500;">${e.display_name_alt}</span>` : '';
-      rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;gap:8px;">
-        <div style="font-size:12.5px;font-weight:700;color:#fff;line-height:1.35;flex:1;">${e.business_name}${alt}</div>
-        <div style="font-size:12px;font-weight:800;color:#0f2456;background:#fff;padding:4px 12px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);">${e.unit_display}</div>
+      const alt = e.display_name_alt ? `<span style="color:rgba(255,255,255,0.9);margin-left:5px;font-weight:500;">${e.display_name_alt}</span>` : '';
+      rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;gap:10px;">
+        <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.35;flex:1;">${e.business_name}${alt}</div>
+        <div style="font-size:14px;font-weight:800;color:#0f2456;background:#fff;padding:5px 14px;border-radius:7px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);">${e.unit_display}</div>
       </div>`;
       if (e.sub_info) {
         e.sub_info.split('||').forEach(line => {
-          rows += `<div style="padding-left:0;font-size:9.5px;color:rgba(255,255,255,0.65);line-height:1.4;margin-bottom:1px;">${line.trim()}</div>`;
+          rows += `<div style="padding-left:2px;font-size:11px;color:rgba(255,255,255,0.7);line-height:1.4;margin-bottom:2px;">${line.trim()}</div>`;
         });
       }
     });
@@ -309,53 +280,18 @@ function renderDirectoryPreview() {
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame" id="pvFrame" style="background:linear-gradient(160deg,#0f2456 0%,#1e3a8a 45%,#2563eb 100%);color:#fff;padding:20px 24px 14px 24px;position:relative;overflow:hidden;">
+      <div class="pv-frame" id="pvFrame" style="background:linear-gradient(160deg,#0f2456 0%,#1e3a8a 45%,#2563eb 100%);color:#fff;padding:22px 26px 14px 26px;position:relative;overflow:hidden;">
         <div style="position:absolute;width:400px;height:400px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);top:-120px;right:-120px;pointer-events:none;"></div>
         <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,0.25) 0%,transparent 70%);bottom:-60px;left:-60px;pointer-events:none;"></div>
         
+        <div style="text-align:center;margin-bottom:10px;position:relative;z-index:2;">
+          <img src="/redmyre.png" style="height:68px;display:inline-block;" alt="Redmyre House">
+        </div>
+        
         <div style="flex:1;position:relative;z-index:2;overflow:hidden;">${rows}</div>
         
-        <div style="margin-top:auto;padding-top:8px;position:relative;z-index:2;">
-          <div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:2px;">${activeTab} / 2</div>
-        </div>
-      </div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
-    </div>
-  `;
-}
-
-/* ===== Notice (Page 3) - 로고/Footer 유지 ===== */
-
-function renderNoticeEditor() {
-  const unsaved = noticeBody !== savedNoticeBody;
-  document.getElementById('leftPanel').innerHTML = `
-    <div class="sb-notice-editor">
-      <div class="sb-notice-header">
-        <div class="sb-notice-label">Notice Content (HTML)</div>
-        <div class="sb-notice-status ${unsaved?'unsaved':''}" id="noticeStatus">${unsaved?'● Unsaved changes':'✓ Saved'}</div>
-      </div>
-      <textarea class="sb-notice-body" id="noticeBody" oninput="updateNoticePreview()" placeholder="Enter notice HTML here...">${escapeHtml(noticeBody)}</textarea>
-      <div class="sb-notice-hint">HTML supported. Logo/Footer are auto-added. Click Save to store to DB.</div>
-      <div class="sb-notice-actions">
-        <button class="sb-btn-clear" onclick="clearNotice()">Clear</button>
-        <button class="sb-btn-save" id="saveNoticeBtn" onclick="saveNotice()">💾 Save Notice</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderNoticePreview() {
-  document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">Preview · 540 × 960</div>
-    <div class="sb-preview-wrap">
-      <div class="pv-frame" id="pvFrame">
-        <div class="pv-logo"><img src="/redmyre_logo.png" alt="Redmyre House"></div>
-        <div class="pv-content" id="noticePreviewBody">${noticeBody || '<span style="color:#ccc;font-style:italic;">Notice preview will appear here...</span>'}</div>
-        <div class="pv-footer">
-          <div class="pv-footer-bar">
-            <img src="/sca-logo.png" alt="SCA">
-            <div class="pv-footer-text">Building Managers Phone: <span class="blue">0478 705 406</span><br>Email: <a href="mailto:sp77249.redmyre@gmail.com">sp77249.redmyre@gmail.com</a></div>
-          </div>
+        <div style="margin-top:auto;padding-top:6px;position:relative;z-index:2;">
+          <div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:2px;">${activeTab} / ${TOTAL_DIRECTORY_PAGES}</div>
         </div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
@@ -373,7 +309,7 @@ function renderFullpageEditor() {
         <div class="sb-notice-label">Fullpage HTML (No header/footer)</div>
         <div class="sb-notice-status ${unsaved?'unsaved':''}" id="fullpageStatus">${unsaved?'● Unsaved changes':'✓ Saved'}</div>
       </div>
-      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview()" placeholder="Enter full HTML (covers entire 540×960 canvas)...&#10;&#10;Example:&#10;&lt;div style='width:100%;height:100%;padding:30px;background:#000;color:#fff;'&gt;&#10;  &lt;h1&gt;Full canvas design&lt;/h1&gt;&#10;&lt;/div&gt;">${escapeHtml(fullpageBody)}</textarea>
+      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview()" placeholder="Enter full HTML (covers entire 540×960 canvas)...">${escapeHtml(fullpageBody)}</textarea>
       <div class="sb-notice-hint">Full 540×960 canvas. No auto-logo/footer. Design anything. Click Save to store.</div>
       <div class="sb-notice-actions">
         <button class="sb-btn-clear" onclick="clearFullpage()">Clear</button>
@@ -403,7 +339,6 @@ function escapeHtml(str) {
 }
 
 function hasUnsaved() {
-  if (activeTab === NOTICE_PAGE) return noticeBody !== savedNoticeBody;
   if (activeTab === FULLPAGE_PAGE) return fullpageBody !== savedFullpageBody;
   return false;
 }
@@ -413,57 +348,10 @@ function hasUnsaved() {
 window.setTab = (t) => {
   if (hasUnsaved()) {
     if (!confirm('You have unsaved changes. Leave anyway?')) return;
-    if (activeTab === NOTICE_PAGE) noticeBody = savedNoticeBody;
     if (activeTab === FULLPAGE_PAGE) fullpageBody = savedFullpageBody;
   }
   activeTab = t;
   render();
-};
-
-/* ===== Notice functions ===== */
-
-window.updateNoticePreview = () => {
-  noticeBody = document.getElementById('noticeBody').value;
-  const el = document.getElementById('noticePreviewBody');
-  if (el) el.innerHTML = noticeBody || '<span style="color:#ccc;font-style:italic;">Notice preview will appear here...</span>';
-  updateNoticeStatus();
-};
-
-function updateNoticeStatus() {
-  const el = document.getElementById('noticeStatus');
-  if (!el) return;
-  const unsaved = noticeBody !== savedNoticeBody;
-  el.className = 'sb-notice-status' + (unsaved ? ' unsaved' : '');
-  el.textContent = unsaved ? '● Unsaved changes' : '✓ Saved';
-}
-
-window.saveNotice = async () => {
-  const btn = document.getElementById('saveNoticeBtn');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-  try {
-    const { error } = await supabase
-      .from('signboard_notice')
-      .upsert({ id: 1, content: noticeBody, updated_at: new Date().toISOString() });
-    if (error) throw error;
-    savedNoticeBody = noticeBody;
-    updateNoticeStatus();
-    showToast('Notice saved successfully');
-  } catch (e) {
-    showToast('Error saving: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 Save Notice';
-  }
-};
-
-window.clearNotice = () => {
-  if (!confirm('Clear all notice content? (Not saved until Save is clicked)')) return;
-  noticeBody = '';
-  document.getElementById('noticeBody').value = '';
-  const el = document.getElementById('noticePreviewBody');
-  if (el) el.innerHTML = '<span style="color:#ccc;font-style:italic;">Notice preview will appear here...</span>';
-  updateNoticeStatus();
 };
 
 /* ===== Fullpage functions ===== */
@@ -512,11 +400,11 @@ window.clearFullpage = () => {
   updateFullpageStatus();
 };
 
-/* ===== Entry Modal (for Page 1, 2) ===== */
+/* ===== Entry Modal (for Page 1, 2, 3) ===== */
 
 window.openAddModal = () => {
-  if (activeTab !== 1 && activeTab !== 2) {
-    showToast('Add entry only works on Page 1 or 2', true);
+  if (activeTab < 1 || activeTab > TOTAL_DIRECTORY_PAGES) {
+    showToast('Add entry only works on Page 1, 2, or 3', true);
     return;
   }
   document.getElementById('modalTitle').textContent = 'Add Entry';
@@ -592,11 +480,9 @@ window.downloadJPEG = async () => {
       return new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = resolve;
-        // 타임아웃 (5초)
         setTimeout(resolve, 5000);
       });
     }));
-    // 추가 대기 (렌더링 확실히 끝나도록)
     await new Promise(r => setTimeout(r, 300));
     
     const canvas = await html2canvas(frame, {
@@ -609,7 +495,7 @@ window.downloadJPEG = async () => {
       imageTimeout: 15000,
       logging: false
     });
-    // 최종 출력 canvas를 540x960으로 리사이즈
+    
     const finalCanvas = document.createElement('canvas');
     finalCanvas.width = 540;
     finalCanvas.height = 960;
@@ -628,7 +514,7 @@ window.downloadJPEG = async () => {
 
 window.downloadAllJPEG = async () => {
   showToast('Generating all JPEGs...');
-  const pages = [1, 2, NOTICE_PAGE, FULLPAGE_PAGE];
+  const pages = [1, 2, 3, FULLPAGE_PAGE];
   for (const p of pages) {
     activeTab = p;
     render();
