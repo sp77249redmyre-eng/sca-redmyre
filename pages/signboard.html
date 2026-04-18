@@ -285,26 +285,45 @@ function renderDirectoryPreview() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
   entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+  
   let rows = '';
   FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
-    rows += `<div class="pv-floor">${floor}</div>`;
+    rows += `<div style="margin-top:14px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:2.5px;color:#60a5fa;text-transform:uppercase;">${floor}</div>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.2);"></div>
+    </div>`;
     grouped[floor].forEach(e => {
-      const alt = e.display_name_alt ? `<span class="pv-alt">${e.display_name_alt}</span>` : '';
-      rows += `<div class="pv-row"><div><span class="pv-biz">${e.business_name}</span>${alt}</div><span class="pv-unit">${e.unit_display}</span></div>`;
-      if (e.sub_info) e.sub_info.split('||').forEach(line => { rows += `<div class="pv-sub">${line.trim()}</div>`; });
+      const alt = e.display_name_alt ? `<span style="color:rgba(255,255,255,0.85);margin-left:4px;font-weight:500;">${e.display_name_alt}</span>` : '';
+      rows += `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:3px 0;gap:8px;">
+        <div style="font-size:10.5px;font-weight:700;color:#fff;line-height:1.35;flex:1;">${e.business_name}${alt}</div>
+        <div style="font-size:10px;font-weight:700;color:#0f2456;background:#60a5fa;padding:2px 8px;border-radius:4px;white-space:nowrap;">${e.unit_display}</div>
+      </div>`;
+      if (e.sub_info) {
+        e.sub_info.split('||').forEach(line => {
+          rows += `<div style="padding-left:0;font-size:9px;color:rgba(255,255,255,0.65);line-height:1.4;margin-bottom:1px;">${line.trim()}</div>`;
+        });
+      }
     });
   });
+  
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame" id="pvFrame">
-        <div class="pv-logo"><img src="/redmyre_logo.png" alt="Redmyre House"></div>
-        <div class="pv-content">${rows}</div>
-        <div class="pv-footer">
-          <div class="pv-page-num">${activeTab}/2</div>
-          <div class="pv-footer-bar">
-            <img src="/sca-logo.png" alt="SCA">
-            <div class="pv-footer-text">Building Managers Phone: <span class="blue">0478 705 406</span><br>Email: <a href="mailto:sp77249.redmyre@gmail.com">sp77249.redmyre@gmail.com</a></div>
+      <div class="pv-frame" id="pvFrame" style="background:linear-gradient(160deg,#0f2456 0%,#1e3a8a 45%,#2563eb 100%);color:#fff;padding:22px 24px;position:relative;overflow:hidden;">
+        <div style="position:absolute;width:400px;height:400px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);top:-120px;right:-120px;pointer-events:none;"></div>
+        <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,0.25) 0%,transparent 70%);bottom:-60px;left:-60px;pointer-events:none;"></div>
+        
+        <div style="text-align:center;margin-bottom:12px;position:relative;z-index:2;">
+          <img src="/redmyre.png" style="height:60px;display:inline-block;" alt="Redmyre House">
+        </div>
+        
+        <div style="flex:1;position:relative;z-index:2;overflow:hidden;">${rows}</div>
+        
+        <div style="margin-top:auto;padding-top:10px;position:relative;z-index:2;">
+          <div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:6px;font-weight:600;letter-spacing:1px;">${activeTab} / 2</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+            <img src="/sca-logo.png" style="height:26px;" alt="SCA">
+            <div style="font-size:8.5px;color:rgba(255,255,255,0.85);line-height:1.4;">Building Managers Phone: <span style="color:#60a5fa;font-weight:700;">0478 705 406</span><br>Email: <span style="color:#60a5fa;">sp77249.redmyre@gmail.com</span></div>
           </div>
         </div>
       </div>
