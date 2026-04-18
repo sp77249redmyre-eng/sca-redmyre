@@ -255,8 +255,8 @@
         <div class="step-item active" id="step1Indicator">
           <div class="step-num">1</div>
           <div class="step-text">
-            <div class="step-title">Verify your invite</div>
-            <div class="step-sub">Confirm your email link</div>
+            <div class="step-title">Verify your account</div>
+            <div class="step-sub">Confirm your email</div>
           </div>
         </div>
         <div class="step-item pending" id="step2Indicator">
@@ -292,16 +292,18 @@
       <div class="screen active" id="screenLoading">
         <div class="loading-wrap">
           <div class="loading-spinner"></div>
-          <div class="loading-text">Verifying your invitation…</div>
+          <div class="loading-text">Verifying your account…</div>
         </div>
       </div>
 
       <!-- INVALID -->
       <div class="screen" id="screenInvalid">
         <div class="invalid-icon">⚠️</div>
-        <div class="form-eyebrow">Invitation Invalid</div>
-        <div class="form-title">Link expired or invalid</div>
-        <div class="form-sub" style="margin-bottom:24px">This invitation link has expired or already been used. Please contact your building manager to receive a new invite.</div>
+        <div class="form-eyebrow">Invalid Access</div>
+        <div class="form-title">Cannot set up account</div>
+        <div class="form-sub" style="margin-bottom:24px" id="invalidMessage">
+          Something went wrong. Please go back and try again.
+        </div>
         <button class="submit-btn" onclick="window.location.href='/index.html'" style="background:var(--bg);border:1px solid var(--border);color:var(--text);box-shadow:none">← Back to Login</button>
       </div>
 
@@ -314,9 +316,9 @@
           <div class="invite-dot"></div>
           <span id="invitedEmailBadge">loading…</span>
         </div>
-        
+
         <!-- Role & Unit Info (Read-only) -->
-        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:10px;padding:14px;margin:16px 0;font-size:13px">
+        <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:10px;padding:14px;margin:16px 0;font-size:13px" id="roleUnitBox">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
             <span style="color:var(--muted);min-width:60px">Role:</span>
             <span style="font-weight:600;color:var(--blue-800)" id="assignedRole">—</span>
@@ -326,7 +328,7 @@
             <span style="font-weight:600;color:var(--blue-800)" id="assignedUnit">—</span>
           </div>
         </div>
-        
+
         <div class="error-msg" id="nameError"></div>
         <div class="form-group">
           <label class="form-label">Full Name</label>
@@ -398,8 +400,16 @@
 import { getSupabase } from '/js/auth.js';
 const supabase = await getSupabase();
 
-let currentUser = null;
+// URL에서 이메일 파라미터 받기 (QR 방식)
+const urlParams = new URLSearchParams(window.location.search);
+const emailParam = urlParams.get('email');
+
+// 모드 판별: 'qr' (email 파라미터) 또는 'invite' (세션 기반)
+let mode = null;
+let verifiedEmail = null;
+let currentUserId = null;
 let currentRole = null;
+let userFullName = '';
 
 // Step indicator
 function setStep(num) {
@@ -412,7 +422,7 @@ function setStep(num) {
   indicators.forEach((el, i) => {
     el.classList.remove('done','active','pending');
     const numEl = el.querySelector('.step-num');
-    if (i < num-1)      { el.classList.add('done');    numEl.textContent = '✓'; }
+    if (i < num-1)       { el.classList.add('done');    numEl.textContent = '✓'; }
     else if (i === num-1){ el.classList.add('active');  numEl.textContent = i+1; }
     else                 { el.classList.add('pending'); numEl.textContent = i+1; }
   });
@@ -421,33 +431,98 @@ function setStep(num) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  const stepMap = { screenLoading:1, screenName:1, screenPassword:2, screenSuccess:4, screenInvalid:1 };
+  const stepMap = { screenLoading:1, screenName:2, screenPassword:3, screenSuccess:4, screenInvalid:1 };
   setStep(stepMap[id] || 1);
 }
 
-// Init
+// Init — 모드 판별 후 처리
 async function init() {
+
+  // ============ MODE 1: QR 방식 (URL 파라미터에 email 있음) ============
+  if (emailParam) {
+    mode = 'qr';
+    const email = emailParam.toLowerCase().trim();
+
+    try {
+      const res = await fetch('/api/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+      if (data.status === 'not_found') {
+        document.getElementById('invalidMessage').textContent = 'This email is not registered. Please contact your building manager.';
+        showScreen('screenInvalid');
+        return;
+      }
+
+      if (data.status === 'ready') {
+        document.getElementById('invalidMessage').textContent = 'This account is already set up. Please go to the login page.';
+        showScreen('screenInvalid');
+        return;
+      }
+
+      // needs_setup
+      verifiedEmail = email;
+      document.getElementById('invitedEmailBadge').textContent = email;
+      // Role/Unit 정보는 QR 방식에서는 보여주지 않음 (RLS 막혀있음)
+      document.getElementById('roleUnitBox').style.display = 'none';
+
+      showScreen('screenName');
+      return;
+
+    } catch (err) {
+      console.error('QR init error:', err);
+      document.getElementById('invalidMessage').textContent = err.message || 'Connection error. Please try again.';
+      showScreen('screenInvalid');
+      return;
+    }
+  }
+
+  // ============ MODE 2: 초대 이메일 방식 (세션 기반) ============
   await supabase.auth.getSession();
   await supabase.auth.refreshSession();
   const { data:{ session } } = await supabase.auth.getSession();
-  if (!session) { showScreen('screenInvalid'); return; }
-  currentUser = session.user;
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+
+  if (!session) {
+    document.getElementById('invalidMessage').textContent = 'Invalid or expired invitation link. Please contact your building manager or use the QR code.';
+    showScreen('screenInvalid');
+    return;
+  }
+
+  mode = 'invite';
+  currentUserId = session.user.id;
+  verifiedEmail = session.user.email;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUserId)
+    .single();
+
   currentRole = profile?.role || 'tenant';
-  
-  // Display assigned role and unit (read-only)
+
+  // 이미 셋업 완료된 경우 → Overview로 이동
+  if (profile?.full_name && profile?.setup_complete) {
+    window.location.href = '/pages/building.html';
+    return;
+  }
+
+  // Role/Unit 표시 (invite 모드는 세션 있어서 RLS 통과함)
   const roleLabel = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
   document.getElementById('assignedRole').textContent = roleLabel;
-  
+
   const assignedUnit = profile?.unit || null;
   if (assignedUnit) {
     document.getElementById('assignedUnit').textContent = assignedUnit;
   } else {
     document.getElementById('assignedUnitRow').style.display = 'none';
   }
-  
-  if (profile?.full_name && profile?.setup_complete) { window.location.href = '/pages/building.html'; return; }
-  document.getElementById('invitedEmailBadge').textContent = currentUser.email;
+
+  document.getElementById('invitedEmailBadge').textContent = verifiedEmail;
   showScreen('screenName');
 }
 
@@ -455,12 +530,9 @@ async function init() {
 document.getElementById('nameBtn').addEventListener('click', submitName);
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key==='Enter') submitName(); });
 
-async function submitName() {
+function submitName() {
   const name    = document.getElementById('nameInput').value.trim();
   const errorEl = document.getElementById('nameError');
-  const btn     = document.getElementById('nameBtn');
-  const spinner = document.getElementById('nameSpinner');
-  const btnText = document.getElementById('nameBtnText');
   errorEl.classList.remove('show');
   if (!name || name.length < 2) {
     errorEl.textContent = 'Please enter your full name (at least 2 characters).';
@@ -469,17 +541,8 @@ async function submitName() {
     return;
   }
   document.getElementById('nameInput').classList.remove('error');
-  btn.disabled=true; spinner.style.display='block'; btnText.textContent='Saving…';
-  try {
-    await supabase.from('profiles').update({ full_name:name }).eq('id', currentUser.id);
-    await supabase.auth.updateUser({ data:{ full_name:name } });
-    showScreen('screenPassword');
-  } catch(e) {
-    errorEl.textContent = e.message || 'Failed to save name. Please try again.';
-    errorEl.classList.add('show');
-  } finally {
-    btn.disabled=false; spinner.style.display='none'; btnText.textContent='Continue →';
-  }
+  userFullName = name;
+  showScreen('screenPassword');
 }
 
 // Password strength
@@ -512,15 +575,17 @@ document.getElementById('backToNameBtn').addEventListener('click', () => showScr
 document.getElementById('pwBtn').addEventListener('click', submitPassword);
 
 async function submitPassword() {
-  const pw    = document.getElementById('pwInput').value;
-  const pw2   = document.getElementById('pwConfirmInput').value;
+  const pw     = document.getElementById('pwInput').value;
+  const pw2    = document.getElementById('pwConfirmInput').value;
   const errorEl= document.getElementById('pwError');
-  const btn   = document.getElementById('pwBtn');
+  const btn    = document.getElementById('pwBtn');
   const spinner= document.getElementById('pwSpinner');
   const btnText= document.getElementById('pwBtnText');
+
   errorEl.classList.remove('show');
   document.getElementById('pwInput').classList.remove('error');
   document.getElementById('pwConfirmInput').classList.remove('error');
+
   if (pw.length < 8) {
     errorEl.textContent = 'Password must be at least 8 characters.';
     errorEl.classList.add('show');
@@ -533,22 +598,73 @@ async function submitPassword() {
     document.getElementById('pwConfirmInput').classList.add('error');
     return;
   }
+
   btn.disabled=true; spinner.style.display='block'; btnText.textContent='Setting up…';
+
   try {
-    const { error } = await supabase.auth.updateUser({ password: pw });
-    if (error) throw error;
-    const name = document.getElementById('nameInput').value.trim();
-    await supabase.from('profiles').update({ full_name:name, setup_complete:true }).eq('id', currentUser.id);
+
+    // ============ MODE 1: QR 방식 — API 호출 ============
+    if (mode === 'qr') {
+      const res = await fetch('/api/complete-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: verifiedEmail,
+          full_name: userFullName,
+          password: pw
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Setup failed');
+
+      // 자동 로그인
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: verifiedEmail,
+        password: pw
+      });
+
+      if (loginError) throw loginError;
+
+      // Role 가져오기
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', loginData.user.id)
+          .maybeSingle();
+        currentRole = prof?.role || 'tenant';
+      } catch(e) {
+        currentRole = 'tenant';
+      }
+    }
+
+    // ============ MODE 2: 초대 이메일 방식 — 기존 로직 ============
+    else if (mode === 'invite') {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw error;
+
+      await supabase.from('profiles').update({
+        full_name: userFullName,
+        setup_complete: true
+      }).eq('id', currentUserId);
+
+      await supabase.auth.updateUser({ data:{ full_name: userFullName } });
+    }
+
+    // 성공 화면 표시
     showScreen('screenSuccess');
-    document.getElementById('successName').textContent = name;
+    document.getElementById('successName').textContent = userFullName;
     const pill = document.getElementById('successRolePill');
     pill.textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
     pill.className = `role-pill ${currentRole}`;
+
+    // URL 파라미터 지우기
     history.replaceState(null, '', window.location.pathname);
+
   } catch(e) {
-    errorEl.textContent = e.message || 'Failed to set password. Please try again.';
+    errorEl.textContent = e.message || 'Failed to set up account. Please try again.';
     errorEl.classList.add('show');
-  } finally {
     btn.disabled=false; spinner.style.display='none'; btnText.textContent='Finish Setup →';
   }
 }
