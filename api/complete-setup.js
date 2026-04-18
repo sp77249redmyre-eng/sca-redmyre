@@ -45,7 +45,10 @@ module.exports = async (req, res) => {
 
     const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
       profile.id,
-      { password: password }
+      {
+        password: password,
+        email_confirm: true
+      }
     );
 
     if (updateAuthError) throw updateAuthError;
