@@ -574,12 +574,29 @@ window.downloadJPEG = async () => {
   if (!frame) return;
   showToast('Generating JPEG (540×960)...');
   try {
+    // 모든 이미지 로딩 완료 대기
+    const images = frame.querySelectorAll('img');
+    await Promise.all(Array.from(images).map(img => {
+      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+        // 타임아웃 (5초)
+        setTimeout(resolve, 5000);
+      });
+    }));
+    // 추가 대기 (렌더링 확실히 끝나도록)
+    await new Promise(r => setTimeout(r, 300));
+    
     const canvas = await html2canvas(frame, {
       width: 540,
       height: 960,
       scale: 2,
       useCORS: true,
-      backgroundColor: '#ffffff'
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      imageTimeout: 15000,
+      logging: false
     });
     // 최종 출력 canvas를 540x960으로 리사이즈
     const finalCanvas = document.createElement('canvas');
