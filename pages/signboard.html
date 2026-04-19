@@ -467,17 +467,32 @@ window.downloadJPEG = async () => {
   if (!frame) return;
   showToast('Generating JPEG (540×960)...');
   try {
-    // 모든 이미지 로딩 완료 대기
+    // 모든 이미지를 fetch로 가져와서 blob URL로 교체 → html2canvas가 100% 캡처
     const images = frame.querySelectorAll('img');
-    await Promise.all(Array.from(images).map(img => {
-      if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-      return new Promise((resolve) => {
-        img.onload = resolve;
-        img.onerror = resolve;
-        setTimeout(resolve, 5000);
-      });
+    await Promise.all(Array.from(images).map(async (img) => {
+      try {
+        const src = img.getAttribute('src');
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+        const res = await fetch(src, { cache: 'force-cache' });
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        img.src = dataUrl;
+        // 로딩 완료까지 대기
+        await new Promise((resolve) => {
+          if (img.complete && img.naturalHeight !== 0) return resolve();
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 3000);
+        });
+      } catch (err) {
+        console.warn('Image preload failed:', err);
+      }
     }));
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 500));
     
     const canvas = await html2canvas(frame, {
       width: 540,
