@@ -261,7 +261,7 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (role !== 'admin') {
     try {
       const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: recent, error: coolErr } = await supabase.from('hvac_requests').select('created_at').eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
+      const { data: recent, error: coolErr } = await supabase.from('hvac_requests').select('created_at').eq('level', level).eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
       if (coolErr) { showToast('Unable to verify cooldown. Please try again.', true); return; }
       if (recent && recent.length > 0) {
         const lastTime = new Date(recent[0].created_at);
