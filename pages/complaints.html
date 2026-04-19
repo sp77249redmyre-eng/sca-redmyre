@@ -988,7 +988,15 @@ supabase.channel('complaints-realtime')
     if (currentTab === 'public') await loadPublicComplaints();
   })
   .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async () => {
-    if (currentComplaintId) await loadMessageThread(currentComplaintId);
+    if (currentComplaintId) {
+      if (currentTab === 'public') {
+        const c = publicComplaints.find(x => x.id === currentComplaintId);
+        const isOwn = c ? c.user_id === user.id : false;
+        await loadPublicMessageThread(currentComplaintId, isOwn);
+      } else {
+        await loadMessageThread(currentComplaintId);
+      }
+    }
   })
   .subscribe();
 </script>
