@@ -337,6 +337,25 @@ export async function initLayout() {
     try { await supabase.from('audit_logs').insert({ user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
   }
 
+  // ─── 최초 1회 알림 자동 요청 ─────────────────────────────
+  // localStorage에 notifAsked 없고 알림 미허용 상태일 때만 브라우저 알림 팝업 표시
+  // 이미 허용/거절한 유저에겐 팝업 안 뜸 (Notification.permission 체크)
+  try {
+    const notifAsked = localStorage.getItem('notifAsked');
+    const notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+    if (!notifAsked
+        && !notifEnabled
+        && typeof Notification !== 'undefined'
+        && Notification.permission === 'default') {
+      localStorage.setItem('notifAsked', 'true');
+      setTimeout(() => {
+        if (typeof window.toggleNotification === 'function') {
+          window.toggleNotification();
+        }
+      }, 1500);
+    }
+  } catch(e) {}
+
   return { supabase, user, profile, role, name };
 }
 
