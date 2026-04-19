@@ -1208,10 +1208,10 @@ function renderActivityTable() {
 
 
 window.clearAllLogs = async () => {
-  if (!confirm('⚠️ Delete ALL activity logs?\n\nThis will permanently delete all activity history.\nThis action cannot be undone.')) return;
+  if (!confirm('⚠️ Delete ALL activity logs?\n\nThis will permanently delete all activity history.\n(Announcement read history will be preserved)\n\nThis action cannot be undone.')) return;
   
   try {
-    const { error } = await supabase.from('audit_logs').delete().not('id', 'is', null);
+    const { error } = await supabase.from('audit_logs').delete().neq('action', 'ANNOUNCEMENT_VIEWED');
     if (error) throw error;
     
     showToast('All activity logs cleared ✓');
