@@ -11,15 +11,32 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing user_id' });
   }
 
+  // 🔒 자기 자신 삭제 방지 — Authorization 토큰으로 현재 유저 확인
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const supabaseUser = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY,
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
+      );
+      const { data: { user: currentUser } } = await supabaseUser.auth.getUser();
+      if (currentUser && currentUser.id === user_id) {
+        return res.status(400).json({ error: 'Cannot delete your own account' });
+      }
+    } catch (authErr) {
+      console.warn('[delete-user] Auth check failed:', authErr);
+      return res.status(401).json({ error: 'Invalid authentication' });
+    }
+  }
+
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   try {
-    // 🔥 자기 자신 삭제 방지 (유지)
-    // 필요하면 나중에 user email 기준으로 다시 추가 가능
-
     // 🔥 Auth 삭제
     const { error: deleteError } =
       await supabaseAdmin.auth.admin.deleteUser(user_id);
