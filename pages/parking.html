@@ -338,6 +338,36 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     
     await logActivity('PARKING_REPORTED', prInserted?.id || null);
 
+    // 🔔 자동 이메일 발송: 내부 차량(vehicles 매칭됨)일 때만 해당 유닛 이메일로 경고 발송
+    try {
+      const { data: vehicles } = await supabase.rpc('lookup_vehicle_plates');
+      const matched = (vehicles || []).find(v => {
+        if (!v?.plate) return false;
+        return v.plate.replace(/\s/g,'').toUpperCase() === plate;
+      });
+
+      if (matched?.unit) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
+        const timeStr = now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+
+        // 비동기로 발송 - 실패해도 사용자 UX 방해 안 함
+        supabase.functions.invoke('email-parking-notice', {
+          body: {
+            unit: matched.unit,
+            plate: plate,
+            violation: selectedVio || 'Parking violation',
+            location: bay || area || '',
+            date: dateStr,
+            time: timeStr,
+            reporter_name: name || 'Building Management'
+          }
+        }).catch(err => console.warn('Auto email failed:', err));
+      }
+    } catch (emailErr) {
+      console.warn('Email lookup failed:', emailErr);
+    }
+
     try {
       const cooldownMins = 15;
       const cutoff = new Date(Date.now() - cooldownMins * 60 * 1000).toISOString();
