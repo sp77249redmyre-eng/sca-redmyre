@@ -597,6 +597,11 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
           body: JSON.stringify({ target_role: 'admin', title: '📬 New Resident Request', message: `${title} — ${CAT_LABEL[category]||category}`, url: '/pages/complaints.html' })
         });
+        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-complaint-response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+          body: JSON.stringify({ complaint_title: title, complaint_body: body, admin_response: body, requester_user_id: user.id, sender_role: role, sender_name: name })
+        });
       } catch(pushErr) {}
       showToast('Request submitted ✓');
     }
