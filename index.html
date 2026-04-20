@@ -528,6 +528,18 @@ async function handleLogin() {
       }
     } catch(e) {}
 
+    // 브라우저에 비밀번호 저장 요청 (Credential Management API)
+    try {
+      if (window.PasswordCredential) {
+        const cred = new PasswordCredential({
+          id: email,
+          password: password,
+          name: email
+        });
+        await navigator.credentials.store(cred);
+      }
+    } catch(e) {}
+
     window.location.href = '/pages/building.html';
 
   } catch(err) {
