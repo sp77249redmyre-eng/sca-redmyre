@@ -81,6 +81,7 @@ module.exports = async (req, res) => {
       );
       sent++;
     } catch (err) {
+      console.log('PUSH ERROR:', err.statusCode, err.message, err.body);
       if (err.statusCode === 410 || err.statusCode === 404) {
         try { await supabase.from('push_subscriptions').delete().eq('id', row.id); } catch {}
       }
