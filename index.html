@@ -289,7 +289,7 @@
         <div class="setup-sub">Let's set up your account. Click below to create your name and password.</div>
       </div>
 
-      <form id="loginForm" onsubmit="event.preventDefault(); document.getElementById('signInBtn').click();">
+      <form id="loginForm">
       <div class="form-group">
         <label class="form-label">Email address</label>
         <input class="form-input" type="email" id="emailInput" placeholder="you@example.com" autocomplete="email">
@@ -459,8 +459,11 @@ passwordInput.addEventListener('keydown', e => {
   }
 });
 
-// 메인 버튼 클릭
-signInBtn.addEventListener('click', handleMainButton);
+// 메인 버튼 클릭 (form submit으로 처리 - 브라우저 비번 자동저장 유도)
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  handleMainButton();
+});
 
 async function handleMainButton() {
   const email = emailInput.value.trim().toLowerCase();
