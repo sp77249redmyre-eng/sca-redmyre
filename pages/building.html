@@ -138,40 +138,40 @@
       </div>
       <div class="systems-grid">
 
-        <a href="/pages/announcements.html" class="sys-card" style="text-decoration:none;color:inherit">
+        <a href="/pages/announcements.html" class="sys-card" style="text-decoration:none;color:inherit;background:#1e3a8a;border-color:#1e40af">
           <div class="sys-top">
-            <div class="sys-icon" style="background:#eff6ff">📢</div>
-            <span class="badge badge-blue" id="annCardBadge">Announcement</span>
+            <div class="sys-icon" style="background:rgba(255,255,255,0.15)">📢</div>
+            <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff">Announcements</span>
           </div>
-          <div class="sys-name" id="annCardTitle">Loading…</div>
-          <div class="sys-note" id="annCardDate">—</div>
+          <div class="sys-name" style="color:#fff">Announcements</div>
+          <div class="sys-note" style="color:#bfdbfe">Tap to read latest updates →</div>
         </a>
 
-        <a href="/pages/parking.html" class="sys-card" style="text-decoration:none;color:inherit">
+        <a href="/pages/complaints.html" class="sys-card" style="text-decoration:none;color:inherit;background:#1e3a8a;border-color:#1e40af">
           <div class="sys-top">
-            <div class="sys-icon" style="background:#fef2f2">🚗</div>
-            <span id="parkingCardBadge" class="badge badge-green">All Clear</span>
+            <div class="sys-icon" style="background:rgba(255,255,255,0.15)">💬</div>
+            <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff">Request</span>
           </div>
-          <div class="sys-name" id="parkingCardTitle">Parking</div>
-          <div class="sys-note" id="parkingCardNote">No active incidents</div>
+          <div class="sys-name" style="color:#fff">Residents Request</div>
+          <div class="sys-note" style="color:#bfdbfe">Report issue or request →</div>
         </a>
 
-        <a href="/pages/emergency.html" class="sys-card" style="text-decoration:none;color:inherit">
+        <a href="/pages/hvac.html" class="sys-card" style="text-decoration:none;color:inherit;background:#1e3a8a;border-color:#1e40af">
           <div class="sys-top">
-            <div class="sys-icon" style="background:#fef2f2">🚨</div>
-            <span class="badge badge-red">Emergency</span>
+            <div class="sys-icon" style="background:rgba(255,255,255,0.15)">❄️</div>
+            <span class="badge" id="hvacCardBadge" style="background:rgba(255,255,255,0.2);color:#fff">HVAC</span>
           </div>
-          <div class="sys-name">Emergency Contacts</div>
-          <div class="sys-note">Tap to view emergency contacts</div>
+          <div class="sys-name" style="color:#fff">HVAC Request</div>
+          <div class="sys-note" id="hvacCardNote" style="color:#bfdbfe">Request AC temperature change →</div>
         </a>
 
-        <a href="/pages/works.html" class="sys-card" style="text-decoration:none;color:inherit">
+        <a href="/pages/occupants.html" class="sys-card" style="text-decoration:none;color:inherit;background:#1e3a8a;border-color:#1e40af">
           <div class="sys-top">
-            <div class="sys-icon" style="background:#fffbeb">🔧</div>
-            <span id="worksCardBadge" class="badge badge-blue">Works</span>
+            <div class="sys-icon" style="background:rgba(255,255,255,0.15)">👥</div>
+            <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff">Directory</span>
           </div>
-          <div class="sys-name">Ongoing Works</div>
-          <div class="sys-note" id="worksCardNote">Loading…</div>
+          <div class="sys-name" style="color:#fff">Occupants</div>
+          <div class="sys-note" style="color:#bfdbfe">View residents directory →</div>
         </a>
 
       </div>
@@ -332,30 +332,6 @@ let editingCardIdx = null;
 
 async function loadOverviewCards() {
   try {
-    const { data: anns } = await supabase.from('announcements').select('*').order('created_at',{ascending:false}).limit(1);
-    if (anns && anns.length) {
-      document.getElementById('annCardTitle').textContent = anns[0].title;
-      document.getElementById('annCardDate').textContent = new Date(anns[0].created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
-      if (anns[0].pinned) document.getElementById('annCardBadge').textContent = '📌 Pinned';
-    } else {
-      document.getElementById('annCardTitle').textContent = 'No announcements yet';
-      document.getElementById('annCardDate').textContent = '—';
-    }
-  } catch(e){}
-
-  try {
-    const { data: parking } = await supabase.from('parking_reports').select('*').eq('status','active').order('created_at',{ascending:false});
-    const count = parking?.length || 0;
-    if (count > 0) {
-      const latest = parking[0];
-      document.getElementById('parkingCardBadge').className = 'badge badge-red';
-      document.getElementById('parkingCardBadge').textContent = `${count} Active`;
-      document.getElementById('parkingCardTitle').textContent = `🚨 ${latest.plate}`;
-      document.getElementById('parkingCardNote').textContent = `${latest.location} — ${latest.violation==='disabled'?'Disabled bay':latest.violation==='occupied'?"Someone's bay":latest.violation}`;
-    }
-  } catch(e){}
-
-  try {
     const { data: hvac } = await supabase.from('hvac_requests').select('*').eq('status','pending');
     const count = hvac?.length || 0;
     if (count > 0) {
@@ -363,17 +339,6 @@ async function loadOverviewCards() {
       document.getElementById('hvacCardBadge').textContent = `${count} Pending`;
       document.getElementById('hvacCardNote').textContent = `${hvac.filter(h=>h.type==='hot').length} too hot · ${hvac.filter(h=>h.type==='cold').length} too cold`;
     }
-  } catch(e){}
-
-  try {
-    const { data: works } = await supabase.from('quotes').select('id,work_status').not('work_status','is',null).is('completion_date',null).neq('status','removed');
-    const active = works || [];
-    const inProg = active.filter(w=>w.work_status==='in_progress');
-    document.getElementById('worksCardBadge').className = inProg.length ? 'badge badge-blue' : active.length ? 'badge badge-yellow' : 'badge badge-green';
-    document.getElementById('worksCardBadge').textContent = inProg.length ? `${inProg.length} In Progress` : `${active.length} Active`;
-    document.getElementById('worksCardNote').textContent = active.length
-      ? `${active.length} work${active.length!==1?'s':''} ongoing`
-      : 'All works completed ✓';
   } catch(e){}
 }
 
