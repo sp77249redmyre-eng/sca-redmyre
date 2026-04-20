@@ -268,10 +268,6 @@ async function loadEntries() {
 function render() {
   let filtered = allEntries;
 
-  if (activeFloor !== 'ALL') {
-    filtered = filtered.filter(e => e.floor === activeFloor);
-  }
-
   if (searchTerm) {
     const q = searchTerm.toLowerCase().trim();
     filtered = filtered.filter(e => {
@@ -284,6 +280,8 @@ function render() {
       ].join(' ').toLowerCase();
       return hay.includes(q);
     });
+  } else if (activeFloor !== 'ALL') {
+    filtered = filtered.filter(e => e.floor === activeFloor);
   }
 
   const results = document.getElementById('results');
@@ -346,6 +344,13 @@ document.querySelectorAll('.floor-btn').forEach(btn => {
 const searchInput = document.getElementById('searchInput');
 searchInput.addEventListener('input', e => {
   searchTerm = e.target.value;
+  if (searchTerm.trim()) {
+    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    document.querySelectorAll('.floor-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.floor === activeFloor);
+    });
+  }
   render();
 });
 
