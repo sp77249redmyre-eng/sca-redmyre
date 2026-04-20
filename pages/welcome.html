@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Redmyre House — Find Your Unit</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:#f1f5f9;
+  color:#0f172a;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:560px;margin:0 auto;min-height:100vh;background:#f1f5f9;display:flex;flex-direction:column}
+
+/* HERO */
+.hero{
+  background:linear-gradient(160deg,#0f2456 0%,#1e3a8a 60%,#2563eb 120%);
+  color:#fff;
+  padding:36px 24px 40px;
+  text-align:center;
+}
+.hero-kicker{
+  font-size:12px;letter-spacing:3px;font-weight:700;
+  color:#fbbf24;margin-bottom:10px;
+}
+.hero-title{
+  font-size:34px;font-weight:800;letter-spacing:-0.5px;line-height:1.1;
+  margin-bottom:8px;
+}
+.hero-sub{font-size:15px;color:rgba(255,255,255,0.8);font-weight:500}
+
+/* SEARCH */
+.search-wrap{padding:24px 20px 8px}
+.search-label{
+  font-size:14px;letter-spacing:2px;font-weight:800;
+  color:#475569;margin-bottom:12px;text-transform:uppercase;
+}
+.search-box{
+  display:flex;align-items:center;gap:12px;
+  background:#fff;border:2.5px solid #cbd5e1;border-radius:16px;
+  padding:20px 22px;transition:border-color 0.2s;
+}
+.search-box:focus-within{border-color:#1e3a8a}
+.search-icon{font-size:24px;flex-shrink:0}
+.search-input{
+  flex:1;border:none;outline:none;font-family:inherit;
+  font-size:22px;font-weight:600;color:#0f172a;background:transparent;
+  min-width:0;
+}
+.search-input::placeholder{color:#94a3b8;font-weight:500}
+.search-hint{font-size:14px;color:#475569;margin-top:10px;padding-left:4px;font-weight:500}
+
+/* FLOOR BUTTONS */
+.floor-section{padding:20px 20px 8px}
+.floor-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+}
+.floor-btn{
+  background:#fff;border:2.5px solid #cbd5e1;border-radius:14px;
+  padding:20px 0;text-align:center;
+  font-size:20px;font-weight:800;color:#1e3a8a;
+  font-family:inherit;cursor:pointer;transition:all 0.15s;
+}
+.floor-btn:active{transform:scale(0.96)}
+.floor-btn.active{
+  background:#1e3a8a;color:#fff;border-color:#1e3a8a;
+  box-shadow:0 4px 14px rgba(30,58,138,0.3);
+}
+
+/* RESULTS */
+.results{padding:8px 20px 20px;flex:1}
+.results-count{
+  font-size:14px;letter-spacing:2px;font-weight:800;
+  color:#475569;margin:14px 4px 14px;text-transform:uppercase;
+}
+.result-card{
+  background:#fff;border:1.5px solid #cbd5e1;border-radius:16px;
+  padding:22px 22px;margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:18px;
+}
+.result-badge{
+  background:#1e3a8a;color:#fff;
+  min-width:74px;height:74px;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;padding:0 6px;
+}
+.result-badge-unit{font-size:15px;font-weight:800;letter-spacing:-0.2px;line-height:1.1;text-align:center;white-space:nowrap}
+.result-badge-floor{font-size:11px;font-weight:800;color:#fbbf24;margin-top:5px;letter-spacing:1.2px}
+.result-info{flex:1;min-width:0;padding-top:4px}
+.result-name{
+  font-size:21px;font-weight:800;color:#0f172a;line-height:1.25;
+  margin-bottom:6px;word-break:break-word;
+}
+.result-alt{
+  font-size:16px;color:#334155;font-weight:600;
+  margin-bottom:6px;line-height:1.3;
+}
+.result-sub{font-size:14px;color:#64748b;line-height:1.45;font-weight:500}
+.no-results{
+  text-align:center;padding:40px 20px;color:#94a3b8;
+  font-size:15px;
+}
+
+/* PARKING - 크고 눈에 띄게 */
+.parking-section{padding:4px 20px 24px}
+.parking-card{
+  background:#fff;border:2.5px solid #dc2626;border-radius:18px;
+  padding:0;overflow:hidden;
+}
+.parking-warn{
+  background:#dc2626;color:#fff;
+  padding:14px 20px;text-align:center;
+  font-size:17px;font-weight:800;letter-spacing:1px;
+}
+.parking-main{
+  padding:24px 22px 22px;text-align:center;
+  border-bottom:2px solid #fef2f2;
+}
+.parking-main-icon{font-size:44px;margin-bottom:8px;line-height:1}
+.parking-main-title{
+  font-size:28px;font-weight:800;color:#0f172a;
+  letter-spacing:-0.5px;line-height:1.1;margin-bottom:4px;
+}
+.parking-main-sub{
+  font-size:17px;font-weight:600;color:#475569;
+  margin-bottom:14px;
+}
+.parking-main-badge{
+  display:inline-block;
+  background:#fbbf24;color:#0f172a;
+  padding:12px 22px;border-radius:100px;
+  font-size:18px;font-weight:800;letter-spacing:1px;
+}
+.parking-disabled{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 22px;background:#fef3c7;
+}
+.parking-disabled-icon{font-size:36px;flex-shrink:0}
+.parking-disabled-text{
+  font-size:18px;font-weight:600;color:#0f172a;line-height:1.35;
+}
+.parking-disabled-text strong{color:#b45309;font-weight:800;font-size:20px}
+
+/* FOOTER */
+.footer{
+  background:#1e3a8a;color:rgba(255,255,255,0.8);
+  padding:22px 20px;text-align:center;
+  font-size:13px;letter-spacing:1.8px;font-weight:700;
+}
+.footer strong{color:#fbbf24;font-weight:800}
+
+@media(max-width:400px){
+  .hero{padding:30px 20px 34px}
+  .hero-title{font-size:30px}
+  .floor-btn{font-size:18px;padding:18px 0}
+  .search-input{font-size:20px}
+  .result-badge{min-width:66px;height:66px}
+  .result-badge-unit{font-size:14px}
+  .result-name{font-size:19px}
+  .result-alt{font-size:15px}
+  .parking-warn{font-size:15px;padding:12px 16px}
+  .parking-main-title{font-size:24px}
+  .parking-main-sub{font-size:16px}
+  .parking-main-badge{font-size:16px;padding:11px 18px}
+  .parking-disabled-text{font-size:16px}
+  .parking-disabled-text strong{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-kicker">REDMYRE HOUSE</div>
+    <div class="hero-title">Find Your Unit</div>
+    <div class="hero-sub">9–13 Redmyre Road, Strathfield</div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-label">Search</div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input id="searchInput" class="search-input" type="search" placeholder="Unit or name..." autocomplete="off">
+    </div>
+    <div class="search-hint">e.g. "3B" or "Retina"</div>
+  </div>
+
+  <div class="floor-section">
+    <div class="search-label" style="padding:0 4px;margin-bottom:10px">Browse by Floor</div>
+    <div class="floor-grid">
+      <button class="floor-btn active" data-floor="GROUND">G</button>
+      <button class="floor-btn" data-floor="LEVEL 1">L1</button>
+      <button class="floor-btn" data-floor="LEVEL 2">L2</button>
+      <button class="floor-btn" data-floor="LEVEL 3">L3</button>
+      <button class="floor-btn" data-floor="LEVEL 4">L4</button>
+      <button class="floor-btn" data-floor="LEVEL 5">L5</button>
+      <button class="floor-btn" data-floor="LEVEL 6">L6</button>
+      <button class="floor-btn" data-floor="ALL">All</button>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="no-results">Loading…</div>
+  </div>
+
+  <div class="parking-section">
+    <div class="parking-card">
+      <div class="parking-warn">⚠️ NO VISITOR PARKING</div>
+
+      <div class="parking-main">
+        <div class="parking-main-icon">🚗</div>
+        <div class="parking-main-title">Strathfield Plaza</div>
+        <div class="parking-main-sub">Next door</div>
+        <div class="parking-main-badge">3 HOURS FREE PARKING</div>
+      </div>
+
+      <div class="parking-disabled">
+        <span class="parking-disabled-icon">♿</span>
+        <div class="parking-disabled-text">Only <strong>2 Disabled Parking</strong><br>on-site</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Managed by <strong>SCA FACILITY MANAGEMENT</strong>
+  </div>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://wunsexdnqathluplkkvo.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_6UyUhrHT3X1I02bVqwNuHQ_YQWh_NAo';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+});
+
+const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
+const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
+
+let allEntries = [];
+let activeFloor = 'GROUND';
+let searchTerm = '';
+
+async function loadEntries() {
+  try {
+    const { data, error } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
+    if (error) throw error;
+    allEntries = data || [];
+    render();
+  } catch (e) {
+    document.getElementById('results').innerHTML = '<div class="no-results">Unable to load directory. Please try again.</div>';
+  }
+}
+
+function render() {
+  let filtered = allEntries;
+
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase().trim();
+    filtered = filtered.filter(e => {
+      const hay = [
+        e.business_name || '',
+        e.display_name_alt || '',
+        e.unit_display || '',
+        e.sub_info || '',
+        e.floor || ''
+      ].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  } else if (activeFloor !== 'ALL') {
+    filtered = filtered.filter(e => e.floor === activeFloor);
+  }
+
+  const results = document.getElementById('results');
+
+  if (!filtered.length) {
+    if (searchTerm || activeFloor !== 'ALL') {
+      results.innerHTML = '<div class="no-results">No matches found.<br>Try a different search or floor.</div>';
+    } else {
+      results.innerHTML = '';
+    }
+    return;
+  }
+
+  const countLabel = searchTerm
+    ? `${filtered.length} match${filtered.length>1?'es':''} found`
+    : activeFloor !== 'ALL'
+      ? `${FLOOR_SHORT[activeFloor]} — ${filtered.length} listing${filtered.length>1?'s':''}`
+      : `${filtered.length} listing${filtered.length>1?'s':''}`;
+
+  let html = `<div class="results-count">${countLabel}</div>`;
+
+  filtered.forEach(e => {
+    const short = FLOOR_SHORT[e.floor] || '?';
+    const sub = e.sub_info ? e.sub_info.split('||')[0] : '';
+    const unit = e.unit_display || '';
+    const alt = e.display_name_alt ? `<div class="result-alt">${escapeHtml(e.display_name_alt)}</div>` : '';
+    const subHtml = sub ? `<div class="result-sub">${escapeHtml(sub)}</div>` : '';
+
+    html += `
+      <div class="result-card">
+        <div class="result-badge">
+          <div class="result-badge-unit">${escapeHtml(unit)}</div>
+          <div class="result-badge-floor">${short}</div>
+        </div>
+        <div class="result-info">
+          <div class="result-name">${escapeHtml(e.business_name || '')}</div>
+          ${alt}
+          ${subHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  results.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.querySelectorAll('.floor-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeFloor = btn.dataset.floor;
+    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+const searchInput = document.getElementById('searchInput');
+searchInput.addEventListener('input', e => {
+  searchTerm = e.target.value;
+  if (searchTerm.trim()) {
+    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    document.querySelectorAll('.floor-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.floor === activeFloor);
+    });
+  }
+  render();
+});
+
+loadEntries();
+</script>
+
+</body>
+</html>
