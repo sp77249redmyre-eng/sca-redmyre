@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   let query = supabase
     .from('push_subscriptions')
-    .select('id, user_id, subscription');
+    .select('user_id, subscription');
 
   if (user_id) {
     query = query.eq('user_id', user_id);
@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
     } catch (err) {
       console.log('PUSH ERROR:', err.statusCode, err.message, err.body);
       if (err.statusCode === 410 || err.statusCode === 404) {
-        try { await supabase.from('push_subscriptions').delete().eq('id', row.id); } catch {}
+        try { await supabase.from('push_subscriptions').delete().eq('user_id', row.user_id); } catch {}
       }
     }
   }
