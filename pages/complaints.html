@@ -197,11 +197,11 @@
         </button>
         <button type="button" id="cpFileBtn" style="flex:1;padding:12px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">
           <span style="font-size:22px">📁</span>
-          <span>Browse File</span>
+          <span>Photo / PDF</span>
         </button>
       </div>
       <input type="file" id="complaintPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
-      <input type="file" id="complaintPhotoInputFile" accept="image/*" multiple style="display:none">
+      <input type="file" id="complaintPhotoInputFile" accept="image/*,application/pdf" multiple style="display:none">
       <div class="photo-preview-grid" id="photoPreviewGrid"></div>
     </div>
     <div class="modal-field">
@@ -240,7 +240,7 @@
     </div>
 
     <div id="detailPhotosWrap" style="padding:12px 24px;border-bottom:1px solid var(--border-light);display:none;flex-shrink:0">
-      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Photos</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Attachments</div>
       <div class="photo-gallery" id="detailPhotoGallery"></div>
     </div>
 
@@ -475,17 +475,26 @@ window.previewPhotos = (files) => {
   const grid = document.getElementById('photoPreviewGrid');
   for (const file of files) {
     if (file.size > 5*1024*1024) { showToast(`${file.name} is too large (max 5MB)`, true); continue; }
+    const isPdf = file.type === 'application/pdf';
+    const isImg = file.type.startsWith('image/');
+    if (!isPdf && !isImg) { showToast(`${file.name}: only images or PDF allowed`, true); continue; }
     pendingPhotos.push(file);
-    const reader = new FileReader();
-    reader.onload = e => {
-      const idx = pendingPhotos.length - 1;
-      const div = document.createElement('div');
-      div.className = 'photo-preview-item';
-      div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" data-idx="${idx}">✕</div>`;
+    const idx = pendingPhotos.length - 1;
+    const div = document.createElement('div');
+    div.className = 'photo-preview-item';
+    if (isPdf) {
+      div.innerHTML = `<div style="width:100%;height:100%;background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#991b1b;padding:4px;text-align:center;word-break:break-all;line-height:1.2"><div style="font-size:22px;margin-bottom:2px">📄</div><div>PDF</div></div><div class="rm-photo" data-idx="${idx}">✕</div>`;
       div.querySelector('.rm-photo').addEventListener('click', () => removePreviewPhoto(idx));
       grid.appendChild(div);
-    };
-    reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = e => {
+        div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" data-idx="${idx}">✕</div>`;
+        div.querySelector('.rm-photo').addEventListener('click', () => removePreviewPhoto(idx));
+        grid.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    }
   }
   document.getElementById('complaintPhotoInputCamera').value = '';
   document.getElementById('complaintPhotoInputFile').value = '';
@@ -496,15 +505,22 @@ window.removePreviewPhoto = (idx) => {
   const grid = document.getElementById('photoPreviewGrid');
   grid.innerHTML = '';
   pendingPhotos.forEach((f, i) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const div = document.createElement('div');
-      div.className = 'photo-preview-item';
-      div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" data-idx="${i}">✕</div>`;
+    const isPdf = f.type === 'application/pdf';
+    const div = document.createElement('div');
+    div.className = 'photo-preview-item';
+    if (isPdf) {
+      div.innerHTML = `<div style="width:100%;height:100%;background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#991b1b;padding:4px;text-align:center;word-break:break-all;line-height:1.2"><div style="font-size:22px;margin-bottom:2px">📄</div><div>PDF</div></div><div class="rm-photo" data-idx="${i}">✕</div>`;
       div.querySelector('.rm-photo').addEventListener('click', () => removePreviewPhoto(i));
       grid.appendChild(div);
-    };
-    reader.readAsDataURL(f);
+    } else {
+      const reader = new FileReader();
+      reader.onload = e => {
+        div.innerHTML = `<img src="${e.target.result}"><div class="rm-photo" data-idx="${i}">✕</div>`;
+        div.querySelector('.rm-photo').addEventListener('click', () => removePreviewPhoto(i));
+        grid.appendChild(div);
+      };
+      reader.readAsDataURL(f);
+    }
   });
 };
 
@@ -580,10 +596,15 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
       }).select().single();
       if (error) throw error;
       if (pendingPhotos.length > 0) {
+        const failedFiles = [];
         for (const file of pendingPhotos) {
           const ext = file.name.split('.').pop();
           const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
-          await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
+          const { error: upErr } = await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
+          if (upErr) failedFiles.push(file.name);
+        }
+        if (failedFiles.length > 0) {
+          showToast(`Upload failed: ${failedFiles.join(', ')}`, true);
         }
       }
       closeModal('complaintModal');
@@ -695,7 +716,12 @@ window.openDetail = async (id) => {
       photosWrap.style.display = 'block';
       gallery.innerHTML = files.map(f => {
         const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
-        return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
+        const url = urlData.publicUrl;
+        const isPdf = f.name.toLowerCase().endsWith('.pdf');
+        if (isPdf) {
+          return `<div class="photo-gallery-item" onclick="window.open('${url}','_blank')" style="background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center"><div style="font-size:32px;margin-bottom:4px">📄</div><div style="font-size:10px;color:#991b1b;word-break:break-all;line-height:1.2">PDF</div></div>`;
+        }
+        return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
       }).join('');
     } else { photosWrap.style.display = 'none'; }
   } else { photosWrap.style.display = 'none'; }
