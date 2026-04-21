@@ -47,6 +47,9 @@
 .photo-lightbox.open{display:flex}
 .photo-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain}
 .photo-lightbox-close{position:fixed;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1001}
+.pdf-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;align-items:center;justify-content:center}
+.pdf-lightbox.open{display:flex}
+.pdf-lightbox iframe{width:90vw;height:90vh;border:none;border-radius:8px;background:#fff}
 @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .ct thead{display:none}
@@ -270,6 +273,11 @@
 <div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
   <div class="photo-lightbox-close" onclick="closeLightbox()">✕</div>
   <img id="lightboxImg" src="" alt="">
+</div>
+
+<div class="pdf-lightbox" id="pdfLightbox" onclick="if(event.target.id==='pdfLightbox')closePdfLightbox()">
+  <div class="photo-lightbox-close" onclick="closePdfLightbox()">✕</div>
+  <iframe id="pdfLightboxFrame" src=""></iframe>
 </div>
 
 <div class="modal-backdrop" id="editMsgModal">
@@ -719,7 +727,7 @@ window.openDetail = async (id) => {
         const url = urlData.publicUrl;
         const isPdf = f.name.toLowerCase().endsWith('.pdf');
         if (isPdf) {
-          return `<div class="photo-gallery-item" onclick="window.open('${url}','_blank')" style="background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center"><div style="font-size:32px;margin-bottom:4px">📄</div><div style="font-size:10px;color:#991b1b;word-break:break-all;line-height:1.2">PDF</div></div>`;
+          return `<div class="photo-gallery-item" onclick="openPdfLightbox('${url}')" style="background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center"><div style="font-size:32px;margin-bottom:4px">📄</div><div style="font-size:10px;color:#991b1b;word-break:break-all;line-height:1.2">PDF</div></div>`;
         }
         return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
       }).join('');
@@ -822,6 +830,41 @@ document.getElementById('deleteComplaintBtn').addEventListener('click', async ()
 
 window.openLightbox  = (url) => { document.getElementById('lightboxImg').src = url; document.getElementById('photoLightbox').classList.add('open'); };
 window.closeLightbox = ()    => document.getElementById('photoLightbox').classList.remove('open');
+window.openPdfLightbox  = (url) => { document.getElementById('pdfLightboxFrame').src = url; document.getElementById('pdfLightbox').classList.add('open'); };
+window.closePdfLightbox = ()    => { document.getElementById('pdfLightbox').classList.remove('open'); document.getElementById('pdfLightboxFrame').src = ''; };
+
+// Backdrop click to close — with unsaved content warning
+const ADMIN_SIGNATURE = '\n\nJacob Kim\nBuilding Manager\nSCA Facility Management Pty Ltd';
+
+function handleBackdropClick(e, modalId, checkFn) {
+  if (e.target.id !== modalId) return;
+  if (checkFn()) {
+    if (!confirm('You have unsaved content. Close anyway?')) return;
+  }
+  closeModal(modalId);
+}
+
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  handleBackdropClick(e, 'detailModal', () => {
+    const v = (document.getElementById('adminResponse').value || '').trim();
+    const sig = ADMIN_SIGNATURE.trim();
+    return v.length > 0 && v !== sig;
+  });
+});
+
+document.getElementById('complaintModal').addEventListener('click', (e) => {
+  handleBackdropClick(e, 'complaintModal', () => {
+    const t = (document.getElementById('complaintTitle').value || '').trim();
+    const b = (document.getElementById('complaintBody').value || '').trim();
+    return t.length > 0 || b.length > 0;
+  });
+});
+
+document.getElementById('editMsgModal').addEventListener('click', (e) => {
+  handleBackdropClick(e, 'editMsgModal', () => {
+    return (document.getElementById('editMsgText').value || '').trim().length > 0;
+  });
+});
 
 window.openEditComplaint = () => {
   const c = allComplaints.find(x => x.id === currentComplaintId);
