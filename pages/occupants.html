@@ -64,21 +64,78 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  transition: all 0.15s;
+  max-width: 960px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-header {
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  transition: all 0.15s;
-  max-width: 960px;
+  cursor: pointer;
+  user-select: none;
 }
-.occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-chev {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  margin-left: 6px;
+}
+.occ-item.open .occ-chev { transform: rotate(180deg); }
+.occ-body {
+  display: none;
+  padding: 0 20px 18px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.occ-item.open .occ-body { display: block; }
+.occ-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.occ-row:last-of-type { border-bottom: none; }
+.occ-row-label { color: var(--muted); font-weight: 500; }
+.occ-row-value { color: var(--text); word-break: break-word; }
+.occ-vehicle-pill {
+  display: inline-block;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+.occ-edit-btn {
+  margin-top: 14px;
+  padding: 8px 16px;
+  background: var(--blue-600);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.occ-edit-btn:hover { background: var(--blue-700); }
 .occ-unit {
   font-size: 15px;
   font-weight: 700;
   color: var(--blue-600);
   min-width: 50px;
 }
-.occ-info { flex: 1; }
+.occ-info { flex: 1; min-width: 0; }
 .occ-name {
   font-size: 14px;
   font-weight: 600;
@@ -100,10 +157,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-}
-.occ-actions {
-  display: flex;
-  gap: 6px;
 }
 
 /* Ground Floor Special */
@@ -432,10 +485,11 @@
 @media (max-width: 768px) {
   .suite-tabs { gap: 4px; }
   .suite-tab { padding: 6px 12px; font-size: 12px; }
-  .occ-item { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+  .occ-header { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
   .occ-unit { min-width: auto; }
   .occ-meta { flex-wrap: wrap; }
-  .occ-actions { width: 100%; justify-content: flex-end; }
+  .occ-row { grid-template-columns: 1fr; gap: 4px; }
+  .occ-row-label { font-size: 11px; }
   .modal-info-grid { grid-template-columns: 1fr; gap: 8px; }
   .modal-info-label { text-align: left; }
 }
@@ -745,32 +799,60 @@ function renderOccupants() {
   }
   
   list.innerHTML = filtered.map(o => {
-    const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
+    const vehicles = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
+    const vehicleCount = vehicles.length;
     const emails = [o.primary_email, o.business_email].filter(e => e).length;
     const isGround = o.level === 'Ground';
-    
+    const canEdit = role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit);
+    const canSeeContact = role === 'admin' || (role === 'owner' && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit);
+
+    const bodyRows = [];
+    bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Business</div><div class="occ-row-value">${o.business_name || '—'}</div></div>`);
+    bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Contact</div><div class="occ-row-value">${o.contact_person || '—'}${o.is_committee ? ' ⭐ Committee' : ''}</div></div>`);
+    if (o.committee_role) {
+      bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Role</div><div class="occ-row-value">${o.committee_role}</div></div>`);
+    }
+    if (canSeeContact) {
+      bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Primary Email</div><div class="occ-row-value">${o.primary_email || '—'}</div></div>`);
+      if (o.business_email) {
+        bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Business Email</div><div class="occ-row-value">${o.business_email}</div></div>`);
+      }
+      bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Phone</div><div class="occ-row-value">${o.phone || '—'}</div></div>`);
+    }
+    const vehicleHtml = vehicles.length ? vehicles.map(v => `<span class="occ-vehicle-pill">🚗 ${v}</span>`).join('') : '—';
+    bodyRows.push(`<div class="occ-row"><div class="occ-row-label">Vehicles</div><div class="occ-row-value">${vehicleHtml}</div></div>`);
+
     return `
-      <div class="occ-item ${isGround ? 'ground-floor' : ''}">
-        <div class="occ-unit">${o.unit}</div>
-        <div class="occ-info">
-          <div class="occ-name">
-            ${o.business_name || 'Vacant'}
-            ${o.is_committee ? '<span class="committee-star" title="Committee Member">⭐</span>' : ''}
+      <div class="occ-item ${isGround ? 'ground-floor' : ''}" id="occ-${o.id}">
+        <div class="occ-header" onclick="toggleOcc('${o.id}')">
+          <div class="occ-unit">${o.unit}</div>
+          <div class="occ-info">
+            <div class="occ-name">
+              ${o.business_name || 'Vacant'}
+              ${o.is_committee ? '<span class="committee-star" title="Committee Member">⭐</span>' : ''}
+            </div>
+            ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
           </div>
-          ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
+          <div class="occ-meta">
+            <div class="occ-meta-item">📧 ${emails}</div>
+            <div class="occ-meta-item">🚗 ${vehicleCount}</div>
+          </div>
+          <div class="occ-chev">▼</div>
         </div>
-        <div class="occ-meta">
-          <div class="occ-meta-item">📧 ${emails}</div>
-          <div class="occ-meta-item">🚗 ${vehicles}</div>
-        </div>
-        <div class="occ-actions">
-          <button class="btn-secondary" onclick="openViewModal('${o.id}')">👁️ View</button>
-          ${(role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit)) ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
+        <div class="occ-body">
+          ${bodyRows.join('')}
+          ${canEdit ? `<button class="occ-edit-btn" onclick="event.stopPropagation(); openEditModal('${o.id}')">✏️ Edit Information</button>` : ''}
         </div>
       </div>
     `;
   }).join('');
 }
+
+// Accordion toggle
+window.toggleOcc = (id) => {
+  const el = document.getElementById('occ-' + id);
+  if (el) el.classList.toggle('open');
+};
 
 // Suite tab click
 document.querySelectorAll('.suite-tab').forEach(tab => {
