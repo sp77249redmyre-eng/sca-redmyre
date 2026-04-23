@@ -245,11 +245,20 @@
 .section-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 .cleanup-footer { font-size: 11px; color: var(--muted); margin-top: 10px; }
 
+.qr-range-btn { transition: all 0.15s; }
+.qr-range-btn.active {
+  background: var(--blue-800) !important;
+  color: #fff !important;
+  border-color: var(--blue-800) !important;
+}
+
 @media(max-width:768px) {
   .sys-grid, .sys-grid-3 { grid-template-columns: 1fr; }
   .card.full { grid-column: auto; }
   .health-grid { grid-template-columns: 1fr 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
+  #qrLiftEntry, #qrSignboardEntry { }
+  .card-body > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
 }
 </style>
 </head>
@@ -526,6 +535,65 @@
 
 
     <!-- Row 5: Junk Cleanup (full width) -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon blue">📊</div>
+        <div>
+          <div class="card-title">QR Scan Analytics</div>
+          <div class="card-desc">Track QR code usage from lift and signboard</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn-secondary qr-range-btn active" data-days="7" style="font-size:12px;padding:6px 12px">7d</button>
+          <button class="btn-secondary qr-range-btn" data-days="30" style="font-size:12px;padding:6px 12px">30d</button>
+          <button class="btn-secondary qr-range-btn" data-days="90" style="font-size:12px;padding:6px 12px">90d</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="border:1px solid var(--border);border-radius:10px;padding:16px;background:#f8fafc">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="font-size:20px">🛗</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Lift QR</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:12px;color:var(--muted)">Total Entries</span>
+                <span style="font-size:18px;font-weight:700;color:var(--blue-800)" id="qrLiftEntry">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-left:12px;border-left:2px solid var(--blue-400)">
+                <span style="font-size:12px;color:var(--muted)">→ Resident</span>
+                <span style="font-size:15px;font-weight:600;color:var(--text)" id="qrLiftResident">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-left:12px;border-left:2px solid var(--blue-400)">
+                <span style="font-size:12px;color:var(--muted)">→ Visitor</span>
+                <span style="font-size:15px;font-weight:600;color:var(--text)" id="qrLiftVisitor">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px dashed var(--border);margin-top:4px">
+                <span style="font-size:11px;color:var(--muted)">Drop-off</span>
+                <span style="font-size:12px;font-weight:600;color:var(--muted)" id="qrLiftDropoff">—</span>
+              </div>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:16px;background:#f8fafc">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="font-size:20px">📺</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Signboard QR</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:12px;color:var(--muted)">Total Entries</span>
+                <span style="font-size:18px;font-weight:700;color:var(--blue-800)" id="qrSignboardEntry">—</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);padding-top:8px;line-height:1.5">
+                Direct visitor page access from signboard QR code scans
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cleanup-footer" id="qrLastUpdate" style="margin-top:12px">Last updated: —</div>
+      </div>
+    </div>
+
     <div class="card full" style="margin-bottom:16px">
       <div class="card-header">
         <div class="card-icon red">🗑️</div>
@@ -1138,6 +1206,56 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
 });
 
 
+// ─── QR ANALYTICS ────────────────────────────────────────────
+let qrCurrentDays = 7;
+
+async function loadQRAnalytics(days) {
+  qrCurrentDays = days;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    const { data, error } = await supabase
+      .from('qr_analytics')
+      .select('event_type')
+      .gte('created_at', since);
+
+    if (error) throw error;
+
+    const counts = { lift_entry: 0, lift_resident: 0, lift_visitor: 0, signboard_entry: 0 };
+    (data || []).forEach(r => {
+      if (counts[r.event_type] !== undefined) counts[r.event_type]++;
+    });
+
+    document.getElementById('qrLiftEntry').textContent = counts.lift_entry;
+    document.getElementById('qrLiftResident').textContent = counts.lift_resident;
+    document.getElementById('qrLiftVisitor').textContent = counts.lift_visitor;
+    document.getElementById('qrSignboardEntry').textContent = counts.signboard_entry;
+
+    const decided = counts.lift_resident + counts.lift_visitor;
+    const dropoff = counts.lift_entry - decided;
+    const dropoffPct = counts.lift_entry > 0 ? Math.round((dropoff / counts.lift_entry) * 100) : 0;
+    document.getElementById('qrLiftDropoff').textContent = dropoff > 0
+      ? `${dropoff} (${dropoffPct}%)`
+      : '0';
+
+    document.getElementById('qrLastUpdate').textContent =
+      `Last updated: ${new Date().toLocaleString()} · Last ${days} days`;
+  } catch (e) {
+    document.getElementById('qrLiftEntry').textContent = '—';
+    document.getElementById('qrLiftResident').textContent = '—';
+    document.getElementById('qrLiftVisitor').textContent = '—';
+    document.getElementById('qrSignboardEntry').textContent = '—';
+  }
+}
+
+document.querySelectorAll('.qr-range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.qr-range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadQRAnalytics(parseInt(btn.dataset.days));
+  });
+});
+
 // ─── AUDIT LOG CLEANUP ───────────────────────────────────────
 // ─── INIT ─────────────────────────────────────────────────────
 await Promise.all([
@@ -1146,6 +1264,7 @@ await Promise.all([
   loadPushStats(),
   loadStorageBuckets(),
   loadCacheInfo(),
+  loadQRAnalytics(7),
 ]);
 </script>
 </body>
