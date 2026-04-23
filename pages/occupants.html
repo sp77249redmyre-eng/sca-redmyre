@@ -834,12 +834,9 @@ function renderOccupants() {
     filtered = visibleOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1');
   } else if (currentSuite === 'External') {
     filtered = visibleOccupants.filter(o => o.level === 'External');
-  } else if (currentSuite && currentSuite.startsWith('Level ')) {
-    // "Level 1" → "1"
-    const levelNum = currentSuite.replace('Level ', '');
-    filtered = visibleOccupants.filter(o => o.level === levelNum);
   } else {
-    filtered = visibleOccupants.filter(o => o.suite === currentSuite);
+    // "Level 1" ~ "Level 6" - DB 값과 직접 매칭
+    filtered = visibleOccupants.filter(o => o.level === currentSuite);
   }
   
   if (!filtered.length) {
