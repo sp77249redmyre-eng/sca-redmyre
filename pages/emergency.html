@@ -40,6 +40,8 @@
 .person-card.purple{border-top:3px solid var(--purple)}
 .person-card.orange{border-top:3px solid var(--orange)}
 .person-card.green{border-top:3px solid #16a34a}
+.person-card.clickable{cursor:pointer;transition:transform 0.15s, box-shadow 0.15s, border-color 0.15s}
+.person-card.clickable:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(22,163,74,0.15);border-color:#86efac}
 .committee-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 @media(max-width:900px){.committee-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.committee-grid{grid-template-columns:1fr}}
@@ -399,6 +401,28 @@ async function loadCommitteeMembers() {
     return (roleOrder[a.committee_role] || 99) - (roleOrder[b.committee_role] || 99);
   });
 
+  // 대표 유닛 매핑 (사장님 지정)
+  const PRIMARY_UNIT = {
+    'Jimmy Gupta': '6H',
+    'Michael': '5G',
+    'Sudesh': '5B',
+    'Niranjan': '6B',
+    'Sarah': '1A',
+    'Laura': '4A',
+    'Eva': '4D'
+  };
+  // Michelle는 "Michelle on behalf of Dr. Jung Sook Kim" 같은 긴 이름이라 startsWith로 처리
+  function getPrimaryUnit(contactPerson, units) {
+    for (const [key, val] of Object.entries(PRIMARY_UNIT)) {
+      if (contactPerson.toLowerCase().startsWith(key.toLowerCase())) return val;
+    }
+    if (contactPerson.toLowerCase().includes('michelle')) return '3H';
+    return units[0]; // 못 찾으면 첫 번째
+  }
+
+  // 권한: admin/observer/committee만 카드 클릭 → Occupants로 이동
+  const canNavigate = ['admin', 'observer', 'committee'].includes(role);
+
   // 이름 분리: "Michelle on behalf of Dr. Jung Sook Kim" → "Michelle" + "on behalf of Dr. Jung Sook Kim"
   function splitName(name) {
     const match = name.match(/^(.+?)\s+(on behalf of\s+.+)$/i);
@@ -432,8 +456,12 @@ async function loadCommitteeMembers() {
     const nameHtml = nameParts.sub 
       ? `<div class="person-name">${nameParts.main}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3">${nameParts.sub}</div>`
       : `<div class="person-name">${nameParts.main}</div>`;
+    const primaryUnit = getPrimaryUnit(m.contact_person, m.units);
+    const clickableAttr = canNavigate 
+      ? `class="person-card green clickable" onclick="navigateToOccupant('${primaryUnit}', event)"` 
+      : `class="person-card green"`;
     return `
-      <div class="person-card green">
+      <div ${clickableAttr}>
         <div class="person-header">
           <div class="person-av av-green">${getInitials(m.contact_person)}</div>
           <div>
@@ -444,15 +472,22 @@ async function loadCommitteeMembers() {
         <div class="person-unit-info">${units}</div>
         ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}
         ${phone ? `<div class="person-phone" style="font-size:15px">${phone}</div>` : ''}
-        ${email ? `<a class="person-email" href="mailto:${email}">${email}</a>` : ''}
+        ${email ? `<a class="person-email" href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>` : ''}
         <div class="person-actions">
-          ${phone ? `<a class="call-btn btn-green" href="tel:${phone.replace(/\s/g,'')}">📞 Call</a>` : '<span></span>'}
-          ${email ? `<a class="call-btn btn-email" href="mailto:${email}">✉️ Email</a>` : '<span></span>'}
+          ${phone ? `<a class="call-btn btn-green" href="tel:${phone.replace(/\s/g,'')}" onclick="event.stopPropagation()">📞 Call</a>` : '<span></span>'}
+          ${email ? `<a class="call-btn btn-email" href="mailto:${email}" onclick="event.stopPropagation()">✉️ Email</a>` : '<span></span>'}
         </div>
       </div>
     `;
   }).join('');
 }
+
+// 카드 클릭 시 Occupants 페이지로 이동 (권한 있는 유저만)
+window.navigateToOccupant = function(unit, event) {
+  // 버튼 클릭 시 카드 클릭 안 되게
+  if (event.target.closest('a, button')) return;
+  window.location.href = '/pages/occupants.html?unit=' + encodeURIComponent(unit);
+};
 
 await renderManagerCard();
 await loadCommitteeMembers();
