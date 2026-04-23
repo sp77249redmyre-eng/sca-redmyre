@@ -907,7 +907,7 @@ function renderOccupants() {
             </div>
             <div class="occ-field full">
               <div class="occ-field-label">License Plates</div>
-              <div class="occ-field-value ${plates.length ? '' : 'empty'}">${plates.length ? plates.map(p => `<span style="display:inline-block;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;margin-right:6px;font-family:monospace;font-weight:700;font-size:12px">${p}</span>`).join('') : 'No vehicles registered'}</div>
+              <div class="occ-field-value ${plates.length ? '' : 'empty'}">${plates.length ? `<div class="plate-badges">${plates.map(p => `<span class="plate-badge">${p}</span>`).join('')}</div>` : 'No vehicles registered'}</div>
             </div>
             ${o.is_committee ? `
             <div class="occ-field full">
@@ -925,12 +925,17 @@ function renderOccupants() {
   }).join('');
 }
 
-// 아코디언 토글 (여러 개 동시 열기 가능)
+// 아코디언 토글 (하나만 열림 - 다른 카드 열면 자동 닫힘)
 window.toggleOccAccordion = function(id, event) {
   // Edit 버튼 등 내부 버튼 클릭 시 토글 안 함
   if (event.target.closest('.occ-edit-btn, a')) return;
   const item = document.querySelector(`.occ-item[data-id="${id}"]`);
-  if (item) item.classList.toggle('expanded');
+  if (!item) return;
+  const wasExpanded = item.classList.contains('expanded');
+  // 모든 카드 닫기
+  document.querySelectorAll('.occ-item.expanded').forEach(el => el.classList.remove('expanded'));
+  // 클릭한 카드가 닫혀있었으면 열기 (열려있었으면 그냥 닫힘)
+  if (!wasExpanded) item.classList.add('expanded');
 };
 
 // Suite tab click
