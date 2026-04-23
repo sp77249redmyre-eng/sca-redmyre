@@ -209,14 +209,16 @@ body{
   <div id="langMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:180px;max-height:320px;overflow-y:auto;font-family:system-ui,sans-serif"></div>
 </div>
 
-<!-- Hidden Google Translate (off-screen but functional) -->
-<div id="google_translate_element" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"></div>
+<!-- Google Translate hidden container -->
+<div id="google_translate_element" style="position:fixed;top:-1000px;left:-1000px;opacity:0;pointer-events:none"></div>
 
 <style>
-.goog-te-banner-frame{display:none !important}
-body{top:0 !important;position:static !important}
+.goog-te-banner-frame.skiptranslate{display:none !important}
+.goog-te-gadget-simple{display:none}
+body{top:0 !important}
 .goog-tooltip,.goog-tooltip:hover{display:none !important}
 .goog-text-highlight{background:none !important;box-shadow:none !important}
+font font{background:transparent !important;box-shadow:none !important}
 .lang-option{padding:10px 14px;cursor:pointer;font-size:13px;color:#0f172a;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;transition:background 0.1s}
 .lang-option:hover{background:#f8fafc}
 .lang-option:last-child{border-bottom:none}
@@ -248,16 +250,25 @@ function googleTranslateElementInit(){
   new google.translate.TranslateElement({
     pageLanguage:'en',
     includedLanguages:LANGS.map(function(l){return l.code}).join(','),
-    layout:google.translate.TranslateElement.InlineLayout.SIMPLE,
     autoDisplay:false
   },'google_translate_element');
-  renderLangMenu();
 }
 
-function renderLangMenu(){
+function setCookie(name, value){
+  var hostname = window.location.hostname;
+  document.cookie = name + '=' + value + ';path=/';
+  document.cookie = name + '=' + value + ';path=/;domain=' + hostname;
+  var parts = hostname.split('.');
+  if(parts.length > 1){
+    document.cookie = name + '=' + value + ';path=/;domain=.' + parts.slice(-2).join('.');
+  }
+}
+
+function renderLangMenu(currentCode){
   var menu = document.getElementById('langMenu');
   menu.innerHTML = LANGS.map(function(l){
-    return '<div class="lang-option" data-code="'+l.code+'" onclick="selectLang(\''+l.code+'\',\''+l.label+'\')"><span class="lang-flag">'+l.flag+'</span><span>'+l.name+'</span></div>';
+    var active = l.code === currentCode ? ' active' : '';
+    return '<div class="lang-option'+active+'" data-code="'+l.code+'" onclick="selectLang(\''+l.code+'\',\''+l.label+'\')"><span class="lang-flag">'+l.flag+'</span><span>'+l.name+'</span></div>';
   }).join('');
 }
 
@@ -266,23 +277,25 @@ function toggleLangMenu(){
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 
-function waitForCombo(callback, tries){
-  tries = tries || 0;
-  var combo = document.querySelector('#google_translate_element select.goog-te-combo');
-  if(combo){ callback(combo); return; }
-  if(tries > 40) return;
-  setTimeout(function(){ waitForCombo(callback, tries+1); }, 100);
-}
-
 function selectLang(code, label){
-  waitForCombo(function(combo){
-    combo.value = code;
-    combo.dispatchEvent(new Event('change'));
-  });
+  if(code === 'en'){
+    setCookie('googtrans', '');
+  } else {
+    setCookie('googtrans', '/en/' + code);
+  }
   document.getElementById('langBtnLabel').textContent = label;
   document.getElementById('langMenu').style.display = 'none';
-  document.querySelectorAll('.lang-option').forEach(function(o){o.classList.toggle('active', o.dataset.code === code)});
+  localStorage.setItem('selectedLang', code);
+  localStorage.setItem('selectedLangLabel', label);
+  window.location.reload();
 }
+
+(function initLang(){
+  var saved = localStorage.getItem('selectedLang') || 'en';
+  var label = localStorage.getItem('selectedLangLabel') || 'EN';
+  document.getElementById('langBtnLabel').textContent = label;
+  renderLangMenu(saved);
+})();
 
 document.addEventListener('click', function(e){
   if(!document.getElementById('langSelector').contains(e.target)){
