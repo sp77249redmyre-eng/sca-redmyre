@@ -804,7 +804,19 @@ async function loadOccupants() {
     return;
   }
   
-  allOccupants = data || [];
+  let combined = data || [];
+
+  // owner/tenant: 다른 유닛도 보이게 하려면 public 함수로 보충
+  if (['owner','tenant'].includes(role)) {
+    const { data: publicData } = await supabase.rpc('get_all_occupants_public');
+    if (publicData) {
+      const myIds = new Set(combined.map(o => o.id));
+      const extras = publicData.filter(p => !myIds.has(p.id));
+      combined = [...combined, ...extras];
+    }
+  }
+
+  allOccupants = combined;
 
   // profiles email → role 맵 생성
   const { data: profilesData } = await supabase.from('profiles').select('email, role');
