@@ -170,8 +170,8 @@
       </div>
     </div>
 
-    <!-- CONTRACTORS (admin only) -->
-    <div id="contractorSection" style="display:none">
+    <!-- CONTRACTORS -->
+    <div id="contractorSection">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="section-hdr" style="margin-bottom:0">Building Contractors</div>
         <button class="btn-primary" id="addContractorBtn" style="display:none">+ Add</button>
@@ -279,10 +279,7 @@ function getServiceIcon(service) {
 
 let contractorsData = [];
 
-// admin/committee/observer만 contractor 섹션 표시
-if (['admin','committee','observer'].includes(role)) {
-  document.getElementById('contractorSection').style.display = 'block';
-}
+// 모두에게 contractor 섹션 표시 (Add/Edit는 admin만)
 if (role === 'admin') {
   document.getElementById('addContractorBtn').style.display = 'inline-flex';
 }
@@ -375,10 +372,7 @@ if (halilEmailBtn) { halilEmailBtn.href = 'mailto:' + _h; }
 
 // ── COMMITTEE MEMBERS 로드 (전체 입주자 공개) ──
 async function loadCommitteeMembers() {
-  const { data, error } = await supabase
-    .from('occupants')
-    .select('unit, contact_person, committee_role, business_name, primary_email, phone')
-    .eq('is_committee', true);
+  const { data, error } = await supabase.rpc('get_committee_members');
 
   const grid = document.getElementById('committeeGrid');
   if (error || !data || !data.length) {
