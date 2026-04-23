@@ -199,24 +199,89 @@ body{
 </head>
 <body>
 
-<!-- Google Translate Widget -->
-<div id="google_translate_element" style="position:fixed;top:12px;right:12px;z-index:9999;background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.15);padding:4px 8px"></div>
+<!-- Custom Language Selector -->
+<div id="langSelector" style="position:fixed;top:12px;right:12px;z-index:9999">
+  <button id="langBtn" onclick="toggleLangMenu()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.15);padding:8px 12px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:6px">
+    <span style="font-size:14px">🌐</span>
+    <span id="langBtnLabel">EN</span>
+    <span style="font-size:10px;color:#64748b">▼</span>
+  </button>
+  <div id="langMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:180px;max-height:320px;overflow-y:auto;font-family:system-ui,sans-serif"></div>
+</div>
+
+<!-- Hidden Google Translate (functional backend) -->
+<div id="google_translate_element" style="position:absolute;left:-9999px;top:-9999px;visibility:hidden"></div>
+
 <style>
 .goog-te-banner-frame{display:none !important}
-body{top:0 !important}
-.goog-logo-link,.goog-te-gadget span{display:none !important}
-.goog-te-gadget{font-size:0 !important;color:transparent !important}
-.goog-te-gadget .goog-te-combo{margin:0 !important;padding:6px 8px !important;border:1px solid #e2e8f0 !important;border-radius:6px !important;font-size:13px !important;font-family:'DM Sans',system-ui,sans-serif !important;color:#0f172a !important;background:#fff !important;cursor:pointer !important}
+body{top:0 !important;position:static !important}
+.goog-tooltip,.goog-tooltip:hover{display:none !important}
+.goog-text-highlight{background:none !important;box-shadow:none !important}
+.lang-option{padding:10px 14px;cursor:pointer;font-size:13px;color:#0f172a;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;transition:background 0.1s}
+.lang-option:hover{background:#f8fafc}
+.lang-option:last-child{border-bottom:none}
+.lang-option.active{background:#eff6ff;color:#1e3a8a;font-weight:600}
+.lang-flag{font-size:16px;width:22px}
 </style>
+
 <script>
+var LANGS = [
+  {code:'en', label:'EN', flag:'🇺🇸', name:'English'},
+  {code:'ko', label:'KO', flag:'🇰🇷', name:'한국어'},
+  {code:'zh-CN', label:'中', flag:'🇨🇳', name:'中文 (简体)'},
+  {code:'zh-TW', label:'中', flag:'🇹🇼', name:'中文 (繁體)'},
+  {code:'ja', label:'JA', flag:'🇯🇵', name:'日本語'},
+  {code:'vi', label:'VI', flag:'🇻🇳', name:'Tiếng Việt'},
+  {code:'hi', label:'HI', flag:'🇮🇳', name:'हिन्दी'},
+  {code:'ar', label:'AR', flag:'🇸🇦', name:'العربية'},
+  {code:'es', label:'ES', flag:'🇪🇸', name:'Español'},
+  {code:'fr', label:'FR', flag:'🇫🇷', name:'Français'},
+  {code:'de', label:'DE', flag:'🇩🇪', name:'Deutsch'},
+  {code:'it', label:'IT', flag:'🇮🇹', name:'Italiano'},
+  {code:'pt', label:'PT', flag:'🇵🇹', name:'Português'},
+  {code:'ru', label:'RU', flag:'🇷🇺', name:'Русский'},
+  {code:'th', label:'TH', flag:'🇹🇭', name:'ไทย'},
+  {code:'id', label:'ID', flag:'🇮🇩', name:'Bahasa Indonesia'}
+];
+
 function googleTranslateElementInit(){
   new google.translate.TranslateElement({
     pageLanguage:'en',
-    includedLanguages:'en,ko,zh-CN,zh-TW,ja,vi,hi,ar,es,fr,de,it,pt,ru,th,id',
+    includedLanguages:LANGS.map(function(l){return l.code}).join(','),
     layout:google.translate.TranslateElement.InlineLayout.SIMPLE,
     autoDisplay:false
   },'google_translate_element');
+  renderLangMenu();
 }
+
+function renderLangMenu(){
+  var menu = document.getElementById('langMenu');
+  menu.innerHTML = LANGS.map(function(l){
+    return '<div class="lang-option" data-code="'+l.code+'" onclick="selectLang(\''+l.code+'\',\''+l.label+'\')"><span class="lang-flag">'+l.flag+'</span><span>'+l.name+'</span></div>';
+  }).join('');
+}
+
+function toggleLangMenu(){
+  var menu = document.getElementById('langMenu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function selectLang(code, label){
+  var combo = document.querySelector('#google_translate_element select.goog-te-combo');
+  if(combo){
+    combo.value = code;
+    combo.dispatchEvent(new Event('change'));
+  }
+  document.getElementById('langBtnLabel').textContent = label;
+  document.getElementById('langMenu').style.display = 'none';
+  document.querySelectorAll('.lang-option').forEach(function(o){o.classList.toggle('active', o.dataset.code === code)});
+}
+
+document.addEventListener('click', function(e){
+  if(!document.getElementById('langSelector').contains(e.target)){
+    document.getElementById('langMenu').style.display = 'none';
+  }
+});
 </script>
 <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
