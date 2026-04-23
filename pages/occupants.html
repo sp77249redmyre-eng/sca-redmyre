@@ -89,6 +89,10 @@
 .occ-item.expanded { border-color: #16a34a; box-shadow: 0 4px 14px rgba(22,163,74,0.08); }
 .occ-item.expanded .occ-header { background: #f0fdf4; }
 .occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-item.occ-restricted { opacity: 0.55; cursor: default; }
+.occ-item.occ-restricted:hover { box-shadow: none; }
+.occ-item.occ-restricted .occ-header { cursor: default; }
+.occ-item.occ-restricted .occ-header:hover { background: var(--surface); }
 .occ-chevron {
   font-size: 12px;
   color: var(--muted);
@@ -769,9 +773,8 @@ let allOccupants = [];
 let currentSuite = 'Ground';
 let myOwnedUnits = new Set(); // primary_email 기준 본인 소유 유닛들
 
-// owner/tenant: 본인 level 탭만 표시
+// owner/tenant: 본인 유닛의 level로 초기 탭 설정 (다른 탭도 모두 볼 수 있음)
 if (['owner','tenant'].includes(role) && myUnit) {
-  // owner: myOwnedUnits 기준으로 필요한 탭 계산
   const unitList = (role === 'owner' && myOwnedUnits.size > 0) ? [...myOwnedUnits] : [myUnit];
   const mySuites = new Set();
   unitList.forEach(u => {
@@ -782,20 +785,11 @@ if (['owner','tenant'].includes(role) && myUnit) {
   });
 
   if (mySuites.size === 0) {
-    // Lot 50 등 External 유닛
-    document.querySelectorAll('.suite-tab').forEach(tab => {
-      if (tab.dataset.suite !== 'External') tab.style.display = 'none';
-    });
     currentSuite = 'External';
     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
     const extTab = document.querySelector('.suite-tab[data-suite="External"]');
     if (extTab) extTab.classList.add('active');
   } else {
-    document.querySelectorAll('.suite-tab').forEach(tab => {
-      if (!mySuites.has(tab.dataset.suite)) {
-        tab.style.display = 'none';
-      }
-    });
     const firstSuite = [...mySuites][0];
     currentSuite = firstSuite;
     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
@@ -859,15 +853,8 @@ async function loadOccupants() {
 function renderOccupants() {
   const list = document.getElementById('occList');
 
-  // owner/tenant: 본인 unit만
+  // owner/tenant도 모든 유닛 표시 (본인 것 외엔 비활성)
   let visibleOccupants = allOccupants;
-  if (role === 'owner' && myOwnedUnits.size > 0) {
-    visibleOccupants = allOccupants.filter(o => myOwnedUnits.has(o.unit));
-  } else if (role === 'tenant' && myUnit) {
-    visibleOccupants = allOccupants.filter(o => o.unit === myUnit);
-  } else if (role === 'owner' && myUnit) {
-    visibleOccupants = allOccupants.filter(o => o.unit === myUnit);
-  }
 
   // Filter by current level
   let filtered;
@@ -885,16 +872,25 @@ function renderOccupants() {
     return;
   }
   
+  // owner/tenant 본인 유닛 판별용
+  const isMyUnit = (unit) => {
+    if (role === 'owner' && myOwnedUnits.size > 0) return myOwnedUnits.has(unit);
+    if (['owner','tenant'].includes(role)) return unit === myUnit;
+    return true; // admin/committee/observer는 전부 본인 것처럼 취급
+  };
+  
   list.innerHTML = filtered.map(o => {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
     const emails = [o.primary_email, o.business_email].filter(e => e).length;
     const isGround = o.level === 'Ground';
     const canEdit = (role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit));
     const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
+    const restricted = ['owner','tenant'].includes(role) && !isMyUnit(o.unit);
+    const clickHandler = restricted ? '' : `onclick="toggleOccAccordion('${o.id}', event)"`;
     
     return `
-      <div class="occ-item ${isGround ? 'ground-floor' : ''}" data-unit="${o.unit}" data-id="${o.id}">
-        <div class="occ-header" onclick="toggleOccAccordion('${o.id}', event)">
+      <div class="occ-item ${isGround ? 'ground-floor' : ''} ${restricted ? 'occ-restricted' : ''}" data-unit="${o.unit}" data-id="${o.id}">
+        <div class="occ-header" ${clickHandler}>
           <div class="occ-unit">${o.unit}</div>
           <div class="occ-info">
             <div class="occ-name">
@@ -907,7 +903,7 @@ function renderOccupants() {
             <div class="occ-meta-item">📧 ${emails}</div>
             <div class="occ-meta-item">🚗 ${vehicles}</div>
           </div>
-          <div class="occ-chevron">▼</div>
+          ${restricted ? '' : '<div class="occ-chevron">▼</div>'}
         </div>
         <div class="occ-body">
           <div class="occ-body-grid">
