@@ -527,9 +527,28 @@
 
 /* Mobile */
 @media (max-width: 768px) {
-  .suite-tabs { gap: 4px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .suite-tabs { 
+    gap: 6px; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    scroll-snap-type: x mandatory;
+  }
   .suite-tabs::-webkit-scrollbar { display: none; }
-  .suite-tab { padding: 6px 12px; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
+  .suite-tab { 
+    padding: 8px 0; 
+    font-size: 13px; 
+    flex: 0 0 calc((100% - 12px) / 3);
+    white-space: nowrap;
+    text-align: center;
+    scroll-snap-align: start;
+  }
   .occ-item { padding: 0; }
   .occ-header { flex-wrap: wrap; padding: 14px 16px; gap: 10px; }
   .occ-header .occ-info { flex: 1 1 calc(100% - 120px); min-width: 0; }
@@ -938,6 +957,8 @@ document.querySelectorAll('.suite-tab').forEach(tab => {
     currentSuite = tab.dataset.suite;
     document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
+    // 모바일에서 선택한 탭을 중앙으로 부드럽게 스크롤
+    tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     renderOccupants();
   });
 });
