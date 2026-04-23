@@ -23,7 +23,7 @@
 .ann-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px }
 .ann-title { font-size:15px;font-weight:600 }
 .ann-meta { font-size:12px;color:var(--muted);margin-top:3px }
-.ann-body { font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap }
+.ann-body { font-size:14px;color:#374151;line-height:1.7 }
 .ann-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light) }
 .ann-actions { display:flex;gap:6px }
 .pin-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s }
@@ -252,6 +252,12 @@ window.openAnnDetail = (id) => {
       </div>
     </div>` : '';
 
+  // HTML 태그 포함 여부 자동 감지: 있으면 그대로 렌더, 없으면 \n을 <br>로 변환
+  const hasHTML = /<[a-z][\s\S]*>/i.test(a.content || '');
+  const renderedContent = hasHTML
+    ? a.content
+    : (a.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+
   document.getElementById('annDetailBody').innerHTML = `
     <div class="ann-top" style="margin-bottom:14px">
       <div>
@@ -260,7 +266,7 @@ window.openAnnDetail = (id) => {
       </div>
       <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
     </div>
-    <div class="ann-body">${a.content}</div>
+    <div class="ann-body">${renderedContent}</div>
     ${attachmentsHtml}
     ${adminFooterHtml}
   `;
