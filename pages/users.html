@@ -32,21 +32,28 @@
 .tab-content{display:none}
 .tab-content.active{display:block}
 
-/* Users List */
-.table-head{display:grid;grid-template-columns:48px 1fr 140px 110px 200px;gap:12px;padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border-light)}
-.th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
-.user-row{display:grid;grid-template-columns:48px 1fr 140px 110px 200px;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border-light);transition:background 0.12s}
-.user-row:last-child{border-bottom:none}
+/* Users List - 아코디언 */
+.table-head{display:none}
+.user-row{padding:10px 18px;cursor:pointer;border-bottom:1px solid var(--border-light);background:var(--surface);transition:background 0.12s}
+.user-row:nth-child(even){background:#f8fafc}
 .user-row:hover{background:var(--bg)}
-.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.user-row.open{background:var(--blue-50)!important}
+.user-row-header{display:flex;align-items:center;gap:10px}
+.user-row-arrow{color:var(--muted);font-size:13px;margin-left:4px;transition:transform 0.2s;flex-shrink:0}
+.user-row.open .user-row-arrow{transform:rotate(90deg);color:var(--blue-600)}
+.user-row-details{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)}
+.user-row.open .user-row-details{display:block}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
 .av-admin{background:var(--purple-bg);color:var(--purple-text)}
 .av-committee{background:var(--blue-50);color:var(--blue-700)}
 .av-observer{background:var(--green-bg);color:var(--green-text)}
 .av-owner{background:var(--border-light);color:var(--text-2)}
 .av-tenant{background:var(--border-light);color:var(--text-2)}
 .user-name{font-size:13px;font-weight:600}
-.user-email{font-size:11px;color:var(--muted);margin-top:2px}
-.role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
+.user-email{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-info{flex:1;min-width:0}
+.user-row-label{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+.role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
 
 /* Permissions - Sidebar */
@@ -200,13 +207,6 @@
             </select>
             <span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
           </div>
-        </div>
-        <div class="table-head">
-          <div></div>
-          <div class="th">Name / Email</div>
-          <div class="th">Role</div>
-          <div class="th">Status</div>
-          <div class="th" style="text-align:right">Actions</div>
         </div>
         <div id="userList"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading users…</div></div>
       </div>
@@ -588,31 +588,57 @@ function filterAndRenderUsers() {
     const avClass = ROLE_COLORS_f[p.role]||'av-owner';
     const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
     const unitDisplay = p.unit || '—';
+    const roleLabel = p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—';
     return `
-      <div class="user-row">
-        <div class="avatar ${avClass}">${ini}</div>
-        <div>
-          <div class="user-name" style="cursor:pointer;display:flex;align-items:center;gap:4px" onclick="inlineEditName('${p.id}',this)" title="Click to edit name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
-          <div class="user-email">${p.email||'—'}</div>
-          <div style="font-size:11px;color:var(--blue-600);cursor:pointer;margin-top:2px;display:flex;align-items:center;gap:4px" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:9px;color:var(--muted)">✏️</span></div>
+      <div class="user-row" onclick="toggleUserRow(event,this)">
+        <div class="user-row-header">
+          <div class="avatar ${avClass}">${ini}</div>
+          <div class="user-info">
+            <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
+            <div class="user-email">${p.email||'—'}</div>
+          </div>
+          <span class="badge ${badgeClass}">${roleLabel}</span>
+          <span class="user-row-arrow">▸</span>
         </div>
-        <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
-          <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
-          <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
-          <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
-          <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
-          <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
-        </select>
-        <span class="badge ${badgeClass}">${p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—'}</span>
-        <div style="display:flex;gap:6px;justify-content:flex-end">
+        <div class="user-row-details" onclick="event.stopPropagation()">
+          <div class="detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <div class="user-row-label">Role</div>
+              <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
+                <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
+                <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
+                <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
+                <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
+                <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
+              </select>
+            </div>
+            <div>
+              <div class="user-row-label">Unit</div>
+              <div style="font-size:13px;color:var(--blue-600);cursor:pointer;display:flex;align-items:center;gap:4px;padding:6px 0" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="user-row-label">Name</div>
+            <div style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;padding:6px 0;margin-bottom:12px" onclick="inlineEditName('${p.id}',this)" title="Click to edit name">${displayName} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
+          </div>
           ${!isSelf?`
-            <button class="btn-secondary" style="padding:5px 10px;font-size:11px" onclick="openSetPassword('${p.id}','${displayName}')">Set Password</button>
-            <button class="btn-danger" style="padding:5px 10px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>
-          `:'<span style="font-size:11px;color:var(--muted)">—</span>'}
+            <div style="display:flex;gap:8px">
+              <button class="btn-secondary" style="flex:1;padding:7px 10px;font-size:12px" onclick="openSetPassword('${p.id}','${displayName}')">Set Password</button>
+              <button class="btn-danger" style="flex:1;padding:7px 10px;font-size:12px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>
+            </div>
+          `:'<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">This is you</div>'}
         </div>
       </div>`;
   }).join('');
 }
+
+function toggleUserRow(e, el) {
+  if (e.target.closest('select, button, a, input')) return;
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.user-row.open').forEach(r => r.classList.remove('open'));
+  if (!isOpen) el.classList.add('open');
+}
+window.toggleUserRow = toggleUserRow;
 
 document.getElementById('userSearch').addEventListener('input', function() {
   const q = this.value.trim().toLowerCase();
