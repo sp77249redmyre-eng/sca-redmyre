@@ -73,14 +73,102 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
+  transition: all 0.2s;
+  max-width: 960px;
+  overflow: hidden;
+}
+.occ-header {
   padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  transition: all 0.15s;
-  max-width: 960px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.occ-header:hover { background: #f8fafc; }
+.occ-item.expanded { border-color: #16a34a; box-shadow: 0 4px 14px rgba(22,163,74,0.08); }
+.occ-item.expanded .occ-header { background: #f0fdf4; }
 .occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.occ-item.expanded .occ-chevron { transform: rotate(180deg); color: #16a34a; }
+
+/* Accordion Body */
+.occ-body {
+  display: none;
+  padding: 0 20px 20px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+.occ-item.expanded .occ-body { display: block; animation: slideDown 0.25s ease-out; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.occ-body-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
+  padding-top: 18px;
+}
+.occ-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.occ-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.occ-field-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.occ-field-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+.occ-field-value a { color: var(--blue-600); text-decoration: none; }
+.occ-field-value a:hover { text-decoration: underline; }
+.occ-field-value.full { grid-column: 1 / -1; }
+.occ-badge-committee {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.occ-body-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  margin-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+.occ-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.occ-edit-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.25); }
 .occ-unit {
   font-size: 15px;
   font-weight: 700;
@@ -441,7 +529,10 @@
 @media (max-width: 768px) {
   .suite-tabs { gap: 4px; }
   .suite-tab { padding: 6px 12px; font-size: 12px; }
-  .occ-item { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+  .occ-item { padding: 0; }
+  .occ-header { flex-wrap: wrap; padding: 14px 16px; }
+  .occ-body { padding: 0 16px 16px 16px; }
+  .occ-body-grid { grid-template-columns: 1fr; gap: 12px; }
   .occ-unit { min-width: auto; }
   .occ-meta { flex-wrap: wrap; }
   .occ-actions { width: 100%; justify-content: flex-end; }
@@ -768,29 +859,79 @@ function renderOccupants() {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
     const emails = [o.primary_email, o.business_email].filter(e => e).length;
     const isGround = o.level === 'Ground';
+    const canEdit = (role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit));
+    const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
     
     return `
-      <div class="occ-item ${isGround ? 'ground-floor' : ''}" data-unit="${o.unit}">
-        <div class="occ-unit">${o.unit}</div>
-        <div class="occ-info">
-          <div class="occ-name">
-            ${o.business_name || 'Vacant'}
-            ${o.is_committee ? '<span class="committee-star" title="Committee Member">⭐</span>' : ''}
+      <div class="occ-item ${isGround ? 'ground-floor' : ''}" data-unit="${o.unit}" data-id="${o.id}">
+        <div class="occ-header" onclick="toggleOccAccordion('${o.id}', event)">
+          <div class="occ-unit">${o.unit}</div>
+          <div class="occ-info">
+            <div class="occ-name">
+              ${o.business_name || '<span style="color:#cbd5e1;font-style:italic">Vacant</span>'}
+              ${o.is_committee ? '<span class="committee-star" title="Committee Member">⭐</span>' : ''}
+            </div>
+            ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
           </div>
-          ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
+          <div class="occ-meta">
+            <div class="occ-meta-item">📧 ${emails}</div>
+            <div class="occ-meta-item">🚗 ${vehicles}</div>
+          </div>
+          <div class="occ-chevron">▼</div>
         </div>
-        <div class="occ-meta">
-          <div class="occ-meta-item">📧 ${emails}</div>
-          <div class="occ-meta-item">🚗 ${vehicles}</div>
-        </div>
-        <div class="occ-actions">
-          <button class="btn-secondary" onclick="openViewModal('${o.id}')">👁️ View</button>
-          ${(role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit)) ? `<button class="btn-secondary" onclick="openEditModal('${o.id}')">✏️ Edit</button>` : ''}
+        <div class="occ-body">
+          <div class="occ-body-grid">
+            <div class="occ-field">
+              <div class="occ-field-label">Contact Person</div>
+              <div class="occ-field-value ${o.contact_person ? '' : 'empty'}">${o.contact_person || 'Not set'}</div>
+            </div>
+            <div class="occ-field">
+              <div class="occ-field-label">Business Name</div>
+              <div class="occ-field-value ${o.business_name ? '' : 'empty'}">${o.business_name || 'Vacant'}</div>
+            </div>
+            <div class="occ-field">
+              <div class="occ-field-label">Primary Email</div>
+              <div class="occ-field-value ${o.primary_email ? '' : 'empty'}">${o.primary_email ? `<a href="mailto:${o.primary_email}">${o.primary_email}</a>` : 'Not set'}</div>
+            </div>
+            <div class="occ-field">
+              <div class="occ-field-label">Business Email</div>
+              <div class="occ-field-value ${o.business_email ? '' : 'empty'}">${o.business_email ? o.business_email.split(',').map(e => `<a href="mailto:${e.trim()}">${e.trim()}</a>`).join('<br>') : 'Not set'}</div>
+            </div>
+            <div class="occ-field">
+              <div class="occ-field-label">Phone</div>
+              <div class="occ-field-value ${o.phone ? '' : 'empty'}">${o.phone ? o.phone.split(/[,\/]/).map(p => `<a href="tel:${p.trim().replace(/\s/g,'')}">${p.trim()}</a>`).join(' / ') : 'Not set'}</div>
+            </div>
+            <div class="occ-field">
+              <div class="occ-field-label">Owner Type</div>
+              <div class="occ-field-value ${o.owner_type ? '' : 'empty'}">${o.owner_type || 'Not set'}</div>
+            </div>
+            <div class="occ-field full">
+              <div class="occ-field-label">License Plates</div>
+              <div class="occ-field-value ${plates.length ? '' : 'empty'}">${plates.length ? plates.map(p => `<span style="display:inline-block;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;margin-right:6px;font-family:monospace;font-weight:700;font-size:12px">${p}</span>`).join('') : 'No vehicles registered'}</div>
+            </div>
+            ${o.is_committee ? `
+            <div class="occ-field full">
+              <div class="occ-field-label">Committee Role</div>
+              <div class="occ-field-value"><span class="occ-badge-committee">⭐ ${o.committee_role || 'Committee Member'}</span></div>
+            </div>` : ''}
+          </div>
+          ${canEdit ? `
+          <div class="occ-body-actions">
+            <button class="occ-edit-btn" onclick="openEditModal('${o.id}'); event.stopPropagation();">✏️ Edit Details</button>
+          </div>` : ''}
         </div>
       </div>
     `;
   }).join('');
 }
+
+// 아코디언 토글 (여러 개 동시 열기 가능)
+window.toggleOccAccordion = function(id, event) {
+  // Edit 버튼 등 내부 버튼 클릭 시 토글 안 함
+  if (event.target.closest('.occ-edit-btn, a')) return;
+  const item = document.querySelector(`.occ-item[data-id="${id}"]`);
+  if (item) item.classList.toggle('expanded');
+};
 
 // Suite tab click
 document.querySelectorAll('.suite-tab').forEach(tab => {
@@ -1522,15 +1663,20 @@ await loadOccupants();
     }
   }
   
-  // 렌더링 대기 후 스크롤 + 하이라이트
+  // 렌더링 대기 후 스크롤 + 하이라이트 + 아코디언 자동 펼치기
   setTimeout(() => {
     const targetItem = document.querySelector(`.occ-item[data-unit="${targetUnit}"]`);
     if (targetItem) {
       targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetItem.classList.add('highlight-flash');
+      // 1초 후 아코디언 자동 펼치기
+      setTimeout(() => {
+        targetItem.classList.add('expanded');
+      }, 1000);
+      // 3초 후 하이라이트 제거
       setTimeout(() => targetItem.classList.remove('highlight-flash'), 3000);
     }
-  }, 300);
+  }, 400);
 })();
 </script>
 </body>
