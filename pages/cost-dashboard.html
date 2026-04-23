@@ -417,18 +417,29 @@ function renderMonthlyBarChart(sortedMonths) {
   if (!canvas||!sortedMonths.length) return;
   const dpr=window.devicePixelRatio||1;
   const W=canvas.offsetWidth||800;
-  const H=380;
+  const isMobile = W < 600;
+  const H = isMobile ? 260 : 380;
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
   const maxVal=Math.max(...sortedMonths.map(([,d])=>d.total),1);
   const n=sortedMonths.length;
-  const padL=72,padR=24,padT=60,padB=70;
+  const padL = isMobile ? 40 : 72;
+  const padR = isMobile ? 10 : 24;
+  const padT = isMobile ? 40 : 60;
+  const padB = isMobile ? 50 : 70;
   const chartW=W-padL-padR;
   const chartH=H-padT-padB;
-  const barW=Math.min(Math.floor(chartW/n)-12,80);
+  const barW=Math.min(Math.floor(chartW/n)-(isMobile?2:12), isMobile?30:80);
   const gap=(chartW-barW*n)/(n+1);
+
+  // 폰트 크기
+  const fAxis = isMobile ? '9px' : '12px';
+  const fValTop = isMobile ? 'bold 9px' : 'bold 14px';
+  const fValSub = isMobile ? '8px' : '12px';
+  const fLabel = isMobile ? 'bold 9px' : 'bold 13px';
+  const fJobs = isMobile ? '8px' : '12px';
 
   window._monthSlices = [];
   let selectedMonth = window._selectedMonth||null;
@@ -441,8 +452,8 @@ function renderMonthlyBarChart(sortedMonths) {
       const y=padT+chartH-(chartH/4)*i;
       ctx.strokeStyle='#f1f5f9'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
-      ctx.fillStyle='#94a3b8'; ctx.font='12px DM Sans,sans-serif'; ctx.textAlign='right';
-      ctx.fillText(fmtShort(maxVal/4*i),padL-8,y+4);
+      ctx.fillStyle='#94a3b8'; ctx.font=fAxis+' DM Sans,sans-serif'; ctx.textAlign='right';
+      ctx.fillText(fmtShort(maxVal/4*i),padL-6,y+3);
     }
 
     sortedMonths.forEach(([key,d],i)=>{
@@ -467,20 +478,31 @@ function renderMonthlyBarChart(sortedMonths) {
         ctx.beginPath(); ctx.roundRect(x-1,y-1,barW+2,bH+1,[8,8,0,0]); ctx.stroke();
       }
 
-      // inc GST (크게)
-      ctx.fillStyle=isSelected?'#d97706':'#1e293b';
-      ctx.font='bold 14px DM Sans,sans-serif'; ctx.textAlign='center';
-      ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-26);
-      // ex GST
-      ctx.fillStyle='#64748b'; ctx.font='12px DM Sans,sans-serif';
-      ctx.fillText(fmtShort(d.total),x+barW/2,y-11);
-      // 월 라벨 (크게)
-      ctx.fillStyle=isSelected?'#d97706':monthColor;
-      ctx.font=`bold 13px DM Sans,sans-serif`;
-      ctx.fillText(d.label,x+barW/2,padT+chartH+22);
-      // job 수
-      ctx.fillStyle='#94a3b8'; ctx.font='12px DM Sans,sans-serif';
-      ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+40);
+      if (isMobile) {
+        // 모바일: inc GST만 표시 (공간 부족)
+        ctx.fillStyle=isSelected?'#d97706':'#1e293b';
+        ctx.font=fValTop+' DM Sans,sans-serif'; ctx.textAlign='center';
+        ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-6);
+        // 월 라벨
+        ctx.fillStyle=isSelected?'#d97706':monthColor;
+        ctx.font=fLabel+' DM Sans,sans-serif';
+        ctx.fillText(d.label,x+barW/2,padT+chartH+14);
+        // job 수
+        ctx.fillStyle='#94a3b8'; ctx.font=fJobs+' DM Sans,sans-serif';
+        ctx.fillText(d.count+'j',x+barW/2,padT+chartH+28);
+      } else {
+        // 데스크톱: 기존 그대로
+        ctx.fillStyle=isSelected?'#d97706':'#1e293b';
+        ctx.font=fValTop+' DM Sans,sans-serif'; ctx.textAlign='center';
+        ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-26);
+        ctx.fillStyle='#64748b'; ctx.font=fValSub+' DM Sans,sans-serif';
+        ctx.fillText(fmtShort(d.total),x+barW/2,y-11);
+        ctx.fillStyle=isSelected?'#d97706':monthColor;
+        ctx.font=fLabel+' DM Sans,sans-serif';
+        ctx.fillText(d.label,x+barW/2,padT+chartH+22);
+        ctx.fillStyle='#94a3b8'; ctx.font=fJobs+' DM Sans,sans-serif';
+        ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+40);
+      }
     });
 
     // X축
