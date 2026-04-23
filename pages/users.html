@@ -594,17 +594,20 @@ function filterAndRenderUsers() {
         <div class="user-row-header">
           <div class="avatar ${avClass}">${ini}</div>
           <div class="user-info">
-            <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
+            <div class="user-name" style="display:flex;align-items:center;gap:6px">
+              ${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}
+              <span style="font-size:10px;color:var(--muted);cursor:pointer" onclick="event.stopPropagation();inlineEditName('${p.id}',this.parentElement)" title="Edit name">✏️</span>
+            </div>
             <div class="user-email">${p.email||'—'}</div>
           </div>
           <span class="badge ${badgeClass}">${roleLabel}</span>
           <span class="user-row-arrow">▸</span>
         </div>
         <div class="user-row-details" onclick="event.stopPropagation()">
-          <div class="detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-            <div>
-              <div class="user-row-label">Role</div>
-              <select class="role-select" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="user-row-label" style="margin:0">Role</span>
+              <select class="role-select" style="min-width:130px;width:auto" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
                 <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
                 <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
                 <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
@@ -612,21 +615,16 @@ function filterAndRenderUsers() {
                 <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
               </select>
             </div>
-            <div>
-              <div class="user-row-label">Unit</div>
-              <div style="font-size:13px;color:var(--blue-600);cursor:pointer;display:flex;align-items:center;gap:4px;padding:6px 0" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="user-row-label" style="margin:0">Unit</span>
+              <span style="font-size:12px;color:var(--blue-600);cursor:pointer;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:inline-flex;align-items:center;gap:4px" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:10px;color:var(--muted)">✏️</span></span>
             </div>
+            <div style="flex:1;min-width:0"></div>
+            ${!isSelf?`
+              <button class="btn-secondary" style="padding:6px 12px;font-size:11px" onclick="openSetPassword('${p.id}','${displayName}')">🔑 Set Password</button>
+              <button class="btn-danger" style="padding:6px 12px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">🗑 Remove</button>
+            `:'<span style="font-size:12px;color:var(--muted)">This is you</span>'}
           </div>
-          <div>
-            <div class="user-row-label">Name</div>
-            <div style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;padding:6px 0;margin-bottom:12px" onclick="inlineEditName('${p.id}',this)" title="Click to edit name">${displayName} <span style="font-size:10px;color:var(--muted)">✏️</span></div>
-          </div>
-          ${!isSelf?`
-            <div style="display:flex;gap:8px">
-              <button class="btn-secondary" style="flex:1;padding:7px 10px;font-size:12px" onclick="openSetPassword('${p.id}','${displayName}')">Set Password</button>
-              <button class="btn-danger" style="flex:1;padding:7px 10px;font-size:12px" onclick="removeUser('${p.id}','${displayName}')">Remove</button>
-            </div>
-          `:'<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">This is you</div>'}
         </div>
       </div>`;
   }).join('');
@@ -699,8 +697,17 @@ document.addEventListener('click', function(e) {
 document.getElementById('userRoleFilter').addEventListener('change', filterAndRenderUsers);
 
 async function loadUsers() {
-  const { data:profiles } = await supabase.from('profiles').select('*').order('role').order('full_name');
+  const { data:profiles } = await supabase.from('profiles').select('*');
   if (!profiles) return;
+  
+  // 정렬: admin → committee → 나머지 이름 알파벳순
+  const roleOrder = { admin:1, committee:2 };
+  profiles.sort((a, b) => {
+    const ra = roleOrder[a.role] || 99;
+    const rb = roleOrder[b.role] || 99;
+    if (ra !== rb) return ra - rb;
+    return (a.full_name || a.email || '').localeCompare(b.full_name || b.email || '');
+  });
   
   allProfiles = profiles;
 
