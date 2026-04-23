@@ -374,7 +374,7 @@
 <!-- INVITE MODAL -->
 <div class="modal-backdrop" id="inviteModal">
   <div class="modal-box">
-    <div class="modal-title">Invite New User</div>
+    <div class="modal-title" id="inviteModalTitle">Invite New User</div>
     <div class="modal-field"><label class="modal-label">Email Address</label><input class="modal-input" type="email" id="inviteEmail" placeholder="email@example.com"></div>
     <div class="modal-field"><label class="modal-label">Full Name</label><input class="modal-input" type="text" id="inviteName" placeholder="e.g. John Smith"></div>
     <div class="modal-field">
@@ -442,6 +442,15 @@
         <option value="6G">6G</option>
         <option value="6H">6H</option>
       </select>
+    </div>
+    <div class="modal-field" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:4px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
+        <input type="checkbox" id="inviteSendEmail" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--blue-600)">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">📧 Send invitation email</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Uncheck to add user silently (they can set password later on first login)</div>
+        </div>
+      </label>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('inviteModal')">Cancel</button>
@@ -1384,18 +1393,42 @@ document.getElementById('inviteBtn').addEventListener('click', () => {
   document.getElementById('inviteModal').classList.add('open');
 });
 
+// 체크박스 상태에 따라 모달 제목과 버튼 텍스트 변경
+const inviteSendEmailCb = document.getElementById('inviteSendEmail');
+const inviteModalTitleEl = document.getElementById('inviteModalTitle');
+const sendInviteBtnEl = document.getElementById('sendInviteBtn');
+
+function updateInviteUI() {
+  if (inviteSendEmailCb.checked) {
+    inviteModalTitleEl.textContent = 'Invite New User';
+    sendInviteBtnEl.textContent = 'Send Invite →';
+  } else {
+    inviteModalTitleEl.textContent = 'Add User (No Email)';
+    sendInviteBtnEl.textContent = 'Add User →';
+  }
+}
+inviteSendEmailCb.addEventListener('change', updateInviteUI);
+
+// Invite 모달 열릴 때 체크박스 기본값 리셋 (다음에 열때 다시 checked)
+document.getElementById('inviteBtn').addEventListener('click', () => {
+  inviteSendEmailCb.checked = true;
+  updateInviteUI();
+});
+
 document.getElementById('sendInviteBtn').addEventListener('click', async () => {
   const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
   const fullName = document.getElementById('inviteName').value.trim();
   const inviteRole = document.getElementById('inviteRole').value;
   const inviteUnit = document.getElementById('inviteUnit').value;
+  const sendEmail = inviteSendEmailCb.checked;
   const btn = document.getElementById('sendInviteBtn');
   
   if (!email) { showToast('Please enter an email address', true); return; }
   if (!fullName) { showToast('Please enter a full name', true); return; }
   if (!inviteRole) { showToast('Please select a role', true); return; }
   
-  btn.disabled = true; btn.textContent = 'Sending…';
+  btn.disabled = true; 
+  btn.textContent = sendEmail ? 'Sending…' : 'Adding…';
   
   try {
     const { data:{session:s2} } = await supabase.auth.refreshSession();
@@ -1404,24 +1437,27 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
     const res = await fetch('/api/send-invite', { 
       method:'POST', 
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`}, 
-      body:JSON.stringify({email, full_name:fullName, role:inviteRole, unit:inviteUnit || null}) 
+      body:JSON.stringify({email, full_name:fullName, role:inviteRole, unit:inviteUnit || null, skipEmail: !sendEmail}) 
     });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error||'Failed to send invite');
+    if (!res.ok) throw new Error(result.error||'Failed');
     
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
-      action: 'user_invited',
-      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit }
+      action: sendEmail ? 'user_invited' : 'user_added_silent',
+      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail }
     });
     
     closeModal('inviteModal');
-    showToast(`Invite sent to ${email} ✓`);
+    showToast(sendEmail ? `Invite sent to ${email} ✓` : `User ${email} added ✓`);
     await loadUsers();
-  } catch(e) { showToast(e.message||'Failed to send invite', true); }
-  finally { btn.disabled = false; btn.textContent = 'Send Invite →'; }
+  } catch(e) { showToast(e.message||'Failed', true); }
+  finally { 
+    btn.disabled = false; 
+    updateInviteUI();
+  }
 });
 
 await loadUsers();
