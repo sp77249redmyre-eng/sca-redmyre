@@ -470,8 +470,22 @@ if (session) {
   window.location.href = '/pages/building.html';
 }
 
+// ===== QR Analytics =====
+async function trackQR(eventType) {
+  try {
+    await supabase.from('qr_analytics').insert({ event_type: eventType });
+  } catch (e) {}
+}
+
+// 리프트 QR 스캔 (세션 내 1회만 기록)
+if (!sessionStorage.getItem('qr_lift_entry_tracked')) {
+  sessionStorage.setItem('qr_lift_entry_tracked', '1');
+  trackQR('lift_entry');
+}
+
 // ===== Choice Overlay Handlers =====
 window.showLoginForm = () => {
+  trackQR('lift_resident');
   document.getElementById('choiceOverlay').style.display = 'none';
   setTimeout(() => {
     const el = document.getElementById('emailInput');
@@ -480,6 +494,8 @@ window.showLoginForm = () => {
 };
 
 window.goToVisitor = () => {
+  trackQR('lift_visitor');
+  sessionStorage.setItem('qr_from_lift', '1');
   window.location.href = '/welcome.html';
 };
 

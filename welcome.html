@@ -301,6 +301,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
+// ===== QR Analytics (전광판 QR 직접 진입만 카운트) =====
+(async () => {
+  try {
+    // 리프트 Visitor 버튼 경유는 제외 (이미 lift_visitor로 카운트됨)
+    if (sessionStorage.getItem('qr_from_lift')) {
+      sessionStorage.removeItem('qr_from_lift');
+      return;
+    }
+    // 세션 내 1회만
+    if (sessionStorage.getItem('qr_signboard_entry_tracked')) return;
+    sessionStorage.setItem('qr_signboard_entry_tracked', '1');
+    await supabase.from('qr_analytics').insert({ event_type: 'signboard_entry' });
+  } catch (e) {}
+})();
+
 const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
 const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
 
