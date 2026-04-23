@@ -209,8 +209,8 @@ body{
   <div id="langMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:180px;max-height:320px;overflow-y:auto;font-family:system-ui,sans-serif"></div>
 </div>
 
-<!-- Hidden Google Translate (functional backend) -->
-<div id="google_translate_element" style="position:absolute;left:-9999px;top:-9999px;visibility:hidden"></div>
+<!-- Hidden Google Translate (off-screen but functional) -->
+<div id="google_translate_element" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden"></div>
 
 <style>
 .goog-te-banner-frame{display:none !important}
@@ -266,12 +266,19 @@ function toggleLangMenu(){
   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 
-function selectLang(code, label){
+function waitForCombo(callback, tries){
+  tries = tries || 0;
   var combo = document.querySelector('#google_translate_element select.goog-te-combo');
-  if(combo){
+  if(combo){ callback(combo); return; }
+  if(tries > 40) return;
+  setTimeout(function(){ waitForCombo(callback, tries+1); }, 100);
+}
+
+function selectLang(code, label){
+  waitForCombo(function(combo){
     combo.value = code;
     combo.dispatchEvent(new Event('change'));
-  }
+  });
   document.getElementById('langBtnLabel').textContent = label;
   document.getElementById('langMenu').style.display = 'none';
   document.querySelectorAll('.lang-option').forEach(function(o){o.classList.toggle('active', o.dataset.code === code)});
