@@ -849,17 +849,19 @@ async function loadOccupants() {
     myOwnedUnits = new Set(allOccupants.map(o => o.unit));
   }
 
-  // owner/tenant 다중 유닛 탭 업데이트
-  if (['owner','tenant'].includes(role) && myOwnedUnits.size > 1) {
+  // owner/tenant: 전체 탭 다 표시 (이웃 보게), 본인 유닛 있는 첫 번째 층으로 탭 active 이동
+  if (['owner','tenant'].includes(role) && myOwnedUnits.size > 0) {
     const myLevels = new Set();
     myOwnedUnits.forEach(u => {
       if (u === 'Unit 1') { myLevels.add('Ground'); return; }
       const match = u.match(/^([0-9]+)([A-H])$/i);
       if (match) myLevels.add('Level ' + match[1]);
     });
+    // 전체 탭 표시 (숨김 제거)
     document.querySelectorAll('.suite-tab').forEach(tab => {
-      tab.style.display = myLevels.has(tab.dataset.suite) ? '' : 'none';
+      tab.style.display = '';
     });
+    // 본인 유닛 있는 첫 번째 층으로 active 이동
     const firstLevel = [...myLevels][0];
     if (firstLevel && firstLevel !== currentSuite) {
       currentSuite = firstLevel;
@@ -982,8 +984,12 @@ window.toggleOccAccordion = function(id, event) {
   const wasExpanded = item.classList.contains('expanded');
   // 모든 카드 닫기
   document.querySelectorAll('.occ-item.expanded').forEach(el => el.classList.remove('expanded'));
-  // 클릭한 카드가 닫혀있었으면 열기 (열려있었으면 그냥 닫힘)
-  if (!wasExpanded) item.classList.add('expanded');
+  // 클릭한 카드가 닫혀있었으면 열기 + 녹색 반짝
+  if (!wasExpanded) {
+    item.classList.add('expanded');
+    item.classList.add('highlight-flash');
+    setTimeout(() => item.classList.remove('highlight-flash'), 2000);
+  }
 };
 
 // Suite tab click
