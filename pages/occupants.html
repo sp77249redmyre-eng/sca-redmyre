@@ -825,24 +825,28 @@ async function loadOccupants() {
     if (p.email) window._profileRoleMap[p.email.toLowerCase()] = p.role;
   });
 
-  // primary_email 기준 본인 소유 유닛 세팅 (committee/owner)
-  if (myEmail && ['admin','committee','owner'].includes(role)) {
-    myOwnedUnits = new Set(
-      allOccupants.filter(o => o.primary_email?.toLowerCase() === myEmail.toLowerCase()).map(o => o.unit)
-    );
-  }
-
-  // tenant: business_email 매칭 (콤마 분리 처리)
-  if (myEmail && role === 'tenant') {
+  // committee/owner/tenant: primary_email + business_email 모두 매칭 (콤마 분리 처리)
+  if (myEmail && ['committee','owner','tenant'].includes(role)) {
+    const myEmailLower = myEmail.toLowerCase();
     myOwnedUnits = new Set(
       allOccupants.filter(o => {
-        if (!o.business_email) return false;
-        const emails = o.business_email.split(',').map(e => e.trim().toLowerCase());
-        return emails.includes(myEmail.toLowerCase());
+        // primary_email 매칭
+        if (o.primary_email?.toLowerCase() === myEmailLower) return true;
+        // business_email 매칭 (콤마 분리)
+        if (o.business_email) {
+          const emails = o.business_email.split(',').map(e => e.trim().toLowerCase());
+          if (emails.includes(myEmailLower)) return true;
+        }
+        return false;
       }).map(o => o.unit)
     );
     // profiles.unit도 포함 (안전장치)
     if (myUnit) myOwnedUnits.add(myUnit);
+  }
+
+  // admin은 전체 유닛 접근이라 myOwnedUnits 안 쓰지만 호환성 위해 세팅
+  if (role === 'admin') {
+    myOwnedUnits = new Set(allOccupants.map(o => o.unit));
   }
 
   // owner/tenant 다중 유닛 탭 업데이트
