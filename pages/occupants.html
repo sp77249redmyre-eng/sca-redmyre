@@ -832,22 +832,35 @@ async function loadOccupants() {
     );
   }
 
-  // owner 다중 유닛 탭 업데이트
-  if (role === 'owner' && myOwnedUnits.size > 1) {
-    const mySuites = new Set();
+  // tenant: business_email 매칭 (콤마 분리 처리)
+  if (myEmail && role === 'tenant') {
+    myOwnedUnits = new Set(
+      allOccupants.filter(o => {
+        if (!o.business_email) return false;
+        const emails = o.business_email.split(',').map(e => e.trim().toLowerCase());
+        return emails.includes(myEmail.toLowerCase());
+      }).map(o => o.unit)
+    );
+    // profiles.unit도 포함 (안전장치)
+    if (myUnit) myOwnedUnits.add(myUnit);
+  }
+
+  // owner/tenant 다중 유닛 탭 업데이트
+  if (['owner','tenant'].includes(role) && myOwnedUnits.size > 1) {
+    const myLevels = new Set();
     myOwnedUnits.forEach(u => {
-      if (u === 'Unit 1') { mySuites.add('Ground'); return; }
+      if (u === 'Unit 1') { myLevels.add('Ground'); return; }
       const match = u.match(/^([0-9]+)([A-H])$/i);
-      if (match) mySuites.add('Suite ' + match[2].toUpperCase());
+      if (match) myLevels.add('Level ' + match[1]);
     });
     document.querySelectorAll('.suite-tab').forEach(tab => {
-      tab.style.display = mySuites.has(tab.dataset.suite) ? '' : 'none';
+      tab.style.display = myLevels.has(tab.dataset.suite) ? '' : 'none';
     });
-    const firstSuite = [...mySuites][0];
-    if (firstSuite && firstSuite !== currentSuite) {
-      currentSuite = firstSuite;
+    const firstLevel = [...myLevels][0];
+    if (firstLevel && firstLevel !== currentSuite) {
+      currentSuite = firstLevel;
       document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
-      const myTab = document.querySelector(`.suite-tab[data-suite="${firstSuite}"]`);
+      const myTab = document.querySelector(`.suite-tab[data-suite="${firstLevel}"]`);
       if (myTab) myTab.classList.add('active');
     }
   }
@@ -880,16 +893,15 @@ function renderOccupants() {
   
   // owner/tenant 본인 유닛 판별용
   const isMyUnit = (unit) => {
-    if (role === 'owner' && myOwnedUnits.size > 0) return myOwnedUnits.has(unit);
-    if (['owner','tenant'].includes(role)) return unit === myUnit;
-    return true; // admin/committee/observer는 전부 본인 것처럼 취급
+    if (!['owner','tenant'].includes(role)) return true; // admin/committee/observer는 전부
+    return myOwnedUnits.has(unit) || unit === myUnit;
   };
   
   list.innerHTML = filtered.map(o => {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
     const emails = [o.primary_email, o.business_email].filter(e => e).length;
     const isGround = o.level === 'Ground';
-    const canEdit = (role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(o.unit)) || (role === 'tenant' && o.unit === myUnit));
+    const canEdit = (role === 'admin' || (['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(o.unit) || o.unit === myUnit)));
     const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
     const restricted = ['owner','tenant'].includes(role) && !isMyUnit(o.unit);
     const clickHandler = restricted ? '' : `onclick="toggleOccAccordion('${o.id}', event)"`;
@@ -1037,7 +1049,7 @@ window.openViewModal = (id) => {
   
   // Show Edit button for admin
   const editBtn = document.getElementById('viewEditBtn');
-  const canEdit = role === 'admin' || (['committee','owner'].includes(role) && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit);
+  const canEdit = role === 'admin' || (['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(occ.unit) || occ.unit === myUnit));
   if (canEdit) {
     editBtn.style.display = 'inline-flex';
     editBtn.onclick = () => {
