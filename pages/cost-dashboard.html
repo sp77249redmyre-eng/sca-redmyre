@@ -266,10 +266,12 @@ const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixe
 
 function parseQuoteCategory(q) {
   try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
-  }
+  return q.category||'General';
+}
 
 function catBadge(cat) {
-    const color=CAT_COLORS[cat]||'#94a3b8';
+  const label=CAT_LABELS[cat]||cat||'Other';
+  const color=CAT_COLORS[cat]||'#94a3b8';
   const bg=CAT_BG[cat]||'#f1f5f9';
   return `<span class="cat-badge" style="background:${bg};color:${color};border:0.5px solid ${color}33">${label}</span>`;
 }
