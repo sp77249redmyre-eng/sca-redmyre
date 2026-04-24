@@ -442,16 +442,17 @@ async function loadCommitteeMembers() {
   }
 
   grid.innerHTML = members.map(m => {
-    const units = m.units.length > 1 
-      ? `Unit ${m.units[0]} <span style="opacity:0.7">(${m.units.slice(1).join(' / ')})</span>`
-      : `Unit ${m.units[0]}`;
+    const primaryUnit = getPrimaryUnit(m.contact_person, m.units);
+    const otherUnits = m.units.filter(u => u !== primaryUnit);
+    const units = otherUnits.length > 0
+      ? `Unit ${primaryUnit} <span style="opacity:0.7">(${otherUnits.join(' / ')})</span>`
+      : `Unit ${primaryUnit}`;
     const phone = primaryPhone(m.phone);
     const email = m.primary_email || '';
     const nameParts = splitName(m.contact_person);
     const nameHtml = nameParts.sub 
       ? `<div class="person-name">${nameParts.main}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3">${nameParts.sub}</div>`
       : `<div class="person-name">${nameParts.main}</div>`;
-    const primaryUnit = getPrimaryUnit(m.contact_person, m.units);
     const clickableAttr = canNavigate 
       ? `class="person-card green clickable" onclick="navigateToOccupant('${primaryUnit}', event)"` 
       : `class="person-card green"`;
