@@ -196,6 +196,7 @@
     const myRole = u.my_role; // 'OWNER' | 'TENANT'
     const badgeClass = myRole === 'OWNER' ? 'myprof-card-badge-owner' : 'myprof-card-badge-tenant';
     const cardBorderClass = myRole === 'OWNER' ? 'myprof-card-owner' : 'myprof-card-tenant';
+    const isOwnerCard = myRole === 'OWNER';
 
     const primaryEmails = (u.primary_email || '').split(',').map(e => e.trim()).filter(e => e);
     const businessEmails = (u.business_email || '').split(',').map(e => e.trim()).filter(e => e);
@@ -203,6 +204,16 @@
     const businessLabel = u.owner_type === 'Owner' ? 'Staff Email' : 'Tenants Email';
 
     const plates = (u.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
+
+    // Contact Person — OWNER 카드만 수정 가능, TENANT는 read-only
+    const contactPersonHtml = isOwnerCard ? `
+      <div class="myprof-edit-field">
+        <label class="myprof-edit-label">Contact Person</label>
+        <input type="text" class="myprof-edit-input" data-field="contact_person"
+          value="${escapeHtml(u.contact_person || '')}"
+          placeholder="Primary contact name">
+      </div>
+    ` : '';
 
     return `
       <div class="myprof-unit-card ${cardBorderClass}" data-unit-id="${escapeHtml(u.id)}" data-unit="${escapeHtml(u.unit)}">
@@ -214,7 +225,7 @@
           <span class="myprof-card-badge ${badgeClass}">${myRole}</span>
         </div>
 
-        <!-- Editable: Business Name -->
+        <!-- Editable: Business Name (둘 다 수정 가능) -->
         <div class="myprof-edit-field">
           <label class="myprof-edit-label">Business Name</label>
           <input type="text" class="myprof-edit-input" data-field="business_name"
@@ -222,21 +233,7 @@
             placeholder="Business or tenant name">
         </div>
 
-        <!-- Editable: Contact -->
-        <div class="myprof-edit-field">
-          <label class="myprof-edit-label">Contact Person</label>
-          <input type="text" class="myprof-edit-input" data-field="contact_person"
-            value="${escapeHtml(u.contact_person || '')}"
-            placeholder="Primary contact name">
-        </div>
-
-        <!-- Editable: Phone -->
-        <div class="myprof-edit-field">
-          <label class="myprof-edit-label">Phone</label>
-          <input type="text" class="myprof-edit-input" data-field="phone"
-            value="${escapeHtml(u.phone || '')}"
-            placeholder="Contact phone">
-        </div>
+        ${contactPersonHtml}
 
         <!-- Read-only fields (Admin only) -->
         <div class="myprof-readonly-section">
@@ -246,6 +243,13 @@
             <span class="myprof-readonly-label">Owner Type:</span>
             <span class="myprof-readonly-value">${escapeHtml(u.owner_type || 'Not set')}</span>
           </div>
+
+          ${!isOwnerCard && u.contact_person ? `
+            <div class="myprof-readonly-row">
+              <span class="myprof-readonly-label">Contact Person:</span>
+              <span class="myprof-readonly-value">${escapeHtml(u.contact_person)}</span>
+            </div>
+          ` : ''}
 
           ${primaryEmails.length ? `
             <div class="myprof-readonly-row">
@@ -258,6 +262,13 @@
             <div class="myprof-readonly-row">
               <span class="myprof-readonly-label">${businessLabel}:</span>
               <span class="myprof-readonly-value">${businessEmails.map(e => escapeHtml(e)).join(', ')}</span>
+            </div>
+          ` : ''}
+
+          ${u.phone ? `
+            <div class="myprof-readonly-row">
+              <span class="myprof-readonly-label">Phone:</span>
+              <span class="myprof-readonly-value">${escapeHtml(u.phone)}</span>
             </div>
           ` : ''}
         </div>
@@ -284,6 +295,8 @@
   }
 
   // ── 유닛 저장 ────────────────────────────────────────────
+  // 저장 가능 필드: business_name (둘 다), contact_person (OWNER 카드에만 input 존재)
+  // phone, owner_type, primary_email, business_email = read-only이라 저장 안 함
   window.myProfileSaveUnit = async function(unitId) {
     const card = document.querySelector(`.myprof-unit-card[data-unit-id="${unitId}"]`);
     if (!card) return;
@@ -296,23 +309,25 @@
 
     const msgEl = document.getElementById(`myprofMsg-${unitId}`);
 
-    // 입력값 수집
+    // 입력값 수집 (input이 존재하는 필드만)
     const data = {};
     card.querySelectorAll('.myprof-edit-input').forEach(input => {
       const field = input.dataset.field;
-      data[field] = input.value.trim();
+      data[field] = input.value.trim() || null;
     });
+
+    // 최소한 business_name은 있어야 함 (보호장치)
+    if (!('business_name' in data)) {
+      showCardMsg(msgEl, 'No editable fields found.', 'error');
+      return;
+    }
 
     showCardMsg(msgEl, 'Saving…', 'loading');
 
     try {
       const { error } = await ctx.supabase
         .from('occupants')
-        .update({
-          business_name: data.business_name || null,
-          contact_person: data.contact_person || null,
-          phone: data.phone || null,
-        })
+        .update(data)
         .eq('id', unitId);
 
       if (error) {
@@ -325,9 +340,7 @@
       // 캐시 업데이트
       const cached = currentMyUnits.find(u => u.id === unitId);
       if (cached) {
-        cached.business_name = data.business_name || null;
-        cached.contact_person = data.contact_person || null;
-        cached.phone = data.phone || null;
+        Object.keys(data).forEach(k => { cached[k] = data[k]; });
       }
 
       if (window.showToast) window.showToast('Updated ✓');
