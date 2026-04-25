@@ -213,7 +213,7 @@
     body.innerHTML = `
       ${infoNote}
       <div class="myprof-section">
-        <div class="myprof-section-title">🔒 ADMIN 관리 / Account Info</div>
+        <div class="myprof-section-title">🔒 Account Info</div>
         <div class="myprof-admin-box">
           <div class="myprof-admin-row">
             <span class="myprof-admin-label">Email</span>
@@ -227,26 +227,26 @@
       </div>
 
       <div class="myprof-section">
-        <div class="myprof-section-title">✏️ 본인 정보 / My Info</div>
+        <div class="myprof-section-title">✏️ My Info</div>
         <div class="myprof-field">
-          <label class="myprof-label">이름 / Name</label>
+          <label class="myprof-label">Name</label>
           <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
         </div>
         <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
-          <span>🔑 비밀번호 변경 / Change Password</span>
+          <span>🔑 Change Password</span>
           <span class="myprof-pw-arrow">›</span>
         </button>
         <div class="myprof-pw-panel" id="myprofPwPanel">
           <div class="myprof-field">
-            <label class="myprof-label">현재 비밀번호 / Current</label>
+            <label class="myprof-label">Current Password</label>
             <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">새 비밀번호 / New</label>
+            <label class="myprof-label">New Password</label>
             <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">새 비밀번호 확인 / Confirm</label>
+            <label class="myprof-label">Confirm Password</label>
             <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
           </div>
           <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
@@ -285,7 +285,7 @@
     // Admin 박스
     const adminBox = `
       <div class="myprof-section">
-        <div class="myprof-section-title">🔒 ADMIN 관리 / Admin Info</div>
+        <div class="myprof-section-title">🔒 Account Info</div>
         <div class="myprof-admin-box">
           <div class="myprof-admin-row">
             <span class="myprof-admin-label">Suite</span>
@@ -306,26 +306,26 @@
     // 본인 정보 (이름 + 비번)
     const myInfoBlock = `
       <div class="myprof-section">
-        <div class="myprof-section-title">✏️ 본인 정보 / My Info</div>
+        <div class="myprof-section-title">✏️ My Info</div>
         <div class="myprof-field">
-          <label class="myprof-label">이름 / Name</label>
+          <label class="myprof-label">Name</label>
           <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
         </div>
         <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
-          <span>🔑 비밀번호 변경 / Change Password</span>
+          <span>🔑 Change Password</span>
           <span class="myprof-pw-arrow">›</span>
         </button>
         <div class="myprof-pw-panel" id="myprofPwPanel">
           <div class="myprof-field">
-            <label class="myprof-label">현재 비밀번호 / Current</label>
+            <label class="myprof-label">Current Password</label>
             <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">새 비밀번호 / New</label>
+            <label class="myprof-label">New Password</label>
             <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">새 비밀번호 확인 / Confirm</label>
+            <label class="myprof-label">Confirm Password</label>
             <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
           </div>
           <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
@@ -348,8 +348,8 @@
     if (ownerUnits.length >= 2) {
       checkboxSection = `
         <div class="myprof-section">
-          <div class="myprof-section-title">🏢 본인 운영 유닛 선택 / Operating Units</div>
-          <div class="myprof-section-help">직접 운영하는 유닛에 체크하세요. 미체크 = 임대 중 (TENANT)<br>Check the units you operate yourself. Unchecked = leased out.</div>
+          <div class="myprof-section-title">🏢 Operating Units</div>
+          <div class="myprof-section-help">Check the units you operate yourself. Unchecked = leased out (TENANT).</div>
           <div id="myprofUnitCheckboxes">
             ${ownerUnits.map(u => renderUnitRow(u)).join('')}
           </div>
@@ -378,24 +378,24 @@
     let bulkNote = '';
     if (ownerUnits.length >= 2) {
       const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      bulkNote = `※ 본인 OWNER 유닛(<span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>)에 일괄 적용 / Applied to all checked OWNER units`;
+      bulkNote = `※ Applied to all checked OWNER units: <span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>`;
     } else if (ownerUnits.length === 1) {
-      bulkNote = `※ ${escapeHtml(ownerUnits[0].unit)} 유닛에 적용 / Applied to ${escapeHtml(ownerUnits[0].unit)}`;
+      bulkNote = `※ Applied to ${escapeHtml(ownerUnits[0].unit)}`;
     } else if (tenantUnits.length > 0) {
       const tList = tenantUnits.map(u => u.unit).join(', ');
-      bulkNote = `※ ${escapeHtml(tList)} 유닛에 적용 / Applied to ${escapeHtml(tList)}`;
+      bulkNote = `※ Applied to ${escapeHtml(tList)}`;
     }
 
     const businessSection = `
       <div class="myprof-section">
-        <div class="myprof-section-title">🏪 사업체 정보 / Business Info</div>
+        <div class="myprof-section-title">🏪 Business Info</div>
         <div class="myprof-section-help">${bulkNote}</div>
         <div class="myprof-field">
-          <label class="myprof-label">사업체명 / Business Name</label>
+          <label class="myprof-label">Business Name</label>
           <input type="text" class="myprof-input" id="myprofBusinessName" value="${escapeHtml(businessName)}" placeholder="Business name">
         </div>
         <div class="myprof-field">
-          <label class="myprof-label">전화번호 / Phone</label>
+          <label class="myprof-label">Phone</label>
           <input type="text" class="myprof-input" id="myprofPhone" value="${escapeHtml(phone)}" placeholder="Phone number">
         </div>
       </div>
@@ -405,17 +405,17 @@
     let vehicleNote = '';
     if (ownerUnits.length >= 2) {
       const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      vehicleNote = `※ <span id="myprofVehUnits">${escapeHtml(checkedList)}</span> 모든 유닛에 일괄 등록 / Registered on all checked units`;
+      vehicleNote = `※ Registered on all checked units: <span id="myprofVehUnits">${escapeHtml(checkedList)}</span>`;
     } else if (ownerUnits.length === 1) {
-      vehicleNote = `※ ${escapeHtml(ownerUnits[0].unit)} 유닛에 등록 / Registered on ${escapeHtml(ownerUnits[0].unit)}`;
+      vehicleNote = `※ Registered on ${escapeHtml(ownerUnits[0].unit)}`;
     } else if (tenantUnits.length > 0) {
       const tList = tenantUnits.map(u => u.unit).join(', ');
-      vehicleNote = `※ ${escapeHtml(tList)} 유닛에 등록 / Registered on ${escapeHtml(tList)}`;
+      vehicleNote = `※ Registered on ${escapeHtml(tList)}`;
     }
 
     const vehicleSection = `
       <div class="myprof-section">
-        <div class="myprof-section-title">🚗 사업체 차량 / Business Vehicles (<span id="myprofVehCount">${unifiedPlates.length}</span>)</div>
+        <div class="myprof-section-title">🚗 Business Vehicles (<span id="myprofVehCount">${unifiedPlates.length}</span>)</div>
         <div class="myprof-section-help">${vehicleNote}</div>
         <div class="myprof-vehicles-list" id="myprofVehList">
           ${unifiedPlates.map(p => renderVehBadge(p)).join('')}
@@ -511,7 +511,7 @@
         dup.classList.add('myprof-veh-flash');
         setTimeout(() => dup.classList.remove('myprof-veh-flash'), 600);
       }
-      showSaveMsg('이미 등록된 차량입니다 / Already registered.', 'error', 2500);
+      showSaveMsg('Already registered.', 'error', 2500);
       return;
     }
 
@@ -524,7 +524,7 @@
     });
     if (otherUnitMatch) {
       input.value = '';
-      showSaveMsg(`이 차량은 다른 유닛(${escapeHtml(otherUnitMatch.unit)})에 등록되어 있습니다. 관리자에게 문의하세요. / This plate is registered on another unit. Please contact admin.`, 'error', 4000);
+      showSaveMsg(`This plate is registered on another unit (${escapeHtml(otherUnitMatch.unit)}). Please contact admin.`, 'error', 4000);
       return;
     }
 
@@ -569,11 +569,11 @@
     const msgEl = document.getElementById('myprofPwMsg');
 
     if (newPw.length < 8) {
-      showPwMsg(msgEl, '새 비밀번호는 최소 8자 / New password must be at least 8 characters.', 'error');
+      showPwMsg(msgEl, 'New password must be at least 8 characters.', 'error');
       return;
     }
     if (newPw !== confirmPw) {
-      showPwMsg(msgEl, '새 비밀번호가 일치하지 않습니다 / Passwords do not match.', 'error');
+      showPwMsg(msgEl, 'Passwords do not match.', 'error');
       return;
     }
 
@@ -586,7 +586,7 @@
         password: current
       });
       if (signInError) {
-        showPwMsg(msgEl, '현재 비밀번호가 틀립니다 / Current password is incorrect.', 'error');
+        showPwMsg(msgEl, 'Current password is incorrect.', 'error');
         return;
       }
       // 새 비번 적용
@@ -595,7 +595,7 @@
         showPwMsg(msgEl, 'Failed: ' + updateError.message, 'error');
         return;
       }
-      showPwMsg(msgEl, '✓ 비밀번호 변경 완료 / Password changed.', 'success');
+      showPwMsg(msgEl, '✓ Password changed successfully.', 'success');
       document.getElementById('myprofPwCurrent').value = '';
       document.getElementById('myprofPwNew').value = '';
       document.getElementById('myprofPwConfirm').value = '';
@@ -644,7 +644,7 @@
 
       // Admin/Observer는 여기서 종료 (사업체 정보 없음)
       if (role === 'admin' || role === 'observer') {
-        showSaveMsg('✓ 저장 완료 / Saved.', 'success', 2500);
+        showSaveMsg('✓ Saved.', 'success', 2500);
         if (saveBtn) saveBtn.disabled = false;
         if (window.showToast) window.showToast('Updated ✓');
         // 헤더 갱신
@@ -658,7 +658,7 @@
       const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0;
 
       if (isStaffOnly) {
-        showSaveMsg('✓ 저장 완료 / Saved.', 'success', 2500);
+        showSaveMsg('✓ Saved.', 'success', 2500);
         if (saveBtn) saveBtn.disabled = false;
         if (window.showToast) window.showToast('Updated ✓');
         fillHeader();
@@ -751,7 +751,7 @@
         if (rpcErr) console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
       }
 
-      showSaveMsg('✓ 저장 완료 / Saved successfully.', 'success', 2500);
+      showSaveMsg('✓ Saved.successfully.', 'success', 2500);
       if (saveBtn) saveBtn.disabled = false;
       if (window.showToast) window.showToast('Updated ✓');
       fillHeader();
