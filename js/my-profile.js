@@ -1,26 +1,28 @@
 // ============================================================
 // Redmyre BMS — My Profile Modal (Unified Form)
 // /js/my-profile.js
-// 다중 유닛 통합 폼 아키텍처
-//   - Owner (≥2 유닛): 체크박스 섹션 + 사업체정보/차량 일괄 적용
-//   - Owner (단일): 체크박스 숨김 + 사업체정보/차량 그 유닛에 적용
-//   - Tenant: 체크박스 숨김 + 그 유닛에만 적용
-//   - Staff: 본인 정보(이름+비번)만, 사업체/차량 섹션 없음
+// Multi-unit unified form architecture
+//   - Owner (≥2 units): checkbox section + bulk-applied business info / vehicles
+//   - Owner (single):   no checkboxes, applied to that unit
+//   - Tenant:           no checkboxes, applied to leased unit(s)
+//   - Staff:            personal info only (name + password), no business/vehicles
+//
+// Bulk sync (OWNER side):
+//   Name change → profiles.full_name + occupants.contact_person (all checked OWNER units)
+//   Business Name / Phone / Vehicles → all checked OWNER units
+//   Unchecked OWNER units → only owner_type='Tenant' (no other fields touched)
+//   TENANT-leased units → business_name / phone / vehicles only (contact_person preserved)
 // ============================================================
 
 (function() {
   'use strict';
 
-  // 본인 매칭 유닛 캐시 [{id, unit, owner_type, business_name, phone, license_plates, primary_email, business_email, my_role: 'OWNER'|'TENANT'|'STAFF', checked}]
   let myUnits = [];
-  // 통합 차량 리스트 (체크된 OWNER 유닛 기준 union)
   let unifiedPlates = [];
-  // Admin이 보는 모드 (occupants 페이지에서 직접 와야 의미 있는데, 본 모달은 본인용이라 admin은 안내만)
   let isAdmin = false;
-  // 전체 vehicles (중복 체크용 — lookup_vehicle_plates RPC)
   let allVehicles = [];
 
-  // ── 모달 열기 ────────────────────────────────────────────
+  // ── Open modal ───────────────────────────────────────────
   window.openMyProfile = async function() {
     const modal = document.getElementById('myProfileModal');
     const body = document.getElementById('myProfileBody');
@@ -39,14 +41,13 @@
     await loadAndRender();
   };
 
-  // ── 모달 닫기 ────────────────────────────────────────────
+  // ── Close modal ──────────────────────────────────────────
   window.closeMyProfile = function() {
     const modal = document.getElementById('myProfileModal');
     if (modal) {
       modal.classList.remove('open');
       document.body.style.overflow = '';
     }
-    // 상태 초기화
     myUnits = [];
     unifiedPlates = [];
     allVehicles = [];
@@ -57,7 +58,7 @@
     }
   };
 
-  // ── ESC 키로 닫기 ────────────────────────────────────────
+  // ── ESC closes modal ─────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       const modal = document.getElementById('myProfileModal');
@@ -67,7 +68,7 @@
     }
   });
 
-  // ── 로드 & 렌더 ──────────────────────────────────────────
+  // ── Load & render ────────────────────────────────────────
   async function loadAndRender() {
     const ctx = window.__bmsCtx;
     if (!ctx?.supabase || !ctx?.user?.email) {
@@ -80,10 +81,8 @@
     const myEmail = ctx.user.email.toLowerCase();
     isAdmin = (role === 'admin');
 
-    // 헤더 채우기
     fillHeader();
 
-    // Admin / Observer는 사업체/차량 섹션 없이 본인 정보만
     if (role === 'admin' || role === 'observer') {
       renderSimpleProfile();
       return;
@@ -100,7 +99,6 @@
         return;
       }
 
-      // 본인 매칭 유닛 분류
       myUnits = [];
       (occupants || []).forEach(o => {
         const primaryEmails = (o.primary_email || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -110,22 +108,18 @@
         const isInBusiness = businessEmails.includes(myEmail);
 
         if (isPrimary) {
-          // OWNER 매칭: owner_type 그대로 두고 my_role은 'OWNER' (체크박스 토글 대상)
-          // 체크 초기 상태 = owner_type === 'Owner'
           myUnits.push({
             ...o,
             my_role: 'OWNER',
             checked: (o.owner_type === 'Owner')
           });
         } else if (isInBusiness && o.owner_type === 'Tenant') {
-          // TENANT 매칭 (그 유닛 임차인)
           myUnits.push({
             ...o,
             my_role: 'TENANT',
-            checked: true // 항상 그 유닛 본인이라 체크 개념 없음
+            checked: true
           });
         } else if (isInBusiness && o.owner_type === 'Owner') {
-          // STAFF 매칭 (Owner 유닛의 직원)
           myUnits.push({
             ...o,
             my_role: 'STAFF',
@@ -134,10 +128,8 @@
         }
       });
 
-      // 통합 차량 리스트 초기화 (OWNER 유닛 union, 또는 단일 TENANT 유닛 plate)
       computeUnifiedPlates();
 
-      // 중복 체크용 전체 vehicles 로드
       try {
         const { data: vehicles } = await supabase.rpc('lookup_vehicle_plates');
         allVehicles = vehicles || [];
@@ -154,14 +146,11 @@
     }
   }
 
-  // 통합 차량 리스트 계산
   function computeUnifiedPlates() {
     const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER' && u.checked);
     const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
-
     const targetUnits = ownerUnits.length > 0 ? ownerUnits : tenantUnits;
 
-    // union of plates
     const set = new Set();
     targetUnits.forEach(u => {
       const plates = (u.license_plates || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
@@ -171,7 +160,7 @@
     unifiedPlates = Array.from(set);
   }
 
-  // ── 헤더 ────────────────────────────────────────────────
+  // ── Header ──────────────────────────────────────────────
   function fillHeader() {
     const ctx = window.__bmsCtx || {};
     const name = ctx.name || ctx.profile?.full_name || 'User';
@@ -185,7 +174,7 @@
     if (subtitleEl) subtitleEl.textContent = `${name} · ${roleLabel}`;
   }
 
-  // ── 에러 ────────────────────────────────────────────────
+  // ── Error ───────────────────────────────────────────────
   function renderError(msg) {
     const body = document.getElementById('myProfileBody');
     if (body) {
@@ -193,7 +182,7 @@
     }
   }
 
-  // ── Admin/Observer/Staff용 단순 프로필 (본인 정보만) ────────
+  // ── Simple profile (Admin / Observer) ───────────────────
   function renderSimpleProfile() {
     const ctx = window.__bmsCtx || {};
     const role = ctx.role || '';
@@ -246,7 +235,7 @@
             <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">Confirm Password</label>
+            <label class="myprof-label">Confirm New Password</label>
             <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
           </div>
           <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
@@ -255,37 +244,32 @@
       </div>
     `;
 
-    // Footer 표시 (이름만 저장)
     const footer = document.getElementById('myprofFooter');
     if (footer) footer.style.display = 'flex';
   }
 
-  // ── 풀 프로필 (Owner/Tenant/Staff) ──────────────────────
+  // ── Full profile (Owner / Tenant / Staff) ──────────────
   function renderFullProfile() {
     const ctx = window.__bmsCtx || {};
     const role = ctx.role || '';
     const email = ctx.user?.email || '';
     const fullName = ctx.profile?.full_name || ctx.name || '';
 
-    // 매칭 유닛 없음
     if (myUnits.length === 0) {
       renderSimpleProfile();
       return;
     }
 
-    // Staff 케이스: my_role 'STAFF'만 있고 OWNER/TENANT 없음
     const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
     const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
     const staffUnits = myUnits.filter(u => u.my_role === 'STAFF');
     const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0 && staffUnits.length > 0;
 
-    // Suite 텍스트 (모든 매칭 유닛)
     const suiteText = myUnits.map(u => u.unit).join(', ');
 
-    // Admin 박스
     const adminBox = `
       <div class="myprof-section">
-        <div class="myprof-section-title">🔒 Account Info</div>
+        <div class="myprof-section-title">🔒 Admin Info</div>
         <div class="myprof-admin-box">
           <div class="myprof-admin-row">
             <span class="myprof-admin-label">Suite</span>
@@ -303,7 +287,6 @@
       </div>
     `;
 
-    // 본인 정보 (이름 + 비번)
     const myInfoBlock = `
       <div class="myprof-section">
         <div class="myprof-section-title">✏️ My Info</div>
@@ -325,7 +308,7 @@
             <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
           </div>
           <div class="myprof-field">
-            <label class="myprof-label">Confirm Password</label>
+            <label class="myprof-label">Confirm New Password</label>
             <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
           </div>
           <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
@@ -334,7 +317,6 @@
       </div>
     `;
 
-    // Staff only: 본인 정보만
     if (isStaffOnly) {
       const staffNote = `<div style="padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;font-size:12px;color:#92400e;margin-bottom:14px">You are registered as Staff under the unit Owner. Vehicle registration is handled by the Owner of your unit.</div>`;
       document.getElementById('myProfileBody').innerHTML = staffNote + adminBox + myInfoBlock;
@@ -343,13 +325,12 @@
       return;
     }
 
-    // 체크박스 섹션 (Owner ≥2 유닛만)
     let checkboxSection = '';
     if (ownerUnits.length >= 2) {
       checkboxSection = `
         <div class="myprof-section">
           <div class="myprof-section-title">🏢 Operating Units</div>
-          <div class="myprof-section-help">Check the units you operate yourself. Unchecked = leased out (TENANT).</div>
+          <div class="myprof-section-help">Check the units you operate yourself. Unchecked units = leased out (TENANT).</div>
           <div id="myprofUnitCheckboxes">
             ${ownerUnits.map(u => renderUnitRow(u)).join('')}
           </div>
@@ -357,10 +338,6 @@
       `;
     }
 
-    // 사업체 정보 - 일괄 적용 대상 결정
-    // - Owner ≥2 + 체크된 유닛 있음: 그 유닛 중 첫 값으로 prefill
-    // - Owner 1: 그 유닛 값
-    // - Tenant 1+: 그 유닛 값
     let prefillSource = null;
     if (ownerUnits.length >= 2) {
       const checkedOwners = ownerUnits.filter(u => u.checked);
@@ -374,16 +351,15 @@
     const businessName = prefillSource?.business_name || '';
     const phone = prefillSource?.phone || '';
 
-    // 일괄 적용 안내 텍스트
     let bulkNote = '';
     if (ownerUnits.length >= 2) {
       const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      bulkNote = `※ Applied to all checked OWNER units: <span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>`;
+      bulkNote = `Applied to all checked OWNER units: <span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>`;
     } else if (ownerUnits.length === 1) {
-      bulkNote = `※ Applied to ${escapeHtml(ownerUnits[0].unit)}`;
+      bulkNote = `Applied to unit ${escapeHtml(ownerUnits[0].unit)}`;
     } else if (tenantUnits.length > 0) {
       const tList = tenantUnits.map(u => u.unit).join(', ');
-      bulkNote = `※ Applied to ${escapeHtml(tList)}`;
+      bulkNote = `Applied to unit ${escapeHtml(tList)}`;
     }
 
     const businessSection = `
@@ -401,16 +377,15 @@
       </div>
     `;
 
-    // 차량 섹션
     let vehicleNote = '';
     if (ownerUnits.length >= 2) {
       const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      vehicleNote = `※ Registered on all checked units: <span id="myprofVehUnits">${escapeHtml(checkedList)}</span>`;
+      vehicleNote = `Registered on all checked units: <span id="myprofVehUnits">${escapeHtml(checkedList)}</span>`;
     } else if (ownerUnits.length === 1) {
-      vehicleNote = `※ Registered on ${escapeHtml(ownerUnits[0].unit)}`;
+      vehicleNote = `Registered on unit ${escapeHtml(ownerUnits[0].unit)}`;
     } else if (tenantUnits.length > 0) {
       const tList = tenantUnits.map(u => u.unit).join(', ');
-      vehicleNote = `※ Registered on ${escapeHtml(tList)}`;
+      vehicleNote = `Registered on unit ${escapeHtml(tList)}`;
     }
 
     const vehicleSection = `
@@ -423,7 +398,7 @@
         <div class="myprof-veh-add-row">
           <input type="text" class="myprof-veh-input" id="myprofVehInput" placeholder="ex: ABC123" maxlength="10"
             onkeydown="if(event.key==='Enter'){event.preventDefault();myProfileAddVehicle();}">
-          <button class="myprof-veh-add-btn" onclick="myProfileAddVehicle()">+ 추가 / Add</button>
+          <button class="myprof-veh-add-btn" onclick="myProfileAddVehicle()">+ Add</button>
         </div>
       </div>
     `;
@@ -435,7 +410,6 @@
     if (footer) footer.style.display = 'flex';
   }
 
-  // ── Unit row (체크박스 행) ────────────────────────────────
   function renderUnitRow(u) {
     const cls = u.checked ? 'owner' : 'tenant';
     const badge = u.checked ? 'OWNER' : 'TENANT';
@@ -450,7 +424,6 @@
     `;
   }
 
-  // ── 차량 배지 ────────────────────────────────────────────
   function renderVehBadge(plate) {
     const safe = escapeHtml(plate);
     return `
@@ -462,13 +435,12 @@
     `;
   }
 
-  // ── 체크박스 토글 ────────────────────────────────────────
+  // ── Toggle unit checkbox ────────────────────────────────
   window.myProfileToggleUnit = function(unitId) {
     const u = myUnits.find(x => x.id === unitId);
     if (!u || u.my_role !== 'OWNER') return;
     u.checked = !u.checked;
 
-    // 행 UI 업데이트
     const row = document.querySelector(`.myprof-unit-row[data-unit-id="${unitId}"]`);
     if (row) {
       if (u.checked) {
@@ -482,7 +454,6 @@
       }
     }
 
-    // 일괄 적용 안내 텍스트 업데이트
     const ownerUnits = myUnits.filter(x => x.my_role === 'OWNER');
     const checkedList = ownerUnits.filter(x => x.checked).map(x => x.unit).join(', ') || '(no units checked)';
     const bulkEl = document.getElementById('myprofBulkUnits');
@@ -491,7 +462,7 @@
     if (vehUnitsEl) vehUnitsEl.textContent = checkedList;
   };
 
-  // ── 차량 추가 ────────────────────────────────────────────
+  // ── Add vehicle ─────────────────────────────────────────
   window.myProfileAddVehicle = function() {
     const input = document.getElementById('myprofVehInput');
     if (!input) return;
@@ -503,7 +474,6 @@
       return;
     }
 
-    // 1. 본인 차량 리스트 내 중복
     if (unifiedPlates.includes(plate)) {
       input.value = '';
       const dup = document.querySelector(`.myprof-veh-badge[data-plate="${plate}"]`);
@@ -515,7 +485,6 @@
       return;
     }
 
-    // 2. 다른 유닛에 이미 등록되어 있는지 체크
     const myUnitNumbers = new Set(myUnits.map(u => String(u.unit)));
     const otherUnitMatch = allVehicles.find(v => {
       if (!v?.plate) return false;
@@ -524,11 +493,10 @@
     });
     if (otherUnitMatch) {
       input.value = '';
-      showSaveMsg(`This plate is registered on another unit (${escapeHtml(otherUnitMatch.unit)}). Please contact admin.`, 'error', 4000);
+      showSaveMsg(`This plate is already registered on another unit (${escapeHtml(otherUnitMatch.unit)}). Please contact Building Management.`, 'error', 4000);
       return;
     }
 
-    // 3. 통과 → 추가
     unifiedPlates.push(plate);
     const list = document.getElementById('myprofVehList');
     if (list) list.insertAdjacentHTML('beforeend', renderVehBadge(plate));
@@ -538,7 +506,6 @@
     input.focus();
   };
 
-  // ── 차량 삭제 ────────────────────────────────────────────
   window.myProfileRemoveVehicle = function(plate) {
     const idx = unifiedPlates.indexOf(plate);
     if (idx === -1) return;
@@ -549,7 +516,7 @@
     if (count) count.textContent = unifiedPlates.length;
   };
 
-  // ── 비번 변경 토글 ───────────────────────────────────────
+  // ── Toggle password panel ───────────────────────────────
   window.myProfileTogglePw = function() {
     const btn = document.getElementById('myprofPwBtn');
     const panel = document.getElementById('myprofPwPanel');
@@ -558,7 +525,7 @@
     panel.classList.toggle('open');
   };
 
-  // ── 비번 변경 ────────────────────────────────────────────
+  // ── Change password ─────────────────────────────────────
   window.myProfileChangePw = async function() {
     const ctx = window.__bmsCtx;
     if (!ctx?.supabase || !ctx?.user?.email) return;
@@ -573,14 +540,13 @@
       return;
     }
     if (newPw !== confirmPw) {
-      showPwMsg(msgEl, 'Passwords do not match.', 'error');
+      showPwMsg(msgEl, 'New passwords do not match.', 'error');
       return;
     }
 
     showPwMsg(msgEl, 'Updating…', 'loading');
 
     try {
-      // 현재 비번 확인
       const { error: signInError } = await ctx.supabase.auth.signInWithPassword({
         email: ctx.user.email,
         password: current
@@ -589,13 +555,12 @@
         showPwMsg(msgEl, 'Current password is incorrect.', 'error');
         return;
       }
-      // 새 비번 적용
       const { error: updateError } = await ctx.supabase.auth.updateUser({ password: newPw });
       if (updateError) {
         showPwMsg(msgEl, 'Failed: ' + updateError.message, 'error');
         return;
       }
-      showPwMsg(msgEl, '✓ Password changed successfully.', 'success');
+      showPwMsg(msgEl, '✓ Password changed.', 'success');
       document.getElementById('myprofPwCurrent').value = '';
       document.getElementById('myprofPwNew').value = '';
       document.getElementById('myprofPwConfirm').value = '';
@@ -611,7 +576,7 @@
     el.textContent = msg;
   }
 
-  // ── 전체 저장 ────────────────────────────────────────────
+  // ── Save all ────────────────────────────────────────────
   window.myProfileSaveAll = async function() {
     const ctx = window.__bmsCtx;
     if (!ctx?.supabase || !ctx?.user?.email) return;
@@ -624,7 +589,7 @@
     showSaveMsg('Saving…', 'loading');
 
     try {
-      // a) profiles.full_name UPDATE
+      // a) Update profiles.full_name
       const nameInput = document.getElementById('myprofName');
       const newName = (nameInput?.value || '').trim();
       if (newName.length >= 2) {
@@ -637,48 +602,46 @@
           if (saveBtn) saveBtn.disabled = false;
           return;
         }
-        // ctx 업데이트
         if (ctx.profile) ctx.profile.full_name = newName;
         ctx.name = newName;
       }
 
-      // Admin/Observer는 여기서 종료 (사업체 정보 없음)
+      // Admin/Observer: stop here
       if (role === 'admin' || role === 'observer') {
-        showSaveMsg('✓ Saved.', 'success', 2500);
+        showSaveMsg('✓ Saved successfully.', 'success', 2500);
         if (saveBtn) saveBtn.disabled = false;
         if (window.showToast) window.showToast('Updated ✓');
-        // 헤더 갱신
         fillHeader();
         return;
       }
 
-      // Staff only: 사업체 정보/차량 없음
       const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
       const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
       const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0;
 
       if (isStaffOnly) {
-        showSaveMsg('✓ Saved.', 'success', 2500);
+        showSaveMsg('✓ Saved successfully.', 'success', 2500);
         if (saveBtn) saveBtn.disabled = false;
         if (window.showToast) window.showToast('Updated ✓');
         fillHeader();
         return;
       }
 
-      // b) 사업체 정보 수집
+      // b) Collect business info
       const businessName = (document.getElementById('myprofBusinessName')?.value || '').trim();
       const phone = (document.getElementById('myprofPhone')?.value || '').trim();
       const platesStr = unifiedPlates.join(', ');
 
-      // c) 본인 OWNER 매칭 유닛 순회
-      // - 체크된 유닛: owner_type='Owner', business_name, phone, license_plates
-      // - 미체크 유닛: owner_type='Tenant'만 (다른 필드 절대 안 건드림)
+      // c) OWNER units
+      // - Checked: contact_person + business_name + phone + license_plates + owner_type='Owner' (all bulk-applied)
+      // - Unchecked: owner_type='Tenant' ONLY (do NOT touch other fields)
       for (const u of ownerUnits) {
         if (u.checked) {
           const { error: upErr } = await supabase
             .from('occupants')
             .update({
               owner_type: 'Owner',
+              contact_person: newName || null,        // ← Name → contact_person bulk sync
               business_name: businessName || null,
               phone: phone || null,
               license_plates: platesStr || null
@@ -689,14 +652,14 @@
             if (saveBtn) saveBtn.disabled = false;
             return;
           }
-          // 캐시 업데이트
           u.owner_type = 'Owner';
+          u.contact_person = newName || null;
           u.business_name = businessName || null;
           u.phone = phone || null;
           u.license_plates = platesStr || null;
 
-          // sync_vehicles RPC
-          const ownerName = u.contact_person || businessName || '';
+          // sync_vehicles uses the new contact_person
+          const ownerName = newName || businessName || '';
           const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
             p_unit: u.unit,
             p_owner_name: ownerName,
@@ -704,10 +667,9 @@
           });
           if (rpcErr) {
             console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
-            // 차량 sync 실패는 경고만, 저장 흐름은 계속
           }
         } else {
-          // 미체크 → owner_type만 'Tenant'로
+          // Unchecked: only owner_type='Tenant' — preserve everything else
           const { error: upErr } = await supabase
             .from('occupants')
             .update({ owner_type: 'Tenant' })
@@ -721,8 +683,7 @@
         }
       }
 
-      // d) Tenant 매칭 유닛 (Tenant인 본인이 임차한 유닛)
-      // 체크박스 없이 그 유닛에 직접 적용
+      // d) TENANT-leased units (do NOT touch contact_person — that's the actual Owner's name)
       for (const u of tenantUnits) {
         const { error: upErr } = await supabase
           .from('occupants')
@@ -741,7 +702,6 @@
         u.phone = phone || null;
         u.license_plates = platesStr || null;
 
-        // sync_vehicles
         const ownerName = u.contact_person || businessName || '';
         const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
           p_unit: u.unit,
@@ -751,7 +711,7 @@
         if (rpcErr) console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
       }
 
-      showSaveMsg('✓ Saved.successfully.', 'success', 2500);
+      showSaveMsg('✓ Saved successfully.', 'success', 2500);
       if (saveBtn) saveBtn.disabled = false;
       if (window.showToast) window.showToast('Updated ✓');
       fillHeader();
@@ -763,7 +723,7 @@
     }
   };
 
-  // ── 저장 메시지 ──────────────────────────────────────────
+  // ── Save message ────────────────────────────────────────
   function showSaveMsg(msg, type, autoHide) {
     const el = document.getElementById('myprofSaveMsg');
     if (!el) return;
