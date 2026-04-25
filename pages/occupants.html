@@ -776,8 +776,8 @@
       <label class="modal-label">Owner Type</label>
       <select class="modal-select" id="editOwnerType">
         <option value="">— Not set —</option>
-        <option value="Owner">Owner (본인 운영)</option>
-        <option value="Tenant">Tenant (임대 중)</option>
+        <option value="Owner">Owner (self-operated)</option>
+        <option value="Tenant">Tenant (leased out)</option>
       </select>
     </div>
     
@@ -793,7 +793,7 @@
     
     <div class="modal-field">
       <label class="modal-label">Tenant Email</label>
-      <input class="modal-input" type="email" id="editTenantEmail" placeholder="Tenant 대표 email (1개)">
+      <input class="modal-input" type="email" id="editTenantEmail" placeholder="Tenant lead email (single)">
     </div>
 
     <div class="modal-field">
@@ -1032,14 +1032,14 @@ function renderOccupants() {
     // 안내바 종류
     let infoBarHtml = '';
     if (isOwnerUnit) {
-      infoBarHtml = `<div class="occ-info-bar owner-unit"><span>OWNER 유닛 — 모두에게 동일하게 보임</span></div>`;
+      infoBarHtml = `<div class="occ-info-bar owner-unit"><span>OWNER unit — visible to everyone</span></div>`;
     } else if (isMyOwnedUnit) {
-      infoBarHtml = `<div class="occ-info-bar self-owner"><span>본인 Owner라서 <span style="color:#eab308">⭐</span> 항목도 다 보임</span></div>`;
+      infoBarHtml = `<div class="occ-info-bar self-owner"><span>You are the Owner — all <span style="color:#eab308">⭐</span> fields visible</span></div>`;
     } else if (isPrivilegedRole) {
-      infoBarHtml = `<div class="occ-info-bar privileged"><span><span style="color:#eab308">⭐</span> 표시 = Admin/Committee/Observer/본인 Owner만 보임</span></div>`;
+      infoBarHtml = `<div class="occ-info-bar privileged"><span><span style="color:#eab308">⭐</span> = visible to Admin / Committee / Observer / Owner only</span></div>`;
     } else {
       // 일반 owner/tenant가 다른 TENANT 유닛 보는 경우
-      infoBarHtml = `<div class="occ-info-bar privacy"><span><span style="color:#eab308">⭐</span> 항목(Owner Contact/Primary Email) 숨김 — Privacy 보호</span></div>`;
+      infoBarHtml = `<div class="occ-info-bar privacy"><span><span style="color:#eab308">⭐</span> Owner Contact / Primary Email hidden — Privacy protected</span></div>`;
     }
 
     // 헤더 배지
@@ -1052,11 +1052,11 @@ function renderOccupants() {
     // 차량 섹션
     const vehiclesHtml = plates.length
       ? `<div class="occ-vehicles-section">
-           <div class="occ-vehicles-title">🚗 차량 (${plates.length})</div>
+           <div class="occ-vehicles-title">🚗 Vehicles (${plates.length})</div>
            <div class="plate-badges">${plates.map(p => `<span class="plate-badge">${p}</span>`).join('')}</div>
          </div>`
       : `<div class="occ-vehicles-section">
-           <div class="occ-vehicles-title">🚗 차량 (0)</div>
+           <div class="occ-vehicles-title">🚗 Vehicles (0)</div>
            <div style="font-size:12px;color:#cbd5e1;font-style:italic">No vehicles registered</div>
          </div>`;
 
@@ -1105,7 +1105,7 @@ function renderOccupants() {
     const staffEmailRowHtml = staffEmails.length || isOwnerUnit ? `
       <div class="occ-list-row">
         <div class="occ-list-label"><span class="lbl-icon">📧</span> Staff Email</div>
-        <div class="occ-list-value ${staffEmails.length ? '' : 'empty'}">${staffEmails.length ? staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>') : '(없음)'}</div>
+        <div class="occ-list-value ${staffEmails.length ? '' : 'empty'}">${staffEmails.length ? staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>') : '(none)'}</div>
       </div>
     ` : '';
 
