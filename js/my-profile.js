@@ -273,14 +273,24 @@
           ` : ''}
         </div>
 
-        <!-- Vehicles preview (Phase 5에서 수정 기능 추가) -->
-        <div class="myprof-vehicles-preview">
-          <div class="myprof-vehicles-title">🚗 Vehicles (${plates.length})</div>
-          ${plates.length
-            ? `<div class="myprof-vehicles-plates">${plates.map(p => `<span class="myprof-plate">${escapeHtml(p)}</span>`).join('')}</div>`
-            : `<div class="myprof-vehicles-empty">No vehicles registered</div>`
-          }
-          <div class="myprof-vehicles-note">Vehicle editing — coming next phase</div>
+        <!-- Vehicles Editor (Phase 5) -->
+        <div class="myprof-vehicles-edit" data-vehicles-card="${escapeHtml(u.id)}">
+          <div class="myprof-vehicles-header">
+            <span class="myprof-vehicles-title">🚗 Vehicles</span>
+            <span class="myprof-vehicles-count" id="myprofVehCount-${escapeHtml(u.id)}">${plates.length}</span>
+          </div>
+          <div class="myprof-plate-list" id="myprofPlateList-${escapeHtml(u.id)}">
+            ${plates.map(p => renderPlateBadge(u.id, p)).join('')}
+          </div>
+          <div class="myprof-plate-add-row">
+            <input type="text" class="myprof-plate-input" id="myprofPlateInput-${escapeHtml(u.id)}"
+              placeholder="Add plate (e.g. ABC123)" maxlength="10"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();myProfileAddPlate('${escapeHtml(u.id)}');}">
+            <button class="myprof-plate-add-btn" onclick="myProfileAddPlate('${escapeHtml(u.id)}')">+ Add</button>
+          </div>
+          <div class="myprof-vehicles-help">
+            ℹ️ Remove plates that are not yours, add your own. Save when done.
+          </div>
         </div>
 
         <!-- Save button -->
@@ -294,8 +304,83 @@
     `;
   }
 
+  // ── 차량 (Phase 5) ────────────────────────────────────────
+  function renderPlateBadge(unitId, plate) {
+    const safePlate = escapeHtml(plate);
+    return `
+      <span class="myprof-plate-badge" data-plate="${safePlate}">
+        <span class="myprof-plate-text">${safePlate}</span>
+        <button class="myprof-plate-remove" onclick="myProfileRemovePlate('${escapeHtml(unitId)}', '${safePlate.replace(/'/g, "&#39;")}')" title="Remove">✕</button>
+      </span>
+    `;
+  }
+
+  // 차량 추가
+  window.myProfileAddPlate = function(unitId) {
+    const input = document.getElementById(`myprofPlateInput-${unitId}`);
+    if (!input) return;
+    const raw = (input.value || '').trim().toUpperCase();
+    if (!raw) return;
+    // 영문/숫자만, 최대 10자
+    const plate = raw.replace(/[^A-Z0-9]/g, '');
+    if (!plate) {
+      input.value = '';
+      return;
+    }
+    // 중복 체크
+    const list = document.getElementById(`myprofPlateList-${unitId}`);
+    if (!list) return;
+    const existing = Array.from(list.querySelectorAll('.myprof-plate-badge'))
+      .map(el => el.dataset.plate);
+    if (existing.includes(plate)) {
+      input.value = '';
+      // 살짝 깜빡임 애니메이션 (이미 있음 표시)
+      const dup = list.querySelector(`.myprof-plate-badge[data-plate="${plate}"]`);
+      if (dup) {
+        dup.classList.add('myprof-plate-flash');
+        setTimeout(() => dup.classList.remove('myprof-plate-flash'), 600);
+      }
+      return;
+    }
+    // 추가
+    list.insertAdjacentHTML('beforeend', renderPlateBadge(unitId, plate));
+    input.value = '';
+    updatePlateCount(unitId);
+    input.focus();
+  };
+
+  // 차량 삭제
+  window.myProfileRemovePlate = function(unitId, plate) {
+    const list = document.getElementById(`myprofPlateList-${unitId}`);
+    if (!list) return;
+    const el = list.querySelector(`.myprof-plate-badge[data-plate="${plate}"]`);
+    if (el) {
+      el.remove();
+      updatePlateCount(unitId);
+    }
+  };
+
+  // 카운트 업데이트
+  function updatePlateCount(unitId) {
+    const list = document.getElementById(`myprofPlateList-${unitId}`);
+    const count = document.getElementById(`myprofVehCount-${unitId}`);
+    if (list && count) {
+      count.textContent = list.querySelectorAll('.myprof-plate-badge').length;
+    }
+  }
+
+  // 카드의 현재 plate 리스트 수집 (저장 시 사용)
+  function collectPlatesFromCard(unitId) {
+    const list = document.getElementById(`myprofPlateList-${unitId}`);
+    if (!list) return [];
+    return Array.from(list.querySelectorAll('.myprof-plate-badge'))
+      .map(el => el.dataset.plate)
+      .filter(p => p);
+  }
+
   // ── 유닛 저장 ────────────────────────────────────────────
   // 저장 가능 필드: business_name (둘 다), contact_person (OWNER 카드에만 input 존재)
+  // 차량: 화면 리스트 그대로 license_plates에 덮어쓰기 + sync_vehicles RPC
   // phone, owner_type, primary_email, business_email = read-only이라 저장 안 함
   window.myProfileSaveUnit = async function(unitId) {
     const card = document.querySelector(`.myprof-unit-card[data-unit-id="${unitId}"]`);
@@ -309,12 +394,17 @@
 
     const msgEl = document.getElementById(`myprofMsg-${unitId}`);
 
-    // 입력값 수집 (input이 존재하는 필드만)
+    // 1. 입력값 수집 (input이 존재하는 필드만)
     const data = {};
     card.querySelectorAll('.myprof-edit-input').forEach(input => {
       const field = input.dataset.field;
       data[field] = input.value.trim() || null;
     });
+
+    // 2. 차량 수집 (화면 그대로)
+    const plates = collectPlatesFromCard(unitId);
+    const platesStr = plates.join(', ');
+    data.license_plates = platesStr || null;
 
     // 최소한 business_name은 있어야 함 (보호장치)
     if (!('business_name' in data)) {
@@ -325,6 +415,7 @@
     showCardMsg(msgEl, 'Saving…', 'loading');
 
     try {
+      // 3. occupants 업데이트
       const { error } = await ctx.supabase
         .from('occupants')
         .update(data)
@@ -335,10 +426,31 @@
         return;
       }
 
+      // 4. vehicles 테이블 동기화 (sync_vehicles RPC)
+      const cached = currentMyUnits.find(u => u.id === unitId);
+      const unit = cached?.unit || card.dataset.unit;
+      const ownerName =
+        data.contact_person ||
+        data.business_name ||
+        cached?.contact_person ||
+        cached?.business_name ||
+        '';
+
+      const { error: rpcError } = await ctx.supabase.rpc('sync_vehicles', {
+        p_unit: unit,
+        p_owner_name: ownerName,
+        p_plates: plates
+      });
+
+      if (rpcError) {
+        // occupants는 저장됐는데 vehicles만 실패한 케이스
+        showCardMsg(msgEl, 'Saved, but vehicle sync failed: ' + rpcError.message, 'error');
+        return;
+      }
+
       showCardMsg(msgEl, '✓ Saved successfully', 'success');
 
       // 캐시 업데이트
-      const cached = currentMyUnits.find(u => u.id === unitId);
       if (cached) {
         Object.keys(data).forEach(k => { cached[k] = data[k]; });
       }
