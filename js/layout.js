@@ -1,4 +1,5 @@
 import { getSupabase } from '/js/auth.js';
+import '/js/my-profile.js';
 
 const PAGE_CONFIG = {
   'building':       { title: 'Overview',             allowedRoles: null },
@@ -337,7 +338,10 @@ export async function initLayout() {
     try { await supabase.from('audit_logs').insert({ user_email: user.email, user_role: role, action: 'PAGE_ENTER', details: { page: window.location.pathname } }); } catch(e) {}
   }
 
-  return { supabase, user, profile, role, name };
+  // my-profile.js 등에서 사용할 수 있도록 컨텍스트 노출
+  const ctx = { supabase, user, profile, role, name };
+  window.__bmsCtx = ctx;
+  return ctx;
 }
 
 function initBadges(supabase, user, role) {
