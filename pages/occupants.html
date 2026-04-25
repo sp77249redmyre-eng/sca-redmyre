@@ -152,6 +152,91 @@
   font-size: 11px;
   font-weight: 700;
 }
+/* Type Badge (OWNER / TENANT) - 헤더 우측 */
+.occ-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.occ-type-badge.owner { background: #dcfce7; color: #166534; }
+.occ-type-badge.tenant { background: #dbeafe; color: #1e40af; }
+.occ-type-badge.empty { background: #f1f5f9; color: #94a3b8; }
+
+/* Info Bar (펼침 카드 상단 안내바) */
+.occ-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 16px 0 14px 0;
+}
+.occ-info-bar.privileged { background: #fef9c3; color: #854d0e; border-left: 3px solid #eab308; }
+.occ-info-bar.self-owner { background: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
+.occ-info-bar.privacy { background: #fee2e2; color: #991b1b; border-left: 3px solid #ef4444; }
+.occ-info-bar.owner-unit { background: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
+
+/* List-style fields (1-column) */
+.occ-body-list {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+.occ-list-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  align-items: baseline;
+}
+.occ-list-row + .occ-list-row { border-top: 1px solid #f1f5f9; }
+.occ-list-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.occ-list-label .lbl-star { color: #eab308; font-size: 12px; }
+.occ-list-label .lbl-icon { font-size: 13px; opacity: 0.85; }
+.occ-list-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.occ-list-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+.occ-list-value a { color: var(--blue-600); text-decoration: none; }
+.occ-list-value a:hover { text-decoration: underline; }
+.occ-list-divider {
+  border-top: 1px dashed #cbd5e1;
+  margin: 4px 0;
+}
+
+/* Vehicles Section */
+.occ-vehicles-section {
+  padding: 14px 0 4px 0;
+  margin-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+.occ-vehicles-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .occ-body-actions {
   display: flex;
   justify-content: flex-end;
@@ -570,6 +655,10 @@
   .occ-header .occ-meta { order: 3; flex: 0 0 auto; }
   .occ-chevron { order: 4; flex: 0 0 auto; }
   .occ-body { padding: 0 16px 16px 16px; }
+  .occ-list-row { grid-template-columns: 130px 1fr; gap: 8px; padding: 7px 0; }
+  .occ-list-label { font-size: 11px; }
+  .occ-list-value { font-size: 12.5px; }
+  .occ-info-bar { font-size: 11.5px; padding: 9px 12px; }
   .occ-body-grid { grid-template-columns: 1fr; gap: 12px; }
   .occ-unit { min-width: auto; }
   .occ-meta { flex-wrap: wrap; max-width: 100%; }
@@ -682,6 +771,15 @@
       <label class="modal-label">Business Name</label>
       <input class="modal-input" id="editBusinessName" placeholder="Business or tenant name">
     </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Owner Type</label>
+      <select class="modal-select" id="editOwnerType">
+        <option value="">— Not set —</option>
+        <option value="Owner">Owner (본인 운영)</option>
+        <option value="Tenant">Tenant (임대 중)</option>
+      </select>
+    </div>
     
     <div class="modal-field">
       <label class="modal-label">Contact Person</label>
@@ -694,8 +792,13 @@
     </div>
     
     <div class="modal-field">
-      <label class="modal-label">Business Email(s)</label>
-      <input class="modal-input" id="editBusinessEmail" placeholder="Additional emails (comma-separated)">
+      <label class="modal-label">Tenant Email</label>
+      <input class="modal-input" type="email" id="editTenantEmail" placeholder="Tenant 대표 email (1개)">
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Staff Email(s)</label>
+      <input class="modal-input" id="editStaffEmails" placeholder="Staff emails (comma-separated)">
     </div>
     
     <div class="modal-field">
@@ -830,8 +933,11 @@ async function loadOccupants() {
     const myEmailLower = myEmail.toLowerCase();
     myOwnedUnits = new Set(
       allOccupants.filter(o => {
-        // primary_email 매칭
-        if (o.primary_email?.toLowerCase() === myEmailLower) return true;
+        // primary_email 매칭 (콤마 분리 — 공동 Owner 지원)
+        if (o.primary_email) {
+          const primaryEmails = o.primary_email.split(',').map(e => e.trim().toLowerCase());
+          if (primaryEmails.includes(myEmailLower)) return true;
+        }
         // business_email 매칭 (콤마 분리)
         if (o.business_email) {
           const emails = o.business_email.split(',').map(e => e.trim().toLowerCase());
@@ -905,13 +1011,104 @@ function renderOccupants() {
   
   list.innerHTML = filtered.map(o => {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
-    const emails = [o.primary_email, o.business_email].filter(e => e).length;
+    // business_email 콤마 분리 → tenantEmail (첫번째) / staffEmails (나머지)
+    const allBusinessEmails = (o.business_email || '').split(',').map(e => e.trim()).filter(e => e);
+    const tenantEmail = allBusinessEmails[0] || '';
+    const staffEmails = allBusinessEmails.slice(1);
+    const emailCount = (o.primary_email ? 1 : 0) + allBusinessEmails.length;
     const isGround = o.level === 'Ground';
     const canEdit = (role === 'admin' || (['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(o.unit) || o.unit === myUnit)));
     const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
     const restricted = ['owner','tenant'].includes(role) && !isMyUnit(o.unit);
     const clickHandler = restricted ? '' : `onclick="toggleOccAccordion('${o.id}', event)"`;
-    
+
+    // ──── 4-케이스 권한 분기 ────
+    const isOwnerUnit = o.owner_type === 'Owner';
+    const isTenantUnit = o.owner_type === 'Tenant';
+    const isPrivilegedRole = ['admin','committee','observer'].includes(role);
+    const isMyOwnedUnit = role === 'owner' && myOwnedUnits.has(o.unit);
+    // ⭐ 항목(Owner Contact / Primary Email) 표시 여부
+    const showStarFields = isOwnerUnit || isPrivilegedRole || isMyOwnedUnit;
+    // 안내바 종류
+    let infoBarHtml = '';
+    if (isOwnerUnit) {
+      infoBarHtml = `<div class="occ-info-bar owner-unit"><span>OWNER 유닛 — 모두에게 동일하게 보임</span></div>`;
+    } else if (isMyOwnedUnit) {
+      infoBarHtml = `<div class="occ-info-bar self-owner"><span>본인 Owner라서 <span style="color:#eab308">⭐</span> 항목도 다 보임</span></div>`;
+    } else if (isPrivilegedRole) {
+      infoBarHtml = `<div class="occ-info-bar privileged"><span><span style="color:#eab308">⭐</span> 표시 = Admin/Committee/Observer/본인 Owner만 보임</span></div>`;
+    } else {
+      // 일반 owner/tenant가 다른 TENANT 유닛 보는 경우
+      infoBarHtml = `<div class="occ-info-bar privacy"><span><span style="color:#eab308">⭐</span> 항목(Owner Contact/Primary Email) 숨김 — Privacy 보호</span></div>`;
+    }
+
+    // 헤더 배지
+    const typeBadge = isOwnerUnit
+      ? `<span class="occ-type-badge owner">OWNER</span>`
+      : isTenantUnit
+        ? `<span class="occ-type-badge tenant">TENANT</span>`
+        : '';
+
+    // 차량 섹션
+    const vehiclesHtml = plates.length
+      ? `<div class="occ-vehicles-section">
+           <div class="occ-vehicles-title">🚗 차량 (${plates.length})</div>
+           <div class="plate-badges">${plates.map(p => `<span class="plate-badge">${p}</span>`).join('')}</div>
+         </div>`
+      : `<div class="occ-vehicles-section">
+           <div class="occ-vehicles-title">🚗 차량 (0)</div>
+           <div style="font-size:12px;color:#cbd5e1;font-style:italic">No vehicles registered</div>
+         </div>`;
+
+    // ⭐ 항목 (Owner Contact + Primary Email)
+    // Primary Email 콤마 분리 (공동 Owner 지원)
+    const primaryEmailList = (o.primary_email || '').split(',').map(e => e.trim()).filter(e => e);
+    const primaryEmailHtml = primaryEmailList.length
+      ? primaryEmailList.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>')
+      : '<span class="empty-inline">Not set</span>';
+    const starRowsHtml = showStarFields ? `
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-star">⭐</span> Owner Contact</div>
+        <div class="occ-list-value ${o.contact_person ? '' : 'empty'}">${o.contact_person || 'Not set'}</div>
+      </div>
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-star">⭐</span> Primary Email</div>
+        <div class="occ-list-value ${primaryEmailList.length ? '' : 'empty'}">${primaryEmailList.length ? primaryEmailHtml : 'Not set'}</div>
+      </div>
+    ` : '';
+
+    // Contact 라벨: OWNER 유닛은 ⭐ 안 붙이고 Primary Email만 보여주면 됨 (OWNER는 Contact = Owner)
+    // 그래서 OWNER 유닛은 ⭐Owner Contact 대신 Contact만 보여주고 끝
+    const contactRowHtml = isOwnerUnit ? `
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-icon">👤</span> Contact</div>
+        <div class="occ-list-value ${o.contact_person ? '' : 'empty'}">${o.contact_person || 'Not set'}</div>
+      </div>
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-icon">📧</span> Primary Email</div>
+        <div class="occ-list-value ${primaryEmailList.length ? '' : 'empty'}">${primaryEmailList.length ? primaryEmailHtml : 'Not set'}</div>
+      </div>
+    ` : `
+      ${starRowsHtml}
+      ${showStarFields ? '<div class="occ-list-divider"></div>' : ''}
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-icon">👤</span> Contact</div>
+        <div class="occ-list-value ${o.business_name || o.contact_person ? '' : 'empty'}">${o.business_name ? o.business_name : (o.contact_person || 'Not set')}</div>
+      </div>
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-icon">📧</span> Tenant Email</div>
+        <div class="occ-list-value ${tenantEmail ? '' : 'empty'}">${tenantEmail ? `<a href="mailto:${tenantEmail}">${tenantEmail}</a>` : 'Not set'}</div>
+      </div>
+    `;
+
+    // OWNER 유닛은 Tenant Email 없음, Staff Email만 있을 수 있음
+    const staffEmailRowHtml = staffEmails.length || isOwnerUnit ? `
+      <div class="occ-list-row">
+        <div class="occ-list-label"><span class="lbl-icon">📧</span> Staff Email</div>
+        <div class="occ-list-value ${staffEmails.length ? '' : 'empty'}">${staffEmails.length ? staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>') : '(없음)'}</div>
+      </div>
+    ` : '';
+
     return `
       <div class="occ-item ${isGround ? 'ground-floor' : ''} ${restricted ? 'occ-restricted' : ''}" data-unit="${o.unit}" data-id="${o.id}">
         <div class="occ-header" ${clickHandler}>
@@ -924,47 +1121,36 @@ function renderOccupants() {
             ${o.contact_person ? `<div class="occ-contact">${o.contact_person}</div>` : ''}
           </div>
           <div class="occ-meta">
-            <div class="occ-meta-item">📧 ${emails}</div>
+            ${typeBadge}
+            <div class="occ-meta-item">📧 ${emailCount}</div>
             <div class="occ-meta-item">🚗 ${vehicles}</div>
           </div>
           ${restricted ? '' : '<div class="occ-chevron">▼</div>'}
         </div>
         <div class="occ-body">
-          <div class="occ-body-grid">
-            <div class="occ-field">
-              <div class="occ-field-label">Contact Person</div>
-              <div class="occ-field-value ${o.contact_person ? '' : 'empty'}">${o.contact_person || 'Not set'}</div>
+          ${infoBarHtml}
+          <div class="occ-body-list">
+            <div class="occ-list-row">
+              <div class="occ-list-label"><span class="lbl-icon">🏠</span> Suite</div>
+              <div class="occ-list-value ${o.suite ? '' : 'empty'}">${o.suite || o.unit}</div>
             </div>
-            <div class="occ-field">
-              <div class="occ-field-label">Business Name</div>
-              <div class="occ-field-value ${o.business_name ? '' : 'empty'}">${o.business_name || 'Vacant'}</div>
+            <div class="occ-list-row">
+              <div class="occ-list-label"><span class="lbl-icon">🏷️</span> Type</div>
+              <div class="occ-list-value">${o.owner_type || '<span style="color:#cbd5e1;font-style:italic">Not set</span>'}</div>
             </div>
-            <div class="occ-field">
-              <div class="occ-field-label">Primary Email</div>
-              <div class="occ-field-value ${o.primary_email ? '' : 'empty'}">${o.primary_email ? `<a href="mailto:${o.primary_email}">${o.primary_email}</a>` : 'Not set'}</div>
-            </div>
-            <div class="occ-field">
-              <div class="occ-field-label">Business Email</div>
-              <div class="occ-field-value ${o.business_email ? '' : 'empty'}">${o.business_email ? o.business_email.split(',').map(e => `<a href="mailto:${e.trim()}">${e.trim()}</a>`).join('<br>') : 'Not set'}</div>
-            </div>
-            <div class="occ-field">
-              <div class="occ-field-label">Phone</div>
-              <div class="occ-field-value ${o.phone ? '' : 'empty'}">${o.phone ? o.phone.split(/[,\/]/).map(p => `<a href="tel:${p.trim().replace(/\s/g,'')}">${p.trim()}</a>`).join(' / ') : 'Not set'}</div>
-            </div>
-            <div class="occ-field">
-              <div class="occ-field-label">Owner Type</div>
-              <div class="occ-field-value ${o.owner_type ? '' : 'empty'}">${o.owner_type || 'Not set'}</div>
-            </div>
-            <div class="occ-field full">
-              <div class="occ-field-label">License Plates</div>
-              <div class="occ-field-value ${plates.length ? '' : 'empty'}">${plates.length ? `<div class="plate-badges">${plates.map(p => `<span class="plate-badge">${p}</span>`).join('')}</div>` : 'No vehicles registered'}</div>
+            ${contactRowHtml}
+            ${staffEmailRowHtml}
+            <div class="occ-list-row">
+              <div class="occ-list-label"><span class="lbl-icon">📞</span> Phone</div>
+              <div class="occ-list-value ${o.phone ? '' : 'empty'}">${o.phone ? o.phone.split(/[,\/]/).map(p => `<a href="tel:${p.trim().replace(/\s/g,'')}">${p.trim()}</a>`).join(' · ') : 'Not set'}</div>
             </div>
             ${o.is_committee ? `
-            <div class="occ-field full">
-              <div class="occ-field-label">Committee Role</div>
-              <div class="occ-field-value"><span class="occ-badge-committee">⭐ ${o.committee_role || 'Committee Member'}</span></div>
+            <div class="occ-list-row">
+              <div class="occ-list-label"><span class="lbl-icon">⭐</span> Committee</div>
+              <div class="occ-list-value"><span class="occ-badge-committee">⭐ ${o.committee_role || 'Committee Member'}</span></div>
             </div>` : ''}
           </div>
+          ${vehiclesHtml}
           ${canEdit ? `
           <div class="occ-body-actions">
             <button class="occ-edit-btn" onclick="openEditModal('${o.id}'); event.stopPropagation();">✏️ Edit Details</button>
@@ -1084,7 +1270,13 @@ window.openEditModal = (id) => {
   document.getElementById('editBusinessName').value = occ.business_name || '';
   document.getElementById('editContactPerson').value = occ.contact_person || '';
   document.getElementById('editPrimaryEmail').value = occ.primary_email || '';
-  document.getElementById('editBusinessEmail').value = occ.business_email || '';
+
+  // business_email 콤마 분리 → tenantEmail (첫번째) / staffEmails (나머지)
+  const allBE = (occ.business_email || '').split(',').map(e => e.trim()).filter(e => e);
+  document.getElementById('editTenantEmail').value = allBE[0] || '';
+  document.getElementById('editStaffEmails').value = allBE.slice(1).join(', ');
+
+  document.getElementById('editOwnerType').value = occ.owner_type || '';
   document.getElementById('editPhone').value = occ.phone || '';
   document.getElementById('editIsCommittee').checked = occ.is_committee || false;
   document.getElementById('editCommitteeRole').value = occ.committee_role || 'Member';
@@ -1102,12 +1294,17 @@ window.openEditModal = (id) => {
   const isOwnerTenant = ['owner','tenant'].includes(role);
   document.getElementById('editIsCommittee').disabled = !isAdmin;
   document.getElementById('editCommitteeRole').disabled = !isAdmin;
+  // Owner Type: Admin만 수정 가능 (그 외는 보이지만 disabled)
+  document.getElementById('editOwnerType').disabled = !isAdmin;
+  document.getElementById('editOwnerType').style.opacity = isAdmin ? '1' : '0.6';
   // Committee Member: admin만
   document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
   document.getElementById('committeeRoleField').style.display = 'none';
-  // Business Name, Business Email: 전체 수정 가능
+  // Business Name 보임
   document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
-  document.getElementById('editBusinessEmail').closest('.modal-field').style.display = '';
+  // Tenant Email / Staff Email 둘 다 보임
+  document.getElementById('editTenantEmail').closest('.modal-field').style.display = '';
+  document.getElementById('editStaffEmails').closest('.modal-field').style.display = '';
   // Contact Person: tenant는 disabled (오너 정보)
   document.getElementById('editContactPerson').disabled = isTenant;
   document.getElementById('editContactPerson').style.opacity = isTenant ? '0.5' : '1';
@@ -1149,11 +1346,18 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     occ?.business_name ||
     '';
 
+  // Tenant Email + Staff Email(s) 합쳐서 business_email 생성
+  const tenantEmail = document.getElementById('editTenantEmail').value.trim();
+  const staffEmailsRaw = document.getElementById('editStaffEmails').value.trim();
+  const staffList = staffEmailsRaw ? staffEmailsRaw.split(',').map(e => e.trim()).filter(e => e) : [];
+  const combinedBusinessEmail = [tenantEmail, ...staffList].filter(e => e).join(', ');
+
   const data = {
     business_name: businessName,
     contact_person: contactPerson,
     primary_email: document.getElementById('editPrimaryEmail').value.trim(),
-    business_email: document.getElementById('editBusinessEmail').value.trim(),
+    business_email: combinedBusinessEmail,
+    owner_type: document.getElementById('editOwnerType').value || null,
     phone: document.getElementById('editPhone').value.trim(),
     is_committee: document.getElementById('editIsCommittee').checked,
     committee_role: document.getElementById('editIsCommittee').checked ? document.getElementById('editCommitteeRole').value : null,
