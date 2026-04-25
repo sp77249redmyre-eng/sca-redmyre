@@ -1,21 +1,30 @@
 // ============================================================
-// Redmyre BMS — My Profile Modal
+// Redmyre BMS — My Profile Modal (Unified Form)
 // /js/my-profile.js
-// Phase 4: 본인 정보 + 비번 변경 + My Units (수정 가능)
-//   ✅ 수정 가능 (본인): Business Name, Contact, Phone
-//   🔒 read-only (Admin만): Primary Email, Owner Type, Staff/Tenants Email
+// 다중 유닛 통합 폼 아키텍처
+//   - Owner (≥2 유닛): 체크박스 섹션 + 사업체정보/차량 일괄 적용
+//   - Owner (단일): 체크박스 숨김 + 사업체정보/차량 그 유닛에 적용
+//   - Tenant: 체크박스 숨김 + 그 유닛에만 적용
+//   - Staff: 본인 정보(이름+비번)만, 사업체/차량 섹션 없음
 // ============================================================
 
 (function() {
   'use strict';
 
-  // 현재 로드된 내 유닛들 캐시 (저장 시 비교용)
-  let currentMyUnits = [];
+  // 본인 매칭 유닛 캐시 [{id, unit, owner_type, business_name, phone, license_plates, primary_email, business_email, my_role: 'OWNER'|'TENANT'|'STAFF', checked}]
+  let myUnits = [];
+  // 통합 차량 리스트 (체크된 OWNER 유닛 기준 union)
+  let unifiedPlates = [];
+  // Admin이 보는 모드 (occupants 페이지에서 직접 와야 의미 있는데, 본 모달은 본인용이라 admin은 안내만)
+  let isAdmin = false;
+  // 전체 vehicles (중복 체크용 — lookup_vehicle_plates RPC)
+  let allVehicles = [];
 
   // ── 모달 열기 ────────────────────────────────────────────
   window.openMyProfile = async function() {
     const modal = document.getElementById('myProfileModal');
     const body = document.getElementById('myProfileBody');
+    const footer = document.getElementById('myprofFooter');
     if (!modal || !body) {
       console.error('[my-profile] modal not found');
       return;
@@ -24,8 +33,10 @@
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    renderProfileBody();
-    await loadMyUnits();
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
+    if (footer) footer.style.display = 'none';
+
+    await loadAndRender();
   };
 
   // ── 모달 닫기 ────────────────────────────────────────────
@@ -34,6 +45,15 @@
     if (modal) {
       modal.classList.remove('open');
       document.body.style.overflow = '';
+    }
+    // 상태 초기화
+    myUnits = [];
+    unifiedPlates = [];
+    allVehicles = [];
+    const saveMsg = document.getElementById('myprofSaveMsg');
+    if (saveMsg) {
+      saveMsg.classList.remove('show', 'success', 'error', 'loading');
+      saveMsg.textContent = '';
     }
   };
 
@@ -47,106 +67,25 @@
     }
   });
 
-  // ── 본문 렌더링 ──────────────────────────────────────────
-  function renderProfileBody() {
-    const body = document.getElementById('myProfileBody');
-    if (!body) return;
-
-    const ctx = window.__bmsCtx || {};
-    const name = ctx.name || 'User';
-    const email = ctx.user?.email || '';
-    const role = ctx.role || '';
-    const unit = ctx.profile?.unit || '';
-    const initials = getInitials(name);
-    const roleLabel = getRoleLabel(role);
-    const roleClass = getRoleClass(role);
-
-    body.innerHTML = `
-      <!-- User Info Card -->
-      <div class="myprof-user-card">
-        <div class="myprof-avatar" id="myprofAvatar">${escapeHtml(initials)}</div>
-        <div class="myprof-user-info">
-          <!-- 이름 표시/편집 영역 -->
-          <div class="myprof-name-wrap" id="myprofNameWrap">
-            <div class="myprof-name-display" id="myprofNameDisplay">
-              <span class="myprof-user-name" id="myprofNameText">${escapeHtml(name)}</span>
-              <button class="myprof-name-edit-btn" onclick="myProfileStartEditName()" title="Edit name">✏️</button>
-            </div>
-            <div class="myprof-name-edit" id="myprofNameEdit" style="display:none">
-              <input type="text" class="myprof-name-input" id="myprofNameInput" maxlength="60" placeholder="Your name">
-              <button class="myprof-name-save-btn" onclick="myProfileSaveName()" title="Save">💾</button>
-              <button class="myprof-name-cancel-btn" onclick="myProfileCancelEditName()" title="Cancel">✕</button>
-            </div>
-          </div>
-          <div class="myprof-user-email">${escapeHtml(email)}</div>
-          <div class="myprof-user-meta">
-            <span class="myprof-role-badge ${roleClass}">${escapeHtml(roleLabel)}</span>
-            ${unit ? `<span class="myprof-unit-badge">🏠 ${escapeHtml(unit)}</span>` : ''}
-          </div>
-        </div>
-      </div>
-
-      <!-- Change Password Section -->
-      <div class="myprof-section">
-        <div class="myprof-section-title">🔒 Change Password</div>
-        <div class="myprof-form">
-          <div class="myprof-field">
-            <label>Current Password</label>
-            <input type="password" id="myprofCurrentPwd" placeholder="Enter current password" autocomplete="current-password">
-          </div>
-          <div class="myprof-field">
-            <label>New Password</label>
-            <input type="password" id="myprofNewPwd" placeholder="At least 6 characters" autocomplete="new-password">
-          </div>
-          <div class="myprof-field">
-            <label>Confirm New Password</label>
-            <input type="password" id="myprofConfirmPwd" placeholder="Re-enter new password" autocomplete="new-password">
-          </div>
-          <div class="myprof-form-actions">
-            <button class="myprof-btn-primary" onclick="myProfileChangePassword()">
-              Update Password
-            </button>
-          </div>
-          <div id="myprofPwdMsg" class="myprof-msg" style="display:none"></div>
-        </div>
-      </div>
-
-      <!-- My Units Section -->
-      <div class="myprof-section" id="myprofUnitsSection">
-        <div class="myprof-section-title">🏠 My Units</div>
-        <div id="myprofUnitsContent" class="myprof-units-loading">
-          Loading units…
-        </div>
-      </div>
-    `;
-  }
-
-  // ── My Units 로드 ───────────────────────────────────────
-  async function loadMyUnits() {
+  // ── 로드 & 렌더 ──────────────────────────────────────────
+  async function loadAndRender() {
     const ctx = window.__bmsCtx;
     if (!ctx?.supabase || !ctx?.user?.email) {
-      hideUnitsSection();
+      renderError('Authentication required.');
       return;
     }
 
     const supabase = ctx.supabase;
     const role = ctx.role;
     const myEmail = ctx.user.email.toLowerCase();
+    isAdmin = (role === 'admin');
 
-    if (role === 'admin') {
-      const contentEl = document.getElementById('myprofUnitsContent');
-      if (contentEl) {
-        contentEl.outerHTML = `
-          <div class="myprof-units-info">
-            You manage all units. Use the <strong>Occupants</strong> page to view & edit.
-          </div>
-        `;
-      }
-      return;
-    }
+    // 헤더 채우기
+    fillHeader();
 
-    if (role === 'observer') {
-      hideUnitsSection();
+    // Admin / Observer는 사업체/차량 섹션 없이 본인 정보만
+    if (role === 'admin' || role === 'observer') {
+      renderSimpleProfile();
       return;
     }
 
@@ -157,533 +96,693 @@
         .order('unit', { ascending: true });
 
       if (error) {
-        showUnitsError('Failed to load units: ' + error.message);
+        renderError('Failed to load units: ' + error.message);
         return;
       }
 
-      const myUnits = [];
+      // 본인 매칭 유닛 분류
+      myUnits = [];
       (occupants || []).forEach(o => {
-        const primaryEmails = (o.primary_email || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e);
-        const businessEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e);
+        const primaryEmails = (o.primary_email || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const businessEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
         const isPrimary = primaryEmails.includes(myEmail);
         const isInBusiness = businessEmails.includes(myEmail);
 
         if (isPrimary) {
-          myUnits.push({ ...o, my_role: 'OWNER' });
+          // OWNER 매칭: owner_type 그대로 두고 my_role은 'OWNER' (체크박스 토글 대상)
+          // 체크 초기 상태 = owner_type === 'Owner'
+          myUnits.push({
+            ...o,
+            my_role: 'OWNER',
+            checked: (o.owner_type === 'Owner')
+          });
         } else if (isInBusiness && o.owner_type === 'Tenant') {
-          myUnits.push({ ...o, my_role: 'TENANT' });
+          // TENANT 매칭 (그 유닛 임차인)
+          myUnits.push({
+            ...o,
+            my_role: 'TENANT',
+            checked: true // 항상 그 유닛 본인이라 체크 개념 없음
+          });
+        } else if (isInBusiness && o.owner_type === 'Owner') {
+          // STAFF 매칭 (Owner 유닛의 직원)
+          myUnits.push({
+            ...o,
+            my_role: 'STAFF',
+            checked: false
+          });
         }
-        // Owner 유닛의 Staff는 카드 안 만듦
       });
 
-      currentMyUnits = myUnits;
-      renderUnits(myUnits);
+      // 통합 차량 리스트 초기화 (OWNER 유닛 union, 또는 단일 TENANT 유닛 plate)
+      computeUnifiedPlates();
+
+      // 중복 체크용 전체 vehicles 로드
+      try {
+        const { data: vehicles } = await supabase.rpc('lookup_vehicle_plates');
+        allVehicles = vehicles || [];
+      } catch (e) {
+        console.warn('[my-profile] vehicles lookup failed:', e);
+        allVehicles = [];
+      }
+
+      renderFullProfile();
 
     } catch (err) {
-      console.error('[my-profile] loadMyUnits error:', err);
-      showUnitsError('An error occurred while loading units.');
+      console.error('[my-profile] load error:', err);
+      renderError('An error occurred while loading.');
     }
   }
 
-  // ── My Units 카드 렌더링 ────────────────────────────────
-  function renderUnits(units) {
-    const contentEl = document.getElementById('myprofUnitsContent');
-    const sectionEl = document.getElementById('myprofUnitsSection');
-    if (!contentEl || !sectionEl) return;
+  // 통합 차량 리스트 계산
+  function computeUnifiedPlates() {
+    const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER' && u.checked);
+    const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
 
-    if (!units || units.length === 0) {
-      hideUnitsSection();
+    const targetUnits = ownerUnits.length > 0 ? ownerUnits : tenantUnits;
+
+    // union of plates
+    const set = new Set();
+    targetUnits.forEach(u => {
+      const plates = (u.license_plates || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
+      plates.forEach(p => set.add(p));
+    });
+
+    unifiedPlates = Array.from(set);
+  }
+
+  // ── 헤더 ────────────────────────────────────────────────
+  function fillHeader() {
+    const ctx = window.__bmsCtx || {};
+    const name = ctx.name || ctx.profile?.full_name || 'User';
+    const role = ctx.role || '';
+    const avatarEl = document.getElementById('myprofAvatar');
+    const subtitleEl = document.getElementById('myprofSubtitle');
+
+    if (avatarEl) avatarEl.textContent = getInitials(name);
+
+    const roleLabel = getRoleLabel(role);
+    if (subtitleEl) subtitleEl.textContent = `${name} · ${roleLabel}`;
+  }
+
+  // ── 에러 ────────────────────────────────────────────────
+  function renderError(msg) {
+    const body = document.getElementById('myProfileBody');
+    if (body) {
+      body.innerHTML = `<div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">${escapeHtml(msg)}</div>`;
+    }
+  }
+
+  // ── Admin/Observer/Staff용 단순 프로필 (본인 정보만) ────────
+  function renderSimpleProfile() {
+    const ctx = window.__bmsCtx || {};
+    const role = ctx.role || '';
+    const email = ctx.user?.email || '';
+    const fullName = ctx.profile?.full_name || ctx.name || '';
+
+    let infoNote = '';
+    if (role === 'admin') {
+      infoNote = `<div style="padding:10px 14px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:9px;font-size:12px;color:#1e40af;margin-bottom:14px">You manage all units. Use the <strong>Occupants</strong> page to view & edit unit details.</div>`;
+    } else if (role === 'observer') {
+      infoNote = `<div style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;font-size:12px;color:#475569;margin-bottom:14px">Observer (Strata) accounts have read-only access.</div>`;
+    }
+
+    const body = document.getElementById('myProfileBody');
+    if (!body) return;
+
+    body.innerHTML = `
+      ${infoNote}
+      <div class="myprof-section">
+        <div class="myprof-section-title">🔒 ADMIN 관리 / Account Info</div>
+        <div class="myprof-admin-box">
+          <div class="myprof-admin-row">
+            <span class="myprof-admin-label">Email</span>
+            <span class="myprof-admin-value">${escapeHtml(email)}</span>
+          </div>
+          <div class="myprof-admin-row">
+            <span class="myprof-admin-label">Role</span>
+            <span class="myprof-admin-value">${escapeHtml(getRoleLabel(role))}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="myprof-section">
+        <div class="myprof-section-title">✏️ 본인 정보 / My Info</div>
+        <div class="myprof-field">
+          <label class="myprof-label">이름 / Name</label>
+          <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
+        </div>
+        <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
+          <span>🔑 비밀번호 변경 / Change Password</span>
+          <span class="myprof-pw-arrow">›</span>
+        </button>
+        <div class="myprof-pw-panel" id="myprofPwPanel">
+          <div class="myprof-field">
+            <label class="myprof-label">현재 비밀번호 / Current</label>
+            <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
+          </div>
+          <div class="myprof-field">
+            <label class="myprof-label">새 비밀번호 / New</label>
+            <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
+          </div>
+          <div class="myprof-field">
+            <label class="myprof-label">새 비밀번호 확인 / Confirm</label>
+            <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
+          </div>
+          <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
+          <div class="myprof-pw-msg" id="myprofPwMsg"></div>
+        </div>
+      </div>
+    `;
+
+    // Footer 표시 (이름만 저장)
+    const footer = document.getElementById('myprofFooter');
+    if (footer) footer.style.display = 'flex';
+  }
+
+  // ── 풀 프로필 (Owner/Tenant/Staff) ──────────────────────
+  function renderFullProfile() {
+    const ctx = window.__bmsCtx || {};
+    const role = ctx.role || '';
+    const email = ctx.user?.email || '';
+    const fullName = ctx.profile?.full_name || ctx.name || '';
+
+    // 매칭 유닛 없음
+    if (myUnits.length === 0) {
+      renderSimpleProfile();
       return;
     }
 
-    const titleEl = sectionEl.querySelector('.myprof-section-title');
-    if (titleEl) titleEl.textContent = `🏠 My Units (${units.length})`;
+    // Staff 케이스: my_role 'STAFF'만 있고 OWNER/TENANT 없음
+    const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
+    const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
+    const staffUnits = myUnits.filter(u => u.my_role === 'STAFF');
+    const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0 && staffUnits.length > 0;
 
-    contentEl.outerHTML = `<div id="myprofUnitsContent">${units.map(u => renderUnitCard(u)).join('')}</div>`;
+    // Suite 텍스트 (모든 매칭 유닛)
+    const suiteText = myUnits.map(u => u.unit).join(', ');
+
+    // Admin 박스
+    const adminBox = `
+      <div class="myprof-section">
+        <div class="myprof-section-title">🔒 ADMIN 관리 / Admin Info</div>
+        <div class="myprof-admin-box">
+          <div class="myprof-admin-row">
+            <span class="myprof-admin-label">Suite</span>
+            <span class="myprof-admin-value">${escapeHtml(suiteText)}</span>
+          </div>
+          <div class="myprof-admin-row">
+            <span class="myprof-admin-label">Email</span>
+            <span class="myprof-admin-value">${escapeHtml(email)}</span>
+          </div>
+          <div class="myprof-admin-row">
+            <span class="myprof-admin-label">Role</span>
+            <span class="myprof-admin-value">${escapeHtml(getRoleLabel(role))}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 본인 정보 (이름 + 비번)
+    const myInfoBlock = `
+      <div class="myprof-section">
+        <div class="myprof-section-title">✏️ 본인 정보 / My Info</div>
+        <div class="myprof-field">
+          <label class="myprof-label">이름 / Name</label>
+          <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
+        </div>
+        <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
+          <span>🔑 비밀번호 변경 / Change Password</span>
+          <span class="myprof-pw-arrow">›</span>
+        </button>
+        <div class="myprof-pw-panel" id="myprofPwPanel">
+          <div class="myprof-field">
+            <label class="myprof-label">현재 비밀번호 / Current</label>
+            <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
+          </div>
+          <div class="myprof-field">
+            <label class="myprof-label">새 비밀번호 / New</label>
+            <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
+          </div>
+          <div class="myprof-field">
+            <label class="myprof-label">새 비밀번호 확인 / Confirm</label>
+            <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
+          </div>
+          <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
+          <div class="myprof-pw-msg" id="myprofPwMsg"></div>
+        </div>
+      </div>
+    `;
+
+    // Staff only: 본인 정보만
+    if (isStaffOnly) {
+      const staffNote = `<div style="padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;font-size:12px;color:#92400e;margin-bottom:14px">You are registered as Staff under the unit Owner. Vehicle registration is handled by the Owner of your unit.</div>`;
+      document.getElementById('myProfileBody').innerHTML = staffNote + adminBox + myInfoBlock;
+      const footer = document.getElementById('myprofFooter');
+      if (footer) footer.style.display = 'flex';
+      return;
+    }
+
+    // 체크박스 섹션 (Owner ≥2 유닛만)
+    let checkboxSection = '';
+    if (ownerUnits.length >= 2) {
+      checkboxSection = `
+        <div class="myprof-section">
+          <div class="myprof-section-title">🏢 본인 운영 유닛 선택 / Operating Units</div>
+          <div class="myprof-section-help">직접 운영하는 유닛에 체크하세요. 미체크 = 임대 중 (TENANT)<br>Check the units you operate yourself. Unchecked = leased out.</div>
+          <div id="myprofUnitCheckboxes">
+            ${ownerUnits.map(u => renderUnitRow(u)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 사업체 정보 - 일괄 적용 대상 결정
+    // - Owner ≥2 + 체크된 유닛 있음: 그 유닛 중 첫 값으로 prefill
+    // - Owner 1: 그 유닛 값
+    // - Tenant 1+: 그 유닛 값
+    let prefillSource = null;
+    if (ownerUnits.length >= 2) {
+      const checkedOwners = ownerUnits.filter(u => u.checked);
+      prefillSource = checkedOwners[0] || ownerUnits[0];
+    } else if (ownerUnits.length === 1) {
+      prefillSource = ownerUnits[0];
+    } else if (tenantUnits.length > 0) {
+      prefillSource = tenantUnits[0];
+    }
+
+    const businessName = prefillSource?.business_name || '';
+    const phone = prefillSource?.phone || '';
+
+    // 일괄 적용 안내 텍스트
+    let bulkNote = '';
+    if (ownerUnits.length >= 2) {
+      const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
+      bulkNote = `※ 본인 OWNER 유닛(<span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>)에 일괄 적용 / Applied to all checked OWNER units`;
+    } else if (ownerUnits.length === 1) {
+      bulkNote = `※ ${escapeHtml(ownerUnits[0].unit)} 유닛에 적용 / Applied to ${escapeHtml(ownerUnits[0].unit)}`;
+    } else if (tenantUnits.length > 0) {
+      const tList = tenantUnits.map(u => u.unit).join(', ');
+      bulkNote = `※ ${escapeHtml(tList)} 유닛에 적용 / Applied to ${escapeHtml(tList)}`;
+    }
+
+    const businessSection = `
+      <div class="myprof-section">
+        <div class="myprof-section-title">🏪 사업체 정보 / Business Info</div>
+        <div class="myprof-section-help">${bulkNote}</div>
+        <div class="myprof-field">
+          <label class="myprof-label">사업체명 / Business Name</label>
+          <input type="text" class="myprof-input" id="myprofBusinessName" value="${escapeHtml(businessName)}" placeholder="Business name">
+        </div>
+        <div class="myprof-field">
+          <label class="myprof-label">전화번호 / Phone</label>
+          <input type="text" class="myprof-input" id="myprofPhone" value="${escapeHtml(phone)}" placeholder="Phone number">
+        </div>
+      </div>
+    `;
+
+    // 차량 섹션
+    let vehicleNote = '';
+    if (ownerUnits.length >= 2) {
+      const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
+      vehicleNote = `※ <span id="myprofVehUnits">${escapeHtml(checkedList)}</span> 모든 유닛에 일괄 등록 / Registered on all checked units`;
+    } else if (ownerUnits.length === 1) {
+      vehicleNote = `※ ${escapeHtml(ownerUnits[0].unit)} 유닛에 등록 / Registered on ${escapeHtml(ownerUnits[0].unit)}`;
+    } else if (tenantUnits.length > 0) {
+      const tList = tenantUnits.map(u => u.unit).join(', ');
+      vehicleNote = `※ ${escapeHtml(tList)} 유닛에 등록 / Registered on ${escapeHtml(tList)}`;
+    }
+
+    const vehicleSection = `
+      <div class="myprof-section">
+        <div class="myprof-section-title">🚗 사업체 차량 / Business Vehicles (<span id="myprofVehCount">${unifiedPlates.length}</span>)</div>
+        <div class="myprof-section-help">${vehicleNote}</div>
+        <div class="myprof-vehicles-list" id="myprofVehList">
+          ${unifiedPlates.map(p => renderVehBadge(p)).join('')}
+        </div>
+        <div class="myprof-veh-add-row">
+          <input type="text" class="myprof-veh-input" id="myprofVehInput" placeholder="ex: ABC123" maxlength="10"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();myProfileAddVehicle();}">
+          <button class="myprof-veh-add-btn" onclick="myProfileAddVehicle()">+ 추가 / Add</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('myProfileBody').innerHTML =
+      adminBox + myInfoBlock + checkboxSection + businessSection + vehicleSection;
+
+    const footer = document.getElementById('myprofFooter');
+    if (footer) footer.style.display = 'flex';
   }
 
-  function renderUnitCard(u) {
-    const myRole = u.my_role; // 'OWNER' | 'TENANT'
-    const badgeClass = myRole === 'OWNER' ? 'myprof-card-badge-owner' : 'myprof-card-badge-tenant';
-    const cardBorderClass = myRole === 'OWNER' ? 'myprof-card-owner' : 'myprof-card-tenant';
-    const isOwnerCard = myRole === 'OWNER';
-
-    const primaryEmails = (u.primary_email || '').split(',').map(e => e.trim()).filter(e => e);
-    const businessEmails = (u.business_email || '').split(',').map(e => e.trim()).filter(e => e);
-
-    const businessLabel = u.owner_type === 'Owner' ? 'Staff Email' : 'Tenants Email';
-
-    const plates = (u.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
-
-    // Contact Person — OWNER 카드만 수정 가능, TENANT는 read-only
-    const contactPersonHtml = isOwnerCard ? `
-      <div class="myprof-edit-field">
-        <label class="myprof-edit-label">Contact Person</label>
-        <input type="text" class="myprof-edit-input" data-field="contact_person"
-          value="${escapeHtml(u.contact_person || '')}"
-          placeholder="Primary contact name">
-      </div>
-    ` : '';
-
+  // ── Unit row (체크박스 행) ────────────────────────────────
+  function renderUnitRow(u) {
+    const cls = u.checked ? 'owner' : 'tenant';
+    const badge = u.checked ? 'OWNER' : 'TENANT';
     return `
-      <div class="myprof-unit-card ${cardBorderClass}" data-unit-id="${escapeHtml(u.id)}" data-unit="${escapeHtml(u.unit)}">
-        <div class="myprof-unit-header">
-          <div class="myprof-unit-id">
-            <span class="myprof-unit-num">${escapeHtml(u.unit)}</span>
-            ${u.suite && u.suite !== u.unit ? `<span class="myprof-unit-suite">${escapeHtml(u.suite)}</span>` : ''}
-          </div>
-          <span class="myprof-card-badge ${badgeClass}">${myRole}</span>
+      <div class="myprof-unit-row ${cls}" data-unit-id="${escapeHtml(u.id)}" onclick="myProfileToggleUnit('${escapeHtml(u.id)}')">
+        <div class="myprof-checkbox">
+          <span class="myprof-checkbox-tick">✓</span>
         </div>
-
-        <!-- Editable: Business Name (둘 다 수정 가능) -->
-        <div class="myprof-edit-field">
-          <label class="myprof-edit-label">Business Name</label>
-          <input type="text" class="myprof-edit-input" data-field="business_name"
-            value="${escapeHtml(u.business_name || '')}"
-            placeholder="Business or tenant name">
-        </div>
-
-        ${contactPersonHtml}
-
-        <!-- Read-only fields (Admin only) -->
-        <div class="myprof-readonly-section">
-          <div class="myprof-readonly-title">🔒 Admin only (read-only)</div>
-
-          <div class="myprof-readonly-row">
-            <span class="myprof-readonly-label">Owner Type:</span>
-            <span class="myprof-readonly-value">${escapeHtml(u.owner_type || 'Not set')}</span>
-          </div>
-
-          ${!isOwnerCard && u.contact_person ? `
-            <div class="myprof-readonly-row">
-              <span class="myprof-readonly-label">Contact Person:</span>
-              <span class="myprof-readonly-value">${escapeHtml(u.contact_person)}</span>
-            </div>
-          ` : ''}
-
-          ${primaryEmails.length ? `
-            <div class="myprof-readonly-row">
-              <span class="myprof-readonly-label">Primary Email:</span>
-              <span class="myprof-readonly-value">${primaryEmails.map(e => escapeHtml(e)).join(', ')}</span>
-            </div>
-          ` : ''}
-
-          ${businessEmails.length ? `
-            <div class="myprof-readonly-row">
-              <span class="myprof-readonly-label">${businessLabel}:</span>
-              <span class="myprof-readonly-value">${businessEmails.map(e => escapeHtml(e)).join(', ')}</span>
-            </div>
-          ` : ''}
-
-          ${u.phone ? `
-            <div class="myprof-readonly-row">
-              <span class="myprof-readonly-label">Phone:</span>
-              <span class="myprof-readonly-value">${escapeHtml(u.phone)}</span>
-            </div>
-          ` : ''}
-        </div>
-
-        <!-- Vehicles Editor (Phase 5) -->
-        <div class="myprof-vehicles-edit" data-vehicles-card="${escapeHtml(u.id)}">
-          <div class="myprof-vehicles-header">
-            <span class="myprof-vehicles-title">🚗 Vehicles</span>
-            <span class="myprof-vehicles-count" id="myprofVehCount-${escapeHtml(u.id)}">${plates.length}</span>
-          </div>
-          <div class="myprof-plate-list" id="myprofPlateList-${escapeHtml(u.id)}">
-            ${plates.map(p => renderPlateBadge(u.id, p)).join('')}
-          </div>
-          <div class="myprof-plate-add-row">
-            <input type="text" class="myprof-plate-input" id="myprofPlateInput-${escapeHtml(u.id)}"
-              placeholder="Add plate (e.g. ABC123)" maxlength="10"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();myProfileAddPlate('${escapeHtml(u.id)}');}">
-            <button class="myprof-plate-add-btn" onclick="myProfileAddPlate('${escapeHtml(u.id)}')">+ Add</button>
-          </div>
-          <div class="myprof-vehicles-help">
-            ℹ️ Remove plates that are not yours, add your own. Save when done.
-          </div>
-        </div>
-
-        <!-- Save button -->
-        <div class="myprof-card-actions">
-          <button class="myprof-btn-save" onclick="myProfileSaveUnit('${escapeHtml(u.id)}')">
-            💾 Save Changes
-          </button>
-          <div class="myprof-card-msg" id="myprofMsg-${escapeHtml(u.id)}" style="display:none"></div>
-        </div>
+        <div class="myprof-unit-name">${escapeHtml(u.unit)}</div>
+        <span class="myprof-unit-badge">${badge}</span>
       </div>
     `;
   }
 
-  // ── 이름 편집 (인라인) ────────────────────────────────
-  window.myProfileStartEditName = function() {
-    const display = document.getElementById('myprofNameDisplay');
-    const edit = document.getElementById('myprofNameEdit');
-    const input = document.getElementById('myprofNameInput');
-    const currentName = document.getElementById('myprofNameText')?.textContent || '';
-    if (!display || !edit || !input) return;
-    input.value = currentName;
-    display.style.display = 'none';
-    edit.style.display = 'flex';
-    input.focus();
-    input.select();
-    // Enter = save / Escape = cancel
-    input.onkeydown = function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); window.myProfileSaveName(); }
-      else if (e.key === 'Escape') { e.preventDefault(); window.myProfileCancelEditName(); }
-    };
-  };
-
-  window.myProfileCancelEditName = function() {
-    const display = document.getElementById('myprofNameDisplay');
-    const edit = document.getElementById('myprofNameEdit');
-    if (!display || !edit) return;
-    edit.style.display = 'none';
-    display.style.display = 'flex';
-  };
-
-  window.myProfileSaveName = async function() {
-    const input = document.getElementById('myprofNameInput');
-    if (!input) return;
-    const newName = (input.value || '').trim();
-
-    if (!newName) {
-      if (window.showToast) window.showToast('Name cannot be empty', true);
-      return;
-    }
-    if (newName.length < 2) {
-      if (window.showToast) window.showToast('Name too short', true);
-      return;
-    }
-
-    const ctx = window.__bmsCtx;
-    if (!ctx?.supabase || !ctx?.user?.id) {
-      if (window.showToast) window.showToast('Session error. Please reload.', true);
-      return;
-    }
-
-    const oldName = ctx.name;
-    if (newName === oldName) {
-      window.myProfileCancelEditName();
-      return;
-    }
-
-    try {
-      const { error } = await ctx.supabase
-        .from('profiles')
-        .update({ full_name: newName })
-        .eq('id', ctx.user.id);
-
-      if (error) {
-        if (window.showToast) window.showToast('Failed: ' + error.message, true);
-        return;
-      }
-
-      // 컨텍스트/표시 갱신
-      ctx.name = newName;
-      if (ctx.profile) ctx.profile.full_name = newName;
-
-      // 모달 내 표시 갱신
-      const nameText = document.getElementById('myprofNameText');
-      if (nameText) nameText.textContent = newName;
-      const avatar = document.getElementById('myprofAvatar');
-      if (avatar) avatar.textContent = getInitials(newName);
-
-      // 토픽바/사이드바 즉시 갱신
-      const topName = document.getElementById('topName');
-      const sbName = document.getElementById('sbName');
-      const topAvatar = document.getElementById('topAvatar');
-      const sbAvatar = document.getElementById('sbAvatar');
-      const greet = document.getElementById('topbarGreeting');
-      const initials = getInitials(newName);
-      if (topName) topName.textContent = newName;
-      if (sbName) sbName.textContent = newName;
-      if (topAvatar) topAvatar.textContent = initials;
-      if (sbAvatar) sbAvatar.textContent = initials;
-      if (greet) {
-        // "Good morning, [name] 👋" 형태인 경우 이름 부분만 교체
-        const txt = greet.textContent;
-        const match = txt.match(/^(Good \w+,\s+)(.+?)(\s*[👋🌞🌙]?)\s*$/);
-        if (match) greet.textContent = match[1] + newName + match[3];
-      }
-
-      window.myProfileCancelEditName();
-      if (window.showToast) window.showToast('Name updated ✓');
-
-    } catch (err) {
-      console.error('[my-profile] save name error:', err);
-      if (window.showToast) window.showToast('An error occurred', true);
-    }
-  };
-
-  // ── 차량 (Phase 5) ────────────────────────────────────────
-  function renderPlateBadge(unitId, plate) {
-    const safePlate = escapeHtml(plate);
+  // ── 차량 배지 ────────────────────────────────────────────
+  function renderVehBadge(plate) {
+    const safe = escapeHtml(plate);
     return `
-      <span class="myprof-plate-badge" data-plate="${safePlate}">
-        <span class="myprof-plate-text">${safePlate}</span>
-        <button class="myprof-plate-remove" onclick="myProfileRemovePlate('${escapeHtml(unitId)}', '${safePlate.replace(/'/g, "&#39;")}')" title="Remove">✕</button>
+      <span class="myprof-veh-badge" data-plate="${safe}">
+        <span class="myprof-veh-icon">🚗</span>
+        <span>${safe}</span>
+        <button class="myprof-veh-remove" onclick="myProfileRemoveVehicle('${safe}')" title="Remove">✕</button>
       </span>
     `;
   }
 
-  // 차량 추가
-  window.myProfileAddPlate = function(unitId) {
-    const input = document.getElementById(`myprofPlateInput-${unitId}`);
+  // ── 체크박스 토글 ────────────────────────────────────────
+  window.myProfileToggleUnit = function(unitId) {
+    const u = myUnits.find(x => x.id === unitId);
+    if (!u || u.my_role !== 'OWNER') return;
+    u.checked = !u.checked;
+
+    // 행 UI 업데이트
+    const row = document.querySelector(`.myprof-unit-row[data-unit-id="${unitId}"]`);
+    if (row) {
+      if (u.checked) {
+        row.classList.remove('tenant');
+        row.classList.add('owner');
+        row.querySelector('.myprof-unit-badge').textContent = 'OWNER';
+      } else {
+        row.classList.remove('owner');
+        row.classList.add('tenant');
+        row.querySelector('.myprof-unit-badge').textContent = 'TENANT';
+      }
+    }
+
+    // 일괄 적용 안내 텍스트 업데이트
+    const ownerUnits = myUnits.filter(x => x.my_role === 'OWNER');
+    const checkedList = ownerUnits.filter(x => x.checked).map(x => x.unit).join(', ') || '(no units checked)';
+    const bulkEl = document.getElementById('myprofBulkUnits');
+    if (bulkEl) bulkEl.textContent = checkedList;
+    const vehUnitsEl = document.getElementById('myprofVehUnits');
+    if (vehUnitsEl) vehUnitsEl.textContent = checkedList;
+  };
+
+  // ── 차량 추가 ────────────────────────────────────────────
+  window.myProfileAddVehicle = function() {
+    const input = document.getElementById('myprofVehInput');
     if (!input) return;
     const raw = (input.value || '').trim().toUpperCase();
     if (!raw) return;
-    // 영문/숫자만, 최대 10자
     const plate = raw.replace(/[^A-Z0-9]/g, '');
     if (!plate) {
       input.value = '';
       return;
     }
-    // 중복 체크
-    const list = document.getElementById(`myprofPlateList-${unitId}`);
-    if (!list) return;
-    const existing = Array.from(list.querySelectorAll('.myprof-plate-badge'))
-      .map(el => el.dataset.plate);
-    if (existing.includes(plate)) {
+
+    // 1. 본인 차량 리스트 내 중복
+    if (unifiedPlates.includes(plate)) {
       input.value = '';
-      // 살짝 깜빡임 애니메이션 (이미 있음 표시)
-      const dup = list.querySelector(`.myprof-plate-badge[data-plate="${plate}"]`);
+      const dup = document.querySelector(`.myprof-veh-badge[data-plate="${plate}"]`);
       if (dup) {
-        dup.classList.add('myprof-plate-flash');
-        setTimeout(() => dup.classList.remove('myprof-plate-flash'), 600);
+        dup.classList.add('myprof-veh-flash');
+        setTimeout(() => dup.classList.remove('myprof-veh-flash'), 600);
       }
+      showSaveMsg('이미 등록된 차량입니다 / Already registered.', 'error', 2500);
       return;
     }
-    // 추가
-    list.insertAdjacentHTML('beforeend', renderPlateBadge(unitId, plate));
+
+    // 2. 다른 유닛에 이미 등록되어 있는지 체크
+    const myUnitNumbers = new Set(myUnits.map(u => String(u.unit)));
+    const otherUnitMatch = allVehicles.find(v => {
+      if (!v?.plate) return false;
+      const vp = v.plate.replace(/\s/g, '').toUpperCase();
+      return vp === plate && !myUnitNumbers.has(String(v.unit));
+    });
+    if (otherUnitMatch) {
+      input.value = '';
+      showSaveMsg(`이 차량은 다른 유닛(${escapeHtml(otherUnitMatch.unit)})에 등록되어 있습니다. 관리자에게 문의하세요. / This plate is registered on another unit. Please contact admin.`, 'error', 4000);
+      return;
+    }
+
+    // 3. 통과 → 추가
+    unifiedPlates.push(plate);
+    const list = document.getElementById('myprofVehList');
+    if (list) list.insertAdjacentHTML('beforeend', renderVehBadge(plate));
+    const count = document.getElementById('myprofVehCount');
+    if (count) count.textContent = unifiedPlates.length;
     input.value = '';
-    updatePlateCount(unitId);
     input.focus();
   };
 
-  // 차량 삭제
-  window.myProfileRemovePlate = function(unitId, plate) {
-    const list = document.getElementById(`myprofPlateList-${unitId}`);
-    if (!list) return;
-    const el = list.querySelector(`.myprof-plate-badge[data-plate="${plate}"]`);
-    if (el) {
-      el.remove();
-      updatePlateCount(unitId);
+  // ── 차량 삭제 ────────────────────────────────────────────
+  window.myProfileRemoveVehicle = function(plate) {
+    const idx = unifiedPlates.indexOf(plate);
+    if (idx === -1) return;
+    unifiedPlates.splice(idx, 1);
+    const el = document.querySelector(`.myprof-veh-badge[data-plate="${plate}"]`);
+    if (el) el.remove();
+    const count = document.getElementById('myprofVehCount');
+    if (count) count.textContent = unifiedPlates.length;
+  };
+
+  // ── 비번 변경 토글 ───────────────────────────────────────
+  window.myProfileTogglePw = function() {
+    const btn = document.getElementById('myprofPwBtn');
+    const panel = document.getElementById('myprofPwPanel');
+    if (!btn || !panel) return;
+    btn.classList.toggle('open');
+    panel.classList.toggle('open');
+  };
+
+  // ── 비번 변경 ────────────────────────────────────────────
+  window.myProfileChangePw = async function() {
+    const ctx = window.__bmsCtx;
+    if (!ctx?.supabase || !ctx?.user?.email) return;
+
+    const current = document.getElementById('myprofPwCurrent')?.value || '';
+    const newPw = document.getElementById('myprofPwNew')?.value || '';
+    const confirmPw = document.getElementById('myprofPwConfirm')?.value || '';
+    const msgEl = document.getElementById('myprofPwMsg');
+
+    if (newPw.length < 8) {
+      showPwMsg(msgEl, '새 비밀번호는 최소 8자 / New password must be at least 8 characters.', 'error');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      showPwMsg(msgEl, '새 비밀번호가 일치하지 않습니다 / Passwords do not match.', 'error');
+      return;
+    }
+
+    showPwMsg(msgEl, 'Updating…', 'loading');
+
+    try {
+      // 현재 비번 확인
+      const { error: signInError } = await ctx.supabase.auth.signInWithPassword({
+        email: ctx.user.email,
+        password: current
+      });
+      if (signInError) {
+        showPwMsg(msgEl, '현재 비밀번호가 틀립니다 / Current password is incorrect.', 'error');
+        return;
+      }
+      // 새 비번 적용
+      const { error: updateError } = await ctx.supabase.auth.updateUser({ password: newPw });
+      if (updateError) {
+        showPwMsg(msgEl, 'Failed: ' + updateError.message, 'error');
+        return;
+      }
+      showPwMsg(msgEl, '✓ 비밀번호 변경 완료 / Password changed.', 'success');
+      document.getElementById('myprofPwCurrent').value = '';
+      document.getElementById('myprofPwNew').value = '';
+      document.getElementById('myprofPwConfirm').value = '';
+    } catch (err) {
+      console.error('[my-profile] pw change error:', err);
+      showPwMsg(msgEl, 'An error occurred.', 'error');
     }
   };
 
-  // 카운트 업데이트
-  function updatePlateCount(unitId) {
-    const list = document.getElementById(`myprofPlateList-${unitId}`);
-    const count = document.getElementById(`myprofVehCount-${unitId}`);
-    if (list && count) {
-      count.textContent = list.querySelectorAll('.myprof-plate-badge').length;
-    }
+  function showPwMsg(el, msg, type) {
+    if (!el) return;
+    el.className = 'myprof-pw-msg show ' + type;
+    el.textContent = msg;
   }
 
-  // 카드의 현재 plate 리스트 수집 (저장 시 사용)
-  function collectPlatesFromCard(unitId) {
-    const list = document.getElementById(`myprofPlateList-${unitId}`);
-    if (!list) return [];
-    return Array.from(list.querySelectorAll('.myprof-plate-badge'))
-      .map(el => el.dataset.plate)
-      .filter(p => p);
-  }
-
-  // ── 유닛 저장 ────────────────────────────────────────────
-  // 저장 가능 필드: business_name (둘 다), contact_person (OWNER 카드에만 input 존재)
-  // 차량: 화면 리스트 그대로 license_plates에 덮어쓰기 + sync_vehicles RPC
-  // phone, owner_type, primary_email, business_email = read-only이라 저장 안 함
-  window.myProfileSaveUnit = async function(unitId) {
-    const card = document.querySelector(`.myprof-unit-card[data-unit-id="${unitId}"]`);
-    if (!card) return;
-
+  // ── 전체 저장 ────────────────────────────────────────────
+  window.myProfileSaveAll = async function() {
     const ctx = window.__bmsCtx;
-    if (!ctx?.supabase) {
-      console.error('[my-profile] no supabase ctx');
-      return;
-    }
+    if (!ctx?.supabase || !ctx?.user?.email) return;
+    const supabase = ctx.supabase;
+    const role = ctx.role;
 
-    const msgEl = document.getElementById(`myprofMsg-${unitId}`);
+    const saveBtn = document.getElementById('myprofSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
 
-    // 1. 입력값 수집 (input이 존재하는 필드만)
-    const data = {};
-    card.querySelectorAll('.myprof-edit-input').forEach(input => {
-      const field = input.dataset.field;
-      data[field] = input.value.trim() || null;
-    });
-
-    // 2. 차량 수집 (화면 그대로)
-    const plates = collectPlatesFromCard(unitId);
-    const platesStr = plates.join(', ');
-    data.license_plates = platesStr || null;
-
-    // 최소한 business_name은 있어야 함 (보호장치)
-    if (!('business_name' in data)) {
-      showCardMsg(msgEl, 'No editable fields found.', 'error');
-      return;
-    }
-
-    showCardMsg(msgEl, 'Saving…', 'loading');
+    showSaveMsg('Saving…', 'loading');
 
     try {
-      // 3. occupants 업데이트
-      const { error } = await ctx.supabase
-        .from('occupants')
-        .update(data)
-        .eq('id', unitId);
+      // a) profiles.full_name UPDATE
+      const nameInput = document.getElementById('myprofName');
+      const newName = (nameInput?.value || '').trim();
+      if (newName.length >= 2) {
+        const { error: nameErr } = await supabase
+          .from('profiles')
+          .update({ full_name: newName })
+          .eq('id', ctx.user.id);
+        if (nameErr) {
+          showSaveMsg('Name save failed: ' + nameErr.message, 'error', 4000);
+          if (saveBtn) saveBtn.disabled = false;
+          return;
+        }
+        // ctx 업데이트
+        if (ctx.profile) ctx.profile.full_name = newName;
+        ctx.name = newName;
+      }
 
-      if (error) {
-        showCardMsg(msgEl, 'Failed: ' + error.message, 'error');
+      // Admin/Observer는 여기서 종료 (사업체 정보 없음)
+      if (role === 'admin' || role === 'observer') {
+        showSaveMsg('✓ 저장 완료 / Saved.', 'success', 2500);
+        if (saveBtn) saveBtn.disabled = false;
+        if (window.showToast) window.showToast('Updated ✓');
+        // 헤더 갱신
+        fillHeader();
         return;
       }
 
-      // 4. vehicles 테이블 동기화 (sync_vehicles RPC)
-      const cached = currentMyUnits.find(u => u.id === unitId);
-      const unit = cached?.unit || card.dataset.unit;
-      const ownerName =
-        data.contact_person ||
-        data.business_name ||
-        cached?.contact_person ||
-        cached?.business_name ||
-        '';
+      // Staff only: 사업체 정보/차량 없음
+      const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
+      const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
+      const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0;
 
-      const { error: rpcError } = await ctx.supabase.rpc('sync_vehicles', {
-        p_unit: unit,
-        p_owner_name: ownerName,
-        p_plates: plates
-      });
-
-      if (rpcError) {
-        // occupants는 저장됐는데 vehicles만 실패한 케이스
-        showCardMsg(msgEl, 'Saved, but vehicle sync failed: ' + rpcError.message, 'error');
+      if (isStaffOnly) {
+        showSaveMsg('✓ 저장 완료 / Saved.', 'success', 2500);
+        if (saveBtn) saveBtn.disabled = false;
+        if (window.showToast) window.showToast('Updated ✓');
+        fillHeader();
         return;
       }
 
-      showCardMsg(msgEl, '✓ Saved successfully', 'success');
+      // b) 사업체 정보 수집
+      const businessName = (document.getElementById('myprofBusinessName')?.value || '').trim();
+      const phone = (document.getElementById('myprofPhone')?.value || '').trim();
+      const platesStr = unifiedPlates.join(', ');
 
-      // 캐시 업데이트
-      if (cached) {
-        Object.keys(data).forEach(k => { cached[k] = data[k]; });
+      // c) 본인 OWNER 매칭 유닛 순회
+      // - 체크된 유닛: owner_type='Owner', business_name, phone, license_plates
+      // - 미체크 유닛: owner_type='Tenant'만 (다른 필드 절대 안 건드림)
+      for (const u of ownerUnits) {
+        if (u.checked) {
+          const { error: upErr } = await supabase
+            .from('occupants')
+            .update({
+              owner_type: 'Owner',
+              business_name: businessName || null,
+              phone: phone || null,
+              license_plates: platesStr || null
+            })
+            .eq('id', u.id);
+          if (upErr) {
+            showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
+            if (saveBtn) saveBtn.disabled = false;
+            return;
+          }
+          // 캐시 업데이트
+          u.owner_type = 'Owner';
+          u.business_name = businessName || null;
+          u.phone = phone || null;
+          u.license_plates = platesStr || null;
+
+          // sync_vehicles RPC
+          const ownerName = u.contact_person || businessName || '';
+          const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
+            p_unit: u.unit,
+            p_owner_name: ownerName,
+            p_plates: unifiedPlates
+          });
+          if (rpcErr) {
+            console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
+            // 차량 sync 실패는 경고만, 저장 흐름은 계속
+          }
+        } else {
+          // 미체크 → owner_type만 'Tenant'로
+          const { error: upErr } = await supabase
+            .from('occupants')
+            .update({ owner_type: 'Tenant' })
+            .eq('id', u.id);
+          if (upErr) {
+            showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
+            if (saveBtn) saveBtn.disabled = false;
+            return;
+          }
+          u.owner_type = 'Tenant';
+        }
       }
 
+      // d) Tenant 매칭 유닛 (Tenant인 본인이 임차한 유닛)
+      // 체크박스 없이 그 유닛에 직접 적용
+      for (const u of tenantUnits) {
+        const { error: upErr } = await supabase
+          .from('occupants')
+          .update({
+            business_name: businessName || null,
+            phone: phone || null,
+            license_plates: platesStr || null
+          })
+          .eq('id', u.id);
+        if (upErr) {
+          showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
+          if (saveBtn) saveBtn.disabled = false;
+          return;
+        }
+        u.business_name = businessName || null;
+        u.phone = phone || null;
+        u.license_plates = platesStr || null;
+
+        // sync_vehicles
+        const ownerName = u.contact_person || businessName || '';
+        const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
+          p_unit: u.unit,
+          p_owner_name: ownerName,
+          p_plates: unifiedPlates
+        });
+        if (rpcErr) console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
+      }
+
+      showSaveMsg('✓ 저장 완료 / Saved successfully.', 'success', 2500);
+      if (saveBtn) saveBtn.disabled = false;
       if (window.showToast) window.showToast('Updated ✓');
-
-      // 3초 후 메시지 숨김
-      setTimeout(() => {
-        if (msgEl) msgEl.style.display = 'none';
-      }, 3000);
+      fillHeader();
 
     } catch (err) {
       console.error('[my-profile] save error:', err);
-      showCardMsg(msgEl, 'An error occurred. Please try again.', 'error');
+      showSaveMsg('An error occurred. Please try again.', 'error', 4000);
+      if (saveBtn) saveBtn.disabled = false;
     }
   };
+
+  // ── 저장 메시지 ──────────────────────────────────────────
+  function showSaveMsg(msg, type, autoHide) {
+    const el = document.getElementById('myprofSaveMsg');
+    if (!el) return;
+    el.className = 'myprof-save-msg show ' + type;
+    el.textContent = msg;
+    if (autoHide) {
+      setTimeout(() => {
+        el.classList.remove('show', 'success', 'error', 'loading');
+        el.textContent = '';
+      }, autoHide);
+    }
+  }
 
   // ── Helpers ─────────────────────────────────────────────
-  function hideUnitsSection() {
-    const sectionEl = document.getElementById('myprofUnitsSection');
-    if (sectionEl) sectionEl.style.display = 'none';
-  }
-
-  function showUnitsError(msg) {
-    const contentEl = document.getElementById('myprofUnitsContent');
-    if (contentEl) {
-      contentEl.outerHTML = `<div class="myprof-units-error">${escapeHtml(msg)}</div>`;
-    }
-  }
-
-  function showCardMsg(el, text, type) {
-    if (!el) return;
-    el.textContent = text;
-    el.className = 'myprof-card-msg myprof-card-msg-' + type;
-    el.style.display = 'block';
-  }
-
-  // ── 비밀번호 변경 처리 ──────────────────────────────────
-  window.myProfileChangePassword = async function() {
-    const currentPwd = document.getElementById('myprofCurrentPwd').value;
-    const newPwd = document.getElementById('myprofNewPwd').value;
-    const confirmPwd = document.getElementById('myprofConfirmPwd').value;
-    const msgEl = document.getElementById('myprofPwdMsg');
-
-    if (!currentPwd || !newPwd || !confirmPwd) {
-      showMsg(msgEl, 'Please fill in all fields.', 'error');
-      return;
-    }
-    if (newPwd.length < 6) {
-      showMsg(msgEl, 'New password must be at least 6 characters.', 'error');
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      showMsg(msgEl, 'New passwords do not match.', 'error');
-      return;
-    }
-    if (currentPwd === newPwd) {
-      showMsg(msgEl, 'New password must be different from current.', 'error');
-      return;
-    }
-
-    const ctx = window.__bmsCtx;
-    if (!ctx?.supabase || !ctx?.user?.email) {
-      showMsg(msgEl, 'Session error. Please reload the page.', 'error');
-      return;
-    }
-
-    const supabase = ctx.supabase;
-    const email = ctx.user.email;
-
-    showMsg(msgEl, 'Updating…', 'loading');
-
-    try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: currentPwd,
-      });
-
-      if (signInError) {
-        showMsg(msgEl, 'Current password is incorrect.', 'error');
-        return;
-      }
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPwd
-      });
-
-      if (updateError) {
-        showMsg(msgEl, 'Failed to update password: ' + updateError.message, 'error');
-        return;
-      }
-
-      showMsg(msgEl, '✓ Password updated successfully.', 'success');
-
-      document.getElementById('myprofCurrentPwd').value = '';
-      document.getElementById('myprofNewPwd').value = '';
-      document.getElementById('myprofConfirmPwd').value = '';
-
-      if (window.showToast) window.showToast('Password updated ✓');
-
-    } catch (err) {
-      console.error('[my-profile] password change error:', err);
-      showMsg(msgEl, 'An error occurred. Please try again.', 'error');
-    }
-  };
-
-  function showMsg(el, text, type) {
-    if (!el) return;
-    el.textContent = text;
-    el.className = 'myprof-msg myprof-msg-' + type;
-    el.style.display = 'block';
-  }
-
-  // ── 유틸리티 ─────────────────────────────────────────────
   function getInitials(name) {
     if (!name) return '?';
     const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return parts[0].substring(0, 2).toUpperCase();
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
 
   function getRoleLabel(role) {
@@ -694,11 +793,7 @@
       'owner': 'Owner',
       'tenant': 'Tenant (Staff)'
     };
-    return map[role] || role;
-  }
-
-  function getRoleClass(role) {
-    return 'myprof-role-' + (role || 'default').toLowerCase();
+    return map[role] || role || 'User';
   }
 
   function escapeHtml(str) {
@@ -711,5 +806,4 @@
       .replace(/'/g, '&#39;');
   }
 
-  console.log('[my-profile] module loaded (Phase 4)');
 })();
