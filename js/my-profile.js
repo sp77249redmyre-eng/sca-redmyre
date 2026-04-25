@@ -64,9 +64,20 @@
     body.innerHTML = `
       <!-- User Info Card -->
       <div class="myprof-user-card">
-        <div class="myprof-avatar">${escapeHtml(initials)}</div>
+        <div class="myprof-avatar" id="myprofAvatar">${escapeHtml(initials)}</div>
         <div class="myprof-user-info">
-          <div class="myprof-user-name">${escapeHtml(name)}</div>
+          <!-- 이름 표시/편집 영역 -->
+          <div class="myprof-name-wrap" id="myprofNameWrap">
+            <div class="myprof-name-display" id="myprofNameDisplay">
+              <span class="myprof-user-name" id="myprofNameText">${escapeHtml(name)}</span>
+              <button class="myprof-name-edit-btn" onclick="myProfileStartEditName()" title="Edit name">✏️</button>
+            </div>
+            <div class="myprof-name-edit" id="myprofNameEdit" style="display:none">
+              <input type="text" class="myprof-name-input" id="myprofNameInput" maxlength="60" placeholder="Your name">
+              <button class="myprof-name-save-btn" onclick="myProfileSaveName()" title="Save">💾</button>
+              <button class="myprof-name-cancel-btn" onclick="myProfileCancelEditName()" title="Cancel">✕</button>
+            </div>
+          </div>
           <div class="myprof-user-email">${escapeHtml(email)}</div>
           <div class="myprof-user-meta">
             <span class="myprof-role-badge ${roleClass}">${escapeHtml(roleLabel)}</span>
@@ -303,6 +314,107 @@
       </div>
     `;
   }
+
+  // ── 이름 편집 (인라인) ────────────────────────────────
+  window.myProfileStartEditName = function() {
+    const display = document.getElementById('myprofNameDisplay');
+    const edit = document.getElementById('myprofNameEdit');
+    const input = document.getElementById('myprofNameInput');
+    const currentName = document.getElementById('myprofNameText')?.textContent || '';
+    if (!display || !edit || !input) return;
+    input.value = currentName;
+    display.style.display = 'none';
+    edit.style.display = 'flex';
+    input.focus();
+    input.select();
+    // Enter = save / Escape = cancel
+    input.onkeydown = function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); window.myProfileSaveName(); }
+      else if (e.key === 'Escape') { e.preventDefault(); window.myProfileCancelEditName(); }
+    };
+  };
+
+  window.myProfileCancelEditName = function() {
+    const display = document.getElementById('myprofNameDisplay');
+    const edit = document.getElementById('myprofNameEdit');
+    if (!display || !edit) return;
+    edit.style.display = 'none';
+    display.style.display = 'flex';
+  };
+
+  window.myProfileSaveName = async function() {
+    const input = document.getElementById('myprofNameInput');
+    if (!input) return;
+    const newName = (input.value || '').trim();
+
+    if (!newName) {
+      if (window.showToast) window.showToast('Name cannot be empty', true);
+      return;
+    }
+    if (newName.length < 2) {
+      if (window.showToast) window.showToast('Name too short', true);
+      return;
+    }
+
+    const ctx = window.__bmsCtx;
+    if (!ctx?.supabase || !ctx?.user?.id) {
+      if (window.showToast) window.showToast('Session error. Please reload.', true);
+      return;
+    }
+
+    const oldName = ctx.name;
+    if (newName === oldName) {
+      window.myProfileCancelEditName();
+      return;
+    }
+
+    try {
+      const { error } = await ctx.supabase
+        .from('profiles')
+        .update({ full_name: newName })
+        .eq('id', ctx.user.id);
+
+      if (error) {
+        if (window.showToast) window.showToast('Failed: ' + error.message, true);
+        return;
+      }
+
+      // 컨텍스트/표시 갱신
+      ctx.name = newName;
+      if (ctx.profile) ctx.profile.full_name = newName;
+
+      // 모달 내 표시 갱신
+      const nameText = document.getElementById('myprofNameText');
+      if (nameText) nameText.textContent = newName;
+      const avatar = document.getElementById('myprofAvatar');
+      if (avatar) avatar.textContent = getInitials(newName);
+
+      // 토픽바/사이드바 즉시 갱신
+      const topName = document.getElementById('topName');
+      const sbName = document.getElementById('sbName');
+      const topAvatar = document.getElementById('topAvatar');
+      const sbAvatar = document.getElementById('sbAvatar');
+      const greet = document.getElementById('topbarGreeting');
+      const initials = getInitials(newName);
+      if (topName) topName.textContent = newName;
+      if (sbName) sbName.textContent = newName;
+      if (topAvatar) topAvatar.textContent = initials;
+      if (sbAvatar) sbAvatar.textContent = initials;
+      if (greet) {
+        // "Good morning, [name] 👋" 형태인 경우 이름 부분만 교체
+        const txt = greet.textContent;
+        const match = txt.match(/^(Good \w+,\s+)(.+?)(\s*[👋🌞🌙]?)\s*$/);
+        if (match) greet.textContent = match[1] + newName + match[3];
+      }
+
+      window.myProfileCancelEditName();
+      if (window.showToast) window.showToast('Name updated ✓');
+
+    } catch (err) {
+      console.error('[my-profile] save name error:', err);
+      if (window.showToast) window.showToast('An error occurred', true);
+    }
+  };
 
   // ── 차량 (Phase 5) ────────────────────────────────────────
   function renderPlateBadge(unitId, plate) {
