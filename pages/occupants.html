@@ -791,14 +791,9 @@
       <input class="modal-input" type="email" id="editPrimaryEmail" placeholder="Primary contact email">
     </div>
     
-    <div class="modal-field">
-      <label class="modal-label">Tenant Email</label>
-      <input class="modal-input" type="email" id="editTenantEmail" placeholder="Tenant lead email (single)">
-    </div>
-
-    <div class="modal-field">
-      <label class="modal-label">Staff Email(s)</label>
-      <input class="modal-input" id="editStaffEmails" placeholder="Staff emails (comma-separated)">
+    <div class="modal-field" id="businessEmailField">
+      <label class="modal-label" id="businessEmailLabel">Tenants Email(s)</label>
+      <input class="modal-input" id="editBusinessEmails" placeholder="Comma-separated emails">
     </div>
     
     <div class="modal-field">
@@ -1011,10 +1006,8 @@ function renderOccupants() {
   
   list.innerHTML = filtered.map(o => {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
-    // business_email 콤마 분리: 첫 번째 = Tenant 대표, 나머지 = Staff (모든 유닛 동일)
+    // business_email 콤마 분리 (Tenant/Staff 구분 없음, 한 줄로 다 표시)
     const allBusinessEmails = (o.business_email || '').split(',').map(e => e.trim()).filter(e => e);
-    const tenantEmail = allBusinessEmails[0] || '';
-    const staffEmails = allBusinessEmails.slice(1);
     const emailCount = (o.primary_email ? 1 : 0) + allBusinessEmails.length;
     const isGround = o.level === 'Ground';
     const canEdit = (role === 'admin' || (['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(o.unit) || o.unit === myUnit)));
@@ -1077,7 +1070,11 @@ function renderOccupants() {
       </div>
     ` : '';
 
-    // Contact + Tenant Email 행 (모든 유닛 동일)
+    // Contact + 통합 Email 행 (모든 유닛 동일, 라벨만 owner_type별로 다름)
+    const businessEmailLabel = isOwnerUnit ? 'Staff Email' : 'Tenants Email';
+    const businessEmailValue = allBusinessEmails.length
+      ? allBusinessEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>')
+      : 'Not set';
     const contactRowHtml = `
       ${starRowsHtml}
       ${showStarFields ? '<div class="occ-list-divider"></div>' : ''}
@@ -1086,18 +1083,13 @@ function renderOccupants() {
         <div class="occ-list-value ${o.business_name || o.contact_person ? '' : 'empty'}">${o.business_name ? o.business_name : (o.contact_person || 'Not set')}</div>
       </div>
       <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">📧</span> Tenant Email</div>
-        <div class="occ-list-value ${tenantEmail ? '' : 'empty'}">${tenantEmail ? `<a href="mailto:${tenantEmail}">${tenantEmail}</a>` : 'Not set'}</div>
+        <div class="occ-list-label"><span class="lbl-icon">📧</span> ${businessEmailLabel}</div>
+        <div class="occ-list-value ${allBusinessEmails.length ? '' : 'empty'}">${businessEmailValue}</div>
       </div>
     `;
 
-    // Staff Email 행 (값 있을 때만 표시)
-    const staffEmailRowHtml = staffEmails.length ? `
-      <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">📧</span> Staff Email</div>
-        <div class="occ-list-value">${staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>')}</div>
-      </div>
-    ` : '';
+    // Staff Email 별도 행 제거됨 (통합)
+    const staffEmailRowHtml = '';
 
     return `
       <div class="occ-item ${isGround ? 'ground-floor' : ''} ${restricted ? 'occ-restricted' : ''}" data-unit="${o.unit}" data-id="${o.id}">
@@ -1261,11 +1253,14 @@ window.openEditModal = (id) => {
   document.getElementById('editContactPerson').value = occ.contact_person || '';
   document.getElementById('editPrimaryEmail').value = occ.primary_email || '';
 
-  // business_email 콤마 분리: 첫번째 = Tenant Email, 나머지 = Staff Email
-  // 단순하게 — Edit 모달은 항상 똑같이 동작 (나중에 OWNER → TENANT 변경 자유롭게)
-  const allBE = (occ.business_email || '').split(',').map(e => e.trim()).filter(e => e);
-  document.getElementById('editTenantEmail').value = allBE[0] || '';
-  document.getElementById('editStaffEmails').value = allBE.slice(1).join(', ');
+  // business_email 한 칸에 그대로 (Tenant/Staff 구분 안 함)
+  document.getElementById('editBusinessEmails').value = occ.business_email || '';
+  // 라벨 동적: OWNER → Staff Email(s) / TENANT → Tenants Email(s)
+  const isOwnerUnitForLabel = occ.owner_type === 'Owner';
+  document.getElementById('businessEmailLabel').textContent = isOwnerUnitForLabel ? 'Staff Email(s)' : 'Tenants Email(s)';
+  document.getElementById('editBusinessEmails').placeholder = isOwnerUnitForLabel
+    ? 'Staff emails (comma-separated)'
+    : 'Tenants emails (comma-separated)';
 
   document.getElementById('editOwnerType').value = occ.owner_type || '';
   document.getElementById('editPhone').value = occ.phone || '';
@@ -1293,9 +1288,8 @@ window.openEditModal = (id) => {
   document.getElementById('committeeRoleField').style.display = 'none';
   // Business Name 보임
   document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
-  // Tenant Email / Staff Email 둘 다 항상 보임 (OWNER → TENANT 변경 대비)
-  document.getElementById('editTenantEmail').closest('.modal-field').style.display = '';
-  document.getElementById('editStaffEmails').closest('.modal-field').style.display = '';
+  // 통합 Email 칸 보임
+  document.getElementById('businessEmailField').style.display = '';
   // Contact Person: tenant는 disabled (오너 정보)
   document.getElementById('editContactPerson').disabled = isTenant;
   document.getElementById('editContactPerson').style.opacity = isTenant ? '0.5' : '1';
@@ -1337,11 +1331,10 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     occ?.business_name ||
     '';
 
-  // Tenant Email + Staff Email(s) 합쳐서 business_email 생성
-  const tenantEmail = document.getElementById('editTenantEmail').value.trim();
-  const staffEmailsRaw = document.getElementById('editStaffEmails').value.trim();
-  const staffList = staffEmailsRaw ? staffEmailsRaw.split(',').map(e => e.trim()).filter(e => e) : [];
-  const combinedBusinessEmail = [tenantEmail, ...staffList].filter(e => e).join(', ');
+  // 통합 칸에서 그대로 가져와 정규화 (콤마 분리 후 trim 후 다시 합침)
+  const businessEmailRaw = document.getElementById('editBusinessEmails').value.trim();
+  const beList = businessEmailRaw ? businessEmailRaw.split(',').map(e => e.trim()).filter(e => e) : [];
+  const combinedBusinessEmail = beList.join(', ');
 
   const data = {
     business_name: businessName,
