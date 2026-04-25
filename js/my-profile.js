@@ -1,7 +1,7 @@
 // ============================================================
 // Redmyre BMS — My Profile Modal
 // /js/my-profile.js
-// Phase 2: 본인 정보 카드 + 비밀번호 변경
+// Phase 3: 본인 정보 + 비밀번호 변경 + My Units 카드 (읽기 전용)
 // ============================================================
 
 (function() {
@@ -19,7 +19,11 @@
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
+    // 1단계: 기본 정보 + 비번 변경 폼 표시
     renderProfileBody();
+
+    // 2단계: My Units 비동기 로드 (DB 조회)
+    await loadMyUnits();
   };
 
   // ── 모달 닫기 ────────────────────────────────────────────
@@ -41,7 +45,7 @@
     }
   });
 
-  // ── 본문 렌더링 ──────────────────────────────────────────
+  // ── 본문 렌더링 (정보 카드 + 비번 변경) ─────────────────
   function renderProfileBody() {
     const body = document.getElementById('myProfileBody');
     if (!body) return;
@@ -93,7 +97,194 @@
           <div id="myprofPwdMsg" class="myprof-msg" style="display:none"></div>
         </div>
       </div>
+
+      <!-- My Units Section (loaded async) -->
+      <div class="myprof-section" id="myprofUnitsSection">
+        <div class="myprof-section-title">🏠 My Units</div>
+        <div id="myprofUnitsContent" class="myprof-units-loading">
+          Loading units…
+        </div>
+      </div>
     `;
+  }
+
+  // ── My Units 로드 ───────────────────────────────────────
+  async function loadMyUnits() {
+    const ctx = window.__bmsCtx;
+    if (!ctx?.supabase || !ctx?.user?.email) {
+      hideUnitsSection();
+      return;
+    }
+
+    const supabase = ctx.supabase;
+    const role = ctx.role;
+    const myEmail = ctx.user.email.toLowerCase();
+
+    // Admin: 안내만 표시 (카드 안 만듦)
+    if (role === 'admin') {
+      const contentEl = document.getElementById('myprofUnitsContent');
+      if (contentEl) {
+        contentEl.outerHTML = `
+          <div class="myprof-units-info">
+            You manage all units. Use the <strong>Occupants</strong> page to view & edit.
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Observer: 섹션 숨김
+    if (role === 'observer') {
+      hideUnitsSection();
+      return;
+    }
+
+    try {
+      // 본인 관련 occupants row 조회 (RLS가 알아서 필터링)
+      const { data: occupants, error } = await supabase
+        .from('occupants')
+        .select('*')
+        .order('unit', { ascending: true });
+
+      if (error) {
+        showUnitsError('Failed to load units: ' + error.message);
+        return;
+      }
+
+      // 본인 이메일이 매칭된 유닛만 필터링 + 분류
+      const myUnits = [];
+      (occupants || []).forEach(o => {
+        const primaryEmails = (o.primary_email || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e);
+        const businessEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase()).filter(e => e);
+
+        const isPrimary = primaryEmails.includes(myEmail);
+        const isInBusiness = businessEmails.includes(myEmail);
+
+        if (isPrimary) {
+          // Owner 역할
+          myUnits.push({ ...o, my_role: 'OWNER' });
+        } else if (isInBusiness) {
+          // owner_type=Tenant인 유닛에서 business_email = Tenant 대표
+          // owner_type=Owner인 유닛에서 business_email = Staff (제외)
+          if (o.owner_type === 'Tenant') {
+            myUnits.push({ ...o, my_role: 'TENANT' });
+          }
+          // Owner 유닛의 Staff는 카드 안 만듦 (이름+비번만)
+        }
+      });
+
+      renderUnits(myUnits);
+
+    } catch (err) {
+      console.error('[my-profile] loadMyUnits error:', err);
+      showUnitsError('An error occurred while loading units.');
+    }
+  }
+
+  // ── My Units 카드 렌더링 ────────────────────────────────
+  function renderUnits(units) {
+    const contentEl = document.getElementById('myprofUnitsContent');
+    const sectionEl = document.getElementById('myprofUnitsSection');
+    if (!contentEl || !sectionEl) return;
+
+    // 유닛 0개면 섹션 숨김 (Staff 케이스 등)
+    if (!units || units.length === 0) {
+      hideUnitsSection();
+      return;
+    }
+
+    // 섹션 타이틀에 카운트 표시
+    const titleEl = sectionEl.querySelector('.myprof-section-title');
+    if (titleEl) titleEl.textContent = `🏠 My Units (${units.length})`;
+
+    contentEl.outerHTML = units.map(u => renderUnitCard(u)).join('');
+  }
+
+  function renderUnitCard(u) {
+    const myRole = u.my_role; // 'OWNER' | 'TENANT'
+    const badgeClass = myRole === 'OWNER' ? 'myprof-card-badge-owner' : 'myprof-card-badge-tenant';
+    const cardBorderClass = myRole === 'OWNER' ? 'myprof-card-owner' : 'myprof-card-tenant';
+
+    // 이메일 표시
+    const primaryEmails = (u.primary_email || '').split(',').map(e => e.trim()).filter(e => e);
+    const businessEmails = (u.business_email || '').split(',').map(e => e.trim()).filter(e => e);
+
+    // OWNER 유닛 = business_email은 Staff Email
+    // TENANT 유닛 = business_email은 Tenants Email
+    const businessLabel = u.owner_type === 'Owner' ? 'Staff Email' : 'Tenants Email';
+
+    // 차량
+    const plates = (u.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
+
+    return `
+      <div class="myprof-unit-card ${cardBorderClass}">
+        <div class="myprof-unit-header">
+          <div class="myprof-unit-id">
+            <span class="myprof-unit-num">${escapeHtml(u.unit)}</span>
+            ${u.suite && u.suite !== u.unit ? `<span class="myprof-unit-suite">${escapeHtml(u.suite)}</span>` : ''}
+          </div>
+          <span class="myprof-card-badge ${badgeClass}">${myRole}</span>
+        </div>
+
+        ${u.business_name ? `
+          <div class="myprof-unit-business">${escapeHtml(u.business_name)}</div>
+        ` : ''}
+
+        <div class="myprof-unit-fields">
+          ${u.contact_person ? `
+            <div class="myprof-unit-row">
+              <span class="myprof-unit-icon">👤</span>
+              <span>${escapeHtml(u.contact_person)}</span>
+            </div>
+          ` : ''}
+
+          ${primaryEmails.length ? `
+            <div class="myprof-unit-row">
+              <span class="myprof-unit-icon">📧</span>
+              <span class="myprof-unit-label-inline">Primary:</span>
+              <span class="myprof-unit-emails">${primaryEmails.map(e => `<a href="mailto:${escapeHtml(e)}">${escapeHtml(e)}</a>`).join(', ')}</span>
+            </div>
+          ` : ''}
+
+          ${businessEmails.length ? `
+            <div class="myprof-unit-row">
+              <span class="myprof-unit-icon">📧</span>
+              <span class="myprof-unit-label-inline">${businessLabel}:</span>
+              <span class="myprof-unit-emails">${businessEmails.map(e => `<a href="mailto:${escapeHtml(e)}">${escapeHtml(e)}</a>`).join(', ')}</span>
+            </div>
+          ` : ''}
+
+          ${u.phone ? `
+            <div class="myprof-unit-row">
+              <span class="myprof-unit-icon">📞</span>
+              <span>${escapeHtml(u.phone)}</span>
+            </div>
+          ` : ''}
+
+          <div class="myprof-unit-row">
+            <span class="myprof-unit-icon">🚗</span>
+            <span class="myprof-unit-label-inline">Vehicles (${plates.length}):</span>
+            ${plates.length
+              ? `<span class="myprof-unit-plates">${plates.map(p => `<span class="myprof-plate">${escapeHtml(p)}</span>`).join('')}</span>`
+              : `<span class="myprof-unit-empty">No vehicles registered</span>`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────
+  function hideUnitsSection() {
+    const sectionEl = document.getElementById('myprofUnitsSection');
+    if (sectionEl) sectionEl.style.display = 'none';
+  }
+
+  function showUnitsError(msg) {
+    const contentEl = document.getElementById('myprofUnitsContent');
+    if (contentEl) {
+      contentEl.outerHTML = `<div class="myprof-units-error">${escapeHtml(msg)}</div>`;
+    }
   }
 
   // ── 비밀번호 변경 처리 ──────────────────────────────────
@@ -103,7 +294,6 @@
     const confirmPwd = document.getElementById('myprofConfirmPwd').value;
     const msgEl = document.getElementById('myprofPwdMsg');
 
-    // 기본 검증
     if (!currentPwd || !newPwd || !confirmPwd) {
       showMsg(msgEl, 'Please fill in all fields.', 'error');
       return;
@@ -133,7 +323,6 @@
     showMsg(msgEl, 'Updating…', 'loading');
 
     try {
-      // 1. 현재 비번 검증 — signInWithPassword로 재로그인 시도
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email,
         password: currentPwd,
@@ -144,7 +333,6 @@
         return;
       }
 
-      // 2. 새 비번으로 업데이트
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPwd
       });
@@ -156,12 +344,10 @@
 
       showMsg(msgEl, '✓ Password updated successfully.', 'success');
 
-      // 입력칸 초기화
       document.getElementById('myprofCurrentPwd').value = '';
       document.getElementById('myprofNewPwd').value = '';
       document.getElementById('myprofConfirmPwd').value = '';
 
-      // 글로벌 토스트도 표시 (있으면)
       if (window.showToast) window.showToast('Password updated ✓');
 
     } catch (err) {
@@ -204,7 +390,7 @@
   }
 
   function escapeHtml(str) {
-    if (!str) return '';
+    if (str === null || str === undefined) return '';
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -213,5 +399,5 @@
       .replace(/'/g, '&#39;');
   }
 
-  console.log('[my-profile] module loaded (Phase 2)');
+  console.log('[my-profile] module loaded (Phase 3)');
 })();
