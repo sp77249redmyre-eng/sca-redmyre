@@ -258,6 +258,14 @@
   font-family: inherit;
 }
 .occ-edit-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.25); }
+/* Edit via My Profile — 파란색 버튼 (Admin Edit Details와 차별화) */
+.occ-edit-btn.occ-edit-btn-profile {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+}
+.occ-edit-btn.occ-edit-btn-profile:hover {
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
 .occ-unit {
   font-size: 15px;
   font-weight: 700;
@@ -1133,10 +1141,27 @@ function renderOccupants() {
             </div>` : ''}
           </div>
           ${vehiclesHtml}
-          ${canEdit ? `
-          <div class="occ-body-actions">
-            <button class="occ-edit-btn" onclick="openEditModal('${o.id}'); event.stopPropagation();">✏️ Edit Details</button>
-          </div>` : ''}
+          ${(() => {
+            // Admin → Edit Details 버튼
+            if (role === 'admin') {
+              return `
+                <div class="occ-body-actions">
+                  <button class="occ-edit-btn" onclick="openEditModal('${o.id}'); event.stopPropagation();">✏️ Edit Details</button>
+                </div>`;
+            }
+            // 본인 카드인지 판별 (Owner/Tenant/Committee가 본인 유닛 보는 경우)
+            const isMyCard = ['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(o.unit) || o.unit === myUnit);
+            if (isMyCard) {
+              return `
+                <div class="occ-body-actions">
+                  <button class="occ-edit-btn occ-edit-btn-profile" onclick="openMyProfile(); event.stopPropagation();" title="Open My Profile">
+                    👤 Edit via My Profile
+                  </button>
+                </div>`;
+            }
+            // 그 외 (Observer, 다른 유닛 보는 경우 등) → 버튼 없음
+            return '';
+          })()}
         </div>
       </div>
     `;
