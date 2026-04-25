@@ -201,9 +201,8 @@
     </button>
   </div>
 </div>
-
 <!-- ============================================================
-     My Profile Modal (Phase 1 - skeleton)
+     My Profile Modal (Re-architected — Unified Form)
      ============================================================ -->
 <style>
   .myprof-backdrop {
@@ -214,7 +213,7 @@
     z-index: 9998;
     align-items: flex-start;
     justify-content: center;
-    padding: 60px 20px 40px;
+    padding: 40px 16px;
     overflow-y: auto;
   }
   .myprof-backdrop.open { display: flex; }
@@ -222,729 +221,414 @@
     background: #fff;
     border-radius: 16px;
     width: 100%;
-    max-width: 640px;
+    max-width: 460px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25);
     overflow: hidden;
-    animation: myprofIn 0.2s ease-out;
+    font-family: 'DM Sans', sans-serif;
   }
-  @keyframes myprofIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+
+  /* Header */
   .myprof-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 24px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .myprof-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .myprof-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
     background: linear-gradient(135deg, #1e3a8a, #2563eb);
     color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
   }
+  .myprof-title-block { min-width: 0; }
   .myprof-title {
     font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+  .myprof-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
   }
   .myprof-close {
-    background: rgba(255,255,255,0.15);
+    width: 32px; height: 32px;
     border: none;
-    color: #fff;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
+    background: transparent;
+    color: #64748b;
+    font-size: 18px;
     cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
+    border-radius: 8px;
+    flex-shrink: 0;
   }
-  .myprof-close:hover { background: rgba(255,255,255,0.3); }
+  .myprof-close:hover { background: #f1f5f9; color: #0f172a; }
+
+  /* Body */
   .myprof-body {
-    padding: 24px;
+    padding: 18px 20px 14px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
   }
-  .myprof-placeholder {
-    text-align: center;
-    color: #64748b;
-    padding: 40px 20px;
-  }
-  .myprof-placeholder h3 {
-    font-size: 18px;
-    color: #1e293b;
-    margin: 0 0 8px;
-  }
-  .myprof-placeholder p {
-    font-size: 13px;
-    margin: 0;
-    color: #94a3b8;
-  }
 
-  /* ── User Info Card ── */
-  .myprof-user-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-    border: 1px solid #bae6fd;
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin-bottom: 24px;
-  }
-  .myprof-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1e3a8a, #2563eb);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: 700;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-  }
-  .myprof-user-info { flex: 1; min-width: 0; }
-  .myprof-user-name {
-    font-size: 17px;
-    font-weight: 700;
-    color: #1e293b;
-    word-break: break-word;
-  }
-  .myprof-name-wrap {
-    margin-bottom: 4px;
-  }
-  .myprof-name-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .myprof-name-edit-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    background: rgba(255,255,255,0.6);
-    border: 1px solid #bae6fd;
-    border-radius: 50%;
-    cursor: pointer;
+  /* Section */
+  .myprof-section { margin-bottom: 18px; }
+  .myprof-section-title {
     font-size: 12px;
-    transition: all 0.15s;
-    flex-shrink: 0;
-    padding: 0;
-    line-height: 1;
-  }
-  .myprof-name-edit-btn:hover {
-    background: #fff;
-    border-color: #2563eb;
-    transform: scale(1.05);
-  }
-  .myprof-name-edit {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  .myprof-name-input {
-    flex: 1;
-    min-width: 0;
-    padding: 6px 10px;
-    border: 1.5px solid #2563eb;
-    border-radius: 7px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    background: #fff;
-    color: #1e293b;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    box-sizing: border-box;
-  }
-  .myprof-name-save-btn,
-  .myprof-name-cancel-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.15s;
-    flex-shrink: 0;
-    padding: 0;
-  }
-  .myprof-name-save-btn {
-    background: #16a34a;
-    color: #fff;
-  }
-  .myprof-name-save-btn:hover {
-    background: #15803d;
-    transform: translateY(-1px);
-  }
-  .myprof-name-cancel-btn {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
-  }
-  .myprof-name-cancel-btn:hover {
-    background: #fee2e2;
-    color: #991b1b;
-    border-color: #fca5a5;
-  }
-  .myprof-user-email {
-    font-size: 13px;
+  .myprof-section-help {
+    font-size: 11px;
     color: #64748b;
     margin-bottom: 8px;
-    word-break: break-all;
-  }
-  .myprof-user-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .myprof-role-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 100px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-  }
-  .myprof-role-admin { background: #fee2e2; color: #991b1b; }
-  .myprof-role-committee { background: #fef3c7; color: #92400e; }
-  .myprof-role-observer { background: #ede9fe; color: #5b21b6; }
-  .myprof-role-owner { background: #dcfce7; color: #166534; }
-  .myprof-role-tenant { background: #dbeafe; color: #1e40af; }
-  .myprof-role-default { background: #f1f5f9; color: #475569; }
-  .myprof-unit-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 100px;
-    background: #f1f5f9;
-    color: #475569;
-    font-size: 11px;
-    font-weight: 600;
+    line-height: 1.5;
   }
 
-  /* ── Section ── */
-  .myprof-section {
-    margin-bottom: 20px;
-  }
-  .myprof-section-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 12px;
-    letter-spacing: 0.02em;
-  }
-
-  /* ── Form ── */
-  .myprof-form {
+  /* Admin info box */
+  .myprof-admin-box {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 12px 14px;
   }
-  .myprof-field {
-    margin-bottom: 12px;
-  }
-  .myprof-field:last-of-type { margin-bottom: 16px; }
-  .myprof-field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 5px;
-  }
-  .myprof-field input {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    background: #fff;
-    color: #1e293b;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    box-sizing: border-box;
-  }
-  .myprof-field input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-  }
-  .myprof-form-actions {
-    display: flex;
-    justify-content: flex-end;
+  .myprof-admin-row {
+    display: grid;
+    grid-template-columns: 60px 1fr;
     gap: 8px;
-  }
-
-  /* ── Buttons ── */
-  .myprof-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 18px;
-    background: linear-gradient(135deg, #1e3a8a, #2563eb);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: inherit;
-  }
-  .myprof-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-  }
-  .myprof-btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* ── Messages ── */
-  .myprof-msg {
-    margin-top: 12px;
-    padding: 10px 14px;
-    border-radius: 8px;
     font-size: 12px;
+    padding: 3px 0;
+    align-items: baseline;
+  }
+  .myprof-admin-label {
+    color: #64748b;
     font-weight: 500;
   }
-  .myprof-msg-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-  }
-  .myprof-msg-success {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-  }
-  .myprof-msg-loading {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+  .myprof-admin-value {
+    color: #0f172a;
+    font-weight: 600;
+    word-break: break-all;
   }
 
-  /* ── My Units Section ── */
-  .myprof-units-loading {
-    text-align: center;
-    padding: 24px;
-    color: #94a3b8;
-    font-size: 13px;
-    background: #f8fafc;
-    border: 1px dashed #cbd5e1;
-    border-radius: 10px;
-  }
-  .myprof-units-info {
-    text-align: center;
-    padding: 18px 16px;
+  /* Inputs */
+  .myprof-field { margin-bottom: 10px; }
+  .myprof-label {
+    font-size: 11px;
+    font-weight: 600;
     color: #475569;
-    font-size: 13px;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 10px;
+    margin-bottom: 4px;
+    display: block;
   }
-  .myprof-units-error {
-    text-align: center;
-    padding: 18px 16px;
-    color: #991b1b;
+  .myprof-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
     font-size: 13px;
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    border-radius: 10px;
-  }
-
-  /* Unit Card */
-  .myprof-unit-card {
+    color: #0f172a;
     background: #fff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s;
   }
-  .myprof-unit-card:last-child { margin-bottom: 0; }
-  .myprof-unit-card:hover {
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  .myprof-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
   }
-  .myprof-card-owner { border-left: 4px solid #16a34a; }
-  .myprof-card-tenant { border-left: 4px solid #2563eb; }
 
-  .myprof-unit-header {
+  /* Password change toggle */
+  .myprof-pw-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
   }
-  .myprof-unit-id {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-  .myprof-unit-num {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e3a8a;
-  }
-  .myprof-unit-suite {
-    font-size: 12px;
-    color: #94a3b8;
-    font-weight: 500;
-  }
-  .myprof-card-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 100px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-  .myprof-card-badge-owner { background: #dcfce7; color: #166534; }
-  .myprof-card-badge-tenant { background: #dbeafe; color: #1e40af; }
-
-  .myprof-unit-business {
+  .myprof-pw-btn:hover { background: #f8fafc; }
+  .myprof-pw-arrow {
     font-size: 14px;
-    font-weight: 600;
-    color: #0f172a;
-    margin-bottom: 10px;
-    word-break: break-word;
+    color: #94a3b8;
+    transition: transform 0.2s;
   }
+  .myprof-pw-btn.open .myprof-pw-arrow { transform: rotate(90deg); }
+  .myprof-pw-panel {
+    display: none;
+    margin-top: 8px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+  }
+  .myprof-pw-panel.open { display: block; }
+  .myprof-pw-msg {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    display: none;
+  }
+  .myprof-pw-msg.show { display: block; }
+  .myprof-pw-msg.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .myprof-pw-msg.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .myprof-pw-msg.loading { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-  .myprof-unit-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  .myprof-pw-submit {
+    margin-top: 8px;
+    width: 100%;
+    padding: 9px;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
   }
+  .myprof-pw-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Unit checkbox row */
   .myprof-unit-row {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 12.5px;
-    color: #334155;
-    flex-wrap: wrap;
-    line-height: 1.5;
-  }
-  .myprof-unit-icon {
-    font-size: 13px;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .myprof-unit-label-inline {
-    color: #64748b;
-    font-weight: 600;
-    font-size: 11.5px;
-  }
-  .myprof-unit-emails {
-    word-break: break-all;
-    flex: 1;
-    min-width: 0;
-  }
-  .myprof-unit-emails a {
-    color: #2563eb;
-    text-decoration: none;
-  }
-  .myprof-unit-emails a:hover { text-decoration: underline; }
-  .myprof-unit-plates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .myprof-plate {
-    display: inline-block;
-    padding: 2px 8px;
-    background: #f1f5f9;
-    color: #1e293b;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Courier New', monospace;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-  }
-  .myprof-unit-empty {
-    color: #cbd5e1;
-    font-style: italic;
-    font-size: 12px;
-  }
-
-  /* ── Phase 4: Edit Fields ── */
-  .myprof-edit-field {
-    margin-bottom: 10px;
-  }
-  .myprof-edit-label {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
-  .myprof-edit-input {
-    width: 100%;
-    padding: 8px 11px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    background: #fff;
-    color: #1e293b;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    box-sizing: border-box;
-  }
-  .myprof-edit-input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-  }
-
-  /* Read-only section (Admin only fields) */
-  .myprof-readonly-section {
-    background: #fef9c3;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin: 12px 0;
-  }
-  .myprof-readonly-title {
-    font-size: 10px;
-    font-weight: 700;
-    color: #92400e;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 8px;
-  }
-  .myprof-readonly-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    font-size: 12px;
-    line-height: 1.5;
-    margin-bottom: 4px;
-  }
-  .myprof-readonly-row:last-child { margin-bottom: 0; }
-  .myprof-readonly-label {
-    color: #78350f;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-  .myprof-readonly-value {
-    color: #451a03;
-    word-break: break-all;
-    flex: 1;
-  }
-
-  /* ── Phase 5: Vehicles Editor ── */
-  .myprof-vehicles-edit {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
     border-radius: 10px;
-    padding: 12px;
-    margin: 12px 0;
-  }
-  .myprof-vehicles-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .myprof-vehicles-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #475569;
-  }
-  .myprof-vehicles-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 7px;
-    background: #2563eb;
-    color: #fff;
-    border-radius: 100px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  .myprof-plate-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-height: 32px;
-    padding: 6px;
-    background: #fff;
-    border: 1px dashed #cbd5e1;
-    border-radius: 8px;
-    margin-bottom: 8px;
-  }
-  .myprof-plate-list:empty::before {
-    content: 'No vehicles. Add yours below.';
-    color: #cbd5e1;
-    font-size: 12px;
-    font-style: italic;
-    padding: 4px 8px;
-  }
-  .myprof-plate-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 4px 4px 10px;
-    background: #f1f5f9;
-    color: #1e293b;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    transition: background 0.15s, transform 0.15s;
-  }
-  .myprof-plate-badge.myprof-plate-flash {
-    background: #fef3c7;
-    border-color: #f59e0b;
-    transform: scale(1.05);
-  }
-  .myprof-plate-text { letter-spacing: 0.05em; }
-  .myprof-plate-remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    background: #cbd5e1;
-    color: #475569;
-    border: none;
-    border-radius: 50%;
-    font-size: 10px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    font-family: inherit;
-  }
-  .myprof-plate-remove:hover {
-    background: #ef4444;
-    color: #fff;
-  }
-  .myprof-plate-add-row {
-    display: flex;
-    gap: 6px;
-  }
-  .myprof-plate-input {
-    flex: 1;
-    padding: 7px 11px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 7px;
-    font-size: 12.5px;
-    font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: #fff;
-    color: #1e293b;
-    outline: none;
-    box-sizing: border-box;
-  }
-  .myprof-plate-input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-  }
-  .myprof-plate-add-btn {
-    padding: 7px 14px;
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s;
-    white-space: nowrap;
-  }
-  .myprof-plate-add-btn:hover { background: #1e40af; }
-  .myprof-vehicles-help {
-    font-size: 10.5px;
-    color: #94a3b8;
-    margin-top: 8px;
-    line-height: 1.5;
-  }
-
-  /* Save button on each card */
-  .myprof-card-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e2e8f0;
-  }
-  .myprof-btn-save {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: #16a34a;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    font-size: 12px;
-    font-weight: 600;
+    margin-bottom: 6px;
     cursor: pointer;
     transition: all 0.15s;
-    font-family: inherit;
+    border: 0.5px solid;
   }
-  .myprof-btn-save:hover {
-    background: #15803d;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25);
+  .myprof-unit-row.owner {
+    background: #ecfdf5;
+    border-color: #d1fae5;
   }
-  .myprof-card-msg {
-    width: 100%;
-    padding: 7px 11px;
-    border-radius: 6px;
-    font-size: 11.5px;
-    font-weight: 500;
-    text-align: center;
+  .myprof-unit-row.tenant {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
   }
-  .myprof-card-msg-error {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+  .myprof-unit-row:hover { transform: translateY(-1px); }
+
+  .myprof-checkbox {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    border: 1.5px solid #cbd5e1;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
   }
-  .myprof-card-msg-success {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
+  .myprof-unit-row.owner .myprof-checkbox {
+    background: #065f46;
+    border-color: #065f46;
   }
-  .myprof-card-msg-loading {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+  .myprof-checkbox-tick {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: none;
+  }
+  .myprof-unit-row.owner .myprof-checkbox-tick { display: block; }
+
+  .myprof-unit-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .myprof-unit-row.owner .myprof-unit-name { color: #065f46; }
+  .myprof-unit-row.tenant .myprof-unit-name { color: #475569; }
+
+  .myprof-unit-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 99px;
+    color: #fff;
+    letter-spacing: 0.04em;
+  }
+  .myprof-unit-row.owner .myprof-unit-badge { background: #065f46; }
+  .myprof-unit-row.tenant .myprof-unit-badge { background: #1e40af; }
+
+  /* Vehicles */
+  .myprof-vehicles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    min-height: 4px;
+  }
+  .myprof-veh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 6px 9px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    font-weight: 600;
+    color: #1e3a8a;
+  }
+  .myprof-veh-icon { font-size: 13px; }
+  .myprof-veh-remove {
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .myprof-veh-remove:hover { color: #dc2626; }
+  .myprof-veh-flash { animation: myprofVehFlash 0.6s ease; }
+  @keyframes myprofVehFlash {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); background: #fef3c7; border-color: #fcd34d; }
+  }
+
+  .myprof-veh-add-row {
+    display: flex;
+    gap: 6px;
+  }
+  .myprof-veh-input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    text-transform: uppercase;
+    color: #0f172a;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .myprof-veh-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+  .myprof-veh-add-btn {
+    padding: 9px 14px;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    flex-shrink: 0;
+  }
+
+  /* Footer buttons */
+  .myprof-footer {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid #f1f5f9;
+    background: #fff;
+  }
+  .myprof-btn-cancel {
+    flex: 1;
+    padding: 11px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .myprof-btn-cancel:hover { background: #f8fafc; }
+  .myprof-btn-save {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 3px 10px rgba(37,99,235,0.25);
+  }
+  .myprof-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Global save msg */
+  .myprof-save-msg {
+    padding: 10px 14px;
+    border-radius: 9px;
+    font-size: 12px;
+    margin: 10px 20px 0;
+    display: none;
+  }
+  .myprof-save-msg.show { display: block; }
+  .myprof-save-msg.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .myprof-save-msg.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .myprof-save-msg.loading { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+  @media (max-width: 480px) {
+    .myprof-box { max-width: 100%; }
+    .myprof-body { padding: 14px 16px 10px; }
+    .myprof-footer { padding: 12px 16px 14px; }
+    .myprof-header { padding: 14px 16px 12px; }
   }
 </style>
 
 <div class="myprof-backdrop" id="myProfileModal" onclick="if(event.target===this) closeMyProfile()">
   <div class="myprof-box">
+    <!-- Header -->
     <div class="myprof-header">
-      <div class="myprof-title">👤 My Profile</div>
+      <div class="myprof-header-left">
+        <div class="myprof-avatar" id="myprofAvatar">?</div>
+        <div class="myprof-title-block">
+          <div class="myprof-title">My Profile</div>
+          <div class="myprof-subtitle" id="myprofSubtitle">—</div>
+        </div>
+      </div>
       <button class="myprof-close" onclick="closeMyProfile()">✕</button>
     </div>
+
+    <!-- Body -->
     <div class="myprof-body" id="myProfileBody">
-      <div class="myprof-placeholder">
-        <h3>Loading…</h3>
-        <p>Phase 1 skeleton</p>
-      </div>
+      <div style="padding: 40px; text-align: center; color: #94a3b8; font-size: 13px;">Loading…</div>
+    </div>
+
+    <!-- Save status -->
+    <div class="myprof-save-msg" id="myprofSaveMsg"></div>
+
+    <!-- Footer -->
+    <div class="myprof-footer" id="myprofFooter" style="display:none">
+      <button class="myprof-btn-cancel" onclick="closeMyProfile()">취소 / Cancel</button>
+      <button class="myprof-btn-save" id="myprofSaveBtn" onclick="myProfileSaveAll()">저장 / Save</button>
     </div>
   </div>
 </div>
