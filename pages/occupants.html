@@ -1011,7 +1011,7 @@ function renderOccupants() {
   
   list.innerHTML = filtered.map(o => {
     const vehicles = (o.license_plates || '').split(',').filter(p => p.trim()).length;
-    // business_email 콤마 분리 → tenantEmail (첫번째) / staffEmails (나머지)
+    // business_email 콤마 분리: 첫 번째 = Tenant 대표, 나머지 = Staff (모든 유닛 동일)
     const allBusinessEmails = (o.business_email || '').split(',').map(e => e.trim()).filter(e => e);
     const tenantEmail = allBusinessEmails[0] || '';
     const staffEmails = allBusinessEmails.slice(1);
@@ -1077,18 +1077,8 @@ function renderOccupants() {
       </div>
     ` : '';
 
-    // Contact 라벨: OWNER 유닛은 ⭐ 안 붙이고 Primary Email만 보여주면 됨 (OWNER는 Contact = Owner)
-    // 그래서 OWNER 유닛은 ⭐Owner Contact 대신 Contact만 보여주고 끝
-    const contactRowHtml = isOwnerUnit ? `
-      <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">👤</span> Contact</div>
-        <div class="occ-list-value ${o.contact_person ? '' : 'empty'}">${o.contact_person || 'Not set'}</div>
-      </div>
-      <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">📧</span> Primary Email</div>
-        <div class="occ-list-value ${primaryEmailList.length ? '' : 'empty'}">${primaryEmailList.length ? primaryEmailHtml : 'Not set'}</div>
-      </div>
-    ` : `
+    // Contact + Tenant Email 행 (모든 유닛 동일)
+    const contactRowHtml = `
       ${starRowsHtml}
       ${showStarFields ? '<div class="occ-list-divider"></div>' : ''}
       <div class="occ-list-row">
@@ -1101,11 +1091,11 @@ function renderOccupants() {
       </div>
     `;
 
-    // OWNER 유닛은 Tenant Email 없음, Staff Email만 있을 수 있음
-    const staffEmailRowHtml = staffEmails.length || isOwnerUnit ? `
+    // Staff Email 행 (값 있을 때만 표시)
+    const staffEmailRowHtml = staffEmails.length ? `
       <div class="occ-list-row">
         <div class="occ-list-label"><span class="lbl-icon">📧</span> Staff Email</div>
-        <div class="occ-list-value ${staffEmails.length ? '' : 'empty'}">${staffEmails.length ? staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>') : '(none)'}</div>
+        <div class="occ-list-value">${staffEmails.map(e => `<a href="mailto:${e}">${e}</a>`).join('<br>')}</div>
       </div>
     ` : '';
 
@@ -1271,7 +1261,8 @@ window.openEditModal = (id) => {
   document.getElementById('editContactPerson').value = occ.contact_person || '';
   document.getElementById('editPrimaryEmail').value = occ.primary_email || '';
 
-  // business_email 콤마 분리 → tenantEmail (첫번째) / staffEmails (나머지)
+  // business_email 콤마 분리: 첫번째 = Tenant Email, 나머지 = Staff Email
+  // 단순하게 — Edit 모달은 항상 똑같이 동작 (나중에 OWNER → TENANT 변경 자유롭게)
   const allBE = (occ.business_email || '').split(',').map(e => e.trim()).filter(e => e);
   document.getElementById('editTenantEmail').value = allBE[0] || '';
   document.getElementById('editStaffEmails').value = allBE.slice(1).join(', ');
@@ -1302,7 +1293,7 @@ window.openEditModal = (id) => {
   document.getElementById('committeeRoleField').style.display = 'none';
   // Business Name 보임
   document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
-  // Tenant Email / Staff Email 둘 다 보임
+  // Tenant Email / Staff Email 둘 다 항상 보임 (OWNER → TENANT 변경 대비)
   document.getElementById('editTenantEmail').closest('.modal-field').style.display = '';
   document.getElementById('editStaffEmails').closest('.modal-field').style.display = '';
   // Contact Person: tenant는 disabled (오너 정보)
