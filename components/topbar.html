@@ -4,68 +4,37 @@
      ============================================================ -->
 
 <style>
-  /* User Chip — clickable My Profile entry */
-  .user-chip {
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .user-chip .u-edit-hint {
-    display: none;
-    font-size: 11px;
-    color: #2563eb;
-    font-weight: 600;
-    margin-top: 1px;
-  }
-  .user-chip .u-edit-icon {
+  /* Edit My Profile button — clean & visible */
+  .edit-profile-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    color: #64748b;
-    font-size: 11px;
-    flex-shrink: 0;
+    gap: 7px;
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.2s;
-    margin-left: 6px;
-  }
-  .user-chip:hover {
-    border-color: #2563eb !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
-  }
-  .user-chip:hover .u-edit-icon {
-    background: #2563eb;
-    color: #fff;
-    transform: scale(1.05);
-  }
-  .user-chip:hover .u-role { display: none; }
-  .user-chip:hover .u-edit-hint { display: block; }
-  /* Tooltip on hover */
-  .user-chip::after {
-    content: 'Click to edit your info';
-    position: absolute;
-    bottom: -32px;
-    right: 0;
-    background: #1e293b;
-    color: #fff;
-    font-size: 10.5px;
-    font-weight: 500;
-    padding: 5px 9px;
-    border-radius: 5px;
+    font-family: 'DM Sans', sans-serif;
     white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-    z-index: 100;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
   }
-  .user-chip:hover::after { opacity: 1; }
-  /* Mobile: hide hover tooltip */
+  .edit-profile-btn:hover {
+    background: linear-gradient(135deg, #1e40af, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+  .edit-profile-btn:active {
+    transform: translateY(0);
+  }
+  .edit-profile-icon { font-size: 13px; }
+  /* Mobile: 아이콘만 표시 (공간 절약) */
   @media (max-width: 768px) {
-    .user-chip::after { display: none; }
-    .user-chip .u-edit-icon { width: 20px; height: 20px; font-size: 10px; }
+    .edit-profile-btn { padding: 7px 11px; }
+    .edit-profile-text { display: none; }
   }
 </style>
 
@@ -97,15 +66,17 @@
       <div class="role-dot"></div>
       <span class="role-label" id="topbarRole">—</span>
     </div>
-    <div class="user-chip" onclick="openMyProfile()" title="Click to edit your info">
+    <div class="user-chip">
       <div class="u-avatar" id="topAvatar">?</div>
       <div>
         <div class="u-name" id="topName">—</div>
         <div class="u-role" id="topRole">—</div>
-        <div class="u-edit-hint">✏️ Edit profile</div>
       </div>
-      <div class="u-edit-icon">✏️</div>
     </div>
+    <button class="edit-profile-btn" onclick="openMyProfile()">
+      <span class="edit-profile-icon">✏️</span>
+      <span class="edit-profile-text">Edit My Profile</span>
+    </button>
     <button onclick="handleLogout()" style="
       display:flex;align-items:center;gap:6px;
       padding:7px 14px;
