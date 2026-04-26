@@ -1508,6 +1508,22 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
       body:JSON.stringify({email, full_name:fullName, role:inviteRole, unit:inviteUnit || null, skipEmail: !sendEmail}) 
     });
     const result = await res.json();
+
+    // 409 = profile 등록 성공했지만 occupants 행 없음 (warning)
+    if (res.status === 409 && result.profile_created) {
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        user_name: user.user_metadata?.full_name || user.email,
+        user_email: user.email,
+        action: sendEmail ? 'user_invited' : 'user_added_silent',
+        details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail, occupants_synced: false }
+      });
+      closeModal('inviteModal');
+      alert(`⚠️ ${result.warning}`);
+      await loadUsers();
+      return;
+    }
+
     if (!res.ok) throw new Error(result.error||'Failed');
     
     await supabase.from('audit_logs').insert({
@@ -1515,11 +1531,17 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
       action: sendEmail ? 'user_invited' : 'user_added_silent',
-      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail }
+      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail, occupants_sync: result.occupants_sync }
     });
     
     closeModal('inviteModal');
-    showToast(sendEmail ? `Invite sent to ${email} ✓` : `User ${email} added ✓`);
+    let toastMsg = sendEmail ? `Invite sent to ${email} ✓` : `User ${email} added ✓`;
+    if (result.occupants_sync?.synced) {
+      toastMsg += ` · Synced to Unit ${result.occupants_sync.unit}`;
+    } else if (result.occupants_sync?.reason === 'already_exists') {
+      toastMsg += ` · Already in Unit ${result.occupants_sync.unit}`;
+    }
+    showToast(toastMsg);
     await loadUsers();
   } catch(e) { showToast(e.message||'Failed', true); }
   finally { 
