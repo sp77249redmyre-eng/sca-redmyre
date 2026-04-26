@@ -362,9 +362,14 @@ async function loadComplaints() {
   let query = supabase.from('complaints').select('*').order('created_at',{ascending:false});
   if (!canViewAll.includes(role)) {
     const { data: occs } = await supabase.from('occupants')
-      .select('unit')
-      .or(`primary_email.eq.${user.email},business_email.ilike.%${user.email}%`);
-    const unitList = [...new Set((occs || []).map(o => o.unit).filter(Boolean))];
+      .select('unit, primary_email, business_email');
+    const userEmail = user.email.toLowerCase();
+    const matched = (occs || []).filter(o => {
+      const primary = (o.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
+      const business = (o.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
+      return primary.includes(userEmail) || business.includes(userEmail);
+    });
+    const unitList = [...new Set(matched.map(o => o.unit).filter(Boolean))];
     if (unitList.length) query = query.in('unit', unitList);
     else query = query.eq('user_id', user.id);
   }
