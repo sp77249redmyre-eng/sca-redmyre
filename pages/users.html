@@ -849,7 +849,40 @@ document.getElementById('setPwdBtn').addEventListener('click', async () => {
 });
 
 window.removeUser = async (uid, uname) => {
-  if (!confirm(`Remove ${uname}?\nThey will lose access to this system immediately.`)) return;
+  // 1. 그 user의 이메일 + occupants 등록 위치 조회
+  let warningMsg = `Remove ${uname}?\n\n`;
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', uid)
+      .maybeSingle();
+
+    const userEmail = profile?.email?.toLowerCase();
+    if (userEmail) {
+      const { data: occs } = await supabase
+        .from('occupants')
+        .select('unit, primary_email, business_email');
+
+      const registrations = [];
+      (occs || []).forEach(o => {
+        const primary = (o.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
+        const business = (o.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
+        if (primary.includes(userEmail)) registrations.push(`  • Unit ${o.unit} — primary email`);
+        if (business.includes(userEmail)) registrations.push(`  • Unit ${o.unit} — business email (Staff)`);
+      });
+
+      if (registrations.length > 0) {
+        warningMsg += `Registered in:\n${registrations.join('\n')}\n\n`;
+        warningMsg += `Their email will be removed from these units automatically.\n\n`;
+      }
+    }
+  } catch(e) {
+    console.warn('[removeUser] occupants lookup failed:', e);
+  }
+  warningMsg += `They will lose access to this system immediately.\nContinue?`;
+
+  if (!confirm(warningMsg)) return;
   try {
     const { data:{session:s1} } = await supabase.auth.refreshSession();
     if (!s1) { showToast('Session expired. Please log in again.', true); return; }
