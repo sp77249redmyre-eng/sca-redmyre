@@ -37,6 +37,14 @@ module.exports = async (req, res) => {
   );
 
   try {
+    // 🔍 Auth 삭제 전에 이메일 먼저 가져오기 (occupants 정리에 사용)
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('email')
+      .eq('id', user_id)
+      .maybeSingle();
+    const userEmail = profile?.email?.toLowerCase() || null;
+
     // 🔥 Auth 삭제
     const { error: deleteError } =
       await supabaseAdmin.auth.admin.deleteUser(user_id);
@@ -50,6 +58,49 @@ module.exports = async (req, res) => {
       .eq('id', user_id);
 
     if (dbError) throw dbError;
+
+    // 🔥 occupants에서 그 이메일만 제거 (다른 정보는 유지)
+    if (userEmail) {
+      const { data: occs } = await supabaseAdmin
+        .from('occupants')
+        .select('id, primary_email, business_email');
+
+      for (const o of (occs || [])) {
+        let needsUpdate = false;
+        let newPrimary = o.primary_email;
+        let newBusiness = o.business_email;
+
+        // primary_email에서 그 이메일만 제거 (콤마/세미콜론 분리)
+        if (o.primary_email) {
+          const list = o.primary_email.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+          const filtered = list.filter(e => e.toLowerCase() !== userEmail);
+          if (filtered.length !== list.length) {
+            newPrimary = filtered.length > 0 ? filtered.join(', ') : null;
+            needsUpdate = true;
+          }
+        }
+
+        // business_email에서 그 이메일만 제거
+        if (o.business_email) {
+          const list = o.business_email.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+          const filtered = list.filter(e => e.toLowerCase() !== userEmail);
+          if (filtered.length !== list.length) {
+            newBusiness = filtered.length > 0 ? filtered.join(', ') : null;
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate) {
+          const { error: updErr } = await supabaseAdmin
+            .from('occupants')
+            .update({ primary_email: newPrimary, business_email: newBusiness })
+            .eq('id', o.id);
+          if (updErr) {
+            console.warn(`[delete-user] occupants cleanup failed for ${o.id}:`, updErr);
+          }
+        }
+      }
+    }
 
     return res.status(200).json({ success: true });
 
