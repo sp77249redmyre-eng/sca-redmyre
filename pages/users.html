@@ -54,27 +54,25 @@
 .av-observer{background:var(--green-bg);color:var(--green-text)}
 .av-owner{background:var(--border-light);color:var(--text-2)}
 .av-tenant{background:var(--border-light);color:var(--text-2)}
-.user-name{font-size:13px;font-weight:600}
-.user-email{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-name{font-size:13px;font-weight:600;color:#0f172a}
+.user-email{font-size:12px;color:#1e293b;margin-top:3px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-info{flex:1;min-width:0}
 .user-row-label{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
 .role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
 
-/* User Row Details — refined sections */
-.urd-section{background:var(--bg);border-radius:8px;padding:10px 12px}
-.urd-section-title{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
-.urd-quick-row{display:flex;align-items:center;gap:10px}
-.urd-quick-label{font-size:12px;color:var(--text-2);min-width:36px;font-weight:500}
-.urd-quick-row .role-select{flex:1;width:auto}
+/* User Row Details — clean, no gray boxes */
+.urd-quick-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.urd-quick-label{font-size:13px;color:#0f172a;font-weight:600;min-width:36px}
+.urd-quick-row .role-select{font-size:13px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f172a;font-weight:500;width:auto;min-width:180px;max-width:240px;cursor:pointer}
 .urd-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.urd-btn{font-size:12px;padding:8px 6px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all 0.15s;border:1px solid transparent}
+.urd-btn{font-size:13px;padding:10px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all 0.15s;border:1px solid transparent}
 .urd-btn-default{background:#1e3a8a;color:#fff;border-color:#1e3a8a}
 .urd-btn-default:hover{background:#1e40af;border-color:#1e40af}
-.urd-btn-info{background:var(--surface);color:var(--blue-700);border-color:var(--blue-200)}
-.urd-btn-info:hover{background:var(--blue-50);border-color:var(--blue-600)}
-.urd-btn-danger{background:var(--surface);color:#b91c1c;border-color:#fecaca}
-.urd-btn-danger:hover{background:#fef2f2;border-color:#dc2626}
+.urd-btn-info{background:#fff;color:#1e40af;border:1.5px solid #1e40af}
+.urd-btn-info:hover{background:#eff6ff}
+.urd-btn-danger{background:#b91c1c;color:#fff;border-color:#b91c1c}
+.urd-btn-danger:hover{background:#991b1b;border-color:#991b1b}
 
 /* Edit Profile Modal */
 .epm-warning{margin-top:8px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.5}
@@ -660,26 +658,20 @@ function filterAndRenderUsers() {
           ${isSelf ? `
             <div style="text-align:center;padding:10px;color:var(--muted);font-size:12px">This is you — use My Profile to edit your details</div>
           ` : `
-            <div class="urd-section">
-              <div class="urd-section-title">Quick action</div>
-              <div class="urd-quick-row">
-                <span class="urd-quick-label">Role</span>
-                <select class="role-select" onchange="changeRole('${p.id}',this.value)">
-                  <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
-                  <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
-                  <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
-                  <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
-                  <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
-                </select>
-              </div>
+            <div class="urd-quick-row">
+              <span class="urd-quick-label">Role</span>
+              <select class="role-select" onchange="changeRole('${p.id}',this.value)">
+                <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
+                <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
+                <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
+                <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
+                <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
+              </select>
             </div>
-            <div class="urd-section" style="margin-top:8px">
-              <div class="urd-section-title">Account</div>
-              <div class="urd-actions">
-                <button class="urd-btn urd-btn-default" onclick="openEditProfile('${p.id}','${safeName}','${safeEmail}','${p.unit||''}')">Edit profile</button>
-                <button class="urd-btn urd-btn-info" onclick="openSetPassword('${p.id}','${safeName}')">Set password</button>
-                <button class="urd-btn urd-btn-danger" onclick="removeUser('${p.id}','${safeName}')">Remove</button>
-              </div>
+            <div class="urd-actions">
+              <button class="urd-btn urd-btn-default" onclick="openEditProfile('${p.id}','${safeName}','${safeEmail}','${p.unit||''}')">Edit profile</button>
+              <button class="urd-btn urd-btn-info" onclick="openSetPassword('${p.id}','${safeName}')">Set password</button>
+              <button class="urd-btn urd-btn-danger" onclick="removeUser('${p.id}','${safeName}')">Remove</button>
             </div>
           `}
         </div>
