@@ -28,6 +28,8 @@
 .ann-actions { display:flex;gap:6px }
 .pin-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s }
 .pin-toggle.on { border-color:var(--blue-400);background:var(--blue-50) }
+.archive-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;margin-top:8px }
+.archive-toggle.on { border-color:#94a3b8;background:#f1f5f9 }
 .push-banner { background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;padding:14px 18px;display:none;align-items:center;gap:12px;margin-bottom:16px }
 .push-banner.show { display:flex }
 .push-banner-btn { padding:7px 14px;border-radius:8px;background:var(--blue-600);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap }
@@ -62,10 +64,8 @@
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="urgent">🚨 Urgent</button>
-      <button class="filter-btn" data-filter="maintenance">🔧 Maintenance</button>
-      <button class="filter-btn" data-filter="meeting">📅 Meeting</button>
       <button class="filter-btn" data-filter="reminder">🔔 Reminder</button>
-      <button class="filter-btn" data-filter="general">📌 General</button>
+      <button class="filter-btn" data-filter="archived">📦 Archived</button>
     </div>
     <div class="ann-list" id="annList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
@@ -90,10 +90,8 @@
       <div class="modal-field">
         <label class="modal-label">Category</label>
         <select class="modal-select" id="annCategory">
-          <option value="general">📌 General</option>
-          <option value="maintenance">🔧 Maintenance</option>
           <option value="urgent">🚨 Urgent</option>
-          <option value="meeting">📅 Meeting</option>
+          <option value="maintenance">🔧 Maintenance</option>
           <option value="reminder">🔔 Reminder</option>
         </select>
       </div>
@@ -102,6 +100,10 @@
         <label class="pin-toggle" id="pinToggle">
           <input type="checkbox" id="annPinned">
           <span id="pinLabel" style="font-size:13px;font-weight:500">Pin this announcement</span>
+        </label>
+        <label class="archive-toggle" id="archiveToggle">
+          <input type="checkbox" id="annArchived">
+          <span id="archiveLabel" style="font-size:13px;font-weight:500">📦 Archive this announcement</span>
         </label>
       </div>
     </div>
@@ -209,13 +211,23 @@ async function loadAnnouncements() {
 
 function renderAnns() {
   const list = document.getElementById('annList');
-  const filtered = currentFilter === 'all' ? allAnns : allAnns.filter(a => a.category === currentFilter);
+  let filtered;
+  if (currentFilter === 'all') {
+    filtered = allAnns.filter(a => !a.archived);
+  } else if (currentFilter === 'archived') {
+    filtered = allAnns.filter(a => a.archived);
+  } else {
+    filtered = allAnns.filter(a => !a.archived && a.category === currentFilter);
+  }
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No announcements yet</div><div style="font-size:13px;color:var(--muted)">${role==='admin'?'Click "+ New Announcement" to create one.':'Check back later for updates.'}</div></div>`;
+    const emptyMsg = currentFilter === 'archived'
+      ? '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No archived announcements</div><div style="font-size:13px;color:var(--muted)">Archive old announcements to keep this list tidy.</div></div>'
+      : `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No announcements yet</div><div style="font-size:13px;color:var(--muted)">${role==='admin'?'Click "+ New Announcement" to create one.':'Check back later for updates.'}</div></div>`;
+    list.innerHTML = emptyMsg;
     return;
   }
   list.innerHTML = filtered.map(a => `
-    <div class="ann-item ${a.pinned?'pinned':''}" onclick="openAnnDetail('${a.id}')">
+    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}" onclick="openAnnDetail('${a.id}')">
       <div class="ann-top">
         <div>
           <div class="ann-title">${a.pinned?'📌 ':''}${a.title}</div>
@@ -290,15 +302,26 @@ document.getElementById('pinToggle').addEventListener('click', () => {
   }, 0);
 });
 
+document.getElementById('archiveToggle').addEventListener('click', () => {
+  const cb = document.getElementById('annArchived');
+  setTimeout(() => {
+    document.getElementById('archiveToggle').classList.toggle('on', cb.checked);
+    document.getElementById('archiveLabel').textContent = cb.checked ? '📦 Archived' : '📦 Archive this announcement';
+  }, 0);
+});
+
 document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('annModalTitle').textContent = 'New Announcement';
   document.getElementById('annEditId').value = '';
   document.getElementById('annTitle').value = '';
   document.getElementById('annContent').value = '';
-  document.getElementById('annCategory').value = 'general';
+  document.getElementById('annCategory').value = 'urgent';
   document.getElementById('annPinned').checked = false;
   document.getElementById('pinToggle').classList.remove('on');
   document.getElementById('pinLabel').textContent = 'Pin this announcement';
+  document.getElementById('annArchived').checked = false;
+  document.getElementById('archiveToggle').classList.remove('on');
+  document.getElementById('archiveLabel').textContent = '📦 Archive this announcement';
   document.getElementById('deleteAnnBtn').style.display = 'none';
   annFiles = []; annUpdatePreview(); annUpdateButtons();
   document.getElementById('annModal').classList.add('open');
@@ -309,10 +332,13 @@ window.openEditAnn = (a) => {
   document.getElementById('annEditId').value = a.id;
   document.getElementById('annTitle').value = a.title;
   document.getElementById('annContent').value = a.content;
-  document.getElementById('annCategory').value = a.category||'general';
+  document.getElementById('annCategory').value = a.category||'urgent';
   document.getElementById('annPinned').checked = a.pinned;
   document.getElementById('pinToggle').classList.toggle('on', a.pinned);
   document.getElementById('pinLabel').textContent = a.pinned ? '📌 Pinned!' : 'Pin this announcement';
+  document.getElementById('annArchived').checked = !!a.archived;
+  document.getElementById('archiveToggle').classList.toggle('on', !!a.archived);
+  document.getElementById('archiveLabel').textContent = a.archived ? '📦 Archived' : '📦 Archive this announcement';
   document.getElementById('deleteAnnBtn').style.display = 'inline-flex';
   document.getElementById('annModal').classList.add('open');
 };
@@ -379,6 +405,7 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
     content:  document.getElementById('annContent').value.trim(),
     category: document.getElementById('annCategory').value,
     pinned:   document.getElementById('annPinned').checked,
+    archived: document.getElementById('annArchived').checked,
     author_id: user.id,
   };
   if (!data.title||!data.content) { showToast('Please fill in all fields', true); return; }
