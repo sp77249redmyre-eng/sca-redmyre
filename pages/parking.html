@@ -339,6 +339,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     await logActivity('PARKING_REPORTED', prInserted?.id || null);
 
     // 🔔 자동 이메일 발송: 내부 차량(vehicles 매칭됨)일 때 해당되는 모든 유닛에 경고 발송
+    // 다중 유닛 소유자는 같은 이메일 1통만 받도록 units 배열로 한 번에 전달
     try {
       const { data: vehicles } = await supabase.rpc('lookup_vehicle_plates');
       const matchedUnits = (vehicles || [])
@@ -351,19 +352,17 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
         const dateStr = now.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
         const timeStr = now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
 
-        // 모든 매칭 유닛에 비동기로 발송 - 실패해도 사용자 UX 방해 안 함
-        matchedUnits.forEach(unit => {
-          supabase.functions.invoke('email-parking-notice', {
-            body: {
-              unit: unit,
-              plate: plate,
-              violation: selectedVio || 'Parking violation',
-              location: bay || area || '',
-              date: dateStr,
-              time: timeStr
-            }
-          }).catch(err => console.warn(`Auto email failed for ${unit}:`, err));
-        });
+        // 모든 매칭 유닛 한 번에 전달 - Edge Function이 이메일 중복 제거 후 1통만 발송
+        supabase.functions.invoke('email-parking-notice', {
+          body: {
+            units: matchedUnits,
+            plate: plate,
+            violation: selectedVio || 'Parking violation',
+            location: bay || area || '',
+            date: dateStr,
+            time: timeStr
+          }
+        }).catch(err => console.warn('Auto email failed:', err));
       }
     } catch (emailErr) {
       console.warn('Email lookup failed:', emailErr);
