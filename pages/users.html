@@ -61,6 +61,32 @@
 .role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
 .role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
 
+/* User Row Details — refined sections */
+.urd-section{background:var(--bg);border-radius:8px;padding:10px 12px}
+.urd-section-title{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.urd-quick-row{display:flex;align-items:center;gap:10px}
+.urd-quick-label{font-size:12px;color:var(--text-2);min-width:36px;font-weight:500}
+.urd-quick-row .role-select{flex:1;width:auto}
+.urd-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.urd-btn{font-size:12px;padding:8px 6px;background:transparent;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.15s}
+.urd-btn:hover{background:var(--bg)}
+.urd-btn-default{color:var(--text)}
+.urd-btn-info{color:var(--blue-600);border-color:var(--blue-200)}
+.urd-btn-info:hover{background:var(--blue-50)}
+.urd-btn-danger{color:#b91c1c;border-color:#fecaca}
+.urd-btn-danger:hover{background:#fef2f2}
+
+/* Edit Profile Modal */
+.epm-warning{margin-top:8px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.5}
+.epm-field{margin-bottom:14px}
+.epm-label{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px;display:block}
+.epm-input{width:100%;font-size:13px;padding:9px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;box-sizing:border-box}
+.epm-input:focus{outline:none;border-color:var(--blue-600);box-shadow:0 0 0 3px var(--blue-50)}
+.epm-msg{margin-top:10px;padding:8px 12px;border-radius:8px;font-size:12px;display:none}
+.epm-msg.error{display:block;background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+.epm-msg.success{display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+.epm-msg.loading{display:block;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+
 /* Permissions - Sidebar */
 .perm-header{margin-bottom:20px;display:flex;align-items:center;gap:12px}
 .perm-header select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
@@ -476,6 +502,35 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="editProfileModal">
+  <div class="modal-box">
+    <div class="modal-title" id="epmTitle">Edit profile</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:-6px;margin-bottom:14px">Update name, unit, or login email</div>
+    <input type="hidden" id="epmUserId">
+    <input type="hidden" id="epmOriginalEmail">
+    <div class="epm-field">
+      <label class="epm-label">Display name</label>
+      <input type="text" class="epm-input" id="epmName" placeholder="Full name">
+    </div>
+    <div class="epm-field">
+      <label class="epm-label">Unit</label>
+      <select class="epm-input" id="epmUnit">
+        <option value="">No unit</option>
+      </select>
+    </div>
+    <div class="epm-field">
+      <label class="epm-label">Login email</label>
+      <input type="email" class="epm-input" id="epmEmail" placeholder="user@example.com">
+      <div class="epm-warning" id="epmEmailWarning" style="display:none">Changing the email updates Auth, profiles, and all occupants entries automatically. The user must use the new email for future logins.</div>
+    </div>
+    <div class="epm-msg" id="epmMsg"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('editProfileModal')">Cancel</button>
+      <button class="btn-primary" id="epmSaveBtn">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -585,42 +640,48 @@ function filterAndRenderUsers() {
     const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
     const unitDisplay = p.unit || '—';
     const roleLabel = p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—';
+    const subtitleParts = [p.email||'—'];
+    if (p.unit) subtitleParts.push(`Unit ${p.unit}`);
+    const subtitle = subtitleParts.join(' · ');
+    const safeName = (displayName||'').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    const safeEmail = (p.email||'').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
     return `
       <div class="user-row" onclick="toggleUserRow(event,this)">
         <div class="user-row-header">
           <div class="avatar ${avClass}">${ini}</div>
           <div class="user-info">
-            <div class="user-name" style="display:flex;align-items:center;gap:6px">
-              ${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}
-              <span style="font-size:10px;color:var(--muted);cursor:pointer" onclick="event.stopPropagation();inlineEditName('${p.id}',this.parentElement)" title="Edit name">✏️</span>
-            </div>
-            <div class="user-email">${p.email||'—'}</div>
+            <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
+            <div class="user-email">${subtitle}</div>
           </div>
           <span class="badge ${badgeClass}">${roleLabel}</span>
           <span class="user-row-arrow">▸</span>
         </div>
         <div class="user-row-details" onclick="event.stopPropagation()">
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span class="user-row-label" style="margin:0">Role</span>
-              <select class="role-select" style="min-width:130px;width:auto" onchange="changeRole('${p.id}',this.value)" ${isSelf?'disabled':''}>
-                <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
-                <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
-                <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
-                <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
-                <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
-              </select>
+          ${isSelf ? `
+            <div style="text-align:center;padding:10px;color:var(--muted);font-size:12px">This is you — use My Profile to edit your details</div>
+          ` : `
+            <div class="urd-section">
+              <div class="urd-section-title">Quick action</div>
+              <div class="urd-quick-row">
+                <span class="urd-quick-label">Role</span>
+                <select class="role-select" onchange="changeRole('${p.id}',this.value)">
+                  <option value="admin"     ${p.role==='admin'?'selected':''}>Admin</option>
+                  <option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
+                  <option value="observer"  ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
+                  <option value="owner"     ${p.role==='owner'?'selected':''}>Owner</option>
+                  <option value="tenant"    ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
+                </select>
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <span class="user-row-label" style="margin:0">Unit</span>
-              <span style="font-size:12px;color:var(--blue-600);cursor:pointer;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:inline-flex;align-items:center;gap:4px" onclick="inlineEditUnit('${p.id}',this)" title="Click to edit unit">📍 ${unitDisplay} <span style="font-size:10px;color:var(--muted)">✏️</span></span>
+            <div class="urd-section" style="margin-top:8px">
+              <div class="urd-section-title">Account</div>
+              <div class="urd-actions">
+                <button class="urd-btn urd-btn-default" onclick="openEditProfile('${p.id}','${safeName}','${safeEmail}','${p.unit||''}')">Edit profile</button>
+                <button class="urd-btn urd-btn-info" onclick="openSetPassword('${p.id}','${safeName}')">Set password</button>
+                <button class="urd-btn urd-btn-danger" onclick="removeUser('${p.id}','${safeName}')">Remove</button>
+              </div>
             </div>
-            <div style="flex:1;min-width:0"></div>
-            ${!isSelf?`
-              <button class="btn-secondary" style="padding:6px 12px;font-size:11px" onclick="openSetPassword('${p.id}','${displayName}')">🔑 Set Password</button>
-              <button class="btn-danger" style="padding:6px 12px;font-size:11px" onclick="removeUser('${p.id}','${displayName}')">🗑 Remove</button>
-            `:'<span style="font-size:12px;color:var(--muted)">This is you</span>'}
-          </div>
+          `}
         </div>
       </div>`;
   }).join('');
@@ -845,6 +906,130 @@ document.getElementById('setPwdBtn').addEventListener('click', async () => {
     showToast(e.message || 'Failed to set password', true);
   } finally {
     btn.disabled = false; btn.textContent = 'Set Password';
+  }
+});
+
+// ===== Edit Profile Modal =====
+const ALL_UNITS = ['','Unit 1','1A','1B','1C','1D','1E','1F','1G','1H','2A','2B','2C','2D','2E','2F','2G','2H','3A','3B','3C','3D','3E','3F','3G','3H','4A','4B','4C','4D','4E','4F','4G','4H','5A','5B','5C','5D','5E','5F','5G','5H','6A','6B','6C','6D','6E','6F','6G','6H','Lot 50'];
+
+window.openEditProfile = (uid, uname, uemail, uunit) => {
+  const decodedName = (uname || '').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  const decodedEmail = (uemail || '').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  document.getElementById('epmTitle').textContent = `Edit ${decodedName}'s profile`;
+  document.getElementById('epmUserId').value = uid;
+  document.getElementById('epmOriginalEmail').value = decodedEmail;
+  document.getElementById('epmName').value = decodedName;
+  document.getElementById('epmEmail').value = decodedEmail;
+
+  // Unit 드롭다운 채우기
+  const unitSelect = document.getElementById('epmUnit');
+  unitSelect.innerHTML = '';
+  ALL_UNITS.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = u || 'No unit';
+    if ((u || '') === (uunit || '')) opt.selected = true;
+    unitSelect.appendChild(opt);
+  });
+
+  // 메시지 + 경고 초기화
+  const msg = document.getElementById('epmMsg');
+  msg.className = 'epm-msg';
+  msg.textContent = '';
+  document.getElementById('epmEmailWarning').style.display = 'none';
+
+  openModal('editProfileModal');
+};
+
+// 이메일 입력 변경 감지 → 경고 표시
+document.getElementById('epmEmail').addEventListener('input', () => {
+  const original = (document.getElementById('epmOriginalEmail').value || '').toLowerCase();
+  const current = (document.getElementById('epmEmail').value || '').toLowerCase().trim();
+  document.getElementById('epmEmailWarning').style.display = (current && current !== original) ? 'block' : 'none';
+});
+
+document.getElementById('epmSaveBtn').addEventListener('click', async () => {
+  const uid = document.getElementById('epmUserId').value;
+  const originalEmail = (document.getElementById('epmOriginalEmail').value || '').toLowerCase();
+  const newName = document.getElementById('epmName').value.trim();
+  const newUnit = document.getElementById('epmUnit').value || null;
+  const newEmail = document.getElementById('epmEmail').value.trim().toLowerCase();
+  const btn = document.getElementById('epmSaveBtn');
+  const msg = document.getElementById('epmMsg');
+
+  if (!newName) { msg.className = 'epm-msg error'; msg.textContent = 'Name is required.'; return; }
+  if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    msg.className = 'epm-msg error'; msg.textContent = 'Valid email is required.'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Saving…';
+  msg.className = 'epm-msg loading'; msg.textContent = 'Saving…';
+
+  try {
+    // 1. 이름 변경 (변경됐으면)
+    const { data: oldProfile } = await supabase.from('profiles').select('full_name, unit').eq('id', uid).maybeSingle();
+    if (oldProfile && oldProfile.full_name !== newName) {
+      const { error: nameErr } = await supabase.from('profiles').update({ full_name: newName }).eq('id', uid);
+      if (nameErr) throw new Error('Name update failed: ' + nameErr.message);
+    }
+
+    // 2. Unit 변경 (변경됐으면)
+    if (oldProfile && (oldProfile.unit || null) !== newUnit) {
+      const { error: unitErr } = await supabase.from('profiles').update({ unit: newUnit }).eq('id', uid);
+      if (unitErr) throw new Error('Unit update failed: ' + unitErr.message);
+    }
+
+    // 3. 이메일 변경 (변경됐으면 — admin-change-email API 호출)
+    let emailChangeResult = null;
+    if (newEmail !== originalEmail) {
+      const { data: { session: s } } = await supabase.auth.refreshSession();
+      if (!s) throw new Error('Session expired. Please log in again.');
+
+      const res = await fetch('/api/admin-change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
+        body: JSON.stringify({ user_id: uid, new_email: newEmail })
+      });
+      emailChangeResult = await res.json();
+      if (!res.ok) throw new Error(emailChangeResult.error || 'Email change failed');
+    }
+
+    // 4. audit log
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'profile_edited',
+      details: {
+        target_user_id: uid,
+        new_name: newName,
+        new_unit: newUnit,
+        email_changed: emailChangeResult ? true : false,
+        old_email: emailChangeResult ? originalEmail : undefined,
+        new_email: emailChangeResult ? newEmail : undefined,
+        occupants_updated: emailChangeResult?.occupants_updated
+      }
+    });
+
+    msg.className = 'epm-msg success';
+    let successMsg = '✓ Saved successfully';
+    if (emailChangeResult) {
+      successMsg += ` · Email updated · ${emailChangeResult.occupants_updated || 0} occupants entries synced`;
+    }
+    msg.textContent = successMsg;
+
+    setTimeout(async () => {
+      closeModal('editProfileModal');
+      await loadUsers();
+    }, 1500);
+
+  } catch (e) {
+    console.error('[edit profile] error:', e);
+    msg.className = 'epm-msg error';
+    msg.textContent = e.message || 'Failed to save';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
   }
 });
 
