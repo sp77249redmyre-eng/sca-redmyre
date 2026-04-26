@@ -627,6 +627,24 @@
         return;
       }
 
+      // Safety guard — any OWNER unit unchecked (= about to be cleared)
+      const uncheckedOwners = ownerUnits.filter(u => !u.checked);
+      if (uncheckedOwners.length > 0) {
+        const unitList = uncheckedOwners.map(u => `  • ${u.unit}`).join('\n');
+        const confirmed = confirm(
+          'The following unit(s) will be set as TENANT-leased:\n\n' +
+          unitList + '\n\n' +
+          'Their business info and vehicles will be cleared.\n' +
+          '(Your name remains as the registered owner.)\n\n' +
+          'Continue?'
+        );
+        if (!confirmed) {
+          showSaveMsg('Cancelled.', 'error', 2000);
+          if (saveBtn) saveBtn.disabled = false;
+          return;
+        }
+      }
+
       // b) Collect business info
       const businessName = (document.getElementById('myprofBusinessName')?.value || '').trim();
       const phone = (document.getElementById('myprofPhone')?.value || '').trim();
@@ -634,7 +652,8 @@
 
       // c) OWNER units
       // - Checked: contact_person + business_name + phone + license_plates + owner_type='Owner' (all bulk-applied)
-      // - Unchecked: owner_type='Tenant' ONLY (do NOT touch other fields)
+      // - Unchecked: owner_type='Tenant' + clear business_name/phone/license_plates + clear vehicles
+      //              (contact_person is preserved — owner is still the same person)
       for (const u of ownerUnits) {
         if (u.checked) {
           const { error: upErr } = await supabase
@@ -669,10 +688,15 @@
             console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
           }
         } else {
-          // Unchecked: only owner_type='Tenant' — preserve everything else
+          // Unchecked = leased to tenant: clear business/phone/plates, keep contact_person
           const { error: upErr } = await supabase
             .from('occupants')
-            .update({ owner_type: 'Tenant' })
+            .update({
+              owner_type: 'Tenant',
+              business_name: null,
+              phone: null,
+              license_plates: null
+            })
             .eq('id', u.id);
           if (upErr) {
             showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
@@ -680,6 +704,19 @@
             return;
           }
           u.owner_type = 'Tenant';
+          u.business_name = null;
+          u.phone = null;
+          u.license_plates = null;
+
+          // Clear vehicles for this unit (empty array → DELETE only, no INSERT)
+          const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
+            p_unit: u.unit,
+            p_owner_name: u.contact_person || '',
+            p_plates: []
+          });
+          if (rpcErr) {
+            console.warn(`[my-profile] sync_vehicles clear failed for ${u.unit}:`, rpcErr);
+          }
         }
       }
 
