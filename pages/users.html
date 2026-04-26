@@ -966,35 +966,29 @@ document.getElementById('epmSaveBtn').addEventListener('click', async () => {
   msg.className = 'epm-msg loading'; msg.textContent = 'Saving…';
 
   try {
-    // 1. 이름 변경 (변경됐으면)
-    const { data: oldProfile } = await supabase.from('profiles').select('full_name, unit').eq('id', uid).maybeSingle();
-    if (oldProfile && oldProfile.full_name !== newName) {
-      const { error: nameErr } = await supabase.from('profiles').update({ full_name: newName }).eq('id', uid);
-      if (nameErr) throw new Error('Name update failed: ' + nameErr.message);
-    }
+    // 현재 사용자 role 조회 (Unit 동기화 결정에 필요)
+    const { data: oldProfile } = await supabase.from('profiles').select('role').eq('id', uid).maybeSingle();
+    const userRole = oldProfile?.role;
 
-    // 2. Unit 변경 (변경됐으면)
-    if (oldProfile && (oldProfile.unit || null) !== newUnit) {
-      const { error: unitErr } = await supabase.from('profiles').update({ unit: newUnit }).eq('id', uid);
-      if (unitErr) throw new Error('Unit update failed: ' + unitErr.message);
-    }
+    // admin-edit-profile API 호출 (Auth + profiles + occupants 통합 동기화)
+    const { data: { session: s } } = await supabase.auth.refreshSession();
+    if (!s) throw new Error('Session expired. Please log in again.');
 
-    // 3. 이메일 변경 (변경됐으면 — admin-change-email API 호출)
-    let emailChangeResult = null;
-    if (newEmail !== originalEmail) {
-      const { data: { session: s } } = await supabase.auth.refreshSession();
-      if (!s) throw new Error('Session expired. Please log in again.');
+    const res = await fetch('/api/admin-edit-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
+      body: JSON.stringify({
+        user_id: uid,
+        new_name: newName,
+        new_unit: newUnit,
+        new_email: newEmail,
+        role: userRole
+      })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Save failed');
 
-      const res = await fetch('/api/admin-change-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
-        body: JSON.stringify({ user_id: uid, new_email: newEmail })
-      });
-      emailChangeResult = await res.json();
-      if (!res.ok) throw new Error(emailChangeResult.error || 'Email change failed');
-    }
-
-    // 4. audit log
+    // audit log
     await supabase.from('audit_logs').insert({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
@@ -1002,20 +996,24 @@ document.getElementById('epmSaveBtn').addEventListener('click', async () => {
       action: 'profile_edited',
       details: {
         target_user_id: uid,
-        new_name: newName,
-        new_unit: newUnit,
-        email_changed: emailChangeResult ? true : false,
-        old_email: emailChangeResult ? originalEmail : undefined,
-        new_email: emailChangeResult ? newEmail : undefined,
-        occupants_updated: emailChangeResult?.occupants_updated
+        changes: result.changes,
+        occupants_sync: result.occupants_sync
       }
     });
 
     msg.className = 'epm-msg success';
-    let successMsg = '✓ Saved successfully';
-    if (emailChangeResult) {
-      successMsg += ` · Email updated · ${emailChangeResult.occupants_updated || 0} occupants entries synced`;
-    }
+    const c = result.changes || {};
+    const o = result.occupants_sync || {};
+    const parts = [];
+    if (c.name_changed) parts.push('Name');
+    if (c.unit_changed) parts.push('Unit');
+    if (c.email_changed) parts.push('Email');
+    let successMsg = parts.length > 0 ? `✓ ${parts.join(', ')} updated` : '✓ Saved (no changes)';
+    const syncBits = [];
+    if (o.email_replaced) syncBits.push(`${o.email_replaced} email refs`);
+    if (o.name_synced) syncBits.push(`${o.name_synced} contact names`);
+    if (o.unit_added || o.unit_removed) syncBits.push(`unit moved`);
+    if (syncBits.length) successMsg += ` · synced: ${syncBits.join(', ')}`;
     msg.textContent = successMsg;
 
     setTimeout(async () => {
