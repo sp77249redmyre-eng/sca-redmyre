@@ -740,11 +740,11 @@
       <div class="col-toggle-bar" id="colToggleBar">
         <span class="col-toggle-label">Columns:</span>
         <button class="col-toggle-btn on" data-col="business_name" onclick="toggleCol(this)">Business Name</button>
-        <button class="col-toggle-btn on" data-col="contact" onclick="toggleCol(this)">Contact</button>
+        <button class="col-toggle-btn" data-col="contact" onclick="toggleCol(this)">Contact</button>
         <button class="col-toggle-btn on" data-col="primary_email" onclick="toggleCol(this)">Primary Email</button>
         <button class="col-toggle-btn on" data-col="business_email" onclick="toggleCol(this)">Business Email</button>
-        <button class="col-toggle-btn on" data-col="phone" onclick="toggleCol(this)">Phone</button>
-        <button class="col-toggle-btn on" data-col="role" onclick="toggleCol(this)">Role</button>
+        <button class="col-toggle-btn" data-col="phone" onclick="toggleCol(this)">Phone</button>
+        <button class="col-toggle-btn" data-col="role" onclick="toggleCol(this)">Role</button>
         <button class="col-toggle-btn on" data-col="vehicles" onclick="toggleCol(this)">Vehicles</button>
       </div>
       <div id="adminSearchResults"></div>
@@ -1520,7 +1520,34 @@ if (role === 'admin') {
 
 // ── Column Toggle ─────────────────────────────────────────────
 const ALL_COLS = ['business_name','contact','primary_email','business_email','phone','role','vehicles'];
-let activeCols = new Set(ALL_COLS);
+const DEFAULT_COLS = ['business_name','primary_email','business_email','vehicles'];
+const COL_STORAGE_KEY = 'occupants_active_cols_v1';
+
+function loadActiveCols() {
+  try {
+    const saved = localStorage.getItem(COL_STORAGE_KEY);
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr) && arr.length > 0) {
+        return new Set(arr.filter(c => ALL_COLS.includes(c)));
+      }
+    }
+  } catch(e) {}
+  return new Set(DEFAULT_COLS);
+}
+function saveActiveCols() {
+  try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify([...activeCols])); } catch(e) {}
+}
+
+let activeCols = loadActiveCols();
+
+// 초기 토글 버튼 상태 동기화 (저장된 상태로 UI 반영)
+setTimeout(() => {
+  document.querySelectorAll('.col-toggle-btn').forEach(btn => {
+    if (activeCols.has(btn.dataset.col)) btn.classList.add('on');
+    else btn.classList.remove('on');
+  });
+}, 0);
 
 window.toggleCol = (btn) => {
   const col = btn.dataset.col;
@@ -1532,6 +1559,7 @@ window.toggleCol = (btn) => {
     activeCols.add(col);
     btn.classList.add('on');
   }
+  saveActiveCols();
   // 현재 결과 다시 렌더
   if (window._lastSearchResults) renderSearchResults(window._lastSearchResults);
 };
@@ -1890,17 +1918,16 @@ document.getElementById('sendBulkInviteBtn').addEventListener('click', async () 
 window.exportOccupants = () => {
   const data = (window._lastSearchResults && window._lastSearchResults.length) ? window._lastSearchResults : allOccupants;
 
+  // Excel은 화면 토글과 무관하게 항상 모든 컬럼 출력
   const rows = data.map(o => {
     const row = { 'Unit': o.unit || '' };
-    if (activeCols.has('business_name')) row['Business Name'] = o.business_name || '';
-    if (activeCols.has('contact')) row['Contact Person'] = o.contact_person || '';
-    if (activeCols.has('primary_email')) row['Primary Email'] = o.primary_email || '';
-    if (activeCols.has('business_email')) row['Business Email'] = o.business_email || '';
-    if (activeCols.has('phone')) row['Phone'] = o.phone || '';
-    if (activeCols.has('role')) {
-      row['Role'] = o.is_committee ? ('committee' + ((o.business_email||'').trim() ? ' + tenant (staff)' : '')) : o.primary_email ? 'owner' : (o.business_email||'').trim() ? 'tenant (staff)' : '';
-    }
-    if (activeCols.has('vehicles')) row['License Plates'] = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', ');
+    row['Business Name'] = o.business_name || '';
+    row['Contact Person'] = o.contact_person || '';
+    row['Primary Email'] = o.primary_email || '';
+    row['Business Email'] = o.business_email || '';
+    row['Phone'] = o.phone || '';
+    row['Role'] = o.is_committee ? ('committee' + ((o.business_email||'').trim() ? ' + tenant (staff)' : '')) : o.primary_email ? 'owner' : (o.business_email||'').trim() ? 'tenant (staff)' : '';
+    row['License Plates'] = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p).join(', ');
     return row;
   });
 
