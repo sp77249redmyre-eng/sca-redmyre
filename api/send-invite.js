@@ -1,5 +1,22 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// 에러 로깅 헬퍼 — audit_logs에 자동 기록
+async function logError(supabase, errorMsg, details = {}) {
+  try {
+    await supabase.from('audit_logs').insert({
+      action: 'api_error',
+      user_email: 'system',
+      details: {
+        function: 'send-invite',
+        error: errorMsg,
+        ...details,
+      },
+    });
+  } catch (e) {
+    console.error('[logError] failed:', e);
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -76,6 +93,13 @@ module.exports = async (req, res) => {
 
         if (!occRow) {
           // unit 행이 없음 → 에러 (사장님이 occupants 먼저 등록해야 함)
+          // 동기화 실패 audit 기록
+          await logError(supabaseAdmin, `Sync failed: occupants entry for Unit ${unit} not found`, {
+            type: 'sync_no_occupants_row',
+            email: normalizedEmail,
+            unit,
+            role,
+          });
           return res.status(409).json({
             success: false,
             warning: `User profile created, but occupants entry for Unit ${unit} not found. Please create the unit in the Occupants page first, then re-add this user, OR add the email manually to the Occupants page.`,
@@ -108,6 +132,13 @@ module.exports = async (req, res) => {
         }
       } catch (syncErr) {
         console.warn('[send-invite] occupants sync failed:', syncErr);
+        // 동기화 자체 실패 audit 기록
+        await logError(supabaseAdmin, `Occupants sync failed: ${syncErr.message}`, {
+          type: 'sync_error',
+          email: normalizedEmail,
+          unit,
+          role,
+        });
         occupantsSyncResult = { synced: false, reason: 'error', error: syncErr.message };
       }
     }
@@ -120,6 +151,14 @@ module.exports = async (req, res) => {
 
   } catch (err) {
     console.error('[invite error]', err);
+    // 사용자 추가 실패 audit 기록
+    await logError(supabaseAdmin, err.message || String(err), {
+      type: 'user_creation_failed',
+      email: normalizedEmail,
+      role,
+      unit,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: err.message });
   }
 };

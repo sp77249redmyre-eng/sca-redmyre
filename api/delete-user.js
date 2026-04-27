@@ -1,5 +1,22 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// 에러 로깅 헬퍼 — audit_logs에 자동 기록
+async function logError(supabase, errorMsg, details = {}) {
+  try {
+    await supabase.from('audit_logs').insert({
+      action: 'api_error',
+      user_email: 'system',
+      details: {
+        function: 'delete-user',
+        error: errorMsg,
+        ...details,
+      },
+    });
+  } catch (e) {
+    console.error('[logError] failed:', e);
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -60,6 +77,7 @@ module.exports = async (req, res) => {
     if (dbError) throw dbError;
 
     // 🔥 occupants에서 그 이메일만 제거 (다른 정보는 유지)
+    let cleanupErrors = [];
     if (userEmail) {
       const { data: occs } = await supabaseAdmin
         .from('occupants')
@@ -97,15 +115,32 @@ module.exports = async (req, res) => {
             .eq('id', o.id);
           if (updErr) {
             console.warn(`[delete-user] occupants cleanup failed for ${o.id}:`, updErr);
+            cleanupErrors.push({ occupant_id: o.id, error: updErr.message });
           }
         }
       }
+    }
+
+    // occupants 정리 실패한 경우 audit 기록
+    if (cleanupErrors.length > 0) {
+      await logError(supabaseAdmin, `Occupants cleanup partially failed (${cleanupErrors.length})`, {
+        type: 'sync_partial_fail',
+        user_id,
+        user_email: userEmail,
+        cleanup_errors: cleanupErrors,
+      });
     }
 
     return res.status(200).json({ success: true });
 
   } catch (err) {
     console.error('[delete error]', err);
+    // 사용자 삭제 실패 audit 기록
+    await logError(supabaseAdmin, err.message || String(err), {
+      type: 'user_deletion_failed',
+      user_id,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: err.message });
   }
 };

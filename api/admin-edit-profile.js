@@ -1,5 +1,22 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// 에러 로깅 헬퍼 — audit_logs에 자동 기록
+async function logError(supabase, errorMsg, details = {}) {
+  try {
+    await supabase.from('audit_logs').insert({
+      action: 'api_error',
+      user_email: 'system',
+      details: {
+        function: 'admin-edit-profile',
+        error: errorMsg,
+        ...details,
+      },
+    });
+  } catch (e) {
+    console.error('[logError] failed:', e);
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -325,6 +342,12 @@ module.exports = async (req, res) => {
 
   } catch (err) {
     console.error('[admin-edit-profile] error:', err);
+    // 사용자 정보 변경 실패 audit 기록
+    await logError(supabaseAdmin, err.message || String(err), {
+      type: 'profile_edit_failed',
+      user_id,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: err.message });
   }
 };
