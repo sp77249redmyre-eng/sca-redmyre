@@ -261,6 +261,7 @@
   .card-body > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -270,6 +271,60 @@
 
     <div style="margin-bottom:20px">
       <div class="section-title">System Management</div>
+    </div>
+
+    <!-- Data Backup (Admin Only) -->
+    <div class="card full" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-icon" style="background:#f0fdf4">💾</div>
+        <div>
+          <div class="card-title">Data Backup</div>
+          <div class="card-desc">Download a complete backup of all BMS data to your computer</div>
+        </div>
+      </div>
+      <div class="card-body" style="padding:20px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px">
+          <!-- 안내 메시지 -->
+          <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px">
+            <div style="font-weight:600;margin-bottom:8px;color:#0f172a">📋 What's included:</div>
+            <div style="color:#475569;padding-left:8px">
+              All users, occupants, vehicles, announcements, complaints, HVAC requests, quotes, works, and audit logs.
+            </div>
+          </div>
+
+          <!-- 사용 방법 -->
+          <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:16px">
+            <div style="font-weight:600;margin-bottom:8px;color:#0f172a">📝 How to use:</div>
+            <div style="color:#475569;padding-left:8px">
+              1. Click the button below to download a ZIP file<br>
+              2. Save the file to <strong>Google Drive</strong> or your computer<br>
+              3. Recommended frequency: <strong>once a month</strong>
+            </div>
+          </div>
+
+          <!-- 마지막 백업 정보 -->
+          <div id="backupLastInfo" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;display:none">
+            ⏰ Last backup: <span id="backupLastDate">—</span>
+          </div>
+
+          <!-- 진행 상태 -->
+          <div id="backupProgress" style="display:none;margin-bottom:14px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:13px;color:#1e40af">
+            <div id="backupProgressText" style="font-weight:600;margin-bottom:4px">Preparing backup…</div>
+            <div id="backupProgressDetail" style="font-size:11px;color:#3b82f6">Connecting to database</div>
+          </div>
+
+          <!-- 결과 메시지 -->
+          <div id="backupResult" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:8px;font-size:13px"></div>
+
+          <!-- 다운로드 버튼 -->
+          <button id="downloadBackupBtn" onclick="downloadBackup()" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 2px 8px rgba(34,197,94,0.25);transition:all 0.15s">
+            <span style="display:inline-flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Backup (ZIP)
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- System Access (Admin Only) -->
@@ -1266,6 +1321,178 @@ await Promise.all([
   loadCacheInfo(),
   loadQRAnalytics(7),
 ]);
+
+// ─── DATA BACKUP ─────────────────────────────────────────────────
+// 마지막 백업 정보 표시 (localStorage에 저장)
+function showLastBackupInfo() {
+  const lastDate = localStorage.getItem('bms_last_backup_date');
+  if (lastDate) {
+    const info = document.getElementById('backupLastInfo');
+    const dateSpan = document.getElementById('backupLastDate');
+    if (info && dateSpan) {
+      dateSpan.textContent = lastDate;
+      info.style.display = 'block';
+    }
+  }
+}
+showLastBackupInfo();
+
+// CSV 변환 함수 (단순, 안전)
+function tableToCSV(rows) {
+  if (!rows || rows.length === 0) return '';
+  const headers = Object.keys(rows[0]);
+  const csvHeaders = headers.map(h => `"${h}"`).join(',');
+  const csvRows = rows.map(row => {
+    return headers.map(h => {
+      const val = row[h];
+      if (val === null || val === undefined) return '';
+      const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      // 큰따옴표 escape + 모든 값을 큰따옴표로 감쌈
+      return `"${str.replace(/"/g, '""')}"`;
+    }).join(',');
+  });
+  return [csvHeaders, ...csvRows].join('\n');
+}
+
+// 다운로드 함수
+window.downloadBackup = async function() {
+  const btn = document.getElementById('downloadBackupBtn');
+  const progress = document.getElementById('backupProgress');
+  const progressText = document.getElementById('backupProgressText');
+  const progressDetail = document.getElementById('backupProgressDetail');
+  const result = document.getElementById('backupResult');
+
+  // 결과 메시지 초기화
+  result.style.display = 'none';
+  result.textContent = '';
+
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.style.cursor = 'not-allowed';
+  progress.style.display = 'block';
+
+  // 백업할 테이블 목록
+  const tables = [
+    'profiles',
+    'occupants',
+    'vehicles',
+    'announcements',
+    'complaints',
+    'hvac_requests',
+    'quotes',
+    'works',
+    'audit_logs'
+  ];
+
+  try {
+    // JSZip 인스턴스
+    const zip = new JSZip();
+    const folder = zip.folder('BMS_Backup');
+
+    let totalRows = 0;
+
+    for (let i = 0; i < tables.length; i++) {
+      const tableName = tables[i];
+      progressText.textContent = `Backing up... ${i + 1}/${tables.length}`;
+      progressDetail.textContent = `Reading: ${tableName}`;
+
+      try {
+        const { data, error } = await supabase.from(tableName).select('*');
+        if (error) {
+          console.warn(`[backup] ${tableName} fetch error:`, error);
+          folder.file(`${tableName}_ERROR.txt`, `Error fetching ${tableName}:\n${error.message}`);
+          continue;
+        }
+
+        if (!data || data.length === 0) {
+          folder.file(`${tableName}.csv`, '(no data)');
+          continue;
+        }
+
+        const csv = tableToCSV(data);
+        folder.file(`${tableName}.csv`, '\ufeff' + csv); // UTF-8 BOM (한글 깨짐 방지)
+        totalRows += data.length;
+      } catch (e) {
+        console.warn(`[backup] ${tableName} exception:`, e);
+        folder.file(`${tableName}_ERROR.txt`, `Exception:\n${e.message}`);
+      }
+    }
+
+    // 메타데이터 파일 추가
+    const now = new Date();
+    const dateStr = now.toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
+    const meta = [
+      'BMS Data Backup',
+      '======================',
+      `Backup Date: ${dateStr}`,
+      `Total Rows: ${totalRows}`,
+      `Tables: ${tables.length}`,
+      '',
+      'IMPORTANT NOTES:',
+      '- This backup contains DATA only. Passwords are NOT included (Supabase Auth).',
+      '- File uploads (Storage) are NOT included.',
+      '- To restore: contact Supabase support or import via SQL.',
+      '',
+      'Recommended storage: Google Drive or external drive.',
+      'Recommended frequency: Once a month.',
+    ].join('\n');
+    folder.file('README.txt', meta);
+
+    // 진행 상태: 압축
+    progressText.textContent = 'Compressing...';
+    progressDetail.textContent = 'Creating ZIP file';
+
+    // ZIP 생성 + 다운로드
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const filename = `BMS_Backup_${now.toISOString().slice(0, 10)}.zip`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 마지막 백업 일시 저장
+    localStorage.setItem('bms_last_backup_date', dateStr);
+
+    // 성공 메시지
+    progress.style.display = 'none';
+    result.style.display = 'block';
+    result.style.background = '#f0fdf4';
+    result.style.border = '1px solid #bbf7d0';
+    result.style.color = '#166534';
+    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:11px;color:#475569">💡 Please move the file to Google Drive or a safe location.</span>`;
+
+    // audit log
+    try {
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        user_name: user.user_metadata?.full_name || user.email,
+        user_email: user.email,
+        action: 'data_backup_downloaded',
+        details: { total_rows: totalRows, tables: tables, filename: filename }
+      });
+    } catch (e) { /* audit log 실패해도 사용자 작업은 성공 */ }
+
+    showLastBackupInfo();
+
+  } catch (e) {
+    console.error('[backup] error:', e);
+    progress.style.display = 'none';
+    result.style.display = 'block';
+    result.style.background = '#fef2f2';
+    result.style.border = '1px solid #fecaca';
+    result.style.color = '#991b1b';
+    result.textContent = `❌ Backup failed: ${e.message || 'Unknown error'}`;
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+};
 </script>
 </body>
 </html>
