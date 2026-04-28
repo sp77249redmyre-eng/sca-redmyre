@@ -2179,8 +2179,8 @@ window.resendAnnouncement = async (id) => { ... }
 - **API 키**: Supabase Edge Function 환경변수에 저장 (`RESEND_API_KEY` 등)
 - **발신 주소**: `notify@scafacility.com`
 - **Reply-To**: `sp77249.redmyre@gmail.com`
-- **BCC** (사장님 메모리):
-  - `info@scafacility.com`
+- **BCC** (2026-04-28 업데이트 — info@scafacility.com 메일함 비용 폭탄 사건 후 제거):
+  - ~~`info@scafacility.com`~~ (제거됨 — 2026-04-28)
   - `sca.yun82@gmail.com`
   - `sca.jacob77@gmail.com`
   - 적용 Edge Function: `email-complaint-response`, `email-quote-voting`, `email-quote-confirm`

@@ -213,8 +213,8 @@ WHERE p.push_enabled = true;
 
 #### 사례 C: BCC 적용 (실무 추적)
 
-발신 시 사장님 + SCA 사무실 이메일을 BCC로 자동 포함:
-- `info@scafacility.com`
+발신 시 사장님 + SCA 사무실 이메일을 BCC로 자동 포함 (2026-04-28 업데이트 — info@scafacility.com 메일함 비용 폭탄 사건 후 제거):
+- ~~`info@scafacility.com`~~ (제거됨 — 2026-04-28)
 - `sca.yun82@gmail.com`
 - `sca.jacob77@gmail.com`
 
@@ -1641,7 +1641,7 @@ Committee role로 로그인 시 사이드바:
 
 **Jacob Kim 본인:**
 - Mobile: 0478 705 406
-- Email: sp77249.redmyre@gmail.com / info@scafacility.com
+- Email: sp77249.redmyre@gmail.com (info@scafacility.com은 2026-04-28 비용 폭탄 사건 후 시스템에서 제거됨, 회사 도메인 자체는 유지)
 - 근무: 월/수/금 8AM-4PM
 - 그 외 시간: SCA 사무실 1300 785 007
 

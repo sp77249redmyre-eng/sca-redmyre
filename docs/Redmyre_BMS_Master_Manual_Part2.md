@@ -2831,7 +2831,7 @@ async function isNSWPublicHoliday(date) {
 - 🟠 Public holiday / Building manager unavailable / Outside working hours
 - SCA Emergency Line / 1300 785 007
 - "Available 24/7 for urgent matters"
-- Email: info@scafacility.com
+- Email: sca.yun82@gmail.com (2026-04-28 변경 — 이전: info@scafacility.com)
 - 주의 문구: "Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA."
 
 ### 📡 DB / API 호출

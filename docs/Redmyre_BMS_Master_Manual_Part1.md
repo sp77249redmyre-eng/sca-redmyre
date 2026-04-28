@@ -1764,7 +1764,7 @@ if (sender_role === 'admin') {
 - 현재는 **Push 알림만 사용** (complaints.html 624, 784, 790줄)
 - Edge Function 코드는 보관
 
-**발송 시 BCC:** info@scafacility.com, sca.yun82@gmail.com, sca.jacob77@gmail.com
+**발송 시 BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨 — 2026-04-28 비용 폭탄 사건)
 
 ---
 
@@ -1800,7 +1800,7 @@ SELECT email FROM profiles WHERE role IN ('admin', 'committee', 'observer')
 
 **Fallback:** 빈 경우 `ikf.jacob@gmail.com` (사장님 테스트 이메일)
 
-**BCC:** info@scafacility.com, sca.yun82@gmail.com, sca.jacob77@gmail.com
+**BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨 — 2026-04-28 비용 폭탄 사건)
 
 **body 형식:**
 ```json
