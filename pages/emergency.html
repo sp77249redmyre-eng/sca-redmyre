@@ -442,7 +442,14 @@ async function loadCommitteeMembers() {
   }
   function primaryPhone(phone) {
     if (!phone) return '';
-    return phone.split(/[,\/]/)[0].trim();
+    const nums = phone.split(/[,\/\-]/).map(s => s.trim()).filter(Boolean);
+    if (!nums.length) return '';
+    // 유선번호(landline) 우선: 04로 시작하지 않는 번호 찾기
+    const landline = nums.find(n => {
+      const clean = n.replace(/[\s\(\)\+]/g,'');
+      return !clean.startsWith('04') && !clean.startsWith('614');
+    });
+    return landline || nums[0];
   }
 
   grid.innerHTML = members.map(m => {
@@ -471,11 +478,9 @@ async function loadCommitteeMembers() {
         </div>
         <div class="person-unit-info">${units}</div>
         ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}
-        ${phone ? `<div class="person-phone" style="font-size:15px">${phone}</div>` : ''}
         ${email ? `<a class="person-email" href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>` : ''}
         <div class="person-actions">
-          ${phone ? `<a class="call-btn btn-green" href="tel:${phone.replace(/\s/g,'')}" onclick="event.stopPropagation()">📞 Call</a>` : '<span></span>'}
-          ${email ? `<a class="call-btn btn-email" href="mailto:${email}" onclick="event.stopPropagation()">✉️ Email</a>` : '<span></span>'}
+          ${email ? `<a class="call-btn btn-email" style="flex:1" href="mailto:${email}" onclick="event.stopPropagation()">✉️ Email</a>` : '<span></span>'}
         </div>
       </div>
     `;
