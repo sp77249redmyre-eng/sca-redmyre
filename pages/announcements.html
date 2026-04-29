@@ -183,7 +183,17 @@ document.addEventListener('click', function(e){
   <div id="topbarPlaceholder"></div>
   <div class="content">
     <div class="section-hdr">
-      <div class="section-title">Announcements</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="section-title">Announcements</div>
+        <div id="langSelector" style="position:relative;flex-shrink:0">
+          <button id="langBtn" onclick="toggleLangMenu()" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);border:none;border-radius:8px;box-shadow:0 2px 8px rgba(30,58,138,0.25);padding:7px 12px;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:6px;height:32px;letter-spacing:0.3px;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(30,58,138,0.4)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(30,58,138,0.25)';this.style.transform='translateY(0)'">
+            <span style="font-size:14px">🌐</span>
+            <span id="langBtnLabel">EN</span>
+            <span style="font-size:9px;opacity:0.85">▼</span>
+          </button>
+          <div id="langMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.25);min-width:200px;max-height:340px;overflow-y:auto;font-family:system-ui,sans-serif;z-index:99999"></div>
+        </div>
+      </div>
       <button class="btn-primary" id="addAnnBtn" style="display:none">+ New Announcement</button>
     </div>
     <div class="push-banner" id="pushBanner">
@@ -192,21 +202,11 @@ document.addEventListener('click', function(e){
       <button class="push-banner-btn" id="enablePushBtn">Enable Notifications</button>
       <button class="push-banner-dismiss" id="dismissPushBtn">✕</button>
     </div>
-    <div class="filter-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div class="filter-bar" style="flex:1;min-width:0">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="urgent">🚨 Urgent</button>
-        <button class="filter-btn" data-filter="reminder">🔔 Reminder</button>
-        <button class="filter-btn" data-filter="archived">📦 Archived</button>
-      </div>
-      <div id="langSelector" style="position:relative;flex-shrink:0">
-        <button id="langBtn" onclick="toggleLangMenu()" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);border:none;border-radius:8px;box-shadow:0 2px 8px rgba(30,58,138,0.25);padding:8px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:7px;height:36px;letter-spacing:0.3px;transition:all 0.15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(30,58,138,0.4)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(30,58,138,0.25)';this.style.transform='translateY(0)'">
-          <span style="font-size:15px">🌐</span>
-          <span id="langBtnLabel">EN</span>
-          <span style="font-size:9px;opacity:0.85">▼</span>
-        </button>
-        <div id="langMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.25);min-width:200px;max-height:340px;overflow-y:auto;font-family:system-ui,sans-serif;z-index:99999"></div>
-      </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="urgent">🚨 Urgent</button>
+      <button class="filter-btn" data-filter="reminder">🔔 Reminder</button>
+      <button class="filter-btn" data-filter="archived">📦 Archived</button>
     </div>
     <div class="ann-list" id="annList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
