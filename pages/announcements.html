@@ -135,7 +135,16 @@ function renderLangMenu(currentCode){
 
 function toggleLangMenu(){
   var menu = document.getElementById('langMenu');
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  if(menu.style.display === 'block'){
+    menu.style.display = 'none';
+    return;
+  }
+  var btn = document.getElementById('langBtn');
+  var rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  menu.style.left = 'auto';
+  menu.style.display = 'block';
 }
 
 function selectLang(code, label){
@@ -187,13 +196,13 @@ document.addEventListener('click', function(e){
         <button class="filter-btn" data-filter="reminder">🔔 Reminder</button>
         <button class="filter-btn" data-filter="archived">📦 Archived</button>
       </div>
-      <div id="langSelector" style="position:relative;flex-shrink:0;z-index:9999">
+      <div id="langSelector" style="position:relative;flex-shrink:0">
         <button id="langBtn" onclick="toggleLangMenu()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);padding:8px 12px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:6px;height:36px">
           <span style="font-size:14px">🌐</span>
           <span id="langBtnLabel">EN</span>
           <span style="font-size:10px;color:#64748b">▼</span>
         </button>
-        <div id="langMenu" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.18);min-width:180px;max-height:320px;overflow-y:auto;font-family:system-ui,sans-serif;z-index:9999"></div>
+        <div id="langMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.25);min-width:200px;max-height:340px;overflow-y:auto;font-family:system-ui,sans-serif;z-index:99999"></div>
       </div>
     </div>
     <div class="ann-list" id="annList">
