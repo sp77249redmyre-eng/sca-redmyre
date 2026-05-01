@@ -1,4 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
+const webpush = require('web-push');
+
+webpush.setVapidDetails(
+  process.env.VAPI_SUBJECT || 'mailto:admin@redmyre.com.au',
+  process.env.VAPI_PUBLIC_KEY,
+  process.env.VAPI_PRIVATE_KEY
+);
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -29,7 +36,7 @@ module.exports = async (req, res) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, setup_complete')
+      .select('id, setup_complete, unit, role')
       .eq('email', cleanEmail)
       .maybeSingle();
 
@@ -53,15 +60,59 @@ module.exports = async (req, res) => {
 
     if (updateAuthError) throw updateAuthError;
 
+    const cleanName = full_name.trim();
+
     const { error: updateProfileError } = await supabaseAdmin
       .from('profiles')
       .update({
-        full_name: full_name.trim(),
+        full_name: cleanName,
         setup_complete: true
       })
       .eq('id', profile.id);
 
     if (updateProfileError) throw updateProfileError;
+
+    // 🔔 Notify admin: a user has just completed setup
+    try {
+      const { data: admins } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .eq('push_enabled', true);
+
+      const adminIds = admins?.map(u => u.id) || [];
+
+      if (adminIds.length > 0) {
+        const { data: subs } = await supabaseAdmin
+          .from('push_subscriptions')
+          .select('user_id, subscription')
+          .in('user_id', adminIds);
+
+        const unitLabel = profile.unit ? ` (${profile.unit})` : '';
+        const payload = JSON.stringify({
+          title: '✅ New User Registered',
+          body: `${cleanName}${unitLabel} has completed setup`,
+          url: '/users.html'
+        });
+
+        for (const row of subs || []) {
+          try {
+            await webpush.sendNotification(row.subscription, payload);
+          } catch (err) {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+              try {
+                await supabaseAdmin
+                  .from('push_subscriptions')
+                  .delete()
+                  .eq('user_id', row.user_id);
+              } catch {}
+            }
+          }
+        }
+      }
+    } catch (pushErr) {
+      console.error('[complete-setup push error]', pushErr);
+    }
 
     return res.status(200).json({ success: true });
 
