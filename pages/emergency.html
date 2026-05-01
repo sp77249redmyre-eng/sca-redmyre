@@ -91,6 +91,17 @@
   .emg-grid{grid-template-columns:1fr}
   .committee-grid{grid-template-columns:1fr}
 }
+
+/* Contractor highlight (URL ?contractor=... 로 진입 시) */
+.contact-card.highlight-flash{
+  animation: contractorPulse 2.5s ease;
+}
+@keyframes contractorPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0); border-color: var(--border); background: var(--surface); }
+  20%  { box-shadow: 0 0 0 8px rgba(34,197,94,0.35); border-color: #22c55e; background: #f0fdf4; }
+  60%  { box-shadow: 0 0 0 4px rgba(34,197,94,0.18); border-color: #22c55e; background: #f0fdf4; }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); border-color: var(--border); background: var(--surface); }
+}
 </style>
 </head>
 <body>
@@ -298,7 +309,7 @@ async function loadContractors() {
     const primaryPhone = c.phone ? c.phone.split('/').map(p=>p.trim())[0] : '';
     const primaryEmail = c.email ? c.email.split(',').map(e=>e.trim())[0] : '';
     return `
-      <div class="contact-card">
+      <div class="contact-card" data-company="${(c.company || '').toLowerCase()}">
         <div class="cc-icon">${icon}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -389,11 +400,9 @@ async function loadCommitteeMembers() {
   data.forEach(row => {
     const key = row.contact_person;
     if (!groupMap.has(key)) {
-      groupMap.set(key, { units: [], unitBusiness: {}, ...row });
+      groupMap.set(key, { units: [], ...row });
     }
-    const g = groupMap.get(key);
-    g.units.push(row.unit);
-    g.unitBusiness[row.unit] = row.business_name || '';
+    groupMap.get(key).units.push(row.unit);
   });
 
   // 직책 순서: Chairman → Treasurer → Secretary → Committee Member
@@ -462,7 +471,6 @@ async function loadCommitteeMembers() {
       : `Unit ${primaryUnit}`;
     const phone = primaryPhone(m.phone);
     const email = m.primary_email ? m.primary_email.split(',')[0].trim() : '';
-    const primaryBusiness = (m.unitBusiness && m.unitBusiness[primaryUnit]) || m.business_name || '';
     const nameParts = splitName(m.contact_person);
     const nameHtml = nameParts.sub 
       ? `<div class="person-name">${nameParts.main}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3">${nameParts.sub}</div>`
@@ -480,7 +488,7 @@ async function loadCommitteeMembers() {
           </div>
         </div>
         <div class="person-unit-info">${units}</div>
-        ${primaryBusiness ? `<div class="person-business-info">${primaryBusiness.split('/')[0].trim()}</div>` : ''}
+        ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}
         ${email ? `<a class="person-email" href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>` : ''}
         <div class="person-actions">
           ${email ? `<a class="call-btn btn-green" style="flex:1" href="mailto:${email}" onclick="event.stopPropagation()">✉️ Email</a>` : '<span></span>'}
@@ -502,6 +510,44 @@ await Promise.all([
   loadCommitteeMembers(),
   loadContractors()
 ]);
+
+// URL ?contractor=XXX 파라미터 처리 (building.html에서 진입 시)
+(function handleContractorParam(){
+  const params = new URLSearchParams(window.location.search);
+  const target = params.get('contractor');
+  if (!target) return;
+  const targetLower = target.trim().toLowerCase();
+
+  const cards = document.querySelectorAll('.contact-card[data-company]');
+  if (!cards.length) return;
+
+  // 1. 정확 일치
+  let matched = Array.from(cards).find(el => el.dataset.company === targetLower);
+
+  // 2. 부분 일치 (양방향)
+  if (!matched) {
+    matched = Array.from(cards).find(el => {
+      const c = el.dataset.company;
+      if (!c) return false;
+      return c.includes(targetLower) || targetLower.includes(c);
+    });
+  }
+
+  if (matched) {
+    // 살짝 지연 후 스크롤 (페이지 렌더 완료 대기)
+    setTimeout(() => {
+      matched.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      matched.classList.add('highlight-flash');
+      setTimeout(() => matched.classList.remove('highlight-flash'), 2600);
+    }, 200);
+  }
+
+  // URL에서 파라미터 제거 (새로고침 시 또 깜빡이지 않게)
+  if (window.history && window.history.replaceState) {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+})();
 </script>
 </body>
 </html>

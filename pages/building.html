@@ -299,6 +299,34 @@ if (!ctx) throw new Error('Layout init failed');
 
 const { supabase, role } = ctx;
 
+// Contractor 매칭용 데이터 (emergency 페이지의 등록된 회사 목록)
+let registeredContractors = [];
+async function loadRegisteredContractors() {
+  const { data } = await supabase.rpc('get_contractors');
+  registeredContractors = data || [];
+}
+
+// contractor 이름이 emergency에 등록되어 있는지 확인
+// 정확 일치 우선 → 부분 일치 fallback
+function findMatchedContractor(contractorName) {
+  if (!contractorName || !registeredContractors.length) return null;
+  const target = contractorName.trim().toLowerCase();
+
+  // 1. 정확 일치
+  const exact = registeredContractors.find(c =>
+    (c.company || '').trim().toLowerCase() === target
+  );
+  if (exact) return exact;
+
+  // 2. 부분 일치 (양방향)
+  const partial = registeredContractors.find(c => {
+    const company = (c.company || '').trim().toLowerCase();
+    if (!company) return false;
+    return company.includes(target) || target.includes(company);
+  });
+  return partial || null;
+}
+
 if (role === 'admin') {
   document.getElementById('addCardBtn').style.display = 'inline-flex';
 }
@@ -437,7 +465,13 @@ window.openViewCard = (i) => {
   let tagsHtml = '';
   if (parsed.contractor || parsed.progress) {
     tagsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    if (parsed.contractor) tagsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px"><div style="font-size:14px;flex-shrink:0">🏢</div><div><div style="font-size:9px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.06em">Contractor</div><div style="font-size:13px;font-weight:600;color:#14532d;margin-top:1px">${parsed.contractor}</div></div></div>`;
+    if (parsed.contractor) {
+      const matched = findMatchedContractor(parsed.contractor);
+      const contactBtn = matched
+        ? `<button onclick="goToContractor('${(matched.company||'').replace(/'/g,'&#39;')}')" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;border:1px solid #16a34a;background:#fff;color:#15803d;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:4px">🔗 Contact</button>`
+        : '';
+      tagsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px"><div style="font-size:14px;flex-shrink:0">🏢</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:9px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.06em">Contractor</div>${contactBtn}</div><div style="font-size:13px;font-weight:600;color:#14532d;margin-top:1px">${parsed.contractor}</div></div></div>`;
+    }
     if (parsed.progress) tagsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px"><div style="font-size:14px;flex-shrink:0">📋</div><div><div style="font-size:9px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.06em">Progress</div><div style="font-size:13px;font-weight:600;color:#1e3a8a;margin-top:1px">${parsed.progress}</div></div></div>`;
     tagsHtml += '</div>';
   }
@@ -452,6 +486,11 @@ window.vpOpenEdit = () => {
   const i = document.getElementById('vpEditBtn')._idx;
   document.getElementById('viewPopup').classList.remove('open');
   openEditCard(i);
+};
+
+window.goToContractor = (companyName) => {
+  if (!companyName) return;
+  window.location.href = '/pages/emergency.html?contractor=' + encodeURIComponent(companyName);
 };
 
 window.closeViewPopup = (e) => {
@@ -527,6 +566,7 @@ document.getElementById('deleteCardBtn').addEventListener('click', async () => {
 });
 
 await loadOverviewCards();
+await loadRegisteredContractors();
 await loadCards();
 
 /* ── Realtime ── */
