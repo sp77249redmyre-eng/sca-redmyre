@@ -389,9 +389,11 @@ async function loadCommitteeMembers() {
   data.forEach(row => {
     const key = row.contact_person;
     if (!groupMap.has(key)) {
-      groupMap.set(key, { units: [], ...row });
+      groupMap.set(key, { units: [], unitBusiness: {}, ...row });
     }
-    groupMap.get(key).units.push(row.unit);
+    const g = groupMap.get(key);
+    g.units.push(row.unit);
+    g.unitBusiness[row.unit] = row.business_name || '';
   });
 
   // 직책 순서: Chairman → Treasurer → Secretary → Committee Member
@@ -460,6 +462,7 @@ async function loadCommitteeMembers() {
       : `Unit ${primaryUnit}`;
     const phone = primaryPhone(m.phone);
     const email = m.primary_email ? m.primary_email.split(',')[0].trim() : '';
+    const primaryBusiness = (m.unitBusiness && m.unitBusiness[primaryUnit]) || m.business_name || '';
     const nameParts = splitName(m.contact_person);
     const nameHtml = nameParts.sub 
       ? `<div class="person-name">${nameParts.main}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3">${nameParts.sub}</div>`
@@ -477,7 +480,7 @@ async function loadCommitteeMembers() {
           </div>
         </div>
         <div class="person-unit-info">${units}</div>
-        ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}
+        ${primaryBusiness ? `<div class="person-business-info">${primaryBusiness.split('/')[0].trim()}</div>` : ''}
         ${email ? `<a class="person-email" href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>` : ''}
         <div class="person-actions">
           ${email ? `<a class="call-btn btn-green" style="flex:1" href="mailto:${email}" onclick="event.stopPropagation()">✉️ Email</a>` : '<span></span>'}
