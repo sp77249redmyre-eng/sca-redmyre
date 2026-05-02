@@ -651,6 +651,16 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
+// Auto-switch tab from URL param (e.g. /users?tab=activity)
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const wanted = params.get('tab');
+  if (wanted) {
+    const target = document.querySelector(`.tab[data-tab="${wanted}"]`);
+    if (target) target.click();
+  }
+})();
+
 // Load users
 let allProfiles = [];
 
