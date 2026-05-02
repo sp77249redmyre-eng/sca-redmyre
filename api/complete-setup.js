@@ -92,7 +92,7 @@ module.exports = async (req, res) => {
         const payload = JSON.stringify({
           title: '✅ New User Registered',
           body: `${cleanName}${unitLabel} has completed setup`,
-          url: '/users'
+          url: '/users?tab=activity'
         });
 
         for (const row of subs || []) {
