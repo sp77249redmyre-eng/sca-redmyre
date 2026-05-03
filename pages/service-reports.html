@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Reports – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+/* ============================================================
+   SERVICE REPORTS — page-specific styles
+   ============================================================ */
+
+/* TAB BAR */
+.sr-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.sr-tabs::-webkit-scrollbar { display: none; }
+.sr-tab {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.sr-tab:hover { background: var(--bg); color: var(--text); }
+.sr-tab.active {
+  background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+}
+.sr-tab .sr-tab-icon { font-size: 15px; }
+
+/* HERO HEADER */
+.sr-hero {
+  background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(30,58,138,0.18);
+  position: relative;
+  overflow: hidden;
+}
+.sr-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.sr-hero-content { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.sr-hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+.sr-hero-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.sr-hero-sub {
+  font-size: 13px;
+  opacity: 0.88;
+  letter-spacing: -0.1px;
+  line-height: 1.5;
+}
+.sr-hero-actions { display: flex; gap: 8px; position: relative; z-index: 1; }
+.sr-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.sr-hero-btn:hover { background: rgba(255,255,255,0.28); transform: translateY(-1px); }
+
+/* CATEGORY GROUP CARDS */
+.sr-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.sr-cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+.sr-cat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent, var(--blue-600));
+  opacity: 0.85;
+}
+.sr-cat-card[data-group="HVAC"]    { --accent: #06b6d4; }
+.sr-cat-card[data-group="Fire"]    { --accent: #ef4444; }
+.sr-cat-card[data-group="Lift"]    { --accent: #8b5cf6; }
+.sr-cat-card[data-group="Garage"]  { --accent: #f59e0b; }
+
+.sr-cat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.07);
+  border-color: var(--accent, var(--blue-600));
+}
+.sr-cat-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sr-cat-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.sr-cat-info { flex: 1; min-width: 0; }
+.sr-cat-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+.sr-cat-vendor {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.sr-cat-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+.sr-meta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sr-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sr-meta-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sr-meta-val.muted { color: var(--muted); font-weight: 500; }
+.sr-cat-warning {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--yellow-bg);
+  border: 1px solid #fde68a;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--yellow-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* UPCOMING / RECENT lists */
+.sr-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.sr-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.sr-list-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.sr-list-title-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--blue-600);
+}
+.sr-list-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  border-radius: 100px;
+}
+.sr-list-body { }
+.sr-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.12s ease;
+}
+.sr-list-row:last-child { border-bottom: none; }
+.sr-list-row:hover { background: var(--bg); }
+.sr-row-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.sr-row-info { flex: 1; min-width: 0; }
+.sr-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.1px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-row-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.sr-row-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sr-row-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-2);
+}
+.sr-row-tag.tag-overdue { background: var(--red-bg); color: var(--red-text); }
+.sr-row-tag.tag-due     { background: var(--yellow-bg); color: var(--yellow-text); }
+.sr-row-tag.tag-ok      { background: var(--green-bg); color: var(--green-text); }
+.sr-row-tag.tag-warn    { background: var(--yellow-bg); color: var(--yellow-text); }
+
+/* EMPTY STATE */
+.sr-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.sr-empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+
+/* SECTION (gap between sections) */
+.sr-section { display: flex; flex-direction: column; gap: 14px; }
+
+/* SKELETON / LOADING */
+.sr-skeleton {
+  background: linear-gradient(90deg, var(--border-light) 0%, var(--bg) 50%, var(--border-light) 100%);
+  background-size: 200% 100%;
+  animation: sr-skel 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes sr-skel {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* MODAL — extended for upload */
+#uploadModal .modal-box {
+  max-width: 640px;
+}
+.sr-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sr-form-row > .modal-field { margin-bottom: 0; }
+
+.sr-file-drop {
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg);
+  transition: all 0.15s ease;
+}
+.sr-file-drop:hover {
+  border-color: var(--blue-600);
+  background: var(--blue-50);
+}
+.sr-file-drop-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.7; }
+.sr-file-drop-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.sr-file-drop-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+.sr-file-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sr-file-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 12px;
+}
+.sr-file-pill-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--text);
+}
+.sr-file-pill-size { color: var(--muted); font-size: 11px; }
+.sr-file-pill-rm {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--red-bg);
+  color: var(--red-text);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sr-issue-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--yellow-bg);
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.sr-issue-toggle input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--yellow); }
+.sr-issue-toggle-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--yellow-text);
+  letter-spacing: -0.1px;
+}
+
+.sr-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-top: 12px;
+  display: none;
+}
+.sr-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+  border-radius: 100px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ============================================================
+   MOBILE — 768px breakpoint
+   ============================================================ */
+@media (max-width: 768px) {
+  .sr-hero {
+    padding: 18px 18px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .sr-hero-title { font-size: 19px; }
+  .sr-hero-sub { font-size: 12px; }
+  .sr-hero-actions { width: 100%; }
+  .sr-hero-btn { flex: 1; justify-content: center; }
+  .sr-tabs { padding: 4px; gap: 2px; }
+  .sr-tab {
+    min-width: 80px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+  .sr-cat-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .sr-cat-card { padding: 16px; }
+  .sr-cat-icon { width: 38px; height: 38px; font-size: 19px; }
+  .sr-cat-name { font-size: 14px; }
+  .sr-list-head { padding: 14px 16px; }
+  .sr-list-row { padding: 12px 16px; gap: 10px; }
+  .sr-row-icon { width: 32px; height: 32px; font-size: 14px; }
+  .sr-row-title { font-size: 12.5px; }
+  .sr-row-sub { font-size: 11px; }
+  .sr-row-date { font-size: 11px; }
+  .sr-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .sr-form-row > .modal-field { margin-bottom: 14px; }
+  /* iOS zoom prevention */
+  .modal-input, .modal-select, .modal-textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* iOS dvh */
+@supports (height: 100dvh) {
+  .modal-backdrop { min-height: 100dvh; }
+}
+</style>
+</head>
+<body>
+
+<div id="sidebarPlaceholder"></div>
+
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+
+  <div class="content" style="display:flex;flex-direction:column;gap:18px">
+
+    <!-- HERO HEADER -->
+    <div class="sr-hero">
+      <div class="sr-hero-content">
+        <div class="sr-hero-eyebrow">Compliance &amp; Maintenance</div>
+        <div class="sr-hero-title">Service Reports</div>
+        <div class="sr-hero-sub">Track HVAC, Fire, Lift, and Garage inspection records for the building.</div>
+      </div>
+      <div class="sr-hero-actions">
+        <button class="sr-hero-btn" id="uploadBtn" style="display:none">
+          <span style="font-size:15px;line-height:1">＋</span>
+          <span>New Report</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="sr-tabs" id="srTabs">
+      <button class="sr-tab active" data-tab="overview">
+        <span class="sr-tab-icon">🗂️</span><span>Overview</span>
+      </button>
+      <button class="sr-tab" data-tab="lift">
+        <span class="sr-tab-icon">🛗</span><span>Lift</span>
+      </button>
+      <button class="sr-tab" data-tab="hvac">
+        <span class="sr-tab-icon">💧</span><span>HVAC</span>
+      </button>
+      <button class="sr-tab" data-tab="fire">
+        <span class="sr-tab-icon">🔥</span><span>Fire</span>
+      </button>
+      <button class="sr-tab" data-tab="garage">
+        <span class="sr-tab-icon">🚪</span><span>Garage</span>
+      </button>
+    </div>
+
+    <!-- ───── OVERVIEW TAB ───── -->
+    <div class="sr-tab-pane" id="paneOverview" style="display:flex;flex-direction:column;gap:22px">
+
+      <!-- Category cards -->
+      <div class="sr-section">
+        <div class="section-hdr">
+          <div class="section-title">Categories</div>
+        </div>
+        <div class="sr-cat-grid" id="catGrid">
+          <div class="sr-cat-card sr-skeleton" style="height:180px"></div>
+          <div class="sr-cat-card sr-skeleton" style="height:180px"></div>
+          <div class="sr-cat-card sr-skeleton" style="height:180px"></div>
+          <div class="sr-cat-card sr-skeleton" style="height:180px"></div>
+        </div>
+      </div>
+
+      <!-- Upcoming services -->
+      <div class="sr-section">
+        <div class="sr-list" id="upcomingList">
+          <div class="sr-list-head">
+            <div class="sr-list-title">
+              <span class="sr-list-title-dot" style="background:var(--yellow)"></span>
+              <span>Upcoming Services</span>
+            </div>
+            <span class="sr-list-count" id="upcomingCount" style="background:var(--yellow-bg);color:var(--yellow-text)">—</span>
+          </div>
+          <div class="sr-list-body" id="upcomingBody">
+            <div class="sr-empty">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent reports -->
+      <div class="sr-section">
+        <div class="sr-list" id="recentList">
+          <div class="sr-list-head">
+            <div class="sr-list-title">
+              <span class="sr-list-title-dot"></span>
+              <span>Recent Reports</span>
+            </div>
+            <span class="sr-list-count" id="recentCount">—</span>
+          </div>
+          <div class="sr-list-body" id="recentBody">
+            <div class="sr-empty">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ───── LIFT TAB (placeholder for v4-2) ───── -->
+    <div class="sr-tab-pane" id="paneLift" style="display:none">
+      <div class="sr-list">
+        <div class="sr-empty">
+          <div class="sr-empty-icon">🛗</div>
+          <div style="font-size:14px;color:var(--text-2);font-weight:600;margin-bottom:6px">Lift detail view coming soon</div>
+          <div>For now, view lift reports in <a href="#" class="card-link" data-jump="overview">Overview</a> &nbsp;·&nbsp; Recent Reports.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── HVAC TAB (placeholder for v4-2) ───── -->
+    <div class="sr-tab-pane" id="paneHvac" style="display:none">
+      <div class="sr-list">
+        <div class="sr-empty">
+          <div class="sr-empty-icon">💧</div>
+          <div style="font-size:14px;color:var(--text-2);font-weight:600;margin-bottom:6px">HVAC matrix coming soon</div>
+          <div>For now, view HVAC reports in <a href="#" class="card-link" data-jump="overview">Overview</a>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── FIRE TAB (placeholder for v4-2) ───── -->
+    <div class="sr-tab-pane" id="paneFire" style="display:none">
+      <div class="sr-list">
+        <div class="sr-empty">
+          <div class="sr-empty-icon">🔥</div>
+          <div style="font-size:14px;color:var(--text-2);font-weight:600;margin-bottom:6px">Fire matrix coming soon</div>
+          <div>For now, view Fire reports in <a href="#" class="card-link" data-jump="overview">Overview</a>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── GARAGE TAB (placeholder for v4-2) ───── -->
+    <div class="sr-tab-pane" id="paneGarage" style="display:none">
+      <div class="sr-list">
+        <div class="sr-empty">
+          <div class="sr-empty-icon">🚪</div>
+          <div style="font-size:14px;color:var(--text-2);font-weight:600;margin-bottom:6px">Garage matrix coming soon</div>
+          <div>For now, view Garage reports in <a href="#" class="card-link" data-jump="overview">Overview</a>.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     UPLOAD MODAL  (admin only)
+     ============================================================ -->
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal-box">
+    <div class="modal-title">＋ New Service Report</div>
+
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="upCategory">
+        <option value="">Select category…</option>
+      </select>
+    </div>
+
+    <div class="sr-form-row">
+      <div class="modal-field">
+        <label class="modal-label">Report Date</label>
+        <input type="date" class="modal-input" id="upDate">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Contractor</label>
+        <select class="modal-select" id="upContractor">
+          <option value="">—</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lift-only extra fields -->
+    <div class="sr-form-row" id="upLiftRow" style="display:none">
+      <div class="modal-field">
+        <label class="modal-label">Lift Unit</label>
+        <select class="modal-select" id="upLiftUnit">
+          <option value="">—</option>
+          <option value="lift_1">Lift 1</option>
+          <option value="lift_2">Lift 2</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Service Type</label>
+        <select class="modal-select" id="upServiceType">
+          <option value="">—</option>
+          <option value="pm">Preventive Maintenance</option>
+          <option value="callout">Callout</option>
+          <option value="repair">Repair</option>
+          <option value="notify">Notify</option>
+          <option value="inspection">Inspection</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Title</label>
+      <input class="modal-input" id="upTitle" placeholder="e.g. Cooling Tower – April 2026">
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Summary <span style="font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea class="modal-textarea" id="upSummary" placeholder="Short summary of findings or activity…" style="min-height:80px"></textarea>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Attachments <span style="font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0">(PDF, images — up to 10)</span></label>
+      <label class="sr-file-drop" for="upFiles">
+        <div class="sr-file-drop-icon">📎</div>
+        <div class="sr-file-drop-text">Tap to add files</div>
+        <div class="sr-file-drop-sub">PDF · JPG · PNG · WEBP · DOCX · XLSX (max 50 MB each)</div>
+      </label>
+      <input type="file" id="upFiles" multiple
+             accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             style="display:none">
+      <div class="sr-file-list" id="upFileList"></div>
+    </div>
+
+    <div class="modal-field">
+      <label class="sr-issue-toggle">
+        <input type="checkbox" id="upHasIssues">
+        <span class="sr-issue-toggle-label">⚠️ Mark this report as having issues</span>
+      </label>
+    </div>
+
+    <div class="modal-field" id="upIssueBox" style="display:none">
+      <label class="modal-label">Issue Description</label>
+      <textarea class="modal-textarea" id="upIssueDesc" placeholder="What needs attention? (visible to management only)" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="sr-progress-bar" id="upProgressBar">
+      <div class="sr-progress-fill" id="upProgressFill"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="upCancelBtn">Cancel</button>
+      <button class="btn-primary" id="upSaveBtn">Save Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
+
+const isManagement = ['admin','committee','observer'].includes(role);
+const isAdmin = role === 'admin';
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type === 'err' ? '#991b1b' : '#0f172a';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '—';
+  return dt.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtSize(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(2) + ' MB';
+}
+function monthLabel(m) {
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1] || '';
+}
+function daysBetween(a, b) {
+  const ms = 24*60*60*1000;
+  return Math.round((new Date(a) - new Date(b)) / ms);
+}
+
+// ─── ROLE-BASED UI ───────────────────────────────────────────
+if (isAdmin) {
+  document.getElementById('uploadBtn').style.display = 'inline-flex';
+}
+
+// ─── DATA STATE ──────────────────────────────────────────────
+let categories = [];          // service_categories
+let contractors = [];         // get_contractors RPC
+let reports = [];             // service_reports
+let lastByCategory = {};      // {category_id: latest report}
+
+// ─── LOADERS ─────────────────────────────────────────────────
+async function loadCategories() {
+  const { data, error } = await supabase
+    .from('service_categories')
+    .select('*')
+    .eq('active', true)
+    .order('group_label')
+    .order('position');
+  if (error) { console.error(error); categories = []; return; }
+  categories = data || [];
+}
+
+async function loadContractors() {
+  const { data, error } = await supabase.rpc('get_contractors');
+  if (error) { console.error(error); contractors = []; return; }
+  contractors = data || [];
+}
+
+async function loadReports() {
+  const { data, error } = await supabase
+    .from('service_reports')
+    .select('*')
+    .order('report_date', { ascending: false })
+    .limit(500);
+  if (error) { console.error(error); reports = []; return; }
+  reports = data || [];
+
+  // index latest per category
+  lastByCategory = {};
+  for (const r of reports) {
+    const cur = lastByCategory[r.category_id];
+    if (!cur || new Date(r.report_date) > new Date(cur.report_date)) {
+      lastByCategory[r.category_id] = r;
+    }
+  }
+}
+
+// ─── NEXT-DUE CALCULATION ────────────────────────────────────
+function nextDueFor(cat) {
+  const last = lastByCategory[cat.id];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  if (cat.frequency === 'monthly') {
+    if (!last) return { date: today, status: 'due' };
+    const d = new Date(last.report_date);
+    d.setMonth(d.getMonth() + 1);
+    return classifyDue(d, today);
+  }
+  if (cat.frequency === 'quarterly') {
+    if (!last) return { date: today, status: 'due' };
+    const d = new Date(last.report_date);
+    d.setMonth(d.getMonth() + 3);
+    return classifyDue(d, today);
+  }
+  if (cat.frequency === '6-monthly') {
+    if (!last) return { date: today, status: 'due' };
+    const d = new Date(last.report_date);
+    d.setMonth(d.getMonth() + 6);
+    return classifyDue(d, today);
+  }
+  if (cat.frequency === 'annual') {
+    if (!last) return { date: today, status: 'due' };
+    const d = new Date(last.report_date);
+    d.setFullYear(d.getFullYear() + 1);
+    return classifyDue(d, today);
+  }
+  if (cat.frequency === 'custom' && Array.isArray(cat.custom_months) && cat.custom_months.length) {
+    // next month in custom_months ahead of today's month
+    const m = today.getMonth() + 1;
+    const y = today.getFullYear();
+    const sortedMonths = [...cat.custom_months].sort((a,b)=>a-b);
+    let target = sortedMonths.find(mm => mm >= m);
+    let targetYear = y;
+    if (target === undefined) { target = sortedMonths[0]; targetYear = y + 1; }
+    const d = new Date(targetYear, target - 1, 15);
+    return classifyDue(d, today);
+  }
+  // irregular / custom-no-months → no schedule
+  return { date: null, status: 'na' };
+}
+
+function classifyDue(due, today) {
+  const diff = daysBetween(due, today);
+  if (diff < 0)      return { date: due, status: 'overdue', diff };
+  if (diff <= 14)    return { date: due, status: 'due', diff };
+  return { date: due, status: 'ok', diff };
+}
+
+// ─── RENDER: CATEGORY GRID ───────────────────────────────────
+function renderCategoryGrid() {
+  const grid = document.getElementById('catGrid');
+  if (!categories.length) {
+    grid.innerHTML = '<div class="sr-empty" style="grid-column:1/-1"><div class="sr-empty-icon">📋</div><div>No service categories configured.</div></div>';
+    return;
+  }
+
+  grid.innerHTML = categories.map(cat => {
+    const last = lastByCategory[cat.id];
+    const next = nextDueFor(cat);
+    const contractor = contractors.find(c => c.id === cat.default_contractor_id);
+    const vendor = contractor ? contractor.company : '—';
+
+    // count reports in current calendar year
+    const yearNow = new Date().getFullYear();
+    const yearCount = reports.filter(r =>
+      r.category_id === cat.id && r.period_year === yearNow
+    ).length;
+
+    const lastTxt = last ? fmtDate(last.report_date) : 'Never';
+    const nextTxt = next.date ? fmtDate(next.date) : '—';
+
+    let warning = '';
+    if (isManagement) {
+      if (next.status === 'overdue') {
+        warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(next.diff)} days</div>`;
+      } else if (next.status === 'due') {
+        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${next.diff} days</div>`;
+      }
+    }
+
+    return `
+      <div class="sr-cat-card" data-group="${escHtml(cat.group_label)}">
+        <div class="sr-cat-head">
+          <div class="sr-cat-icon">${escHtml(cat.icon || '📋')}</div>
+          <div class="sr-cat-info">
+            <div class="sr-cat-name">${escHtml(cat.name)}</div>
+            <div class="sr-cat-vendor">${escHtml(vendor)}</div>
+          </div>
+        </div>
+        <div class="sr-cat-meta">
+          <div class="sr-meta-block">
+            <div class="sr-meta-label">Last Service</div>
+            <div class="sr-meta-val ${last ? '' : 'muted'}">${lastTxt}</div>
+          </div>
+          <div class="sr-meta-block">
+            <div class="sr-meta-label">Next Due</div>
+            <div class="sr-meta-val ${next.date ? '' : 'muted'}">${nextTxt}</div>
+          </div>
+        </div>
+        ${isManagement ? `
+        <div class="sr-cat-meta" style="margin-top:8px;padding-top:10px">
+          <div class="sr-meta-block">
+            <div class="sr-meta-label">${yearNow} Reports</div>
+            <div class="sr-meta-val">${yearCount}</div>
+          </div>
+          <div class="sr-meta-block">
+            <div class="sr-meta-label">Frequency</div>
+            <div class="sr-meta-val" style="font-size:12px;text-transform:capitalize">${escHtml(cat.frequency.replace('-',' '))}</div>
+          </div>
+        </div>
+        ` : ''}
+        ${warning}
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── RENDER: UPCOMING ────────────────────────────────────────
+function renderUpcoming() {
+  const body = document.getElementById('upcomingBody');
+  const countEl = document.getElementById('upcomingCount');
+
+  const items = categories
+    .map(cat => ({ cat, next: nextDueFor(cat) }))
+    .filter(x => x.next.date && (x.next.status === 'overdue' || x.next.status === 'due' || x.next.diff <= 60))
+    .sort((a,b) => new Date(a.next.date) - new Date(b.next.date))
+    .slice(0, 8);
+
+  countEl.textContent = items.length;
+
+  if (!items.length) {
+    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">✅</div><div>No upcoming services in the next 60 days.</div></div>';
+    return;
+  }
+
+  body.innerHTML = items.map(({cat, next}) => {
+    let tagCls = 'tag-ok';
+    let tagText = 'Scheduled';
+    if (next.status === 'overdue') { tagCls = 'tag-overdue'; tagText = `Overdue ${Math.abs(next.diff)}d`; }
+    else if (next.status === 'due') { tagCls = 'tag-due'; tagText = `Due ${next.diff}d`; }
+
+    return `
+      <div class="sr-list-row">
+        <div class="sr-row-icon">${escHtml(cat.icon || '📋')}</div>
+        <div class="sr-row-info">
+          <div class="sr-row-title">${escHtml(cat.name)}</div>
+          <div class="sr-row-sub">${escHtml(cat.group_label)}</div>
+        </div>
+        <div class="sr-row-meta">
+          <div class="sr-row-date">${fmtDate(next.date)}</div>
+          <span class="sr-row-tag ${tagCls}">${tagText}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── RENDER: RECENT REPORTS (last 5) ─────────────────────────
+function renderRecent() {
+  const body = document.getElementById('recentBody');
+  const countEl = document.getElementById('recentCount');
+  const recent = reports.slice(0, 5);
+  countEl.textContent = recent.length;
+
+  if (!recent.length) {
+    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">📭</div><div>No reports uploaded yet.</div></div>';
+    return;
+  }
+
+  body.innerHTML = recent.map(r => {
+    const cat = categories.find(c => c.id === r.category_id);
+    const contractor = contractors.find(c => c.id === r.contractor_id);
+    const icon = cat?.icon || '📋';
+    const catName = cat?.name || 'Unknown';
+    const vendor = contractor?.company || '—';
+    const att = Array.isArray(r.attachments) ? r.attachments.length : 0;
+
+    let badge = '';
+    if (isManagement && r.has_issues) {
+      badge = `<span class="sr-row-tag tag-warn">⚠️ Issues</span>`;
+    } else if (att > 0) {
+      badge = `<span class="sr-row-tag">📎 ${att}</span>`;
+    }
+
+    return `
+      <div class="sr-list-row">
+        <div class="sr-row-icon">${escHtml(icon)}</div>
+        <div class="sr-row-info">
+          <div class="sr-row-title">${escHtml(r.title)}</div>
+          <div class="sr-row-sub">${escHtml(catName)} · ${escHtml(vendor)}</div>
+        </div>
+        <div class="sr-row-meta">
+          <div class="sr-row-date">${fmtDate(r.report_date)}</div>
+          ${badge}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── TAB SWITCHER ────────────────────────────────────────────
+const TABS = ['overview','lift','hvac','fire','garage'];
+const PANES = {
+  overview: 'paneOverview',
+  lift:     'paneLift',
+  hvac:     'paneHvac',
+  fire:     'paneFire',
+  garage:   'paneGarage',
+};
+function switchTab(name) {
+  if (!TABS.includes(name)) name = 'overview';
+  document.querySelectorAll('.sr-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  TABS.forEach(t => {
+    const el = document.getElementById(PANES[t]);
+    if (el) el.style.display = (t === name) ? '' : 'none';
+  });
+  // sync display:flex on overview pane
+  if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
+}
+document.querySelectorAll('.sr-tab').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+document.querySelectorAll('[data-jump="overview"]').forEach(el => {
+  el.addEventListener('click', e => { e.preventDefault(); switchTab('overview'); });
+});
+
+// ─── UPLOAD MODAL ────────────────────────────────────────────
+const upModal       = document.getElementById('uploadModal');
+const upCategoryEl  = document.getElementById('upCategory');
+const upDateEl      = document.getElementById('upDate');
+const upContractorEl= document.getElementById('upContractor');
+const upTitleEl     = document.getElementById('upTitle');
+const upSummaryEl   = document.getElementById('upSummary');
+const upHasIssuesEl = document.getElementById('upHasIssues');
+const upIssueBox    = document.getElementById('upIssueBox');
+const upIssueDescEl = document.getElementById('upIssueDesc');
+const upLiftRow     = document.getElementById('upLiftRow');
+const upLiftUnitEl  = document.getElementById('upLiftUnit');
+const upServiceTypeEl = document.getElementById('upServiceType');
+const upFilesEl     = document.getElementById('upFiles');
+const upFileListEl  = document.getElementById('upFileList');
+const upProgressBar = document.getElementById('upProgressBar');
+const upProgressFill= document.getElementById('upProgressFill');
+
+let pendingFiles = [];
+const MAX_FILES = 10;
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+
+function populateUploadDropdowns() {
+  upCategoryEl.innerHTML = '<option value="">Select category…</option>' +
+    categories.map(c => `<option value="${c.id}">${escHtml(c.icon || '📋')} ${escHtml(c.name)} (${escHtml(c.group_label)})</option>`).join('');
+  upContractorEl.innerHTML = '<option value="">—</option>' +
+    contractors.map(c => `<option value="${c.id}">${escHtml(c.company)}</option>`).join('');
+}
+
+function openUploadModal() {
+  // reset
+  upCategoryEl.value = '';
+  const today = new Date();
+  upDateEl.value = today.toISOString().slice(0,10);
+  upContractorEl.value = '';
+  upTitleEl.value = '';
+  upSummaryEl.value = '';
+  upHasIssuesEl.checked = false;
+  upIssueBox.style.display = 'none';
+  upIssueDescEl.value = '';
+  upLiftRow.style.display = 'none';
+  upLiftUnitEl.value = '';
+  upServiceTypeEl.value = '';
+  pendingFiles = [];
+  renderFileList();
+  upProgressBar.style.display = 'none';
+  upProgressFill.style.width = '0%';
+  upModal.classList.add('open');
+}
+function closeUploadModal() { upModal.classList.remove('open'); }
+
+document.getElementById('uploadBtn').addEventListener('click', openUploadModal);
+document.getElementById('upCancelBtn').addEventListener('click', closeUploadModal);
+
+upHasIssuesEl.addEventListener('change', () => {
+  upIssueBox.style.display = upHasIssuesEl.checked ? '' : 'none';
+});
+
+// auto-populate vendor + lift fields based on category
+upCategoryEl.addEventListener('change', () => {
+  const cat = categories.find(c => c.id === upCategoryEl.value);
+  if (!cat) { upLiftRow.style.display = 'none'; return; }
+  if (cat.default_contractor_id) upContractorEl.value = cat.default_contractor_id;
+  // suggest title
+  if (!upTitleEl.value) {
+    const m = monthLabel(new Date(upDateEl.value || Date.now()).getMonth() + 1);
+    const y = new Date(upDateEl.value || Date.now()).getFullYear();
+    upTitleEl.value = `${cat.name} – ${m} ${y}`;
+  }
+  upLiftRow.style.display = (cat.group_label === 'Lift') ? 'grid' : 'none';
+});
+
+// FILE PICKER
+upFilesEl.addEventListener('change', () => {
+  const newFiles = Array.from(upFilesEl.files || []);
+  for (const f of newFiles) {
+    if (pendingFiles.length >= MAX_FILES) {
+      showToast(`Maximum ${MAX_FILES} files per report.`, 'err');
+      break;
+    }
+    if (f.size > MAX_FILE_BYTES) {
+      showToast(`File too large: ${f.name} (max 50 MB)`, 'err');
+      continue;
+    }
+    pendingFiles.push(f);
+  }
+  upFilesEl.value = ''; // reset so same file can be re-selected
+  renderFileList();
+});
+
+function renderFileList() {
+  if (!pendingFiles.length) { upFileListEl.innerHTML = ''; return; }
+  upFileListEl.innerHTML = pendingFiles.map((f, i) => `
+    <div class="sr-file-pill">
+      <span style="flex-shrink:0">${f.type.startsWith('image/') ? '🖼️' : (f.type === 'application/pdf' ? '📄' : '📎')}</span>
+      <span class="sr-file-pill-name">${escHtml(f.name)}</span>
+      <span class="sr-file-pill-size">${fmtSize(f.size)}</span>
+      <button class="sr-file-pill-rm" data-idx="${i}" type="button" title="Remove">×</button>
+    </div>
+  `).join('');
+  upFileListEl.querySelectorAll('.sr-file-pill-rm').forEach(b => {
+    b.addEventListener('click', () => {
+      pendingFiles.splice(parseInt(b.dataset.idx, 10), 1);
+      renderFileList();
+    });
+  });
+}
+
+// SAVE
+document.getElementById('upSaveBtn').addEventListener('click', async () => {
+  if (!isAdmin) return;
+
+  const categoryId = upCategoryEl.value;
+  const reportDate = upDateEl.value;
+  const contractorId = upContractorEl.value || null;
+  const title = upTitleEl.value.trim();
+  const summary = upSummaryEl.value.trim() || null;
+  const hasIssues = upHasIssuesEl.checked;
+  const issueDesc = hasIssues ? (upIssueDescEl.value.trim() || null) : null;
+  const liftUnit = upLiftUnitEl.value || null;
+  const serviceType = upServiceTypeEl.value || null;
+
+  if (!categoryId) { showToast('Please select a category.', 'err'); return; }
+  if (!reportDate) { showToast('Please select a report date.', 'err'); return; }
+  if (!title)      { showToast('Please enter a title.', 'err'); return; }
+
+  const cat = categories.find(c => c.id === categoryId);
+  if (cat?.group_label === 'Lift' && !liftUnit) {
+    showToast('Please select a Lift unit.', 'err'); return;
+  }
+
+  const saveBtn = document.getElementById('upSaveBtn');
+  const cancelBtn = document.getElementById('upCancelBtn');
+  saveBtn.disabled = true; cancelBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  upProgressBar.style.display = 'block';
+  upProgressFill.style.width = '5%';
+
+  try {
+    const dt = new Date(reportDate);
+    const period_year = dt.getFullYear();
+    const period_month = dt.getMonth() + 1;
+
+    // 1) Insert report row first (to get id for storage path)
+    const { data: inserted, error: insErr } = await supabase
+      .from('service_reports')
+      .insert({
+        category_id: categoryId,
+        contractor_id: contractorId,
+        report_date: reportDate,
+        period_year,
+        period_month,
+        title,
+        summary,
+        has_issues: hasIssues,
+        issue_description: issueDesc,
+        lift_unit: liftUnit,
+        service_type: serviceType,
+        attachments: [],
+        uploaded_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (insErr) throw insErr;
+    const reportId = inserted.id;
+
+    upProgressFill.style.width = '15%';
+
+    // 2) Upload files to storage
+    const uploaded = [];
+    for (let i = 0; i < pendingFiles.length; i++) {
+      const f = pendingFiles[i];
+      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${period_year}/${cat.group_label}/${reportId}/${Date.now()}_${i}_${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from('service-reports')
+        .upload(path, f, { contentType: f.type, upsert: false });
+      if (upErr) throw upErr;
+      uploaded.push({
+        path,
+        name: f.name,
+        size: f.size,
+        type: f.type,
+      });
+      const pct = 15 + Math.round(((i+1) / pendingFiles.length) * 75);
+      upProgressFill.style.width = pct + '%';
+    }
+
+    // 3) Update report row with attachments JSONB
+    if (uploaded.length) {
+      const { error: updErr } = await supabase
+        .from('service_reports')
+        .update({ attachments: uploaded })
+        .eq('id', reportId);
+      if (updErr) throw updErr;
+    }
+
+    upProgressFill.style.width = '100%';
+    showToast('Report saved.', 'ok');
+
+    setTimeout(async () => {
+      closeUploadModal();
+      saveBtn.disabled = false; cancelBtn.disabled = false;
+      saveBtn.textContent = 'Save Report';
+      // refresh
+      await loadReports();
+      renderCategoryGrid();
+      renderUpcoming();
+      renderRecent();
+    }, 600);
+
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'Failed to save report.', 'err');
+    saveBtn.disabled = false; cancelBtn.disabled = false;
+    saveBtn.textContent = 'Save Report';
+    upProgressBar.style.display = 'none';
+  }
+});
+
+// click outside to close
+upModal.addEventListener('click', (e) => {
+  if (e.target === upModal) closeUploadModal();
+});
+
+// ─── INIT ────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadCategories(), loadContractors(), loadReports()]);
+  populateUploadDropdowns();
+  renderCategoryGrid();
+  renderUpcoming();
+  renderRecent();
+}
+init();
+
+</script>
+</body>
+</html>
