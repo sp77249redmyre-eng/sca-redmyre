@@ -3,6 +3,7 @@ import '/js/my-profile.js';
 
 const PAGE_CONFIG = {
   'building':       { title: 'Overview',             allowedRoles: null },
+  'service-reports':{ title: 'Service Reports',       allowedRoles: null },
   'announcements':  { title: 'Announcements',         allowedRoles: null },
   'parking':        { title: 'Parking / Towing',      allowedRoles: null },
   'complaints':     { title: 'Resident Requests',     allowedRoles: null },
@@ -81,7 +82,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
+    allowedPages = ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
