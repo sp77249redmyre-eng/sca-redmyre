@@ -1036,8 +1036,8 @@
     </div>
 
     <div class="modal-field">
-      <label class="modal-label">Summary <span style="font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0">(optional)</span></label>
-      <textarea class="modal-textarea" id="upSummary" placeholder="Short summary of findings or activity…" style="min-height:80px"></textarea>
+      <label class="modal-label">Summary <span style="font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0">(optional · HTML supported: &lt;b&gt;, &lt;br&gt;, emojis 🛠️✅⚠️)</span></label>
+      <textarea class="modal-textarea" id="upSummary" placeholder="Short summary of findings or activity. You can use HTML tags for formatting." style="min-height:80px"></textarea>
     </div>
 
     <div class="modal-field">
@@ -1079,10 +1079,22 @@
 <div class="toast" id="toast"></div>
 
 <!-- ============================================================
+     FILE VIEWER MODAL  (in-page popup for attachments)
+     ============================================================ -->
+<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(2px)" onclick="if(event.target===this)closeViewer()">
+  <div style="background:#fff;border-radius:16px;padding:20px;max-width:1000px;width:94%;max-height:94vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button onclick="closeViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+    </div>
+    <div id="viewerContent"></div>
+  </div>
+</div>
+
+<!-- ============================================================
      REPORT DETAIL MODAL
      ============================================================ -->
 <div class="modal-backdrop" id="detailModal">
-  <div class="modal-box" style="max-width:600px">
+  <div class="modal-box" style="max-width:720px">
     <div class="modal-title" id="detailTitle">Report Detail</div>
     <div id="detailBody"></div>
     <div class="modal-footer">
@@ -1529,7 +1541,7 @@ window.openDetailModal = function(reportId) {
   const atts = Array.isArray(r.attachments) ? r.attachments : [];
   const attHtml = atts.length ? atts.map(a => {
     const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
-    return `<a class="sr-attach-item" href="#" onclick="downloadAttachment('${escHtml(a.path)}','${escHtml(a.name)}');return false;">
+    return `<a class="sr-attach-item" href="#" onclick="openFileViewer('${escHtml(a.path)}','${escHtml(a.name)}','${escHtml(a.type || '')}');return false;">
       <span class="sr-attach-icon">${icon}</span>
       <span class="sr-attach-name">${escHtml(a.name)}</span>
       <span class="sr-attach-size">${fmtSize(a.size || 0)}</span>
@@ -1548,6 +1560,19 @@ window.openDetailModal = function(reportId) {
          <div class="sr-detail-val issue">${escHtml(r.issue_description || 'Marked as having issues.')}</div>
        </div>` : '';
 
+  // Summary: HTML 태그 포함 시 그대로 렌더, 평문이면 줄바꿈을 <br>로 변환
+  let summaryHtml = '';
+  if (r.summary) {
+    const hasHTML = /<[a-z][\s\S]*>/i.test(r.summary);
+    const rendered = hasHTML
+      ? r.summary
+      : escHtml(r.summary).replace(/\n/g, '<br>');
+    summaryHtml = `<div class="sr-detail-section">
+      <div class="sr-detail-label">Summary</div>
+      <div class="sr-detail-val" style="line-height:1.6">${rendered}</div>
+    </div>`;
+  }
+
   document.getElementById('detailBody').innerHTML = `
     <div class="sr-detail-section">
       <div class="sr-detail-label">Category</div>
@@ -1564,10 +1589,7 @@ window.openDetailModal = function(reportId) {
       </div>
     </div>
     ${liftLine}
-    ${r.summary ? `<div class="sr-detail-section">
-      <div class="sr-detail-label">Summary</div>
-      <div class="sr-detail-val" style="white-space:pre-wrap">${escHtml(r.summary)}</div>
-    </div>` : ''}
+    ${summaryHtml}
     ${issueLine}
     <div class="sr-detail-section">
       <div class="sr-detail-label">Attachments (${atts.length})</div>
@@ -1577,24 +1599,43 @@ window.openDetailModal = function(reportId) {
   detailModal.classList.add('open');
 };
 
-window.downloadAttachment = async function(path, name) {
+// In-page file viewer popup (image inline / PDF iframe)
+window.openFileViewer = async function(path, name, type) {
   try {
     const { data, error } = await supabase.storage
       .from('service-reports')
-      .createSignedUrl(path, 60);
-    if (error) throw error;
-    const a = document.createElement('a');
-    a.href = data.signedUrl;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.download = name || '';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+      .createSignedUrl(path, 3600);
+    if (error || !data?.signedUrl) throw new Error('Signed URL failed');
+    const url = data.signedUrl;
+
+    const isPdf = (type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'));
+    const isImg = (type && type.startsWith('image/')) ||
+                  /\.(jpe?g|png|webp|gif)$/i.test(name || '');
+
+    let body = '';
+    if (isPdf) {
+      body = `<iframe src="${url}" style="width:100%;height:75vh;border:none;border-radius:8px;background:#f8fafc"></iframe>`;
+    } else if (isImg) {
+      body = `<img src="${url}" alt="${escHtml(name)}" style="max-width:100%;max-height:78vh;border-radius:8px;display:block;margin:0 auto">`;
+    } else {
+      body = `<div style="padding:30px;text-align:center;color:#64748b;font-size:13px">
+        Preview not available for this file type.<br>
+        <a href="${url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;padding:10px 20px;background:#1e3a8a;color:#fff;border-radius:8px;font-weight:600;text-decoration:none">Open in new tab ↗</a>
+      </div>`;
+    }
+
+    document.getElementById('viewerContent').innerHTML =
+      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">📎 ${escHtml(name)}</div>` + body;
+    document.getElementById('fileViewerModal').style.display = 'flex';
   } catch (e) {
-    console.error(e);
+    console.error('openFileViewer failed:', e);
     showToast(e.message || 'Failed to open file.', 'err');
   }
+};
+
+window.closeViewer = function() {
+  document.getElementById('fileViewerModal').style.display = 'none';
+  document.getElementById('viewerContent').innerHTML = '';
 };
 
 document.getElementById('detailCloseBtn').addEventListener('click', () => {
