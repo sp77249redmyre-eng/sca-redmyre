@@ -57,7 +57,12 @@
   color: #fff;
   box-shadow: 0 4px 12px rgba(37,99,235,0.25);
 }
-.sr-tab .sr-tab-icon { font-size: 15px; }
+.sr-tab .sr-tab-icon {
+  font-size: 15px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+}
 
 /* HERO HEADER */
 .sr-hero {
@@ -173,6 +178,7 @@
   justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji", sans-serif;
 }
 .sr-cat-info { flex: 1; min-width: 0; }
 .sr-cat-name {
@@ -282,6 +288,7 @@
   justify-content: center;
   font-size: 16px;
   flex-shrink: 0;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji", sans-serif;
 }
 .sr-row-info { flex: 1; min-width: 0; }
 .sr-row-title {
@@ -335,7 +342,12 @@
   color: var(--muted);
   font-size: 13px;
 }
-.sr-empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+.sr-empty-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji", sans-serif;
+}
 
 /* SECTION (gap between sections) */
 .sr-section { display: flex; flex-direction: column; gap: 14px; }
@@ -896,30 +908,31 @@ function nextDueFor(cat) {
   const today = new Date(); today.setHours(0,0,0,0);
 
   if (cat.frequency === 'monthly') {
-    if (!last) return { date: today, status: 'due' };
+    if (!last) return { date: null, status: 'first', diff: null };
     const d = new Date(last.report_date);
     d.setMonth(d.getMonth() + 1);
     return classifyDue(d, today);
   }
   if (cat.frequency === 'quarterly') {
-    if (!last) return { date: today, status: 'due' };
+    if (!last) return { date: null, status: 'first', diff: null };
     const d = new Date(last.report_date);
     d.setMonth(d.getMonth() + 3);
     return classifyDue(d, today);
   }
   if (cat.frequency === '6-monthly') {
-    if (!last) return { date: today, status: 'due' };
+    if (!last) return { date: null, status: 'first', diff: null };
     const d = new Date(last.report_date);
     d.setMonth(d.getMonth() + 6);
     return classifyDue(d, today);
   }
   if (cat.frequency === 'annual') {
-    if (!last) return { date: today, status: 'due' };
+    if (!last) return { date: null, status: 'first', diff: null };
     const d = new Date(last.report_date);
     d.setFullYear(d.getFullYear() + 1);
     return classifyDue(d, today);
   }
   if (cat.frequency === 'custom' && Array.isArray(cat.custom_months) && cat.custom_months.length) {
+    if (!last) return { date: null, status: 'first', diff: null };
     // next month in custom_months ahead of today's month
     const m = today.getMonth() + 1;
     const y = today.getFullYear();
@@ -931,7 +944,7 @@ function nextDueFor(cat) {
     return classifyDue(d, today);
   }
   // irregular / custom-no-months → no schedule
-  return { date: null, status: 'na' };
+  return { date: null, status: 'na', diff: null };
 }
 
 function classifyDue(due, today) {
@@ -962,7 +975,8 @@ function renderCategoryGrid() {
     ).length;
 
     const lastTxt = last ? fmtDate(last.report_date) : 'Never';
-    const nextTxt = next.date ? fmtDate(next.date) : '—';
+    const nextTxt = next.status === 'first' ? 'First inspection'
+                  : next.date ? fmtDate(next.date) : '—';
 
     let warning = '';
     if (isManagement) {
@@ -970,6 +984,8 @@ function renderCategoryGrid() {
         warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(next.diff)} days</div>`;
       } else if (next.status === 'due') {
         warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${next.diff} days</div>`;
+      } else if (next.status === 'first') {
+        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">📋 No inspection record yet</div>`;
       }
     }
 
@@ -1017,7 +1033,8 @@ function renderUpcoming() {
 
   const items = categories
     .map(cat => ({ cat, next: nextDueFor(cat) }))
-    .filter(x => x.next.date && (x.next.status === 'overdue' || x.next.status === 'due' || x.next.diff <= 60))
+    .filter(x => x.next.status !== 'first' && x.next.status !== 'na')
+    .filter(x => x.next.date && (x.next.status === 'overdue' || x.next.status === 'due' || (x.next.diff != null && x.next.diff <= 60)))
     .sort((a,b) => new Date(a.next.date) - new Date(b.next.date))
     .slice(0, 8);
 
