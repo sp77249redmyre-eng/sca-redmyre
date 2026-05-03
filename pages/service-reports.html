@@ -559,6 +559,273 @@
 @supports (height: 100dvh) {
   .modal-backdrop { min-height: 100dvh; }
 }
+
+/* ============================================================
+   MATRIX VIEW (Garage / HVAC / Fire tabs)
+   ============================================================ */
+.sr-matrix-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sr-matrix-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+.sr-year-select {
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+.sr-year-select:focus { border-color: var(--blue-600); }
+
+.sr-matrix-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.sr-matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+  min-width: 720px;
+}
+.sr-matrix th, .sr-matrix td {
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+}
+.sr-matrix th {
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+.sr-matrix th.sr-row-th, .sr-matrix td.sr-row-th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 12.5px;
+  padding-left: 4px;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+  min-width: 130px;
+}
+.sr-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 56px;
+  border-radius: 8px;
+  cursor: default;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  position: relative;
+}
+.sr-cell-icon { font-size: 16px; line-height: 1; }
+.sr-cell-date { font-size: 10px; font-weight: 600; color: var(--muted); }
+
+/* Cell states */
+.sr-cell.done {
+  background: var(--green-bg);
+  border-color: #bbf7d0;
+  cursor: pointer;
+}
+.sr-cell.done:hover {
+  background: #bbf7d0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(22,163,74,0.18);
+}
+.sr-cell.done .sr-cell-date { color: var(--green-text); }
+
+.sr-cell.due {
+  background: var(--blue-50);
+  border: 1.5px dashed #93c5fd;
+}
+.sr-cell.due .sr-cell-icon { color: var(--blue-700); }
+.sr-cell.due .sr-cell-date { color: var(--blue-700); font-weight: 700; font-size: 11px; }
+
+.sr-cell.overdue {
+  background: var(--red-bg);
+  border: 1.5px solid #fca5a5;
+  animation: sr-pulse 2.4s ease-in-out infinite;
+}
+.sr-cell.overdue .sr-cell-icon { color: var(--red-text); }
+.sr-cell.overdue .sr-cell-date {
+  color: var(--red-text);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+@keyframes sr-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(220,38,38,0.10); }
+}
+
+.sr-cell.future {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+}
+.sr-cell.future .sr-cell-icon { color: var(--muted); opacity: 0.6; }
+
+.sr-cell.na {
+  background: transparent;
+  border: 1px solid var(--border-light);
+}
+.sr-cell.na .sr-cell-icon { color: var(--border); font-size: 11px; }
+
+/* Matrix legend */
+.sr-matrix-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.sr-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sr-legend-dot {
+  width: 14px; height: 14px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.sr-legend-dot.done    { background: var(--green-bg); border-color: #bbf7d0; }
+.sr-legend-dot.due     { background: var(--blue-50); border-color: #93c5fd; border-style: dashed; }
+.sr-legend-dot.overdue { background: var(--red-bg); border-color: #fca5a5; }
+.sr-legend-dot.future  { background: var(--bg); border-color: var(--border); border-style: dashed; }
+.sr-legend-dot.na      { background: transparent; border-color: var(--border-light); }
+
+/* Matrix mobile — convert to cards (no horizontal scroll) */
+@media (max-width: 768px) {
+  .sr-matrix-wrap { padding: 0; background: transparent; border: none; overflow: visible; }
+  .sr-matrix { display: none; }
+  .sr-matrix-mobile { display: flex; flex-direction: column; gap: 14px; }
+  .sr-mobile-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .sr-mobile-row-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: -0.2px;
+  }
+  .sr-mobile-months {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .sr-mobile-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    min-height: 54px;
+  }
+  .sr-mobile-cell-month {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .sr-mobile-cell-icon { font-size: 15px; line-height: 1; }
+  .sr-mobile-cell-date { font-size: 9.5px; font-weight: 600; }
+  .sr-mobile-cell.done    { background: var(--green-bg); border-color: #bbf7d0; cursor: pointer; }
+  .sr-mobile-cell.done .sr-mobile-cell-date { color: var(--green-text); }
+  .sr-mobile-cell.due     { background: var(--blue-50); border: 1.5px dashed #93c5fd; }
+  .sr-mobile-cell.due .sr-mobile-cell-date { color: var(--blue-700); font-weight: 700; }
+  .sr-mobile-cell.overdue { background: var(--red-bg); border: 1.5px solid #fca5a5; }
+  .sr-mobile-cell.overdue .sr-mobile-cell-date { color: var(--red-text); font-weight: 700; text-transform: uppercase; font-size: 9px; }
+  .sr-mobile-cell.future  { background: var(--bg); border: 1px dashed var(--border); }
+  .sr-mobile-cell.na      { background: transparent; border: 1px solid var(--border-light); }
+  .sr-mobile-cell.na .sr-mobile-cell-icon { color: var(--border); font-size: 11px; }
+}
+@media (min-width: 769px) {
+  .sr-matrix-mobile { display: none !important; }
+}
+
+/* Report detail modal */
+.sr-detail-section { margin-bottom: 14px; }
+.sr-detail-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.sr-detail-val {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.sr-detail-val.issue { color: var(--red-text); font-weight: 600; }
+.sr-attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.sr-attach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: all 0.12s ease;
+}
+.sr-attach-item:hover {
+  border-color: var(--blue-600);
+  background: var(--blue-50);
+}
+.sr-attach-icon { font-size: 18px; flex-shrink: 0; }
+.sr-attach-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-attach-size { font-size: 11px; color: var(--muted); font-weight: 500; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -687,14 +954,25 @@
       </div>
     </div>
 
-    <!-- ───── GARAGE TAB (placeholder for v4-2) ───── -->
+    <!-- ───── GARAGE TAB ───── -->
     <div class="sr-tab-pane" id="paneGarage" style="display:none">
-      <div class="sr-list">
-        <div class="sr-empty">
-          <div class="sr-empty-icon">🚪</div>
-          <div style="font-size:14px;color:var(--text-2);font-weight:600;margin-bottom:6px">Garage matrix coming soon</div>
-          <div>For now, view Garage reports in <a href="#" class="card-link" data-jump="overview">Overview</a>.</div>
-        </div>
+      <div class="sr-matrix-toolbar">
+        <div class="sr-matrix-title">Garage Door Inspection Schedule</div>
+        <select class="sr-year-select" id="garageYear"></select>
+      </div>
+      <div class="sr-matrix-wrap">
+        <table class="sr-matrix" id="garageMatrix">
+          <thead><tr><th class="sr-row-th">Service</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="sr-matrix-mobile" id="garageMatrixMobile"></div>
+      </div>
+      <div class="sr-matrix-legend">
+        <span class="sr-legend-item"><span class="sr-legend-dot done"></span>Completed</span>
+        <span class="sr-legend-item"><span class="sr-legend-dot due"></span>Due this month</span>
+        <span class="sr-legend-item"><span class="sr-legend-dot overdue"></span>Overdue</span>
+        <span class="sr-legend-item"><span class="sr-legend-dot future"></span>Scheduled (future)</span>
+        <span class="sr-legend-item"><span class="sr-legend-dot na"></span>Not scheduled</span>
       </div>
     </div>
 
@@ -799,6 +1077,19 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     REPORT DETAIL MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-title" id="detailTitle">Report Detail</div>
+    <div id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="detailCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
@@ -1067,6 +1358,252 @@ function renderUpcoming() {
   }).join('');
 }
 
+// ─── RENDER: MATRIX (Garage / HVAC / Fire) ───────────────────
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// State per matrix tab
+const matrixState = {
+  garage: { year: new Date().getFullYear() },
+  hvac:   { year: new Date().getFullYear() },
+  fire:   { year: new Date().getFullYear() },
+};
+
+function getCategoriesForGroup(groupLabel) {
+  return categories.filter(c => c.group_label === groupLabel);
+}
+
+function reportsForCategoryYear(catId, year) {
+  return reports.filter(r => r.category_id === catId && r.period_year === year);
+}
+
+// Decide cell state for (category, year, month)
+// Returns: { state, report, isScheduled }
+function cellStateFor(cat, year, month) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const curY = today.getFullYear();
+  const curM = today.getMonth() + 1;
+
+  // Find report in this slot (latest if multiple)
+  const slotReports = reportsForCategoryYear(cat.id, year)
+    .filter(r => r.period_month === month)
+    .sort((a,b) => new Date(b.report_date) - new Date(a.report_date));
+  const report = slotReports[0] || null;
+
+  // Determine if this month is scheduled for this category
+  let isScheduled = false;
+  if (cat.frequency === 'monthly') {
+    isScheduled = true;
+  } else if (cat.frequency === 'quarterly') {
+    isScheduled = [3,6,9,12].includes(month);
+  } else if (cat.frequency === '6-monthly') {
+    isScheduled = [6,12].includes(month);
+  } else if (cat.frequency === 'annual') {
+    isScheduled = (month === 12);
+  } else if (cat.frequency === 'custom' && Array.isArray(cat.custom_months)) {
+    isScheduled = cat.custom_months.includes(month);
+  }
+
+  if (report) return { state: 'done', report, isScheduled };
+  if (!isScheduled) return { state: 'na', report: null, isScheduled: false };
+
+  // Scheduled but no report
+  // Past year → overdue
+  if (year < curY) return { state: 'overdue', report: null, isScheduled };
+  // Future year → future
+  if (year > curY) return { state: 'future', report: null, isScheduled };
+  // Same year:
+  if (month < curM) return { state: 'overdue', report: null, isScheduled };
+  if (month === curM) return { state: 'due', report: null, isScheduled };
+  return { state: 'future', report: null, isScheduled };
+}
+
+function fmtCellDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  return String(dt.getDate()).padStart(2,'0') + ' ' + MONTH_LABELS[dt.getMonth()];
+}
+
+function cellInner(cs) {
+  if (cs.state === 'done') {
+    return `<span class="sr-cell-icon">✓</span><span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
+  }
+  if (cs.state === 'due')     return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
+  if (cs.state === 'overdue') return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
+  if (cs.state === 'future')  return `<span class="sr-cell-icon">○</span>`;
+  return `<span class="sr-cell-icon">—</span>`;
+}
+
+function buildYearOptions(selectEl, currentYear) {
+  // Earliest year from reports, fallback this year
+  const years = [...new Set(reports.map(r => r.period_year))].sort((a,b) => b - a);
+  const thisY = new Date().getFullYear();
+  const minY = years.length ? Math.min(...years, thisY) : thisY;
+  const maxY = thisY + 1;
+  const options = [];
+  for (let y = maxY; y >= minY; y--) options.push(y);
+  selectEl.innerHTML = options.map(y =>
+    `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+  ).join('');
+}
+
+function renderMatrix(groupLabel, tableId, mobileId, year) {
+  const cats = getCategoriesForGroup(groupLabel);
+  const table = document.getElementById(tableId);
+  const mobile = document.getElementById(mobileId);
+  if (!table || !mobile) return;
+
+  if (!cats.length) {
+    table.innerHTML = `<tbody><tr><td style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No ${escHtml(groupLabel)} categories configured.</td></tr></tbody>`;
+    mobile.innerHTML = `<div class="sr-empty">No ${escHtml(groupLabel)} categories configured.</div>`;
+    return;
+  }
+
+  // Desktop table
+  const thead = `<thead><tr>
+    <th class="sr-row-th">Service</th>
+    ${MONTH_LABELS.map(m => `<th>${m}</th>`).join('')}
+  </tr></thead>`;
+
+  const tbody = '<tbody>' + cats.map(cat => {
+    const cells = MONTH_LABELS.map((_, i) => {
+      const month = i + 1;
+      const cs = cellStateFor(cat, year, month);
+      const clickAttr = cs.state === 'done' ? `onclick="openDetailModal('${cs.report.id}')"` : '';
+      return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
+    }).join('');
+    return `<tr>
+      <td class="sr-row-th">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
+      ${cells}
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  table.innerHTML = thead + tbody;
+
+  // Mobile cards
+  mobile.innerHTML = cats.map(cat => {
+    const months = MONTH_LABELS.map((label, i) => {
+      const month = i + 1;
+      const cs = cellStateFor(cat, year, month);
+      const clickAttr = cs.state === 'done' ? `onclick="openDetailModal('${cs.report.id}')"` : '';
+      const inner = cs.state === 'done'
+        ? `<span class="sr-mobile-cell-icon">✓</span><span class="sr-mobile-cell-date">${fmtCellDate(cs.report.report_date).split(' ')[0]}</span>`
+        : cs.state === 'due'     ? `<span class="sr-mobile-cell-icon">●</span><span class="sr-mobile-cell-date">DUE</span>`
+        : cs.state === 'overdue' ? `<span class="sr-mobile-cell-icon">!</span><span class="sr-mobile-cell-date">MISSED</span>`
+        : cs.state === 'future'  ? `<span class="sr-mobile-cell-icon">○</span>`
+        : `<span class="sr-mobile-cell-icon">—</span>`;
+      return `<div class="sr-mobile-cell ${cs.state}" ${clickAttr}>
+        <div class="sr-mobile-cell-month">${label}</div>
+        ${inner}
+      </div>`;
+    }).join('');
+    return `<div class="sr-mobile-row">
+      <div class="sr-mobile-row-title">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
+      <div class="sr-mobile-months">${months}</div>
+    </div>`;
+  }).join('');
+}
+
+// Year selector handlers
+function setupYearSelect(selectId, key, groupLabel, tableId, mobileId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  buildYearOptions(sel, matrixState[key].year);
+  sel.addEventListener('change', () => {
+    matrixState[key].year = parseInt(sel.value, 10);
+    renderMatrix(groupLabel, tableId, mobileId, matrixState[key].year);
+  });
+}
+
+// ─── REPORT DETAIL MODAL ─────────────────────────────────────
+const detailModal = document.getElementById('detailModal');
+
+window.openDetailModal = function(reportId) {
+  const r = reports.find(x => x.id === reportId);
+  if (!r) { showToast('Report not found.', 'err'); return; }
+  const cat = categories.find(c => c.id === r.category_id);
+  const contractor = contractors.find(c => c.id === r.contractor_id);
+
+  document.getElementById('detailTitle').textContent = r.title || 'Report Detail';
+
+  const atts = Array.isArray(r.attachments) ? r.attachments : [];
+  const attHtml = atts.length ? atts.map(a => {
+    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
+    return `<a class="sr-attach-item" href="#" onclick="downloadAttachment('${escHtml(a.path)}','${escHtml(a.name)}');return false;">
+      <span class="sr-attach-icon">${icon}</span>
+      <span class="sr-attach-name">${escHtml(a.name)}</span>
+      <span class="sr-attach-size">${fmtSize(a.size || 0)}</span>
+    </a>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 0">No attachments.</div>';
+
+  const liftLine = (cat?.group_label === 'Lift' && (r.lift_unit || r.service_type))
+    ? `<div class="sr-detail-section">
+         <div class="sr-detail-label">Lift Detail</div>
+         <div class="sr-detail-val">${r.lift_unit ? escHtml(r.lift_unit.replace('_',' ').toUpperCase()) : ''}${r.service_type ? ' · ' + escHtml(r.service_type) : ''}</div>
+       </div>` : '';
+
+  const issueLine = (isManagement && r.has_issues)
+    ? `<div class="sr-detail-section">
+         <div class="sr-detail-label">⚠️ Issue</div>
+         <div class="sr-detail-val issue">${escHtml(r.issue_description || 'Marked as having issues.')}</div>
+       </div>` : '';
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="sr-detail-section">
+      <div class="sr-detail-label">Category</div>
+      <div class="sr-detail-val">${escHtml(cat?.icon || '📋')} ${escHtml(cat?.name || '—')}</div>
+    </div>
+    <div class="sr-form-row">
+      <div class="sr-detail-section">
+        <div class="sr-detail-label">Report Date</div>
+        <div class="sr-detail-val">${fmtDate(r.report_date)}</div>
+      </div>
+      <div class="sr-detail-section">
+        <div class="sr-detail-label">Contractor</div>
+        <div class="sr-detail-val">${escHtml(contractor?.company || '—')}</div>
+      </div>
+    </div>
+    ${liftLine}
+    ${r.summary ? `<div class="sr-detail-section">
+      <div class="sr-detail-label">Summary</div>
+      <div class="sr-detail-val" style="white-space:pre-wrap">${escHtml(r.summary)}</div>
+    </div>` : ''}
+    ${issueLine}
+    <div class="sr-detail-section">
+      <div class="sr-detail-label">Attachments (${atts.length})</div>
+      <div class="sr-attach-list">${attHtml}</div>
+    </div>
+  `;
+  detailModal.classList.add('open');
+};
+
+window.downloadAttachment = async function(path, name) {
+  try {
+    const { data, error } = await supabase.storage
+      .from('service-reports')
+      .createSignedUrl(path, 60);
+    if (error) throw error;
+    const a = document.createElement('a');
+    a.href = data.signedUrl;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.download = name || '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'Failed to open file.', 'err');
+  }
+};
+
+document.getElementById('detailCloseBtn').addEventListener('click', () => {
+  detailModal.classList.remove('open');
+});
+detailModal.addEventListener('click', (e) => {
+  if (e.target === detailModal) detailModal.classList.remove('open');
+});
+
 // ─── RENDER: RECENT REPORTS (last 5) ─────────────────────────
 function renderRecent() {
   const body = document.getElementById('recentBody');
@@ -1128,6 +1665,10 @@ function switchTab(name) {
   });
   // sync display:flex on overview pane
   if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
+  // render matrix on tab switch
+  if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+  if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+  if (name === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
 }
 document.querySelectorAll('.sr-tab').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
@@ -1346,6 +1887,11 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
       renderCategoryGrid();
       renderUpcoming();
       renderRecent();
+      // refresh active matrix tab if any
+      const activeTab = document.querySelector('.sr-tab.active')?.dataset.tab;
+      if (activeTab === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+      if (activeTab === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+      if (activeTab === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
     }, 600);
 
   } catch (e) {
@@ -1369,6 +1915,8 @@ async function init() {
   renderCategoryGrid();
   renderUpcoming();
   renderRecent();
+  // matrix year selectors
+  setupYearSelect('garageYear', 'garage', 'Garage', 'garageMatrix', 'garageMatrixMobile');
 }
 init();
 
