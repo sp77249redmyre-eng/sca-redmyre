@@ -807,15 +807,27 @@ let reports = [];             // service_reports
 let lastByCategory = {};      // {category_id: latest report}
 
 // ─── LOADERS ─────────────────────────────────────────────────
+// Group display order — must match tab order
+const GROUP_ORDER = ['Lift', 'HVAC', 'Fire', 'Garage'];
+function groupRank(g) {
+  const idx = GROUP_ORDER.indexOf(g);
+  return idx === -1 ? 999 : idx;
+}
+
 async function loadCategories() {
   const { data, error } = await supabase
     .from('service_categories')
     .select('*')
     .eq('active', true)
-    .order('group_label')
     .order('position');
   if (error) { console.error(error); categories = []; return; }
-  categories = data || [];
+  // Sort by GROUP_ORDER first, then position within group
+  categories = (data || []).sort((a, b) => {
+    const ga = groupRank(a.group_label);
+    const gb = groupRank(b.group_label);
+    if (ga !== gb) return ga - gb;
+    return (a.position || 0) - (b.position || 0);
+  });
 }
 
 async function loadContractors() {
