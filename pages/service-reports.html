@@ -826,6 +826,23 @@
   line-height: 1.5;
 }
 .sr-detail-val.issue { color: var(--red-text); font-weight: 600; }
+.sr-detail-issue-box {
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-left: 4px solid #dc2626;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+.sr-detail-issue-box .sr-detail-label {
+  color: var(--red-text);
+  margin-bottom: 8px;
+  font-size: 11.5px;
+}
+.sr-detail-issue-box .sr-detail-val {
+  color: #7f1d1d;
+  font-weight: 500;
+}
 .sr-attach-list {
   display: flex;
   flex-wrap: wrap;
@@ -1606,15 +1623,15 @@ window.openDetailModal = function(reportId) {
          <div class="sr-detail-val">${r.lift_unit ? escHtml(r.lift_unit.replace('_',' ').toUpperCase()) : ''}${r.service_type ? ' · ' + escHtml(r.service_type) : ''}</div>
        </div>` : '';
 
-  // Issue Description: Summary와 동일하게 HTML 자동감지
+  // Issue Description: Summary와 동일하게 HTML 자동감지 + 빨간 박스로 강조
   let issueLine = '';
   if (isManagement && r.has_issues) {
     const raw = r.issue_description || 'Marked as having issues.';
     const hasHTML = /<[a-z][\s\S]*>/i.test(raw);
     const rendered = hasHTML ? raw : escHtml(raw).replace(/\n/g, '<br>');
-    issueLine = `<div class="sr-detail-section">
-         <div class="sr-detail-label">⚠️ Issue</div>
-         <div class="sr-detail-val issue" style="line-height:1.6">${rendered}</div>
+    issueLine = `<div class="sr-detail-section sr-detail-issue-box">
+         <div class="sr-detail-label">⚠️ Issue — Action Required</div>
+         <div class="sr-detail-val" style="line-height:1.7">${rendered}</div>
        </div>`;
   }
 
