@@ -1567,11 +1567,17 @@ window.openDetailModal = function(reportId) {
          <div class="sr-detail-val">${r.lift_unit ? escHtml(r.lift_unit.replace('_',' ').toUpperCase()) : ''}${r.service_type ? ' · ' + escHtml(r.service_type) : ''}</div>
        </div>` : '';
 
-  const issueLine = (isManagement && r.has_issues)
-    ? `<div class="sr-detail-section">
+  // Issue Description: Summary와 동일하게 HTML 자동감지
+  let issueLine = '';
+  if (isManagement && r.has_issues) {
+    const raw = r.issue_description || 'Marked as having issues.';
+    const hasHTML = /<[a-z][\s\S]*>/i.test(raw);
+    const rendered = hasHTML ? raw : escHtml(raw).replace(/\n/g, '<br>');
+    issueLine = `<div class="sr-detail-section">
          <div class="sr-detail-label">⚠️ Issue</div>
-         <div class="sr-detail-val issue">${escHtml(r.issue_description || 'Marked as having issues.')}</div>
-       </div>` : '';
+         <div class="sr-detail-val issue" style="line-height:1.6">${rendered}</div>
+       </div>`;
+  }
 
   // Summary: HTML 태그 포함 시 그대로 렌더, 평문이면 줄바꿈을 <br>로 변환
   let summaryHtml = '';
