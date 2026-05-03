@@ -984,7 +984,7 @@
      ============================================================ -->
 <div class="modal-backdrop" id="uploadModal">
   <div class="modal-box">
-    <div class="modal-title">＋ New Service Report</div>
+    <div class="modal-title" id="upModalTitle">＋ New Service Report</div>
 
     <div class="modal-field">
       <label class="modal-label">Category</label>
@@ -1042,6 +1042,7 @@
 
     <div class="modal-field">
       <label class="modal-label">Attachments <span style="font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0">(PDF, images — up to 10)</span></label>
+      <div class="sr-file-list" id="upExistingFileList" style="margin-bottom:8px"></div>
       <label class="sr-file-drop" for="upFiles">
         <div class="sr-file-drop-icon">📎</div>
         <div class="sr-file-drop-text">Tap to add files</div>
@@ -1097,7 +1098,11 @@
   <div class="modal-box" style="max-width:720px">
     <div class="modal-title" id="detailTitle">Report Detail</div>
     <div id="detailBody"></div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="justify-content:space-between">
+      <div id="detailAdminActions" style="display:none;gap:8px">
+        <button class="btn-secondary" id="detailEditBtn" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe">✏️ Edit</button>
+        <button class="btn-secondary" id="detailDeleteBtn" style="background:#fee2e2;color:#991b1b;border-color:#fecaca">🗑 Delete</button>
+      </div>
       <button class="btn-secondary" id="detailCloseBtn">Close</button>
     </div>
   </div>
@@ -1530,13 +1535,21 @@ function setupYearSelect(selectId, key, groupLabel, tableId, mobileId) {
 // ─── REPORT DETAIL MODAL ─────────────────────────────────────
 const detailModal = document.getElementById('detailModal');
 
+// State for current detail modal
+let currentDetailReportId = null;
+
 window.openDetailModal = function(reportId) {
   const r = reports.find(x => x.id === reportId);
   if (!r) { showToast('Report not found.', 'err'); return; }
+  currentDetailReportId = reportId;
   const cat = categories.find(c => c.id === r.category_id);
   const contractor = contractors.find(c => c.id === r.contractor_id);
 
   document.getElementById('detailTitle').textContent = r.title || 'Report Detail';
+
+  // Toggle admin actions
+  const adminBox = document.getElementById('detailAdminActions');
+  adminBox.style.display = isAdmin ? 'flex' : 'none';
 
   const atts = Array.isArray(r.attachments) ? r.attachments : [];
   const attHtml = atts.length ? atts.map(a => {
@@ -1638,6 +1651,52 @@ window.closeViewer = function() {
   document.getElementById('viewerContent').innerHTML = '';
 };
 
+// ─── EDIT / DELETE (admin only) ──────────────────────────────
+document.getElementById('detailEditBtn').addEventListener('click', () => {
+  if (!isAdmin || !currentDetailReportId) return;
+  const r = reports.find(x => x.id === currentDetailReportId);
+  if (!r) return;
+  detailModal.classList.remove('open');
+  openUploadModal('edit', r);
+});
+
+document.getElementById('detailDeleteBtn').addEventListener('click', async () => {
+  if (!isAdmin || !currentDetailReportId) return;
+  const r = reports.find(x => x.id === currentDetailReportId);
+  if (!r) return;
+  if (!confirm(`⚠️ Permanently delete this report?\n\n"${r.title}"\n\nAll attachments will also be removed.\nThis cannot be undone.`)) return;
+
+  try {
+    // 1) Remove all attachments from Storage
+    const atts = Array.isArray(r.attachments) ? r.attachments : [];
+    if (atts.length) {
+      const paths = atts.map(a => a.path).filter(Boolean);
+      if (paths.length) {
+        const { error: stErr } = await supabase.storage.from('service-reports').remove(paths);
+        if (stErr) console.warn('Storage delete warning:', stErr);
+      }
+    }
+    // 2) Delete DB row
+    const { error: delErr } = await supabase.from('service_reports').delete().eq('id', r.id);
+    if (delErr) throw delErr;
+
+    showToast('Report deleted.', 'ok');
+    detailModal.classList.remove('open');
+    currentDetailReportId = null;
+    await loadReports();
+    renderCategoryGrid();
+    renderUpcoming();
+    renderRecent();
+    const activeTab = document.querySelector('.sr-tab.active')?.dataset.tab;
+    if (activeTab === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+    if (activeTab === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+    if (activeTab === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+  } catch (e) {
+    console.error('Delete failed:', e);
+    showToast(e.message || 'Failed to delete report.', 'err');
+  }
+});
+
 document.getElementById('detailCloseBtn').addEventListener('click', () => {
   detailModal.classList.remove('open');
 });
@@ -1737,6 +1796,9 @@ const upProgressBar = document.getElementById('upProgressBar');
 const upProgressFill= document.getElementById('upProgressFill');
 
 let pendingFiles = [];
+let existingAttachments = [];   // edit 모드에서 기존 파일 (수정 시작 시점 스냅샷)
+let removedExistingPaths = [];  // edit 모드에서 사용자가 ✕ 누른 기존 파일 경로
+let editingReportId = null;     // null = create, 값 있으면 = edit
 const MAX_FILES = 10;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -1747,29 +1809,90 @@ function populateUploadDropdowns() {
     contractors.map(c => `<option value="${c.id}">${escHtml(c.company)}</option>`).join('');
 }
 
-function openUploadModal() {
-  // reset
-  upCategoryEl.value = '';
-  const today = new Date();
-  upDateEl.value = today.toISOString().slice(0,10);
-  upContractorEl.value = '';
-  upTitleEl.value = '';
-  upSummaryEl.value = '';
-  upHasIssuesEl.checked = false;
-  upIssueBox.style.display = 'none';
-  upIssueDescEl.value = '';
-  upLiftRow.style.display = 'none';
-  upLiftUnitEl.value = '';
-  upServiceTypeEl.value = '';
+function openUploadModal(mode = 'create', report = null) {
+  editingReportId = (mode === 'edit' && report) ? report.id : null;
+  removedExistingPaths = [];
   pendingFiles = [];
+
+  if (mode === 'edit' && report) {
+    document.getElementById('upModalTitle').textContent = '✏️ Edit Service Report';
+    document.getElementById('upSaveBtn').textContent = 'Save Changes';
+    upCategoryEl.value = report.category_id || '';
+    upDateEl.value = report.report_date || '';
+    upContractorEl.value = report.contractor_id || '';
+    upTitleEl.value = report.title || '';
+    upSummaryEl.value = report.summary || '';
+    upHasIssuesEl.checked = !!report.has_issues;
+    upIssueBox.style.display = report.has_issues ? '' : 'none';
+    upIssueDescEl.value = report.issue_description || '';
+    const cat = categories.find(c => c.id === report.category_id);
+    if (cat?.group_label === 'Lift') {
+      upLiftRow.style.display = 'grid';
+      upLiftUnitEl.value = report.lift_unit || '';
+      upServiceTypeEl.value = report.service_type || '';
+    } else {
+      upLiftRow.style.display = 'none';
+      upLiftUnitEl.value = '';
+      upServiceTypeEl.value = '';
+    }
+    existingAttachments = Array.isArray(report.attachments) ? [...report.attachments] : [];
+  } else {
+    document.getElementById('upModalTitle').textContent = '＋ New Service Report';
+    document.getElementById('upSaveBtn').textContent = 'Save Report';
+    upCategoryEl.value = '';
+    const today = new Date();
+    upDateEl.value = today.toISOString().slice(0,10);
+    upContractorEl.value = '';
+    upTitleEl.value = '';
+    upSummaryEl.value = '';
+    upHasIssuesEl.checked = false;
+    upIssueBox.style.display = 'none';
+    upIssueDescEl.value = '';
+    upLiftRow.style.display = 'none';
+    upLiftUnitEl.value = '';
+    upServiceTypeEl.value = '';
+    existingAttachments = [];
+  }
+
+  renderExistingFileList();
   renderFileList();
   upProgressBar.style.display = 'none';
   upProgressFill.style.width = '0%';
   upModal.classList.add('open');
 }
-function closeUploadModal() { upModal.classList.remove('open'); }
+function closeUploadModal() {
+  upModal.classList.remove('open');
+  editingReportId = null;
+  existingAttachments = [];
+  removedExistingPaths = [];
+  pendingFiles = [];
+}
 
-document.getElementById('uploadBtn').addEventListener('click', openUploadModal);
+// Render existing attachments (edit mode) with ✕ to mark for removal
+function renderExistingFileList() {
+  const el = document.getElementById('upExistingFileList');
+  if (!el) return;
+  if (!existingAttachments.length) { el.innerHTML = ''; return; }
+  el.innerHTML = existingAttachments.map((a, i) => {
+    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
+    return `<div class="sr-file-pill" style="background:#f0f9ff;border-color:#bae6fd">
+      <span style="flex-shrink:0">${icon}</span>
+      <span class="sr-file-pill-name">${escHtml(a.name)}</span>
+      <span class="sr-file-pill-size">${fmtSize(a.size || 0)}</span>
+      <button class="sr-file-pill-rm" data-existing-idx="${i}" type="button" title="Remove">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.sr-file-pill-rm').forEach(b => {
+    b.addEventListener('click', () => {
+      const idx = parseInt(b.dataset.existingIdx, 10);
+      const removed = existingAttachments.splice(idx, 1)[0];
+      if (removed && removed.path) removedExistingPaths.push(removed.path);
+      renderExistingFileList();
+    });
+  });
+}
+
+document.getElementById('uploadBtn').addEventListener('click', () => openUploadModal('create'));
 document.getElementById('upCancelBtn').addEventListener('click', closeUploadModal);
 
 upHasIssuesEl.addEventListener('change', () => {
@@ -1851,6 +1974,8 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
 
   const saveBtn = document.getElementById('upSaveBtn');
   const cancelBtn = document.getElementById('upCancelBtn');
+  const isEdit = !!editingReportId;
+  const originalSaveText = isEdit ? 'Save Changes' : 'Save Report';
   saveBtn.disabled = true; cancelBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
   upProgressBar.style.display = 'block';
@@ -1861,34 +1986,46 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
     const period_year = dt.getFullYear();
     const period_month = dt.getMonth() + 1;
 
-    // 1) Insert report row first (to get id for storage path)
-    const { data: inserted, error: insErr } = await supabase
-      .from('service_reports')
-      .insert({
-        category_id: categoryId,
-        contractor_id: contractorId,
-        report_date: reportDate,
-        period_year,
-        period_month,
-        title,
-        summary,
-        has_issues: hasIssues,
-        issue_description: issueDesc,
-        lift_unit: liftUnit,
-        service_type: serviceType,
-        attachments: [],
-        uploaded_by: user.id,
-      })
-      .select()
-      .single();
+    let reportId;
 
-    if (insErr) throw insErr;
-    const reportId = inserted.id;
+    if (isEdit) {
+      // EDIT MODE
+      reportId = editingReportId;
 
-    upProgressFill.style.width = '15%';
+      // 1a) Remove existing files marked for deletion from Storage
+      if (removedExistingPaths.length) {
+        const { error: rmErr } = await supabase.storage.from('service-reports').remove(removedExistingPaths);
+        if (rmErr) console.warn('Storage remove warning:', rmErr);
+      }
+      upProgressFill.style.width = '15%';
+    } else {
+      // CREATE MODE — insert empty row first to get id
+      const { data: inserted, error: insErr } = await supabase
+        .from('service_reports')
+        .insert({
+          category_id: categoryId,
+          contractor_id: contractorId,
+          report_date: reportDate,
+          period_year,
+          period_month,
+          title,
+          summary,
+          has_issues: hasIssues,
+          issue_description: issueDesc,
+          lift_unit: liftUnit,
+          service_type: serviceType,
+          attachments: [],
+          uploaded_by: user.id,
+        })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      reportId = inserted.id;
+      upProgressFill.style.width = '15%';
+    }
 
-    // 2) Upload files to storage
-    const uploaded = [];
+    // 2) Upload new files to storage
+    const newlyUploaded = [];
     for (let i = 0; i < pendingFiles.length; i++) {
       const f = pendingFiles[i];
       const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -1897,32 +2034,49 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
         .from('service-reports')
         .upload(path, f, { contentType: f.type, upsert: false });
       if (upErr) throw upErr;
-      uploaded.push({
+      newlyUploaded.push({
         path,
         name: f.name,
         size: f.size,
         type: f.type,
       });
-      const pct = 15 + Math.round(((i+1) / pendingFiles.length) * 75);
+      const pct = 15 + Math.round(((i+1) / Math.max(pendingFiles.length, 1)) * 70);
       upProgressFill.style.width = pct + '%';
     }
 
-    // 3) Update report row with attachments JSONB
-    if (uploaded.length) {
-      const { error: updErr } = await supabase
-        .from('service_reports')
-        .update({ attachments: uploaded })
-        .eq('id', reportId);
-      if (updErr) throw updErr;
-    }
+    // 3) Final attachments = existing (kept) + newly uploaded
+    const finalAttachments = isEdit
+      ? [...existingAttachments, ...newlyUploaded]
+      : newlyUploaded;
+
+    // 4) Update report row
+    const updatePayload = {
+      category_id: categoryId,
+      contractor_id: contractorId,
+      report_date: reportDate,
+      period_year,
+      period_month,
+      title,
+      summary,
+      has_issues: hasIssues,
+      issue_description: issueDesc,
+      lift_unit: liftUnit,
+      service_type: serviceType,
+      attachments: finalAttachments,
+    };
+    const { error: updErr } = await supabase
+      .from('service_reports')
+      .update(updatePayload)
+      .eq('id', reportId);
+    if (updErr) throw updErr;
 
     upProgressFill.style.width = '100%';
-    showToast('Report saved.', 'ok');
+    showToast(isEdit ? 'Report updated.' : 'Report saved.', 'ok');
 
     setTimeout(async () => {
       closeUploadModal();
       saveBtn.disabled = false; cancelBtn.disabled = false;
-      saveBtn.textContent = 'Save Report';
+      saveBtn.textContent = originalSaveText;
       // refresh
       await loadReports();
       renderCategoryGrid();
@@ -1939,7 +2093,7 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
     console.error(e);
     showToast(e.message || 'Failed to save report.', 'err');
     saveBtn.disabled = false; cancelBtn.disabled = false;
-    saveBtn.textContent = 'Save Report';
+    saveBtn.textContent = originalSaveText;
     upProgressBar.style.display = 'none';
   }
 });
