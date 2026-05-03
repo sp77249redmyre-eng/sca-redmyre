@@ -272,6 +272,7 @@ const matrixState = {
   garage: { year: new Date().getFullYear() },
   hvac:   { year: new Date().getFullYear() },
   fire:   { year: new Date().getFullYear() },
+  lift:   { year: new Date().getFullYear(), filter: 'all' },
 };
 
 function getCategoriesForGroup(groupLabel) {
@@ -419,6 +420,228 @@ function setupYearSelect(selectId, key, groupLabel, tableId, mobileId) {
     matrixState[key].year = parseInt(sel.value, 10);
     renderMatrix(groupLabel, tableId, mobileId, matrixState[key].year);
   });
+}
+
+// ─── LIFT DASHBOARD ──────────────────────────────────────────
+const LIFT_TYPE_LABEL = {
+  pm: 'PM',
+  callout: 'Callout',
+  repair: 'Repair',
+  notify: 'Notify',
+  inspection: 'Inspection',
+};
+const LIFT_TYPE_ICON = {
+  pm: '🛠',
+  callout: '📞',
+  repair: '🔧',
+  notify: '🚨',
+  inspection: '🔍',
+};
+
+function getLiftReports() {
+  // All reports under Lift group
+  const liftCats = categories.filter(c => c.group_label === 'Lift').map(c => c.id);
+  return reports.filter(r => liftCats.includes(r.category_id));
+}
+
+function liftReportsForYear(year) {
+  return getLiftReports().filter(r => r.period_year === year);
+}
+
+function setupLiftDashboard() {
+  const sel = document.getElementById('liftYear');
+  if (!sel) return;
+  buildYearOptions(sel, matrixState.lift.year);
+  sel.addEventListener('change', () => {
+    matrixState.lift.year = parseInt(sel.value, 10);
+    renderLiftDashboard();
+  });
+  // filter buttons
+  const filterEl = document.getElementById('liftFilter');
+  if (filterEl) {
+    filterEl.addEventListener('click', e => {
+      const btn = e.target.closest('.sr-lift-filter-btn');
+      if (!btn) return;
+      filterEl.querySelectorAll('.sr-lift-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+      matrixState.lift.filter = btn.dataset.filter;
+      renderLiftTimeline();
+    });
+  }
+}
+
+function renderLiftDashboard() {
+  renderLiftStats();
+  renderLiftChart();
+  renderLiftTimeline();
+}
+
+function renderLiftStats() {
+  const el = document.getElementById('liftStats');
+  if (!el) return;
+  const year = matrixState.lift.year;
+  const yearReports = liftReportsForYear(year);
+
+  // Tally per lift_unit and service_type
+  // service_type values: pm, callout, repair, notify, inspection
+  const stats = {
+    lift_1: { pm: 0, callout: 0, repair: 0, other: 0 },
+    lift_2: { pm: 0, callout: 0, repair: 0, other: 0 },
+  };
+  yearReports.forEach(r => {
+    const unit = r.lift_unit;
+    const type = r.service_type;
+    if (!unit || !type) return;
+    const targets = unit === 'both' ? ['lift_1', 'lift_2'] : (stats[unit] ? [unit] : []);
+    targets.forEach(u => {
+      if (type === 'pm' || type === 'callout' || type === 'repair') {
+        stats[u][type] += 1;
+      } else {
+        stats[u].other += 1;
+      }
+    });
+  });
+
+  const cards = [
+    { key: 'pm',      label: 'Maintenance', icon: '🛠', color: '#16a34a' },
+    { key: 'callout', label: 'Callouts',    icon: '📞', color: '#f59e0b' },
+    { key: 'repair',  label: 'Repairs',     icon: '🔧', color: '#dc2626' },
+    { key: 'other',   label: 'Other',       icon: '📋', color: '#64748b' },
+  ];
+
+  el.innerHTML = cards.map(c => {
+    const v1 = stats.lift_1[c.key];
+    const v2 = stats.lift_2[c.key];
+    const warn = (c.key === 'callout' || c.key === 'repair') && v2 >= 4;
+    return `
+      <div class="sr-lift-stat" style="--bar-color:${c.color}">
+        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${c.icon}</span>${escHtml(c.label)}</div>
+        <div class="sr-lift-stat-rows">
+          <div class="sr-lift-stat-row lift1">
+            <span class="sr-lift-stat-row-label">Lift 1</span>
+            <span class="sr-lift-stat-row-value">${v1}</span>
+          </div>
+          <div class="sr-lift-stat-row lift2">
+            <span class="sr-lift-stat-row-label">Lift 2</span>
+            <span class="sr-lift-stat-row-value ${warn ? 'warn' : ''}">${v2}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLiftChart() {
+  const el = document.getElementById('liftChart');
+  if (!el) return;
+  const year = matrixState.lift.year;
+  const yearReports = liftReportsForYear(year);
+
+  // Per-month counts
+  const counts = {};
+  for (let m = 1; m <= 12; m++) counts[m] = { lift_1: 0, lift_2: 0 };
+  yearReports.forEach(r => {
+    const m = r.period_month;
+    if (!m || m < 1 || m > 12) return;
+    if (r.lift_unit === 'lift_1') counts[m].lift_1 += 1;
+    else if (r.lift_unit === 'lift_2') counts[m].lift_2 += 1;
+    else if (r.lift_unit === 'both') {
+      counts[m].lift_1 += 1;
+      counts[m].lift_2 += 1;
+    }
+  });
+
+  // Find max
+  let max = 0;
+  for (let m = 1; m <= 12; m++) {
+    const total = counts[m].lift_1 + counts[m].lift_2;
+    if (total > max) max = total;
+  }
+  if (max === 0) max = 1;
+
+  el.innerHTML = MONTH_LABELS.map((label, i) => {
+    const m = i + 1;
+    const v1 = counts[m].lift_1;
+    const v2 = counts[m].lift_2;
+    const total = v1 + v2;
+    const isAnomaly = total >= 3;
+    const h1 = (v1 / max) * 100;
+    const h2 = (v2 / max) * 100;
+    const barLift1 = v1 > 0 ? `<div class="sr-lift-bar lift1" style="height:${h1}%" title="Lift 1 — ${v1}"></div>` : '';
+    const barLift2 = v2 > 0 ? `<div class="sr-lift-bar lift2" style="height:${h2}%" title="Lift 2 — ${v2}"></div>` : '';
+    const countLabel = total > 0 ? `<span class="sr-lift-bar-count">${total}</span>` : '';
+    return `
+      <div class="sr-lift-bar-col">
+        ${countLabel}
+        <div class="sr-lift-bar-stack ${isAnomaly ? 'anomaly' : ''}">
+          ${barLift2}
+          ${barLift1}
+        </div>
+        <div class="sr-lift-bar-month">${label}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLiftTimeline() {
+  const el = document.getElementById('liftTimeline');
+  if (!el) return;
+  const year = matrixState.lift.year;
+  const filter = matrixState.lift.filter || 'all';
+  let list = liftReportsForYear(year);
+
+  // Apply filter
+  if (filter === 'lift_1') {
+    list = list.filter(r => r.lift_unit === 'lift_1' || r.lift_unit === 'both');
+  } else if (filter === 'lift_2') {
+    list = list.filter(r => r.lift_unit === 'lift_2' || r.lift_unit === 'both');
+  } else if (filter === 'callout') {
+    list = list.filter(r => ['callout', 'repair', 'notify'].includes(r.service_type));
+  }
+
+  // Sort by date desc
+  list.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="sr-lift-empty">
+        <div class="sr-lift-empty-icon">📋</div>
+        <div>No service records for ${year}${filter !== 'all' ? ' (current filter)' : ''}.</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(r => {
+    const d = new Date(r.report_date);
+    const dayN = d.getDate();
+    const monthLabel = MONTH_LABELS[d.getMonth()];
+    const liftClass = r.lift_unit === 'both' ? 'lift1' : (r.lift_unit || 'lift1');
+    const liftLabel = r.lift_unit === 'both' ? 'Lift 1+2' : (r.lift_unit === 'lift_1' ? 'Lift 1' : (r.lift_unit === 'lift_2' ? 'Lift 2' : '—'));
+    const typeLabel = LIFT_TYPE_LABEL[r.service_type] || r.service_type || '—';
+    const typeClass = r.service_type || '';
+    const summary = (r.summary || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const fallback = r.title ? escHtml(r.title) : '';
+    const hasAttach = Array.isArray(r.attachments) && r.attachments.length > 0;
+    const attachLabel = hasAttach
+      ? `<span class="sr-lift-event-attach">📎 ${r.attachments.length} file${r.attachments.length > 1 ? 's' : ''}</span>`
+      : `<span class="sr-lift-event-attach sr-lift-event-attach-empty">No attachment</span>`;
+    const clickable = hasAttach || true; // all open detail modal
+    return `
+      <div class="sr-lift-event ${!clickable ? 'sr-lift-event-nopdf' : ''}" onclick="openDetailModal('${r.id}')">
+        <div class="sr-lift-event-date">
+          <span class="sr-lift-event-date-day">${dayN}</span>
+          ${escHtml(monthLabel)} ${d.getFullYear()}
+        </div>
+        <div class="sr-lift-event-body">
+          <div class="sr-lift-event-row1">
+            <span class="sr-lift-event-lift ${liftClass}">${escHtml(liftLabel)}</span>
+            <span class="sr-lift-event-type ${typeClass}">${escHtml(typeLabel)}</span>
+          </div>
+          <div class="sr-lift-event-summary">${escHtml(summary || fallback)}</div>
+        </div>
+        ${attachLabel}
+      </div>
+    `;
+  }).join('');
 }
 
 // ─── REPORT DETAIL MODAL ─────────────────────────────────────
@@ -586,6 +809,7 @@ document.getElementById('detailDeleteBtn').addEventListener('click', async () =>
     if (activeTab === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
     if (activeTab === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
     if (activeTab === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+    if (activeTab === 'lift')   renderLiftDashboard();
   } catch (e) {
     console.error('Delete failed:', e);
     showToast(e.message || 'Failed to delete report.', 'err');
@@ -664,6 +888,7 @@ function switchTab(name) {
   if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
   if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
   if (name === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+  if (name === 'lift')   renderLiftDashboard();
 }
 document.querySelectorAll('.sr-tab').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
@@ -994,6 +1219,10 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
       if (activeTab === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
       if (activeTab === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
       if (activeTab === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+      if (activeTab === 'lift')   renderLiftDashboard();
+      // rebuild lift year options if needed (new report may add a new year)
+      const liftSel = document.getElementById('liftYear');
+      if (liftSel) buildYearOptions(liftSel, matrixState.lift?.year || new Date().getFullYear());
     }, 600);
 
   } catch (e) {
@@ -1019,6 +1248,10 @@ async function init() {
   renderRecent();
   // matrix year selectors
   setupYearSelect('garageYear', 'garage', 'Garage', 'garageMatrix', 'garageMatrixMobile');
+  setupYearSelect('hvacYear',   'hvac',   'HVAC',   'hvacMatrix',   'hvacMatrixMobile');
+  setupYearSelect('fireYear',   'fire',   'Fire',   'fireMatrix',   'fireMatrixMobile');
+  // lift dashboard
+  setupLiftDashboard();
 }
 init();
 
