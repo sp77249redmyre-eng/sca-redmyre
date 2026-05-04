@@ -684,8 +684,8 @@ function renderLiftMatrix() {
     return false;
   }
 
-  // 헤더
-  let headHtml = '<thead><tr><th class="sr-mx-rowhead">Service</th>';
+  // 헤더 (Group 자리 + Service 자리 + 12개월 = 14컬럼, 데이터 행과 일치)
+  let headHtml = '<thead><tr><th class="sr-mx-grouphead"></th><th class="sr-mx-rowhead">Service</th>';
   slots.forEach(s => {
     const yearSuffix = (s.month <= 4) ? `<span class="sr-mx-year">'${String(s.year).slice(-2)}</span>` : '';
     headHtml += `<th class="sr-mx-month">${s.label}${yearSuffix}</th>`;
