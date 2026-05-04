@@ -41,7 +41,7 @@ function daysBetween(a, b) {
 
 // ─── ROLE-BASED UI ───────────────────────────────────────────
 if (isAdmin) {
-  // Categories 옆 + 각 탭 Add 버튼 admin만 보이게
+  // Categories + tab Add buttons visible to admin only
   ['newCategoryBtn', 'addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.style.display = 'inline-flex';
@@ -103,7 +103,7 @@ async function loadReports() {
   }
 }
 
-// 매트릭스 셀 상태/메모 (admin이 수동 입력) — key: `${category_id}|${year}|${month}`
+// Matrix cell status/note (admin manual input) — key: `${category_id}|${year}|${month}`
 let cellNotes = {};
 
 async function loadCellNotes() {
@@ -186,7 +186,7 @@ function classifyDue(due, today) {
 }
 
 // ─── RENDER: CATEGORY GRID ───────────────────────────────────
-// 그룹 단위 카드 렌더링 — 같은 group_label의 카테고리들을 1장의 카드로 묶어 표시
+// Group-level card rendering — categories with same group_label merged into one card
 const GROUP_DISPLAY_ORDER = ['Lift', 'HVAC', 'Fire', 'Garage'];
 const GROUP_DEFAULT_ICONS = {
   'Lift':         '🛗',
@@ -208,7 +208,7 @@ function renderCategoryGrid() {
     return;
   }
 
-  // 그룹별로 카테고리 묶기
+  // Group categories by group_label
   const groupMap = {};
   categories.forEach(cat => {
     const g = cat.group_label;
@@ -216,7 +216,7 @@ function renderCategoryGrid() {
     groupMap[g].push(cat);
   });
 
-  // 그룹 표시 순서: 기본 4개 먼저, 그 다음은 알파벳
+  // Group display order: default 4 first, then alphabetical
   const groupKeys = Object.keys(groupMap);
   groupKeys.sort((a, b) => {
     const ia = GROUP_DISPLAY_ORDER.indexOf(a);
@@ -232,7 +232,7 @@ function renderCategoryGrid() {
   grid.innerHTML = groupKeys.map(group => {
     const cats = groupMap[group];
 
-    // 그룹 전체에서 가장 최근 점검 (모든 카테고리 통틀어)
+    // Latest service across all categories in group
     let latestReport = null;
     cats.forEach(c => {
       const r = lastByCategory[c.id];
@@ -242,8 +242,8 @@ function renderCategoryGrid() {
       }
     });
 
-    // 그룹 내 어떤 카테고리든 due/overdue/first가 있으면 가장 심각한 것 표시
-    // 우선순위: overdue > due > first > ok
+    // Show most severe status across all categories in group
+    // Priority: overdue > due > first > ok
     let groupWarning = null;
     cats.forEach(c => {
       const n = nextDueFor(c);
@@ -251,7 +251,7 @@ function renderCategoryGrid() {
         if (!groupWarning || groupWarning.priority < 3) {
           groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
         } else if (groupWarning.status === 'overdue' && Math.abs(n.diff) > Math.abs(groupWarning.diff)) {
-          // 더 오래 overdue
+          // Longer overdue
           groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
         }
       } else if (n.status === 'due') {
@@ -265,20 +265,20 @@ function renderCategoryGrid() {
       }
     });
 
-    // 그룹 내 모든 리포트 (올해)
+    // All reports in group (current year)
     const groupCatIds = new Set(cats.map(c => c.id));
     const yearCount = reports.filter(r =>
       groupCatIds.has(r.category_id) && r.period_year === yearNow
     ).length;
 
-    // 카테고리 수
+    // Category count
     const catCount = cats.length;
     const catCountTxt = catCount === 1 ? '1 service' : `${catCount} services`;
 
-    // 그룹 아이콘 — 카테고리가 1개면 그 아이콘, 여러 개면 기본 그룹 아이콘
+    // Group icon — single category uses its icon, multiple uses default group icon
     const groupIcon = (catCount === 1 && cats[0].icon) ? cats[0].icon : (GROUP_DEFAULT_ICONS[group] || '📋');
 
-    // Vendor — 그룹 내 default_contractor 첫 번째 (대부분 같은 회사)
+    // Vendor — first default_contractor in group (usually same company)
     let vendor = '—';
     for (const c of cats) {
       const ct = contractors.find(x => x.id === c.default_contractor_id);
@@ -287,7 +287,7 @@ function renderCategoryGrid() {
 
     const lastTxt = latestReport ? fmtDate(latestReport.report_date) : 'Never';
 
-    // 경고 박스
+    // Warning box
     let warning = '';
     if (isManagement && groupWarning) {
       if (groupWarning.status === 'overdue') {
@@ -398,15 +398,15 @@ function cellStateFor(cat, year, month) {
   const report = slotReports[0] || null;
 
   // Determine if this month is scheduled for this category
-  // 6-monthly/quarterly/annual은 마지막 점검 날짜 기준으로 동적 계산
-  // (Fire 6-Monthly가 3/9월에 받으면 6/12월이 아니라 3/9월에 표시)
+  // 6-monthly/quarterly/annual calculated dynamically from last service date
+  // (Fire 6-Monthly received in Mar/Sep shows on Mar/Sep, not Jun/Dec)
   let isScheduled = false;
   if (cat.frequency === 'monthly') {
     isScheduled = true;
   } else if (cat.frequency === 'quarterly') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // 마지막 점검 달 기준으로 +3,+6,+9... 패턴
+      // Last service month + 3,+6,+9... pattern
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = ((month - baseMonth) % 3 + 3) % 3 === 0;
     } else {
@@ -415,7 +415,7 @@ function cellStateFor(cat, year, month) {
   } else if (cat.frequency === '6-monthly') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // 마지막 점검 달 기준으로 +6 패턴 (3월 받으면 3/9월, 6월 받으면 6/12월)
+      // Last service month + 6 pattern (Mar -> Mar/Sep, Jun -> Jun/Dec)
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = ((month - baseMonth) % 6 + 6) % 6 === 0;
     } else {
@@ -424,7 +424,7 @@ function cellStateFor(cat, year, month) {
   } else if (cat.frequency === 'annual') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // 마지막 점검 달과 같은 달
+      // Same month as last service
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = (month === baseMonth);
     } else {
@@ -436,7 +436,7 @@ function cellStateFor(cat, year, month) {
 
   if (report) return { state: 'done', report, isScheduled, note: null };
 
-  // 사장님이 수동 입력한 상태 메모가 있으면 그게 우선 (done 셀 제외)
+  // Manual cell note takes priority (except for done cells)
   const note = getCellNote(cat.id, year, month);
   if (note) {
     return { state: note.status, report: null, isScheduled, note };
@@ -515,7 +515,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       if (cs.state === 'done') {
         clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
       } else if (isAdmin) {
-        // admin: 빈 셀 클릭 → 셀 상태/메모 입력 모달
+        // admin: empty cell click -> cell status/note modal
         clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})" style="cursor:pointer"`;
       }
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
@@ -752,10 +752,10 @@ function renderLiftStats() {
 
 /* ─────────────────────────────────────────────
    Lift Service Matrix
-   행: Lift 1 Maintenance / Callout / (Repair/Investigation은 데이터 있을 때만)
+   Rows: Lift 1 Maintenance / Callout / (Repair/Investigation only if data exists)
        Lift 2 Maintenance / Callout / Repair / Investigation
-   열: 12개월 (May → Apr, contract year 순서)
-   셀 클릭: 해당 월/lift/type 리포트 모달 (단일=바로, 복수=리스트)
+   Columns: 12 months (May -> Apr, contract year order)
+   Cell click: opens report modal for that month/lift/type (single=direct, multi=list)
    ───────────────────────────────────────────── */
 const LIFT_SERVICE_TYPES = [
   { key: 'pm',            label: 'Maintenance',   cls: 'ok'    },
@@ -765,13 +765,13 @@ const LIFT_SERVICE_TYPES = [
 ];
 
 function classifyLiftReport(r) {
-  // service_type이 있으면 그대로 사용, 없으면 빈 값
+  // Use service_type if present, else empty
   const t = (r.service_type || '').toLowerCase();
   if (!t) return null;
   if (t === 'pm' || t.includes('maint')) return 'pm';
   if (t.includes('call')) return 'callout';
   if (t.includes('repair') || t.includes('notify')) return 'repair';
-  // 그 외 (other, inspection, shutdown 등) → Investigation
+  // Otherwise (other, inspection, shutdown, etc.) -> Investigation
   return 'investigation';
 }
 
@@ -782,7 +782,7 @@ function renderLiftMatrix() {
   const range = liftContractYearRange(cy);
   const yearReports = liftReportsForContractYear(cy);
 
-  // 12개월 슬롯 (May→Apr 순서)
+  // 12 month slots (May -> Apr order)
   const slots = [];
   for (let i = 0; i < 12; i++) {
     const m = LIFT_CONTRACT_MONTHS[i];
@@ -808,19 +808,19 @@ function renderLiftMatrix() {
     });
   });
 
-  // 어느 행을 보일지 결정 — 데이터 있는 type만 표시 (단, Maintenance/Callout은 항상 표시)
+  // Which rows to show — only types with data (Maintenance/Callout always shown)
   function rowsForUnit(unit) {
     return LIFT_SERVICE_TYPES.filter(t => {
       if (t.key === 'pm' || t.key === 'callout') return true;
-      // repair/investigation은 해당 unit에 데이터 있을 때만
+      // repair/investigation only when that unit has data
       return Object.keys(bucket[unit][t.key]).length > 0;
     });
   }
   const rows1 = rowsForUnit('lift_1');
   const rows2 = rowsForUnit('lift_2');
 
-  // PM 누락 셀 판정 — 해당 월에 PM이 없으면 critical
-  // (단, contract 시작 이후 ~ 오늘까지의 월만 — 미래 월은 빈 셀)
+  // PM missing cell — critical if no PM that month
+  // (only months from contract start to today — future months empty)
   const today = new Date();
   const todayY = today.getFullYear();
   const todayM = today.getMonth() + 1;
@@ -830,7 +830,7 @@ function renderLiftMatrix() {
     return false;
   }
 
-  // 헤더 (Group 자리 + Service 자리 + 12개월 = 14컬럼, 데이터 행과 일치)
+  // Header (Group + Service + 12 months = 14 cols, matching data rows)
   let headHtml = '<thead><tr><th class="sr-mx-grouphead"></th><th class="sr-mx-rowhead">Service</th>';
   slots.forEach(s => {
     const yearSuffix = (s.month <= 4) ? `<span class="sr-mx-year">'${String(s.year).slice(-2)}</span>` : '';
@@ -853,12 +853,12 @@ function renderLiftMatrix() {
         let cls = 'sr-mx-cell';
         let content = '';
         if (cnt === 0) {
-          // PM 누락 = critical (과거/현재 월만)
+          // PM missing = critical (past/current months only)
           if (t.key === 'pm' && isPastOrCurrent(s)) {
-            // 다만 contract 시작 월 이전은 제외
+            // Excluding months before contract start
             const slotIdx = LIFT_CONTRACT_MONTHS.indexOf(s.month);
-            // PM은 보통 분기마다 — 데이터 보면 5/7/9/11/2/3 패턴. 매월 강제 안 함.
-            // → 그냥 빈 점으로 표시
+            // PM is usually quarterly — pattern 5/7/9/11/2/3 in data. Not forced monthly.
+            // -> shown as empty dot
             cls += ' empty';
             content = '·';
           } else {
@@ -866,7 +866,7 @@ function renderLiftMatrix() {
             content = '·';
           }
         } else {
-          // 셀 상태 결정
+          // Determine cell state
           if (t.key === 'pm') {
             cls += ' ok';
             content = cnt === 1 ? '✓' : `✓<sup>${cnt}</sup>`;
@@ -882,8 +882,8 @@ function renderLiftMatrix() {
           }
           cls += ' clickable';
         }
-        // PM 누락 (Lift 2 Apr처럼) — 데이터에서 PM 없는 케이스 강조
-        // 단순화: 빈 칸은 모두 dot. critical PM-missed는 별도 처리하지 않음 (사장님 데이터 보면 PM이 매월이 아니라 분기)
+        // PM missing (e.g., Lift 2 Apr) — highlight cases with no PM in data
+        // Simplified: all empty cells are dots. Critical PM-missed not separately handled (PM is quarterly, not monthly)
         const dataAttr = cnt > 0
           ? `data-unit="${unit}" data-type="${t.key}" data-slot="${si}"`
           : '';
@@ -900,7 +900,7 @@ function renderLiftMatrix() {
 
   el.innerHTML = headHtml + bodyHtml;
 
-  // 셀 클릭 → 셀 자체 반짝 + Timeline 항목 반짝 + 모달
+  // Cell click -> cell flash + Timeline flash + modal
   el.querySelectorAll('.sr-mx-cell.clickable').forEach(cell => {
     cell.addEventListener('click', () => {
       const unit = cell.getAttribute('data-unit');
@@ -908,12 +908,12 @@ function renderLiftMatrix() {
       const slotIdx = parseInt(cell.getAttribute('data-slot'), 10);
       const list = bucket[unit][type][slotIdx] || [];
       if (list.length === 0) return;
-      // 클릭한 셀 자체 반짝
+      // Flash the clicked cell itself
       flashElement(cell);
       if (list.length === 1) {
         highlightAndOpenReport(list[0].id);
       } else {
-        // 다중 — 가장 최근 (날짜 desc) 1건 모달 + 토스트로 추가 건수 알림
+        // Multiple — show most recent (date desc) modal + toast for extra count
         const sorted = [...list].sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
         highlightAndOpenReport(sorted[0].id);
         if (sorted.length > 1) {
@@ -995,31 +995,31 @@ const detailModal = document.getElementById('detailModal');
 let currentDetailReportId = null;
 
 /* ─────────────────────────────────────────────
-   클릭 피드백 헬퍼 — 모든 진입 경로에서 사용
-   - 매트릭스 셀: 클릭한 셀 자체 녹색 반짝
-   - Lift Timeline: 항목 자체 녹색 반짝 + 스크롤
-   - Lift 매트릭스 셀 → Timeline 항목까지 반짝
+   Click feedback helpers — used across all entry points
+   - Matrix cell: clicked cell flashes green
+   - Lift Timeline: item flashes green + scroll
+   - Lift matrix cell -> Timeline item also flashes
    ───────────────────────────────────────────── */
 
-// 단일 element에 녹색 반짝 적용 (재실행 가능)
+// Apply green flash to single element (re-runnable)
 function flashElement(el) {
   if (!el) return;
   el.classList.remove('highlight-flash');
-  void el.offsetWidth; // 리플로우 강제
+  void el.offsetWidth; // Force reflow
   el.classList.add('highlight-flash');
   setTimeout(() => el.classList.remove('highlight-flash'), 2000);
 }
 
-// 매트릭스 셀 클릭 (HVAC/Fire/Garage + Lift 매트릭스 모두)
+// Matrix cell click (HVAC/Fire/Garage + Lift matrix)
 window.highlightCellAndOpen = function(cellEl, reportId) {
-  // 1. 클릭한 셀 자체 반짝
+  // 1. Flash clicked cell
   flashElement(cellEl);
-  // 2. Lift 카테고리면 Timeline 항목도 반짝 + 스크롤
+  // 2. If Lift category, also flash Timeline item + scroll
   highlightAndOpenReport(reportId);
 };
 
-// Timeline 항목 직접 클릭 또는 매트릭스에서 호출
-// → Lift Timeline 항목 찾아서 반짝/스크롤 + 모달 열기
+// Direct Timeline click or call from matrix
+// -> Find Lift Timeline item, flash/scroll + open modal
 window.highlightAndOpenReport = function(reportId) {
   const r = reports.find(x => x.id === reportId);
   if (!r) {
@@ -1027,7 +1027,7 @@ window.highlightAndOpenReport = function(reportId) {
     return;
   }
   const cat = categories.find(c => c.id === r.category_id);
-  // Lift 카테고리만 Timeline 있음
+  // Only Lift category has Timeline
   if (cat?.group_label === 'Lift') {
     const liftPane = document.getElementById('paneLift');
     const isLiftVisible = liftPane && liftPane.style.display !== 'none';
@@ -1071,7 +1071,7 @@ window.openDetailModal = function(reportId) {
          <div class="sr-detail-val">${r.lift_unit ? escHtml(r.lift_unit.replace('_',' ').toUpperCase()) : ''}${r.service_type ? ' · ' + escHtml(r.service_type) : ''}</div>
        </div>` : '';
 
-  // Issue Description: Summary와 동일하게 HTML 자동감지 + 빨간 박스로 강조
+  // Issue Description: same auto-HTML detection as Summary + red box highlight
   let issueLine = '';
   if (isManagement && r.has_issues) {
     const raw = r.issue_description || 'Marked as having issues.';
@@ -1083,7 +1083,7 @@ window.openDetailModal = function(reportId) {
        </div>`;
   }
 
-  // Summary: HTML 태그 포함 시 그대로 렌더, 평문이면 줄바꿈을 <br>로 변환
+  // Summary: render HTML tags as-is if present, convert newlines to <br> if plain
   let summaryHtml = '';
   if (r.summary) {
     const hasHTML = /<[a-z][\s\S]*>/i.test(r.summary);
@@ -1276,7 +1276,7 @@ function switchTab(name) {
   });
   // sync display:flex on overview pane
   if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
-  // Hero 텍스트 탭별 자동 변경
+  // Hero text auto-changes per tab
   const heroTexts = {
     overview: {
       eyebrow: 'Compliance & Maintenance',
@@ -1343,9 +1343,9 @@ const upProgressBar = document.getElementById('upProgressBar');
 const upProgressFill= document.getElementById('upProgressFill');
 
 let pendingFiles = [];
-let existingAttachments = [];   // edit 모드에서 기존 파일 (수정 시작 시점 스냅샷)
-let removedExistingPaths = [];  // edit 모드에서 사용자가 ✕ 누른 기존 파일 경로
-let editingReportId = null;     // null = create, 값 있으면 = edit
+let existingAttachments = [];   // existing files in edit mode (snapshot at edit start)
+let removedExistingPaths = [];  // existing file paths user clicked ✕ in edit mode
+let editingReportId = null;     // null = create, value = edit
 const MAX_FILES = 10;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -1361,8 +1361,8 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
   removedExistingPaths = [];
   pendingFiles = [];
 
-  // 카테고리 드롭다운 — preselectGroup이 있으면 해당 그룹만 표시
-  // (Edit 모드에서는 모든 카테고리 표시 — 카테고리 변경 가능)
+  // Category dropdown — show only preselectGroup if specified
+  // (Edit mode shows all categories — category can be changed)
   const filteredCats = (preselectGroup && mode === 'create')
     ? categories.filter(c => c.group_label === preselectGroup && c.active !== false)
     : categories.filter(c => c.active !== false);
@@ -1392,7 +1392,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     }
     existingAttachments = Array.isArray(report.attachments) ? [...report.attachments] : [];
   } else {
-    // 그룹별 모달 제목 표시
+    // Show modal title per group
     const groupTitle = {
       'Lift':   '＋ New Lift Report',
       'HVAC':   '＋ New HVAC Report',
@@ -1401,7 +1401,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     }[preselectGroup] || '＋ New Service Report';
     document.getElementById('upModalTitle').textContent = groupTitle;
     document.getElementById('upSaveBtn').textContent = 'Save Report';
-    // 카테고리: 해당 그룹에 1개만 있으면 자동 선택, 여러 개면 사장님이 선택
+    // Category: auto-select if only 1 in group, otherwise user picks
     if (preselectGroup && filteredCats.length === 1) {
       upCategoryEl.value = filteredCats[0].id;
     } else {
@@ -1415,7 +1415,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     upHasIssuesEl.checked = false;
     upIssueBox.style.display = 'none';
     upIssueDescEl.value = '';
-    // Lift 그룹이고 카테고리 자동 선택됐으면 Lift 입력 행 표시
+    // If Lift group and category auto-selected, show Lift input row
     if (preselectGroup === 'Lift' && upCategoryEl.value) {
       upLiftRow.style.display = 'grid';
     } else {
@@ -1424,7 +1424,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     upLiftUnitEl.value = '';
     upServiceTypeEl.value = '';
     existingAttachments = [];
-    // 카테고리 자동 선택 시 default contractor도 자동 채우기 (기존 change 핸들러 트리거)
+    // Auto-fill default contractor when category auto-selected (trigger existing change handler)
     if (upCategoryEl.value) {
       upCategoryEl.dispatchEvent(new Event('change'));
     }
@@ -1474,7 +1474,7 @@ function renderExistingFileList() {
   });
 }
 
-// 각 탭 전용 Add 버튼 — 그룹 미리 지정해서 모달 열기
+// Tab-specific Add buttons — open modal with preselected group
 const tabAddButtons = [
   { id: 'addLiftBtn',   group: 'Lift'   },
   { id: 'addHvacBtn',   group: 'HVAC'   },
@@ -1488,21 +1488,21 @@ tabAddButtons.forEach(({ id, group }) => {
   }
 });
 
-// 카드 클릭 → 해당 그룹 탭 점프
+// Card click -> jump to corresponding group tab
 window.jumpToGroupTab = function(groupLabel) {
   const tabName = (groupLabel || '').toLowerCase(); // 'Lift' → 'lift'
   if (TABS.includes(tabName)) {
     switchTab(tabName);
-    // 부드러운 스크롤 (상단으로)
+    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
 
 /* ─────────────────────────────────────────────
    CATEGORY MANAGEMENT MODAL (Add)
-   - admin이 Categories 옆 "+ New Category" 클릭 시 열림
-   - 입력: name, group, icon, frequency, custom_months, default_contractor, notes
-   - Save → service_categories INSERT → renderCategoryGrid 갱신
+   - Opens when admin clicks "+ New Category" next to Categories
+   - Inputs: name, group, icon, frequency, custom_months, default_contractor, notes
+   - Save -> INSERT service_categories -> refresh renderCategoryGrid
    ───────────────────────────────────────────── */
 const categoryModal   = document.getElementById('categoryModal');
 const catNameEl       = document.getElementById('catName');
@@ -1514,7 +1514,7 @@ const catCustomGrid   = document.getElementById('catCustomMonths');
 const catContractorEl = document.getElementById('catContractor');
 const catNotesEl      = document.getElementById('catNotes');
 
-// 그룹별 추천 이모지 (그룹 선택 시 자동 표시)
+// Group-suggested emojis (auto-shown when group selected)
 const GROUP_EMOJI_SUGGESTIONS = {
   'Lift':         ['🛗', '🏢', '⬆️', '🔝'],
   'HVAC':         ['❄️', '💧', '🧪', '🌡️', '💨'],
@@ -1528,10 +1528,10 @@ const GROUP_EMOJI_SUGGESTIONS = {
   'Other':        ['📋', '🛠️', '🏗️', '⚙️'],
 };
 
-// 일반 자주 쓰는 이모지 (기본 표시)
+// Common frequently-used emojis (default display)
 const COMMON_EMOJIS = ['🛗','❄️','🔥','🚪','💧','⚡','🐜','🧴','🗑️','🛠️','🔧','🚨','🧯','💡','🌡️','🚰','♻️','🧪','🧼','📋'];
 
-// HTML이 아직 배포되지 않은 경우 등을 대비한 가드 — 모달 없으면 전체 블록 skip
+// Guard for case when HTML not yet deployed — skip entire block if modal missing
 if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
 
   function renderIconPicker(emojis) {
@@ -1541,7 +1541,7 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
       <button type="button" class="cat-icon-btn" data-emoji="${e}"
         style="font-size:22px;padding:6px;background:#fff;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;line-height:1;transition:all 0.12s">${e}</button>
     `).join('');
-    // 클릭 시 input에 채우기 + 선택 표시
+    // On click: fill input + show selection
     picker.querySelectorAll('.cat-icon-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         catIconEl.value = btn.getAttribute('data-emoji');
@@ -1572,7 +1572,7 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
         <span>${lbl}</span>
       </label>
     `).join('');
-    // 기본 이모지 그리드 (자주 쓰는 거)
+    // Default emoji grid (common ones)
     renderIconPicker(COMMON_EMOJIS);
     categoryModal.classList.add('open');
     setTimeout(() => catNameEl.focus(), 50);
@@ -1582,11 +1582,11 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
     categoryModal.classList.remove('open');
   }
 
-  // Group 선택 시 → 그 그룹에 어울리는 이모지로 picker 갱신
+  // On group select -> refresh picker with group-appropriate emojis
   catGroupEl.addEventListener('change', () => {
     const suggestions = GROUP_EMOJI_SUGGESTIONS[catGroupEl.value];
     if (suggestions && suggestions.length) {
-      // 그룹 추천 + 자주 쓰는 거 조합 (중복 제거)
+      // Group suggestions + common emojis combined (deduplicated)
       const combined = [...new Set([...suggestions, ...COMMON_EMOJIS])];
       renderIconPicker(combined);
     } else {
@@ -1594,27 +1594,27 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
     }
   });
 
-  // frequency = custom 일 때만 month 그리드 표시
+  // Show month grid only when frequency = custom
   catFrequencyEl.addEventListener('change', () => {
     catCustomBox.style.display = (catFrequencyEl.value === 'custom') ? '' : 'none';
   });
 
-  // 모달 외부 클릭 = 닫기
+  // Click outside modal = close
   categoryModal.addEventListener('click', (e) => {
     if (e.target === categoryModal) closeCategoryModal();
   });
 
-  // Cancel 버튼
+  // Cancel button
   const catCancelBtn = document.getElementById('catCancelBtn');
   if (catCancelBtn) catCancelBtn.addEventListener('click', closeCategoryModal);
 
-  // + New Category 버튼 핸들러
+  // + New Category button handler
   const newCatBtn = document.getElementById('newCategoryBtn');
   if (newCatBtn) {
     newCatBtn.addEventListener('click', openCategoryModal);
   }
 
-  // Save 버튼 — service_categories INSERT
+  // Save button — INSERT service_categories
   const catSaveBtn = document.getElementById('catSaveBtn');
   if (catSaveBtn) {
     catSaveBtn.addEventListener('click', async () => {
@@ -1680,10 +1680,10 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
 }
 
 /* ─────────────────────────────────────────────
-   CELL NOTE MODAL — 매트릭스 셀 상태/메모 입력 (admin only)
-   - openCellNoteModal(catId, year, month) — 셀 클릭 시 호출
-   - 기존 메모 있으면 수정 / 없으면 새로 입력
-   - status null 선택하면 셀 메모 삭제
+   CELL NOTE MODAL — Matrix cell status/note input (admin only)
+   - openCellNoteModal(catId, year, month) — called on cell click
+   - Edit existing note / create new if none
+   - Selecting null status deletes cell note
    ───────────────────────────────────────────── */
 const cellNoteModal = document.getElementById('cellNoteModal');
 const cellStatusEl  = document.getElementById('cellStatus');
@@ -1701,16 +1701,16 @@ window.openCellNoteModal = function(catId, year, month) {
   const existing = getCellNote(catId, year, month);
   editingCellNote = { catId, year, month, existing };
 
-  // 모달 제목 + 부제
+  // Modal title + subtitle
   document.getElementById('cellModalTitle').textContent = existing ? '📝 Edit Cell Note' : '📝 Add Cell Note';
   document.getElementById('cellModalSubtitle').textContent =
     `${cat.icon || '📋'} ${cat.name} — ${MONTH_LABELS[month - 1]} ${year}`;
 
-  // 폼 초기화 / 채우기
+  // Reset / populate form
   cellStatusEl.value = existing ? existing.status : '';
   cellNoteEl.value = existing ? (existing.note || '') : '';
 
-  // Delete 버튼은 기존 메모 있을 때만 표시
+  // Delete button only shown when existing note
   document.getElementById('cellDeleteBtn').style.display = existing ? 'inline-flex' : 'none';
 
   cellNoteModal.classList.add('open');
@@ -1723,7 +1723,7 @@ function closeCellNoteModal() {
 }
 
 if (cellNoteModal) {
-  // 외부 클릭 = 닫기
+  // Click outside = close
   cellNoteModal.addEventListener('click', (e) => {
     if (e.target === cellNoteModal) closeCellNoteModal();
   });
@@ -1743,7 +1743,7 @@ if (cellNoteModal) {
     saveBtn.textContent = 'Saving…';
 
     try {
-      // status가 빈 값 = 셀 메모 삭제 (기존 있을 때만)
+      // Empty status = delete cell note (only if existing)
       if (!status) {
         if (existing) {
           const { error } = await supabase
@@ -1772,7 +1772,7 @@ if (cellNoteModal) {
 
       closeCellNoteModal();
       await loadCellNotes();
-      // 매트릭스 재렌더
+      // Re-render matrices
       renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
       renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
       renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
@@ -1813,7 +1813,7 @@ document.getElementById('upCancelBtn').addEventListener('click', closeUploadModa
 
 upHasIssuesEl.addEventListener('change', () => {
   upIssueBox.style.display = upHasIssuesEl.checked ? '' : 'none';
-  // 체크 안 했을 때는 토글 박스 단독으로 둥근 박스, 체크하면 아래 빨간박스와 연결
+  // Unchecked: toggle box alone with rounded corners. Checked: connects to red box below
   const toggle = document.querySelector('.sr-issue-toggle');
   if (toggle) {
     toggle.style.borderRadius = upHasIssuesEl.checked ? '12px 12px 0 0' : '12px';
