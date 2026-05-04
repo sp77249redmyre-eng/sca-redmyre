@@ -299,6 +299,18 @@ function renderCategoryGrid() {
       }
     }
 
+    let actionsBar = '';
+    if (isAdmin && cats.length === 1) {
+      const cat = cats[0];
+      actionsBar = `
+        <div class="sr-cat-actions-bar" onclick="event.stopPropagation()">
+          <button class="sr-cat-action-edit" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">✏️ Edit</button>
+          <div class="sr-cat-action-divider"></div>
+          <button class="sr-cat-action-delete" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">🗑️ Delete</button>
+        </div>
+      `;
+    }
+
     return `
       <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="jumpToGroupTab('${escHtml(group)}')">
         <div class="sr-cat-head">
@@ -319,6 +331,7 @@ function renderCategoryGrid() {
           </div>
         </div>
         ${warning}
+        ${actionsBar}
       </div>
     `;
   }).join('');
@@ -1555,30 +1568,41 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
     });
   }
 
-  function openCategoryModal() {
-    catNameEl.value = '';
-    catGroupEl.value = '';
-    catIconEl.value = '';
-    catFrequencyEl.value = '';
-    catCustomBox.style.display = 'none';
-    catNotesEl.value = '';
+  let editingCategoryId = null;
+
+  function openCategoryModal(editId = null) {
+    editingCategoryId = editId;
+    const editing = editId ? categories.find(c => c.id === editId) : null;
+    document.getElementById('catModalTitle').textContent = editing ? '✏️ Edit Category' : '＋ New Category';
+    const sb = document.getElementById('catSaveBtn');
+    if (sb) sb.textContent = editing ? 'Save Changes' : 'Save Category';
+
+    catNameEl.value = editing ? (editing.name || '') : '';
+    catGroupEl.value = editing ? (editing.group_label || '') : '';
+    catIconEl.value = editing ? (editing.icon || '') : '';
+    catFrequencyEl.value = editing ? (editing.frequency || '') : '';
+    catCustomBox.style.display = (editing && editing.frequency === 'custom') ? '' : 'none';
+    catNotesEl.value = editing ? (editing.notes || '') : '';
     catContractorEl.innerHTML = '<option value="">— None —</option>' +
       contractors.map(c => `<option value="${c.id}">${escHtml(c.company || c.name || '—')}</option>`).join('');
-    catContractorEl.value = '';
+    catContractorEl.value = editing ? (editing.default_contractor_id || '') : '';
     const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const editingMonths = (editing && Array.isArray(editing.custom_months)) ? editing.custom_months : [];
     catCustomGrid.innerHTML = monthLabels.map((lbl, i) => `
       <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-        <input type="checkbox" class="cat-month-cb" data-month="${i + 1}" style="width:16px;height:16px;cursor:pointer">
+        <input type="checkbox" class="cat-month-cb" data-month="${i + 1}" ${editingMonths.includes(i + 1) ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer">
         <span>${lbl}</span>
       </label>
     `).join('');
-    // Default emoji grid (common ones)
     renderIconPicker(COMMON_EMOJIS);
     categoryModal.classList.add('open');
     setTimeout(() => catNameEl.focus(), 50);
   }
 
+  window.openCategoryEdit = (catId) => openCategoryModal(catId);
+
   function closeCategoryModal() {
+    editingCategoryId = null;
     categoryModal.classList.remove('open');
   }
 
@@ -1648,31 +1672,39 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
       catSaveBtn.textContent = 'Saving…';
 
       try {
-        const { error } = await supabase
-          .from('service_categories')
-          .insert({
-            name,
-            group_label,
-            icon,
-            frequency,
-            custom_months,
-            default_contractor_id,
-            notes,
-            position: samePos + 10,
-            active: true,
-          });
-        if (error) throw error;
-        showToast('Category created.', 'ok');
+        if (editingCategoryId) {
+          const { error } = await supabase
+            .from('service_categories')
+            .update({ name, group_label, icon, frequency, custom_months, default_contractor_id, notes })
+            .eq('id', editingCategoryId);
+          if (error) throw error;
+          showToast('Category updated.', 'ok');
+        } else {
+          const { error } = await supabase
+            .from('service_categories')
+            .insert({
+              name, group_label, icon, frequency, custom_months,
+              default_contractor_id, notes,
+              position: samePos + 10, active: true,
+            });
+          if (error) throw error;
+          showToast('Category created.', 'ok');
+        }
         closeCategoryModal();
         await loadCategories();
         renderCategoryGrid();
         renderUpcoming();
+        if (typeof matrixState !== 'undefined') {
+          if (document.getElementById('garageMatrix')) renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+          if (document.getElementById('hvacMatrix'))   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+          if (document.getElementById('fireMatrix'))   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+        }
       } catch (e) {
         console.error('Category save failed:', e);
-        showToast(e.message || 'Failed to create category.', 'err');
+        showToast(e.message || 'Failed to save category.', 'err');
       } finally {
         catSaveBtn.disabled = false;
-        catSaveBtn.textContent = 'Save Category';
+        catSaveBtn.textContent = editingCategoryId ? 'Save Changes' : 'Save Category';
       }
     });
   }
@@ -1690,6 +1722,41 @@ const cellStatusEl  = document.getElementById('cellStatus');
 const cellNoteEl    = document.getElementById('cellNote');
 
 let editingCellNote = null; // {catId, year, month, existing}
+
+window.deleteCategoryConfirm = async function(catId) {
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return;
+  const reportCount = reports.filter(r => r.category_id === catId).length;
+
+  let msg;
+  if (reportCount === 0) {
+    msg = `Delete category "${cat.name}"?\n\nNo reports under this category.\nThis action cannot be undone.`;
+  } else {
+    msg = `⚠️ Delete category "${cat.name}"?\n\nThis category has ${reportCount} report${reportCount > 1 ? 's' : ''}.\nALL reports and attachments will be deleted as well.\n\nThis action cannot be undone. Are you sure?`;
+  }
+  if (!confirm(msg)) return;
+
+  try {
+    if (reportCount > 0) {
+      const { error: e1 } = await supabase.from('service_reports').delete().eq('category_id', catId);
+      if (e1) throw e1;
+    }
+    const { error } = await supabase.from('service_categories').delete().eq('id', catId);
+    if (error) throw error;
+    showToast(`Category "${cat.name}" deleted.`, 'ok');
+    await Promise.all([loadCategories(), loadReports(), loadCellNotes()]);
+    renderCategoryGrid();
+    renderUpcoming();
+    if (typeof matrixState !== 'undefined') {
+      if (document.getElementById('garageMatrix')) renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+      if (document.getElementById('hvacMatrix'))   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+      if (document.getElementById('fireMatrix'))   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+    }
+  } catch (e) {
+    console.error('Category delete failed:', e);
+    showToast(e.message || 'Failed to delete.', 'err');
+  }
+};
 
 window.openCellNoteModal = function(catId, year, month) {
   if (!isAdmin) return;
