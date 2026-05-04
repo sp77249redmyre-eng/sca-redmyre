@@ -545,7 +545,7 @@ function buildLiftYearOptions(sel) {
 
 function renderLiftDashboard() {
   renderLiftStats();
-  renderLiftChart();
+  renderLiftMatrix();
   renderLiftTimeline();
 }
 
@@ -604,69 +604,178 @@ function renderLiftStats() {
   }).join('');
 }
 
-function renderLiftChart() {
-  const el = document.getElementById('liftChart');
+/* ─────────────────────────────────────────────
+   Lift Service Matrix
+   행: Lift 1 Maintenance / Callout / (Repair/Shutdown은 데이터 있을 때만)
+       Lift 2 Maintenance / Callout / Repair / Shutdown
+   열: 12개월 (May → Apr, contract year 순서)
+   셀 클릭: 해당 월/lift/type 리포트 모달 (단일=바로, 복수=리스트)
+   ───────────────────────────────────────────── */
+const LIFT_SERVICE_TYPES = [
+  { key: 'pm',       label: 'Maintenance', cls: 'ok'    },
+  { key: 'callout',  label: 'Callout',     cls: 'warn'  },
+  { key: 'repair',   label: 'Repair',      cls: 'crit'  },
+  { key: 'shutdown', label: 'Shutdown',    cls: 'other' },
+];
+
+function classifyLiftReport(r) {
+  // service_type이 있으면 그대로 사용, 없으면 빈 값
+  const t = (r.service_type || '').toLowerCase();
+  if (!t) return null;
+  if (t === 'pm' || t.includes('maint')) return 'pm';
+  if (t.includes('call')) return 'callout';
+  if (t.includes('repair') || t.includes('notify')) return 'repair';
+  // 그 외 (other, inspection, shutdown 등)
+  return 'shutdown';
+}
+
+function renderLiftMatrix() {
+  const el = document.getElementById('liftMatrix');
   if (!el) return;
   const cy = matrixState.lift.year;
   const range = liftContractYearRange(cy);
   const yearReports = liftReportsForContractYear(cy);
 
-  // Per-month counts keyed by absolute (year-month) so we can
-  // render in contract order (May → Apr) crossing calendar boundary.
-  // slot key: `${year}-${month}` for each of the 12 contract months
-  const slots = []; // [{year, month, label}, ...] in display order
+  // 12개월 슬롯 (May→Apr 순서)
+  const slots = [];
   for (let i = 0; i < 12; i++) {
-    const m = LIFT_CONTRACT_MONTHS[i]; // 5,6,...,12,1,2,3,4
+    const m = LIFT_CONTRACT_MONTHS[i];
     const y = (m >= LIFT_CONTRACT_START_MONTH) ? range.startYear : range.endYear;
     slots.push({ year: y, month: m, label: MONTH_LABELS[m - 1] });
   }
-  // Initialize counts
-  const counts = slots.map(() => ({ lift_1: 0, lift_2: 0 }));
 
+  // bucket[liftUnit][typeKey][slotIdx] = report[]
+  const bucket = {
+    lift_1: { pm: {}, callout: {}, repair: {}, shutdown: {} },
+    lift_2: { pm: {}, callout: {}, repair: {}, shutdown: {} },
+  };
   yearReports.forEach(r => {
-    const m = r.period_month;
-    const y = r.period_year;
-    const idx = slots.findIndex(s => s.year === y && s.month === m);
+    const tk = classifyLiftReport(r);
+    if (!tk) return;
+    const idx = slots.findIndex(s => s.year === r.period_year && s.month === r.period_month);
     if (idx === -1) return;
-    if (r.lift_unit === 'lift_1') counts[idx].lift_1 += 1;
-    else if (r.lift_unit === 'lift_2') counts[idx].lift_2 += 1;
-    else if (r.lift_unit === 'both') {
-      counts[idx].lift_1 += 1;
-      counts[idx].lift_2 += 1;
-    }
+    const units = (r.lift_unit === 'both') ? ['lift_1', 'lift_2'] : [r.lift_unit];
+    units.forEach(u => {
+      if (!bucket[u]) return;
+      if (!bucket[u][tk][idx]) bucket[u][tk][idx] = [];
+      bucket[u][tk][idx].push(r);
+    });
   });
 
-  // Find max
-  let max = 0;
-  counts.forEach(c => {
-    const total = c.lift_1 + c.lift_2;
-    if (total > max) max = total;
-  });
-  if (max === 0) max = 1;
+  // 어느 행을 보일지 결정 — 데이터 있는 type만 표시 (단, Maintenance/Callout은 항상 표시)
+  function rowsForUnit(unit) {
+    return LIFT_SERVICE_TYPES.filter(t => {
+      if (t.key === 'pm' || t.key === 'callout') return true;
+      // repair/shutdown은 해당 unit에 데이터 있을 때만
+      return Object.keys(bucket[unit][t.key]).length > 0;
+    });
+  }
+  const rows1 = rowsForUnit('lift_1');
+  const rows2 = rowsForUnit('lift_2');
 
-  el.innerHTML = slots.map((s, i) => {
-    const v1 = counts[i].lift_1;
-    const v2 = counts[i].lift_2;
-    const total = v1 + v2;
-    const isAnomaly = total >= 3;
-    const h1 = (v1 / max) * 100;
-    const h2 = (v2 / max) * 100;
-    const barLift1 = v1 > 0 ? `<div class="sr-lift-bar lift1" style="height:${h1}%" title="Lift 1 — ${v1}"></div>` : '';
-    const barLift2 = v2 > 0 ? `<div class="sr-lift-bar lift2" style="height:${h2}%" title="Lift 2 — ${v2}"></div>` : '';
-    const countLabel = total > 0 ? `<span class="sr-lift-bar-count">${total}</span>` : '';
-    // Show short year suffix for Jan~Apr to disambiguate (they belong to next calendar year)
-    const yearSuffix = (s.month <= 4) ? `<span class="sr-lift-bar-year">'${String(s.year).slice(-2)}</span>` : '';
-    return `
-      <div class="sr-lift-bar-col">
-        ${countLabel}
-        <div class="sr-lift-bar-stack ${isAnomaly ? 'anomaly' : ''}">
-          ${barLift2}
-          ${barLift1}
-        </div>
-        <div class="sr-lift-bar-month">${s.label}${yearSuffix}</div>
-      </div>
-    `;
-  }).join('');
+  // PM 누락 셀 판정 — 해당 월에 PM이 없으면 critical
+  // (단, contract 시작 이후 ~ 오늘까지의 월만 — 미래 월은 빈 셀)
+  const today = new Date();
+  const todayY = today.getFullYear();
+  const todayM = today.getMonth() + 1;
+  function isPastOrCurrent(s) {
+    if (s.year < todayY) return true;
+    if (s.year === todayY && s.month <= todayM) return true;
+    return false;
+  }
+
+  // 헤더
+  let headHtml = '<thead><tr><th class="sr-mx-rowhead">Service</th>';
+  slots.forEach(s => {
+    const yearSuffix = (s.month <= 4) ? `<span class="sr-mx-year">'${String(s.year).slice(-2)}</span>` : '';
+    headHtml += `<th class="sr-mx-month">${s.label}${yearSuffix}</th>`;
+  });
+  headHtml += '</tr></thead>';
+
+  // body
+  function buildRowsHtml(unit, rows, unitLabel, unitCls) {
+    return rows.map((t, ri) => {
+      const isFirst = ri === 0;
+      const rowSpan = isFirst ? rows.length : 0;
+      const groupCellHtml = isFirst
+        ? `<td class="sr-mx-group ${unitCls}" rowspan="${rowSpan}">${unitLabel}</td>`
+        : '';
+      let cellsHtml = '';
+      slots.forEach((s, si) => {
+        const list = bucket[unit][t.key][si] || [];
+        const cnt = list.length;
+        let cls = 'sr-mx-cell';
+        let content = '';
+        if (cnt === 0) {
+          // PM 누락 = critical (과거/현재 월만)
+          if (t.key === 'pm' && isPastOrCurrent(s)) {
+            // 다만 contract 시작 월 이전은 제외
+            const slotIdx = LIFT_CONTRACT_MONTHS.indexOf(s.month);
+            // PM은 보통 분기마다 — 데이터 보면 5/7/9/11/2/3 패턴. 매월 강제 안 함.
+            // → 그냥 빈 점으로 표시
+            cls += ' empty';
+            content = '·';
+          } else {
+            cls += ' empty';
+            content = '·';
+          }
+        } else {
+          // 셀 상태 결정
+          if (t.key === 'pm') {
+            cls += ' ok';
+            content = cnt === 1 ? '✓' : `✓<sup>${cnt}</sup>`;
+          } else if (t.key === 'callout') {
+            cls += cnt >= 3 ? ' crit' : ' warn';
+            content = String(cnt);
+          } else if (t.key === 'repair') {
+            cls += ' crit';
+            content = String(cnt);
+          } else {
+            cls += ' other';
+            content = String(cnt);
+          }
+          cls += ' clickable';
+        }
+        // PM 누락 (Lift 2 Apr처럼) — 데이터에서 PM 없는 케이스 강조
+        // 단순화: 빈 칸은 모두 dot. critical PM-missed는 별도 처리하지 않음 (사장님 데이터 보면 PM이 매월이 아니라 분기)
+        const dataAttr = cnt > 0
+          ? `data-unit="${unit}" data-type="${t.key}" data-slot="${si}"`
+          : '';
+        cellsHtml += `<td class="${cls}" ${dataAttr}>${content}</td>`;
+      });
+      return `<tr class="sr-mx-row ${unitCls}">${groupCellHtml}<td class="sr-mx-typehead">${t.label}</td>${cellsHtml}</tr>`;
+    }).join('');
+  }
+
+  const bodyHtml = '<tbody>'
+    + buildRowsHtml('lift_1', rows1, 'Lift 1', 'lift1')
+    + buildRowsHtml('lift_2', rows2, 'Lift 2', 'lift2')
+    + '</tbody>';
+
+  el.innerHTML = headHtml + bodyHtml;
+
+  // 셀 클릭 → 리포트 모달
+  el.querySelectorAll('.sr-mx-cell.clickable').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const unit = cell.getAttribute('data-unit');
+      const type = cell.getAttribute('data-type');
+      const slotIdx = parseInt(cell.getAttribute('data-slot'), 10);
+      const list = bucket[unit][type][slotIdx] || [];
+      if (list.length === 0) return;
+      if (list.length === 1) {
+        openDetailModal(list[0].id);
+      } else {
+        // 다중 — 가장 최근 (날짜 desc) 1건 모달 + 토스트로 추가 건수 알림
+        const sorted = [...list].sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
+        openDetailModal(sorted[0].id);
+        if (sorted.length > 1) {
+          setTimeout(() => {
+            showToast(`This month has ${sorted.length} reports. Showing the most recent.`, 'info');
+          }, 200);
+        }
+      }
+    });
+  });
 }
 
 function renderLiftTimeline() {
