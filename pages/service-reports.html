@@ -249,6 +249,39 @@
 <!-- ============================================================
      CATEGORY ADD/EDIT MODAL
      ============================================================ -->
+<!-- ============================================================
+     CELL NOTE MODAL — 매트릭스 셀 상태/메모 입력 (admin only)
+     ============================================================ -->
+<div class="modal-backdrop" id="cellNoteModal">
+  <div class="modal-box">
+    <div class="modal-title" id="cellModalTitle">📝 Cell Note</div>
+
+    <div id="cellModalSubtitle" style="font-size:13px;color:var(--muted);margin-bottom:14px"></div>
+
+    <div class="modal-field">
+      <label class="modal-label">Status *</label>
+      <select class="modal-select" id="cellStatus">
+        <option value="">— None (clear cell) —</option>
+        <option value="scheduled">📅 Scheduled — 점검 예약됨</option>
+        <option value="in_progress">⚙ In Progress — 진행 중</option>
+        <option value="postponed">↪ Postponed — 연기됨</option>
+        <option value="cancelled">✕ Cancelled — 취소됨</option>
+      </select>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">Note (optional)</label>
+      <textarea class="modal-textarea" id="cellNote" rows="3" placeholder="e.g. Booked for 15 June, contact: 0400 000 000"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="cellDeleteBtn" style="margin-right:auto;color:#dc2626;display:none">🗑 Delete</button>
+      <button class="btn-secondary" id="cellCancelBtn">Cancel</button>
+      <button class="btn-primary" id="cellSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="categoryModal">
   <div class="modal-box">
     <div class="modal-title" id="catModalTitle">＋ New Category</div>
@@ -263,32 +296,42 @@
         <label class="modal-label">Group *</label>
         <select class="modal-select" id="catGroup">
           <option value="">Select…</option>
-          <option value="Lift">Lift</option>
-          <option value="HVAC">HVAC</option>
-          <option value="Fire">Fire</option>
-          <option value="Garage">Garage</option>
+          <option value="Lift">🛗 Lift</option>
+          <option value="HVAC">❄️ HVAC</option>
+          <option value="Fire">🔥 Fire</option>
+          <option value="Garage">🚪 Garage</option>
+          <option value="Plumbing">🔧 Plumbing</option>
+          <option value="Electrical">⚡ Electrical</option>
+          <option value="Pest Control">🐜 Pest Control</option>
+          <option value="Hygiene">🧴 Hygiene</option>
+          <option value="Waste">🗑️ Waste</option>
+          <option value="Other">📋 Other</option>
         </select>
       </div>
       <div class="modal-field">
-        <label class="modal-label">Icon (emoji) *</label>
-        <input class="modal-input" id="catIcon" type="text" placeholder="🛗" maxlength="4">
+        <label class="modal-label">Frequency *</label>
+        <select class="modal-select" id="catFrequency">
+          <option value="">Select…</option>
+          <option value="weekly">Weekly</option>
+          <option value="fortnightly">Fortnightly (every 2 weeks)</option>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly (every 3 months)</option>
+          <option value="6-monthly">Every 6 months</option>
+          <option value="annual">Annual</option>
+          <option value="custom">Custom (specific months)</option>
+        </select>
       </div>
     </div>
 
     <div class="modal-field">
-      <label class="modal-label">Frequency *</label>
-      <select class="modal-select" id="catFrequency">
-        <option value="">Select…</option>
-        <option value="monthly">Monthly</option>
-        <option value="6-monthly">Every 6 months</option>
-        <option value="annual">Annual</option>
-        <option value="custom">Custom (specific months)</option>
-      </select>
+      <label class="modal-label">Icon *</label>
+      <div id="catIconPicker" style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px"></div>
+      <input class="modal-input" id="catIcon" type="text" placeholder="Or type any emoji directly…" maxlength="4" style="margin-top:4px">
     </div>
 
     <div class="modal-field" id="catCustomMonthsBox" style="display:none">
       <label class="modal-label">Custom Months</label>
-      <div id="catCustomMonths" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px"></div>
+      <div id="catCustomMonths" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px"></div>
     </div>
 
     <div class="modal-field">
@@ -303,9 +346,9 @@
       <textarea class="modal-textarea" id="catNotes" rows="2" placeholder="Optional notes about this category"></textarea>
     </div>
 
-    <div class="modal-actions">
-      <button class="modal-btn modal-btn-cancel" id="catCancelBtn">Cancel</button>
-      <button class="modal-btn modal-btn-primary" id="catSaveBtn">Save Category</button>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="catCancelBtn">Cancel</button>
+      <button class="btn-primary" id="catSaveBtn">Save Category</button>
     </div>
   </div>
 </div>
