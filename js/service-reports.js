@@ -42,6 +42,11 @@ function daysBetween(a, b) {
 // ─── ROLE-BASED UI ───────────────────────────────────────────
 if (isAdmin) {
   document.getElementById('uploadBtn').style.display = 'inline-flex';
+  // 각 탭 전용 Add 버튼도 admin만 보이게
+  ['addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = 'inline-flex';
+  });
 }
 
 // ─── DATA STATE ──────────────────────────────────────────────
@@ -1130,6 +1135,12 @@ function switchTab(name) {
   });
   // sync display:flex on overview pane
   if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
+  // Hero "+ New Report" 버튼은 Overview 탭에서만 의미 있음 (모든 카테고리 추가 가능)
+  // 다른 탭에는 각 탭 전용 Add 버튼이 따로 있음
+  const heroBtn = document.getElementById('uploadBtn');
+  if (heroBtn && isAdmin) {
+    heroBtn.style.display = (name === 'overview') ? 'inline-flex' : 'none';
+  }
   // render matrix on tab switch
   if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
   if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
@@ -1175,10 +1186,18 @@ function populateUploadDropdowns() {
     contractors.map(c => `<option value="${c.id}">${escHtml(c.company)}</option>`).join('');
 }
 
-function openUploadModal(mode = 'create', report = null) {
+function openUploadModal(mode = 'create', report = null, preselectGroup = null) {
   editingReportId = (mode === 'edit' && report) ? report.id : null;
   removedExistingPaths = [];
   pendingFiles = [];
+
+  // 카테고리 드롭다운 — preselectGroup이 있으면 해당 그룹만 표시
+  // (Edit 모드에서는 모든 카테고리 표시 — 카테고리 변경 가능)
+  const filteredCats = (preselectGroup && mode === 'create')
+    ? categories.filter(c => c.group_label === preselectGroup && c.active !== false)
+    : categories.filter(c => c.active !== false);
+  upCategoryEl.innerHTML = '<option value="">Select category…</option>' +
+    filteredCats.map(c => `<option value="${c.id}">${escHtml(c.icon || '')} ${escHtml(c.name)}</option>`).join('');
 
   if (mode === 'edit' && report) {
     document.getElementById('upModalTitle').textContent = '✏️ Edit Service Report';
@@ -1203,9 +1222,21 @@ function openUploadModal(mode = 'create', report = null) {
     }
     existingAttachments = Array.isArray(report.attachments) ? [...report.attachments] : [];
   } else {
-    document.getElementById('upModalTitle').textContent = '＋ New Service Report';
+    // 그룹별 모달 제목 표시
+    const groupTitle = {
+      'Lift':   '＋ New Lift Report',
+      'HVAC':   '＋ New HVAC Report',
+      'Fire':   '＋ New Fire Report',
+      'Garage': '＋ New Garage Report',
+    }[preselectGroup] || '＋ New Service Report';
+    document.getElementById('upModalTitle').textContent = groupTitle;
     document.getElementById('upSaveBtn').textContent = 'Save Report';
-    upCategoryEl.value = '';
+    // 카테고리: 해당 그룹에 1개만 있으면 자동 선택, 여러 개면 사장님이 선택
+    if (preselectGroup && filteredCats.length === 1) {
+      upCategoryEl.value = filteredCats[0].id;
+    } else {
+      upCategoryEl.value = '';
+    }
     const today = new Date();
     upDateEl.value = today.toISOString().slice(0,10);
     upContractorEl.value = '';
@@ -1214,10 +1245,19 @@ function openUploadModal(mode = 'create', report = null) {
     upHasIssuesEl.checked = false;
     upIssueBox.style.display = 'none';
     upIssueDescEl.value = '';
-    upLiftRow.style.display = 'none';
+    // Lift 그룹이고 카테고리 자동 선택됐으면 Lift 입력 행 표시
+    if (preselectGroup === 'Lift' && upCategoryEl.value) {
+      upLiftRow.style.display = 'grid';
+    } else {
+      upLiftRow.style.display = 'none';
+    }
     upLiftUnitEl.value = '';
     upServiceTypeEl.value = '';
     existingAttachments = [];
+    // 카테고리 자동 선택 시 default contractor도 자동 채우기 (기존 change 핸들러 트리거)
+    if (upCategoryEl.value) {
+      upCategoryEl.dispatchEvent(new Event('change'));
+    }
   }
 
   renderExistingFileList();
@@ -1265,6 +1305,20 @@ function renderExistingFileList() {
 }
 
 document.getElementById('uploadBtn').addEventListener('click', () => openUploadModal('create'));
+
+// 각 탭 전용 Add 버튼 — 그룹 미리 지정해서 모달 열기
+const tabAddButtons = [
+  { id: 'addLiftBtn',   group: 'Lift'   },
+  { id: 'addHvacBtn',   group: 'HVAC'   },
+  { id: 'addFireBtn',   group: 'Fire'   },
+  { id: 'addGarageBtn', group: 'Garage' },
+];
+tabAddButtons.forEach(({ id, group }) => {
+  const btn = document.getElementById(id);
+  if (btn) {
+    btn.addEventListener('click', () => openUploadModal('create', null, group));
+  }
+});
 document.getElementById('upCancelBtn').addEventListener('click', closeUploadModal);
 
 upHasIssuesEl.addEventListener('change', () => {
