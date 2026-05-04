@@ -376,7 +376,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     const cells = MONTH_LABELS.map((_, i) => {
       const month = i + 1;
       const cs = cellStateFor(cat, year, month);
-      const clickAttr = cs.state === 'done' ? `onclick="openDetailModal('${cs.report.id}')"` : '';
+      const clickAttr = cs.state === 'done' ? `onclick="highlightCellAndOpen(this, '${cs.report.id}')"` : '';
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
     return `<tr>
@@ -392,7 +392,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     const months = MONTH_LABELS.map((label, i) => {
       const month = i + 1;
       const cs = cellStateFor(cat, year, month);
-      const clickAttr = cs.state === 'done' ? `onclick="openDetailModal('${cs.report.id}')"` : '';
+      const clickAttr = cs.state === 'done' ? `onclick="highlightCellAndOpen(this, '${cs.report.id}')"` : '';
       const inner = cs.state === 'done'
         ? `<span class="sr-mobile-cell-icon">✓</span><span class="sr-mobile-cell-date">${fmtCellDate(cs.report.report_date).split(' ')[0]}</span>`
         : cs.state === 'due'     ? `<span class="sr-mobile-cell-icon">●</span><span class="sr-mobile-cell-date">DUE</span>`
@@ -754,7 +754,7 @@ function renderLiftMatrix() {
 
   el.innerHTML = headHtml + bodyHtml;
 
-  // 셀 클릭 → 리포트 모달
+  // 셀 클릭 → 셀 자체 반짝 + Timeline 항목 반짝 + 모달
   el.querySelectorAll('.sr-mx-cell.clickable').forEach(cell => {
     cell.addEventListener('click', () => {
       const unit = cell.getAttribute('data-unit');
@@ -762,12 +762,14 @@ function renderLiftMatrix() {
       const slotIdx = parseInt(cell.getAttribute('data-slot'), 10);
       const list = bucket[unit][type][slotIdx] || [];
       if (list.length === 0) return;
+      // 클릭한 셀 자체 반짝
+      flashElement(cell);
       if (list.length === 1) {
-        openDetailModal(list[0].id);
+        highlightAndOpenReport(list[0].id);
       } else {
         // 다중 — 가장 최근 (날짜 desc) 1건 모달 + 토스트로 추가 건수 알림
         const sorted = [...list].sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
-        openDetailModal(sorted[0].id);
+        highlightAndOpenReport(sorted[0].id);
         if (sorted.length > 1) {
           setTimeout(() => {
             showToast(`This month has ${sorted.length} reports. Showing the most recent.`, 'info');
@@ -822,7 +824,7 @@ function renderLiftTimeline() {
       : `<span class="sr-lift-event-attach sr-lift-event-attach-empty">No attachment</span>`;
     const clickable = hasAttach || true; // all open detail modal
     return `
-      <div class="sr-lift-event ${!clickable ? 'sr-lift-event-nopdf' : ''}" onclick="openDetailModal('${r.id}')">
+      <div class="sr-lift-event ${!clickable ? 'sr-lift-event-nopdf' : ''}" data-report-id="${r.id}" onclick="highlightAndOpenReport('${r.id}')">
         <div class="sr-lift-event-date">
           <span class="sr-lift-event-date-day">${dayN}</span>
           ${escHtml(monthLabel)} ${d.getFullYear()}
@@ -845,6 +847,54 @@ const detailModal = document.getElementById('detailModal');
 
 // State for current detail modal
 let currentDetailReportId = null;
+
+/* ─────────────────────────────────────────────
+   클릭 피드백 헬퍼 — 모든 진입 경로에서 사용
+   - 매트릭스 셀: 클릭한 셀 자체 녹색 반짝
+   - Lift Timeline: 항목 자체 녹색 반짝 + 스크롤
+   - Lift 매트릭스 셀 → Timeline 항목까지 반짝
+   ───────────────────────────────────────────── */
+
+// 단일 element에 녹색 반짝 적용 (재실행 가능)
+function flashElement(el) {
+  if (!el) return;
+  el.classList.remove('highlight-flash');
+  void el.offsetWidth; // 리플로우 강제
+  el.classList.add('highlight-flash');
+  setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+}
+
+// 매트릭스 셀 클릭 (HVAC/Fire/Garage + Lift 매트릭스 모두)
+window.highlightCellAndOpen = function(cellEl, reportId) {
+  // 1. 클릭한 셀 자체 반짝
+  flashElement(cellEl);
+  // 2. Lift 카테고리면 Timeline 항목도 반짝 + 스크롤
+  highlightAndOpenReport(reportId);
+};
+
+// Timeline 항목 직접 클릭 또는 매트릭스에서 호출
+// → Lift Timeline 항목 찾아서 반짝/스크롤 + 모달 열기
+window.highlightAndOpenReport = function(reportId) {
+  const r = reports.find(x => x.id === reportId);
+  if (!r) {
+    openDetailModal(reportId);
+    return;
+  }
+  const cat = categories.find(c => c.id === r.category_id);
+  // Lift 카테고리만 Timeline 있음
+  if (cat?.group_label === 'Lift') {
+    const liftPane = document.getElementById('paneLift');
+    const isLiftVisible = liftPane && liftPane.style.display !== 'none';
+    if (isLiftVisible) {
+      const eventEl = document.querySelector(`.sr-lift-event[data-report-id="${reportId}"]`);
+      if (eventEl) {
+        eventEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        flashElement(eventEl);
+      }
+    }
+  }
+  openDetailModal(reportId);
+};
 
 window.openDetailModal = function(reportId) {
   const r = reports.find(x => x.id === reportId);
