@@ -1135,6 +1135,41 @@ function switchTab(name) {
   });
   // sync display:flex on overview pane
   if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
+  // Hero 텍스트 탭별 자동 변경
+  const heroTexts = {
+    overview: {
+      eyebrow: 'Compliance & Maintenance',
+      title:   'Service Reports',
+      sub:     'Track HVAC, Fire, Lift, and Garage inspection records for the building.',
+    },
+    lift: {
+      eyebrow: 'Vertical Transport',
+      title:   'Lift Service Reports',
+      sub:     'TKE service records for Lift 1 and Lift 2 — maintenance, callouts, and repairs.',
+    },
+    hvac: {
+      eyebrow: 'Cooling Tower System',
+      title:   'HVAC Service Reports',
+      sub:     'Voyager Air water treatment and SAS Legionella testing records.',
+    },
+    fire: {
+      eyebrow: 'Fire Safety Compliance',
+      title:   'Fire Service Reports',
+      sub:     'DDE monthly and 6-monthly fire inspections for common areas and units.',
+    },
+    garage: {
+      eyebrow: 'Access Control',
+      title:   'Garage Service Reports',
+      sub:     'Automated Doors & Gates roller shutter and sectional door inspections.',
+    },
+  };
+  const ht = heroTexts[name] || heroTexts.overview;
+  const eyebrowEl = document.getElementById('srHeroEyebrow');
+  const titleEl   = document.getElementById('srHeroTitle');
+  const subEl     = document.getElementById('srHeroSub');
+  if (eyebrowEl) eyebrowEl.textContent = ht.eyebrow;
+  if (titleEl)   titleEl.textContent   = ht.title;
+  if (subEl)     subEl.textContent     = ht.sub;
   // Hero "+ New Report" 버튼은 Overview 탭에서만 의미 있음 (모든 카테고리 추가 가능)
   // 다른 탭에는 각 탭 전용 Add 버튼이 따로 있음
   const heroBtn = document.getElementById('uploadBtn');
