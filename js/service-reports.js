@@ -41,9 +41,8 @@ function daysBetween(a, b) {
 
 // ─── ROLE-BASED UI ───────────────────────────────────────────
 if (isAdmin) {
-  document.getElementById('uploadBtn').style.display = 'inline-flex';
-  // 각 탭 전용 Add 버튼도 admin만 보이게
-  ['addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
+  // Categories 옆 + 각 탭 Add 버튼 admin만 보이게
+  ['newCategoryBtn', 'addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.style.display = 'inline-flex';
   });
@@ -192,7 +191,7 @@ function renderCategoryGrid() {
     }
 
     return `
-      <div class="sr-cat-card" data-group="${escHtml(cat.group_label)}">
+      <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(cat.group_label)}" onclick="jumpToGroupTab('${escHtml(cat.group_label)}')">
         <div class="sr-cat-head">
           <div class="sr-cat-icon">${escHtml(cat.icon || '📋')}</div>
           <div class="sr-cat-info">
@@ -1170,12 +1169,6 @@ function switchTab(name) {
   if (eyebrowEl) eyebrowEl.textContent = ht.eyebrow;
   if (titleEl)   titleEl.textContent   = ht.title;
   if (subEl)     subEl.textContent     = ht.sub;
-  // Hero "+ New Report" 버튼은 Overview 탭에서만 의미 있음 (모든 카테고리 추가 가능)
-  // 다른 탭에는 각 탭 전용 Add 버튼이 따로 있음
-  const heroBtn = document.getElementById('uploadBtn');
-  if (heroBtn && isAdmin) {
-    heroBtn.style.display = (name === 'overview') ? 'inline-flex' : 'none';
-  }
   // render matrix on tab switch
   if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
   if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
@@ -1339,8 +1332,6 @@ function renderExistingFileList() {
   });
 }
 
-document.getElementById('uploadBtn').addEventListener('click', () => openUploadModal('create'));
-
 // 각 탭 전용 Add 버튼 — 그룹 미리 지정해서 모달 열기
 const tabAddButtons = [
   { id: 'addLiftBtn',   group: 'Lift'   },
@@ -1352,6 +1343,144 @@ tabAddButtons.forEach(({ id, group }) => {
   const btn = document.getElementById(id);
   if (btn) {
     btn.addEventListener('click', () => openUploadModal('create', null, group));
+  }
+});
+
+// 카드 클릭 → 해당 그룹 탭 점프
+window.jumpToGroupTab = function(groupLabel) {
+  const tabName = (groupLabel || '').toLowerCase(); // 'Lift' → 'lift'
+  if (TABS.includes(tabName)) {
+    switchTab(tabName);
+    // 부드러운 스크롤 (상단으로)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+/* ─────────────────────────────────────────────
+   CATEGORY MANAGEMENT MODAL (Add)
+   - admin이 Categories 옆 "+ New Category" 클릭 시 열림
+   - 입력: name, group, icon, frequency, custom_months, default_contractor, notes
+   - Save → service_categories INSERT → renderCategoryGrid 갱신
+   ───────────────────────────────────────────── */
+const categoryModal = document.getElementById('categoryModal');
+const catNameEl       = document.getElementById('catName');
+const catGroupEl      = document.getElementById('catGroup');
+const catIconEl       = document.getElementById('catIcon');
+const catFrequencyEl  = document.getElementById('catFrequency');
+const catCustomBox    = document.getElementById('catCustomMonthsBox');
+const catCustomGrid   = document.getElementById('catCustomMonths');
+const catContractorEl = document.getElementById('catContractor');
+const catNotesEl      = document.getElementById('catNotes');
+
+function openCategoryModal() {
+  // 초기화
+  catNameEl.value = '';
+  catGroupEl.value = '';
+  catIconEl.value = '';
+  catFrequencyEl.value = '';
+  catCustomBox.style.display = 'none';
+  catNotesEl.value = '';
+  // Contractor 드롭다운 채우기
+  catContractorEl.innerHTML = '<option value="">— None —</option>' +
+    contractors.map(c => `<option value="${c.id}">${escHtml(c.company || c.name || '—')}</option>`).join('');
+  catContractorEl.value = '';
+  // Custom months 12개 체크박스
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  catCustomGrid.innerHTML = monthLabels.map((lbl, i) => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" class="cat-month-cb" data-month="${i + 1}" style="width:16px;height:16px;cursor:pointer">
+      <span>${lbl}</span>
+    </label>
+  `).join('');
+  categoryModal.classList.add('open');
+  setTimeout(() => catNameEl.focus(), 50);
+}
+
+function closeCategoryModal() {
+  categoryModal.classList.remove('open');
+}
+
+// frequency = custom 일 때만 month 그리드 표시
+catFrequencyEl.addEventListener('change', () => {
+  catCustomBox.style.display = (catFrequencyEl.value === 'custom') ? '' : 'none';
+});
+
+// 모달 외부 클릭 = 닫기
+categoryModal.addEventListener('click', (e) => {
+  if (e.target === categoryModal) closeCategoryModal();
+});
+
+// Cancel 버튼
+document.getElementById('catCancelBtn').addEventListener('click', closeCategoryModal);
+
+// + New Category 버튼 핸들러
+const newCatBtn = document.getElementById('newCategoryBtn');
+if (newCatBtn) {
+  newCatBtn.addEventListener('click', openCategoryModal);
+}
+
+// Save 버튼 — service_categories INSERT
+document.getElementById('catSaveBtn').addEventListener('click', async () => {
+  const name = catNameEl.value.trim();
+  const group_label = catGroupEl.value;
+  const icon = catIconEl.value.trim() || '📋';
+  const frequency = catFrequencyEl.value;
+  const default_contractor_id = catContractorEl.value || null;
+  const notes = catNotesEl.value.trim() || null;
+
+  // 검증
+  if (!name) { showToast('Name is required.', 'err'); catNameEl.focus(); return; }
+  if (!group_label) { showToast('Group is required.', 'err'); catGroupEl.focus(); return; }
+  if (!frequency) { showToast('Frequency is required.', 'err'); catFrequencyEl.focus(); return; }
+
+  // custom_months
+  let custom_months = null;
+  if (frequency === 'custom') {
+    custom_months = Array.from(catCustomGrid.querySelectorAll('.cat-month-cb:checked'))
+      .map(cb => parseInt(cb.getAttribute('data-month'), 10))
+      .sort((a, b) => a - b);
+    if (custom_months.length === 0) {
+      showToast('Select at least one month for custom frequency.', 'err');
+      return;
+    }
+  }
+
+  // 같은 그룹 내 max position + 1
+  const samePos = categories
+    .filter(c => c.group_label === group_label)
+    .reduce((mx, c) => Math.max(mx, c.position || 0), 0);
+
+  const saveBtn = document.getElementById('catSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    const { error } = await supabase
+      .from('service_categories')
+      .insert({
+        name,
+        group_label,
+        icon,
+        frequency,
+        custom_months,
+        default_contractor_id,
+        notes,
+        position: samePos + 10,
+        active: true,
+      });
+    if (error) throw error;
+    showToast('Category created.', 'ok');
+    closeCategoryModal();
+    // 데이터 다시 로드
+    await loadCategories();
+    renderCategoryGrid();
+    renderUpcoming();
+  } catch (e) {
+    console.error('Category save failed:', e);
+    showToast(e.message || 'Failed to create category.', 'err');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Category';
   }
 });
 document.getElementById('upCancelBtn').addEventListener('click', closeUploadModal);
