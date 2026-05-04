@@ -96,10 +96,10 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
-        observer:  ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
-        owner:     ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident'],
-        tenant:    ['building', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
+        committee: ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
+        observer:  ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
+        owner:     ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident'],
+        tenant:    ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
