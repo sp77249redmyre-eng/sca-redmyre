@@ -5,7 +5,7 @@ const PAGE_CONFIG = {
   'building':       { title: 'Overview',             allowedRoles: null },
   'service-reports':{ title: 'Service Reports',       allowedRoles: null },
   'announcements':  { title: 'Announcements',         allowedRoles: null },
-  'parking':        { title: 'Parking / Towing',      allowedRoles: null },
+  'parking':        { title: 'Parking Management',    allowedRoles: null },
   'complaints':     { title: 'Resident Requests',     allowedRoles: null },
   'hvac':           { title: 'A/C Temperature',       allowedRoles: null },
   'emergency':      { title: 'Emergency Contacts',    allowedRoles: null },
