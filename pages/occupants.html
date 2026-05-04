@@ -734,7 +734,6 @@
       <div class="admin-search-header">
         <div class="admin-search-title">🔍 Quick Search</div>
         <button onclick="exportOccupants()" style="padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📥 Export Excel</button>
-        <button onclick="openBulkInvite()" style="padding:7px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📧 Bulk Invite</button>
         <div class="admin-search-bar">
           <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Search unit, name, email, plate…" autocomplete="off">
           <button id="adminSearchClear" class="admin-search-clear">✕</button>
@@ -746,25 +745,14 @@
       <div class="filter-chips" id="filterChips">
         <span class="filter-chip-label">Quick:</span>
         <button class="filter-chip" data-filter="all" onclick="applyFilter('all')">All</button>
-        <button class="filter-chip" data-filter="Ground" onclick="applyFilter('Ground')">Ground</button>
+        <button class="filter-chip" data-filter="Ground" onclick="applyFilter('Ground')">G</button>
         <button class="filter-chip" data-filter="1" onclick="applyFilter('1')">L1</button>
         <button class="filter-chip" data-filter="2" onclick="applyFilter('2')">L2</button>
         <button class="filter-chip" data-filter="3" onclick="applyFilter('3')">L3</button>
         <button class="filter-chip" data-filter="4" onclick="applyFilter('4')">L4</button>
         <button class="filter-chip" data-filter="5" onclick="applyFilter('5')">L5</button>
         <button class="filter-chip" data-filter="6" onclick="applyFilter('6')">L6</button>
-        <button class="filter-chip" data-filter="External" onclick="applyFilter('External')">External</button>
-      </div>
-      <!-- Column Toggle -->
-      <div class="col-toggle-bar" id="colToggleBar">
-        <span class="col-toggle-label">Columns:</span>
-        <button class="col-toggle-btn on" data-col="business_name" onclick="toggleCol(this)">Business Name</button>
-        <button class="col-toggle-btn" data-col="contact" onclick="toggleCol(this)">Contact</button>
-        <button class="col-toggle-btn on" data-col="primary_email" onclick="toggleCol(this)">Primary Email</button>
-        <button class="col-toggle-btn on" data-col="business_email" onclick="toggleCol(this)">Business Email</button>
-        <button class="col-toggle-btn" data-col="phone" onclick="toggleCol(this)">Phone</button>
-        <button class="col-toggle-btn" data-col="role" onclick="toggleCol(this)">Role</button>
-        <button class="col-toggle-btn on" data-col="vehicles" onclick="toggleCol(this)">Vehicles</button>
+        <button class="filter-chip" data-filter="External" onclick="applyFilter('External')">Ex</button>
       </div>
       <div id="adminSearchResults"></div>
     </div>
@@ -1537,51 +1525,7 @@ if (role === 'admin') {
   });
 }
 
-// ── Column Toggle ─────────────────────────────────────────────
-const ALL_COLS = ['business_name','contact','primary_email','business_email','phone','role','vehicles'];
-const DEFAULT_COLS = ['business_name','primary_email','business_email','vehicles'];
-const COL_STORAGE_KEY = 'occupants_active_cols_v1';
-
-function loadActiveCols() {
-  try {
-    const saved = localStorage.getItem(COL_STORAGE_KEY);
-    if (saved) {
-      const arr = JSON.parse(saved);
-      if (Array.isArray(arr) && arr.length > 0) {
-        return new Set(arr.filter(c => ALL_COLS.includes(c)));
-      }
-    }
-  } catch(e) {}
-  return new Set(DEFAULT_COLS);
-}
-function saveActiveCols() {
-  try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify([...activeCols])); } catch(e) {}
-}
-
-let activeCols = loadActiveCols();
-
-// 초기 토글 버튼 상태 동기화 (저장된 상태로 UI 반영)
-setTimeout(() => {
-  document.querySelectorAll('.col-toggle-btn').forEach(btn => {
-    if (activeCols.has(btn.dataset.col)) btn.classList.add('on');
-    else btn.classList.remove('on');
-  });
-}, 0);
-
-window.toggleCol = (btn) => {
-  const col = btn.dataset.col;
-  if (activeCols.has(col)) {
-    if (activeCols.size <= 1) return; // 최소 1개는 유지
-    activeCols.delete(col);
-    btn.classList.remove('on');
-  } else {
-    activeCols.add(col);
-    btn.classList.add('on');
-  }
-  saveActiveCols();
-  // 현재 결과 다시 렌더
-  if (window._lastSearchResults) renderSearchResults(window._lastSearchResults);
-};
+// ── Column Toggle removed — 4 fixed columns (Unit / Role / Email / Vehicles)
 
 // ── Filter Chips ──────────────────────────────────────────────
 window.applyFilter = (filter) => {
@@ -1636,26 +1580,39 @@ function renderSearchResults(results) {
         <button class="plate-badge-remove" onclick="removePlateInline('${o.id}','${p}')" title="Remove">✕</button>
       </span>`).join('');
 
+    const roleBadges = (() => {
+      if (o.is_committee) {
+        const parts = ['<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>'];
+        if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
+        return parts.join(' ');
+      }
+      const parts = [];
+      if (o.primary_email) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>');
+      if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
+      return parts.length ? parts.join(' ') : '<span style="font-size:11px;color:var(--muted)">—</span>';
+    })();
+
+    const emailCell = (() => {
+      const lines = [];
+      if (o.primary_email) {
+        lines.push(`<div class="edit-cell" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:12.5px">${o.primary_email}</div>`);
+      } else {
+        lines.push(`<div class="edit-cell empty" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:12.5px">Add primary email…</div>`);
+      }
+      if ((o.business_email||'').trim()) {
+        lines.push(`<div class="edit-cell" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:11.5px;color:var(--muted);margin-top:2px">${o.business_email}</div>`);
+      } else {
+        lines.push(`<div class="edit-cell empty" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:11.5px;color:var(--muted);margin-top:2px">Add business email…</div>`);
+      }
+      return lines.join('');
+    })();
+
     return `
       <tr data-id="${o.id}">
         <td><span class="unit-badge">${o.unit}</span></td>
-        ${activeCols.has('business_name') ? `<td><div class="edit-cell ${!o.business_name?'empty':''}" data-field="business_name" data-id="${o.id}" onclick="startInlineEdit(this)">${o.business_name || 'Add name…'}</div></td>` : ''}
-        ${activeCols.has('contact') ? `<td><div class="edit-cell ${!o.contact_person?'empty':''}" data-field="contact_person" data-id="${o.id}" onclick="startInlineEdit(this)">${o.contact_person || 'Add name…'}</div></td>` : ''}
-        ${activeCols.has('primary_email') ? `<td><div class="edit-cell ${!o.primary_email?'empty':''}" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)">${o.primary_email || 'Add email…'}</div></td>` : ''}
-        ${activeCols.has('business_email') ? `<td><div class="edit-cell ${!o.business_email?'empty':''}" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)">${o.business_email || 'Add email…'}</div></td>` : ''}
-        ${activeCols.has('phone') ? `<td><div class="edit-cell ${!o.phone?'empty':''}" data-field="phone" data-id="${o.id}" onclick="startInlineEdit(this)">${o.phone || 'Add phone…'}</div></td>` : ''}
-        ${activeCols.has('role') ? `<td>${(() => {
-            if (o.is_committee) {
-              const parts = ['<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>'];
-              if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
-              return parts.join(' ');
-            }
-            const parts = [];
-            if (o.primary_email) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>');
-            if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
-            return parts.length ? parts.join(' ') : '<span style="font-size:11px;color:var(--muted)">—</span>';
-          })()}</td>` : ''}
-        ${activeCols.has('vehicles') ? `<td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>` : ''}
+        <td>${roleBadges}</td>
+        <td>${emailCell}</td>
+        <td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>
         <td><button class="btn-secondary" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="openEditModal('${o.id}')">✏️ Edit</button></td>
       </tr>`;
   }).join('');
@@ -1666,13 +1623,9 @@ function renderSearchResults(results) {
         <thead>
           <tr>
             <th>Unit</th>
-            ${activeCols.has('business_name') ? '<th>Business Name</th>' : ''}
-            ${activeCols.has('contact') ? '<th>Contact</th>' : ''}
-            ${activeCols.has('primary_email') ? '<th>Primary Email</th>' : ''}
-            ${activeCols.has('business_email') ? '<th>Business Email</th>' : ''}
-            ${activeCols.has('phone') ? '<th>Phone</th>' : ''}
-            ${activeCols.has('role') ? '<th>Role</th>' : ''}
-            ${activeCols.has('vehicles') ? '<th>Vehicles</th>' : ''}
+            <th>Role</th>
+            <th>Email</th>
+            <th>Vehicles</th>
             <th>Actions</th>
           </tr>
         </thead>
