@@ -620,7 +620,7 @@
 @media (max-width: 768px) {
   .content { padding: 16px !important; overflow-x: hidden; }
   .occ-list { max-width: 100%; width: 100%; }
-  .occ-item { max-width: 600px; width: 100%; box-sizing: border-box; margin-left: auto; margin-right: auto; }
+  .occ-item { max-width: 100%; width: 100%; box-sizing: border-box; }
   .occ-header { box-sizing: border-box; max-width: 100%; }
   .occ-name { word-break: break-word; overflow-wrap: break-word; }
   
@@ -709,52 +709,24 @@
     
     <div class="section-hdr">
       <div class="section-title">Occupants</div>
+      <button id="exportExcelBtn" onclick="exportOccupants()" style="display:none;padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;gap:6px;">📥 Export Excel</button>
     </div>
 
     <!-- Suite Tabs -->
     <div class="suite-tabs">
-      <button class="suite-tab active" data-suite="Ground">G</button>
-      <button class="suite-tab" data-suite="Level 1">L1</button>
-      <button class="suite-tab" data-suite="Level 2">L2</button>
-      <button class="suite-tab" data-suite="Level 3">L3</button>
-      <button class="suite-tab" data-suite="Level 4">L4</button>
-      <button class="suite-tab" data-suite="Level 5">L5</button>
-      <button class="suite-tab" data-suite="Level 6">L6</button>
-      <button class="suite-tab" data-suite="External">Ex</button>
+      <button class="suite-tab active" data-suite="Ground">Ground</button>
+      <button class="suite-tab" data-suite="Level 1">Level 1</button>
+      <button class="suite-tab" data-suite="Level 2">Level 2</button>
+      <button class="suite-tab" data-suite="Level 3">Level 3</button>
+      <button class="suite-tab" data-suite="Level 4">Level 4</button>
+      <button class="suite-tab" data-suite="Level 5">Level 5</button>
+      <button class="suite-tab" data-suite="Level 6">Level 6</button>
+      <button class="suite-tab" data-suite="External">External</button>
     </div>
 
     <!-- Occupant List -->
     <div class="occ-list" id="occList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
-    </div>
-
-    <!-- Admin Search Section -->
-    <div class="admin-search-section" id="adminSearchSection">
-      <div style="height:1px;background:var(--border);margin-bottom:28px"></div>
-      <div class="admin-search-header">
-        <div class="admin-search-title">🔍 Quick Search</div>
-        <button onclick="exportOccupants()" style="padding:7px 16px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;">📥 Export Excel</button>
-        <div class="admin-search-bar">
-          <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Search unit, name, email, plate…" autocomplete="off">
-          <button id="adminSearchClear" class="admin-search-clear">✕</button>
-        </div>
-        <div class="admin-search-count" id="adminSearchCount"></div>
-      </div>
-
-      <!-- Filter Chips -->
-      <div class="filter-chips" id="filterChips">
-        <span class="filter-chip-label">Quick:</span>
-        <button class="filter-chip" data-filter="all" onclick="applyFilter('all')">All</button>
-        <button class="filter-chip" data-filter="Ground" onclick="applyFilter('Ground')">G</button>
-        <button class="filter-chip" data-filter="1" onclick="applyFilter('1')">L1</button>
-        <button class="filter-chip" data-filter="2" onclick="applyFilter('2')">L2</button>
-        <button class="filter-chip" data-filter="3" onclick="applyFilter('3')">L3</button>
-        <button class="filter-chip" data-filter="4" onclick="applyFilter('4')">L4</button>
-        <button class="filter-chip" data-filter="5" onclick="applyFilter('5')">L5</button>
-        <button class="filter-chip" data-filter="6" onclick="applyFilter('6')">L6</button>
-        <button class="filter-chip" data-filter="External" onclick="applyFilter('External')">Ex</button>
-      </div>
-      <div id="adminSearchResults"></div>
     </div>
 
   </div>
@@ -968,6 +940,9 @@ async function loadOccupants() {
   // admin은 전체 유닛 접근이라 myOwnedUnits 안 쓰지만 호환성 위해 세팅
   if (role === 'admin') {
     myOwnedUnits = new Set(allOccupants.map(o => o.unit));
+    // Show Export Excel button for admin
+    const exportBtn = document.getElementById('exportExcelBtn');
+    if (exportBtn) exportBtn.style.display = 'inline-flex';
   }
 
   // owner/tenant: 전체 탭 다 표시 (이웃 보게), 본인 유닛 있는 첫 번째 층으로 탭 active 이동
@@ -1488,202 +1463,6 @@ function collectPlates() {
 }
 // ─────────────────────────────────────────────────────────────
 
-// ── Admin Search ─────────────────────────────────────────────
-if (role === 'admin') {
-  document.getElementById('adminSearchSection').classList.add('visible');
-
-  const searchInput = document.getElementById('adminSearchInput');
-  const searchClear = document.getElementById('adminSearchClear');
-  const searchCount = document.getElementById('adminSearchCount');
-  const searchResults = document.getElementById('adminSearchResults');
-
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.trim().toLowerCase();
-    searchClear.style.display = q ? 'block' : 'none';
-    // 필터 칩 해제
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    if (!q) { searchResults.innerHTML = ''; searchCount.textContent = ''; return; }
-    renderSearchResults(allOccupants.filter(o => {
-      const plates = (o.license_plates || '').toLowerCase();
-      return (
-        (o.unit || '').toLowerCase().includes(q) ||
-        (o.business_name || '').toLowerCase().includes(q) ||
-        (o.contact_person || '').toLowerCase().includes(q) ||
-        (o.primary_email || '').toLowerCase().includes(q) ||
-        (o.business_email || '').toLowerCase().includes(q) ||
-        plates.includes(q)
-      );
-    }));
-  });
-
-  searchClear.addEventListener('click', () => {
-    searchInput.value = '';
-    searchClear.style.display = 'none';
-    searchResults.innerHTML = '';
-    searchCount.textContent = '';
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  });
-}
-
-// ── Column Toggle removed — 4 fixed columns (Unit / Role / Email / Vehicles)
-
-// ── Filter Chips ──────────────────────────────────────────────
-window.applyFilter = (filter) => {
-  // 검색창 초기화
-  const searchInput = document.getElementById('adminSearchInput');
-  searchInput.value = '';
-  document.getElementById('adminSearchClear').style.display = 'none';
-
-  // 칩 활성화
-  document.querySelectorAll('.filter-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.filter === filter);
-  });
-
-  if (filter === 'all') {
-    renderSearchResults(allOccupants);
-    return;
-  }
-
-  const results = allOccupants.filter(o => {
-    const unit = (o.unit || '').toUpperCase();
-    if (filter === 'Ground') return o.level === 'Ground' || o.unit === 'Unit 1';
-    if (filter === 'External') return o.level === 'External';
-    // Level (숫자) — unit이 "1A", "2B" 등
-    if (/^\d$/.test(filter)) return unit.startsWith(filter);
-    // Suite (알파벳) — unit이 "1A", "2A" 등 끝자리
-    if (/^[A-H]$/.test(filter)) return unit.endsWith(filter);
-    return false;
-  });
-
-  renderSearchResults(results);
-};
-
-function renderSearchResults(results) {
-  window._lastSearchResults = results;
-
-  const countEl = document.getElementById('adminSearchCount');
-  const resultsEl = document.getElementById('adminSearchResults');
-
-  if (!results.length) {
-    countEl.textContent = '';
-    resultsEl.innerHTML = `<div class="search-table-wrap"><div class="search-empty">No results found</div></div>`;
-    return;
-  }
-
-  countEl.textContent = `${results.length} result${results.length > 1 ? 's' : ''}`;
-
-  const rows = results.map(o => {
-    const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
-    const plateBadges = plates.map(p => `
-      <span class="plate-badge" data-occ-id="${o.id}" data-plate="${p}">
-        ${p}
-        <button class="plate-badge-remove" onclick="removePlateInline('${o.id}','${p}')" title="Remove">✕</button>
-      </span>`).join('');
-
-    const roleBadges = (() => {
-      if (o.is_committee) {
-        const parts = ['<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#ede9fe;color:#6d28d9">committee</span>'];
-        if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
-        return parts.join(' ');
-      }
-      const parts = [];
-      if (o.primary_email) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dbeafe;color:#1d4ed8">owner</span>');
-      if ((o.business_email||'').trim()) parts.push('<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#dcfce7;color:#15803d">tenant (staff)</span>');
-      return parts.length ? parts.join(' ') : '<span style="font-size:11px;color:var(--muted)">—</span>';
-    })();
-
-    const emailCell = (() => {
-      const lines = [];
-      if (o.primary_email) {
-        lines.push(`<div class="edit-cell" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:12.5px">${o.primary_email}</div>`);
-      } else {
-        lines.push(`<div class="edit-cell empty" data-field="primary_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:12.5px">Add primary email…</div>`);
-      }
-      if ((o.business_email||'').trim()) {
-        lines.push(`<div class="edit-cell" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:11.5px;color:var(--muted);margin-top:2px">${o.business_email}</div>`);
-      } else {
-        lines.push(`<div class="edit-cell empty" data-field="business_email" data-id="${o.id}" onclick="startInlineEdit(this)" style="font-size:11.5px;color:var(--muted);margin-top:2px">Add business email…</div>`);
-      }
-      return lines.join('');
-    })();
-
-    return `
-      <tr data-id="${o.id}">
-        <td><span class="unit-badge">${o.unit}</span></td>
-        <td>${roleBadges}</td>
-        <td>${emailCell}</td>
-        <td><div class="plate-badges" id="plates-${o.id}">${plateBadges}<button class="plate-add-btn" onclick="addPlateInline('${o.id}')">+ Add</button></div></td>
-        <td><button class="btn-secondary" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="openEditModal('${o.id}')">✏️ Edit</button></td>
-      </tr>`;
-  }).join('');
-
-  resultsEl.innerHTML = `
-    <div class="search-table-wrap">
-      <table class="search-table">
-        <thead>
-          <tr>
-            <th>Unit</th>
-            <th>Role</th>
-            <th>Email</th>
-            <th>Vehicles</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
-
-// Inline Edit
-window.startInlineEdit = (cell) => {
-  if (cell.classList.contains('editing')) return;
-  const field = cell.dataset.field;
-  const id = cell.dataset.id;
-  const occ = allOccupants.find(o => o.id === id);
-  const currentVal = occ?.[field] || '';
-
-  cell.classList.add('editing');
-  cell.classList.remove('empty');
-
-  const input = document.createElement('input');
-  input.type = field.includes('email') ? 'email' : 'text';
-  input.value = currentVal;
-  input.style.minWidth = '120px';
-  cell.innerHTML = '';
-  cell.appendChild(input);
-  input.focus();
-  input.select();
-
-  const save = async () => {
-    const newVal = input.value.trim();
-    cell.classList.remove('editing');
-    if (newVal === currentVal) {
-      cell.innerHTML = currentVal || '<span style="color:var(--muted);font-style:italic">Add…</span>';
-      if (!currentVal) cell.classList.add('empty');
-      return;
-    }
-    try {
-      const { error } = await supabase.from('occupants').update({ [field]: newVal || null }).eq('id', id);
-      if (error) throw error;
-      // Update local cache
-      const idx = allOccupants.findIndex(o => o.id === id);
-      if (idx !== -1) allOccupants[idx][field] = newVal || null;
-      cell.innerHTML = newVal || '';
-      if (!newVal) cell.classList.add('empty');
-      showToast('Saved ✓');
-    } catch(e) {
-      showToast('Failed to save', true);
-      cell.innerHTML = currentVal || '';
-      if (!currentVal) cell.classList.add('empty');
-    }
-  };
-
-  input.addEventListener('blur', save);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { cell.classList.remove('editing'); cell.innerHTML = currentVal || ''; if (!currentVal) cell.classList.add('empty'); }
-  });
-};
 
 // Add plate inline
 window.addPlateInline = (id) => {
@@ -1888,7 +1667,7 @@ document.getElementById('sendBulkInviteBtn').addEventListener('click', async () 
 // ─────────────────────────────────────────────────────────────
 
 window.exportOccupants = () => {
-  const data = (window._lastSearchResults && window._lastSearchResults.length) ? window._lastSearchResults : allOccupants;
+  const data = allOccupants;
 
   // Excel은 화면 토글과 무관하게 항상 모든 컬럼 출력
   const rows = data.map(o => {
