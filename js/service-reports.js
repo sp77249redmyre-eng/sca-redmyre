@@ -299,20 +299,8 @@ function renderCategoryGrid() {
       }
     }
 
-    let actionsBar = '';
-    if (isAdmin && cats.length === 1) {
-      const cat = cats[0];
-      actionsBar = `
-        <div class="sr-cat-actions-bar" onclick="event.stopPropagation()">
-          <button class="sr-cat-action-edit" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">✏️ Edit</button>
-          <div class="sr-cat-action-divider"></div>
-          <button class="sr-cat-action-delete" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">🗑️ Delete</button>
-        </div>
-      `;
-    }
-
     return `
-      <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="jumpToGroupTab('${escHtml(group)}')">
+      <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="openGroupModal('${escHtml(group)}')">
         <div class="sr-cat-head">
           <div class="sr-cat-icon">${escHtml(groupIcon)}</div>
           <div class="sr-cat-info">
@@ -331,7 +319,6 @@ function renderCategoryGrid() {
           </div>
         </div>
         ${warning}
-        ${actionsBar}
       </div>
     `;
   }).join('');
@@ -1503,13 +1490,83 @@ tabAddButtons.forEach(({ id, group }) => {
 
 // Card click -> jump to corresponding group tab
 window.jumpToGroupTab = function(groupLabel) {
-  const tabName = (groupLabel || '').toLowerCase(); // 'Lift' → 'lift'
+  const tabName = (groupLabel || '').toLowerCase();
   if (TABS.includes(tabName)) {
     switchTab(tabName);
-    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
+
+const FREQ_LABEL = {
+  'weekly': 'Weekly',
+  'fortnightly': 'Fortnightly',
+  'monthly': 'Monthly',
+  'quarterly': 'Quarterly',
+  '6-monthly': 'Every 6 months',
+  'annual': 'Annual',
+  'custom': 'Custom',
+};
+const GROUP_ICON = {
+  'Lift': '🛗', 'HVAC': '💧', 'Fire': '🔥', 'Garage': '🚪',
+  'Plumbing': '🔧', 'Electrical': '⚡', 'Pest Control': '🐜',
+  'Hygiene': '🧴', 'Waste': '🗑️', 'Other': '📋',
+};
+
+let currentGroupModalLabel = null;
+
+window.openGroupModal = function(groupLabel) {
+  currentGroupModalLabel = groupLabel;
+  const cats = categories.filter(c => c.group_label === groupLabel);
+  if (!cats.length) return;
+
+  document.getElementById('groupModalIcon').textContent = GROUP_ICON[groupLabel] || '📋';
+  document.getElementById('groupModalTitle').textContent = groupLabel;
+  document.getElementById('groupModalSub').textContent = `${cats.length} ${cats.length > 1 ? 'categories' : 'category'}`;
+
+  const list = document.getElementById('groupModalList');
+  list.innerHTML = cats.map(cat => {
+    const last = lastByCategory[cat.id];
+    const lastTxt = last ? new Date(last.report_date).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No record';
+    const freqTxt = FREQ_LABEL[cat.frequency] || cat.frequency || '—';
+    const adminBtns = isAdmin ? `
+      <div class="sr-group-modal-actions">
+        <button class="sr-cat-action-edit-btn" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">✏️ Edit</button>
+        <button class="sr-cat-action-delete-btn" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">🗑️</button>
+      </div>
+    ` : '';
+    const cleanName = cat.name.replace(/^.*–\s*/, '');
+    return `
+      <div class="sr-group-modal-item">
+        <div class="sr-group-modal-item-main">
+          <span class="sr-group-modal-item-icon">${escHtml(cat.icon || '📋')}</span>
+          <div style="min-width:0;flex:1">
+            <div class="sr-group-modal-item-name">${escHtml(cleanName)}</div>
+            <div class="sr-group-modal-item-meta">${escHtml(freqTxt)} · Last: ${escHtml(lastTxt)}</div>
+          </div>
+        </div>
+        ${adminBtns}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('groupModal').classList.add('open');
+};
+
+function closeGroupModal() {
+  document.getElementById('groupModal').classList.remove('open');
+  currentGroupModalLabel = null;
+}
+
+const groupModalEl = document.getElementById('groupModal');
+if (groupModalEl) {
+  groupModalEl.addEventListener('click', (e) => { if (e.target === groupModalEl) closeGroupModal(); });
+  document.getElementById('groupModalCloseBtn').addEventListener('click', closeGroupModal);
+  document.getElementById('groupModalJumpBtn').addEventListener('click', () => {
+    const g = currentGroupModalLabel;
+    closeGroupModal();
+    if (g) window.jumpToGroupTab(g);
+  });
+}
 
 /* ─────────────────────────────────────────────
    CATEGORY MANAGEMENT MODAL (Add)
