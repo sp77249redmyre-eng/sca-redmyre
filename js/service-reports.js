@@ -108,6 +108,18 @@ function nextDueFor(cat) {
   const last = lastByCategory[cat.id];
   const today = new Date(); today.setHours(0,0,0,0);
 
+  if (cat.frequency === 'weekly') {
+    if (!last) return { date: null, status: 'first', diff: null };
+    const d = new Date(last.report_date);
+    d.setDate(d.getDate() + 7);
+    return classifyDue(d, today);
+  }
+  if (cat.frequency === 'fortnightly') {
+    if (!last) return { date: null, status: 'first', diff: null };
+    const d = new Date(last.report_date);
+    d.setDate(d.getDate() + 14);
+    return classifyDue(d, today);
+  }
   if (cat.frequency === 'monthly') {
     if (!last) return { date: null, status: 'first', diff: null };
     const d = new Date(last.report_date);
@@ -156,6 +168,21 @@ function classifyDue(due, today) {
 }
 
 // ─── RENDER: CATEGORY GRID ───────────────────────────────────
+// 그룹 단위 카드 렌더링 — 같은 group_label의 카테고리들을 1장의 카드로 묶어 표시
+const GROUP_DISPLAY_ORDER = ['Lift', 'HVAC', 'Fire', 'Garage'];
+const GROUP_DEFAULT_ICONS = {
+  'Lift':         '🛗',
+  'HVAC':         '❄️',
+  'Fire':         '🔥',
+  'Garage':       '🚪',
+  'Plumbing':     '🔧',
+  'Electrical':   '⚡',
+  'Pest Control': '🐜',
+  'Hygiene':      '🧴',
+  'Waste':        '🗑️',
+  'Other':        '📋',
+};
+
 function renderCategoryGrid() {
   const grid = document.getElementById('catGrid');
   if (!categories.length) {
@@ -163,64 +190,116 @@ function renderCategoryGrid() {
     return;
   }
 
-  grid.innerHTML = categories.map(cat => {
-    const last = lastByCategory[cat.id];
-    const next = nextDueFor(cat);
-    const contractor = contractors.find(c => c.id === cat.default_contractor_id);
-    const vendor = contractor ? contractor.company : '—';
+  // 그룹별로 카테고리 묶기
+  const groupMap = {};
+  categories.forEach(cat => {
+    const g = cat.group_label;
+    if (!groupMap[g]) groupMap[g] = [];
+    groupMap[g].push(cat);
+  });
 
-    // count reports in current calendar year
-    const yearNow = new Date().getFullYear();
+  // 그룹 표시 순서: 기본 4개 먼저, 그 다음은 알파벳
+  const groupKeys = Object.keys(groupMap);
+  groupKeys.sort((a, b) => {
+    const ia = GROUP_DISPLAY_ORDER.indexOf(a);
+    const ib = GROUP_DISPLAY_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  const yearNow = new Date().getFullYear();
+
+  grid.innerHTML = groupKeys.map(group => {
+    const cats = groupMap[group];
+
+    // 그룹 전체에서 가장 최근 점검 (모든 카테고리 통틀어)
+    let latestReport = null;
+    cats.forEach(c => {
+      const r = lastByCategory[c.id];
+      if (!r) return;
+      if (!latestReport || (r.report_date || '') > (latestReport.report_date || '')) {
+        latestReport = r;
+      }
+    });
+
+    // 그룹 내 어떤 카테고리든 due/overdue/first가 있으면 가장 심각한 것 표시
+    // 우선순위: overdue > due > first > ok
+    let groupWarning = null;
+    cats.forEach(c => {
+      const n = nextDueFor(c);
+      if (n.status === 'overdue') {
+        if (!groupWarning || groupWarning.priority < 3) {
+          groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
+        } else if (groupWarning.status === 'overdue' && Math.abs(n.diff) > Math.abs(groupWarning.diff)) {
+          // 더 오래 overdue
+          groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
+        }
+      } else if (n.status === 'due') {
+        if (!groupWarning || groupWarning.priority < 2) {
+          groupWarning = { priority: 2, status: 'due', diff: n.diff, cat: c };
+        }
+      } else if (n.status === 'first') {
+        if (!groupWarning || groupWarning.priority < 1) {
+          groupWarning = { priority: 1, status: 'first', cat: c };
+        }
+      }
+    });
+
+    // 그룹 내 모든 리포트 (올해)
+    const groupCatIds = new Set(cats.map(c => c.id));
     const yearCount = reports.filter(r =>
-      r.category_id === cat.id && r.period_year === yearNow
+      groupCatIds.has(r.category_id) && r.period_year === yearNow
     ).length;
 
-    const lastTxt = last ? fmtDate(last.report_date) : 'Never';
-    const nextTxt = next.status === 'first' ? 'First inspection'
-                  : next.date ? fmtDate(next.date) : '—';
+    // 카테고리 수
+    const catCount = cats.length;
+    const catCountTxt = catCount === 1 ? '1 service' : `${catCount} services`;
 
+    // 그룹 아이콘 — 카테고리가 1개면 그 아이콘, 여러 개면 기본 그룹 아이콘
+    const groupIcon = (catCount === 1 && cats[0].icon) ? cats[0].icon : (GROUP_DEFAULT_ICONS[group] || '📋');
+
+    // Vendor — 그룹 내 default_contractor 첫 번째 (대부분 같은 회사)
+    let vendor = '—';
+    for (const c of cats) {
+      const ct = contractors.find(x => x.id === c.default_contractor_id);
+      if (ct) { vendor = ct.company; break; }
+    }
+
+    const lastTxt = latestReport ? fmtDate(latestReport.report_date) : 'Never';
+
+    // 경고 박스
     let warning = '';
-    if (isManagement) {
-      if (next.status === 'overdue') {
-        warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(next.diff)} days</div>`;
-      } else if (next.status === 'due') {
-        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${next.diff} days</div>`;
-      } else if (next.status === 'first') {
-        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">📋 No inspection record yet</div>`;
+    if (isManagement && groupWarning) {
+      if (groupWarning.status === 'overdue') {
+        warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(groupWarning.diff)} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+      } else if (groupWarning.status === 'due') {
+        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${groupWarning.diff} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+      } else if (groupWarning.status === 'first') {
+        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">📋 ${escHtml(groupWarning.cat.name)} — no record yet</div>`;
       }
     }
 
     return `
-      <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(cat.group_label)}" onclick="jumpToGroupTab('${escHtml(cat.group_label)}')">
+      <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="jumpToGroupTab('${escHtml(group)}')">
         <div class="sr-cat-head">
-          <div class="sr-cat-icon">${escHtml(cat.icon || '📋')}</div>
+          <div class="sr-cat-icon">${escHtml(groupIcon)}</div>
           <div class="sr-cat-info">
-            <div class="sr-cat-name">${escHtml(cat.name)}</div>
-            <div class="sr-cat-vendor">${escHtml(vendor)}</div>
+            <div class="sr-cat-name">${escHtml(group)}</div>
+            <div class="sr-cat-vendor">${escHtml(vendor)} · ${catCountTxt}</div>
           </div>
         </div>
         <div class="sr-cat-meta">
           <div class="sr-meta-block">
             <div class="sr-meta-label">Last Service</div>
-            <div class="sr-meta-val ${last ? '' : 'muted'}">${lastTxt}</div>
+            <div class="sr-meta-val ${latestReport ? '' : 'muted'}">${lastTxt}</div>
           </div>
-          <div class="sr-meta-block">
-            <div class="sr-meta-label">Next Due</div>
-            <div class="sr-meta-val ${next.date ? '' : 'muted'}">${nextTxt}</div>
-          </div>
-        </div>
-        ${isManagement ? `
-        <div class="sr-cat-meta" style="margin-top:8px;padding-top:10px">
           <div class="sr-meta-block">
             <div class="sr-meta-label">${yearNow} Reports</div>
             <div class="sr-meta-val">${yearCount}</div>
           </div>
-          <div class="sr-meta-block">
-            <div class="sr-meta-label">Frequency</div>
-            <div class="sr-meta-val" style="font-size:12px;text-transform:capitalize">${escHtml(cat.frequency.replace('-',' '))}</div>
-          </div>
         </div>
-        ` : ''}
         ${warning}
       </div>
     `;
@@ -1372,8 +1451,46 @@ const catCustomGrid   = document.getElementById('catCustomMonths');
 const catContractorEl = document.getElementById('catContractor');
 const catNotesEl      = document.getElementById('catNotes');
 
+// 그룹별 추천 이모지 (그룹 선택 시 자동 표시)
+const GROUP_EMOJI_SUGGESTIONS = {
+  'Lift':         ['🛗', '🏢', '⬆️', '🔝'],
+  'HVAC':         ['❄️', '💧', '🧪', '🌡️', '💨'],
+  'Fire':         ['🔥', '🚨', '🧯', '🚒'],
+  'Garage':       ['🚪', '🚗', '🛢️', '🔧'],
+  'Plumbing':     ['🚰', '🚿', '🛁', '🔧', '💧'],
+  'Electrical':   ['⚡', '💡', '🔌', '🔋'],
+  'Pest Control': ['🐜', '🪳', '🐀', '🕷️', '🦟'],
+  'Hygiene':      ['🧴', '🧼', '🚽', '🧻', '🧽'],
+  'Waste':        ['🗑️', '♻️', '🚯', '📦'],
+  'Other':        ['📋', '🛠️', '🏗️', '⚙️'],
+};
+
+// 일반 자주 쓰는 이모지 (기본 표시)
+const COMMON_EMOJIS = ['🛗','❄️','🔥','🚪','💧','⚡','🐜','🧴','🗑️','🛠️','🔧','🚨','🧯','💡','🌡️','🚰','♻️','🧪','🧼','📋'];
+
 // HTML이 아직 배포되지 않은 경우 등을 대비한 가드 — 모달 없으면 전체 블록 skip
 if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
+
+  function renderIconPicker(emojis) {
+    const picker = document.getElementById('catIconPicker');
+    if (!picker) return;
+    picker.innerHTML = emojis.map(e => `
+      <button type="button" class="cat-icon-btn" data-emoji="${e}"
+        style="font-size:22px;padding:6px;background:#fff;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;line-height:1;transition:all 0.12s">${e}</button>
+    `).join('');
+    // 클릭 시 input에 채우기 + 선택 표시
+    picker.querySelectorAll('.cat-icon-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        catIconEl.value = btn.getAttribute('data-emoji');
+        picker.querySelectorAll('.cat-icon-btn').forEach(b => {
+          b.style.borderColor = 'var(--border)';
+          b.style.background = '#fff';
+        });
+        btn.style.borderColor = '#2563eb';
+        btn.style.background = '#dbeafe';
+      });
+    });
+  }
 
   function openCategoryModal() {
     catNameEl.value = '';
@@ -1392,6 +1509,8 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
         <span>${lbl}</span>
       </label>
     `).join('');
+    // 기본 이모지 그리드 (자주 쓰는 거)
+    renderIconPicker(COMMON_EMOJIS);
     categoryModal.classList.add('open');
     setTimeout(() => catNameEl.focus(), 50);
   }
@@ -1399,6 +1518,18 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
   function closeCategoryModal() {
     categoryModal.classList.remove('open');
   }
+
+  // Group 선택 시 → 그 그룹에 어울리는 이모지로 picker 갱신
+  catGroupEl.addEventListener('change', () => {
+    const suggestions = GROUP_EMOJI_SUGGESTIONS[catGroupEl.value];
+    if (suggestions && suggestions.length) {
+      // 그룹 추천 + 자주 쓰는 거 조합 (중복 제거)
+      const combined = [...new Set([...suggestions, ...COMMON_EMOJIS])];
+      renderIconPicker(combined);
+    } else {
+      renderIconPicker(COMMON_EMOJIS);
+    }
+  });
 
   // frequency = custom 일 때만 month 그리드 표시
   catFrequencyEl.addEventListener('change', () => {
