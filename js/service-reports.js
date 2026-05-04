@@ -606,16 +606,16 @@ function renderLiftStats() {
 
 /* ─────────────────────────────────────────────
    Lift Service Matrix
-   행: Lift 1 Maintenance / Callout / (Repair/Shutdown은 데이터 있을 때만)
-       Lift 2 Maintenance / Callout / Repair / Shutdown
+   행: Lift 1 Maintenance / Callout / (Repair/Investigation은 데이터 있을 때만)
+       Lift 2 Maintenance / Callout / Repair / Investigation
    열: 12개월 (May → Apr, contract year 순서)
    셀 클릭: 해당 월/lift/type 리포트 모달 (단일=바로, 복수=리스트)
    ───────────────────────────────────────────── */
 const LIFT_SERVICE_TYPES = [
-  { key: 'pm',       label: 'Maintenance', cls: 'ok'    },
-  { key: 'callout',  label: 'Callout',     cls: 'warn'  },
-  { key: 'repair',   label: 'Repair',      cls: 'crit'  },
-  { key: 'shutdown', label: 'Shutdown',    cls: 'other' },
+  { key: 'pm',            label: 'Maintenance',   cls: 'ok'    },
+  { key: 'callout',       label: 'Callout',       cls: 'warn'  },
+  { key: 'repair',        label: 'Repair',        cls: 'crit'  },
+  { key: 'investigation', label: 'Investigation', cls: 'other' },
 ];
 
 function classifyLiftReport(r) {
@@ -625,8 +625,8 @@ function classifyLiftReport(r) {
   if (t === 'pm' || t.includes('maint')) return 'pm';
   if (t.includes('call')) return 'callout';
   if (t.includes('repair') || t.includes('notify')) return 'repair';
-  // 그 외 (other, inspection, shutdown 등)
-  return 'shutdown';
+  // 그 외 (other, inspection, shutdown 등) → Investigation
+  return 'investigation';
 }
 
 function renderLiftMatrix() {
@@ -646,8 +646,8 @@ function renderLiftMatrix() {
 
   // bucket[liftUnit][typeKey][slotIdx] = report[]
   const bucket = {
-    lift_1: { pm: {}, callout: {}, repair: {}, shutdown: {} },
-    lift_2: { pm: {}, callout: {}, repair: {}, shutdown: {} },
+    lift_1: { pm: {}, callout: {}, repair: {}, investigation: {} },
+    lift_2: { pm: {}, callout: {}, repair: {}, investigation: {} },
   };
   yearReports.forEach(r => {
     const tk = classifyLiftReport(r);
@@ -666,7 +666,7 @@ function renderLiftMatrix() {
   function rowsForUnit(unit) {
     return LIFT_SERVICE_TYPES.filter(t => {
       if (t.key === 'pm' || t.key === 'callout') return true;
-      // repair/shutdown은 해당 unit에 데이터 있을 때만
+      // repair/investigation은 해당 unit에 데이터 있을 때만
       return Object.keys(bucket[unit][t.key]).length > 0;
     });
   }
