@@ -272,7 +272,7 @@ const matrixState = {
   garage: { year: new Date().getFullYear() },
   hvac:   { year: new Date().getFullYear() },
   fire:   { year: new Date().getFullYear() },
-  lift:   { year: new Date().getFullYear(), filter: 'all' },
+  lift:   { year: null, filter: 'all' },  // year = contract year number, set by setupLiftDashboard
 };
 
 function getCategoriesForGroup(groupLabel) {
@@ -444,14 +444,61 @@ function getLiftReports() {
   return reports.filter(r => liftCats.includes(r.category_id));
 }
 
-function liftReportsForYear(year) {
-  return getLiftReports().filter(r => r.period_year === year);
+// ── CONTRACT YEAR LOGIC (Lift / TKE) ──────────────────────────
+// TKE Platinum contract starts 1 May. Year 1 = May 2025 – Apr 2026.
+const LIFT_CONTRACT_START_MONTH = 5;        // May
+const LIFT_CONTRACT_START_YEAR  = 2025;     // first year of contract
+// Months in display order, starting from contract month:
+// [May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Apr]
+const LIFT_CONTRACT_MONTHS = [5,6,7,8,9,10,11,12,1,2,3,4];
+
+// Given a (year, month), return which contract year it belongs to.
+// e.g. (2025, 5) → 1, (2026, 4) → 1, (2026, 5) → 2
+function liftContractYearOf(year, month) {
+  if (year < LIFT_CONTRACT_START_YEAR) return null;
+  if (year === LIFT_CONTRACT_START_YEAR && month < LIFT_CONTRACT_START_MONTH) return null;
+  const startIdx = (year - LIFT_CONTRACT_START_YEAR) * 12 + (month - LIFT_CONTRACT_START_MONTH);
+  return Math.floor(startIdx / 12) + 1;
+}
+
+// Range for a contract year N: returns { startYear, startMonth, endYear, endMonth, label }
+function liftContractYearRange(n) {
+  const startY = LIFT_CONTRACT_START_YEAR + (n - 1);
+  const startM = LIFT_CONTRACT_START_MONTH;
+  // end = startMonth-1 of next calendar
+  const endY = startY + 1;
+  const endM = LIFT_CONTRACT_START_MONTH - 1; // April
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {
+    startYear: startY, startMonth: startM,
+    endYear: endY, endMonth: endM,
+    label: `Year ${n} (${monthLabels[startM-1]} ${startY} – ${monthLabels[endM-1]} ${endY})`
+  };
+}
+
+// Highest contract year that has any report (or current year if none)
+function highestLiftContractYear() {
+  const all = getLiftReports();
+  let max = 1;
+  all.forEach(r => {
+    const cy = liftContractYearOf(r.period_year, r.period_month);
+    if (cy && cy > max) max = cy;
+  });
+  // Also include current calendar position
+  const now = new Date();
+  const cyNow = liftContractYearOf(now.getFullYear(), now.getMonth() + 1);
+  if (cyNow && cyNow > max) max = cyNow;
+  return max;
+}
+
+function liftReportsForContractYear(n) {
+  return getLiftReports().filter(r => liftContractYearOf(r.period_year, r.period_month) === n);
 }
 
 function setupLiftDashboard() {
   const sel = document.getElementById('liftYear');
   if (!sel) return;
-  buildYearOptions(sel, matrixState.lift.year);
+  buildLiftYearOptions(sel);
   sel.addEventListener('change', () => {
     matrixState.lift.year = parseInt(sel.value, 10);
     renderLiftDashboard();
@@ -469,6 +516,28 @@ function setupLiftDashboard() {
   }
 }
 
+// Build year selector with contract year labels
+function buildLiftYearOptions(sel) {
+  const maxYear = highestLiftContractYear();
+  // Default to current contract year (or latest with data)
+  const now = new Date();
+  const currentCy = liftContractYearOf(now.getFullYear(), now.getMonth() + 1) || maxYear;
+  // Use the higher of currentCy or any stored selection that's still valid
+  let selected = matrixState.lift.year;
+  if (!selected || selected < 1 || selected > maxYear) selected = currentCy;
+  matrixState.lift.year = selected;
+  // Build options 1..maxYear
+  sel.innerHTML = '';
+  for (let n = maxYear; n >= 1; n--) {
+    const r = liftContractYearRange(n);
+    const opt = document.createElement('option');
+    opt.value = String(n);
+    opt.textContent = r.label;
+    if (n === selected) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
 function renderLiftDashboard() {
   renderLiftStats();
   renderLiftChart();
@@ -478,8 +547,8 @@ function renderLiftDashboard() {
 function renderLiftStats() {
   const el = document.getElementById('liftStats');
   if (!el) return;
-  const year = matrixState.lift.year;
-  const yearReports = liftReportsForYear(year);
+  const cy = matrixState.lift.year;
+  const yearReports = liftReportsForContractYear(cy);
 
   // Tally per lift_unit and service_type
   // service_type values: pm, callout, repair, notify, inspection
@@ -533,35 +602,46 @@ function renderLiftStats() {
 function renderLiftChart() {
   const el = document.getElementById('liftChart');
   if (!el) return;
-  const year = matrixState.lift.year;
-  const yearReports = liftReportsForYear(year);
+  const cy = matrixState.lift.year;
+  const range = liftContractYearRange(cy);
+  const yearReports = liftReportsForContractYear(cy);
 
-  // Per-month counts
-  const counts = {};
-  for (let m = 1; m <= 12; m++) counts[m] = { lift_1: 0, lift_2: 0 };
+  // Per-month counts keyed by absolute (year-month) so we can
+  // render in contract order (May → Apr) crossing calendar boundary.
+  // slot key: `${year}-${month}` for each of the 12 contract months
+  const slots = []; // [{year, month, label}, ...] in display order
+  for (let i = 0; i < 12; i++) {
+    const m = LIFT_CONTRACT_MONTHS[i]; // 5,6,...,12,1,2,3,4
+    const y = (m >= LIFT_CONTRACT_START_MONTH) ? range.startYear : range.endYear;
+    slots.push({ year: y, month: m, label: MONTH_LABELS[m - 1] });
+  }
+  // Initialize counts
+  const counts = slots.map(() => ({ lift_1: 0, lift_2: 0 }));
+
   yearReports.forEach(r => {
     const m = r.period_month;
-    if (!m || m < 1 || m > 12) return;
-    if (r.lift_unit === 'lift_1') counts[m].lift_1 += 1;
-    else if (r.lift_unit === 'lift_2') counts[m].lift_2 += 1;
+    const y = r.period_year;
+    const idx = slots.findIndex(s => s.year === y && s.month === m);
+    if (idx === -1) return;
+    if (r.lift_unit === 'lift_1') counts[idx].lift_1 += 1;
+    else if (r.lift_unit === 'lift_2') counts[idx].lift_2 += 1;
     else if (r.lift_unit === 'both') {
-      counts[m].lift_1 += 1;
-      counts[m].lift_2 += 1;
+      counts[idx].lift_1 += 1;
+      counts[idx].lift_2 += 1;
     }
   });
 
   // Find max
   let max = 0;
-  for (let m = 1; m <= 12; m++) {
-    const total = counts[m].lift_1 + counts[m].lift_2;
+  counts.forEach(c => {
+    const total = c.lift_1 + c.lift_2;
     if (total > max) max = total;
-  }
+  });
   if (max === 0) max = 1;
 
-  el.innerHTML = MONTH_LABELS.map((label, i) => {
-    const m = i + 1;
-    const v1 = counts[m].lift_1;
-    const v2 = counts[m].lift_2;
+  el.innerHTML = slots.map((s, i) => {
+    const v1 = counts[i].lift_1;
+    const v2 = counts[i].lift_2;
     const total = v1 + v2;
     const isAnomaly = total >= 3;
     const h1 = (v1 / max) * 100;
@@ -569,6 +649,8 @@ function renderLiftChart() {
     const barLift1 = v1 > 0 ? `<div class="sr-lift-bar lift1" style="height:${h1}%" title="Lift 1 — ${v1}"></div>` : '';
     const barLift2 = v2 > 0 ? `<div class="sr-lift-bar lift2" style="height:${h2}%" title="Lift 2 — ${v2}"></div>` : '';
     const countLabel = total > 0 ? `<span class="sr-lift-bar-count">${total}</span>` : '';
+    // Show short year suffix for Jan~Apr to disambiguate (they belong to next calendar year)
+    const yearSuffix = (s.month <= 4) ? `<span class="sr-lift-bar-year">'${String(s.year).slice(-2)}</span>` : '';
     return `
       <div class="sr-lift-bar-col">
         ${countLabel}
@@ -576,7 +658,7 @@ function renderLiftChart() {
           ${barLift2}
           ${barLift1}
         </div>
-        <div class="sr-lift-bar-month">${label}</div>
+        <div class="sr-lift-bar-month">${s.label}${yearSuffix}</div>
       </div>
     `;
   }).join('');
@@ -585,9 +667,9 @@ function renderLiftChart() {
 function renderLiftTimeline() {
   const el = document.getElementById('liftTimeline');
   if (!el) return;
-  const year = matrixState.lift.year;
+  const cy = matrixState.lift.year;
   const filter = matrixState.lift.filter || 'all';
-  let list = liftReportsForYear(year);
+  let list = liftReportsForContractYear(cy);
 
   // Apply filter
   if (filter === 'lift_1') {
@@ -605,7 +687,7 @@ function renderLiftTimeline() {
     el.innerHTML = `
       <div class="sr-lift-empty">
         <div class="sr-lift-empty-icon">📋</div>
-        <div>No service records for ${year}${filter !== 'all' ? ' (current filter)' : ''}.</div>
+        <div>No service records for ${liftContractYearRange(cy).label}${filter !== 'all' ? ' (current filter)' : ''}.</div>
       </div>`;
     return;
   }
@@ -1222,7 +1304,7 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
       if (activeTab === 'lift')   renderLiftDashboard();
       // rebuild lift year options if needed (new report may add a new year)
       const liftSel = document.getElementById('liftYear');
-      if (liftSel) buildYearOptions(liftSel, matrixState.lift?.year || new Date().getFullYear());
+      if (liftSel) buildLiftYearOptions(liftSel);
     }, 600);
 
   } catch (e) {
