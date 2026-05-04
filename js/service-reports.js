@@ -930,7 +930,7 @@ function renderLiftTimeline() {
       : `<span class="sr-lift-event-attach sr-lift-event-attach-empty">No attachment</span>`;
     const clickable = hasAttach || true; // all open detail modal
     return `
-      <div class="sr-lift-event ${!clickable ? 'sr-lift-event-nopdf' : ''}" data-report-id="${r.id}" onclick="highlightAndOpenReport('${r.id}')">
+      <div class="sr-lift-event type-${typeClass} ${!clickable ? 'sr-lift-event-nopdf' : ''}" data-report-id="${r.id}" onclick="highlightAndOpenReport('${r.id}')">
         <div class="sr-lift-event-date">
           <span class="sr-lift-event-date-day">${dayN}</span>
           ${escHtml(monthLabel)} ${d.getFullYear()}
