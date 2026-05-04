@@ -1243,7 +1243,7 @@ function renderRecent() {
     }
 
     return `
-      <div class="sr-list-row">
+      <div class="sr-list-row" style="cursor:pointer" onclick="highlightAndOpenReport('${r.id}')">
         <div class="sr-row-icon">${escHtml(icon)}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(r.title)}</div>
@@ -1280,7 +1280,7 @@ function switchTab(name) {
   const heroTexts = {
     overview: {
       eyebrow: 'Compliance & Maintenance',
-      title:   'Scheduled Maintenance',
+      title:   'Service Reports',
       sub:     'Track HVAC, Fire, Lift, and Garage inspection records for the building.',
     },
     lift: {
