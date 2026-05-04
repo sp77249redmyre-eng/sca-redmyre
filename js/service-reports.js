@@ -1280,7 +1280,7 @@ function switchTab(name) {
   const heroTexts = {
     overview: {
       eyebrow: 'Compliance & Maintenance',
-      title:   'Service Reports',
+      title:   'Scheduled Maintenance',
       sub:     'Track HVAC, Fire, Lift, and Garage inspection records for the building.',
     },
     lift: {
