@@ -103,6 +103,24 @@ async function loadReports() {
   }
 }
 
+// 매트릭스 셀 상태/메모 (admin이 수동 입력) — key: `${category_id}|${year}|${month}`
+let cellNotes = {};
+
+async function loadCellNotes() {
+  const { data, error } = await supabase
+    .from('service_cell_notes')
+    .select('*');
+  if (error) { console.error(error); cellNotes = {}; return; }
+  cellNotes = {};
+  for (const n of (data || [])) {
+    cellNotes[`${n.category_id}|${n.year}|${n.month}`] = n;
+  }
+}
+
+function getCellNote(catId, year, month) {
+  return cellNotes[`${catId}|${year}|${month}`] || null;
+}
+
 // ─── NEXT-DUE CALCULATION ────────────────────────────────────
 function nextDueFor(cat) {
   const last = lastByCategory[cat.id];
@@ -416,18 +434,25 @@ function cellStateFor(cat, year, month) {
     isScheduled = cat.custom_months.includes(month);
   }
 
-  if (report) return { state: 'done', report, isScheduled };
-  if (!isScheduled) return { state: 'na', report: null, isScheduled: false };
+  if (report) return { state: 'done', report, isScheduled, note: null };
+
+  // 사장님이 수동 입력한 상태 메모가 있으면 그게 우선 (done 셀 제외)
+  const note = getCellNote(cat.id, year, month);
+  if (note) {
+    return { state: note.status, report: null, isScheduled, note };
+  }
+
+  if (!isScheduled) return { state: 'na', report: null, isScheduled: false, note: null };
 
   // Scheduled but no report
   // Past year → overdue
-  if (year < curY) return { state: 'overdue', report: null, isScheduled };
+  if (year < curY) return { state: 'overdue', report: null, isScheduled, note: null };
   // Future year → future
-  if (year > curY) return { state: 'future', report: null, isScheduled };
+  if (year > curY) return { state: 'future', report: null, isScheduled, note: null };
   // Same year:
-  if (month < curM) return { state: 'overdue', report: null, isScheduled };
-  if (month === curM) return { state: 'due', report: null, isScheduled };
-  return { state: 'future', report: null, isScheduled };
+  if (month < curM) return { state: 'overdue', report: null, isScheduled, note: null };
+  if (month === curM) return { state: 'due', report: null, isScheduled, note: null };
+  return { state: 'future', report: null, isScheduled, note: null };
 }
 
 function fmtCellDate(d) {
@@ -441,9 +466,13 @@ function cellInner(cs) {
   if (cs.state === 'done') {
     return `<span class="sr-cell-icon">✓</span><span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
   }
-  if (cs.state === 'due')     return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
-  if (cs.state === 'overdue') return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
-  if (cs.state === 'future')  return `<span class="sr-cell-icon">○</span>`;
+  if (cs.state === 'due')         return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
+  if (cs.state === 'overdue')     return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
+  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon">📅</span><span class="sr-cell-date">SCHEDULED</span>`;
+  if (cs.state === 'in_progress') return `<span class="sr-cell-icon">⚙</span><span class="sr-cell-date">IN PROGRESS</span>`;
+  if (cs.state === 'postponed')   return `<span class="sr-cell-icon">↪</span><span class="sr-cell-date">POSTPONED</span>`;
+  if (cs.state === 'cancelled')   return `<span class="sr-cell-icon">✕</span><span class="sr-cell-date">CANCELLED</span>`;
+  if (cs.state === 'future')      return `<span class="sr-cell-icon">○</span>`;
   return `<span class="sr-cell-icon">—</span>`;
 }
 
@@ -482,7 +511,13 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     const cells = MONTH_LABELS.map((_, i) => {
       const month = i + 1;
       const cs = cellStateFor(cat, year, month);
-      const clickAttr = cs.state === 'done' ? `onclick="highlightCellAndOpen(this, '${cs.report.id}')"` : '';
+      let clickAttr = '';
+      if (cs.state === 'done') {
+        clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
+      } else if (isAdmin) {
+        // admin: 빈 셀 클릭 → 셀 상태/메모 입력 모달
+        clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})" style="cursor:pointer"`;
+      }
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
     return `<tr>
@@ -498,7 +533,12 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     const months = MONTH_LABELS.map((label, i) => {
       const month = i + 1;
       const cs = cellStateFor(cat, year, month);
-      const clickAttr = cs.state === 'done' ? `onclick="highlightCellAndOpen(this, '${cs.report.id}')"` : '';
+      let clickAttr = '';
+      if (cs.state === 'done') {
+        clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
+      } else if (isAdmin) {
+        clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})"`;
+      }
       const inner = cs.state === 'done'
         ? `<span class="sr-mobile-cell-icon">✓</span><span class="sr-mobile-cell-date">${fmtCellDate(cs.report.report_date).split(' ')[0]}</span>`
         : cs.state === 'due'     ? `<span class="sr-mobile-cell-icon">●</span><span class="sr-mobile-cell-date">DUE</span>`
@@ -1638,6 +1678,137 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
   }
 
 }
+
+/* ─────────────────────────────────────────────
+   CELL NOTE MODAL — 매트릭스 셀 상태/메모 입력 (admin only)
+   - openCellNoteModal(catId, year, month) — 셀 클릭 시 호출
+   - 기존 메모 있으면 수정 / 없으면 새로 입력
+   - status null 선택하면 셀 메모 삭제
+   ───────────────────────────────────────────── */
+const cellNoteModal = document.getElementById('cellNoteModal');
+const cellStatusEl  = document.getElementById('cellStatus');
+const cellNoteEl    = document.getElementById('cellNote');
+
+let editingCellNote = null; // {catId, year, month, existing}
+
+window.openCellNoteModal = function(catId, year, month) {
+  if (!isAdmin) return;
+  if (!cellNoteModal) return;
+
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return;
+
+  const existing = getCellNote(catId, year, month);
+  editingCellNote = { catId, year, month, existing };
+
+  // 모달 제목 + 부제
+  document.getElementById('cellModalTitle').textContent = existing ? '📝 Edit Cell Note' : '📝 Add Cell Note';
+  document.getElementById('cellModalSubtitle').textContent =
+    `${cat.icon || '📋'} ${cat.name} — ${MONTH_LABELS[month - 1]} ${year}`;
+
+  // 폼 초기화 / 채우기
+  cellStatusEl.value = existing ? existing.status : '';
+  cellNoteEl.value = existing ? (existing.note || '') : '';
+
+  // Delete 버튼은 기존 메모 있을 때만 표시
+  document.getElementById('cellDeleteBtn').style.display = existing ? 'inline-flex' : 'none';
+
+  cellNoteModal.classList.add('open');
+  setTimeout(() => cellStatusEl.focus(), 50);
+};
+
+function closeCellNoteModal() {
+  if (cellNoteModal) cellNoteModal.classList.remove('open');
+  editingCellNote = null;
+}
+
+if (cellNoteModal) {
+  // 외부 클릭 = 닫기
+  cellNoteModal.addEventListener('click', (e) => {
+    if (e.target === cellNoteModal) closeCellNoteModal();
+  });
+
+  // Cancel
+  document.getElementById('cellCancelBtn').addEventListener('click', closeCellNoteModal);
+
+  // Save
+  document.getElementById('cellSaveBtn').addEventListener('click', async () => {
+    if (!editingCellNote) return;
+    const { catId, year, month, existing } = editingCellNote;
+    const status = cellStatusEl.value;
+    const note = cellNoteEl.value.trim() || null;
+
+    const saveBtn = document.getElementById('cellSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+      // status가 빈 값 = 셀 메모 삭제 (기존 있을 때만)
+      if (!status) {
+        if (existing) {
+          const { error } = await supabase
+            .from('service_cell_notes')
+            .delete()
+            .eq('id', existing.id);
+          if (error) throw error;
+          showToast('Cell note removed.', 'ok');
+        }
+      } else if (existing) {
+        // UPDATE
+        const { error } = await supabase
+          .from('service_cell_notes')
+          .update({ status, note })
+          .eq('id', existing.id);
+        if (error) throw error;
+        showToast('Cell note updated.', 'ok');
+      } else {
+        // INSERT
+        const { error } = await supabase
+          .from('service_cell_notes')
+          .insert({ category_id: catId, year, month, status, note });
+        if (error) throw error;
+        showToast('Cell note added.', 'ok');
+      }
+
+      closeCellNoteModal();
+      await loadCellNotes();
+      // 매트릭스 재렌더
+      renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+      renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+      renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+    } catch (e) {
+      console.error('Cell note save failed:', e);
+      showToast(e.message || 'Failed to save cell note.', 'err');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  // Delete
+  document.getElementById('cellDeleteBtn').addEventListener('click', async () => {
+    if (!editingCellNote || !editingCellNote.existing) return;
+    if (!confirm('Delete this cell note?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('service_cell_notes')
+        .delete()
+        .eq('id', editingCellNote.existing.id);
+      if (error) throw error;
+      showToast('Cell note deleted.', 'ok');
+      closeCellNoteModal();
+      await loadCellNotes();
+      renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+      renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+      renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+    } catch (e) {
+      console.error('Cell note delete failed:', e);
+      showToast(e.message || 'Failed to delete.', 'err');
+    }
+  });
+}
+
 document.getElementById('upCancelBtn').addEventListener('click', closeUploadModal);
 
 upHasIssuesEl.addEventListener('change', () => {
@@ -1860,7 +2031,7 @@ upModal.addEventListener('click', (e) => {
 
 // ─── INIT ────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadCategories(), loadContractors(), loadReports()]);
+  await Promise.all([loadCategories(), loadContractors(), loadReports(), loadCellNotes()]);
   populateUploadDropdowns();
   renderCategoryGrid();
   renderUpcoming();
