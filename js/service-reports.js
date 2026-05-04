@@ -576,10 +576,10 @@ function renderLiftStats() {
   });
 
   const cards = [
-    { key: 'pm',      label: 'Maintenance', icon: '🛠', color: '#16a34a' },
-    { key: 'callout', label: 'Callouts',    icon: '📞', color: '#f59e0b' },
-    { key: 'repair',  label: 'Repairs',     icon: '🔧', color: '#dc2626' },
-    { key: 'other',   label: 'Other',       icon: '📋', color: '#64748b' },
+    { key: 'pm',      label: 'Maintenance', icon: '🛠', color: '#16a34a', bg: '#dcfce7' },
+    { key: 'callout', label: 'Callouts',    icon: '📞', color: '#d97706', bg: '#fef3c7' },
+    { key: 'repair',  label: 'Repairs',     icon: '🔧', color: '#dc2626', bg: '#fee2e2' },
+    { key: 'other',   label: 'Other',       icon: '📋', color: '#7c3aed', bg: '#ede9fe' },
   ];
 
   el.innerHTML = cards.map(c => {
@@ -587,7 +587,7 @@ function renderLiftStats() {
     const v2 = stats.lift_2[c.key];
     const warn = (c.key === 'callout' || c.key === 'repair') && v2 >= 4;
     return `
-      <div class="sr-lift-stat" style="--bar-color:${c.color}">
+      <div class="sr-lift-stat" style="--bar-color:${c.color};--bg-color:${c.bg}">
         <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${c.icon}</span>${escHtml(c.label)}</div>
         <div class="sr-lift-stat-rows">
           <div class="sr-lift-stat-row lift1">
