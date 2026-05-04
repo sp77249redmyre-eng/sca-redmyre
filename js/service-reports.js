@@ -980,7 +980,7 @@ function renderLiftTimeline() {
             <span class="sr-lift-event-lift ${liftClass}">${escHtml(liftLabel)}</span>
             <span class="sr-lift-event-type ${typeClass}">${escHtml(typeLabel)}</span>
           </div>
-          <div class="sr-lift-event-summary">${escHtml(summary || fallback)}</div>
+          <div class="sr-lift-event-summary">${escHtml(r.title || summary || '—')}</div>
         </div>
         ${attachLabel}
       </div>
