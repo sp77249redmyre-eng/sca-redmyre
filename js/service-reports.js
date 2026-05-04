@@ -380,15 +380,38 @@ function cellStateFor(cat, year, month) {
   const report = slotReports[0] || null;
 
   // Determine if this month is scheduled for this category
+  // 6-monthly/quarterly/annual은 마지막 점검 날짜 기준으로 동적 계산
+  // (Fire 6-Monthly가 3/9월에 받으면 6/12월이 아니라 3/9월에 표시)
   let isScheduled = false;
   if (cat.frequency === 'monthly') {
     isScheduled = true;
   } else if (cat.frequency === 'quarterly') {
-    isScheduled = [3,6,9,12].includes(month);
+    const lastReport = lastByCategory[cat.id];
+    if (lastReport) {
+      // 마지막 점검 달 기준으로 +3,+6,+9... 패턴
+      const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
+      isScheduled = ((month - baseMonth) % 3 + 3) % 3 === 0;
+    } else {
+      isScheduled = [3, 6, 9, 12].includes(month);  // fallback
+    }
   } else if (cat.frequency === '6-monthly') {
-    isScheduled = [6,12].includes(month);
+    const lastReport = lastByCategory[cat.id];
+    if (lastReport) {
+      // 마지막 점검 달 기준으로 +6 패턴 (3월 받으면 3/9월, 6월 받으면 6/12월)
+      const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
+      isScheduled = ((month - baseMonth) % 6 + 6) % 6 === 0;
+    } else {
+      isScheduled = [6, 12].includes(month);  // fallback
+    }
   } else if (cat.frequency === 'annual') {
-    isScheduled = (month === 12);
+    const lastReport = lastByCategory[cat.id];
+    if (lastReport) {
+      // 마지막 점검 달과 같은 달
+      const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
+      isScheduled = (month === baseMonth);
+    } else {
+      isScheduled = (month === 12);  // fallback
+    }
   } else if (cat.frequency === 'custom' && Array.isArray(cat.custom_months)) {
     isScheduled = cat.custom_months.includes(month);
   }
