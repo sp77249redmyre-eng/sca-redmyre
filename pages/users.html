@@ -669,19 +669,22 @@ let allProfiles = [];
 const FIXED_ORDER = [
   { match: p => p.email === 'sp77249.redmyre@gmail.com' },                               // 1. Jacob
   { match: p => p.email === 'sca.yun82@gmail.com' },                                     // 2. David
-  { match: p => p.email === 'ikf.jacob@gmail.com' },                                     // 3. Test Tenant
-  { match: p => p.unit === '6H' },                                                       // 4. Jimmy
-  { match: p => ['5G','5H'].includes(p.unit) },                                          // 5. Michael
-  { match: p => ['2C','2E','3G','3H'].includes(p.unit) },                                // 6. Michelle
-  { match: p => ['4G','5B','5D'].includes(p.unit) },                                     // 7. Sudesh
-  { match: p => ['6B','6C'].includes(p.unit) },                                          // 8. Niranjan
-  { match: p => ['1A','1B','1C'].includes(p.unit) },                                     // 9. Sarah
-  { match: p => ['2D','4A'].includes(p.unit) },                                          // 10. Laura
-  { match: p => p.unit === '4D' },                                                       // 11. Eva
-  { match: p => (p.email||'').toLowerCase() === 'halil@exclusivere.com.au' },            // 12. Halil
-  { match: p => p.email === 'sca.jacob77@gmail.com' },                                   // 13. sca.jacob77
+  { match: p => p.email === 'ikf.jacob@gmail.com' },                                     // 3. Test 1 (Jacob's test)
+  { match: p => p.email === 'sca.jacob77@gmail.com' },                                   // 4. Test 2 (Jacob's test)
+  { match: p => p.unit === '6H' },                                                       // 5. Jimmy
+  { match: p => ['5G','5H'].includes(p.unit) },                                          // 6. Michael
+  { match: p => ['2C','2E','3G','3H'].includes(p.unit) },                                // 7. Michelle
+  { match: p => ['4G','5B','5D'].includes(p.unit) },                                     // 8. Sudesh
+  { match: p => ['6B','6C'].includes(p.unit) },                                          // 9. Niranjan
+  { match: p => ['1A','1B','1C'].includes(p.unit) },                                     // 10. Sarah
+  { match: p => ['2D','4A'].includes(p.unit) },                                          // 11. Laura
+  { match: p => p.unit === '4D' },                                                       // 12. Eva
+  { match: p => (p.email||'').toLowerCase() === 'halil@exclusivere.com.au' },            // 13. Halil
   { match: p => p.email === 'ogmin15@gmail.com' },                                       // 14. min
 ];
+
+// Test emails (always shown as Admin pastel red)
+const TEST_EMAILS = new Set(['ikf.jacob@gmail.com', 'sca.jacob77@gmail.com']);
 
 function sortProfilesForDisplay(profiles) {
   const fixed = [];
@@ -764,8 +767,21 @@ function filterAndRenderUsers() {
       ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup completed">✓</span>`
       : `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#dc2626;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup not completed">✕</span>`;
     
+    // Row background color
+    let rowBg = '';
+    if (TEST_EMAILS.has(p.email) || p.role === 'admin') {
+      rowBg = '#FEF2F2';        // pastel red (Admin + Test)
+    } else if (p.role === 'committee') {
+      rowBg = '#F0FDF4';        // pastel green
+    } else if (p.role === 'observer') {
+      rowBg = '#FAF5FF';        // pastel purple
+    } else {
+      // Owner/Tenant: zebra striping by resident counter
+      rowBg = (residentCounter % 2 === 0) ? '#F8FAFC' : '#FFFFFF';
+    }
+    
     return `
-      <div class="user-row" onclick="toggleUserRow(event,this)">
+      <div class="user-row" style="background:${rowBg}" onclick="toggleUserRow(event,this)">
         <div class="user-row-header">
           ${numberBadge}
           <div class="avatar ${avClass}">${ini}</div>
