@@ -268,7 +268,7 @@
         <div class="stat-card"><div class="stat-num" id="statObserver" style="color:var(--green)">—</div><div class="stat-label">Observer (Strata)</div></div>
         <div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--muted)">—</div><div class="stat-label">Owner / Tenant (Staff)</div></div>
       </div>
-      <div class="card">
+      <div class="card" style="max-width:350px">
         <div class="card-header" style="justify-content:flex-start;gap:12px;flex-wrap:wrap">
           <div class="card-title">All Users</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -700,9 +700,7 @@ function filterAndRenderUsers() {
     const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
     const unitDisplay = p.unit || '—';
     const roleLabel = p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—';
-    const subtitleParts = [p.email||'—'];
-    if (p.unit) subtitleParts.push(`Unit ${p.unit}`);
-    const subtitle = subtitleParts.join(' · ');
+    const subtitle = p.unit ? `Unit ${p.unit}` : '';
     const safeName = (displayName||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const safeEmail = (p.email||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `
@@ -711,12 +709,16 @@ function filterAndRenderUsers() {
           <div class="avatar ${avClass}">${ini}</div>
           <div class="user-info">
             <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
-            <div class="user-email">${subtitle}</div>
+            ${subtitle ? `<div class="user-email">${subtitle}</div>` : ''}
           </div>
           <span class="badge ${badgeClass}">${roleLabel}</span>
           <span class="user-row-arrow">▸</span>
         </div>
         <div class="user-row-details" onclick="event.stopPropagation()">
+          <div style="display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #dcfce7">
+            <span>📧 <span style="color:var(--text);font-weight:500">${p.email||'—'}</span></span>
+            ${p.unit ? `<span>📍 <span style="color:var(--text);font-weight:500">Unit ${p.unit}</span></span>` : ''}
+          </div>
           ${isSelf ? `
             <div style="text-align:center;padding:10px;color:var(--muted);font-size:12px">This is you — use My Profile to edit your details</div>
           ` : `
