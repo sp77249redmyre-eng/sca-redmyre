@@ -665,12 +665,52 @@ document.querySelectorAll('.tab').forEach(tab => {
 // Load users
 let allProfiles = [];
 
+// Fixed order for first 14 users (matched by email or unit)
+const FIXED_ORDER = [
+  { match: p => p.email === 'sp77249.redmyre@gmail.com' },                               // 1. Jacob
+  { match: p => p.email === 'sca.yun82@gmail.com' },                                     // 2. David
+  { match: p => p.email === 'ikf.jacob@gmail.com' },                                     // 3. Test Tenant
+  { match: p => p.unit === '6H' },                                                       // 4. Jimmy
+  { match: p => ['5G','5H'].includes(p.unit) },                                          // 5. Michael
+  { match: p => ['2C','2E','3G','3H'].includes(p.unit) },                                // 6. Michelle
+  { match: p => ['4G','5B','5D'].includes(p.unit) },                                     // 7. Sudesh
+  { match: p => ['6B','6C'].includes(p.unit) },                                          // 8. Niranjan
+  { match: p => ['1A','1B','1C'].includes(p.unit) },                                     // 9. Sarah
+  { match: p => ['2D','4A'].includes(p.unit) },                                          // 10. Laura
+  { match: p => p.unit === '4D' },                                                       // 11. Eva
+  { match: p => (p.email||'').toLowerCase() === 'halil@exclusivere.com.au' },            // 12. Halil
+  { match: p => p.email === 'sca.jacob77@gmail.com' },                                   // 13. sca.jacob77
+  { match: p => p.email === 'ogmin15@gmail.com' },                                       // 14. min
+];
+
+function sortProfilesForDisplay(profiles) {
+  const fixed = [];
+  const rest = [...profiles];
+  
+  for (const rule of FIXED_ORDER) {
+    const idx = rest.findIndex(p => rule.match(p));
+    if (idx !== -1) {
+      fixed.push(rest[idx]);
+      rest.splice(idx, 1);
+    }
+  }
+  
+  // Remaining users: alphabetical by name
+  rest.sort((a, b) => {
+    const nameA = (a.full_name || a.email?.split('@')[0] || '').toLowerCase();
+    const nameB = (b.full_name || b.email?.split('@')[0] || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+  
+  return [...fixed, ...rest];
+}
+
 function filterAndRenderUsers() {
   const q = document.getElementById('userSearch').value.trim().toLowerCase();
   const roleFilter = document.getElementById('userRoleFilter').value;
   const list = document.getElementById('userList');
 
-  let filtered = allProfiles;
+  let filtered = sortProfilesForDisplay(allProfiles);
   if (roleFilter) filtered = filtered.filter(p => p.role === roleFilter);
   if (q) filtered = filtered.filter(p =>
     (p.full_name||'').toLowerCase().includes(q) ||
@@ -694,7 +734,10 @@ function filterAndRenderUsers() {
   const ROLE_COLORS_f = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
   const ROLE_BADGES_f = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
 
-  list.innerHTML = filtered.map(p => {
+  // Track resident counter (reset per render)
+  let residentCounter = 0;
+
+  list.innerHTML = filtered.map((p, idx) => {
     const displayName = p.full_name||p.email?.split('@')[0]||'—';
     const ini = displayName.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
     const isSelf = p.id===user.id;
@@ -705,12 +748,29 @@ function filterAndRenderUsers() {
     const subtitle = p.unit ? `Unit ${p.unit}` : '';
     const safeName = (displayName||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const safeEmail = (p.email||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    
+    // Number badge: only for users AFTER fixed order (index >= 14 in original sort)
+    const isInFixedOrder = idx < 14;
+    let numberBadge = '';
+    if (!isInFixedOrder) {
+      residentCounter++;
+      numberBadge = `<span style="font-size:12px;color:var(--muted);font-weight:600;width:24px;text-align:right;flex-shrink:0">${residentCounter}</span>`;
+    } else {
+      numberBadge = `<span style="width:24px;flex-shrink:0"></span>`;
+    }
+    
+    // Setup complete indicator
+    const setupIcon = p.setup_complete
+      ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup completed">✓</span>`
+      : `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#dc2626;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup not completed">✕</span>`;
+    
     return `
       <div class="user-row" onclick="toggleUserRow(event,this)">
         <div class="user-row-header">
+          ${numberBadge}
           <div class="avatar ${avClass}">${ini}</div>
           <div class="user-info">
-            <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}</div>
+            <div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}${setupIcon}</div>
             ${subtitle ? `<div class="user-email">${subtitle}</div>` : ''}
           </div>
           <span class="badge ${badgeClass}">${roleLabel}</span>
