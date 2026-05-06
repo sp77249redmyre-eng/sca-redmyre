@@ -785,8 +785,9 @@ function renderPendingQuotes(quotes) {
       const vendorContent = document.createElement('div');
       vendorContent.className = 'vendor-content';
       const vDot = vColor ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${vColor.dot};margin-right:6px;flex-shrink:0"></span>` : '';
+      const selectedBadgeHtml = (isVoting && (isSingle || isSelected)) ? '<span class="badge-selected" style="flex-shrink:0">✓ Selected</span>' : '';
       vendorContent.innerHTML = `
-        ${vDot}<div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
+        ${vDot}${selectedBadgeHtml}<div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
         <div class="vendor-amount">$${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>`;
       vendorHeader.appendChild(vendorContent);
 
@@ -795,16 +796,9 @@ function renderPendingQuotes(quotes) {
 
       if (isVoting) {
         if (isSingle) {
-          // PATCH 3: single quote – auto-selected, no UI button needed
-          const badge = document.createElement('span');
-          badge.className = 'badge-selected';
-          badge.textContent = '✔ Selected';
-          statusDiv.appendChild(badge);
+          // Single quote – auto-selected, badge already in vendor-content
         } else if (isSelected) {
-          const badge = document.createElement('span');
-          badge.className = 'badge-selected';
-          badge.textContent = '✔ Selected';
-          statusDiv.appendChild(badge);
+          // Selected badge already in vendor-content, only show Change button here
           if (!userAlreadyVoted && role === 'committee') {
             const deselBtn = document.createElement('button');
             deselBtn.className = 'deselect-btn';
