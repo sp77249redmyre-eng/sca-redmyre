@@ -41,8 +41,10 @@
 .vendor-content{flex:1;display:flex;align-items:center;gap:12px}
 .vendor-name{font-size:14px;font-weight:600;color:#0f172a;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vendor-amount{font-size:13px;color:#475569;font-weight:500}
-.view-hint-banner{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fef3c7;border-bottom:1px solid #fde68a;font-size:12px;color:#92400e;font-weight:500}
+.view-hint-banner{display:flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(90deg,#fef3c7 0%,#fde68a 100%);border-bottom:1.5px solid #f59e0b;font-size:13px;color:#92400e;font-weight:600}
 .view-hint-banner svg{flex-shrink:0}
+.view-hint-banner .bounce-arrow{display:inline-block;animation:bounceArrow 1.2s ease-in-out infinite;font-size:16px}
+@keyframes bounceArrow{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
 .btn-view-details{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;animation:viewDetailsPulse 2s ease-in-out infinite;transition:transform 0.15s,background 0.15s}
 .btn-view-details:hover{transform:scale(1.05);animation:none;background:#1d4ed8}
 .btn-view-details.is-open{animation:none;background:#475569}
@@ -723,11 +725,11 @@ function renderPendingQuotes(quotes) {
 
     // Vote summary bar (visible during voting)
     const VENDOR_COLORS = [
-      { bg: '#f0f7ff', border: '#bfdbfe', dot: '#3b82f6' },
-      { bg: '#f0fdf4', border: '#bbf7d0', dot: '#22c55e' },
-      { bg: '#fefce8', border: '#fde68a', dot: '#eab308' },
-      { bg: '#fdf2f8', border: '#fbcfe8', dot: '#ec4899' },
-      { bg: '#f5f3ff', border: '#c4b5fd', dot: '#8b5cf6' },
+      { bg: '#dbeafe', border: '#3b82f6', dot: '#1d4ed8' },
+      { bg: '#dcfce7', border: '#22c55e', dot: '#15803d' },
+      { bg: '#fef3c7', border: '#eab308', dot: '#a16207' },
+      { bg: '#fce7f3', border: '#ec4899', dot: '#be185d' },
+      { bg: '#ede9fe', border: '#8b5cf6', dot: '#6d28d9' },
     ];
     const vendorColorMap = {};
     group.forEach((q, idx) => { vendorColorMap[q.id] = VENDOR_COLORS[idx % VENDOR_COLORS.length]; });
@@ -749,10 +751,11 @@ function renderPendingQuotes(quotes) {
       card.appendChild(sBar);
     }
 
-    // Click hint banner — guides users to View Details button
+    // Click hint banner — guides users to scroll down and view quotes
     const hintBanner = document.createElement('div');
     hintBanner.className = 'view-hint-banner';
-    hintBanner.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>Click "View Details" to see scope of works, attachments and notes</span>';
+    const quoteCount = group.length;
+    hintBanner.innerHTML = `<span class="bounce-arrow">⬇</span><span>${quoteCount} quote${quoteCount!==1?'s':''} below — Click "View Details" to see scope of works, attachments and notes</span>`;
     card.appendChild(hintBanner);
 
     // Vendor list
@@ -770,7 +773,10 @@ function renderPendingQuotes(quotes) {
       vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}`;
       vendorItem.id = `vendor-${quoteId}`;
       const vColor = vendorColorMap[quoteId];
-      if (vColor && !isSelected) vendorItem.style.background = vColor.bg;
+      if (vColor && !isSelected) {
+        vendorItem.style.background = vColor.bg;
+        vendorItem.style.borderLeft = `4px solid ${vColor.dot}`;
+      }
 
       const vendorHeader = document.createElement('div');
       vendorHeader.className = `vendor-header${isSelected ? ' hdr-selected' : ''}`;
@@ -780,7 +786,8 @@ function renderPendingQuotes(quotes) {
       vendorContent.className = 'vendor-content';
       const vDot = vColor ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${vColor.dot};margin-right:6px;flex-shrink:0"></span>` : '';
       vendorContent.innerHTML = `
-        ${vDot}<div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>`;
+        ${vDot}<div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
+        <div class="vendor-amount">$${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>`;
       vendorHeader.appendChild(vendorContent);
 
       const statusDiv = document.createElement('div');
