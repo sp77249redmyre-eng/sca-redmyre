@@ -352,12 +352,12 @@
   </div>
 </div>
 
-<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeViewer()">
-  <div style="background:#fff;border-radius:14px;padding:20px;max-width:900px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-      <button onclick="closeViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
+<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeViewer()">
+  <div style="background:#fff;border-radius:14px;padding:20px;max-width:1400px;width:96%;height:96vh;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;flex-shrink:0">
+      <button onclick="closeViewer()" style="background:none;border:none;font-size:26px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
     </div>
-    <div id="viewerContent"></div>
+    <div id="viewerContent" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden"></div>
   </div>
 </div>
 
@@ -754,8 +754,7 @@ function renderPendingQuotes(quotes) {
     // Click hint banner — guides users to scroll down and view quotes
     const hintBanner = document.createElement('div');
     hintBanner.className = 'view-hint-banner';
-    const quoteCount = group.length;
-    hintBanner.innerHTML = `<span class="bounce-arrow">⬇</span><span>${quoteCount} quote${quoteCount!==1?'s':''} below — Click "View Details" to see scope of works, attachments and notes</span>`;
+    hintBanner.innerHTML = `<span class="bounce-arrow">⬇</span><span>Click "View Details" to see scope of works, attachments and notes</span>`;
     card.appendChild(hintBanner);
 
     // Vendor list
@@ -2232,13 +2231,13 @@ window.openFileViewer = async function(path, name, type) {
     if (!url) throw new Error('No URL');
     let html = '';
     if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
-      html = `<iframe src="${url}" style="width:100%;height:500px;border:none;border-radius:6px"></iframe>`;
+      html = `<iframe src="${url}" style="width:100%;flex:1;border:none;border-radius:6px;min-height:0"></iframe>`;
     } else if (['png','jpg','jpeg','gif','webp','svg'].some(e => name?.toLowerCase().endsWith('.'+e))) {
-      html = `<img src="${url}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:auto" alt="${name}">`;
+      html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" style="max-width:100%;max-height:100%;border-radius:6px;display:block" alt="${name}"></div>`;
     } else {
       html = `<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">📎</div><a href="${url}" download="${name}" style="display:inline-block;padding:10px 22px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇ Download ${name}</a></div>`;
     }
-    document.getElementById('viewerContent').innerHTML = `<div style="font-size:13px;font-weight:600;color:#1f2937;margin-bottom:10px">📎 ${name||''}</div>` + html;
+    document.getElementById('viewerContent').innerHTML = `<div style="font-size:13px;font-weight:600;color:#1f2937;margin-bottom:10px;flex-shrink:0">📎 ${name||''}</div>` + html;
     document.getElementById('fileViewerModal').style.display = 'flex';
   } catch(e) {
     console.error('openFileViewer failed:', e);
