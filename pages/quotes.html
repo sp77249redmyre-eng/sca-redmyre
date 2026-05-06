@@ -69,8 +69,10 @@
 .detail-file-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#fff;border:0.5px solid #dbeafe;border-radius:7px;font-size:12px;color:#2563eb;text-decoration:none;transition:background 0.15s}
 .detail-file-link:hover{background:#eff6ff}
 .voting-section{padding:18px 20px;border-top:0.5px solid #f1f5f9;background:#fff}
-.section-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:0.07em;margin:16px 0 10px;padding:6px 10px;background:#f1f5f9;border-left:4px solid #2563eb;border-radius:0 6px 6px 0}
-.section-title:first-child{margin-top:0}
+.section-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.07em;margin:14px -20px 12px;padding:9px 20px;background:#dbeafe;border-top:0.5px solid #93c5fd;border-bottom:0.5px solid #93c5fd;border-left:none;border-radius:0;flex-wrap:wrap}
+.section-title:first-child{margin-top:-18px}
+.section-title .tally-inline{display:flex;gap:5px;margin-left:auto}
+.section-title .tally-pill{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0}
 .action-buttons{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
 .btn-admin-row{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
 .btn-action{padding:10px 24px;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;min-width:100px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
@@ -746,23 +748,7 @@ function renderPendingQuotes(quotes) {
     const vendorColorMap = {};
     group.forEach((q, idx) => { vendorColorMap[q.id] = VENDOR_COLORS[idx % VENDOR_COLORS.length]; });
 
-    let sBar = null;
-    if (isVoting) {
-      sBar = document.createElement('div');
-      sBar.className = 'summary-bar';
-      // Vendor distribution
-      const vDistItems = Object.entries(vendorApproveMap).map(([qid, cnt]) => {
-        const vq = group.find(q => q.id === qid);
-        const vc = vendorColorMap[qid] || VENDOR_COLORS[0];
-        return vq ? `<span class="vendor-dist-item" style="margin-left:0;background:${vc.bg};border-color:${vc.border};color:#1e293b"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${vc.dot};margin-right:4px"></span>${escHtml(vq.vendor)}: ${cnt}</span>` : '';
-      }).join('');
-      sBar.innerHTML = `
-        <span class="summary-chip chip-approve">✅ ${totalApprovals}</span>
-        <span class="summary-chip chip-decline">❌ ${declines}</span>
-        <span class="summary-chip chip-hold">⏸ ${holds}</span>
-        ${!isSingle ? `<span style="font-size:12px;color:#64748b;align-self:center">│</span>${vDistItems}` : ''}`;
-      // Append later, just above the Voting Status section
-    }
+    // Tally summary now shown inline in the Voting / Admin Controls section title
 
     // Click hint banner removed
 
@@ -781,14 +767,15 @@ function renderPendingQuotes(quotes) {
       vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}`;
       vendorItem.id = `vendor-${quoteId}`;
       const vColor = vendorColorMap[quoteId];
+      // Option D: white background + colored left bar only
       if (vColor && !isSelected) {
-        vendorItem.style.background = vColor.bg;
+        vendorItem.style.background = '#fff';
         vendorItem.style.borderLeft = `4px solid ${vColor.dot}`;
       }
 
       const vendorHeader = document.createElement('div');
       vendorHeader.className = `vendor-header${isSelected ? ' hdr-selected' : ''}`;
-      if (vColor && !isSelected) vendorHeader.style.background = vColor.bg;
+      if (vColor && !isSelected) vendorHeader.style.background = '#fff';
 
       const vendorContent = document.createElement('div');
       vendorContent.className = 'vendor-content';
@@ -936,7 +923,8 @@ function renderPendingQuotes(quotes) {
     if (role === 'committee' && isVoting && (selectedQuote || isSingle)) {
       const actionTitle = document.createElement('div');
       actionTitle.className = 'section-title';
-      actionTitle.innerHTML = '🎯 Action';
+      const tallyHTML = `<span class="tally-inline"><span class="tally-pill" style="background:#dcfce7;color:#166534">✅ ${totalApprovals}</span><span class="tally-pill" style="background:#fee2e2;color:#991b1b">❌ ${declines}</span><span class="tally-pill" style="background:#fef3c7;color:#92400e">⏸ ${holds}</span></span>`;
+      actionTitle.innerHTML = '🗳 Voting' + tallyHTML;
       votingSection.appendChild(actionTitle);
 
       const actionButtons = document.createElement('div');
@@ -973,7 +961,8 @@ function renderPendingQuotes(quotes) {
     if (role === 'admin' && isVoting) {
       const adminTitle = document.createElement('div');
       adminTitle.className = 'section-title';
-      adminTitle.innerHTML = '👨‍💼 Admin Controls';
+      const adminTallyHTML = `<span class="tally-inline"><span class="tally-pill" style="background:#dcfce7;color:#166534">✅ ${totalApprovals}</span><span class="tally-pill" style="background:#fee2e2;color:#991b1b">❌ ${declines}</span><span class="tally-pill" style="background:#fef3c7;color:#92400e">⏸ ${holds}</span></span>`;
+      adminTitle.innerHTML = '👨‍💼 Admin Controls' + adminTallyHTML;
       votingSection.appendChild(adminTitle);
 
       const adminRow = document.createElement('div');
@@ -1000,12 +989,6 @@ function renderPendingQuotes(quotes) {
     const voteTitle = document.createElement('div');
     voteTitle.className = 'section-title';
     voteTitle.innerHTML = '📊 Voting Status';
-    if (sBar) {
-      sBar.style.borderRadius = '8px';
-      sBar.style.border = '0.5px solid #e2e8f0';
-      sBar.style.marginBottom = '12px';
-      votingSection.appendChild(sBar);
-    }
     votingSection.appendChild(voteTitle);
 
     const voteGrid = document.createElement('div');
