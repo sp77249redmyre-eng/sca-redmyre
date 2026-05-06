@@ -423,6 +423,7 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">📎 Attachments</label>
+      <div id="existingFilesList" style="margin-bottom:8px"></div>
       <div class="file-upload-area" onclick="document.getElementById('quoteFiles').click()">
         <input type="file" id="quoteFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" onchange="handleFileSelect(event)">
         <div style="color:#6b7280;font-size:13.5px">Click to upload files (PDF, Word, Excel, Images)</div>
@@ -1864,7 +1865,35 @@ window.editQuote = function(id) {
   document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
   pendingFiles = [];
   document.getElementById('fileList').innerHTML = '';
+
+  // Render existing files with remove buttons
+  window._editingExistingFiles = Array.isArray(parsed.files) ? [...parsed.files] : [];
+  renderExistingFilesList();
+
   document.getElementById('quoteModal').classList.add('open');
+};
+
+window.renderExistingFilesList = function() {
+  const wrap = document.getElementById('existingFilesList');
+  if (!wrap) return;
+  const files = window._editingExistingFiles || [];
+  if (!files.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:500">Current files:</div>' +
+    files.map((f, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;margin-bottom:6px">
+        <span style="font-size:14px">📎</span>
+        <span style="flex:1;font-size:13px;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(f.name||'(unnamed)')}</span>
+        <button type="button" onclick="removeExistingFile(${i})" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer">✕ Remove</button>
+      </div>`).join('');
+};
+
+window.removeExistingFile = function(idx) {
+  if (!Array.isArray(window._editingExistingFiles)) return;
+  const f = window._editingExistingFiles[idx];
+  if (!f) return;
+  if (!confirm(`Remove file "${f.name||'(unnamed)'}" from this quote?\n\nThis will be applied when you click Save Quote.`)) return;
+  window._editingExistingFiles.splice(idx, 1);
+  renderExistingFilesList();
 };
 
 // Delete individual quote (quote-level, not project-level)
@@ -2075,6 +2104,11 @@ window.handleProjectSelect = function() {
 window.closeModal = function(id) {
   const el = document.getElementById(id);
   if (el) el.classList.remove('open');
+  if (id === 'quoteModal') {
+    window._editingExistingFiles = [];
+    const wrap = document.getElementById('existingFilesList');
+    if (wrap) wrap.innerHTML = '';
+  }
 };
 
 window.formatAmount = function(input) { input.value = input.value.replace(/[^0-9.]/g, ''); };
@@ -2103,7 +2137,9 @@ window.saveQuote = async function() {
       if (!existingQ) { showToast('Quote not found', true); btn.disabled=false; btn.textContent='Save Quote'; return; }
       const existingParsed = parseComment(existingQ.comment);
       const uploadedNew    = pendingFiles.length > 0 ? await uploadFiles(editId) : [];
-      const mergedFiles    = [...(existingParsed.files||[]), ...uploadedNew];
+      // Use edited files list (with removals) instead of existingParsed.files
+      const keptExistingFiles = Array.isArray(window._editingExistingFiles) ? window._editingExistingFiles : (existingParsed.files||[]);
+      const mergedFiles    = [...keptExistingFiles, ...uploadedNew];
       const updatedComment = JSON.stringify({ ...existingParsed, note: internalNote, files: mergedFiles, category, priority });
       const { error: uErr } = await supabase.from('quotes').update({
         vendor, amount, category, notes, comment: updatedComment
