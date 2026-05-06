@@ -952,42 +952,7 @@ function renderPendingQuotes(quotes) {
     const votingSection = document.createElement('div');
     votingSection.className = 'voting-section';
 
-    // Vote buttons: committee only; single quote auto-selected so no selectedQuote required
-    if (role === 'committee' && isVoting && (selectedQuote || isSingle)) {
-      const actionTitle = document.createElement('div');
-      actionTitle.className = 'section-title';
-      actionTitle.innerHTML = '🗳 Voting';
-      votingSection.appendChild(actionTitle);
-
-      const actionButtons = document.createElement('div');
-      actionButtons.className = 'action-buttons';
-      ['approve','hold','decline'].forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = `btn-action btn-${type}`;
-        btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        if (resultDetermined) {
-          btn.disabled = true;
-          btn.title = 'Voting is closed – result determined';
-        } else {
-          btn.onclick = () => {
-            btn.disabled = true;
-            actionButtons.querySelectorAll('button').forEach(b => { b.disabled = true; });
-            const vRow = getUserVoteRow(projectKey);
-            if (resultDetermined) { showToast('Voting is already closed', true); return; }
-            if (!isSingle && type === 'approve' && !vRow?.selected_quote_id) {
-              showToast('Please select a vendor first', true);
-              btn.disabled = false;
-              actionButtons.querySelectorAll('button').forEach(b => { b.disabled = false; });
-              return;
-            }
-            if (window.logActivity) window.logActivity('QUOTE_VOTED', projectKey);
-            doUpsert(projectKey, { vote: type }, btn, type.charAt(0).toUpperCase() + type.slice(1));
-          };
-        }
-        actionButtons.appendChild(btn);
-      });
-      votingSection.appendChild(actionButtons);
-    }
+    // (Old "🗳 Voting" section removed — vote buttons now inline next to YOU HAVE NOT VOTED banner)
 
     // Admin force controls – always visible when voting
     if (role === 'admin' && isVoting) {
@@ -1032,21 +997,66 @@ function renderPendingQuotes(quotes) {
       ? committeeMembers
       : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
 
-    // My vote status banner (committee only)
+    // My vote status banner + inline action buttons (committee only)
     if (role === 'committee' && isVoting) {
       const myVoteRow = getUserVoteRow(projectKey);
+      const hasVoted = myVoteRow && myVoteRow.vote && myVoteRow.vote !== '';
+
+      const bannerWrap = document.createElement('div');
+      bannerWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap';
+
       const myVoteBanner = document.createElement('div');
-      if (myVoteRow && myVoteRow.vote && myVoteRow.vote !== '') {
+      if (hasVoted) {
         const myVoteLabel = myVoteRow.vote === 'approve' ? '✅ Approve' : myVoteRow.vote === 'hold' ? '⏸ Hold' : '❌ Decline';
         const mySelQ = myVoteRow.selected_quote_id ? group.find(q => q.id === myVoteRow.selected_quote_id) : null;
         const myVendorText = mySelQ ? ' → ' + escHtml(mySelQ.vendor) : '';
-        myVoteBanner.style.cssText = 'padding:6px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:800;color:#14532d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;align-self:flex-start';
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:8px;font-size:13px;font-weight:800;color:#14532d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto';
         myVoteBanner.innerHTML = '✅ YOU VOTED: ' + myVoteLabel + myVendorText;
       } else {
-        myVoteBanner.style.cssText = 'padding:6px 12px;background:#fee2e2;border:1.5px solid #dc2626;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:800;color:#7f1d1d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;align-self:flex-start;animation:pulseVote 1.8s ease-in-out infinite';
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#fee2e2;border:1.5px solid #dc2626;border-radius:8px;font-size:13px;font-weight:800;color:#7f1d1d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;animation:pulseVote 1.8s ease-in-out infinite';
         myVoteBanner.innerHTML = '🗳 YOU HAVE NOT VOTED YET';
       }
-      voteStatusFrag.appendChild(myVoteBanner);
+      bannerWrap.appendChild(myVoteBanner);
+
+      // Inline action buttons next to the banner
+      const inlineActions = document.createElement('div');
+      inlineActions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+
+      const canVoteNow = (selectedQuote || isSingle);
+
+      if (hasVoted) {
+        // Change Vote button
+        const changeBtn = document.createElement('button');
+        changeBtn.className = 'btn-action';
+        changeBtn.style.cssText = 'padding:7px 14px;font-size:12px;background:#475569;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;letter-spacing:0.02em';
+        changeBtn.textContent = '✎ Change Vote';
+        changeBtn.onclick = async () => {
+          changeBtn.disabled = true;
+          await doUpsert(projectKey, { vote: '', selected_quote_id: null }, changeBtn, '✎ Change Vote');
+          changeBtn.disabled = false;
+        };
+        inlineActions.appendChild(changeBtn);
+      } else if (canVoteNow) {
+        ['approve','hold','decline'].forEach(type => {
+          const btn = document.createElement('button');
+          btn.className = `btn-action btn-${type}`;
+          btn.style.cssText = 'padding:7px 16px;font-size:12px;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;letter-spacing:0.02em';
+          btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+          btn.onclick = async () => {
+            inlineActions.querySelectorAll('button').forEach(b => { b.disabled = true; });
+            const payload = { vote: type };
+            if (!isSingle && type === 'approve' && !myVoteRow?.selected_quote_id && selectedQuote) {
+              payload.selected_quote_id = selectedQuote;
+            }
+            await doUpsert(projectKey, payload, btn, btn.textContent);
+            inlineActions.querySelectorAll('button').forEach(b => { b.disabled = false; });
+          };
+          inlineActions.appendChild(btn);
+        });
+      }
+
+      bannerWrap.appendChild(inlineActions);
+      voteStatusFrag.appendChild(bannerWrap);
     }
 
     if (membersToShow.length > 0) {
