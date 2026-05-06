@@ -117,7 +117,7 @@
 .vote-value.v-closed{color:#cbd5e1}
 @media(max-width:900px){.voting-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.voting-grid{grid-template-columns:repeat(2,1fr)}}
-.result-box{padding:14px 18px;border-radius:12px;border:1.5px solid;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.result-box{padding:8px 14px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .result-pending{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .result-approved{background:#ecfdf5;border-color:#4ade80;color:#166534}
 .result-declined{background:#fee2e2;border-color:#f87171;color:#991b1b}
@@ -1029,10 +1029,10 @@ function renderPendingQuotes(quotes) {
         const myVoteLabel = myVoteRow.vote === 'approve' ? '✅ Approve' : myVoteRow.vote === 'hold' ? '⏸ Hold' : '❌ Decline';
         const mySelQ = myVoteRow.selected_quote_id ? group.find(q => q.id === myVoteRow.selected_quote_id) : null;
         const myVendorText = mySelQ ? ' → ' + escHtml(mySelQ.vendor) : '';
-        myVoteBanner.style.cssText = 'padding:10px 14px;background:#dcfce7;border:2px solid #16a34a;border-radius:10px;margin-bottom:10px;font-size:14px;font-weight:800;color:#14532d;display:flex;align-items:center;gap:8px;letter-spacing:0.02em';
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:800;color:#14532d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;align-self:flex-start';
         myVoteBanner.innerHTML = '✅ YOU VOTED: ' + myVoteLabel + myVendorText;
       } else {
-        myVoteBanner.style.cssText = 'padding:10px 14px;background:#fee2e2;border:2px solid #dc2626;border-radius:10px;margin-bottom:10px;font-size:14px;font-weight:800;color:#7f1d1d;display:flex;align-items:center;gap:8px;letter-spacing:0.02em;animation:pulseVote 1.8s ease-in-out infinite';
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#fee2e2;border:1.5px solid #dc2626;border-radius:8px;margin-bottom:10px;font-size:13px;font-weight:800;color:#7f1d1d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;align-self:flex-start;animation:pulseVote 1.8s ease-in-out infinite';
         myVoteBanner.innerHTML = '🗳 YOU HAVE NOT VOTED YET';
       }
       voteStatusFrag.appendChild(myVoteBanner);
@@ -1058,7 +1058,8 @@ function renderPendingQuotes(quotes) {
           valueText = 'Closed';
         }
 
-        const memberLabel = member.committeeRole ? escHtml(member.name) + (isMe ? ' (You)' : '') + ' (' + escHtml(member.committeeRole) + ')' : escHtml(member.name) + (isMe ? ' (You)' : '');
+        const shortRole = (member.committeeRole || '').replace('Committee Member', 'Committee');
+        const memberLabel = shortRole ? escHtml(member.name) + (isMe ? ' (You)' : '') + ' (' + escHtml(shortRole) + ')' : escHtml(member.name) + (isMe ? ' (You)' : '');
         cell.innerHTML = '<span class="vote-name">' + memberLabel + '</span><span class="vote-value ' + valueCls + '">' + valueText + '</span>';
         voteGrid.appendChild(cell);
       });
@@ -1436,7 +1437,8 @@ function renderArchiveTable(quotes) {
           vLabel = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + (vRow.vote === 'approve' ? 'Approve' : vRow.vote === 'hold' ? 'Hold' : 'Decline');
           vColor = vRow.vote === 'approve' ? '#16a34a' : vRow.vote === 'hold' ? '#ca8a04' : '#dc2626';
         }
-        const mLabel = m.committeeRole ? escHtml(m.name) + ' (' + escHtml(m.committeeRole) + ')' : escHtml(m.name);
+        const mShortRole = (m.committeeRole || '').replace('Committee Member', 'Committee');
+        const mLabel = mShortRole ? escHtml(m.name) + ' (' + escHtml(mShortRole) + ')' : escHtml(m.name);
         cell.innerHTML = `<span class="mgmt-vote-name">${mLabel}</span><span class="mgmt-vote-val" style="color:${vColor}">${vLabel}</span>`;
         votesGrid.appendChild(cell);
       });
