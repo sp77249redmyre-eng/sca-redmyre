@@ -746,8 +746,9 @@ function renderPendingQuotes(quotes) {
     const vendorColorMap = {};
     group.forEach((q, idx) => { vendorColorMap[q.id] = VENDOR_COLORS[idx % VENDOR_COLORS.length]; });
 
+    let sBar = null;
     if (isVoting) {
-      const sBar = document.createElement('div');
+      sBar = document.createElement('div');
       sBar.className = 'summary-bar';
       // Vendor distribution
       const vDistItems = Object.entries(vendorApproveMap).map(([qid, cnt]) => {
@@ -760,7 +761,7 @@ function renderPendingQuotes(quotes) {
         <span class="summary-chip chip-decline">❌ ${declines}</span>
         <span class="summary-chip chip-hold">⏸ ${holds}</span>
         ${!isSingle ? `<span style="font-size:12px;color:#64748b;align-self:center">│</span>${vDistItems}` : ''}`;
-      card.appendChild(sBar);
+      // Append later, just above the Voting Status section
     }
 
     // Click hint banner — guides users to scroll down and view quotes
@@ -1003,6 +1004,12 @@ function renderPendingQuotes(quotes) {
     const voteTitle = document.createElement('div');
     voteTitle.className = 'section-title';
     voteTitle.innerHTML = '📊 Voting Status';
+    if (sBar) {
+      sBar.style.borderRadius = '8px';
+      sBar.style.border = '0.5px solid #e2e8f0';
+      sBar.style.marginBottom = '12px';
+      votingSection.appendChild(sBar);
+    }
     votingSection.appendChild(voteTitle);
 
     const voteGrid = document.createElement('div');
