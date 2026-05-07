@@ -894,8 +894,10 @@ function renderLiftMatrix() {
     }).join('');
   }
 
+  const spacerRow = '<tr class="lift2-spacer"><td colspan="14"></td></tr>';
   const bodyHtml = '<tbody>'
     + buildRowsHtml('lift_1', rows1, 'Lift 1', 'lift1')
+    + spacerRow
     + buildRowsHtml('lift_2', rows2, 'Lift 2', 'lift2')
     + '</tbody>';
 
