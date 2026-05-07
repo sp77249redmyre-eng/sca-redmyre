@@ -1766,94 +1766,94 @@ await loadOccupants();
       setTimeout(() => targetItem.classList.remove('highlight-flash'), 3000);
     }
   }, 400);
+})();
 
-  // ===== ADMIN QUICK LOOKUP (vehicle plate / phone) =====
-  if (role === 'admin') {
-    const lookupSection = document.getElementById('adminLookupSection');
-    const lookupInput = document.getElementById('adminLookupInput');
-    const lookupClear = document.getElementById('adminLookupClear');
-    const lookupResult = document.getElementById('adminLookupResult');
-    if (lookupSection) lookupSection.classList.add('visible');
+// ===== ADMIN QUICK LOOKUP (occupants + contractors) =====
+(function setupAdminLookup() {
+  if (role !== 'admin') return;
 
-    let lookupTimer = null;
+  const lookupSection = document.getElementById('adminLookupSection');
+  const lookupInput = document.getElementById('adminLookupInput');
+  const lookupClear = document.getElementById('adminLookupClear');
+  const lookupResult = document.getElementById('adminLookupResult');
+  if (!lookupSection || !lookupInput) return;
 
-    function normalize(s) {
-      return (s || '').toString().replace(/[\s\-\(\)\+]/g, '').toUpperCase();
-    }
+  lookupSection.classList.add('visible');
 
-    async function runLookup(query) {
-      const q = (query || '').trim();
-      if (!q) { lookupResult.innerHTML = ''; return; }
+  let lookupTimer = null;
 
-      lookupResult.innerHTML = '<span style="color:var(--muted)">Searching…</span>';
-      const qNorm = normalize(q);
-      const isPhone = /^\d+$/.test(qNorm) && qNorm.length >= 6;
+  function normalize(s) {
+    return (s || '').toString().replace(/[\s\-\(\)\+]/g, '').toUpperCase();
+  }
 
-      try {
-        // 1) 차량 번호 검색 (lookup_vehicle_plates RPC)
-        const { data: plateData } = await supabase.rpc('lookup_vehicle_plates', { p_plates: [qNorm] });
-        if (plateData && plateData.length > 0) {
-          const rows = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
-          lookupResult.innerHTML = rows;
+  async function runLookup(query) {
+    const q = (query || '').trim();
+    if (!q) { lookupResult.innerHTML = ''; return; }
+
+    lookupResult.innerHTML = '<span style="color:var(--muted)">Searching…</span>';
+    const qNorm = normalize(q);
+    const isPhone = /^\d+$/.test(qNorm) && qNorm.length >= 6;
+
+    try {
+      // 1) 차량 번호 정확 매치
+      const { data: plateData } = await supabase.rpc('lookup_vehicle_plates', { p_plates: [qNorm] });
+      if (plateData && plateData.length > 0) {
+        lookupResult.innerHTML = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
+        return;
+      }
+
+      // 2) 전화번호 검색: occupants + contractors
+      if (isPhone) {
+        let html = '';
+
+        const { data: phoneData } = await supabase
+          .from('occupants')
+          .select('unit, contact_person, business_name, phone')
+          .ilike('phone', '%' + q + '%');
+        if (phoneData && phoneData.length > 0) {
+          html += phoneData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>📞 ${r.phone}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
+        }
+
+        const { data: cData } = await supabase
+          .from('contractors')
+          .select('service, company, contact_name, phone')
+          .ilike('phone', '%' + q + '%');
+        if (cData && cData.length > 0) {
+          html += cData.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b>🏢 ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
+        }
+
+        if (html) { lookupResult.innerHTML = html; return; }
+      } else {
+        // 부분 plate 매치
+        const { data: partData } = await supabase
+          .from('occupants')
+          .select('unit, contact_person, business_name, license_plates')
+          .ilike('license_plates', '%' + qNorm + '%');
+        if (partData && partData.length > 0) {
+          lookupResult.innerHTML = partData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.license_plates}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
           return;
         }
-
-        // 2) 전화번호 검색 (occupants + contractors)
-        if (isPhone) {
-          let html = '';
-
-          // occupants
-          const { data: phoneData } = await supabase
-            .from('occupants')
-            .select('unit, contact_person, business_name, phone')
-            .ilike('phone', '%' + q + '%');
-          if (phoneData && phoneData.length > 0) {
-            html += phoneData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>📞 ${r.phone}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
-          }
-
-          // contractors
-          const { data: cData } = await supabase
-            .from('contractors')
-            .select('service, company, contact_name, phone')
-            .ilike('phone', '%' + q + '%');
-          if (cData && cData.length > 0) {
-            html += cData.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b>🏢 ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
-          }
-
-          if (html) { lookupResult.innerHTML = html; return; }
-        } else {
-          // 짧은 문자열은 plate 부분일치로 occupants.license_plates ilike
-          const { data: partData } = await supabase
-            .from('occupants')
-            .select('unit, contact_person, business_name, license_plates')
-            .ilike('license_plates', '%' + qNorm + '%');
-          if (partData && partData.length > 0) {
-            const rows = partData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.license_plates}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
-            lookupResult.innerHTML = rows;
-            return;
-          }
-        }
-
-        lookupResult.innerHTML = '<span style="color:var(--muted)">No match found.</span>';
-      } catch (e) {
-        lookupResult.innerHTML = '<span style="color:#dc2626">Lookup failed.</span>';
       }
+
+      lookupResult.innerHTML = '<span style="color:var(--muted)">No match found.</span>';
+    } catch (e) {
+      lookupResult.innerHTML = '<span style="color:#dc2626">Lookup failed.</span>';
     }
-
-    lookupInput.addEventListener('input', (e) => {
-      const v = e.target.value;
-      lookupClear.style.display = v ? 'block' : 'none';
-      clearTimeout(lookupTimer);
-      lookupTimer = setTimeout(() => runLookup(v), 300);
-    });
-
-    lookupClear.addEventListener('click', () => {
-      lookupInput.value = '';
-      lookupClear.style.display = 'none';
-      lookupResult.innerHTML = '';
-      lookupInput.focus();
-    });
   }
+
+  lookupInput.addEventListener('input', (e) => {
+    const v = e.target.value;
+    lookupClear.style.display = v ? 'block' : 'none';
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(() => runLookup(v), 300);
+  });
+
+  lookupClear.addEventListener('click', () => {
+    lookupInput.value = '';
+    lookupClear.style.display = 'none';
+    lookupResult.innerHTML = '';
+    lookupInput.focus();
+  });
 })();
 </script>
 </body>
