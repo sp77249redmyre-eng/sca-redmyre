@@ -424,13 +424,24 @@ async function loadCommitteeMembers() {
   }
 
   // contact_person 기준으로 그룹핑 (같은 사람 여러 유닛 → 하나의 카드)
+  // is_primary=true인 unit이 있으면 그 row의 contact_person/business_name/email/phone 사용
   const groupMap = new Map();
   data.forEach(row => {
     const key = row.contact_person;
     if (!groupMap.has(key)) {
-      groupMap.set(key, { units: [], ...row });
+      groupMap.set(key, { units: [], primaryUnit: null, ...row });
     }
-    groupMap.get(key).units.push(row.unit);
+    const g = groupMap.get(key);
+    g.units.push(row.unit);
+    if (row.is_primary) {
+      g.primaryUnit = row.unit;
+      // primary unit의 정보로 덮어쓰기 (사장님이 대표 unit 데이터를 카드에 표시 원함)
+      g.contact_person = row.contact_person;
+      g.business_name = row.business_name;
+      g.primary_email = row.primary_email;
+      g.phone = row.phone;
+      g.committee_role = row.committee_role;
+    }
   });
 
   // 직책 순서: Chairman → Treasurer → Secretary → Committee Member
@@ -439,23 +450,9 @@ async function loadCommitteeMembers() {
     return (roleOrder[a.committee_role] || 99) - (roleOrder[b.committee_role] || 99);
   });
 
-  // 대표 유닛 매핑 (사장님 지정)
-  const PRIMARY_UNIT = {
-    'Jimmy Gupta': '6H',
-    'Michael': '5G',
-    'Sudesh': '5B',
-    'Niranjan': '6B',
-    'Sarah': '1A',
-    'Laura': '4A',
-    'Eva': '4D'
-  };
-  // Michelle는 "Michelle on behalf of Dr. Jung Sook Kim" 같은 긴 이름이라 startsWith로 처리
-  function getPrimaryUnit(contactPerson, units) {
-    for (const [key, val] of Object.entries(PRIMARY_UNIT)) {
-      if (contactPerson.toLowerCase().startsWith(key.toLowerCase())) return val;
-    }
-    if (contactPerson.toLowerCase().includes('michelle')) return '3H';
-    return units[0]; // 못 찾으면 첫 번째
+  // 대표 유닛: occupants.is_primary=true로 지정 (없으면 첫 번째 유닛)
+  function getPrimaryUnit(member) {
+    return member.primaryUnit || member.units[0];
   }
 
   // 권한: admin/observer/committee만 카드 클릭 → Occupants로 이동
@@ -492,7 +489,7 @@ async function loadCommitteeMembers() {
   }
 
   grid.innerHTML = members.map(m => {
-    const primaryUnit = getPrimaryUnit(m.contact_person, m.units);
+    const primaryUnit = getPrimaryUnit(m);
     const otherUnits = m.units.filter(u => u !== primaryUnit);
     const units = otherUnits.length > 0
       ? `Unit ${primaryUnit} <span style="opacity:0.7">(${otherUnits.join(' / ')})</span>`
@@ -510,10 +507,11 @@ async function loadCommitteeMembers() {
       <div ${clickableAttr}>
         <div class="person-header">
           <div class="person-av av-green">${getInitials(m.contact_person)}</div>
-          <div>
+          <div style="flex:1;min-width:0">
             ${nameHtml}
             <div class="committee-role-badge ${badgeClass(m.committee_role)}">${m.committee_role}</div>
           </div>
+          ${role==='admin'?`<button onclick="event.stopPropagation();window.location.href='/pages/occupants.html?unit=${primaryUnit}'" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0">✏️ Edit</button>`:''}
         </div>
         <div class="person-unit-info">${units}</div>
         ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}

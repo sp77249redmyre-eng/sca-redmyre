@@ -839,7 +839,15 @@
         <option value="Secretary">Secretary</option>
       </select>
     </div>
-    
+
+    <div class="modal-field" id="primaryUnitField" style="display:none">
+      <label class="modal-label">Primary Unit (Emergency 카드 대표)</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="editIsPrimary">
+        <span style="font-size:13px">⭐ 이 유닛을 emergency 페이지 대표 카드로 표시</span>
+      </label>
+    </div>
+
     <div class="modal-field">
       <label class="modal-label">License Plates</label>
       <div class="plate-badges" id="plateList" style="min-height:44px;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
@@ -1312,6 +1320,7 @@ window.openEditModal = (id) => {
   document.getElementById('editPhone').value = occ.phone || '';
   document.getElementById('editIsCommittee').checked = occ.is_committee || false;
   document.getElementById('editCommitteeRole').value = occ.committee_role || 'Member';
+  document.getElementById('editIsPrimary').checked = occ.is_primary || false;
   
   // License plates - plate tag UI
   const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
@@ -1326,12 +1335,14 @@ window.openEditModal = (id) => {
   const isOwnerTenant = ['owner','tenant'].includes(role);
   document.getElementById('editIsCommittee').disabled = !isAdmin;
   document.getElementById('editCommitteeRole').disabled = !isAdmin;
+  document.getElementById('editIsPrimary').disabled = !isAdmin;
   // Owner Type: Admin만 수정 가능 (그 외는 보이지만 disabled)
   document.getElementById('editOwnerType').disabled = !isAdmin;
   document.getElementById('editOwnerType').style.opacity = isAdmin ? '1' : '0.6';
   // Committee Member: admin만
   document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
   document.getElementById('committeeRoleField').style.display = 'none';
+  document.getElementById('primaryUnitField').style.display = (occ.is_committee && !isOwnerTenant) ? '' : 'none';
   // Business Name 보임
   document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
   // 통합 Email 칸 보임
@@ -1356,6 +1367,10 @@ document.getElementById('editIsCommittee').addEventListener('change', toggleComm
 function toggleCommitteeRole() {
   const isCommittee = document.getElementById('editIsCommittee').checked;
   document.getElementById('committeeRoleField').style.display = isCommittee ? 'block' : 'none';
+  document.getElementById('primaryUnitField').style.display = isCommittee ? 'block' : 'none';
+  if (!isCommittee) {
+    document.getElementById('editIsPrimary').checked = false;
+  }
 }
 
 // Save
@@ -1382,6 +1397,9 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   const beList = businessEmailRaw ? businessEmailRaw.split(',').map(e => e.trim()).filter(e => e) : [];
   const combinedBusinessEmail = beList.join(', ');
 
+  const isCommitteeChecked = document.getElementById('editIsCommittee').checked;
+  const isPrimaryChecked = isCommitteeChecked && document.getElementById('editIsPrimary').checked;
+
   const data = {
     business_name: businessName,
     contact_person: contactPerson,
@@ -1389,10 +1407,20 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     business_email: combinedBusinessEmail,
     owner_type: document.getElementById('editOwnerType').value || null,
     phone: document.getElementById('editPhone').value.trim(),
-    is_committee: document.getElementById('editIsCommittee').checked,
-    committee_role: document.getElementById('editIsCommittee').checked ? document.getElementById('editCommitteeRole').value : null,
+    is_committee: isCommitteeChecked,
+    committee_role: isCommitteeChecked ? document.getElementById('editCommitteeRole').value : null,
+    is_primary: isPrimaryChecked,
     license_plates: platesStr || null,
   };
+
+  // is_primary=true로 설정 시 같은 contact_person의 다른 유닛은 모두 false로 (대표는 1개만)
+  if (isPrimaryChecked && contactPerson) {
+    await supabase
+      .from('occupants')
+      .update({ is_primary: false })
+      .eq('contact_person', contactPerson)
+      .neq('id', id);
+  }
 
   const { error } = await supabase
     .from('occupants')
@@ -1795,20 +1823,16 @@ await loadOccupants();
     const isPhone = /^\d+$/.test(qNorm) && qNorm.length >= 6;
 
     try {
-      // 1) 차량 번호 정확 매치 (RPC)
       const { data: plateData } = await supabase.rpc('lookup_vehicle_plates', { p_plates: [qNorm] });
       if (plateData && plateData.length > 0) {
         lookupResult.innerHTML = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
         return;
       }
 
-      // 2) 전화번호 검색: occupants + contractors (Halil 포함)
       if (isPhone) {
         let html = '';
-
         const qDigits = q.replace(/\D/g, '');
 
-        // occupants: phone 컬럼이 있는 모든 행 가져와서 숫자만 비교
         const { data: phoneData } = await supabase
           .from('occupants')
           .select('unit, contact_person, business_name, phone')
@@ -1820,7 +1844,6 @@ await loadOccupants();
           }
         }
 
-        // contractors: 동일 방식
         const { data: cData } = await supabase
           .from('contractors')
           .select('service, company, contact_name, phone')
@@ -1834,7 +1857,6 @@ await loadOccupants();
 
         if (html) { lookupResult.innerHTML = html; return; }
       } else {
-        // 부분 plate 매치
         const { data: partData } = await supabase
           .from('occupants')
           .select('unit, contact_person, business_name, license_plates')
