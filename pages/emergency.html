@@ -481,14 +481,6 @@ async function loadCommitteeMembers() {
   });
   window._committeeMembers = members;
 
-  // Edit 버튼 이벤트 위임 (admin)
-  document.querySelectorAll('.committee-edit-btn').forEach(btn => {
-    btn.onclick = (ev) => {
-      ev.stopPropagation();
-      window.openCommitteeEdit(btn.dataset.person);
-    };
-  });
-
   // 대표 유닛: occupants.is_primary=true로 지정 (없으면 첫 번째 유닛)
   function getPrimaryUnit(member) {
     return member.primaryUnit || member.units[0];
@@ -561,6 +553,14 @@ async function loadCommitteeMembers() {
       </div>
     `;
   }).join('');
+
+  // Edit 버튼 이벤트 위임 (admin) — innerHTML 렌더 후에 실행
+  document.querySelectorAll('.committee-edit-btn').forEach(btn => {
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      window.openCommitteeEdit(btn.dataset.person);
+    };
+  });
 }
 
 // Committee Edit 모달 열기 (admin)
