@@ -1795,14 +1795,14 @@ await loadOccupants();
     const isPhone = /^\d+$/.test(qNorm) && qNorm.length >= 6;
 
     try {
-      // 1) 차량 번호 정확 매치
+      // 1) 차량 번호 정확 매치 (RPC)
       const { data: plateData } = await supabase.rpc('lookup_vehicle_plates', { p_plates: [qNorm] });
       if (plateData && plateData.length > 0) {
         lookupResult.innerHTML = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
         return;
       }
 
-      // 2) 전화번호 검색: occupants + contractors
+      // 2) 전화번호 검색: occupants + contractors (Halil 포함)
       if (isPhone) {
         let html = '';
 
