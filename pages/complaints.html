@@ -15,6 +15,9 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
+.btn-new-request{padding:11px 22px!important;font-size:14px!important;font-weight:700!important;border-radius:10px!important;transform:scale(1.05);animation:newReqPulse 2s ease-in-out infinite;letter-spacing:0.02em}
+.btn-new-request:hover{transform:scale(1.08);animation:none}
+@keyframes newReqPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.6)}50%{box-shadow:0 0 0 10px rgba(37,99,235,0)}}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
@@ -197,16 +200,8 @@
       <span style="font-size:13px;color:#166534;font-weight:600;line-height:1.4">Building management responds within 24-48 hours during business days.</span>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-      <button class="btn-primary" id="addComplaintBtn" style="display:none">+ New Request</button>
-    </div>
-    <div id="statsWrap" style="display:none">
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total</div></div>
-        <div class="stat-card"><div class="stat-num" id="statOpen" style="color:var(--red)">—</div><div class="stat-label">Open</div></div>
-        <div class="stat-card"><div class="stat-num" id="statInprog" style="color:var(--yellow)">—</div><div class="stat-label">In Progress</div></div>
-        <div class="stat-card"><div class="stat-num" id="statResolved" style="color:var(--green)">—</div><div class="stat-label">Resolved</div></div>
-      </div>
+    <div style="display:flex;justify-content:flex-start;margin-bottom:16px">
+      <button class="btn-primary btn-new-request" id="addComplaintBtn" style="display:none">+ New Request</button>
     </div>
     <!-- View Tabs (hidden for admin/committee/observer) -->
     <div class="view-tabs" id="viewTabs" style="display:none">
@@ -398,7 +393,6 @@ const canViewAll  = ['admin','committee','observer'];
 const privileged  = ['admin','committee','observer'];
 
 if (canSubmit.includes(role))  document.getElementById('addComplaintBtn').style.display = 'inline-flex';
-if (canViewAll.includes(role)) document.getElementById('statsWrap').style.display = 'block';
 if (!canViewAll.includes(role)) document.getElementById('filterBar').style.display = 'none';
 
 // 탭 표시 (admin/committee/observer는 기존대로 전체 보기 유지)
@@ -454,12 +448,6 @@ async function loadComplaints() {
   }
   const { data } = await query;
   allComplaints = data || [];
-  if (canViewAll.includes(role)) {
-    document.getElementById('statTotal').textContent    = allComplaints.length;
-    document.getElementById('statOpen').textContent     = allComplaints.filter(c=>c.status==='open').length;
-    document.getElementById('statInprog').textContent   = allComplaints.filter(c=>c.status==='inprog').length;
-    document.getElementById('statResolved').textContent = allComplaints.filter(c=>c.status==='resolved').length;
-  }
   renderComplaints();
 }
 
