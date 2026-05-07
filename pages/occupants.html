@@ -1806,20 +1806,30 @@ await loadOccupants();
       if (isPhone) {
         let html = '';
 
+        const qDigits = q.replace(/\D/g, '');
+
+        // occupants: phone 컬럼이 있는 모든 행 가져와서 숫자만 비교
         const { data: phoneData } = await supabase
           .from('occupants')
           .select('unit, contact_person, business_name, phone')
-          .ilike('phone', '%' + q + '%');
+          .not('phone', 'is', null);
         if (phoneData && phoneData.length > 0) {
-          html += phoneData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>📞 ${r.phone}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
+          const matched = phoneData.filter(r => (r.phone || '').replace(/\D/g, '').includes(qDigits));
+          if (matched.length > 0) {
+            html += matched.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>📞 ${r.phone}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
+          }
         }
 
+        // contractors: 동일 방식
         const { data: cData } = await supabase
           .from('contractors')
           .select('service, company, contact_name, phone')
-          .ilike('phone', '%' + q + '%');
+          .not('phone', 'is', null);
         if (cData && cData.length > 0) {
-          html += cData.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b>🏢 ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
+          const matched = cData.filter(r => (r.phone || '').replace(/\D/g, '').includes(qDigits));
+          if (matched.length > 0) {
+            html += matched.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b>🏢 ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
+          }
         }
 
         if (html) { lookupResult.innerHTML = html; return; }
