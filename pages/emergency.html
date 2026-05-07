@@ -455,8 +455,9 @@ async function loadCommitteeMembers() {
     return member.primaryUnit || member.units[0];
   }
 
-  // 권한: admin/observer/committee만 카드 클릭 → Occupants로 이동
-  const canNavigate = ['admin', 'observer', 'committee'].includes(role);
+  // 권한: observer/committee만 카드 클릭 → Occupants로 이동
+  // admin은 Edit 버튼으로만 이동 (카드 클릭 실수 방지)
+  const canNavigate = ['observer', 'committee'].includes(role);
 
   // 이름 분리: "Michelle on behalf of Dr. Jung Sook Kim" → "Michelle" + "on behalf of Dr. Jung Sook Kim"
   function splitName(name) {
