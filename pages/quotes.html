@@ -99,7 +99,7 @@
 .pc-msg-body{color:#1e293b}
 .pc-del{margin-left:8px;font-size:11px;color:#ef4444;cursor:pointer;opacity:0.7}
 .pc-del:hover{opacity:1}
-.input-area{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-bottom:14px;max-width:70%}
+.input-area{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-bottom:4px;max-width:70%}
 .input-area textarea{width:100%;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;min-height:160px;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box;transition:border-color 0.15s}
 .input-area textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
 .input-area .submit-row{display:flex;justify-content:flex-end}
@@ -118,12 +118,13 @@
 .vote-value.v-closed{color:#cbd5e1}
 @media(max-width:900px){.voting-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.voting-grid{grid-template-columns:repeat(2,1fr)}}
-.result-box{padding:6px 14px!important;border-radius:8px;border:1.5px solid;font-size:13px!important;font-weight:700;line-height:1.2!important;display:inline-flex!important;align-items:center;gap:8px;margin:8px 0 8px!important;letter-spacing:0.02em;align-self:flex-start;width:fit-content!important}
+.result-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.result-box{padding:6px 14px!important;border-radius:8px;border:1.5px solid;font-size:13px!important;font-weight:700;line-height:1.2!important;display:inline-flex!important;align-items:center;gap:8px;margin:0!important;letter-spacing:0.02em;align-self:flex-start;width:fit-content!important}
 .result-pending{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .result-approved{background:#ecfdf5;border-color:#4ade80;color:#166534}
 .result-declined{background:#fee2e2;border-color:#f87171;color:#991b1b}
 .result-onhold{background:#fef3c7;border-color:#fcd34d;color:#92400e}
-.confirm-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:13px 26px;border:none;border-radius:9999px;font-size:15px;font-weight:600;cursor:pointer;width:100%;margin-top:12px;transition:all 0.2s;box-shadow:0 4px 14px rgba(37,99,235,0.3)}
+.confirm-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:8px 18px;border:none;border-radius:9999px;font-size:13px;font-weight:700;cursor:pointer;width:auto;margin:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(37,99,235,0.3);letter-spacing:0.02em;white-space:nowrap}
 .confirm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
 .confirm-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
 .draft-overlay{padding:24px;text-align:center;color:#94a3b8;font-size:14px;border-top:0.5px solid #f1f5f9}
@@ -167,7 +168,7 @@
 @media(max-width:768px){
   .action-buttons,.btn-admin-row{flex-direction:column}
   .btn-action{width:100%}
-  .confirm-btn{width:100%}
+  .confirm-btn{width:auto}
   .voting-grid{grid-template-columns:1fr}
 
   /* 줌인 방지 */
@@ -1182,13 +1183,18 @@ function renderPendingQuotes(quotes) {
 
     resultBox.className = 'result-box ' + resultClass;
     resultBox.innerHTML = resultHTML;
-    votingSection.appendChild(resultBox);
+
+    // Build a row that will hold result + confirm button, placed at the TOP of voting section
+    const resultRow = document.createElement('div');
+    resultRow.className = 'result-row';
+
+    resultRow.appendChild(resultBox);
 
     if (resultDetermined) {
       const lockNotice = document.createElement('div');
-      lockNotice.style.cssText = 'margin-top:6px;font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:6px';
+      lockNotice.style.cssText = 'font-size:12px;color:#9ca3af;display:flex;align-items:center;gap:6px';
       lockNotice.innerHTML = '🔒 Voting Closed';
-      votingSection.appendChild(lockNotice);
+      resultRow.appendChild(lockNotice);
     }
 
     // Confirm button – only when result determined
@@ -1212,8 +1218,11 @@ function renderPendingQuotes(quotes) {
       confirmBtn.className = 'confirm-btn';
       confirmBtn.innerHTML = '✔ Confirm &amp; Send Notification';
       confirmBtn.onclick = () => confirmSelection(confirmQuoteId, group, confirmBtn, calcResult);
-      votingSection.appendChild(confirmBtn);
+      resultRow.appendChild(confirmBtn);
     }
+
+    // Insert the result row at the TOP of the voting section (before Voting Status)
+    votingSection.insertBefore(resultRow, votingSection.firstChild);
 
     card.appendChild(votingSection);
     container.appendChild(card);
