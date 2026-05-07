@@ -889,7 +889,8 @@ function renderLiftMatrix() {
           : '';
         cellsHtml += `<td class="${cls}" ${dataAttr}>${content}</td>`;
       });
-      return `<tr class="sr-mx-row ${unitCls}">${groupCellHtml}<td class="sr-mx-typehead">${t.label}</td>${cellsHtml}</tr>`;
+      const trCls = (isFirst && unit === 'lift_2') ? `sr-mx-row ${unitCls} lift2-start` : `sr-mx-row ${unitCls}`;
+      return `<tr class="${trCls}">${groupCellHtml}<td class="sr-mx-typehead">${t.label}</td>${cellsHtml}</tr>`;
     }).join('');
   }
 
@@ -1243,7 +1244,7 @@ function renderRecent() {
     }
 
     return `
-      <div class="sr-list-row" style="cursor:pointer" onclick="highlightAndOpenReport('${r.id}')">
+      <div class="sr-list-row">
         <div class="sr-row-icon">${escHtml(icon)}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(r.title)}</div>
