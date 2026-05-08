@@ -522,7 +522,7 @@ const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold:
 // ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
 // Priority order: conflict(4A+4D) → approved → declined → hold → pending
 function calculateResult({ approvals, declines, holds, hasTie = false }) {
-  if (hasTie) return 'hold';                                         // Tie → hold (HIGHEST PRIORITY)
+  if (hasTie && approvals >= RULES.approvalsRequired) return 'hold';   // Tie → hold (only after threshold)
   const hasConflict = approvals >= 4 && declines >= 4;               // 4A+4D conflict → hold
   if (hasConflict) return 'hold';
   if (approvals >= RULES.approvalsRequired) return 'approved';
@@ -544,7 +544,8 @@ function calculateResult({ approvals, declines, holds, hasTie = false }) {
     { input: { approvals:3, declines:0, holds:3 }, expected:'hold',      label:'3A 3H → hold'       },
     { input: { approvals:2, declines:2, holds:2 }, expected:'pending',   label:'2A 2D 2H → pending' },
     { input: { approvals:4, declines:3, holds:0 }, expected:'pending',   label:'4A 3D → pending'    },
-    { input: { approvals:3, declines:2, holds:0, hasTie:true }, expected:'hold', label:'3A Tie → hold'      },
+    { input: { approvals:5, declines:2, holds:0, hasTie:true }, expected:'hold',    label:'5A Tie → hold'      },
+    { input: { approvals:3, declines:2, holds:0, hasTie:true }, expected:'pending', label:'3A Tie → pending'   },
   ];
   let passed = 0; let failed = 0;
   cases.forEach(({ input, expected, label }) => {
