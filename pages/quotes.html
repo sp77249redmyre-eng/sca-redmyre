@@ -1844,7 +1844,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await fetch('/api/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '✔ Quote Confirmed', message: `${group[0].project || group[0].project_title || 'Project'} — ${calcResult === 'approved' ? 'Approved' : calcResult === 'declined' ? 'Declined' : 'On Hold'}`, url: '/pages/quotes.html' })
+        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '✔ Quote Confirmed', message: `${group[0].project || group[0].project_title || 'Project'} — ${calcResult === 'approved' ? 'Approved' : calcResult === 'declined' ? 'Declined' : 'On Hold'}`, url: calcResult === 'approved' ? '/pages/works.html' : '/pages/quotes.html' })
       });
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
         method: 'POST',
