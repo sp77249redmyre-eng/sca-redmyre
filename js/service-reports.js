@@ -665,14 +665,10 @@ function setupLiftDashboard() {
 // Build year selector with contract year labels
 function buildLiftYearOptions(sel) {
   const maxYear = highestLiftContractYear();
-  // Default = lowest contract year that has any data (so Year 1 opens first
-  // even if today is already in Year 2).
-  let earliestWithData = null;
-  getLiftReports().forEach(r => {
-    const cy = liftContractYearOf(r.period_year, r.period_month);
-    if (cy && (earliestWithData === null || cy < earliestWithData)) earliestWithData = cy;
-  });
-  const defaultCy = earliestWithData || 1;
+  // Default = current contract year (so newest data shows first)
+  const now = new Date();
+  const cyNow = liftContractYearOf(now.getFullYear(), now.getMonth() + 1);
+  const defaultCy = cyNow || maxYear || 1;
   // Honour any stored selection that's still in range, otherwise use default.
   let selected = matrixState.lift.year;
   if (!selected || selected < 1 || selected > maxYear) selected = defaultCy;
