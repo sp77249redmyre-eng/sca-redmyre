@@ -124,6 +124,7 @@
 .result-approved{background:#ecfdf5;border-color:#4ade80;color:#166534}
 .result-declined{background:#fee2e2;border-color:#f87171;color:#991b1b}
 .result-onhold{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.result-tie{background:#f3e8ff;border-color:#c084fc;color:#6b21a8}
 .confirm-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:8px 18px;border:none;border-radius:9999px;font-size:13px;font-weight:700;cursor:pointer;width:auto;margin:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(37,99,235,0.3);letter-spacing:0.02em;white-space:nowrap}
 .confirm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
 .confirm-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
@@ -297,6 +298,7 @@
 .result-approved{background:#dcfce7!important;border-color:#86efac!important;color:#166534!important}
 .result-declined{background:#fee2e2!important;border-color:#f87171!important;color:#7f1d1d!important}
 .result-onhold{background:#fef3c7!important;border-color:#fcd34d!important;color:#92400e!important}
+.result-tie{background:#f3e8ff!important;border-color:#c084fc!important;color:#6b21a8!important}
 /* 번호 뱃지 */
 .pnum{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;flex-shrink:0;white-space:nowrap;margin-right:4px}
 .pnum-blue  {background:#dbeafe;color:#1e40af}
@@ -522,7 +524,7 @@ const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold:
 // ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
 // Priority order: conflict(4A+4D) → approved → declined → hold → pending
 function calculateResult({ approvals, declines, holds, hasTie = false }) {
-  if (hasTie && approvals >= RULES.approvalsRequired) return 'hold';   // Tie → hold (only after threshold)
+  if (hasTie && approvals >= 4) return 'hold';   // Tie → hold when 4+ approvals (deadlock)
   const hasConflict = approvals >= 4 && declines >= 4;               // 4A+4D conflict → hold
   if (hasConflict) return 'hold';
   if (approvals >= RULES.approvalsRequired) return 'approved';
@@ -714,7 +716,8 @@ function renderPendingQuotes(quotes) {
     const resultApproved   = calcResult === 'approved';
     const resultDeclined   = calcResult === 'declined';
     const resultHold       = calcResult === 'hold';
-    const resultDetermined = resultApproved || resultDeclined || resultHold;
+    const isTieHold        = resultHold && hasTie;
+    const resultDetermined = resultApproved || resultDeclined || (resultHold && !hasTie);
     const isLocked         = resultDetermined;
 
     // Winning vendor (for approved result)
@@ -1177,9 +1180,14 @@ function renderPendingQuotes(quotes) {
       resultClass = 'result-declined';
       resultHTML  = '❌ RESULT: Declined';
     } else if (resultHold) {
-      resultClass = 'result-onhold';
-      const holdReason = hasTie ? ' (Tie)' : (approvals >= 4 && declines >= 4) ? ' (Conflict)' : '';
-      resultHTML  = '⏸ RESULT: On Hold' + holdReason;
+      if (isTieHold) {
+        resultClass = 'result-tie';
+        resultHTML  = '⚖️ RESULT: Tie — Please reconsider your selection';
+      } else {
+        resultClass = 'result-onhold';
+        const holdReason = (approvals >= 4 && declines >= 4) ? ' (Conflict)' : '';
+        resultHTML  = '⏸ RESULT: On Hold' + holdReason;
+      }
     }
 
     resultBox.className = 'result-box ' + resultClass;
@@ -1589,7 +1597,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
       const gDec         = guardVoted.filter(v => v.vote === 'decline').length;
       const gHold        = guardVoted.filter(v => v.vote === 'hold').length;
       const gResult      = calculateResult({ approvals: gMaxA, declines: gDec, holds: gHold, hasTie: gHasTie });
-      if (gResult !== 'pending') {
+      if (gResult !== 'pending' && !(gResult === 'hold' && gHasTie)) {
         showToast('Voting is already closed – result determined', true);
         if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
         return;
