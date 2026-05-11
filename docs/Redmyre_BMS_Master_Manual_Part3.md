@@ -13,6 +13,7 @@
 - **Section 1**: 핵심 JS 모듈 4개 (auth.js, common.js, audit.js, layout.js)
 - **Section 2**: Vercel API Functions 6개
 - **Section 3**: Service Worker + 외부 시스템 연동 4개 (HVAC Daemon, SignApps, Resend, NSW 공휴일)
+- **추가**: `/api/admin-change-email.js` (7번째 API), `service-reports` 페이지 (Part2 그룹 D 추가)
 
 ---
 
@@ -1661,6 +1662,73 @@ Service Worker (sw.js) → 브라우저 알림 표시
 
 ---
 
+## 📂 7. `/api/admin-change-email.js` — Admin이 다른 유저 이메일 변경
+
+**파일 크기:** ~170줄
+**인증:** Bearer 토큰 필수 + Admin role 검증
+**DB 영향:** Auth + profiles + occupants 동시 업데이트
+
+### 📌 용도
+
+Admin이 다른 유저의 이메일을 변경할 때 사용.
+- Auth (`auth.users`) + `profiles.email` + `occupants` (primary_email/business_email) 세 곳 동시 업데이트
+- 자기 자신 이메일 변경 불가 (보안)
+- 새 이메일 중복 체크
+
+### 🔒 보안 검증 순서
+
+1. Bearer 토큰 유효성 확인
+2. 토큰으로 현재 유저 조회
+3. **자기 자신 변경 방지** (`currentUser.id === user_id` 차단)
+4. profiles에서 `role = 'admin'` 확인
+5. Service Role Key로 실제 변경
+
+### 📡 요청 형식
+
+```javascript
+POST /api/admin-change-email
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{ "user_id": "uuid", "new_email": "new@example.com" }
+```
+
+### 🔄 처리 순서 (6단계)
+
+1. 대상 유저 기존 이메일 조회 (`profiles`)
+2. 동일 이메일 → 400 반환
+3. 새 이메일 중복 체크 (다른 유저가 이미 사용 중인지)
+4. **Supabase Auth 이메일 변경** (`email_confirm: true` — 확인 이메일 스킵)
+5. **profiles.email 업데이트** (실패 시 Auth 롤백 시도)
+6. **occupants 전체 스캔** — primary_email/business_email에서 옛 이메일 → 새 이메일 교체 (콤마 분리, 중복 제거)
+
+### 📤 응답
+
+```json
+{
+  "success": true,
+  "old_email": "old@example.com",
+  "new_email": "new@example.com",
+  "occupants_updated": 2
+}
+```
+
+### ⚠️ 주의사항
+
+- **Auth 변경 후 profiles 변경 실패 시 롤백 시도** (완전한 원자성은 보장 못함 — rollback 실패 가능)
+- occupants 업데이트는 best-effort (실패해도 200 반환, 로그만 남김)
+- 자기 자신 이메일은 Supabase 대시보드에서 직접 변경해야 함
+- `send-invite.js`와 달리 이메일 발송 없음 — Admin이 별도 안내 필요
+
+### 🔗 연결
+
+- `users.html` — UI에서 이 API 호출 (Admin 전용 이메일 변경 버튼)
+- `occupants` 테이블 — primary_email / business_email 자동 동기화
+- `profiles` 테이블 — email 컬럼 업데이트
+- Supabase Auth — auth.users 이메일 업데이트
+
+---
+
 ## 📋 섹션 2 최종 요약
 
 ### 6개 API 비교표
@@ -1672,14 +1740,16 @@ Service Worker (sw.js) → 브라우저 알림 표시
 | delete-user | 60 | Bearer (선택적) | ❌ | profiles DELETE + auth.admin | Supabase Auth |
 | send-invite | 65 | ❌ | ❌ | profiles upsert + auth.admin | Supabase Auth (이메일 발송) |
 | send-push | 92 | ❌ | ❌ | push_subscriptions DELETE (실패 시) | Web Push (FCM/Mozilla 등) |
+| admin-change-email | ~170 | Bearer | ✅ | Auth + profiles + occupants | Supabase Auth |
 
 ### 인증 강도 (높음 → 낮음)
 1. **admin-set-password** (Bearer + admin 검증) — 가장 엄격
-2. **delete-user** (Bearer 선택적, 자기 자신만 차단) — 중간
-3. **나머지 4개** (인증 없음) — 환경변수만 보호
+2. **admin-change-email** (Bearer + admin 검증 + 자기 자신 차단) — 동급 엄격
+3. **delete-user** (Bearer 선택적, 자기 자신만 차단) — 중간
+4. **나머지 5개** (인증 없음) — 환경변수만 보호
 
 ### Service Role Key 사용처
-- 6개 API **전부** 사용
+- 7개 API **전부** 사용
 - ⚠️ 키 노출 시 BMS 전체 권한 탈취 가능
 
 ### 환경변수 누락 시 영향
@@ -1687,7 +1757,7 @@ Service Worker (sw.js) → 브라우저 알림 표시
 |---|---|
 | SUPABASE_URL | 6개 API 전부 즉시 죽음 |
 | SUPABASE_SERVICE_ROLE_KEY | 6개 API 전부 즉시 죽음 |
-| SUPABASE_ANON_KEY | admin-set-password, delete-user 죽음 |
+| SUPABASE_ANON_KEY | admin-set-password, delete-user, admin-change-email 죽음 |
 | SITE_URL | send-invite는 fallback URL로 동작 (영향 적음) |
 | VAPI_* | send-push 죽음 (Push 알림 전체 중단) |
 
@@ -2179,8 +2249,8 @@ window.resendAnnouncement = async (id) => { ... }
 - **API 키**: Supabase Edge Function 환경변수에 저장 (`RESEND_API_KEY` 등)
 - **발신 주소**: `notify@scafacility.com`
 - **Reply-To**: `sp77249.redmyre@gmail.com`
-- **BCC** (2026-04-28 업데이트 — info@scafacility.com 메일함 비용 폭탄 사건 후 제거):
-  - ~~`info@scafacility.com`~~ (제거됨 — 2026-04-28)
+- **BCC** (사장님 메모리):
+  - `info@scafacility.com`
   - `sca.yun82@gmail.com`
   - `sca.jacob77@gmail.com`
   - 적용 Edge Function: `email-complaint-response`, `email-quote-voting`, `email-quote-confirm`

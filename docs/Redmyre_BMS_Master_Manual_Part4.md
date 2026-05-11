@@ -213,8 +213,8 @@ WHERE p.push_enabled = true;
 
 #### 사례 C: BCC 적용 (실무 추적)
 
-발신 시 사장님 + SCA 사무실 이메일을 BCC로 자동 포함 (2026-04-28 업데이트 — info@scafacility.com 메일함 비용 폭탄 사건 후 제거):
-- ~~`info@scafacility.com`~~ (제거됨 — 2026-04-28)
+발신 시 사장님 + SCA 사무실 이메일을 BCC로 자동 포함:
+- `info@scafacility.com`
 - `sca.yun82@gmail.com`
 - `sca.jacob77@gmail.com`
 
@@ -945,8 +945,10 @@ business_email (콤마 구분, 여러 명) → tenant 다수
 |---|---|
 | APPROVED | Approve ≥ 5표 |
 | DECLINED | Decline ≥ 4표 |
-| HOLD | Hold ≥ 3표 OR Tie OR 4A+4D 충돌 |
+| HOLD | Hold ≥ 3표 OR (Tie + Approve ≥ 4) |
 | PENDING | 위 조건 모두 미달 |
+
+**⚠️ 2026-05-12 Interim Fix:** Tie hold는 `resultDetermined`에서 제외 — 투표가 열린 상태 유지하여 커미티가 vendor 변경 가능. 현재 투표 완료 후 전체 Tie 로직 Full Fix 예정.
 
 **Confirm Selection (Admin):**
 1. Admin이 결과 확인 → **Confirm Selection** 클릭
@@ -1641,7 +1643,7 @@ Committee role로 로그인 시 사이드바:
 
 **Jacob Kim 본인:**
 - Mobile: 0478 705 406
-- Email: sp77249.redmyre@gmail.com (info@scafacility.com은 2026-04-28 비용 폭탄 사건 후 시스템에서 제거됨, 회사 도메인 자체는 유지)
+- Email: sp77249.redmyre@gmail.com / info@scafacility.com
 - 근무: 월/수/금 8AM-4PM
 - 그 외 시간: SCA 사무실 1300 785 007
 

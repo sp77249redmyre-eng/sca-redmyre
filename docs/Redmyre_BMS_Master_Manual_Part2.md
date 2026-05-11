@@ -12,7 +12,7 @@ Part 1이 DB/Edge Function/Cron 중심이라면, Part 2는 **각 페이지가 �
 - **그룹 A (4개):** 공개 페이지 (인증 없음)
 - **그룹 B (2개):** Overview + 공지
 - **그룹 C (4개):** 입주자 기능
-- **그룹 D (5개):** 견적/작업/리포트 ⭐ 핵심
+- **그룹 D (6개):** 견적/작업/리포트/서비스리포트 ⭐ 핵심
 - **그룹 E (4개):** 관리자 기능
 - **그룹 F (2개):** 가이드
 
@@ -1353,7 +1353,7 @@ supabase.channel('building_cards_changes')
 ## 📄 6. `announcements.html` — 공지사항
 
 **URL:** `/announcements` (rewrites)
-**파일 크기:** 578줄
+**파일 크기:** 631줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체
 
@@ -1371,7 +1371,7 @@ Admin이 공지 작성 + 전체 구성원 조회 + **읽음 추적** + Push 알�
 - 각 카드: 제목 + 작성일 + 카테고리 뱃지
 - 클릭 시 상세 모달
 
-**③ `+ New Announcement` 버튼** (Admin만)
+**③ `+ New Announcement` 버튼** (Admin만 — Hero 박스 내부에 위치, max-width 제약 없음)
 
 **④ 공지 상세 모달 (`annDetailModal`)**
 - 제목 + 작성일 + 카테고리
@@ -1691,7 +1691,7 @@ supabase.from('push_subscriptions').upsert(
 ## 📄 7. `complaints.html` — 민원/요청
 
 **URL:** `/complaints` (rewrites)
-**파일 크기:** 1063줄
+**파일 크기:** 1,147줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체 (observer는 조회만)
 
@@ -2414,7 +2414,7 @@ const filtered = window._adminCompleted.filter(r =>
 ## 📄 9. `parking.html` — 주차 위반 신고
 
 **URL:** `/parking` (rewrites)
-**파일 크기:** 721줄
+**파일 크기:** 868줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체
 
@@ -2423,6 +2423,9 @@ const filtered = window._adminCompleted.filter(r =>
 주차 위반 신고 + 등록 차량 자동 이메일 + 경고 프린트 + Admin 해결 처리.
 
 ### 🎨 화면 구성
+
+**PC 레이아웃:** `grid-template-columns: 400px 1fr` (폼 고정 400px + 목록 가변)
+**모바일 (≤900px):** `grid-template-columns: 1fr` (1열)
 
 **① 신고 제출 폼**
 - 차량 번호 입력 (`plateInput`)
@@ -2735,7 +2738,7 @@ created_at < NOW() - 30 days → image_url + image_urls 둘 다 삭제 + DB 컬�
 ## 📄 10. `emergency.html` — 비상 연락처
 
 **URL:** `/emergency` (rewrites)
-**파일 크기:** 494줄
+**파일 크기:** 703줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체
 
@@ -2753,11 +2756,10 @@ created_at < NOW() - 30 days → image_url + image_urls 둘 다 삭제 + DB 컬�
   - **근무 시간:** 🟢 Available now → Jacob Kim
   - **근무 외/휴일:** 🟠 Unavailable → SCA Emergency Line
 
-**② Halil 카드** (Strata Manager - Observer)
-- 이메일 Cloudflare 난독화 우회:
-```javascript
-const _h = ['Halil', '@', 'exclusivere', '.com.au'].join('');
-```
+**② Strata Manager 카드**
+- `contractors` 테이블에서 `service='Strata Manager'` 1건으로 관리 (하드코딩 제거됨)
+- `get_contractors` RPC로 로드 후 service로 분리 표시
+- ⚠️ 이전 Cloudflare 난독화 방식(`const _h = [...]`) 제거됨
 
 **③ Contractor Grid (`contractorGrid`)**
 - 서비스별 아이콘 자동 매핑
@@ -2831,7 +2833,7 @@ async function isNSWPublicHoliday(date) {
 - 🟠 Public holiday / Building manager unavailable / Outside working hours
 - SCA Emergency Line / 1300 785 007
 - "Available 24/7 for urgent matters"
-- Email: sca.yun82@gmail.com (2026-04-28 변경 — 이전: info@scafacility.com)
+- Email: info@scafacility.com
 - 주의 문구: "Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA."
 
 ### 📡 DB / API 호출
@@ -2953,11 +2955,10 @@ window.navigateToOccupant = function(unit, event) {
 
 ### ⚠️ 주의사항
 
-**Halil 이메일 난독화:**
-```javascript
-const _h = ['Halil', '@', 'exclusivere', '.com.au'].join('');
-```
-이메일을 배열로 쪼개서 Cloudflare 난독화 우회. **절대 plain text로 바꾸지 말 것.**
+**Strata Manager 카드:**
+- 이전 하드코딩 방식 제거됨
+- 현재 `contractors` 테이블 DB에서 동적 로드 (Admin이 직접 편집 가능)
+- Strata Manager 변경 시 DB contractors 테이블만 수정하면 됨
 
 **공휴일 API 의존:**
 - `date.nager.at` API 호출
@@ -3062,7 +3063,7 @@ onclick="event.stopPropagation()"
 ## 📄 11. `quotes.html` — 견적 관리 ⭐⭐⭐
 
 **URL:** `/quotes` (rewrites)
-**파일 크기:** 2,159줄 (가장 복잡한 페이지)
+**파일 크기:** 2,351줄 (가장 복잡한 페이지)
 **인증 필요:** ✅
 **접근 가능 Role:** admin / committee / observer (owner/tenant 접근 차단)
 
@@ -3115,21 +3116,32 @@ const RULES = {
 
 ### 🎯 calculateResult() 함수 — 투표 로직 단일 진실 원천
 
-**절대 수정 금지. quotes.html 420줄:**
+**절대 수정 금지.**
 
+**⚠️ 현재 상태 (2026-05-12 기준 — Interim Fix 적용 중):**
 ```javascript
 function calculateResult({ approvals, declines, holds, hasTie = false }) {
-  if (hasTie) return 'hold';                              // 동점 → hold (최우선)
-  const hasConflict = approvals >= 4 && declines >= 4;    // 4승인+4거절 = 충돌 → hold
-  if (hasConflict) return 'hold';
-  if (approvals >= RULES.approvalsRequired) return 'approved';  // ≥5
-  if (declines >= RULES.declinesToAutoDecline) return 'declined';  // ≥4
-  if (holds >= RULES.holdsToAutoHold) return 'hold';      // ≥3
+  if (hasTie && approvals >= 4) return 'hold';   // Tie + 4승인 이상 → hold (deadlock 방지)
+  if (approvals >= RULES.approvalsRequired) return 'approved';
+  if (declines  >= RULES.declinesToAutoDecline) return 'declined';
+  if (holds     >= RULES.holdsToAutoHold) return 'hold';
   return 'pending';
 }
 ```
 
-**우선순위:** Tie > Conflict > Approved > Declined > Hold > Pending
+**isTieHold / resultDetermined 분리 (현재 코드):**
+```javascript
+const isTieHold        = resultHold && hasTie;
+const resultDetermined = resultApproved || resultDeclined || (resultHold && !hasTie);
+// Tie hold는 resultDetermined에서 제외 → 투표 계속 열려있음
+```
+
+**🔧 전체 Tie 로직 Fix (현재 투표 완료 후 적용 예정):**
+1. line 525: `if(hasTie) return 'hold'` 복원
+2. lines 713-718: `isTieHold` 분리, Tie hold는 `resultDetermined` 제외
+3. line 1592: Tie hold guard 추가
+
+**우선순위:** Tie > Approved > Declined > Hold > Pending
 
 **내장 검증 테스트 (페이지 로드 시 자동 실행, 콘솔에 결과):**
 - 11개 테스트 케이스 전부 통과해야 함
@@ -3488,7 +3500,7 @@ supabase.channel('quotes-realtime')
 ## 📄 12. `works.html` — 작업 진행 관리
 
 **URL:** `/works` (rewrites)
-**파일 크기:** 873줄
+**파일 크기:** 892줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체 (owner/tenant는 파일 접근 제한)
 
@@ -3782,7 +3794,7 @@ async function getSignedUrl(path) {
 ## 📄 13. `reports.html` — 완료 작업 리포트
 
 **URL:** `/reports` (rewrites)
-**파일 크기:** 468줄
+**파일 크기:** 486줄
 **인증 필요:** ✅
 **접근 가능 Role:** admin / committee / observer (owner/tenant는 자동 리다이렉트)
 
@@ -4304,16 +4316,143 @@ const ST_CLS = {
 
 ---
 
+## 📄 15b. `service-reports.html` — 서비스 리포트 관리 🆕
+
+**URL:** `/service-reports` (rewrites 추가 필요 확인)
+**파일 크기:** 501줄 (HTML) + 2,174줄 (JS) + 1,674줄 (CSS)
+**인증 필요:** ✅
+**접근 가능 Role:** admin / committee / observer (관리자급)
+
+### 📌 용도
+
+건물 법정 점검 및 정기 유지보수 기록 통합 관리:
+- Lift / HVAC / Fire / Garage 4개 카테고리
+- 월별 Matrix 뷰 (연도별 점검 완료 여부 한눈에)
+- PDF/이미지 첨부 파일 업로드 + 인라인 뷰어
+- 다음 점검일 자동 계산 (frequency 기반)
+- Lift 특화 대시보드 (계약 연도별 통계)
+
+### 🎨 화면 구성
+
+**① Hero Header** — 카테고리/탭 선택에 따라 동적 변경
+
+**② Tab Bar (5개)**
+- 🗂️ Overview — 카테고리 카드 + Upcoming 점검 목록
+- 🏢 Lift — Lift 특화 대시보드 + 월별 Matrix
+- 💧 HVAC — HVAC Matrix (Cooling Tower 등)
+- 🔥 Fire — Fire 점검 Matrix
+- 🚪 Garage — 자동문/게이트 Matrix
+
+**③ Category Card Grid** (Overview)
+- 각 카테고리: 아이콘 + 이름 + 빈도 + 마지막 점검일 + 다음 점검일
+- Due 상태: `overdue` (빨강) / `soon` (주황) / `ok` (초록)
+
+**④ Monthly Matrix** (각 탭)
+- 연도 선택 드롭다운
+- 행: 카테고리, 열: 1월-12월
+- 셀 클릭 → 해당 월 리포트 목록 모달
+
+**⑤ Report 상세 모달**
+- 날짜 / 업체 / 설명 / 첨부파일 목록
+- PDF → iframe 인라인 뷰어, 이미지 → inline 표시
+- Admin: Edit / Delete 버튼
+
+**⑥ Upload 모달** (Admin만)
+- 카테고리 선택 / 날짜 / 업체 / 설명
+- 다중 파일 첨부 (PDF, 이미지)
+
+### 🗃️ DB 테이블 (3개 신규)
+
+| 테이블 | 용도 |
+|---|---|
+| `service_categories` | 점검 카테고리 (Lift Service, Fire – Common Monthly 등) |
+| `service_reports` | 개별 점검 기록 (날짜, 업체, 설명, 첨부파일 jsonb) |
+| `service_cell_notes` | 월별 셀 메모 (Matrix 셀에 노트 추가) |
+
+**`service_categories` 주요 컬럼:** id, name, icon, group_label, frequency, custom_months, position, active
+
+**`service_reports` 주요 컬럼:** id, category_id, report_date, contractor_id, description, attachments(jsonb), uploaded_by, created_at
+
+### 📡 DB / Storage 호출
+
+```javascript
+// 카테고리 로드
+supabase.from('service_categories').select('*').eq('active', true).order('position')
+
+// 리포트 로드
+supabase.from('service_reports').select('*').order('report_date', { ascending: false })
+
+// 셀 노트 로드
+supabase.from('service_cell_notes').select('*')
+
+// 업체 로드 (기존 contractors RPC 재사용)
+supabase.rpc('get_contractors')
+```
+
+**Storage 버킷:** `service-reports` (신규)
+```javascript
+// 파일 업로드
+supabase.storage.from('service-reports').upload(path, file)
+
+// 파일 삭제
+supabase.storage.from('service-reports').remove(paths)
+
+// 서명된 URL 생성 (인라인 뷰어용)
+supabase.storage.from('service-reports').createSignedUrl(path, 3600)
+```
+
+### 🎯 핵심 함수
+
+**`nextDueFor(cat)`** — 카테고리별 다음 점검일 계산
+- frequency: `'monthly'` / `'quarterly'` / `'6-monthly'` / `'yearly'` / `'custom'`
+- custom: `custom_months` 배열 (특정 월만 점검)
+
+**`cellStateFor(cat, year, month)`** — 셀 상태 판정
+- 해당 월 리포트 있으면 → `done`
+- 없고 점검 필요 없으면 → `na`
+- 점검 필요한데 없으면 → `missing` (과거) / `upcoming` (미래)
+
+**`renderMatrix(groupLabel, tableId, mobileId, year)`** — Matrix 렌더링
+- PC: 테이블 형식
+- 모바일: 카드 형식 (수평 스크롤 없음)
+
+**`setupLiftDashboard()`** — Lift 특화 대시보드
+- TK 계약 연도 기준 그룹핑 (5월~익년4월)
+- 유지보수(M) / 수리(C) / 일반(N) 타입별 통계
+
+### 🔑 Role별 UI 동작
+
+| 기능 | admin | committee/observer | owner/tenant |
+|---|---|---|---|
+| 리포트 조회 | ✅ | ✅ | ❌ |
+| 파일 인라인 뷰어 | ✅ | ✅ | ❌ |
+| Upload 버튼 | ✅ | ❌ | ❌ |
+| Edit / Delete | ✅ | ❌ | ❌ |
+| New Category 버튼 | ✅ | ❌ | ❌ |
+| Cell Note 입력 | ✅ | ❌ | ❌ |
+
+### 🔗 연결되는 파일
+
+- `/js/service-reports.js` — 전체 로직 (2,174줄)
+- `/css/service-reports.css` — 전용 스타일 (1,674줄)
+- `service-reports` Storage 버킷
+- `service_categories` / `service_reports` / `service_cell_notes` 테이블
+- `get_contractors` RPC (업체 선택용)
+- `/sql/migrate-service-reports.sql` — 초기 데이터 마이그레이션 SQL
+
+---
+
 # ✅ 그룹 D 완료
 
-**5개 핵심 페이지 문서화 완료:**
-11. ✅ `quotes.html` — 견적 관리 (2,159줄) ⭐⭐⭐
-12. ✅ `works.html` — 작업 진행 (873줄)
-13. ✅ `reports.html` — 완료 리포트 (468줄)
+**6개 핵심 페이지 문서화 완료:**
+11. ✅ `quotes.html` — 견적 관리 (2,351줄) ⭐⭐⭐
+12. ✅ `works.html` — 작업 진행 (892줄)
+13. ✅ `reports.html` — 완료 리포트 (486줄)
 14. ✅ `cost-dashboard.html` — 비용 대시보드 (860줄)
 15. ✅ `history.html` — **HVAC 이력 + 분석** (351줄) ⚠️ 이름 혼동 주의
+15b. ✅ `service-reports.html` — 서비스 리포트 관리 🆕 (501줄 HTML + 2,174줄 JS)
 
-**총 4,711줄 HTML 코드 분석 완료**
+**총 ~9,700줄 코드 분석 완료**
 
 **⚠️ 발견된 버그 2건 (cost-dashboard.html):**
 1. `parseQuoteCategory()` return 문 누락 → undefined 반환 가능
@@ -4758,7 +4897,7 @@ supabase.from('audit_logs').select('*').gte('created_at', since).order('created_
 ## 📄 17. `occupants.html` — 입주민 정보
 
 **URL:** `/occupants` (rewrites)
-**파일 크기:** 1,742줄 (가장 큰 페이지)
+**파일 크기:** 1,892줄
 **인증 필요:** ✅
 **접근 가능 Role:** 전체 (role별 편집/조회 범위 다름)
 
@@ -4781,6 +4920,11 @@ supabase.from('audit_logs').select('*').gte('created_at', since).order('created_
 - 이름/이메일/유닛 검색
 - 열 선택 (Business Name / Contact / Emails / Phone / Role / Vehicles)
 
+**② Admin 전용 Quick Lookup (별도 검색바 — `.admin-search-bar`)**
+- 차량 번호판 OR 전화번호로 즉시 검색
+- 검색 대상: `occupants` 테이블 + `contractors` 테이블
+- max-width: 340px (PC), 100% (모바일)
+
 **③ 입주민 카드 리스트 (`occList`)**
 - Unit 번호 뱃지
 - Business Name / Contact Person
@@ -4793,6 +4937,7 @@ supabase.from('audit_logs').select('*').gte('created_at', since).order('created_
 - Contact Person / Business Name / Primary Email / Business Email / Phone / Owner Type / License Plates
 - Committee Member 체크박스 (Admin만)
 - Committee Role 드롭다운
+- **Is Primary 체크박스 (Admin만)** — 같은 contact_person의 다중 유닛 중 대표 유닛 지정. true 설정 시 같은 contact_person의 다른 유닛은 자동 false 처리
 
 **⑤ Bulk Invite 모달 (Admin 전용)**
 - 전체 occupants에서 이메일 있는데 profiles 없는 사람 자동 리스트업

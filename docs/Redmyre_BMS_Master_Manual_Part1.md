@@ -236,7 +236,7 @@ BMS에는 5가지 역할이 있습니다.
 
 # 🗃️ PART 1: DB 전체 구조
 
-## 22개 테이블 전체 목록
+## 25개 테이블 전체 목록
 
 | # | 테이블명 | 용도 | 행 수(대략) |
 |---|---|---|---|
@@ -262,6 +262,9 @@ BMS에는 5가지 역할이 있습니다.
 | 20 | `signboard_notice` | 전광판 공지 | 1 |
 | 21 | `vehicles` | 차량 (occupants 파생) | 50+ |
 | 22 | `votes` | 견적 투표 | 수십 |
+| 23 | `service_categories` | 법정 점검 카테고리 (Lift/HVAC/Fire/Garage) | 10+ |
+| 24 | `service_reports` | 개별 점검 기록 + 첨부파일 | 수십+ |
+| 25 | `service_cell_notes` | Matrix 월별 셀 메모 | 소수 |
 
 ---
 
@@ -721,6 +724,7 @@ tenancy IN (본인의 유닛)
 | `phone` | text | YES | - | 전화번호 |
 | `is_committee` | boolean | YES | `false` | Committee 여부 |
 | `committee_role` | varchar | YES | - | Chairman/Treasurer/Secretary |
+| `is_primary` | boolean | YES | `false` | 다중 유닛 owner의 대표 유닛 여부 (같은 contact_person 중 1개만 true) |
 | `license_plates` | text | YES | - | 차량 번호 (**콤마 분리**, 마스터 데이터) |
 | `owner_type` | varchar | YES | - | Owner/Tenant |
 | `status` | varchar | YES | `'Active'` | 상태 |
@@ -1703,6 +1707,8 @@ BMS는 **Push 알림**과 **Email 발송** 2가지 알림 채널을 운영합니
 
 ## Edge Function 전체 목록
 
+> ⚠️ cleanup-images(구버전)는 cleanup_parking_images로 통합됨. 실제 활성 Edge Function은 6개.
+
 | # | 이름 | 상태 | 호출 방식 |
 |---|---|---|---|
 | 1 | `email-announcement` | **비활성** (Resend 한도 방지) | 프론트 호출 없음 |
@@ -1764,7 +1770,9 @@ if (sender_role === 'admin') {
 - 현재는 **Push 알림만 사용** (complaints.html 624, 784, 790줄)
 - Edge Function 코드는 보관
 
-**발송 시 BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨 — 2026-04-28 비용 폭탄 사건)
+**BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨)
+
+**reply_to:** sp77249.redmyre@gmail.com
 
 ---
 
@@ -1776,12 +1784,18 @@ if (sender_role === 'admin') {
 
 **수신자 결정:**
 ```javascript
-occupants.primary_email + business_email (콤마 분리) → 중복 제거
+// units 배열 지원 (신규) — 복수 유닛 한 번에 처리
+// 하위 호환: unit 단일값도 지원 → [unit]으로 변환
+occupants.primary_email + business_email (콤마/세미콜론 분리) → Set으로 중복 제거
 ```
 
 **발신:** `Redmyre House <notify@scafacility.com>`
 
 **⚠️ BCC 없음** (익명성 유지 — 누가 신고했는지 외부에 알리지 않음)
+
+**에러 처리:** `logError()` 함수 — 에러 발생 시 `audit_logs`에 자동 기록 (`action='edge_function_error'`, `user_email='system'`)
+
+**이메일 없는 경우:** 400 아닌 200 반환 (`success: false, reason: "No email found"`) — audit_logs에 `no_email_for_unit` 타입으로 기록
 
 **템플릿:** 빨간색 URGENT 테마, 위반 상세 + 워닝 스티커 경고 + 방문자 주차 안내.
 
@@ -1800,7 +1814,11 @@ SELECT email FROM profiles WHERE role IN ('admin', 'committee', 'observer')
 
 **Fallback:** 빈 경우 `ikf.jacob@gmail.com` (사장님 테스트 이메일)
 
-**BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨 — 2026-04-28 비용 폭탄 사건)
+**BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨)
+
+**reply_to:** sp77249.redmyre@gmail.com
+
+**에러 처리:** `logError()` — 에러 시 audit_logs 자동 기록
 
 **body 형식:**
 ```json
@@ -1820,59 +1838,54 @@ SELECT email FROM profiles WHERE role IN ('admin', 'committee', 'observer')
 
 **호출 위치:** quotes.html (승인 완료 버튼)
 
-**수신자/BCC:** email-quote-voting과 동일.
+**수신자:** profiles에서 `role IN ('admin','committee','observer')` 동적 조회
+
+**BCC:** sca.yun82@gmail.com, sca.jacob77@gmail.com (info@scafacility.com 제거됨)
+
+**reply_to:** sp77249.redmyre@gmail.com
+
+**에러 처리:** `logError()` — 에러 시 audit_logs 자동 기록
+
+**버튼 URL 분기:**
+- `approved` → `works.html` ("View Work →")
+- `declined` / `hold` → `quotes.html` ("View Result →")
+
+**committeeCount:** DB에서 동적 조회 (`profiles WHERE role='committee'`) — 하드코딩 8 아님
 
 **body 형식:**
 ```json
 {
   "record": {
     "project": "Lift Repair",
-    "result": "approved",  // approved/declined/hold
-    "quotes": [{"vendor": "...", "amount": 5000}, ...]
+    "result": "approved",
+    "quotes": [{"vendor": "...", "amount": 5000}, ...],
+    "voteCounts": { "approvals": 5, "declines": 1, "holds": 0 }
   }
 }
 ```
+- `voteCounts` 선택적 — 있으면 이메일에 Vote Summary 섹션 표시 (Approve/Decline/Hold/Not voted 카운트)
 
-**템플릿:** 결과 색상 구분 (approved=녹색, declined=빨강, hold=노랑).
-
----
-
-## 6. cleanup-images (사용 중)
-
-**용도:** 해결된 주차 리포트의 이미지 삭제 (3일 경과).
-
-**Cron:** 매일 03:00 AM
-
-**동작:**
-```sql
-SELECT id, image_url FROM parking_reports
-WHERE status = 'resolved' AND resolved_at < NOW() - INTERVAL '3 days'
-```
-1. Storage `parking-images` 버킷에서 파일 삭제
-2. DB의 image_url을 NULL로 업데이트
-
-**⚠️ image_urls (배열) 미처리** — 구버전 방식. cleanup_parking_images로 보완.
+**템플릿:** 결과 색상 구분 (approved=녹색 `#16a34a`, declined=빨강 `#dc2626`, hold=노랑 `#d97706`).
 
 ---
 
-## 7. cleanup_parking_images (사용 중)
+## 6. cleanup_parking_images (사용 중)
 
-**용도:** 30일 경과한 모든 주차 리포트 이미지 정리.
+**용도:** 30일 경과한 주차 리포트 이미지 정리 (레코드는 유지).
 
 **Cron:** 매일 03:00 AM
 
-**동작:**
-```sql
-SELECT id, image_url, image_urls FROM parking_reports
-WHERE created_at < NOW() - INTERVAL '30 days'
-AND (image_url IS NOT NULL OR image_urls IS NOT NULL)
-```
-1. `image_url` + `image_urls` 배열 둘 다 파싱
-2. Storage에서 실제 파일 삭제
-3. DB의 image_url, image_urls를 NULL로 업데이트
-4. **parking_reports 레코드 자체는 유지** (이력 보존)
+**⚠️ 이전 cleanup-images(구버전)는 통합/대체됨.**
 
-**⚠️ Cron에 Service Role Key 하드코딩됨** — key rotation 시 이 Cron도 업데이트 필수.
+**동작 (실제 코드):**
+1. `created_at < 30일 전` + `image_url OR image_urls NOT NULL` 조건으로 조회
+2. `image_url` → `/parking-images/` 이후 경로 추출
+3. `image_urls` 배열 → 각 URL에서 경로 추출
+4. Storage `parking-images` 버킷에서 파일 삭제
+5. DB `image_url`, `image_urls` → NULL로 업데이트
+6. **레코드 자체는 유지** (이력 보존)
+
+**인증:** Service Role Key (Deno.env)
 
 ---
 
@@ -2136,6 +2149,66 @@ const CACHE_NAME = 'redmyre-bms-v5';
 ---
 
 
+
+---
+
+### 23. `service_categories` — 법정 점검 카테고리
+
+**용도:** 건물 법정/정기 점검 카테고리 정의 (빈도, 그룹, 아이콘 등)
+
+**주요 컬럼:**
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | uuid | PK |
+| `name` | text | 카테고리명 (예: "Lift Service", "Fire – Common Monthly") |
+| `icon` | text | 이모지 아이콘 |
+| `group_label` | text | 그룹 (Lift / HVAC / Fire / Garage) |
+| `frequency` | text | 점검 빈도 (monthly/quarterly/6-monthly/yearly/custom) |
+| `custom_months` | int[] | frequency='custom'일 때 점검 월 배열 |
+| `position` | integer | 정렬 순서 |
+| `active` | boolean | 활성 여부 |
+
+---
+
+### 24. `service_reports` — 개별 점검 기록
+
+**용도:** 카테고리별 점검 완료 기록 + 첨부파일 저장
+
+**주요 컬럼:**
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | uuid | PK |
+| `category_id` | uuid | FK → service_categories.id |
+| `report_date` | date | 점검일 |
+| `contractor_id` | uuid | FK → contractors.id |
+| `description` | text | 점검 설명 |
+| `attachments` | jsonb | 첨부파일 배열 [{name, path, type, size}] |
+| `uploaded_by` | uuid | FK → profiles.id |
+| `created_at` | timestamptz | 등록일 |
+
+**Storage:** `service-reports` 버킷 (파일 경로: `{category_id}/{report_id}/{filename}`)
+
+---
+
+### 25. `service_cell_notes` — Matrix 셀 메모
+
+**용도:** service-reports.html Matrix 뷰에서 특정 월 셀에 관리자 메모 추가
+
+**주요 컬럼:**
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | uuid | PK |
+| `category_id` | uuid | FK → service_categories.id |
+| `year` | integer | 연도 |
+| `month` | integer | 월 (1-12) |
+| `note` | text | 메모 내용 |
+| `updated_by` | uuid | FK → profiles.id |
+| `updated_at` | timestamptz | 수정일 |
+
+---
 # 🚑 PART 1.8: 응급 복구 SQL
 
 ## 상황별 복구 SQL
@@ -2315,7 +2388,7 @@ FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY tablename;
 ```
-**기대 결과:** 22개 테이블 전부 `rowsecurity = true`
+**기대 결과:** 25개 테이블 전부 `rowsecurity = true`
 
 ### 모든 RLS 정책 조회
 ```sql
@@ -2358,7 +2431,7 @@ SELECT jobid, jobname, schedule, active FROM cron.job;
 SELECT name, public, file_size_limit, allowed_mime_types
 FROM storage.buckets;
 ```
-**기대 결과:** 4개 (quotes=private, 나머지 3개=public)
+**기대 결과:** 5개 (quotes=private, service-reports=private, 나머지 3개=public)
 
 ---
 
