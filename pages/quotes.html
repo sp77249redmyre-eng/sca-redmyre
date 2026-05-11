@@ -1857,7 +1857,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds } })
       });
     } catch(pushErr) {}
     await loadData();
