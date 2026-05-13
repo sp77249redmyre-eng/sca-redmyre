@@ -397,6 +397,7 @@ let allWorks = [];
 let openAccordionId = null;
 let emergencyFiles = [];
 let editFiles = [];
+let deletedFilePaths = [];
 let currentWorkStatus = {};
 
 
@@ -725,7 +726,7 @@ document.getElementById('editFileInput').addEventListener('change', e => {
   Array.from(e.target.files).forEach(file => {
     editFiles.push({ file, name: file.name });
   });
-  const preview = document.getElementById('editFilePreview');
+  const preview = document.getElementById('editNewFilePreview') || document.getElementById('editFilePreview');
   preview.innerHTML = editFiles.map((f,i) => `
     <div class="file-preview">
       <span class="file-icon">📄</span>
@@ -840,6 +841,7 @@ window.openEditWork = (quoteId) => {
   if (!work) return;
   
   editFiles = [];
+  deletedFilePaths = [];
   document.getElementById('editFilePreview').innerHTML = '';
   
   const parsed = parseComment(work.comment);
@@ -856,8 +858,30 @@ window.openEditWork = (quoteId) => {
     ? new Date(work.work_start_date).toISOString().split('T')[0]
     : new Date(work.created_at).toISOString().split('T')[0];
   document.getElementById('editWorkDate').value = workStartDate;
+
+  // 기존 파일 목록 표시
+  const preview = document.getElementById('editFilePreview');
+  const existingFiles = parsed.files || [];
+  if (existingFiles.length > 0) {
+    preview.innerHTML = '<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Saved Files</div>' +
+      existingFiles.map((f, i) => `
+        <div class="file-preview" id="existing-file-${i}">
+          <span class="file-icon">📄</span>
+          <span class="file-name">${f.name}</span>
+          <span class="file-del" onclick="removeExistingFile(${i},'${f.path}');event.stopPropagation()">✕</span>
+        </div>`).join('') +
+      '<div id="editNewFilePreview"></div>';
+  } else {
+    preview.innerHTML = '<div id="editNewFilePreview"></div>';
+  }
   
   document.getElementById('editModal').classList.add('open');
+};
+
+window.removeExistingFile = (index, path) => {
+  deletedFilePaths.push(path);
+  const el = document.getElementById(`existing-file-${index}`);
+  if (el) el.remove();
 };
 
 window.saveEdit = async () => {
@@ -880,13 +904,20 @@ window.saveEdit = async () => {
     const work = allWorks.find(w => w.id === id);
     const parsed = parseComment(work.comment);
     
-    const existingFiles = parsed.files || [];
+    // 삭제된 파일 제외
+    const existingFiles = (parsed.files || []).filter(f => !deletedFilePaths.includes(f.path));
     const newFileData = [];
     for (const f of editFiles) {
       if (f.file) {
         const uploaded = await uploadFile(f.file, id);
         newFileData.push({ path: uploaded.path, name: uploaded.name, type: uploaded.type, size: uploaded.size, visibility: 'internal' });
       }
+    }
+
+    // Storage에서 삭제
+    if (deletedFilePaths.length > 0) {
+      const cleanPaths = deletedFilePaths.map(p => p.replace(/^quotes\//, ''));
+      await supabase.storage.from('quotes').remove(cleanPaths);
     }
 
     const updatedComment = {
