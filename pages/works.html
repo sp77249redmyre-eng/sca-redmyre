@@ -339,6 +339,12 @@
       <label class="modal-label">Work Start Date</label>
       <input type="date" class="modal-input" id="editWorkDate">
     </div>
+    <div class="modal-field">
+      <label class="modal-label">📎 Attach Files (Internal Only)</label>
+      <input type="file" id="editFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none">
+      <button class="btn-secondary" onclick="document.getElementById('editFileInput').click()">+ Choose Files</button>
+      <div id="editFilePreview" style="margin-top:10px"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
       <button class="btn-primary" onclick="saveEdit()">Save Changes →</button>
@@ -390,6 +396,7 @@ window.formatAmount = (input) => {
 let allWorks = [];
 let openAccordionId = null;
 let emergencyFiles = [];
+let editFiles = [];
 let currentWorkStatus = {};
 
 
@@ -714,6 +721,20 @@ window.openAddEmergencyWork = () => {
   document.getElementById('emergencyModal').classList.add('open');
 };
 
+document.getElementById('editFileInput').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(file => {
+    editFiles.push({ file, name: file.name });
+  });
+  const preview = document.getElementById('editFilePreview');
+  preview.innerHTML = editFiles.map((f,i) => `
+    <div class="file-preview">
+      <span class="file-icon">📄</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-del" onclick="editFiles.splice(${i},1);document.getElementById('editFileInput').dispatchEvent(new Event('change'))">✕</span>
+    </div>`).join('');
+  e.target.value = '';
+});
+
 document.getElementById('emergencyFileInput').addEventListener('change', e => {
   Array.from(e.target.files).forEach(f => {
     emergencyFiles.push({ 
@@ -818,6 +839,9 @@ window.openEditWork = (quoteId) => {
   const work = allWorks.find(w => w.id === quoteId);
   if (!work) return;
   
+  editFiles = [];
+  document.getElementById('editFilePreview').innerHTML = '';
+  
   const parsed = parseComment(work.comment);
   
   document.getElementById('editWorkId').value = work.id;
@@ -856,10 +880,20 @@ window.saveEdit = async () => {
     const work = allWorks.find(w => w.id === id);
     const parsed = parseComment(work.comment);
     
+    const existingFiles = parsed.files || [];
+    const newFileData = [];
+    for (const f of editFiles) {
+      if (f.file) {
+        const uploaded = await uploadFile(f.file, id);
+        newFileData.push({ path: uploaded.path, name: uploaded.name, type: uploaded.type, size: uploaded.size, visibility: 'internal' });
+      }
+    }
+
     const updatedComment = {
       ...parsed,
       note: internalNote,
-      category: category
+      category: category,
+      files: [...existingFiles, ...newFileData]
     };
 
     const { error } = await supabase
@@ -877,6 +911,7 @@ window.saveEdit = async () => {
 
     if (error) throw error;
 
+    editFiles = [];
     showToast('Work updated');
     closeModal('editModal');
     await loadWorks();
