@@ -1613,9 +1613,9 @@ window.clearLogsByDate = async () => {
   if (!confirm(`⚠️ Delete ALL activity logs for ${dateLabel}?\n\nThis action cannot be undone.`)) return;
 
   try {
-    const from = dateVal + 'T00:00:00.000Z';
-    const to   = dateVal + 'T23:59:59.999Z';
-    const { error } = await supabase.from('audit_logs').delete().gte('created_at', from).lte('created_at', to);
+    const fromLocal = new Date(dateVal + 'T00:00:00');
+    const toLocal   = new Date(dateVal + 'T23:59:59.999');
+    const { error } = await supabase.from('audit_logs').delete().gte('created_at', fromLocal.toISOString()).lte('created_at', toLocal.toISOString());
     if (error) throw error;
 
     showToast(`Logs for ${dateLabel} deleted ✓`);
