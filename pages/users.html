@@ -360,8 +360,12 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
         <div class="log-count" id="logCount">Loading...</div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="inactiveBtn" onclick="toggleInactivePanel()" style="padding:7px 14px;font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.15s">👻 Inactive Users</button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="date" id="logDeleteDate" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;height:32px;box-sizing:border-box">
+            <button onclick="clearLogsByDate()" style="padding:7px 12px;font-size:12px;font-weight:500;border:1px solid #f87171;border-radius:8px;background:#fff1f2;color:#b91c1c;cursor:pointer;transition:all 0.15s;white-space:nowrap">🗓️ Delete Day</button>
+          </div>
           <button class="btn-danger" onclick="clearAllLogs()" style="padding:7px 14px;font-size:13px">🗑️ Clear All Logs</button>
         </div>
       </div>
@@ -1600,6 +1604,30 @@ function renderActivityTable() {
 }
 
 
+
+window.clearLogsByDate = async () => {
+  const dateVal = document.getElementById('logDeleteDate').value;
+  if (!dateVal) { showToast('Please select a date first', true); return; }
+
+  const dateLabel = new Date(dateVal + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
+  if (!confirm(`⚠️ Delete ALL activity logs for ${dateLabel}?\n\nThis action cannot be undone.`)) return;
+
+  try {
+    const from = dateVal + 'T00:00:00.000Z';
+    const to   = dateVal + 'T23:59:59.999Z';
+    const { error } = await supabase.from('audit_logs').delete().gte('created_at', from).lte('created_at', to);
+    if (error) throw error;
+
+    showToast(`Logs for ${dateLabel} deleted ✓`);
+    allLogs = [];
+    currentOffset = 0;
+    await loadActivityLog(false);
+    if (inactivePanelOpen) loadInactiveUsers();
+  } catch(e) {
+    console.error('Clear logs by date error:', e);
+    showToast('Failed to delete logs', true);
+  }
+};
 
 window.clearAllLogs = async () => {
   if (!confirm('⚠️ Delete ALL activity logs?\n\nThis will permanently delete ALL activity history,\nincluding announcement read history.\n\nThis action cannot be undone.')) return;
