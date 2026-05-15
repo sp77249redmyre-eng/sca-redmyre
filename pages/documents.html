@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Documents – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.doc-hero{background:linear-gradient(135deg,#0f2456 0%,#1e3a8a 60%,#2563eb 100%);padding:28px 24px 24px;color:#fff}
+.doc-hero-title{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.doc-hero-sub{font-size:13px;opacity:0.75;margin-top:4px}
+.doc-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;align-items:start}
+.doc-panel{background:var(--card-bg,#fff);border-radius:14px;border:1px solid var(--border,#e5e7eb);overflow:hidden}
+.doc-panel-hdr{padding:14px 16px 10px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between}
+.doc-panel-title{font-size:13px;font-weight:600;color:var(--text,#0f172a);display:flex;align-items:center;gap:7px}
+.doc-panel-title i{font-size:16px;color:#2563eb}
+.doc-panel-body{padding:14px 16px}
+.year-sel{font-size:13px;padding:6px 10px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);margin-bottom:12px;width:100%;cursor:pointer}
+.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.mcell{border-radius:9px;padding:11px 4px;text-align:center;border:1px solid var(--border,#e5e7eb);background:var(--card-bg,#fff);cursor:default;transition:all .15s}
+.mcell.has{background:#EFF6FF;border-color:#93C5FD;cursor:pointer}
+.mcell.has:hover{background:#DBEAFE;border-color:#3B82F6}
+.mcell.empty{opacity:0.38}
+.mcell-name{font-size:11px;font-weight:600;color:var(--text,#0f172a)}
+.mcell.has .mcell-name{color:#1D4ED8}
+.mcell-n{font-size:10px;color:#60A5FA;margin-top:2px}
+.mcell.empty .mcell-name,.mcell.empty .mcell-n{color:#9CA3AF}
+.cat-list{display:flex;flex-direction:column;gap:8px}
+.cat-card{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
+.cat-card:hover{background:var(--hover,#f8fafc)}
+.cat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.cat-icon.blue{background:#EFF6FF;color:#1D4ED8}
+.cat-icon.green{background:#F0FDF4;color:#15803D}
+.cat-icon.amber{background:#FFFBEB;color:#B45309}
+.cat-icon.red{background:#FEF2F2;color:#B91C1C}
+.cat-icon.purple{background:#F5F3FF;color:#6D28D9}
+.cat-icon.teal{background:#F0FDFA;color:#0F766E}
+.cat-info{flex:1}
+.cat-name{font-size:13px;font-weight:600;color:var(--text,#0f172a)}
+.cat-count{font-size:11px;color:#6B7280;margin-top:2px}
+.cat-arrow{color:#9CA3AF;font-size:15px}
+.cat-empty{font-size:13px;color:#9CA3AF;text-align:center;padding:20px 0}
+.btn-new{font-size:12px;padding:6px 12px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif}
+.btn-new:hover{background:var(--hover,#f8fafc)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--card-bg,#fff);border-radius:16px;width:380px;max-width:92vw;border:1px solid var(--border,#e5e7eb);max-height:85vh;display:flex;flex-direction:column}
+.modal-top{padding:16px 18px 12px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.modal-ttl{font-size:15px;font-weight:600;color:var(--text,#0f172a)}
+.modal-sub{font-size:12px;color:#6B7280;margin-top:3px}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#9CA3AF;padding:0 4px;line-height:1;font-family:'DM Sans',sans-serif}
+.modal-close:hover{color:var(--text,#0f172a)}
+.modal-body{padding:12px 18px;overflow-y:auto;flex:1}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#e5e7eb)}
+.file-row:last-child{border:none}
+.file-icon{font-size:20px;color:#2563eb;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:12px;font-weight:500;color:var(--text,#0f172a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:10px;color:#9CA3AF;margin-top:2px}
+.file-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-dl{font-size:11px;padding:5px 9px;border:1px solid #93C5FD;border-radius:7px;background:#EFF6FF;color:#1D4ED8;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif}
+.btn-dl:hover{background:#DBEAFE}
+.btn-del-file{font-size:11px;padding:5px 7px;border:1px solid #FECACA;border-radius:7px;background:#FEF2F2;color:#B91C1C;cursor:pointer;font-family:'DM Sans',sans-serif;display:none}
+.btn-del-file:hover{background:#FEE2E2}
+.btn-add-file{width:100%;margin-top:12px;padding:9px;border:1px dashed var(--border,#e5e7eb);border-radius:9px;background:transparent;color:#9CA3AF;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;display:none}
+.btn-add-file:hover{background:var(--hover,#f8fafc)}
+.modal-foot{padding:12px 18px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border,#e5e7eb);flex-shrink:0}
+.btn-cancel{font-size:13px;padding:8px 18px;border:1px solid var(--border,#e5e7eb);border-radius:9px;background:var(--card-bg,#fff);color:var(--text,#0f172a);cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-cancel:hover{background:var(--hover,#f8fafc)}
+.btn-danger{font-size:13px;padding:8px 14px;border:1px solid #FECACA;border-radius:9px;background:#FEF2F2;color:#B91C1C;cursor:pointer;font-family:'DM Sans',sans-serif;display:none}
+.btn-danger:hover{background:#FEE2E2}
+.modal-form{display:flex;flex-direction:column;gap:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:600;color:#374151}
+.form-input{font-size:13px;padding:8px 10px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);font-family:'DM Sans',sans-serif;width:100%}
+.form-input:focus{outline:none;border-color:#3B82F6}
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-height:160px;overflow-y:auto}
+.icon-opt{width:36px;height:36px;border-radius:8px;border:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#374151;transition:all .15s}
+.icon-opt:hover,.icon-opt.sel{background:#EFF6FF;border-color:#3B82F6;color:#1D4ED8}
+.color-opts{display:flex;gap:8px}
+.color-opt{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
+.color-opt.sel{border-color:#1D4ED8}
+.color-opt.blue{background:#3B82F6}
+.color-opt.green{background:#22C55E}
+.color-opt.amber{background:#F59E0B}
+.color-opt.red{background:#EF4444}
+.color-opt.purple{background:#8B5CF6}
+.color-opt.teal{background:#14B8A6}
+.file-drop{border:2px dashed var(--border,#e5e7eb);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .15s}
+.file-drop:hover,.file-drop.drag{border-color:#3B82F6;background:#EFF6FF}
+.file-drop-txt{font-size:13px;color:#6B7280;margin-top:6px}
+.file-drop-icon{font-size:28px;color:#93C5FD}
+.selected-files{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.sel-file{display:flex;align-items:center;gap:8px;font-size:12px;color:#374151;background:var(--hover,#f8fafc);padding:6px 10px;border-radius:7px}
+.sel-file i{color:#2563eb}
+.sel-file-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sel-file-rm{background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:14px;font-family:'DM Sans',sans-serif;padding:0}
+.sel-file-rm:hover{color:#EF4444}
+.no-files{text-align:center;padding:20px 0;color:#9CA3AF;font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;display:none;z-index:999;font-family:'DM Sans',sans-serif}
+.uploading{opacity:.6;pointer-events:none}
+.btn-primary{font-size:13px;padding:8px 18px;border:none;border-radius:9px;background:#1e3a8a;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:#1D4ED8}
+.btn-primary:disabled{opacity:.5;cursor:default}
+@media(max-width:768px){
+  .doc-split{grid-template-columns:1fr}
+  .month-grid{grid-template-columns:repeat(4,1fr)}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main-content" id="mainContent">
+  <div id="topbarPlaceholder"></div>
+
+  <div class="doc-hero">
+    <div class="doc-hero-title"><i class="ti ti-files"></i>Building Documents</div>
+    <div class="doc-hero-sub">SCM Meeting Records &amp; Building Reference Documents</div>
+  </div>
+
+  <div class="doc-split">
+    <!-- SCM PANEL -->
+    <div class="doc-panel">
+      <div class="doc-panel-hdr">
+        <div class="doc-panel-title"><i class="ti ti-calendar-event"></i>SCM Documents</div>
+        <button class="btn-new" id="btnNewMeeting" style="display:none"><i class="ti ti-plus"></i>New Meeting</button>
+      </div>
+      <div class="doc-panel-body">
+        <select class="year-sel" id="yearSel"></select>
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
+    </div>
+
+    <!-- BUILDING PANEL -->
+    <div class="doc-panel">
+      <div class="doc-panel-hdr">
+        <div class="doc-panel-title"><i class="ti ti-building"></i>Building Documents</div>
+        <button class="btn-new" id="btnNewCat" style="display:none"><i class="ti ti-plus"></i>Add Category</button>
+      </div>
+      <div class="doc-panel-body">
+        <div class="cat-list" id="catList"><div class="cat-empty">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SCM File List -->
+<div class="modal-backdrop" id="scmModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div>
+        <div class="modal-ttl" id="scmModalTitle"></div>
+        <div class="modal-sub" id="scmModalDate"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('scmModal')">×</button>
+    </div>
+    <div class="modal-body" id="scmFileList"></div>
+    <div class="modal-foot">
+      <button class="btn-danger" id="btnDeleteMeeting">Delete Meeting</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeModal('scmModal')">Close</button>
+        <button class="btn-primary" id="btnAddScmFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New SCM Meeting -->
+<div class="modal-backdrop" id="newMeetingModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div><div class="modal-ttl">New SCM Meeting</div></div>
+      <button class="modal-close" onclick="closeModal('newMeetingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form">
+        <div class="form-field">
+          <label class="form-label">Meeting Title</label>
+          <input class="form-input" id="meetingTitle" placeholder="e.g. May 2026 SCM">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Meeting Date</label>
+          <input class="form-input" id="meetingDate" type="date">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeModal('newMeetingModal')">Cancel</button>
+        <button class="btn-primary" id="btnSaveMeeting"><i class="ti ti-check"></i>Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Building Category Files -->
+<div class="modal-backdrop" id="catModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div>
+        <div class="modal-ttl" id="catModalTitle"></div>
+        <div class="modal-sub" id="catModalCount"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('catModal')">×</button>
+    </div>
+    <div class="modal-body" id="catFileList"></div>
+    <div class="modal-foot">
+      <button class="btn-danger" id="btnDeleteCat">Delete Category</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeModal('catModal')">Close</button>
+        <button class="btn-primary" id="btnAddCatFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Category -->
+<div class="modal-backdrop" id="addCatModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div><div class="modal-ttl">Add Category</div></div>
+      <button class="modal-close" onclick="closeModal('addCatModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-form">
+        <div class="form-field">
+          <label class="form-label">Category Name</label>
+          <input class="form-input" id="catName" placeholder="e.g. Contracts">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Icon</label>
+          <div class="icon-grid" id="iconGrid"></div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Colour</label>
+          <div class="color-opts" id="colorOpts"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeModal('addCatModal')">Cancel</button>
+        <button class="btn-primary" id="btnSaveCat"><i class="ti ti-check"></i>Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Upload File -->
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div><div class="modal-ttl" id="uploadModalTitle">Upload File</div></div>
+      <button class="modal-close" onclick="closeModal('uploadModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+        <div class="file-drop-icon"><i class="ti ti-cloud-upload"></i></div>
+        <div class="file-drop-txt">Click to select files or drag &amp; drop</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:4px">PDF, Word, Excel, Images</div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
+      </div>
+      <div class="selected-files" id="selectedFiles"></div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="closeModal('uploadModal')">Cancel</button>
+        <button class="btn-primary" id="btnUpload" disabled><i class="ti ti-upload"></i>Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
+
+const isAdmin = role === 'admin';
+const ICON_LIST = ['ti-writing','ti-shield-check','ti-home','ti-folder','ti-file-text','ti-certificate','ti-gavel','ti-building-bank','ti-tool','ti-car','ti-phone','ti-mail','ti-users','ti-cash','ti-chart-bar','ti-lock','ti-key','ti-clipboard-list'];
+const COLOR_LIST = ['blue','green','amber','red','purple','teal'];
+
+let scmMeetings = [];
+let buildingCats = [];
+let selectedYear = new Date().getFullYear();
+let activeScmId = null;
+let activeCatId = null;
+let uploadTarget = null;
+let selectedFiles = [];
+let selectedIcon = ICON_LIST[0];
+let selectedColor = COLOR_LIST[0];
+
+// ─── INIT ───────────────────────────────────────────────
+if (isAdmin) {
+  document.getElementById('btnNewMeeting').style.display = 'flex';
+  document.getElementById('btnNewCat').style.display = 'flex';
+}
+
+await Promise.all([loadSCM(), loadCategories()]);
+renderYearSel();
+renderMonthGrid();
+
+// ─── SCM ────────────────────────────────────────────────
+async function loadSCM() {
+  const { data } = await supabase.from('scm_meetings').select('*').order('meeting_date', { ascending: false });
+  scmMeetings = data || [];
+}
+
+function renderYearSel() {
+  const years = [...new Set(scmMeetings.map(m => new Date(m.meeting_date).getFullYear()))];
+  const cur = new Date().getFullYear();
+  if (!years.includes(cur)) years.unshift(cur);
+  years.sort((a, b) => b - a);
+  const sel = document.getElementById('yearSel');
+  sel.innerHTML = years.map(y => `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`).join('');
+  sel.onchange = () => { selectedYear = parseInt(sel.value); renderMonthGrid(); };
+}
+
+function renderMonthGrid() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = months.map((m, i) => {
+    const meeting = scmMeetings.find(x => {
+      const d = new Date(x.meeting_date);
+      return d.getFullYear() === selectedYear && d.getMonth() === i;
+    });
+    const has = !!meeting;
+    return `<div class="mcell ${has ? 'has' : 'empty'}" ${has ? `onclick="openScmModal('${meeting.id}')"` : ''}>
+      <div class="mcell-name">${m}</div>
+      <div class="mcell-n">${has ? '●' : '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+window.openScmModal = async function(meetingId) {
+  activeScmId = meetingId;
+  const meeting = scmMeetings.find(m => m.id === meetingId);
+  document.getElementById('scmModalTitle').textContent = meeting.title;
+  document.getElementById('scmModalDate').textContent = new Date(meeting.meeting_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (isAdmin) {
+    document.getElementById('btnAddScmFile').style.display = 'flex';
+    document.getElementById('btnDeleteMeeting').style.display = 'flex';
+  }
+  await loadScmFiles(meetingId);
+  openModal('scmModal');
+};
+
+async function loadScmFiles(meetingId) {
+  const list = document.getElementById('scmFileList');
+  list.innerHTML = '<div class="no-files">Loading...</div>';
+  const { data } = await supabase.from('scm_documents').select('*').eq('meeting_id', meetingId).order('created_at');
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="no-files">No files uploaded yet.</div>';
+    return;
+  }
+  list.innerHTML = data.map(f => `
+    <div class="file-row">
+      <i class="${fileIcon(f.file_name)} file-icon"></i>
+      <div class="file-info">
+        <div class="file-name">${f.file_name}</div>
+        <div class="file-size">${formatSize(f.file_size)}</div>
+      </div>
+      <div class="file-actions">
+        <button class="btn-dl" onclick="downloadFile('scm-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i>Download</button>
+        ${isAdmin ? `<button class="btn-del-file" style="display:flex" onclick="deleteFile('scm_documents','${f.id}','scm-documents','${f.file_path}','${meetingId}','scm')"><i class="ti ti-trash"></i></button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('btnAddScmFile').onclick = () => {
+  uploadTarget = { type: 'scm', id: activeScmId };
+  document.getElementById('uploadModalTitle').textContent = 'Upload SCM File';
+  resetUpload();
+  openModal('uploadModal');
+};
+
+document.getElementById('btnDeleteMeeting').onclick = async () => {
+  if (!confirm('Delete this meeting and all its files?')) return;
+  const meeting = scmMeetings.find(m => m.id === activeScmId);
+  const { data: files } = await supabase.from('scm_documents').select('file_path').eq('meeting_id', activeScmId);
+  if (files && files.length > 0) {
+    await supabase.storage.from('scm-documents').remove(files.map(f => f.file_path));
+  }
+  await supabase.from('scm_meetings').delete().eq('id', activeScmId);
+  closeModal('scmModal');
+  await loadSCM();
+  renderYearSel();
+  renderMonthGrid();
+  showToast('Meeting deleted');
+};
+
+// New Meeting
+document.getElementById('btnNewMeeting').onclick = () => {
+  document.getElementById('meetingTitle').value = '';
+  document.getElementById('meetingDate').value = '';
+  openModal('newMeetingModal');
+};
+
+document.getElementById('btnSaveMeeting').onclick = async () => {
+  const title = document.getElementById('meetingTitle').value.trim();
+  const date = document.getElementById('meetingDate').value;
+  if (!title || !date) { showToast('Please fill in all fields', true); return; }
+  const btn = document.getElementById('btnSaveMeeting');
+  btn.disabled = true;
+  const { error } = await supabase.from('scm_meetings').insert({ title, meeting_date: date, created_by: user.id });
+  btn.disabled = false;
+  if (error) { showToast('Error creating meeting', true); return; }
+  closeModal('newMeetingModal');
+  await loadSCM();
+  renderYearSel();
+  renderMonthGrid();
+  showToast('Meeting created');
+};
+
+// ─── BUILDING CATEGORIES ────────────────────────────────
+async function loadCategories() {
+  const { data } = await supabase.from('building_categories').select('*').order('position');
+  buildingCats = data || [];
+  renderCategories();
+}
+
+function renderCategories() {
+  const list = document.getElementById('catList');
+  if (buildingCats.length === 0) {
+    list.innerHTML = '<div class="cat-empty">No categories yet.</div>';
+    return;
+  }
+  list.innerHTML = buildingCats.map(c => `
+    <div class="cat-card" onclick="openCatModal('${c.id}')">
+      <div class="cat-icon ${c.color}"><i class="ti ${c.icon}"></i></div>
+      <div class="cat-info">
+        <div class="cat-name">${c.name}</div>
+        <div class="cat-count" id="count-${c.id}">Loading...</div>
+      </div>
+      <i class="ti ti-chevron-right cat-arrow"></i>
+    </div>`).join('');
+  loadCatCounts();
+}
+
+async function loadCatCounts() {
+  for (const c of buildingCats) {
+    const { count } = await supabase.from('building_documents').select('*', { count: 'exact', head: true }).eq('category_id', c.id);
+    const el = document.getElementById(`count-${c.id}`);
+    if (el) el.textContent = `${count || 0} document${count !== 1 ? 's' : ''}`;
+  }
+}
+
+window.openCatModal = async function(catId) {
+  activeCatId = catId;
+  const cat = buildingCats.find(c => c.id === catId);
+  document.getElementById('catModalTitle').textContent = cat.name;
+  if (isAdmin) {
+    document.getElementById('btnAddCatFile').style.display = 'flex';
+    document.getElementById('btnDeleteCat').style.display = 'flex';
+  }
+  await loadCatFiles(catId);
+  openModal('catModal');
+};
+
+async function loadCatFiles(catId) {
+  const list = document.getElementById('catFileList');
+  list.innerHTML = '<div class="no-files">Loading...</div>';
+  const { data } = await supabase.from('building_documents').select('*').eq('category_id', catId).order('created_at');
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="no-files">No files uploaded yet.</div>';
+    const el = document.getElementById('catModalCount');
+    if (el) el.textContent = '0 documents';
+    return;
+  }
+  document.getElementById('catModalCount').textContent = `${data.length} document${data.length !== 1 ? 's' : ''}`;
+  list.innerHTML = data.map(f => `
+    <div class="file-row">
+      <i class="${fileIcon(f.file_name)} file-icon"></i>
+      <div class="file-info">
+        <div class="file-name">${f.file_name}</div>
+        <div class="file-size">${formatSize(f.file_size)}</div>
+      </div>
+      <div class="file-actions">
+        <button class="btn-dl" onclick="downloadFile('building-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i>Download</button>
+        ${isAdmin ? `<button class="btn-del-file" style="display:flex" onclick="deleteFile('building_documents','${f.id}','building-documents','${f.file_path}','${catId}','cat')"><i class="ti ti-trash"></i></button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('btnAddCatFile').onclick = () => {
+  uploadTarget = { type: 'cat', id: activeCatId };
+  document.getElementById('uploadModalTitle').textContent = 'Upload Document';
+  resetUpload();
+  openModal('uploadModal');
+};
+
+document.getElementById('btnDeleteCat').onclick = async () => {
+  if (!confirm('Delete this category and all its files?')) return;
+  const { data: files } = await supabase.from('building_documents').select('file_path').eq('category_id', activeCatId);
+  if (files && files.length > 0) {
+    await supabase.storage.from('building-documents').remove(files.map(f => f.file_path));
+  }
+  await supabase.from('building_categories').delete().eq('id', activeCatId);
+  closeModal('catModal');
+  await loadCategories();
+  showToast('Category deleted');
+};
+
+// Add Category
+document.getElementById('btnNewCat').onclick = () => {
+  document.getElementById('catName').value = '';
+  selectedIcon = ICON_LIST[0];
+  selectedColor = COLOR_LIST[0];
+  renderIconGrid();
+  renderColorOpts();
+  openModal('addCatModal');
+};
+
+function renderIconGrid() {
+  document.getElementById('iconGrid').innerHTML = ICON_LIST.map(ic =>
+    `<div class="icon-opt ${ic === selectedIcon ? 'sel' : ''}" onclick="selectIcon('${ic}')"><i class="ti ${ic}"></i></div>`
+  ).join('');
+}
+
+function renderColorOpts() {
+  document.getElementById('colorOpts').innerHTML = COLOR_LIST.map(c =>
+    `<div class="color-opt ${c} ${c === selectedColor ? 'sel' : ''}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+
+window.selectIcon = function(ic) { selectedIcon = ic; renderIconGrid(); };
+window.selectColor = function(c) { selectedColor = c; renderColorOpts(); };
+
+document.getElementById('btnSaveCat').onclick = async () => {
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { showToast('Please enter a category name', true); return; }
+  const btn = document.getElementById('btnSaveCat');
+  btn.disabled = true;
+  const position = buildingCats.length + 1;
+  const { error } = await supabase.from('building_categories').insert({ name, icon: selectedIcon, color: selectedColor, position });
+  btn.disabled = false;
+  if (error) { showToast('Error saving category', true); return; }
+  closeModal('addCatModal');
+  await loadCategories();
+  showToast('Category added');
+};
+
+// ─── FILE UPLOAD ─────────────────────────────────────────
+function resetUpload() {
+  selectedFiles = [];
+  document.getElementById('fileInput').value = '';
+  document.getElementById('selectedFiles').innerHTML = '';
+  document.getElementById('btnUpload').disabled = true;
+}
+
+document.getElementById('fileInput').onchange = (e) => {
+  addFiles(Array.from(e.target.files));
+};
+
+const fileDrop = document.getElementById('fileDrop');
+fileDrop.ondragover = (e) => { e.preventDefault(); fileDrop.classList.add('drag'); };
+fileDrop.ondragleave = () => fileDrop.classList.remove('drag');
+fileDrop.ondrop = (e) => { e.preventDefault(); fileDrop.classList.remove('drag'); addFiles(Array.from(e.dataTransfer.files)); };
+
+function addFiles(files) {
+  files.forEach(f => { if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f); });
+  renderSelectedFiles();
+}
+
+function renderSelectedFiles() {
+  const container = document.getElementById('selectedFiles');
+  container.innerHTML = selectedFiles.map((f, i) => `
+    <div class="sel-file">
+      <i class="ti ${fileIcon(f.name)}"></i>
+      <span class="sel-file-name">${f.name}</span>
+      <span style="color:#9CA3AF;font-size:10px">${formatSize(f.size)}</span>
+      <button class="sel-file-rm" onclick="removeFile(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('btnUpload').disabled = selectedFiles.length === 0;
+}
+
+window.removeFile = function(i) { selectedFiles.splice(i, 1); renderSelectedFiles(); };
+
+document.getElementById('btnUpload').onclick = async () => {
+  if (!uploadTarget || selectedFiles.length === 0) return;
+  const btn = document.getElementById('btnUpload');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader ti-spin"></i>Uploading...';
+
+  const bucket = uploadTarget.type === 'scm' ? 'scm-documents' : 'building-documents';
+  const table = uploadTarget.type === 'scm' ? 'scm_documents' : 'building_documents';
+  const fkCol = uploadTarget.type === 'scm' ? 'meeting_id' : 'category_id';
+
+  let success = 0;
+  for (const file of selectedFiles) {
+    const path = `${uploadTarget.id}/${Date.now()}_${file.name}`;
+    const { error: upErr } = await supabase.storage.from(bucket).upload(path, file);
+    if (upErr) continue;
+    await supabase.from(table).insert({ [fkCol]: uploadTarget.id, file_name: file.name, file_path: path, file_size: file.size, uploaded_by: user.id });
+    success++;
+  }
+
+  btn.innerHTML = '<i class="ti ti-upload"></i>Upload';
+  closeModal('uploadModal');
+
+  if (uploadTarget.type === 'scm') {
+    await loadScmFiles(uploadTarget.id);
+    openModal('scmModal');
+  } else {
+    await loadCatFiles(uploadTarget.id);
+    await loadCategories();
+    openModal('catModal');
+  }
+  showToast(`${success} file${success !== 1 ? 's' : ''} uploaded`);
+};
+
+// ─── DELETE FILE ─────────────────────────────────────────
+window.deleteFile = async function(table, id, bucket, path, parentId, type) {
+  if (!confirm('Delete this file?')) return;
+  await supabase.storage.from(bucket).remove([path]);
+  await supabase.from(table).delete().eq('id', id);
+  if (type === 'scm') {
+    await loadScmFiles(parentId);
+  } else {
+    await loadCatFiles(parentId);
+    await loadCategories();
+  }
+  showToast('File deleted');
+};
+
+// ─── DOWNLOAD ────────────────────────────────────────────
+window.downloadFile = async function(bucket, path, name) {
+  const { data, error } = await supabase.storage.from(bucket).download(path);
+  if (error) { showToast('Download failed', true); return; }
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ─── UTILS ───────────────────────────────────────────────
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return 'ti ti-file-type-pdf';
+  if (['doc','docx'].includes(ext)) return 'ti ti-file-type-doc';
+  if (['xls','xlsx'].includes(ext)) return 'ti ti-file-type-xls';
+  if (['jpg','jpeg','png'].includes(ext)) return 'ti ti-photo';
+  return 'ti ti-file';
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#991b1b' : '#0f172a';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
+
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
