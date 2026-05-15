@@ -491,6 +491,47 @@ window.deletePc = async function(id, el) {
   const msg = el.closest('.pc-msg');
   if (msg) msg.remove();
 };
+
+window.editPc = function(id, el) {
+  const msgDiv = el.closest('.pc-msg');
+  const bodyDiv = msgDiv.querySelector('.pc-msg-body');
+  if (!bodyDiv) return;
+  if (msgDiv.querySelector('.pc-edit-area')) return;
+  const original = bodyDiv.innerText;
+  bodyDiv.style.display = 'none';
+  const editArea = document.createElement('div');
+  editArea.className = 'pc-edit-area';
+  editArea.style.cssText = 'margin-top:6px;display:flex;flex-direction:column;gap:6px';
+  const ta = document.createElement('textarea');
+  ta.value = original;
+  ta.style.cssText = 'width:100%;min-height:60px;padding:8px;border:0.5px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box';
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end';
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:#f1f5f9;color:#374151;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer';
+  saveBtn.onclick = async () => {
+    const txt = ta.value.trim();
+    if (!txt) return;
+    const { error } = await supabase.from('project_comments').update({ comment: txt }).eq('id', id);
+    if (error) { showToast('Failed to update', true); return; }
+    bodyDiv.innerText = txt;
+    bodyDiv.style.display = '';
+    editArea.remove();
+  };
+  cancelBtn.onclick = () => {
+    bodyDiv.style.display = '';
+    editArea.remove();
+  };
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(saveBtn);
+  editArea.appendChild(ta);
+  editArea.appendChild(btnRow);
+  msgDiv.appendChild(editArea);
+};
 import { getSupabase } from '/js/auth.js';
 
 let allQuotes   = [];
@@ -1124,7 +1165,7 @@ function renderPendingQuotes(quotes) {
         const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
         const nameColor = isEven ? '#2563eb' : '#166534';
         const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}${isOwn ? '<span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div></div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
+        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}${isOwn ? '<span style="margin-left:8px;font-size:11px;color:#2563eb;cursor:pointer;opacity:0.7" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" onclick="editPc(\'' + pc.id + '\', this)">✏️</span><span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div></div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
         thread.appendChild(msgDiv);
       });
       thread.scrollTop = thread.scrollHeight;
