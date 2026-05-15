@@ -52,20 +52,18 @@
 .cat-empty{font-size:13px;color:#9CA3AF;text-align:center;padding:20px 0}
 .btn-new{font-size:12px;padding:6px 12px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif}
 .btn-new:hover{background:var(--hover,#f8fafc)}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-backdrop.open{opacity:1;pointer-events:all}
-.modal-box{background:var(--card-bg,#fff);border-radius:16px;width:560px;max-width:95vw;border:1px solid var(--border,#e5e7eb);max-height:90vh;display:flex;flex-direction:column}
-.pdf-preview{width:100%;height:500px;border:none;border-radius:8px;margin-top:10px;background:#f3f4f6}
-.btn-preview{font-size:11px;padding:5px 9px;border:1px solid #D1D5DB;border-radius:7px;background:var(--card-bg,#fff);color:#374151;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif}
-.btn-preview:hover{background:var(--hover,#f8fafc)}
-.preview-area{margin-top:8px}
-.modal-top{padding:16px 18px 12px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
-.modal-ttl{font-size:15px;font-weight:600;color:var(--text,#0f172a)}
-.modal-sub{font-size:12px;color:#6B7280;margin-top:3px}
-.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#9CA3AF;padding:0 4px;line-height:1;font-family:'DM Sans',sans-serif}
-.modal-close:hover{color:var(--text,#0f172a)}
-.modal-body{padding:12px 18px;overflow-y:auto;flex:1}
-.file-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#e5e7eb);flex-wrap:wrap}
+.modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);display:none;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;backdrop-filter:blur(2px)}
+.modal-backdrop.open{display:flex}
+.modal-box{background:#fff;border-radius:18px;padding:28px;max-width:680px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.modal-title{font-size:20px;font-weight:600;color:#1e293b;margin-bottom:6px}
+.modal-footer{display:flex;gap:12px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
+@media(max-width:768px){
+  .modal-box{padding:18px;max-height:94vh}
+  .modal-title{font-size:17px;margin-bottom:16px}
+  .modal-footer{flex-direction:column-reverse;gap:8px;margin-top:18px}
+  .modal-footer button{width:100%;height:46px;font-size:14px}
+}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#e5e7eb)}
 .file-row:last-child{border:none}
 .file-icon{font-size:20px;color:#2563eb;flex-shrink:0}
 .file-info{flex:1;min-width:0}
@@ -162,136 +160,109 @@
 </div>
 
 <!-- MODAL: SCM File List -->
-<div class="modal-backdrop" id="scmModal">
+<div class="modal-backdrop" id="scmModal" onclick="if(event.target===this)closeModal('scmModal')">
   <div class="modal-box">
-    <div class="modal-top">
-      <div>
-        <div class="modal-ttl" id="scmModalTitle"></div>
-        <div class="modal-sub" id="scmModalDate"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal('scmModal')">×</button>
-    </div>
-    <div class="modal-body" id="scmFileList"></div>
-    <div class="modal-foot">
-      <button class="btn-danger" id="btnDeleteMeeting">Delete Meeting</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeModal('scmModal')">Close</button>
-        <button class="btn-primary" id="btnAddScmFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
-      </div>
+    <div class="modal-title" id="scmModalTitle"></div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:16px" id="scmModalDate"></div>
+    <div id="scmFileList"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btnDeleteMeeting" style="display:none;background:#fee2e2;color:#991b1b;border-color:#fecaca">Delete Meeting</button>
+      <button class="btn-secondary" onclick="closeModal('scmModal')">Close</button>
+      <button class="btn-primary" id="btnAddScmFile" style="display:none"><i class="ti ti-upload"></i> Upload File</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: New SCM Meeting -->
-<div class="modal-backdrop" id="newMeetingModal">
+<div class="modal-backdrop" id="newMeetingModal" onclick="if(event.target===this)closeModal('newMeetingModal')">
   <div class="modal-box">
-    <div class="modal-top">
-      <div><div class="modal-ttl">New SCM Meeting</div></div>
-      <button class="modal-close" onclick="closeModal('newMeetingModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-form">
-        <div class="form-field">
-          <label class="form-label">Meeting Title</label>
-          <input class="form-input" id="meetingTitle" placeholder="e.g. May 2026 SCM">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Meeting Date</label>
-          <input class="form-input" id="meetingDate" type="date">
-        </div>
+    <div class="modal-title">New SCM Meeting</div>
+    <div class="modal-form">
+      <div class="form-field">
+        <label class="form-label">Meeting Title</label>
+        <input class="form-input" id="meetingTitle" placeholder="e.g. May 2026 SCM">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Meeting Date</label>
+        <input class="form-input" id="meetingDate" type="date">
       </div>
     </div>
-    <div class="modal-foot">
-      <div></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeModal('newMeetingModal')">Cancel</button>
-        <button class="btn-primary" id="btnSaveMeeting"><i class="ti ti-check"></i>Create</button>
-      </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('newMeetingModal')">Cancel</button>
+      <button class="btn-primary" id="btnSaveMeeting"><i class="ti ti-check"></i> Create</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Building Category Files -->
-<div class="modal-backdrop" id="catModal">
+<div class="modal-backdrop" id="catModal" onclick="if(event.target===this)closeModal('catModal')">
   <div class="modal-box">
-    <div class="modal-top">
-      <div>
-        <div class="modal-ttl" id="catModalTitle"></div>
-        <div class="modal-sub" id="catModalCount"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal('catModal')">×</button>
-    </div>
-    <div class="modal-body" id="catFileList"></div>
-    <div class="modal-foot">
-      <button class="btn-danger" id="btnDeleteCat">Delete Category</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeModal('catModal')">Close</button>
-        <button class="btn-primary" id="btnAddCatFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
-      </div>
+    <div class="modal-title" id="catModalTitle"></div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:16px" id="catModalCount"></div>
+    <div id="catFileList"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btnDeleteCat" style="display:none;background:#fee2e2;color:#991b1b;border-color:#fecaca">Delete Category</button>
+      <button class="btn-secondary" onclick="closeModal('catModal')">Close</button>
+      <button class="btn-primary" id="btnAddCatFile" style="display:none"><i class="ti ti-upload"></i> Upload File</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Add Category -->
-<div class="modal-backdrop" id="addCatModal">
+<div class="modal-backdrop" id="addCatModal" onclick="if(event.target===this)closeModal('addCatModal')">
   <div class="modal-box">
-    <div class="modal-top">
-      <div><div class="modal-ttl">Add Category</div></div>
-      <button class="modal-close" onclick="closeModal('addCatModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-form">
-        <div class="form-field">
-          <label class="form-label">Category Name</label>
-          <input class="form-input" id="catName" placeholder="e.g. Contracts">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Icon</label>
-          <div class="icon-grid" id="iconGrid"></div>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Colour</label>
-          <div class="color-opts" id="colorOpts"></div>
-        </div>
+    <div class="modal-title">Add Category</div>
+    <div class="modal-form">
+      <div class="form-field">
+        <label class="form-label">Category Name</label>
+        <input class="form-input" id="catName" placeholder="e.g. Contracts">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Icon</label>
+        <div class="icon-grid" id="iconGrid"></div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Colour</label>
+        <div class="color-opts" id="colorOpts"></div>
       </div>
     </div>
-    <div class="modal-foot">
-      <div></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeModal('addCatModal')">Cancel</button>
-        <button class="btn-primary" id="btnSaveCat"><i class="ti ti-check"></i>Save</button>
-      </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('addCatModal')">Cancel</button>
+      <button class="btn-primary" id="btnSaveCat"><i class="ti ti-check"></i> Save</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Upload File -->
-<div class="modal-backdrop" id="uploadModal">
+<div class="modal-backdrop" id="uploadModal" onclick="if(event.target===this)closeModal('uploadModal')">
   <div class="modal-box">
-    <div class="modal-top">
-      <div><div class="modal-ttl" id="uploadModalTitle">Upload File</div></div>
-      <button class="modal-close" onclick="closeModal('uploadModal')">×</button>
+    <div class="modal-title" id="uploadModalTitle">Upload File</div>
+    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+      <div class="file-drop-icon"><i class="ti ti-cloud-upload"></i></div>
+      <div class="file-drop-txt">Click to select files or drag &amp; drop</div>
+      <div style="font-size:11px;color:#9CA3AF;margin-top:4px">PDF, Word, Excel, Images</div>
+      <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
     </div>
-    <div class="modal-body">
-      <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
-        <div class="file-drop-icon"><i class="ti ti-cloud-upload"></i></div>
-        <div class="file-drop-txt">Click to select files or drag &amp; drop</div>
-        <div style="font-size:11px;color:#9CA3AF;margin-top:4px">PDF, Word, Excel, Images</div>
-        <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
-      </div>
-      <div class="selected-files" id="selectedFiles"></div>
-    </div>
-    <div class="modal-foot">
-      <div></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="closeModal('uploadModal')">Cancel</button>
-        <button class="btn-primary" id="btnUpload" disabled><i class="ti ti-upload"></i>Upload</button>
-      </div>
+    <div class="selected-files" id="selectedFiles"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn-primary" id="btnUpload" disabled><i class="ti ti-upload"></i> Upload</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- MODAL: File Preview -->
+<div class="modal-backdrop" id="filePreviewModal" onclick="if(event.target===this)closeModal('filePreviewModal')">
+  <div class="modal-box" style="max-width:860px;width:96%;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f8fafc">
+      <span id="filePreviewTitle" style="font-weight:600;color:#1f2937;font-size:15px"></span>
+      <button onclick="closeModal('filePreviewModal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">×</button>
+    </div>
+    <div id="filePreviewBody" style="min-height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:#fff"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
 
 <script type="module">
 import { initLayout } from '/js/layout.js';
@@ -377,18 +348,17 @@ async function loadScmFiles(meetingId) {
     return;
   }
   list.innerHTML = data.map(f => `
-    <div class="file-row" id="row-${f.id}">
+    <div class="file-row">
       <i class="${fileIcon(f.file_name)} file-icon"></i>
       <div class="file-info">
         <div class="file-name">${f.file_name}</div>
         <div class="file-size">${formatSize(f.file_size)}</div>
       </div>
       <div class="file-actions">
-        ${isPdf(f.file_name) ? `<button class="btn-preview" onclick="previewFile('scm-documents','${f.file_path}','${f.id}')"><i class="ti ti-eye"></i>View</button>` : ''}
-        <button class="btn-dl" onclick="downloadFile('scm-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i>Download</button>
+        <button class="btn-secondary" style="font-size:12px;padding:5px 10px" onclick="previewFile('scm-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-eye"></i> View</button>
+        <button class="btn-dl" onclick="downloadFile('scm-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i> Download</button>
         ${isAdmin ? `<button class="btn-del-file" style="display:flex" onclick="deleteFile('scm_documents','${f.id}','scm-documents','${f.file_path}','${meetingId}','scm')"><i class="ti ti-trash"></i></button>` : ''}
       </div>
-      <div class="preview-area" id="preview-${f.id}" style="display:none;width:100%"></div>
     </div>`).join('');
 }
 
@@ -494,18 +464,17 @@ async function loadCatFiles(catId) {
   }
   document.getElementById('catModalCount').textContent = `${data.length} document${data.length !== 1 ? 's' : ''}`;
   list.innerHTML = data.map(f => `
-    <div class="file-row" id="row-${f.id}">
+    <div class="file-row">
       <i class="${fileIcon(f.file_name)} file-icon"></i>
       <div class="file-info">
         <div class="file-name">${f.file_name}</div>
         <div class="file-size">${formatSize(f.file_size)}</div>
       </div>
       <div class="file-actions">
-        ${isPdf(f.file_name) ? `<button class="btn-preview" onclick="previewFile('building-documents','${f.file_path}','${f.id}')"><i class="ti ti-eye"></i>View</button>` : ''}
-        <button class="btn-dl" onclick="downloadFile('building-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i>Download</button>
+        <button class="btn-secondary" style="font-size:12px;padding:5px 10px" onclick="previewFile('building-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-eye"></i> View</button>
+        <button class="btn-dl" onclick="downloadFile('building-documents','${f.file_path}','${f.file_name}')"><i class="ti ti-download"></i> Download</button>
         ${isAdmin ? `<button class="btn-del-file" style="display:flex" onclick="deleteFile('building_documents','${f.id}','building-documents','${f.file_path}','${catId}','cat')"><i class="ti ti-trash"></i></button>` : ''}
       </div>
-      <div class="preview-area" id="preview-${f.id}" style="display:none;width:100%"></div>
     </div>`).join('');
 }
 
@@ -661,24 +630,6 @@ window.downloadFile = async function(bucket, path, name) {
 };
 
 // ─── UTILS ───────────────────────────────────────────────
-function isPdf(name) {
-  return name.split('.').pop().toLowerCase() === 'pdf';
-}
-
-window.previewFile = async function(bucket, path, fileId) {
-  const area = document.getElementById(`preview-${fileId}`);
-  if (area.style.display !== 'none') {
-    area.style.display = 'none';
-    area.innerHTML = '';
-    return;
-  }
-  area.innerHTML = '<div style="padding:10px;color:#9CA3AF;font-size:12px">Loading preview...</div>';
-  area.style.display = 'block';
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
-  if (error || !data) { area.innerHTML = '<div style="padding:10px;color:#EF4444;font-size:12px">Preview failed.</div>'; return; }
-  area.innerHTML = `<iframe src="${data.signedUrl}" class="pdf-preview"></iframe>`;
-};
-
 function fileIcon(name) {
   const ext = name.split('.').pop().toLowerCase();
   if (ext === 'pdf') return 'ti ti-file-type-pdf';
@@ -702,6 +653,29 @@ function showToast(msg, isError = false) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }
+
+// ─── PREVIEW ─────────────────────────────────────────────
+window.previewFile = async function(bucket, path, name) {
+  document.getElementById('filePreviewTitle').textContent = name;
+  document.getElementById('filePreviewBody').innerHTML = '<div style="color:#9CA3AF;font-size:13px">Loading...</div>';
+  openModal('filePreviewModal');
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+  if (error || !data) {
+    document.getElementById('filePreviewBody').innerHTML = '<div style="color:#EF4444;font-size:13px">Preview failed.</div>';
+    return;
+  }
+  const url = data.signedUrl;
+  const ext = name.split('.').pop().toLowerCase();
+  let html = '';
+  if (ext === 'pdf') {
+    html = `<iframe src="${url}" style="width:100%;height:600px;border:none;border-radius:6px"></iframe>`;
+  } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
+    html = `<img src="${url}" style="max-width:100%;max-height:600px;border-radius:6px;display:block" alt="${name}">`;
+  } else {
+    html = `<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">📎</div><a href="${url}" download="${name}" style="display:inline-block;padding:10px 22px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">⬇ Download ${name}</a></div>`;
+  }
+  document.getElementById('filePreviewBody').innerHTML = html;
+};
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
