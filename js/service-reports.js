@@ -1136,7 +1136,8 @@ window.openFileViewer = async function(path, name, type) {
 
     let body = '';
     if (isPdf) {
-      body = `<iframe src="${url}" style="width:100%;height:75vh;border:none;border-radius:8px;background:#f8fafc"></iframe>`;
+      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      body = `<iframe src="${viewerUrl}" style="width:100%;height:75vh;border:none;border-radius:8px;background:#f8fafc"></iframe>`;
     } else if (isImg) {
       body = `<img src="${url}" alt="${escHtml(name)}" style="max-width:100%;max-height:78vh;border-radius:8px;display:block;margin:0 auto">`;
     } else {
