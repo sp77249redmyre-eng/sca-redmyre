@@ -16,7 +16,7 @@ function svgIcon(name, size = 18) {
     'elevator':       `${blank}<path d="M5 4m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z"/><path d="M10 10l2 -2l2 2"/><path d="M10 14l2 2l2 -2"/>`,
     'snowflake':      `${blank}<path d="M12 3l0 18"/><path d="M3 12l18 0"/><path d="M5.636 5.636l12.728 12.728"/><path d="M5.636 18.364l12.728 -12.728"/><path d="M12 6l-2 2m4 -2l2 2"/><path d="M18 12l-2 -2m2 6l-2 -2"/><path d="M12 18l-2 -2m4 2l2 -2"/><path d="M6 12l2 -2m-2 6l2 -2"/>`,
     'flame':          `${blank}<path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 0 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/>`,
-    'garage-door':    `${blank}<path d="M5 4h14a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-9"/><path d="M9 14h6"/>`,
+    'garage-door':    `${blank}<path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1v-16a1 1 0 0 1 1 -1"/><path d="M4 7h16"/><path d="M4 11h16"/><path d="M4 15h16"/>`,
     'tool':           `${blank}<path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/>`,
     'bolt':           `${blank}<path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>`,
     'bug':            `${blank}<path d="M9 9v-1a3 3 0 0 1 6 0v1"/><path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3"/><path d="M3 13l4 0"/><path d="M17 13l4 0"/><path d="M12 20l0 -6"/><path d="M4 19l3.35 -2"/><path d="M20 19l-3.35 -2"/><path d="M4 7l3.75 2.4"/><path d="M20 7l-3.75 2.4"/>`,
