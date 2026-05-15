@@ -496,41 +496,50 @@ window.editPc = function(id, el) {
   const msgDiv = el.closest('.pc-msg');
   const bodyDiv = msgDiv.querySelector('.pc-msg-body');
   if (!bodyDiv) return;
-  if (msgDiv.querySelector('.pc-edit-area')) return;
   const original = bodyDiv.innerText;
-  bodyDiv.style.display = 'none';
-  const editArea = document.createElement('div');
-  editArea.className = 'pc-edit-area';
-  editArea.style.cssText = 'margin-top:6px;display:flex;flex-direction:column;gap:6px';
+  // Build modal
+  const overlay = document.createElement('div');
+  overlay.id = 'pc-edit-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:#fff;border-radius:14px;padding:24px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-direction:column;gap:14px';
+  const title = document.createElement('div');
+  title.textContent = 'Edit Comment';
+  title.style.cssText = 'font-size:16px;font-weight:700;color:#1e293b';
   const ta = document.createElement('textarea');
   ta.value = original;
-  ta.style.cssText = 'width:100%;min-height:60px;padding:8px;border:0.5px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box';
+  ta.style.cssText = 'width:100%;min-height:160px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.6;color:#1e293b';
   const btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end';
-  const saveBtn = document.createElement('button');
-  saveBtn.textContent = 'Save';
-  saveBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer';
+  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
   const cancelBtn = document.createElement('button');
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.style.cssText = 'background:#f1f5f9;color:#374151;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer';
+  cancelBtn.style.cssText = 'background:#f1f5f9;color:#374151;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer';
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer';
+  const close = () => overlay.remove();
+  cancelBtn.onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
   saveBtn.onclick = async () => {
     const txt = ta.value.trim();
     if (!txt) return;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
     const { error } = await supabase.from('project_comments').update({ comment: txt }).eq('id', id);
-    if (error) { showToast('Failed to update', true); return; }
+    if (error) { showToast('Failed to update', true); saveBtn.disabled = false; saveBtn.textContent = 'Save'; return; }
     bodyDiv.innerText = txt;
-    bodyDiv.style.display = '';
-    editArea.remove();
-  };
-  cancelBtn.onclick = () => {
-    bodyDiv.style.display = '';
-    editArea.remove();
+    close();
+    showToast('Comment updated');
   };
   btnRow.appendChild(cancelBtn);
   btnRow.appendChild(saveBtn);
-  editArea.appendChild(ta);
-  editArea.appendChild(btnRow);
-  msgDiv.appendChild(editArea);
+  modal.appendChild(title);
+  modal.appendChild(ta);
+  modal.appendChild(btnRow);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
 };
 import { getSupabase } from '/js/auth.js';
 
@@ -1165,7 +1174,7 @@ function renderPendingQuotes(quotes) {
         const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
         const nameColor = isEven ? '#2563eb' : '#166534';
         const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}${isOwn ? '<span style="margin-left:8px;font-size:11px;color:#2563eb;cursor:pointer;opacity:0.7" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" onclick="editPc(\'' + pc.id + '\', this)">✏️</span><span class="pc-del" onclick="deletePc(\'' + pc.id + '\', this)">✕</span>' : ''}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div></div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
+        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div>${isOwn ? '<div style="display:flex;gap:5px;margin-left:auto"><button onclick="editPc(\'' + pc.id + '\', this)" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Edit</button><button onclick="deletePc(\'' + pc.id + '\', this)" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Delete</button></div>' : ''}</div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
         thread.appendChild(msgDiv);
       });
       thread.scrollTop = thread.scrollHeight;
