@@ -6,6 +6,61 @@ const { supabase, user, role } = ctx;
 const isManagement = ['admin','committee','observer'].includes(role);
 const isAdmin = role === 'admin';
 
+// ─── TABLER SVG ICONS ────────────────────────────────────────
+function svgIcon(name, size = 18) {
+  const s = `width="${size}" height="${size}"`;
+  const base = `xmlns="http://www.w3.org/2000/svg" ${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`;
+  const blank = `<path stroke="none" d="M0 0h24v24H0z" fill="none"/>`;
+  const paths = {
+    // group/category icons
+    'elevator':       `${blank}<path d="M5 4m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z"/><path d="M10 10l2 -2l2 2"/><path d="M10 14l2 2l2 -2"/>`,
+    'snowflake':      `${blank}<path d="M12 3l0 18"/><path d="M3 12l18 0"/><path d="M5.636 5.636l12.728 12.728"/><path d="M5.636 18.364l12.728 -12.728"/><path d="M12 6l-2 2m4 -2l2 2"/><path d="M18 12l-2 -2m2 6l-2 -2"/><path d="M12 18l-2 -2m4 2l2 -2"/><path d="M6 12l2 -2m-2 6l2 -2"/>`,
+    'flame':          `${blank}<path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 0 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/>`,
+    'garage-door':    `${blank}<path d="M5 4h14a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-9"/><path d="M9 14h6"/>`,
+    'tool':           `${blank}<path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/>`,
+    'bolt':           `${blank}<path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>`,
+    'bug':            `${blank}<path d="M9 9v-1a3 3 0 0 1 6 0v1"/><path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3"/><path d="M3 13l4 0"/><path d="M17 13l4 0"/><path d="M12 20l0 -6"/><path d="M4 19l3.35 -2"/><path d="M20 19l-3.35 -2"/><path d="M4 7l3.75 2.4"/><path d="M20 7l-3.75 2.4"/>`,
+    'droplet':        `${blank}<path d="M6.8 11a6 6 0 1 0 10.396 0l-5.197 -8l-5.2 8z"/>`,
+    'trash':          `${blank}<path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>`,
+    'clipboard-list': `${blank}<path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 12h6"/><path d="M9 16h6"/>`,
+    // action / status icons
+    'wrench':         `${blank}<path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/>`,
+    'phone':          `${blank}<path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/>`,
+    'calendar':       `${blank}<path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/><path d="M11 15h1"/><path d="M12 15v3"/>`,
+    'loader':         `${blank}<path d="M12 6l0 -3"/><path d="M16.25 7.75l2.125 -2.125"/><path d="M18 12l3 0"/><path d="M16.25 16.25l2.125 2.125"/><path d="M12 18l0 3"/><path d="M7.75 16.25l-2.125 2.125"/><path d="M6 12l-3 0"/><path d="M7.75 7.75l-2.125 -2.125"/>`,
+    'corner-right-down': `${blank}<path d="M6 6h6a3 3 0 0 1 3 3v8"/><path d="M12 14l3 3l3 -3"/>`,
+    'alert-triangle': `${blank}<path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/>`,
+    'paperclip':      `${blank}<path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"/>`,
+    'photo':          `${blank}<path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/>`,
+    'file-text':      `${blank}<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 9l1 0"/><path d="M9 13l6 0"/><path d="M9 17l6 0"/>`,
+  };
+  return `<svg ${base}>${paths[name] || blank}</svg>`;
+}
+
+// Group → icon name mapping
+const GROUP_ICON_NAME = {
+  'Lift':         'elevator',
+  'HVAC':         'snowflake',
+  'Fire':         'flame',
+  'Garage':       'garage-door',
+  'Plumbing':     'tool',
+  'Electrical':   'bolt',
+  'Pest Control': 'bug',
+  'Hygiene':      'droplet',
+  'Waste':        'trash',
+  'Other':        'clipboard-list',
+};
+
+function groupSvg(group, size = 18) {
+  return svgIcon(GROUP_ICON_NAME[group] || 'clipboard-list', size);
+}
+
+function attachIcon(type, name) {
+  if ((type || '').startsWith('image/')) return svgIcon('photo', 16);
+  if ((type || '') === 'application/pdf' || (name || '').toLowerCase().endsWith('.pdf')) return svgIcon('file-text', 16);
+  return svgIcon('paperclip', 16);
+}
+
 // ─── HELPERS ─────────────────────────────────────────────────
 function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
@@ -15,8 +70,8 @@ function showToast(msg, type='ok') {
   setTimeout(() => { t.style.display = 'none'; }, 3000);
 }
 function escHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  return String(s ?? '').replace(/[&<>'"]/g, c => ({\
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'\
   }[c]));
 }
 function fmtDate(d) {
@@ -41,7 +96,6 @@ function daysBetween(a, b) {
 
 // ─── ROLE-BASED UI ───────────────────────────────────────────
 if (isAdmin) {
-  // Categories + tab Add buttons visible to admin only
   ['newCategoryBtn', 'addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.style.display = 'inline-flex';
@@ -49,13 +103,12 @@ if (isAdmin) {
 }
 
 // ─── DATA STATE ──────────────────────────────────────────────
-let categories = [];          // service_categories
-let contractors = [];         // get_contractors RPC
-let reports = [];             // service_reports
-let lastByCategory = {};      // {category_id: latest report}
+let categories = [];
+let contractors = [];
+let reports = [];
+let lastByCategory = {};
 
 // ─── LOADERS ─────────────────────────────────────────────────
-// Group display order — must match tab order
 const GROUP_ORDER = ['Lift', 'HVAC', 'Fire', 'Garage'];
 function groupRank(g) {
   const idx = GROUP_ORDER.indexOf(g);
@@ -69,7 +122,6 @@ async function loadCategories() {
     .eq('active', true)
     .order('position');
   if (error) { console.error(error); categories = []; return; }
-  // Sort by GROUP_ORDER first, then position within group
   categories = (data || []).sort((a, b) => {
     const ga = groupRank(a.group_label);
     const gb = groupRank(b.group_label);
@@ -93,7 +145,6 @@ async function loadReports() {
   if (error) { console.error(error); reports = []; return; }
   reports = data || [];
 
-  // index latest per category
   lastByCategory = {};
   for (const r of reports) {
     const cur = lastByCategory[r.category_id];
@@ -103,7 +154,6 @@ async function loadReports() {
   }
 }
 
-// Matrix cell status/note (admin manual input) — key: `${category_id}|${year}|${month}`
 let cellNotes = {};
 
 async function loadCellNotes() {
@@ -164,7 +214,6 @@ function nextDueFor(cat) {
   }
   if (cat.frequency === 'custom' && Array.isArray(cat.custom_months) && cat.custom_months.length) {
     if (!last) return { date: null, status: 'first', diff: null };
-    // next month in custom_months ahead of today's month
     const m = today.getMonth() + 1;
     const y = today.getFullYear();
     const sortedMonths = [...cat.custom_months].sort((a,b)=>a-b);
@@ -174,7 +223,6 @@ function nextDueFor(cat) {
     const d = new Date(targetYear, target - 1, 15);
     return classifyDue(d, today);
   }
-  // irregular / custom-no-months → no schedule
   return { date: null, status: 'na', diff: null };
 }
 
@@ -186,29 +234,15 @@ function classifyDue(due, today) {
 }
 
 // ─── RENDER: CATEGORY GRID ───────────────────────────────────
-// Group-level card rendering — categories with same group_label merged into one card
 const GROUP_DISPLAY_ORDER = ['Lift', 'HVAC', 'Fire', 'Garage'];
-const GROUP_DEFAULT_ICONS = {
-  'Lift':         '🛗',
-  'HVAC':         '❄️',
-  'Fire':         '🔥',
-  'Garage':       '🚪',
-  'Plumbing':     '🔧',
-  'Electrical':   '⚡',
-  'Pest Control': '🐜',
-  'Hygiene':      '🧴',
-  'Waste':        '🗑️',
-  'Other':        '📋',
-};
 
 function renderCategoryGrid() {
   const grid = document.getElementById('catGrid');
   if (!categories.length) {
-    grid.innerHTML = '<div class="sr-empty" style="grid-column:1/-1"><div class="sr-empty-icon">📋</div><div>No service categories configured.</div></div>';
+    grid.innerHTML = `<div class="sr-empty" style="grid-column:1/-1"><div class="sr-empty-icon">${svgIcon('clipboard-list', 32)}</div><div>No service categories configured.</div></div>`;
     return;
   }
 
-  // Group categories by group_label
   const groupMap = {};
   categories.forEach(cat => {
     const g = cat.group_label;
@@ -216,7 +250,6 @@ function renderCategoryGrid() {
     groupMap[g].push(cat);
   });
 
-  // Group display order: default 4 first, then alphabetical
   const groupKeys = Object.keys(groupMap);
   groupKeys.sort((a, b) => {
     const ia = GROUP_DISPLAY_ORDER.indexOf(a);
@@ -232,7 +265,6 @@ function renderCategoryGrid() {
   grid.innerHTML = groupKeys.map(group => {
     const cats = groupMap[group];
 
-    // Latest service across all categories in group
     let latestReport = null;
     cats.forEach(c => {
       const r = lastByCategory[c.id];
@@ -242,8 +274,6 @@ function renderCategoryGrid() {
       }
     });
 
-    // Show most severe status across all categories in group
-    // Priority: overdue > due > first > ok
     let groupWarning = null;
     cats.forEach(c => {
       const n = nextDueFor(c);
@@ -251,7 +281,6 @@ function renderCategoryGrid() {
         if (!groupWarning || groupWarning.priority < 3) {
           groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
         } else if (groupWarning.status === 'overdue' && Math.abs(n.diff) > Math.abs(groupWarning.diff)) {
-          // Longer overdue
           groupWarning = { priority: 3, status: 'overdue', diff: n.diff, cat: c };
         }
       } else if (n.status === 'due') {
@@ -265,20 +294,17 @@ function renderCategoryGrid() {
       }
     });
 
-    // All reports in group (current year)
     const groupCatIds = new Set(cats.map(c => c.id));
     const yearCount = reports.filter(r =>
       groupCatIds.has(r.category_id) && r.period_year === yearNow
     ).length;
 
-    // Category count
     const catCount = cats.length;
     const catCountTxt = catCount === 1 ? '1 service' : `${catCount} services`;
 
-    // Group icon — single category uses its icon, multiple uses default group icon
-    const groupIcon = (catCount === 1 && cats[0].icon) ? cats[0].icon : (GROUP_DEFAULT_ICONS[group] || '📋');
+    // Use group SVG icon (category icon from DB is emoji — still used in modal/matrix)
+    const groupIconHtml = groupSvg(group, 24);
 
-    // Vendor — first default_contractor in group (usually same company)
     let vendor = '—';
     for (const c of cats) {
       const ct = contractors.find(x => x.id === c.default_contractor_id);
@@ -287,22 +313,21 @@ function renderCategoryGrid() {
 
     const lastTxt = latestReport ? fmtDate(latestReport.report_date) : 'Never';
 
-    // Warning box
     let warning = '';
     if (isManagement && groupWarning) {
       if (groupWarning.status === 'overdue') {
-        warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(groupWarning.diff)} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+        warning = `<div class="sr-cat-warning"><span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle">${svgIcon('alert-triangle', 14)}</span> Overdue by ${Math.abs(groupWarning.diff)} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
       } else if (groupWarning.status === 'due') {
-        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${groupWarning.diff} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)"><span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle">${svgIcon('calendar', 14)}</span> Due within ${groupWarning.diff} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
       } else if (groupWarning.status === 'first') {
-        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">📋 ${escHtml(groupWarning.cat.name)} — no record yet</div>`;
+        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569"><span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle">${svgIcon('clipboard-list', 14)}</span> ${escHtml(groupWarning.cat.name)} — no record yet</div>`;
       }
     }
 
     return `
       <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="openGroupModal('${escHtml(group)}')">
         <div class="sr-cat-head">
-          <div class="sr-cat-icon">${escHtml(groupIcon)}</div>
+          <div class="sr-cat-icon">${groupIconHtml}</div>
           <div class="sr-cat-info">
             <div class="sr-cat-name">${escHtml(group)}</div>
             <div class="sr-cat-vendor">${escHtml(vendor)} · ${catCountTxt}</div>
@@ -339,7 +364,7 @@ function renderUpcoming() {
   countEl.textContent = items.length;
 
   if (!items.length) {
-    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">✅</div><div>No upcoming services in the next 60 days.</div></div>';
+    body.innerHTML = `<div class="sr-empty"><div class="sr-empty-icon" style="display:flex;justify-content:center">${svgIcon('clipboard-list', 32)}</div><div>No upcoming services in the next 60 days.</div></div>`;
     return;
   }
 
@@ -351,7 +376,7 @@ function renderUpcoming() {
 
     return `
       <div class="sr-list-row">
-        <div class="sr-row-icon">${escHtml(cat.icon || '📋')}</div>
+        <div class="sr-row-icon">${escHtml(cat.icon || '')}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(cat.name)}</div>
           <div class="sr-row-sub">${escHtml(cat.group_label)}</div>
@@ -368,12 +393,11 @@ function renderUpcoming() {
 // ─── RENDER: MATRIX (Garage / HVAC / Fire) ───────────────────
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// State per matrix tab
 const matrixState = {
   garage: { year: new Date().getFullYear() },
   hvac:   { year: new Date().getFullYear() },
   fire:   { year: new Date().getFullYear() },
-  lift:   { year: null, filter: 'all' },  // year = contract year number, set by setupLiftDashboard
+  lift:   { year: null, filter: 'all' },
 };
 
 function getCategoriesForGroup(groupLabel) {
@@ -384,51 +408,42 @@ function reportsForCategoryYear(catId, year) {
   return reports.filter(r => r.category_id === catId && r.period_year === year);
 }
 
-// Decide cell state for (category, year, month)
-// Returns: { state, report, isScheduled }
 function cellStateFor(cat, year, month) {
   const today = new Date(); today.setHours(0,0,0,0);
   const curY = today.getFullYear();
   const curM = today.getMonth() + 1;
 
-  // Find report in this slot (latest if multiple)
   const slotReports = reportsForCategoryYear(cat.id, year)
     .filter(r => r.period_month === month)
     .sort((a,b) => new Date(b.report_date) - new Date(a.report_date));
   const report = slotReports[0] || null;
 
-  // Determine if this month is scheduled for this category
-  // 6-monthly/quarterly/annual calculated dynamically from last service date
-  // (Fire 6-Monthly received in Mar/Sep shows on Mar/Sep, not Jun/Dec)
   let isScheduled = false;
   if (cat.frequency === 'monthly') {
     isScheduled = true;
   } else if (cat.frequency === 'quarterly') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // Last service month + 3,+6,+9... pattern
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = ((month - baseMonth) % 3 + 3) % 3 === 0;
     } else {
-      isScheduled = [3, 6, 9, 12].includes(month);  // fallback
+      isScheduled = [3, 6, 9, 12].includes(month);
     }
   } else if (cat.frequency === '6-monthly') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // Last service month + 6 pattern (Mar -> Mar/Sep, Jun -> Jun/Dec)
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = ((month - baseMonth) % 6 + 6) % 6 === 0;
     } else {
-      isScheduled = [6, 12].includes(month);  // fallback
+      isScheduled = [6, 12].includes(month);
     }
   } else if (cat.frequency === 'annual') {
     const lastReport = lastByCategory[cat.id];
     if (lastReport) {
-      // Same month as last service
       const baseMonth = new Date(lastReport.report_date).getMonth() + 1;
       isScheduled = (month === baseMonth);
     } else {
-      isScheduled = (month === 12);  // fallback
+      isScheduled = (month === 12);
     }
   } else if (cat.frequency === 'custom' && Array.isArray(cat.custom_months)) {
     isScheduled = cat.custom_months.includes(month);
@@ -436,7 +451,6 @@ function cellStateFor(cat, year, month) {
 
   if (report) return { state: 'done', report, isScheduled, note: null };
 
-  // Manual cell note takes priority (except for done cells)
   const note = getCellNote(cat.id, year, month);
   if (note) {
     return { state: note.status, report: null, isScheduled, note };
@@ -444,12 +458,8 @@ function cellStateFor(cat, year, month) {
 
   if (!isScheduled) return { state: 'na', report: null, isScheduled: false, note: null };
 
-  // Scheduled but no report
-  // Past year → overdue
   if (year < curY) return { state: 'overdue', report: null, isScheduled, note: null };
-  // Future year → future
   if (year > curY) return { state: 'future', report: null, isScheduled, note: null };
-  // Same year:
   if (month < curM) return { state: 'overdue', report: null, isScheduled, note: null };
   if (month === curM) return { state: 'due', report: null, isScheduled, note: null };
   return { state: 'future', report: null, isScheduled, note: null };
@@ -468,16 +478,15 @@ function cellInner(cs) {
   }
   if (cs.state === 'due')         return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
   if (cs.state === 'overdue')     return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
-  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon">📅</span><span class="sr-cell-date">SCHEDULED</span>`;
-  if (cs.state === 'in_progress') return `<span class="sr-cell-icon">⚙</span><span class="sr-cell-date">IN PROGRESS</span>`;
-  if (cs.state === 'postponed')   return `<span class="sr-cell-icon">↪</span><span class="sr-cell-date">POSTPONED</span>`;
+  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon" style="display:inline-flex;align-items:center">${svgIcon('calendar', 12)}</span><span class="sr-cell-date">SCHEDULED</span>`;
+  if (cs.state === 'in_progress') return `<span class="sr-cell-icon" style="display:inline-flex;align-items:center">${svgIcon('loader', 12)}</span><span class="sr-cell-date">IN PROGRESS</span>`;
+  if (cs.state === 'postponed')   return `<span class="sr-cell-icon" style="display:inline-flex;align-items:center">${svgIcon('corner-right-down', 12)}</span><span class="sr-cell-date">POSTPONED</span>`;
   if (cs.state === 'cancelled')   return `<span class="sr-cell-icon">✕</span><span class="sr-cell-date">CANCELLED</span>`;
   if (cs.state === 'future')      return `<span class="sr-cell-icon">○</span>`;
   return `<span class="sr-cell-icon">—</span>`;
 }
 
 function buildYearOptions(selectEl, currentYear) {
-  // Earliest year from reports, fallback this year
   const years = [...new Set(reports.map(r => r.period_year))].sort((a,b) => b - a);
   const thisY = new Date().getFullYear();
   const minY = years.length ? Math.min(...years, thisY) : thisY;
@@ -501,7 +510,6 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     return;
   }
 
-  // Desktop table
   const thead = `<thead><tr>
     <th class="sr-row-th">Service</th>
     ${MONTH_LABELS.map(m => `<th>${m}</th>`).join('')}
@@ -515,20 +523,18 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       if (cs.state === 'done') {
         clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
       } else if (isAdmin) {
-        // admin: empty cell click -> cell status/note modal
         clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})" style="cursor:pointer"`;
       }
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
     return `<tr>
-      <td class="sr-row-th">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
+      <td class="sr-row-th">${escHtml(cat.icon || '')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
       ${cells}
     </tr>`;
   }).join('') + '</tbody>';
 
   table.innerHTML = thead + tbody;
 
-  // Mobile cards
   mobile.innerHTML = cats.map(cat => {
     const months = MONTH_LABELS.map((label, i) => {
       const month = i + 1;
@@ -551,13 +557,12 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       </div>`;
     }).join('');
     return `<div class="sr-mobile-row">
-      <div class="sr-mobile-row-title">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
+      <div class="sr-mobile-row-title">${escHtml(cat.icon || '')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
       <div class="sr-mobile-months">${months}</div>
     </div>`;
   }).join('');
 }
 
-// Year selector handlers
 function setupYearSelect(selectId, key, groupLabel, tableId, mobileId) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
@@ -576,30 +581,16 @@ const LIFT_TYPE_LABEL = {
   notify: 'Notify',
   inspection: 'Inspection',
 };
-const LIFT_TYPE_ICON = {
-  pm: '🛠',
-  callout: '📞',
-  repair: '🔧',
-  notify: '🚨',
-  inspection: '🔍',
-};
 
 function getLiftReports() {
-  // All reports under Lift group
   const liftCats = categories.filter(c => c.group_label === 'Lift').map(c => c.id);
   return reports.filter(r => liftCats.includes(r.category_id));
 }
 
-// ── CONTRACT YEAR LOGIC (Lift / TKE) ──────────────────────────
-// TKE Platinum contract starts 1 May. Year 1 = May 2025 – Apr 2026.
-const LIFT_CONTRACT_START_MONTH = 5;        // May
-const LIFT_CONTRACT_START_YEAR  = 2025;     // first year of contract
-// Months in display order, starting from contract month:
-// [May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Apr]
+const LIFT_CONTRACT_START_MONTH = 5;
+const LIFT_CONTRACT_START_YEAR  = 2025;
 const LIFT_CONTRACT_MONTHS = [5,6,7,8,9,10,11,12,1,2,3,4];
 
-// Given a (year, month), return which contract year it belongs to.
-// e.g. (2025, 5) → 1, (2026, 4) → 1, (2026, 5) → 2
 function liftContractYearOf(year, month) {
   if (year < LIFT_CONTRACT_START_YEAR) return null;
   if (year === LIFT_CONTRACT_START_YEAR && month < LIFT_CONTRACT_START_MONTH) return null;
@@ -607,13 +598,11 @@ function liftContractYearOf(year, month) {
   return Math.floor(startIdx / 12) + 1;
 }
 
-// Range for a contract year N: returns { startYear, startMonth, endYear, endMonth, label }
 function liftContractYearRange(n) {
   const startY = LIFT_CONTRACT_START_YEAR + (n - 1);
   const startM = LIFT_CONTRACT_START_MONTH;
-  // end = startMonth-1 of next calendar
   const endY = startY + 1;
-  const endM = LIFT_CONTRACT_START_MONTH - 1; // April
+  const endM = LIFT_CONTRACT_START_MONTH - 1;
   const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return {
     startYear: startY, startMonth: startM,
@@ -622,7 +611,6 @@ function liftContractYearRange(n) {
   };
 }
 
-// Highest contract year that has any report (or current year if none)
 function highestLiftContractYear() {
   const all = getLiftReports();
   let max = 1;
@@ -630,7 +618,6 @@ function highestLiftContractYear() {
     const cy = liftContractYearOf(r.period_year, r.period_month);
     if (cy && cy > max) max = cy;
   });
-  // Also include current calendar position
   const now = new Date();
   const cyNow = liftContractYearOf(now.getFullYear(), now.getMonth() + 1);
   if (cyNow && cyNow > max) max = cyNow;
@@ -649,7 +636,6 @@ function setupLiftDashboard() {
     matrixState.lift.year = parseInt(sel.value, 10);
     renderLiftDashboard();
   });
-  // filter buttons
   const filterEl = document.getElementById('liftFilter');
   if (filterEl) {
     filterEl.addEventListener('click', e => {
@@ -662,18 +648,14 @@ function setupLiftDashboard() {
   }
 }
 
-// Build year selector with contract year labels
 function buildLiftYearOptions(sel) {
   const maxYear = highestLiftContractYear();
-  // Default = current contract year (so newest data shows first)
   const now = new Date();
   const cyNow = liftContractYearOf(now.getFullYear(), now.getMonth() + 1);
   const defaultCy = cyNow || maxYear || 1;
-  // Honour any stored selection that's still in range, otherwise use default.
   let selected = matrixState.lift.year;
   if (!selected || selected < 1 || selected > maxYear) selected = defaultCy;
   matrixState.lift.year = selected;
-  // Build options 1..maxYear (newest first)
   sel.innerHTML = '';
   for (let n = maxYear; n >= 1; n--) {
     const r = liftContractYearRange(n);
@@ -697,8 +679,6 @@ function renderLiftStats() {
   const cy = matrixState.lift.year;
   const yearReports = liftReportsForContractYear(cy);
 
-  // Tally per lift_unit and service_type
-  // service_type values: pm, callout, repair, notify, inspection
   const stats = {
     lift_1: { pm: 0, callout: 0, repair: 0, other: 0 },
     lift_2: { pm: 0, callout: 0, repair: 0, other: 0 },
@@ -718,10 +698,10 @@ function renderLiftStats() {
   });
 
   const cards = [
-    { key: 'pm',      label: 'Maintenance', icon: '🛠', color: '#16a34a', bg: '#dcfce7' },
-    { key: 'callout', label: 'Callouts',    icon: '📞', color: '#d97706', bg: '#fef3c7' },
-    { key: 'repair',  label: 'Repairs',     icon: '🔧', color: '#dc2626', bg: '#fee2e2' },
-    { key: 'other',   label: 'Other',       icon: '📋', color: '#7c3aed', bg: '#ede9fe' },
+    { key: 'pm',      label: 'Maintenance', iconName: 'tool',           color: '#16a34a', bg: '#dcfce7' },
+    { key: 'callout', label: 'Callouts',    iconName: 'phone',          color: '#d97706', bg: '#fef3c7' },
+    { key: 'repair',  label: 'Repairs',     iconName: 'wrench',         color: '#dc2626', bg: '#fee2e2' },
+    { key: 'other',   label: 'Other',       iconName: 'clipboard-list', color: '#7c3aed', bg: '#ede9fe' },
   ];
 
   el.innerHTML = cards.map(c => {
@@ -730,7 +710,7 @@ function renderLiftStats() {
     const warn = (c.key === 'callout' || c.key === 'repair') && v2 >= 4;
     return `
       <div class="sr-lift-stat" style="--bar-color:${c.color};--bg-color:${c.bg}">
-        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${c.icon}</span>${escHtml(c.label)}</div>
+        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon" style="display:inline-flex;align-items:center">${svgIcon(c.iconName, 16)}</span>${escHtml(c.label)}</div>
         <div class="sr-lift-stat-rows">
           <div class="sr-lift-stat-row lift1">
             <span class="sr-lift-stat-row-label">Lift 1</span>
@@ -746,13 +726,6 @@ function renderLiftStats() {
   }).join('');
 }
 
-/* ─────────────────────────────────────────────
-   Lift Service Matrix
-   Rows: Lift 1 Maintenance / Callout / (Repair/Investigation only if data exists)
-       Lift 2 Maintenance / Callout / Repair / Investigation
-   Columns: 12 months (May -> Apr, contract year order)
-   Cell click: opens report modal for that month/lift/type (single=direct, multi=list)
-   ───────────────────────────────────────────── */
 const LIFT_SERVICE_TYPES = [
   { key: 'pm',            label: 'Maintenance',   cls: 'ok'    },
   { key: 'callout',       label: 'Callout',       cls: 'warn'  },
@@ -761,13 +734,11 @@ const LIFT_SERVICE_TYPES = [
 ];
 
 function classifyLiftReport(r) {
-  // Use service_type if present, else empty
   const t = (r.service_type || '').toLowerCase();
   if (!t) return null;
   if (t === 'pm' || t.includes('maint')) return 'pm';
   if (t.includes('call')) return 'callout';
   if (t.includes('repair') || t.includes('notify')) return 'repair';
-  // Otherwise (other, inspection, shutdown, etc.) -> Investigation
   return 'investigation';
 }
 
@@ -778,7 +749,6 @@ function renderLiftMatrix() {
   const range = liftContractYearRange(cy);
   const yearReports = liftReportsForContractYear(cy);
 
-  // 12 month slots (May -> Apr order)
   const slots = [];
   for (let i = 0; i < 12; i++) {
     const m = LIFT_CONTRACT_MONTHS[i];
@@ -786,7 +756,6 @@ function renderLiftMatrix() {
     slots.push({ year: y, month: m, label: MONTH_LABELS[m - 1] });
   }
 
-  // bucket[liftUnit][typeKey][slotIdx] = report[]
   const bucket = {
     lift_1: { pm: {}, callout: {}, repair: {}, investigation: {} },
     lift_2: { pm: {}, callout: {}, repair: {}, investigation: {} },
@@ -804,19 +773,15 @@ function renderLiftMatrix() {
     });
   });
 
-  // Which rows to show — only types with data (Maintenance/Callout always shown)
   function rowsForUnit(unit) {
     return LIFT_SERVICE_TYPES.filter(t => {
       if (t.key === 'pm' || t.key === 'callout') return true;
-      // repair/investigation only when that unit has data
       return Object.keys(bucket[unit][t.key]).length > 0;
     });
   }
   const rows1 = rowsForUnit('lift_1');
   const rows2 = rowsForUnit('lift_2');
 
-  // PM missing cell — critical if no PM that month
-  // (only months from contract start to today — future months empty)
   const today = new Date();
   const todayY = today.getFullYear();
   const todayM = today.getMonth() + 1;
@@ -826,7 +791,6 @@ function renderLiftMatrix() {
     return false;
   }
 
-  // Header (Group + Service + 12 months = 14 cols, matching data rows)
   let headHtml = '<thead><tr><th class="sr-mx-grouphead"></th><th class="sr-mx-rowhead">Service</th>';
   slots.forEach(s => {
     const yearSuffix = (s.month <= 4) ? `<span class="sr-mx-year">'${String(s.year).slice(-2)}</span>` : '';
@@ -834,7 +798,6 @@ function renderLiftMatrix() {
   });
   headHtml += '</tr></thead>';
 
-  // body
   function buildRowsHtml(unit, rows, unitLabel, unitCls) {
     return rows.map((t, ri) => {
       const isFirst = ri === 0;
@@ -849,20 +812,9 @@ function renderLiftMatrix() {
         let cls = 'sr-mx-cell';
         let content = '';
         if (cnt === 0) {
-          // PM missing = critical (past/current months only)
-          if (t.key === 'pm' && isPastOrCurrent(s)) {
-            // Excluding months before contract start
-            const slotIdx = LIFT_CONTRACT_MONTHS.indexOf(s.month);
-            // PM is usually quarterly — pattern 5/7/9/11/2/3 in data. Not forced monthly.
-            // -> shown as empty dot
-            cls += ' empty';
-            content = '·';
-          } else {
-            cls += ' empty';
-            content = '·';
-          }
+          cls += ' empty';
+          content = '·';
         } else {
-          // Determine cell state
           if (t.key === 'pm') {
             cls += ' ok';
             content = cnt === 1 ? '✓' : `✓<sup>${cnt}</sup>`;
@@ -878,8 +830,6 @@ function renderLiftMatrix() {
           }
           cls += ' clickable';
         }
-        // PM missing (e.g., Lift 2 Apr) — highlight cases with no PM in data
-        // Simplified: all empty cells are dots. Critical PM-missed not separately handled (PM is quarterly, not monthly)
         const dataAttr = cnt > 0
           ? `data-unit="${unit}" data-type="${t.key}" data-slot="${si}"`
           : '';
@@ -899,7 +849,6 @@ function renderLiftMatrix() {
 
   el.innerHTML = headHtml + bodyHtml;
 
-  // Cell click -> cell flash + Timeline flash + modal
   el.querySelectorAll('.sr-mx-cell.clickable').forEach(cell => {
     cell.addEventListener('click', () => {
       const unit = cell.getAttribute('data-unit');
@@ -907,12 +856,10 @@ function renderLiftMatrix() {
       const slotIdx = parseInt(cell.getAttribute('data-slot'), 10);
       const list = bucket[unit][type][slotIdx] || [];
       if (list.length === 0) return;
-      // Flash the clicked cell itself
       flashElement(cell);
       if (list.length === 1) {
         highlightAndOpenReport(list[0].id);
       } else {
-        // Multiple — show most recent (date desc) modal + toast for extra count
         const sorted = [...list].sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
         highlightAndOpenReport(sorted[0].id);
         if (sorted.length > 1) {
@@ -932,7 +879,6 @@ function renderLiftTimeline() {
   const filter = matrixState.lift.filter || 'all';
   let list = liftReportsForContractYear(cy);
 
-  // Apply filter
   if (filter === 'lift_1') {
     list = list.filter(r => r.lift_unit === 'lift_1' || r.lift_unit === 'both');
   } else if (filter === 'lift_2') {
@@ -941,13 +887,12 @@ function renderLiftTimeline() {
     list = list.filter(r => ['callout', 'repair', 'notify'].includes(r.service_type));
   }
 
-  // Sort by date desc
   list.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
 
   if (!list.length) {
     el.innerHTML = `
       <div class="sr-lift-empty">
-        <div class="sr-lift-empty-icon">📋</div>
+        <div class="sr-lift-empty-icon" style="display:flex;justify-content:center">${svgIcon('clipboard-list', 32)}</div>
         <div>No service records for ${liftContractYearRange(cy).label}${filter !== 'all' ? ' (current filter)' : ''}.</div>
       </div>`;
     return;
@@ -956,23 +901,21 @@ function renderLiftTimeline() {
   el.innerHTML = list.map(r => {
     const d = new Date(r.report_date);
     const dayN = d.getDate();
-    const monthLabel = MONTH_LABELS[d.getMonth()];
+    const mLabel = MONTH_LABELS[d.getMonth()];
     const liftClass = r.lift_unit === 'both' ? 'lift1' : (r.lift_unit || 'lift1');
     const liftLabel = r.lift_unit === 'both' ? 'Lift 1+2' : (r.lift_unit === 'lift_1' ? 'Lift 1' : (r.lift_unit === 'lift_2' ? 'Lift 2' : '—'));
     const typeLabel = LIFT_TYPE_LABEL[r.service_type] || r.service_type || '—';
     const typeClass = r.service_type || '';
     const summary = (r.summary || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const fallback = r.title ? escHtml(r.title) : '';
     const hasAttach = Array.isArray(r.attachments) && r.attachments.length > 0;
     const attachLabel = hasAttach
-      ? `<span class="sr-lift-event-attach">📎 ${r.attachments.length} file${r.attachments.length > 1 ? 's' : ''}</span>`
+      ? `<span class="sr-lift-event-attach" style="display:inline-flex;align-items:center;gap:4px">${svgIcon('paperclip', 13)} ${r.attachments.length} file${r.attachments.length > 1 ? 's' : ''}</span>`
       : `<span class="sr-lift-event-attach sr-lift-event-attach-empty">No attachment</span>`;
-    const clickable = hasAttach || true; // all open detail modal
     return `
-      <div class="sr-lift-event type-${typeClass} ${!clickable ? 'sr-lift-event-nopdf' : ''}" data-report-id="${r.id}" onclick="highlightAndOpenReport('${r.id}')">
+      <div class="sr-lift-event type-${typeClass}" data-report-id="${r.id}" onclick="highlightAndOpenReport('${r.id}')">
         <div class="sr-lift-event-date">
           <span class="sr-lift-event-date-day">${dayN}</span>
-          ${escHtml(monthLabel)} ${d.getFullYear()}
+          ${escHtml(mLabel)} ${d.getFullYear()}
         </div>
         <div class="sr-lift-event-body">
           <div class="sr-lift-event-row1">
@@ -989,36 +932,21 @@ function renderLiftTimeline() {
 
 // ─── REPORT DETAIL MODAL ─────────────────────────────────────
 const detailModal = document.getElementById('detailModal');
-
-// State for current detail modal
 let currentDetailReportId = null;
 
-/* ─────────────────────────────────────────────
-   Click feedback helpers — used across all entry points
-   - Matrix cell: clicked cell flashes green
-   - Lift Timeline: item flashes green + scroll
-   - Lift matrix cell -> Timeline item also flashes
-   ───────────────────────────────────────────── */
-
-// Apply green flash to single element (re-runnable)
 function flashElement(el) {
   if (!el) return;
   el.classList.remove('highlight-flash');
-  void el.offsetWidth; // Force reflow
+  void el.offsetWidth;
   el.classList.add('highlight-flash');
   setTimeout(() => el.classList.remove('highlight-flash'), 2000);
 }
 
-// Matrix cell click (HVAC/Fire/Garage + Lift matrix)
 window.highlightCellAndOpen = function(cellEl, reportId) {
-  // 1. Flash clicked cell
   flashElement(cellEl);
-  // 2. If Lift category, also flash Timeline item + scroll
   highlightAndOpenReport(reportId);
 };
 
-// Direct Timeline click or call from matrix
-// -> Find Lift Timeline item, flash/scroll + open modal
 window.highlightAndOpenReport = function(reportId) {
   const r = reports.find(x => x.id === reportId);
   if (!r) {
@@ -1026,7 +954,6 @@ window.highlightAndOpenReport = function(reportId) {
     return;
   }
   const cat = categories.find(c => c.id === r.category_id);
-  // Only Lift category has Timeline
   if (cat?.group_label === 'Lift') {
     const liftPane = document.getElementById('paneLift');
     const isLiftVisible = liftPane && liftPane.style.display !== 'none';
@@ -1050,15 +977,13 @@ window.openDetailModal = function(reportId) {
 
   document.getElementById('detailTitle').textContent = r.title || 'Report Detail';
 
-  // Toggle admin actions
   const adminBox = document.getElementById('detailAdminActions');
   adminBox.style.display = isAdmin ? 'flex' : 'none';
 
   const atts = Array.isArray(r.attachments) ? r.attachments : [];
   const attHtml = atts.length ? atts.map(a => {
-    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
     return `<a class="sr-attach-item" href="#" onclick="openFileViewer('${escHtml(a.path)}','${escHtml(a.name)}','${escHtml(a.type || '')}');return false;">
-      <span class="sr-attach-icon">${icon}</span>
+      <span class="sr-attach-icon" style="display:inline-flex;align-items:center">${attachIcon(a.type, a.name)}</span>
       <span class="sr-attach-name">${escHtml(a.name)}</span>
       <span class="sr-attach-size">${fmtSize(a.size || 0)}</span>
     </a>`;
@@ -1070,19 +995,17 @@ window.openDetailModal = function(reportId) {
          <div class="sr-detail-val">${r.lift_unit ? escHtml(r.lift_unit.replace('_',' ').toUpperCase()) : ''}${r.service_type ? ' · ' + escHtml(r.service_type) : ''}</div>
        </div>` : '';
 
-  // Issue Description: same auto-HTML detection as Summary + red box highlight
   let issueLine = '';
   if (isManagement && r.has_issues) {
     const raw = r.issue_description || 'Marked as having issues.';
     const hasHTML = /<[a-z][\s\S]*>/i.test(raw);
     const rendered = hasHTML ? raw : escHtml(raw).replace(/\n/g, '<br>');
     issueLine = `<div class="sr-detail-section sr-detail-issue-box">
-         <div class="sr-detail-label">⚠️ Issue — Action Required</div>
+         <div class="sr-detail-label"><span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle">${svgIcon('alert-triangle', 14)}</span> Issue — Action Required</div>
          <div class="sr-detail-val" style="line-height:1.7">${rendered}</div>
        </div>`;
   }
 
-  // Summary: render HTML tags as-is if present, convert newlines to <br> if plain
   let summaryHtml = '';
   if (r.summary) {
     const hasHTML = /<[a-z][\s\S]*>/i.test(r.summary);
@@ -1098,7 +1021,7 @@ window.openDetailModal = function(reportId) {
   document.getElementById('detailBody').innerHTML = `
     <div class="sr-detail-section">
       <div class="sr-detail-label">Category</div>
-      <div class="sr-detail-val">${escHtml(cat?.icon || '📋')} ${escHtml(cat?.name || '—')}</div>
+      <div class="sr-detail-val">${escHtml(cat?.icon || '')} ${escHtml(cat?.name || '—')}</div>
     </div>
     <div class="sr-form-row">
       <div class="sr-detail-section">
@@ -1121,7 +1044,6 @@ window.openDetailModal = function(reportId) {
   detailModal.classList.add('open');
 };
 
-// In-page file viewer popup (image inline / PDF iframe)
 window.openFileViewer = async function(path, name, type) {
   try {
     const { data, error } = await supabase.storage
@@ -1148,7 +1070,7 @@ window.openFileViewer = async function(path, name, type) {
     }
 
     document.getElementById('viewerContent').innerHTML =
-      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">📎 ${escHtml(name)}</div>` + body;
+      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px;display:flex;align-items:center;gap:6px">${svgIcon('paperclip', 14)} ${escHtml(name)}</div>` + body;
     document.getElementById('fileViewerModal').style.display = 'flex';
   } catch (e) {
     console.error('openFileViewer failed:', e);
@@ -1177,7 +1099,6 @@ document.getElementById('detailDeleteBtn').addEventListener('click', async () =>
   if (!confirm(`⚠️ Permanently delete this report?\n\n"${r.title}"\n\nAll attachments will also be removed.\nThis cannot be undone.`)) return;
 
   try {
-    // 1) Remove all attachments from Storage
     const atts = Array.isArray(r.attachments) ? r.attachments : [];
     if (atts.length) {
       const paths = atts.map(a => a.path).filter(Boolean);
@@ -1186,7 +1107,6 @@ document.getElementById('detailDeleteBtn').addEventListener('click', async () =>
         if (stErr) console.warn('Storage delete warning:', stErr);
       }
     }
-    // 2) Delete DB row
     const { error: delErr } = await supabase.from('service_reports').delete().eq('id', r.id);
     if (delErr) throw delErr;
 
@@ -1223,23 +1143,23 @@ function renderRecent() {
   countEl.textContent = recent.length;
 
   if (!recent.length) {
-    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">📭</div><div>No reports uploaded yet.</div></div>';
+    body.innerHTML = `<div class="sr-empty"><div class="sr-empty-icon" style="display:flex;justify-content:center">${svgIcon('clipboard-list', 32)}</div><div>No reports uploaded yet.</div></div>`;
     return;
   }
 
   body.innerHTML = recent.map(r => {
     const cat = categories.find(c => c.id === r.category_id);
     const contractor = contractors.find(c => c.id === r.contractor_id);
-    const icon = cat?.icon || '📋';
+    const icon = cat?.icon || '';
     const catName = cat?.name || 'Unknown';
     const vendor = contractor?.company || '—';
     const att = Array.isArray(r.attachments) ? r.attachments.length : 0;
 
     let badge = '';
     if (isManagement && r.has_issues) {
-      badge = `<span class="sr-row-tag tag-warn">⚠️ Issues</span>`;
+      badge = `<span class="sr-row-tag tag-warn" style="display:inline-flex;align-items:center;gap:3px">${svgIcon('alert-triangle', 12)} Issues</span>`;
     } else if (att > 0) {
-      badge = `<span class="sr-row-tag">📎 ${att}</span>`;
+      badge = `<span class="sr-row-tag" style="display:inline-flex;align-items:center;gap:3px">${svgIcon('paperclip', 12)} ${att}</span>`;
     }
 
     return `
@@ -1274,9 +1194,7 @@ function switchTab(name) {
     const el = document.getElementById(PANES[t]);
     if (el) el.style.display = (t === name) ? '' : 'none';
   });
-  // sync display:flex on overview pane
   if (name === 'overview') document.getElementById('paneOverview').style.display = 'flex';
-  // Hero text auto-changes per tab
   const heroTexts = {
     overview: {
       eyebrow: 'Compliance & Maintenance',
@@ -1311,7 +1229,6 @@ function switchTab(name) {
   if (eyebrowEl) eyebrowEl.textContent = ht.eyebrow;
   if (titleEl)   titleEl.textContent   = ht.title;
   if (subEl)     subEl.textContent     = ht.sub;
-  // render matrix on tab switch
   if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
   if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
   if (name === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
@@ -1343,15 +1260,15 @@ const upProgressBar = document.getElementById('upProgressBar');
 const upProgressFill= document.getElementById('upProgressFill');
 
 let pendingFiles = [];
-let existingAttachments = [];   // existing files in edit mode (snapshot at edit start)
-let removedExistingPaths = [];  // existing file paths user clicked ✕ in edit mode
-let editingReportId = null;     // null = create, value = edit
+let existingAttachments = [];
+let removedExistingPaths = [];
+let editingReportId = null;
 const MAX_FILES = 10;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function populateUploadDropdowns() {
   upCategoryEl.innerHTML = '<option value="">Select category…</option>' +
-    categories.map(c => `<option value="${c.id}">${escHtml(c.icon || '📋')} ${escHtml(c.name)} (${escHtml(c.group_label)})</option>`).join('');
+    categories.map(c => `<option value="${c.id}">${escHtml(c.icon || '')} ${escHtml(c.name)} (${escHtml(c.group_label)})</option>`).join('');
   upContractorEl.innerHTML = '<option value="">—</option>' +
     contractors.map(c => `<option value="${c.id}">${escHtml(c.company)}</option>`).join('');
 }
@@ -1361,8 +1278,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
   removedExistingPaths = [];
   pendingFiles = [];
 
-  // Category dropdown — show only preselectGroup if specified
-  // (Edit mode shows all categories — category can be changed)
   const filteredCats = (preselectGroup && mode === 'create')
     ? categories.filter(c => c.group_label === preselectGroup && c.active !== false)
     : categories.filter(c => c.active !== false);
@@ -1392,7 +1307,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     }
     existingAttachments = Array.isArray(report.attachments) ? [...report.attachments] : [];
   } else {
-    // Show modal title per group
     const groupTitle = {
       'Lift':   '＋ New Lift Report',
       'HVAC':   '＋ New HVAC Report',
@@ -1401,7 +1315,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     }[preselectGroup] || '＋ New Service Report';
     document.getElementById('upModalTitle').textContent = groupTitle;
     document.getElementById('upSaveBtn').textContent = 'Save Report';
-    // Category: auto-select if only 1 in group, otherwise user picks
     if (preselectGroup && filteredCats.length === 1) {
       upCategoryEl.value = filteredCats[0].id;
     } else {
@@ -1415,7 +1328,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     upHasIssuesEl.checked = false;
     upIssueBox.style.display = 'none';
     upIssueDescEl.value = '';
-    // If Lift group and category auto-selected, show Lift input row
     if (preselectGroup === 'Lift' && upCategoryEl.value) {
       upLiftRow.style.display = 'grid';
     } else {
@@ -1424,7 +1336,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     upLiftUnitEl.value = '';
     upServiceTypeEl.value = '';
     existingAttachments = [];
-    // Auto-fill default contractor when category auto-selected (trigger existing change handler)
     if (upCategoryEl.value) {
       upCategoryEl.dispatchEvent(new Event('change'));
     }
@@ -1434,7 +1345,6 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
   renderFileList();
   upProgressBar.style.display = 'none';
   upProgressFill.style.width = '0%';
-  // sync issue toggle border radius with checkbox state
   const toggle = document.querySelector('.sr-issue-toggle');
   if (toggle) {
     toggle.style.borderRadius = upHasIssuesEl.checked ? '12px 12px 0 0' : '12px';
@@ -1450,15 +1360,13 @@ function closeUploadModal() {
   pendingFiles = [];
 }
 
-// Render existing attachments (edit mode) with ✕ to mark for removal
 function renderExistingFileList() {
   const el = document.getElementById('upExistingFileList');
   if (!el) return;
   if (!existingAttachments.length) { el.innerHTML = ''; return; }
   el.innerHTML = existingAttachments.map((a, i) => {
-    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
     return `<div class="sr-file-pill" style="background:#f0f9ff;border-color:#bae6fd">
-      <span style="flex-shrink:0">${icon}</span>
+      <span style="flex-shrink:0;display:inline-flex;align-items:center">${attachIcon(a.type, a.name)}</span>
       <span class="sr-file-pill-name">${escHtml(a.name)}</span>
       <span class="sr-file-pill-size">${fmtSize(a.size || 0)}</span>
       <button class="sr-file-pill-rm" data-existing-idx="${i}" type="button" title="Remove">×</button>
@@ -1474,7 +1382,6 @@ function renderExistingFileList() {
   });
 }
 
-// Tab-specific Add buttons — open modal with preselected group
 const tabAddButtons = [
   { id: 'addLiftBtn',   group: 'Lift'   },
   { id: 'addHvacBtn',   group: 'HVAC'   },
@@ -1488,7 +1395,6 @@ tabAddButtons.forEach(({ id, group }) => {
   }
 });
 
-// Card click -> jump to corresponding group tab
 window.jumpToGroupTab = function(groupLabel) {
   const tabName = (groupLabel || '').toLowerCase();
   if (TABS.includes(tabName)) {
@@ -1506,11 +1412,6 @@ const FREQ_LABEL = {
   'annual': 'Annual',
   'custom': 'Custom',
 };
-const GROUP_ICON = {
-  'Lift': '🛗', 'HVAC': '💧', 'Fire': '🔥', 'Garage': '🚪',
-  'Plumbing': '🔧', 'Electrical': '⚡', 'Pest Control': '🐜',
-  'Hygiene': '🧴', 'Waste': '🗑️', 'Other': '📋',
-};
 
 let currentGroupModalLabel = null;
 
@@ -1519,7 +1420,10 @@ window.openGroupModal = function(groupLabel) {
   const cats = categories.filter(c => c.group_label === groupLabel);
   if (!cats.length) return;
 
-  document.getElementById('groupModalIcon').textContent = GROUP_ICON[groupLabel] || '📋';
+  // Update modal icon with SVG
+  const iconEl = document.getElementById('groupModalIcon');
+  iconEl.innerHTML = groupSvg(groupLabel, 28);
+
   document.getElementById('groupModalTitle').textContent = groupLabel;
   document.getElementById('groupModalSub').textContent = `${cats.length} ${cats.length > 1 ? 'categories' : 'category'}`;
 
@@ -1531,14 +1435,14 @@ window.openGroupModal = function(groupLabel) {
     const adminBtns = isAdmin ? `
       <div class="sr-group-modal-actions">
         <button class="sr-cat-action-edit-btn" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">✏️ Edit</button>
-        <button class="sr-cat-action-delete-btn" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">🗑️</button>
+        <button class="sr-cat-action-delete-btn" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">Delete</button>
       </div>
     ` : '';
     const cleanName = cat.name.replace(/^.*–\s*/, '');
     return `
       <div class="sr-group-modal-item">
         <div class="sr-group-modal-item-main">
-          <span class="sr-group-modal-item-icon">${escHtml(cat.icon || '📋')}</span>
+          <span class="sr-group-modal-item-icon">${escHtml(cat.icon || '')}</span>
           <div style="min-width:0;flex:1">
             <div class="sr-group-modal-item-name">${escHtml(cleanName)}</div>
             <div class="sr-group-modal-item-meta">${escHtml(freqTxt)} · Last: ${escHtml(lastTxt)}</div>
@@ -1569,10 +1473,7 @@ if (groupModalEl) {
 }
 
 /* ─────────────────────────────────────────────
-   CATEGORY MANAGEMENT MODAL (Add)
-   - Opens when admin clicks "+ New Category" next to Categories
-   - Inputs: name, group, icon, frequency, custom_months, default_contractor, notes
-   - Save -> INSERT service_categories -> refresh renderCategoryGrid
+   CATEGORY MANAGEMENT MODAL
    ───────────────────────────────────────────── */
 const categoryModal   = document.getElementById('categoryModal');
 const catNameEl       = document.getElementById('catName');
@@ -1584,7 +1485,7 @@ const catCustomGrid   = document.getElementById('catCustomMonths');
 const catContractorEl = document.getElementById('catContractor');
 const catNotesEl      = document.getElementById('catNotes');
 
-// Group-suggested emojis (auto-shown when group selected)
+// Group-suggested emojis (auto-shown when group selected) — picker kept as-is
 const GROUP_EMOJI_SUGGESTIONS = {
   'Lift':         ['🛗', '🏢', '⬆️', '🔝'],
   'HVAC':         ['❄️', '💧', '🧪', '🌡️', '💨'],
@@ -1598,10 +1499,8 @@ const GROUP_EMOJI_SUGGESTIONS = {
   'Other':        ['📋', '🛠️', '🏗️', '⚙️'],
 };
 
-// Common frequently-used emojis (default display)
 const COMMON_EMOJIS = ['🛗','❄️','🔥','🚪','💧','⚡','🐜','🧴','🗑️','🛠️','🔧','🚨','🧯','💡','🌡️','🚰','♻️','🧪','🧼','📋'];
 
-// Guard for case when HTML not yet deployed — skip entire block if modal missing
 if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
 
   function renderIconPicker(emojis) {
@@ -1611,7 +1510,6 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
       <button type="button" class="cat-icon-btn" data-emoji="${e}"
         style="font-size:22px;padding:6px;background:#fff;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;line-height:1;transition:all 0.12s">${e}</button>
     `).join('');
-    // On click: fill input + show selection
     picker.querySelectorAll('.cat-icon-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         catIconEl.value = btn.getAttribute('data-emoji');
@@ -1663,11 +1561,9 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
     categoryModal.classList.remove('open');
   }
 
-  // On group select -> refresh picker with group-appropriate emojis
   catGroupEl.addEventListener('change', () => {
     const suggestions = GROUP_EMOJI_SUGGESTIONS[catGroupEl.value];
     if (suggestions && suggestions.length) {
-      // Group suggestions + common emojis combined (deduplicated)
       const combined = [...new Set([...suggestions, ...COMMON_EMOJIS])];
       renderIconPicker(combined);
     } else {
@@ -1675,27 +1571,22 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
     }
   });
 
-  // Show month grid only when frequency = custom
   catFrequencyEl.addEventListener('change', () => {
     catCustomBox.style.display = (catFrequencyEl.value === 'custom') ? '' : 'none';
   });
 
-  // Click outside modal = close
   categoryModal.addEventListener('click', (e) => {
     if (e.target === categoryModal) closeCategoryModal();
   });
 
-  // Cancel button
   const catCancelBtn = document.getElementById('catCancelBtn');
   if (catCancelBtn) catCancelBtn.addEventListener('click', closeCategoryModal);
 
-  // + New Category button handler
   const newCatBtn = document.getElementById('newCategoryBtn');
   if (newCatBtn) {
     newCatBtn.addEventListener('click', openCategoryModal);
   }
 
-  // Save button — INSERT service_categories
   const catSaveBtn = document.getElementById('catSaveBtn');
   if (catSaveBtn) {
     catSaveBtn.addEventListener('click', async () => {
@@ -1769,16 +1660,13 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
 }
 
 /* ─────────────────────────────────────────────
-   CELL NOTE MODAL — Matrix cell status/note input (admin only)
-   - openCellNoteModal(catId, year, month) — called on cell click
-   - Edit existing note / create new if none
-   - Selecting null status deletes cell note
+   CELL NOTE MODAL
    ───────────────────────────────────────────── */
 const cellNoteModal = document.getElementById('cellNoteModal');
 const cellStatusEl  = document.getElementById('cellStatus');
 const cellNoteEl    = document.getElementById('cellNote');
 
-let editingCellNote = null; // {catId, year, month, existing}
+let editingCellNote = null;
 
 window.deleteCategoryConfirm = async function(catId) {
   const cat = categories.find(c => c.id === catId);
@@ -1825,16 +1713,13 @@ window.openCellNoteModal = function(catId, year, month) {
   const existing = getCellNote(catId, year, month);
   editingCellNote = { catId, year, month, existing };
 
-  // Modal title + subtitle
-  document.getElementById('cellModalTitle').textContent = existing ? '📝 Edit Cell Note' : '📝 Add Cell Note';
+  document.getElementById('cellModalTitle').textContent = existing ? 'Edit Cell Note' : 'Add Cell Note';
   document.getElementById('cellModalSubtitle').textContent =
-    `${cat.icon || '📋'} ${cat.name} — ${MONTH_LABELS[month - 1]} ${year}`;
+    `${cat.icon || ''} ${cat.name} — ${MONTH_LABELS[month - 1]} ${year}`;
 
-  // Reset / populate form
   cellStatusEl.value = existing ? existing.status : '';
   cellNoteEl.value = existing ? (existing.note || '') : '';
 
-  // Delete button only shown when existing note
   document.getElementById('cellDeleteBtn').style.display = existing ? 'inline-flex' : 'none';
 
   cellNoteModal.classList.add('open');
@@ -1847,15 +1732,12 @@ function closeCellNoteModal() {
 }
 
 if (cellNoteModal) {
-  // Click outside = close
   cellNoteModal.addEventListener('click', (e) => {
     if (e.target === cellNoteModal) closeCellNoteModal();
   });
 
-  // Cancel
   document.getElementById('cellCancelBtn').addEventListener('click', closeCellNoteModal);
 
-  // Save
   document.getElementById('cellSaveBtn').addEventListener('click', async () => {
     if (!editingCellNote) return;
     const { catId, year, month, existing } = editingCellNote;
@@ -1867,7 +1749,6 @@ if (cellNoteModal) {
     saveBtn.textContent = 'Saving…';
 
     try {
-      // Empty status = delete cell note (only if existing)
       if (!status) {
         if (existing) {
           const { error } = await supabase
@@ -1878,7 +1759,6 @@ if (cellNoteModal) {
           showToast('Cell note removed.', 'ok');
         }
       } else if (existing) {
-        // UPDATE
         const { error } = await supabase
           .from('service_cell_notes')
           .update({ status, note })
@@ -1886,7 +1766,6 @@ if (cellNoteModal) {
         if (error) throw error;
         showToast('Cell note updated.', 'ok');
       } else {
-        // INSERT
         const { error } = await supabase
           .from('service_cell_notes')
           .insert({ category_id: catId, year, month, status, note });
@@ -1896,7 +1775,6 @@ if (cellNoteModal) {
 
       closeCellNoteModal();
       await loadCellNotes();
-      // Re-render matrices
       renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
       renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
       renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
@@ -1909,7 +1787,6 @@ if (cellNoteModal) {
     }
   });
 
-  // Delete
   document.getElementById('cellDeleteBtn').addEventListener('click', async () => {
     if (!editingCellNote || !editingCellNote.existing) return;
     if (!confirm('Delete this cell note?')) return;
@@ -1937,7 +1814,6 @@ document.getElementById('upCancelBtn').addEventListener('click', closeUploadModa
 
 upHasIssuesEl.addEventListener('change', () => {
   upIssueBox.style.display = upHasIssuesEl.checked ? '' : 'none';
-  // Unchecked: toggle box alone with rounded corners. Checked: connects to red box below
   const toggle = document.querySelector('.sr-issue-toggle');
   if (toggle) {
     toggle.style.borderRadius = upHasIssuesEl.checked ? '12px 12px 0 0' : '12px';
@@ -1945,12 +1821,10 @@ upHasIssuesEl.addEventListener('change', () => {
   }
 });
 
-// auto-populate vendor + lift fields based on category
 upCategoryEl.addEventListener('change', () => {
   const cat = categories.find(c => c.id === upCategoryEl.value);
   if (!cat) { upLiftRow.style.display = 'none'; return; }
   if (cat.default_contractor_id) upContractorEl.value = cat.default_contractor_id;
-  // suggest title
   if (!upTitleEl.value) {
     const m = monthLabel(new Date(upDateEl.value || Date.now()).getMonth() + 1);
     const y = new Date(upDateEl.value || Date.now()).getFullYear();
@@ -1959,7 +1833,6 @@ upCategoryEl.addEventListener('change', () => {
   upLiftRow.style.display = (cat.group_label === 'Lift') ? 'grid' : 'none';
 });
 
-// FILE PICKER
 upFilesEl.addEventListener('change', () => {
   const newFiles = Array.from(upFilesEl.files || []);
   for (const f of newFiles) {
@@ -1973,7 +1846,7 @@ upFilesEl.addEventListener('change', () => {
     }
     pendingFiles.push(f);
   }
-  upFilesEl.value = ''; // reset so same file can be re-selected
+  upFilesEl.value = '';
   renderFileList();
 });
 
@@ -1981,7 +1854,7 @@ function renderFileList() {
   if (!pendingFiles.length) { upFileListEl.innerHTML = ''; return; }
   upFileListEl.innerHTML = pendingFiles.map((f, i) => `
     <div class="sr-file-pill">
-      <span style="flex-shrink:0">${f.type.startsWith('image/') ? '🖼️' : (f.type === 'application/pdf' ? '📄' : '📎')}</span>
+      <span style="flex-shrink:0;display:inline-flex;align-items:center">${attachIcon(f.type, f.name)}</span>
       <span class="sr-file-pill-name">${escHtml(f.name)}</span>
       <span class="sr-file-pill-size">${fmtSize(f.size)}</span>
       <button class="sr-file-pill-rm" data-idx="${i}" type="button" title="Remove">×</button>
@@ -1995,7 +1868,6 @@ function renderFileList() {
   });
 }
 
-// SAVE
 document.getElementById('upSaveBtn').addEventListener('click', async () => {
   if (!isAdmin) return;
 
@@ -2035,17 +1907,13 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
     let reportId;
 
     if (isEdit) {
-      // EDIT MODE
       reportId = editingReportId;
-
-      // 1a) Remove existing files marked for deletion from Storage
       if (removedExistingPaths.length) {
         const { error: rmErr } = await supabase.storage.from('service-reports').remove(removedExistingPaths);
         if (rmErr) console.warn('Storage remove warning:', rmErr);
       }
       upProgressFill.style.width = '15%';
     } else {
-      // CREATE MODE — insert empty row first to get id
       const { data: inserted, error: insErr } = await supabase
         .from('service_reports')
         .insert({
@@ -2070,7 +1938,6 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
       upProgressFill.style.width = '15%';
     }
 
-    // 2) Upload new files to storage
     const newlyUploaded = [];
     for (let i = 0; i < pendingFiles.length; i++) {
       const f = pendingFiles[i];
@@ -2080,22 +1947,15 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
         .from('service-reports')
         .upload(path, f, { contentType: f.type, upsert: false });
       if (upErr) throw upErr;
-      newlyUploaded.push({
-        path,
-        name: f.name,
-        size: f.size,
-        type: f.type,
-      });
+      newlyUploaded.push({ path, name: f.name, size: f.size, type: f.type });
       const pct = 15 + Math.round(((i+1) / Math.max(pendingFiles.length, 1)) * 70);
       upProgressFill.style.width = pct + '%';
     }
 
-    // 3) Final attachments = existing (kept) + newly uploaded
     const finalAttachments = isEdit
       ? [...existingAttachments, ...newlyUploaded]
       : newlyUploaded;
 
-    // 4) Update report row
     const updatePayload = {
       category_id: categoryId,
       contractor_id: contractorId,
@@ -2123,18 +1983,15 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
       closeUploadModal();
       saveBtn.disabled = false; cancelBtn.disabled = false;
       saveBtn.textContent = originalSaveText;
-      // refresh
       await loadReports();
       renderCategoryGrid();
       renderUpcoming();
       renderRecent();
-      // refresh active matrix tab if any
       const activeTab = document.querySelector('.sr-tab.active')?.dataset.tab;
       if (activeTab === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
       if (activeTab === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
       if (activeTab === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
       if (activeTab === 'lift')   renderLiftDashboard();
-      // rebuild lift year options if needed (new report may add a new year)
       const liftSel = document.getElementById('liftYear');
       if (liftSel) buildLiftYearOptions(liftSel);
     }, 600);
@@ -2148,7 +2005,6 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
   }
 });
 
-// click outside to close
 upModal.addEventListener('click', (e) => {
   if (e.target === upModal) closeUploadModal();
 });
@@ -2160,12 +2016,9 @@ async function init() {
   renderCategoryGrid();
   renderUpcoming();
   renderRecent();
-  // matrix year selectors
   setupYearSelect('garageYear', 'garage', 'Garage', 'garageMatrix', 'garageMatrixMobile');
   setupYearSelect('hvacYear',   'hvac',   'HVAC',   'hvacMatrix',   'hvacMatrixMobile');
   setupYearSelect('fireYear',   'fire',   'Fire',   'fireMatrix',   'fireMatrixMobile');
-  // lift dashboard
   setupLiftDashboard();
 }
 init();
-
