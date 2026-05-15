@@ -11,6 +11,7 @@ const PAGE_CONFIG = {
   'emergency':      { title: 'Emergency Contacts',    allowedRoles: null },
   'works':          { title: 'Ongoing Works',         allowedRoles: null },
   'cost-dashboard': { title: 'Cost Analysis',         allowedRoles: ['admin', 'committee', 'observer'] },
+  'documents':      { title: 'Building Documents',    allowedRoles: ['admin', 'committee', 'observer'] },
   'history':        { title: 'Temperature History',   allowedRoles: ['admin', 'committee', 'observer'] },
   'quotes':         { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':        { title: 'Completed Works',       allowedRoles: ['admin', 'committee', 'observer'] },
@@ -82,7 +83,7 @@ async function applyRoleMenuControl(role, supabase) {
   
   if (role === 'admin') {
     // Admin은 모든 페이지 접근 가능
-    allowedPages = ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
+    allowedPages = ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
   } else {
     // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
@@ -96,8 +97,8 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
-        observer:  ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'occupants', 'guide-committee'],
+        committee: ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
+        observer:  ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
         owner:     ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident'],
         tenant:    ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
       };
