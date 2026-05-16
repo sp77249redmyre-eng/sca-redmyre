@@ -754,13 +754,14 @@ function renderLiftStats() {
     { key: 'other',   label: 'Other',       icon: '📋', color: '#7c3aed' },
   ];
 
-  el.innerHTML = cards.map(c => {
+  el.innerHTML = `<div class="sr-lift-stats-box">${cards.map(c => {
     const v1 = stats.lift_1[c.key];
     const v2 = stats.lift_2[c.key];
     const warn = (c.key === 'callout' || c.key === 'repair') && v2 >= 4;
     return `
-      <div class="sr-lift-stat" style="--bar-color:${c.color}">
-        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${tablerIcon(c.icon)}</span>${escHtml(c.label)}</div>
+      <div class="sr-lift-stat">
+        <div class="sr-lift-stat-label" style="color:${c.color}"><span class="sr-lift-stat-icon">${tablerIcon(c.icon)}</span>${escHtml(c.label)}</div>
+        <div class="sr-lift-stat-divider"></div>
         <div class="sr-lift-stat-rows">
           <div class="sr-lift-stat-row lift1">
             <span class="sr-lift-stat-row-label">Lift 1</span>
@@ -773,7 +774,7 @@ function renderLiftStats() {
         </div>
       </div>
     `;
-  }).join('');
+  }).join('')}</div>`;
 }
 
 /* ─────────────────────────────────────────────
