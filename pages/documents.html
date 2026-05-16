@@ -90,7 +90,18 @@
 .form-label{font-size:12px;font-weight:600;color:#374151}
 .form-input{font-size:13px;padding:8px 10px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);font-family:'DM Sans',sans-serif;width:100%}
 .form-input:focus{outline:none;border-color:#3B82F6}
-
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-height:160px;overflow-y:auto}
+.icon-opt{width:36px;height:36px;border-radius:8px;border:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#374151;transition:all .15s}
+.icon-opt:hover,.icon-opt.sel{background:#EFF6FF;border-color:#3B82F6;color:#1D4ED8}
+.color-opts{display:flex;gap:8px}
+.color-opt{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s}
+.color-opt.sel{border-color:#1D4ED8}
+.color-opt.blue{background:#3B82F6}
+.color-opt.green{background:#22C55E}
+.color-opt.amber{background:#F59E0B}
+.color-opt.red{background:#EF4444}
+.color-opt.purple{background:#8B5CF6}
+.color-opt.teal{background:#14B8A6}
 .file-drop{border:2px dashed var(--border,#e5e7eb);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .15s}
 .file-drop:hover,.file-drop.drag{border-color:#3B82F6;background:#EFF6FF}
 .file-drop-txt{font-size:13px;color:#6B7280;margin-top:6px}
@@ -245,7 +256,14 @@
           <label class="form-label">Category Name</label>
           <input class="form-input" id="catName" placeholder="e.g. Contracts">
         </div>
-
+        <div class="form-field">
+          <label class="form-label">Icon</label>
+          <div class="icon-grid" id="iconGrid"></div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Colour</label>
+          <div class="color-opts" id="colorOpts"></div>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -302,25 +320,8 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
 const isAdmin = role === 'admin';
-const getCatMeta = (name) => {
-  const n = (name || '').toLowerCase();
-  if (n.includes('contract') || n.includes('agreement') || n.includes('legal'))   return { icon:'ti-file-text',    bg:'#EFF6FF', color:'#1D4ED8' };
-  if (n.includes('insurance') || n.includes('policy'))                             return { icon:'ti-shield-check',  bg:'#F0FDF4', color:'#15803D' };
-  if (n.includes('fire') || n.includes('safety') || n.includes('compliance'))     return { icon:'ti-flame',          bg:'#FEF2F2', color:'#B91C1C' };
-  if (n.includes('lift') || n.includes('elevator'))                                return { icon:'ti-elevator',       bg:'#EFF6FF', color:'#1D4ED8' };
-  if (n.includes('hvac') || n.includes('air') || n.includes('mechanical'))        return { icon:'ti-snowflake',      bg:'#E0F2FE', color:'#0369A1' };
-  if (n.includes('water') || n.includes('plumb'))                                  return { icon:'ti-droplet',        bg:'#F0FDFA', color:'#0F766E' };
-  if (n.includes('electr') || n.includes('power'))                                 return { icon:'ti-bolt',           bg:'#FEFCE8', color:'#A16207' };
-  if (n.includes('financ') || n.includes('budget') || n.includes('levy'))         return { icon:'ti-cash',           bg:'#F0FDF4', color:'#15803D' };
-  if (n.includes('minute') || n.includes('meeting') || n.includes('agm'))         return { icon:'ti-clipboard-list', bg:'#F5F3FF', color:'#6D28D9' };
-  if (n.includes('report') || n.includes('inspection'))                            return { icon:'ti-report',         bg:'#FFF7ED', color:'#C2410C' };
-  if (n.includes('plan') || n.includes('drawing') || n.includes('blueprint'))     return { icon:'ti-ruler-2',        bg:'#F8FAFC', color:'#475569' };
-  if (n.includes('warrant') || n.includes('certificate') || n.includes('cert'))   return { icon:'ti-certificate',    bg:'#FEFCE8', color:'#A16207' };
-  if (n.includes('parking') || n.includes('garage'))                               return { icon:'ti-car',            bg:'#F8FAFC', color:'#475569' };
-  if (n.includes('key') || n.includes('access'))                                   return { icon:'ti-key',            bg:'#F5F3FF', color:'#6D28D9' };
-  if (n.includes('strata') || n.includes('owner') || n.includes('body corp'))     return { icon:'ti-building-bank',  bg:'#EFF6FF', color:'#1D4ED8' };
-  return { icon:'ti-folder', bg:'#F8FAFC', color:'#475569' };
-};
+const ICON_LIST = ['ti-writing','ti-shield-check','ti-home','ti-folder','ti-file-text','ti-certificate','ti-gavel','ti-building-bank','ti-tool','ti-car','ti-phone','ti-mail','ti-users','ti-cash','ti-chart-bar','ti-lock','ti-key','ti-clipboard-list'];
+const COLOR_LIST = ['blue','green','amber','red','purple','teal'];
 
 let scmMeetings = [];
 let buildingCats = [];
@@ -329,6 +330,8 @@ let activeScmId = null;
 let activeCatId = null;
 let uploadTarget = null;
 let selectedFiles = [];
+let selectedIcon = ICON_LIST[0];
+let selectedColor = COLOR_LIST[0];
 let editingCatId = null;
 
 // ─── SANITIZE FILENAME ───────────────────────────────────
@@ -500,19 +503,16 @@ function renderCategories() {
     list.innerHTML = '<div class="cat-empty">No categories yet.</div>';
     return;
   }
-  list.innerHTML = buildingCats.map(c => {
-    const meta = getCatMeta(c.name);
-    return `
+  list.innerHTML = buildingCats.map(c => `
     <div class="cat-card" onclick="openCatModal('${c.id}')">
-      <div class="cat-icon" style="background:${meta.bg};color:${meta.color}"><i class="ti ${meta.icon}"></i></div>
+      <div class="cat-icon ${c.color}"><i class="ti ${c.icon}"></i></div>
       <div class="cat-info">
         <div class="cat-name">${c.name}</div>
         <div class="cat-count" id="count-${c.id}">Loading...</div>
       </div>
       ${isAdmin ? `<button class="cat-edit-btn" onclick="event.stopPropagation();openEditCat('${c.id}')"><i class="ti ti-pencil"></i>Edit</button>` : ''}
       <i class="ti ti-chevron-right cat-arrow"></i>
-    </div>`;
-  }).join('');
+    </div>`).join('');
   loadCatCounts();
 }
 
@@ -543,6 +543,10 @@ window.openEditCat = function(catId) {
   editingCatId = catId;
   document.getElementById('addCatModalTitle').textContent = 'Edit Category';
   document.getElementById('catName').value = cat.name;
+  selectedIcon = cat.icon;
+  selectedColor = cat.color;
+  renderIconGrid();
+  renderColorOpts();
   document.getElementById('btnSaveCat').dataset.mode = 'edit';
   closeModal('catModal');
   openModal('addCatModal');
@@ -602,11 +606,28 @@ document.getElementById('btnNewCat').onclick = () => {
   editingCatId = null;
   document.getElementById('addCatModalTitle').textContent = 'Add Category';
   document.getElementById('catName').value = '';
+  selectedIcon = ICON_LIST[0];
+  selectedColor = COLOR_LIST[0];
+  renderIconGrid();
+  renderColorOpts();
   document.getElementById('btnSaveCat').dataset.mode = 'new';
   openModal('addCatModal');
 };
 
+function renderIconGrid() {
+  document.getElementById('iconGrid').innerHTML = ICON_LIST.map(ic =>
+    `<div class="icon-opt ${ic === selectedIcon ? 'sel' : ''}" onclick="selectIcon('${ic}')"><i class="ti ${ic}"></i></div>`
+  ).join('');
+}
 
+function renderColorOpts() {
+  document.getElementById('colorOpts').innerHTML = COLOR_LIST.map(c =>
+    `<div class="color-opt ${c} ${c === selectedColor ? 'sel' : ''}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+
+window.selectIcon = function(ic) { selectedIcon = ic; renderIconGrid(); };
+window.selectColor = function(c) { selectedColor = c; renderColorOpts(); };
 
 document.getElementById('btnSaveCat').onclick = async () => {
   const name = document.getElementById('catName').value.trim();
@@ -614,13 +635,12 @@ document.getElementById('btnSaveCat').onclick = async () => {
   const btn = document.getElementById('btnSaveCat');
   btn.disabled = true;
   const mode = btn.dataset.mode || 'new';
-  const meta = getCatMeta(name);
   let error;
   if (mode === 'edit' && editingCatId) {
-    ({ error } = await supabase.from('building_categories').update({ name, icon: meta.icon, color: meta.bg }).eq('id', editingCatId));
+    ({ error } = await supabase.from('building_categories').update({ name, icon: selectedIcon, color: selectedColor }).eq('id', editingCatId));
   } else {
     const position = buildingCats.length + 1;
-    ({ error } = await supabase.from('building_categories').insert({ name, icon: meta.icon, color: meta.bg, position }));
+    ({ error } = await supabase.from('building_categories').insert({ name, icon: selectedIcon, color: selectedColor, position }));
   }
   btn.disabled = false;
   if (error) { showToast('Error saving category', true); return; }
