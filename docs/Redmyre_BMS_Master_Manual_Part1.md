@@ -8,8 +8,9 @@
 **GitHub:** sp77249redmyre-eng/sca-redmyre (Private)
 **Supabase Project ref:** wunsexdnqathluplkkvo
 
-**Manual 버전:** 1.0
+**Manual 버전:** 1.1
 **작성일:** 2026-04-25
+**최종 업데이트:** 2026-05-17
 **작성자:** Claude (사장님 감수)
 
 ---
@@ -34,6 +35,20 @@
 ## ⚠️ Claude를 위한 작업 철칙 (SQL/코드 작성 규칙)
 
 **이 섹션은 Claude가 작업 시 반드시 지켜야 할 규칙입니다.**
+
+### 0. 권한 변경 / 신규 기능 / 삭제 작업 시 필수 절차
+
+**반드시 아래 순서로 진행 — 절대 바로 진행 금지:**
+
+1. **MD 전체 구조 먼저 확인**
+2. **영향받는 모든 곳 파악 후 한번에 보고:**
+   - `layout.js` — `PAGE_CONFIG.allowedRoles` + fallback 목록
+   - `sidebar.html` — `nav-privileged` 클래스 여부
+   - `sidebar_permissions` DB — role × page
+   - 테이블 RLS — SELECT 정책
+   - Storage RLS — `storage.objects` SELECT 정책
+3. **한번에 정리해서 사장님께 보고 → 승인 → 진행**
+4. **절대 단계별로 나눠서 진행 금지** — 한번에 다 처리
 
 ### 1. 추측 금지
 - 컬럼명/테이블명 **절대 추측 금지**
@@ -103,6 +118,63 @@
    - `syncQuoteToWorks()`
 6. **Quotes Storage RLS 정책** — 4중 방어망 구조 유지
 7. **`notify_announcement`, `notify_quote` 함수의 JWT 토큰** — key rotation 시 동시 업데이트 필수
+8. **complaints.html (lines 361–377) / hvac.html (lines 373–388) email exact-matching 로직** — 콤마/세미콜론 split → 정확 소문자 매칭 (ilike 사용 금지)
+9. **complaints_select / hvac_select RLS 정책** — 절대 변경 금지
+10. **HVAC 30분 쿨다운 (hvac.html lines 260–274)** — 절대 수정 금지
+11. **`sidebar_permissions` 테이블** — 삭제 금지
+
+---
+
+## 📋 신규 테이블 생성 시 필수 GRANT 정책
+
+**2026-05-30 이후 신규 프로젝트 / 2026-10-30 이후 기존 프로젝트 적용:**
+
+모든 신규 테이블은 아래 GRANT를 명시적으로 포함해야 함:
+
+```sql
+GRANT SELECT ON public.new_table TO anon;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.new_table TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.new_table TO service_role;
+```
+
+Plus 명시적 RLS enable:
+```sql
+ALTER TABLE public.new_table ENABLE ROW LEVEL SECURITY;
+```
+
+---
+
+## 🎨 아이콘 정책 (2026-05-16 확정)
+
+**방법2 적용: DB는 emoji 저장, 렌더링 시 EMOJI_TO_TABLER 매핑으로 Tabler Icons 치환**
+
+- DB(building_cards 등): emoji 그대로 저장
+- 모든 페이지 렌더링 시: `EMOJI_TO_TABLER` 매핑 객체로 Tabler Icons SVG로 치환
+- 아이콘 피커/select option 내부: emoji 유지
+- 새 페이지 작성 시 반드시 이 패턴 따를 것
+
+---
+
+## 📋 미구현 대기 작업 (정책 확정, 구현 전)
+
+아래 작업들은 사장님이 정책 확정했으나 아직 구현 안 됨. 구현 시 이 항목 업데이트할 것:
+
+1. **users.html 사용자 추가 시 occupants 자동동기화**
+   - owner/committee → primary_email, tenant → business_email
+   - 콤마 누적, 중복 방지
+2. **delete-user.js 사용자 삭제 시 occupants에서 이메일 제거**
+   - 어느 유닛에 등록됐는지 경고 팝업
+3. **parking.html email-parking-notice 다중유닛 소유자 이메일 중복 제거**
+4. **admin-change-email.js 신규 API + users.html UI**
+   - Auth + profiles + occupants 동시 변경 + 안내 메일
+
+---
+
+## 🗑️ 삭제 예정 백업 테이블
+
+안정 확인 후 (1주일+ 이상, multi-unit 유저 확인 완료 시) 삭제:
+- `occupants_backup_20260426`
+- `vehicles_backup_20260426`
 
 ---
 
@@ -215,6 +287,8 @@ BMS에는 5가지 역할이 있습니다.
 | 페이지 | admin | committee | observer | owner | tenant |
 |---|---|---|---|---|---|
 | building (Overview) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| service-reports | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **documents (SCM & Documents)** | ✅ | ✅ | ✅ | ✅ | ❌ |
 | announcements | ✅ | ✅ | ✅ | ✅ | ✅ |
 | parking | ✅ | ✅ | ✅ | ✅ | ✅ |
 | complaints | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -236,35 +310,39 @@ BMS에는 5가지 역할이 있습니다.
 
 # 🗃️ PART 1: DB 전체 구조
 
-## 25개 테이블 전체 목록
+## 29개 테이블 전체 목록
 
 | # | 테이블명 | 용도 | 행 수(대략) |
 |---|---|---|---|
 | 1 | `announcements` | 공지사항 | 수십 |
 | 2 | `audit_logs` | 사용자 활동 로그 | 수천 |
 | 3 | `building_cards` | Building Systems 카드 (Overview) | 11개 고정 |
-| 4 | `complaint_messages` | 민원 대화 스레드 | 수백 |
-| 5 | `complaints` | 민원/요청 | 수십 |
-| 6 | `contractors` | 계약업체 연락처 | 수십 |
-| 7 | `hvac_requests` | 온도 조절 요청 | 수백 |
-| 8 | `occupants` | 입주자 정보 (마스터) | 52 |
-| 9 | `parking_reports` | 주차 위반 신고 | 수백 |
-| 10 | `profiles` | 로그인 계정 (Supabase Auth 연결) | 100+ |
-| 11 | `project_comments` | 프로젝트 레벨 댓글 (견적 상의) | 수십 |
-| 12 | `push_subscriptions` | PWA 푸시 구독 | 100+ |
-| 13 | `qr_analytics` | QR 스캔 통계 | 수백 |
-| 14 | `quote_comments` | 개별 견적 댓글 | 수십 |
-| 15 | `quotes` | 견적/작업 (시스템의 핵심) | 수십 |
-| 16 | `settings` | 시스템 설정 (key-value) | 소수 |
-| 17 | `sidebar_permissions` | Role별 페이지 권한 | 85 (5role × 17페이지) |
-| 18 | `signboard_entries` | 전광판 입주자 엔트리 | 52+ |
-| 19 | `signboard_fullpage` | 전광판 전체 페이지(비상연락처) | 1 |
-| 20 | `signboard_notice` | 전광판 공지 | 1 |
-| 21 | `vehicles` | 차량 (occupants 파생) | 50+ |
-| 22 | `votes` | 견적 투표 | 수십 |
-| 23 | `service_categories` | 법정 점검 카테고리 (Lift/HVAC/Fire/Garage) | 10+ |
-| 24 | `service_reports` | 개별 점검 기록 + 첨부파일 | 수십+ |
-| 25 | `service_cell_notes` | Matrix 월별 셀 메모 | 소수 |
+| 4 | `building_categories` | **[신규]** Building Documents 카테고리 | 수십 |
+| 5 | `building_documents` | **[신규]** Building Documents 파일 | 수십 |
+| 6 | `complaint_messages` | 민원 대화 스레드 | 수백 |
+| 7 | `complaints` | 민원/요청 | 수십 |
+| 8 | `contractors` | 계약업체 연락처 | 수십 |
+| 9 | `hvac_requests` | 온도 조절 요청 | 수백 |
+| 10 | `occupants` | 입주자 정보 (마스터) | 52 |
+| 11 | `parking_reports` | 주차 위반 신고 | 수백 |
+| 12 | `profiles` | 로그인 계정 (Supabase Auth 연결) | 100+ |
+| 13 | `project_comments` | 프로젝트 레벨 댓글 (견적 상의) | 수십 |
+| 14 | `push_subscriptions` | PWA 푸시 구독 | 100+ |
+| 15 | `qr_analytics` | QR 스캔 통계 | 수백 |
+| 16 | `quote_comments` | 개별 견적 댓글 | 수십 |
+| 17 | `quotes` | 견적/작업 (시스템의 핵심) | 수십 |
+| 18 | `scm_documents` | **[신규]** SCM Meeting 첨부파일 | 수십 |
+| 19 | `scm_meetings` | **[신규]** SCM 회의 목록 | 수십 |
+| 20 | `service_categories` | 법정 점검 카테고리 (Lift/HVAC/Fire/Garage) | 10+ |
+| 21 | `service_cell_notes` | Matrix 월별 셀 메모 | 소수 |
+| 22 | `service_reports` | 개별 점검 기록 + 첨부파일 | 수십+ |
+| 23 | `settings` | 시스템 설정 (key-value) | 소수 |
+| 24 | `sidebar_permissions` | Role별 페이지 권한 | 90 (5role × 18페이지) |
+| 25 | `signboard_entries` | 전광판 입주자 엔트리 | 52+ |
+| 26 | `signboard_fullpage` | 전광판 전체 페이지(비상연락처) | 1 |
+| 27 | `signboard_notice` | 전광판 공지 | 1 |
+| 28 | `vehicles` | 차량 (occupants 파생) | 50+ |
+| 29 | `votes` | 견적 투표 | 수십 |
 
 ---
 
@@ -2209,6 +2287,145 @@ const CACHE_NAME = 'redmyre-bms-v5';
 | `updated_at` | timestamptz | 수정일 |
 
 ---
+
+### 26. `scm_meetings` — SCM 회의 목록
+
+**용도:** SCM(Strata Committee Meeting) 회의별 파일 그룹핑 기준.
+
+**컬럼:**
+
+| 컬럼 | 타입 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | PK |
+| `title` | text | NO | - | 회의명 (예: May 2026 SCM) |
+| `meeting_date` | date | NO | - | 회의 날짜 |
+| `created_by` | uuid | YES | - | FK → profiles.id |
+| `created_at` | timestamptz | YES | `now()` | 생성일 |
+
+**RLS 정책:**
+```sql
+-- SELECT: admin/committee/observer/owner
+-- INSERT: admin만
+-- UPDATE: admin만
+-- DELETE: admin만
+```
+
+---
+
+### 27. `scm_documents` — SCM 회의 첨부파일
+
+**용도:** 각 SCM 회의에 첨부된 파일 메타데이터. 실제 파일은 `scm-documents` Storage 버킷.
+
+**컬럼:**
+
+| 컬럼 | 타입 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | PK |
+| `meeting_id` | uuid | YES | - | FK → scm_meetings.id |
+| `file_name` | text | NO | - | 원본 파일명 (특수문자 포함 가능) |
+| `file_path` | text | NO | - | Storage 경로 (sanitize된 파일명) |
+| `file_size` | bigint | YES | - | 파일 크기 (bytes) |
+| `uploaded_by` | uuid | YES | - | FK → profiles.id |
+| `created_at` | timestamptz | YES | `now()` | 업로드일 |
+
+**RLS 정책:**
+```sql
+-- SELECT: admin/committee/observer/owner
+-- INSERT: admin만
+-- DELETE: admin만
+```
+
+**⚠️ 파일명 주의:**
+- `file_name`: 원본 파일명 그대로 저장 (표시용)
+- `file_path`: 특수문자(`[`, `]`, `'` 등) sanitize 후 Storage에 저장
+- `sanitizeFileName()` 함수: 특수문자 → `_` 치환
+
+---
+
+### 28. `building_categories` — Building Documents 카테고리
+
+**용도:** Building Documents 섹션의 카테고리 구조.
+
+**컬럼:**
+
+| 컬럼 | 타입 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | PK |
+| `name` | text | NO | - | 카테고리명 (예: Contracts, Insurance) |
+| `icon` | text | YES | - | Tabler icon class (ti-file-text 등) |
+| `color` | text | YES | - | 배경색 hex (#EFF6FF 등) |
+| `position` | integer | YES | - | 정렬 순서 |
+| `created_at` | timestamptz | YES | `now()` | 생성일 |
+
+**RLS 정책:**
+```sql
+-- SELECT: admin/committee/observer/owner
+-- INSERT: admin만
+-- UPDATE: admin만
+-- DELETE: admin만
+```
+
+**⚠️ 아이콘/색상 자동 매핑:**
+- 카테고리 이름 입력 시 `getCatMeta()` 함수가 자동으로 icon+color 결정
+- 사용자가 직접 선택하지 않음
+- 매핑 기준: Contracts→파란 문서, Insurance→초록 방패, Fire→빨간 불꽃 등
+
+---
+
+### 29. `building_documents` — Building Documents 파일
+
+**용도:** 각 Building 카테고리에 첨부된 파일 메타데이터. 실제 파일은 `building-documents` Storage 버킷.
+
+**컬럼:**
+
+| 컬럼 | 타입 | NULL | 기본값 | 설명 |
+|---|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` | PK |
+| `category_id` | uuid | YES | - | FK → building_categories.id |
+| `file_name` | text | NO | - | 원본 파일명 |
+| `file_path` | text | NO | - | Storage 경로 (sanitize됨) |
+| `file_size` | bigint | YES | - | 파일 크기 (bytes) |
+| `uploaded_by` | uuid | YES | - | FK → profiles.id |
+| `created_at` | timestamptz | YES | `now()` | 업로드일 |
+
+**RLS 정책:**
+```sql
+-- SELECT: admin/committee/observer/owner
+-- INSERT: admin만
+-- DELETE: admin만
+```
+
+---
+
+## Storage 버킷 전체 목록 (6개)
+
+| 이름 | 공개 | 용량 제한 | 파일 형식 | 용도 |
+|---|---|---|---|---|
+| `announcements` | Public | 50MB | Any | 공지 첨부파일 |
+| `building-documents` | **Private** | 50MB | Any | Building Documents 파일 |
+| `complaint-images` | Public | 5MB | 이미지+PDF | 민원 사진 |
+| `parking-images` | Public | 5MB | 이미지 | 주차 위반 사진 |
+| `quotes` | **Private** | 50MB | Any | 견적서 PDF (⚠️ 4중 방어망) |
+| `scm-documents` | **Private** | 50MB | Any | SCM 회의 첨부파일 |
+| `service-reports` | **Private** | 50MB | Any | 법정점검 보고서 |
+
+**scm-documents / building-documents Storage RLS 정책:**
+```sql
+-- SELECT (signed URL 기반): admin/committee/observer/owner
+((bucket_id = 'scm-documents') AND (get_my_role() = ANY (ARRAY['admin','committee','observer','owner'])))
+
+-- INSERT: admin만
+((bucket_id = 'scm-documents') AND (get_my_role() = 'admin'))
+-- ⚠️ INSERT 정책은 USING + WITH CHECK 둘 다 설정해야 작동
+
+-- DELETE: admin만
+((bucket_id = 'scm-documents') AND (get_my_role() = 'admin'))
+```
+
+**파일 접근 방식:** `createSignedUrl(path, 3600)` — 1시간 만료 Signed URL
+
+---
+
 # 🚑 PART 1.8: 응급 복구 SQL
 
 ## 상황별 복구 SQL
@@ -2216,6 +2433,14 @@ const CACHE_NAME = 'redmyre-bms-v5';
 ### 1. project_comments RLS 원복
 
 **증상:** project_comments 정책 수정 후 댓글 작성 불가 또는 보안 이슈.
+
+**실제 정책 (2026-05-16 확인):**
+- SELECT: admin/committee/observer
+- INSERT: admin/committee
+- UPDATE: admin/committee
+- DELETE: admin만 (user_email = 본인만)
+
+**설계 의도:** Committee 멤버가 견적 상의 시 댓글 작성/조회 가능. Admin이 관리.
 
 ```sql
 DROP POLICY IF EXISTS project_comments_select ON project_comments;
@@ -2388,7 +2613,7 @@ FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY tablename;
 ```
-**기대 결과:** 25개 테이블 전부 `rowsecurity = true`
+**기대 결과:** 29개 테이블 전부 `rowsecurity = true`
 
 ### 모든 RLS 정책 조회
 ```sql
@@ -2431,19 +2656,19 @@ SELECT jobid, jobname, schedule, active FROM cron.job;
 SELECT name, public, file_size_limit, allowed_mime_types
 FROM storage.buckets;
 ```
-**기대 결과:** 5개 (quotes=private, service-reports=private, 나머지 3개=public)
+**기대 결과:** 7개 (quotes/scm-documents/building-documents/service-reports=private, 나머지 3개=public)
 
 ---
 
 # ✅ PART 1 완료
 
 **Part 1 내용:**
-- 22개 테이블 완전 상세 (컬럼, 제약, RLS)
+- 29개 테이블 완전 상세 (컬럼, 제약, RLS)
 - 16개 DB 함수 (SECURITY DEFINER 표시 포함)
 - 6개 트리거 (public + auth)
 - 7개 Edge Functions (사용 여부 명시)
 - 4개 Cron Jobs
-- 4개 Storage Buckets + Quotes 4중 방어망
+- 7개 Storage Buckets + Quotes 4중 방어망
 - 하드코딩 키 보안 경고
 - 응급 복구 SQL 6가지
 
@@ -2476,6 +2701,7 @@ FROM storage.buckets;
     { "source": "/signboard", "destination": "/pages/signboard.html" },
     { "source": "/guide-resident", "destination": "/pages/guide-resident.html" },
     { "source": "/guide-committee", "destination": "/pages/guide-committee.html" },
+    { "source": "/documents", "destination": "/pages/documents.html" },
     { "source": "/setup", "destination": "/pages/setup.html" },
     { "source": "/reset-password", "destination": "/pages/reset-password.html" }
   ]

@@ -213,15 +213,14 @@ WHERE p.push_enabled = true;
 
 #### 사례 C: BCC 적용 (실무 추적)
 
-발신 시 사장님 + SCA 사무실 이메일을 BCC로 자동 포함:
-- `info@scafacility.com`
+발신 시 BCC 정책 (2026-04-28 이후 — info@scafacility.com 비용 사고로 제거):
 - `sca.yun82@gmail.com`
 - `sca.jacob77@gmail.com`
 
 **적용 함수:**
-- `email-complaint-response` ✅ BCC
-- `email-quote-voting` ✅ BCC
-- `email-quote-confirm` ✅ BCC
+- `email-complaint-response` ✅ BCC (위 2개)
+- `email-quote-voting` ❌ BCC 없음 (admin이 to에 포함됨)
+- `email-quote-confirm` ❌ BCC 없음 (admin이 to에 포함됨)
 - `email-parking-notice` ❌ BCC 없음 (익명성 유지)
 - `email-announcement` — 비활성
 
@@ -1666,6 +1665,8 @@ Committee role로 로그인 시 사이드바:
 - ❌ HVAC_daemon.py: `SUPABASE_KEY`, `TENANCY_SENSOR_IDS`, ±0.5°C 조정 폭, Polygon1 hidden 대기 로직
 - ❌ Quotes Storage 4중 방어망 (15개 정책)
 - ❌ BMS role 표시명 변경 시 layout.js/complaints.html/hvac.html 비교 로직 (DB role값은 observer/tenant, 화면만 Observer (Strata)/Tenant (Staff))
+- ❌ complaints.html/hvac.html email exact-matching 로직 (콤마분리 → 정확 매칭)
+- ❌ `sidebar_permissions` 테이블 삭제 금지
 
 #### DB
 - ❌ `audit_logs` RLS (SELECT/INSERT/DELETE 전부 true — 의도적, profiles RLS + layout.js role 체크로 다중 보안)
@@ -1676,6 +1677,7 @@ Committee role로 로그인 시 사이드바:
 - ❌ Complaints 이메일 재추가 (4/21 정책 — Push만)
 - ❌ Announcements 이메일 발송 (Resend 한도 보호)
 - ❌ email-parking-notice에 BCC 추가 (익명성 유지)
+- ❌ info@scafacility.com BCC 재추가 금지 (2026-04-28 비용 사고로 영구 제거)
 
 #### 운영
 - ❌ Storage 직접 수동 삭제 (DB 불일치 발생)
@@ -1731,3 +1733,6 @@ CREATE POLICY project_comments_admin_only ON project_comments
 ---
 
 **문서 끝.**
+
+---
+*최종 업데이트: 2026-05-17 / Jacob Kim 감수*

@@ -364,7 +364,7 @@ flowchart TB
     SYS["🛠️ system.html<br/>(Admin 전용)"]
     
     Tables[("📊 모든 테이블<br/>COUNT 집계")]
-    Storage[("📁 Storage 4개<br/>announcements<br/>complaint-images<br/>parking-images<br/>quotes")]
+    Storage[("📁 Storage 6개<br/>announcements<br/>complaint-images<br/>parking-images<br/>quotes<br/>scm-documents<br/>building-documents")]
     QR[("📈 qr_analytics<br/>최근 7/30/90일")]
     Health["🏥 Health Check<br/>DB / Auth / Storage<br/>Ping 응답시간"]
     
@@ -6183,11 +6183,112 @@ function goTo(id) {
 
 ---
 
+# 📄 그룹 G: 신규 페이지 (2026-05-16)
+
+## 22. `documents.html` — SCM & Documents
+
+**URL:** `/documents`
+**사이드바:** SCM & Documents (Service Reports 다음 위치)
+**인증 필요:** ✅
+**접근 가능 Role:** admin / committee / observer / owner
+
+### 화면 구성
+
+2컬럼 레이아웃:
+- **좌: SCM Documents** — 연도 셀렉터 + 월별 12칸 그리드
+- **우: Building Documents** — 카테고리 카드 리스트
+
+### SCM Documents 동작
+
+- 연도별 월 그리드 표시 (회의 있으면 파란색, 없으면 회색)
+- 월 클릭 → 파일 목록 모달
+- Admin: New Meeting 버튼 + Edit 버튼(hover) + Delete 버튼
+
+### Building Documents 동작
+
+- 카테고리 카드 클릭 → 파일 목록 모달
+- 카테고리 아이콘/색상 자동 매핑 (이름 기반, `getCatMeta()`)
+- Admin: Add Category 버튼 + Edit 버튼(hover) + Delete 버튼
+
+### 파일 업로드
+
+- Drag & Drop 또는 클릭
+- 파일명 특수문자 자동 sanitize (DB에는 원본명 저장, Storage에는 sanitize된 경로)
+- View(Signed URL → Google Docs viewer) / Download / Delete
+
+### Role별 UI 분기
+
+| 기능 | admin | committee | observer | owner |
+|---|---|---|---|---|
+| 파일 조회/다운로드/뷰 | ✅ | ✅ | ✅ | ✅ |
+| New Meeting / Add Category | ✅ | ❌ | ❌ | ❌ |
+| Edit Meeting / Edit Category | ✅ | ❌ | ❌ | ❌ |
+| Upload File | ✅ | ❌ | ❌ | ❌ |
+| Delete Meeting / Category / File | ✅ | ❌ | ❌ | ❌ |
+
+### 주요 함수
+
+| 함수 | 역할 |
+|---|---|
+| `sanitizeFileName(name)` | 특수문자 → `_` 치환, Storage 경로용 |
+| `escAttr(str)` | onclick 속성 내 작은따옴표 escape |
+| `getCatMeta(name)` | 카테고리명 → icon/bg/color 자동 매핑 |
+| `loadSCM()` | scm_meetings 전체 로드 |
+| `loadCategories()` | building_categories 로드 |
+| `loadScmFiles(meetingId)` | scm_documents 파일 목록 |
+| `loadCatFiles(catId)` | building_documents 파일 목록 |
+
+### DB 호출
+
+```javascript
+supabase.from('scm_meetings').select('*').order('meeting_date', { ascending: false })
+supabase.from('scm_documents').select('*').eq('meeting_id', meetingId)
+supabase.from('building_categories').select('*').order('position')
+supabase.from('building_documents').select('*').eq('category_id', catId)
+supabase.storage.from(bucket).createSignedUrl(path, 3600)
+```
+
+### ⚠️ 주의사항
+
+- `[`, `]`, `'`, `%20` 등 포함된 파일명 → Storage 업로드 400 에러
+- `sanitizeFileName()` 으로 자동 처리, `escAttr()`로 onclick 내 작은따옴표 escape
+- sidebar.html에 `nav-privileged` 클래스 없음 (owner 접근 허용)
+- layout.js `PAGE_CONFIG.documents.allowedRoles` = `['admin','committee','observer','owner']`
+
+---
+
+# 📋 사이드바 메뉴 순서 (2026-05-16 변경)
+
+```
+Overview
+Service Reports
+SCM & Documents    ← 2026-05-16 이 위치로 이동 (Service Reports 다음)
+Announcements
+Parking Management
+Occupant Details
+Resident Requests
+A/C Request
+A/C History
+Quote Approvals
+Active Works
+Completed Works
+Cost Report
+Emergency Contacts
+User Guide
+Committee Guide
+--- Admin ---
+User Management
+System Management
+Signboard Management
+```
+
+---
+
 # 🏁 Part 2 전체 완료
 
 ## 📊 최종 요약
 
-**총 21개 HTML 페이지 문서화 완료:**
+**총 22개 HTML 페이지 문서화 완료:**
 
 | 그룹 | 페이지 수 | HTML 총 줄 수 | 분류 |
 |---|---|---|---|
@@ -6197,20 +6298,21 @@ function goTo(id) {
 | 그룹 D | 5 | 4,711줄 | 견적/작업/리포트 ⭐ |
 | 그룹 E | 4 | 5,215줄 | 관리자 기능 |
 | 그룹 F | 2 | 2,397줄 | 가이드 |
-| **합계** | **21** | **18,784줄** | — |
+| 그룹 G | 1 | - | 신규 (2026-05-16) |
+| **합계** | **22** | **18,784줄+** | — |
 
 ## 📝 Master Manual 전체 구성
 
-**Part 1 (2,488줄):** DB / Edge Functions / Cron / Storage
-- 22개 테이블 전체 명세
+**Part 1:** DB / Edge Functions / Cron / Storage
+- 29개 테이블 전체 명세
 - 16개 DB 함수
 - 6개 트리거
 - 7개 Edge Functions
 - 4개 Cron Jobs
-- 4개 Storage Buckets + 4중 방어망
+- 7개 Storage Buckets + 4중 방어망
 - 응급 복구 SQL
 
-**Part 2 (~4,300줄):** 21개 HTML 페이지
+**Part 2:** 22개 HTML 페이지
 - 각 페이지별 용도 / 구조 / Role별 권한 / DB 호출
 - 핵심 함수 설명 (calculateResult, doUpsert, forceAction, confirmSelection 등)
 - 주의사항 + 절대 수정 금지 목록
@@ -6241,6 +6343,7 @@ function goTo(id) {
 
 **✍️ 작성자: Claude (Anthropic)**
 **📅 작성일: 2026-04-25**
+**🔄 최종 업데이트: 2026-05-17**
 **👤 Building Manager: Jacob Kim (SCA Facility Management Pty Ltd)**
 **🏢 대상: Redmyre House (SP77249, 9–13 Redmyre Road, Strathfield NSW 2135)**
 
