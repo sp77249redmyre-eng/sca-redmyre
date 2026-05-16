@@ -11,7 +11,7 @@ const PAGE_CONFIG = {
   'emergency':      { title: 'Emergency Contacts',    allowedRoles: null },
   'works':          { title: 'Ongoing Works',         allowedRoles: null },
   'cost-dashboard': { title: 'Cost Analysis',         allowedRoles: ['admin', 'committee', 'observer'] },
-  'documents':      { title: 'Building Documents',    allowedRoles: ['admin', 'committee', 'observer'] },
+  'documents':      { title: 'Building Documents',    allowedRoles: ['admin', 'committee', 'observer', 'owner'] },
   'history':        { title: 'Temperature History',   allowedRoles: ['admin', 'committee', 'observer'] },
   'quotes':         { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':        { title: 'Completed Works',       allowedRoles: ['admin', 'committee', 'observer'] },
