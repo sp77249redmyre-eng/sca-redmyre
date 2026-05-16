@@ -304,20 +304,20 @@ async function renderManagerCard() {
   }
 }
 
-function getServiceIcon(service) {
+function getServiceMeta(service) {
   const s=(service||'').toLowerCase();
-  if (s.includes('lift')||s.includes('elevator')) return '<i class="ti ti-elevator"></i>';
-  if (s.includes('air')||s.includes('hvac')||s.includes('conditioning')) return '<i class="ti ti-snowflake"></i>';
-  if (s.includes('fire')) return '<i class="ti ti-flame"></i>';
-  if (s.includes('plumb')||s.includes('water')) return '<i class="ti ti-droplet"></i>';
-  if (s.includes('electr')) return '<i class="ti ti-bolt"></i>';
-  if (s.includes('lock')) return '<i class="ti ti-lock"></i>';
-  if (s.includes('pest')) return '<i class="ti ti-bug"></i>';
-  if (s.includes('clean')) return '<i class="ti ti-brush"></i>';
-  if (s.includes('garage')||s.includes('gate')) return '<i class="ti ti-door"></i>';
-  if (s.includes('access')||s.includes('security')) return '<i class="ti ti-shield"></i>';
-  if (s.includes('waste')||s.includes('recycl')) return '<i class="ti ti-recycle"></i>';
-  return '<i class="ti ti-tool"></i>';
+  if (s.includes('lift')||s.includes('elevator'))          return { icon:'ti-elevator',  bg:'#EFF6FF', color:'#1D4ED8' };
+  if (s.includes('air')||s.includes('hvac')||s.includes('conditioning')) return { icon:'ti-snowflake', bg:'#E0F2FE', color:'#0369A1' };
+  if (s.includes('fire'))                                   return { icon:'ti-flame',     bg:'#FEF2F2', color:'#B91C1C' };
+  if (s.includes('plumb')||s.includes('water'))             return { icon:'ti-droplet',   bg:'#F0FDFA', color:'#0F766E' };
+  if (s.includes('electr'))                                 return { icon:'ti-bolt',      bg:'#FEFCE8', color:'#A16207' };
+  if (s.includes('lock'))                                   return { icon:'ti-lock',      bg:'#F5F3FF', color:'#6D28D9' };
+  if (s.includes('pest'))                                   return { icon:'ti-bug',       bg:'#F0FDF4', color:'#15803D' };
+  if (s.includes('clean'))                                  return { icon:'ti-brush',     bg:'#FFF7ED', color:'#C2410C' };
+  if (s.includes('garage')||s.includes('gate'))             return { icon:'ti-door',      bg:'#F8FAFC', color:'#475569' };
+  if (s.includes('access')||s.includes('security'))         return { icon:'ti-shield',    bg:'#F0FDF4', color:'#15803D' };
+  if (s.includes('waste')||s.includes('recycl'))            return { icon:'ti-recycle',   bg:'#F0FDF4', color:'#15803D' };
+  return { icon:'ti-tool', bg:'#F8FAFC', color:'#475569' };
 }
 
 let contractorsData = [];
@@ -335,12 +335,12 @@ async function loadContractors() {
   const gridList = contractorsData.filter(c => (c.service || '').toLowerCase() !== 'strata manager');
   if (!gridList.length) { grid.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No contractors found.</div>'; return; }
   grid.innerHTML = gridList.map((c,i) => {
-    const icon = getServiceIcon(c.service);
+    const meta = getServiceMeta(c.service);
     const primaryPhone = c.phone ? c.phone.split('/').map(p=>p.trim())[0] : '';
     const primaryEmail = c.email ? c.email.split(',').map(e=>e.trim())[0] : '';
     return `
       <div class="contact-card" data-company="${(c.company || '').toLowerCase()}">
-        <div class="cc-icon">${icon}</div>
+        <div class="cc-icon" style="background:${meta.bg};color:${meta.color}"><i class="ti ${meta.icon}"></i></div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <div class="cc-service">${c.service}</div>
