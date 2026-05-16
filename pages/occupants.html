@@ -208,7 +208,8 @@
   color: var(--text-2);
 }
 .occ-list-label .lbl-star { color: #eab308; font-size: 12px; }
-.occ-list-label .lbl-icon { font-size: 13px; opacity: 0.85; }
+.occ-list-label .lbl-icon { width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
+.occ-list-label .lbl-icon i { font-size:12px; }
 .occ-list-value {
   font-size: 13px;
   color: var(--text);
@@ -552,7 +553,7 @@
   font-family: 'Courier New', monospace;
   letter-spacing: 0.5px;
 }
-.plate-badge::before { content: '🚗'; font-size: 13px; }
+.plate-badge::before { content: none; }
 .plate-badge-remove {
   width: 20px;
   height: 20px;
@@ -721,7 +722,7 @@
     </div>
     <div style="background:#DBEAFE;border:1px solid #93C5FD;border-top:none;border-radius:0 0 16px 16px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px">
       <span style="font-size:16px;flex-shrink:0;line-height:1.4">✏️</span>
-      <span style="font-size:13px;color:#1E40AF;font-weight:600;line-height:1.4">Update your details anytime via My Profile in the top right corner.</span>
+      <span style="font-size:13px;color:#1E40AF;font-weight:600;line-height:1.4">Update your details anytime via Edit Profile.</span>
     </div>
 
     <!-- Suite Tabs -->
@@ -1026,7 +1027,7 @@ function renderOccupants() {
   }
   
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">No occupants on this level</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="ti ti-building" style="font-size:32px;color:#93C5FD"></i></div><div class="empty-title">No occupants on this level</div></div>`;
     return;
   }
   
@@ -1077,11 +1078,11 @@ function renderOccupants() {
     // 차량 섹션
     const vehiclesHtml = plates.length
       ? `<div class="occ-vehicles-section">
-           <div class="occ-vehicles-title">🚗 Vehicles (${plates.length})</div>
-           <div class="plate-badges">${plates.map(p => `<span class="plate-badge">${p}</span>`).join('')}</div>
+           <div class="occ-vehicles-title"><span style="width:22px;height:22px;border-radius:6px;background:#EFF6FF;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px"><i class="ti ti-car" style="font-size:13px;color:#1D4ED8"></i></span>Vehicles (${plates.length})</div>
+           <div class="plate-badges">${plates.map(p => `<span class="plate-badge"><i class="ti ti-car" style="font-size:12px;color:#1D4ED8;margin-right:3px;vertical-align:-1px"></i>${p}</span>`).join('')}</div>
          </div>`
       : `<div class="occ-vehicles-section">
-           <div class="occ-vehicles-title">🚗 Vehicles (0)</div>
+           <div class="occ-vehicles-title"><span style="width:22px;height:22px;border-radius:6px;background:#EFF6FF;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px"><i class="ti ti-car" style="font-size:13px;color:#1D4ED8"></i></span>Vehicles (0)</div>
            <div style="font-size:12px;color:#cbd5e1;font-style:italic">No vehicles registered</div>
          </div>`;
 
@@ -1111,11 +1112,11 @@ function renderOccupants() {
       ${starRowsHtml}
       ${showStarFields ? '<div class="occ-list-divider"></div>' : ''}
       <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">👤</span> Contact</div>
+        <div class="occ-list-label"><span class="lbl-icon" style="background:#EFF6FF"><i class="ti ti-user" style="color:#1D4ED8"></i></span> Contact</div>
         <div class="occ-list-value ${o.business_name || o.contact_person ? '' : 'empty'}">${o.business_name ? o.business_name : (o.contact_person || 'Not set')}</div>
       </div>
       <div class="occ-list-row">
-        <div class="occ-list-label"><span class="lbl-icon">📧</span> ${businessEmailLabel}</div>
+        <div class="occ-list-label"><span class="lbl-icon" style="background:#F0FDF4"><i class="ti ti-mail" style="color:#15803D"></i></span> ${businessEmailLabel}</div>
         <div class="occ-list-value ${allBusinessEmails.length ? '' : 'empty'}">${businessEmailValue}</div>
       </div>
     `;
@@ -1137,7 +1138,7 @@ function renderOccupants() {
           <div class="occ-meta">
             ${typeBadge}
             <div class="occ-meta-item">📧 ${emailCount}</div>
-            <div class="occ-meta-item">🚗 ${vehicles}</div>
+            <div class="occ-meta-item"><i class="ti ti-car" style="color:#1D4ED8;font-size:12px;vertical-align:-1px"></i> ${vehicles}</div>
           </div>
           ${restricted ? '' : '<div class="occ-chevron">▼</div>'}
         </div>
@@ -1145,22 +1146,22 @@ function renderOccupants() {
           ${infoBarHtml}
           <div class="occ-body-list">
             <div class="occ-list-row">
-              <div class="occ-list-label"><span class="lbl-icon">🏠</span> Suite</div>
+              <div class="occ-list-label"><span class="lbl-icon" style="background:#F0FDFA"><i class="ti ti-home" style="color:#0F766E"></i></span> Suite</div>
               <div class="occ-list-value">${o.suite || o.unit || '<span style="color:#cbd5e1;font-style:italic">Not set</span>'}</div>
             </div>
             <div class="occ-list-row">
-              <div class="occ-list-label"><span class="lbl-icon">🏷️</span> Type</div>
+              <div class="occ-list-label"><span class="lbl-icon" style="background:#F5F3FF"><i class="ti ti-tag" style="color:#6D28D9"></i></span> Type</div>
               <div class="occ-list-value">${o.owner_type || '<span style="color:#cbd5e1;font-style:italic">Not set</span>'}</div>
             </div>
             ${contactRowHtml}
             ${staffEmailRowHtml}
             <div class="occ-list-row">
-              <div class="occ-list-label"><span class="lbl-icon">📞</span> Phone</div>
+              <div class="occ-list-label"><span class="lbl-icon" style="background:#FFF7ED"><i class="ti ti-phone" style="color:#C2410C"></i></span> Phone</div>
               <div class="occ-list-value ${o.phone ? '' : 'empty'}">${o.phone ? o.phone.split(/[,\/]/).map(p => `<a href="tel:${p.trim().replace(/\s/g,'')}">${p.trim()}</a>`).join(' · ') : 'Not set'}</div>
             </div>
             ${o.is_committee ? `
             <div class="occ-list-row">
-              <div class="occ-list-label"><span class="lbl-icon">⭐</span> Committee</div>
+              <div class="occ-list-label"><span class="lbl-icon" style="background:#FEFCE8"><i class="ti ti-star" style="color:#A16207"></i></span> Committee</div>
               <div class="occ-list-value"><span class="occ-badge-committee">⭐ ${o.committee_role || 'Committee Member'}</span></div>
             </div>` : ''}
           </div>
@@ -1266,7 +1267,7 @@ window.openViewModal = (id) => {
     <div class="modal-info-value">
       ${vehicles.length ? `
         <div class="vehicle-list">
-          ${vehicles.map(v => `<div class="vehicle-item">🚗 ${v.trim()}</div>`).join('')}
+          ${vehicles.map(v => `<div class="vehicle-item"><i class="ti ti-car" style="color:#1D4ED8;font-size:12px;vertical-align:-1px"></i> ${v.trim()}</div>`).join('')}
         </div>
       ` : '—'}
     </div>
@@ -1825,7 +1826,7 @@ await loadOccupants();
     try {
       const { data: plateData } = await supabase.rpc('lookup_vehicle_plates', { p_plates: [qNorm] });
       if (plateData && plateData.length > 0) {
-        lookupResult.innerHTML = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
+        lookupResult.innerHTML = plateData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b><i class="ti ti-car" style="color:#1D4ED8;font-size:13px;vertical-align:-1px"></i> ${r.plate || qNorm}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.owner_name ? ' · ' + r.owner_name : ''}</div>`).join('');
         return;
       }
 
@@ -1851,7 +1852,7 @@ await loadOccupants();
         if (cData && cData.length > 0) {
           const matched = cData.filter(r => (r.phone || '').replace(/\D/g, '').includes(qDigits));
           if (matched.length > 0) {
-            html += matched.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b>🏢 ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
+            html += matched.map(r => `<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:6px"><b><i class="ti ti-building" style="color:#15803D;font-size:13px;vertical-align:-1px"></i> ${r.phone}</b> → <b style="color:#166534">${r.company || r.contact_name || 'Contractor'}</b>${r.service ? ' · ' + r.service : ''}${r.contact_name && r.company ? ' (' + r.contact_name + ')' : ''}</div>`).join('');
           }
         }
 
@@ -1862,7 +1863,7 @@ await loadOccupants();
           .select('unit, contact_person, business_name, license_plates')
           .ilike('license_plates', '%' + qNorm + '%');
         if (partData && partData.length > 0) {
-          lookupResult.innerHTML = partData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b>🚗 ${r.license_plates}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
+          lookupResult.innerHTML = partData.map(r => `<div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px"><b><i class="ti ti-car" style="color:#1D4ED8;font-size:13px;vertical-align:-1px"></i> ${r.license_plates}</b> → Unit <b style="color:var(--blue-600)">${r.unit}</b>${r.contact_person ? ' · ' + r.contact_person : ''}${r.business_name ? ' (' + r.business_name + ')' : ''}</div>`).join('');
           return;
         }
       }
