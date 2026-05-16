@@ -99,7 +99,7 @@ async function applyRoleMenuControl(role, supabase) {
       const defaultPermissions = {
         committee: ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
         observer:  ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
-        owner:     ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident'],
+        owner:     ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'documents', 'guide-resident'],
         tenant:    ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
       };
       allowedPages = defaultPermissions[role] || ['building'];
