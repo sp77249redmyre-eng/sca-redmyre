@@ -26,7 +26,7 @@
 .doc-panel-body{padding:14px 16px}
 .year-sel{font-size:13px;padding:6px 10px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);margin-bottom:12px;width:100%;cursor:pointer}
 .month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
-.mcell{border-radius:9px;padding:11px 4px;text-align:center;border:1px solid var(--border,#e5e7eb);background:var(--card-bg,#fff);cursor:default;transition:all .15s}
+.mcell{border-radius:9px;padding:11px 4px;text-align:center;border:1px solid var(--border,#e5e7eb);background:var(--card-bg,#fff);cursor:default;transition:all .15s;position:relative}
 .mcell.has{background:#EFF6FF;border-color:#93C5FD;cursor:pointer}
 .mcell.has:hover{background:#DBEAFE;border-color:#3B82F6}
 .mcell.empty{opacity:0.38}
@@ -34,8 +34,11 @@
 .mcell.has .mcell-name{color:#1D4ED8}
 .mcell-n{font-size:10px;color:#60A5FA;margin-top:2px}
 .mcell.empty .mcell-name,.mcell.empty .mcell-n{color:#9CA3AF}
+.mcell-edit{position:absolute;top:3px;right:3px;background:none;border:none;cursor:pointer;color:#93C5FD;font-size:11px;padding:1px 3px;border-radius:4px;display:none;line-height:1}
+.mcell-edit:hover{color:#1D4ED8;background:#DBEAFE}
+.mcell.has:hover .mcell-edit{display:block}
 .cat-list{display:flex;flex-direction:column;gap:8px}
-.cat-card{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
+.cat-card{border:1px solid var(--border,#e5e7eb);border-radius:10px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;position:relative}
 .cat-card:hover{background:var(--hover,#f8fafc)}
 .cat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .cat-icon.blue{background:#EFF6FF;color:#1D4ED8}
@@ -49,6 +52,9 @@
 .cat-count{font-size:11px;color:#6B7280;margin-top:2px}
 .cat-arrow{color:#9CA3AF;font-size:15px}
 .cat-empty{font-size:13px;color:#9CA3AF;text-align:center;padding:20px 0}
+.cat-edit-btn{font-size:11px;padding:4px 8px;border:1px solid var(--border,#e5e7eb);border-radius:7px;background:var(--card-bg,#fff);color:#6B7280;cursor:pointer;display:none;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.cat-edit-btn:hover{background:var(--hover,#f8fafc);color:var(--text,#0f172a)}
+.cat-card:hover .cat-edit-btn{display:flex}
 .btn-new{font-size:12px;padding:6px 12px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--card-bg,#fff);color:var(--text,#0f172a);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif}
 .btn-new:hover{background:var(--hover,#f8fafc)}
 .modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);display:none;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;padding:20px}
@@ -179,6 +185,7 @@
       <button class="btn-danger" id="btnDeleteMeeting">Delete Meeting</button>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" onclick="closeModal('scmModal')">Close</button>
+        <button class="btn-primary" id="btnEditMeeting" style="display:none"><i class="ti ti-pencil"></i>Edit</button>
         <button class="btn-primary" id="btnAddScmFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
       </div>
     </div>
@@ -189,7 +196,7 @@
 <div class="modal-backdrop" id="newMeetingModal">
   <div class="modal-box">
     <div class="modal-top">
-      <div><div class="modal-ttl">New SCM Meeting</div></div>
+      <div><div class="modal-ttl" id="newMeetingModalTitle">New SCM Meeting</div></div>
       <button class="modal-close" onclick="closeModal('newMeetingModal')">×</button>
     </div>
     <div class="modal-body">
@@ -208,7 +215,7 @@
       <div></div>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" onclick="closeModal('newMeetingModal')">Cancel</button>
-        <button class="btn-primary" id="btnSaveMeeting"><i class="ti ti-check"></i>Create</button>
+        <button class="btn-primary" id="btnSaveMeeting"><i class="ti ti-check"></i>Save</button>
       </div>
     </div>
   </div>
@@ -229,17 +236,18 @@
       <button class="btn-danger" id="btnDeleteCat">Delete Category</button>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" onclick="closeModal('catModal')">Close</button>
+        <button class="btn-primary" id="btnEditCat" style="display:none"><i class="ti ti-pencil"></i>Edit</button>
         <button class="btn-primary" id="btnAddCatFile" style="display:none"><i class="ti ti-upload"></i>Upload File</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MODAL: Add Category -->
+<!-- MODAL: Add/Edit Category -->
 <div class="modal-backdrop" id="addCatModal">
   <div class="modal-box">
     <div class="modal-top">
-      <div><div class="modal-ttl">Add Category</div></div>
+      <div><div class="modal-ttl" id="addCatModalTitle">Add Category</div></div>
       <button class="modal-close" onclick="closeModal('addCatModal')">×</button>
     </div>
     <div class="modal-body">
@@ -324,6 +332,15 @@ let uploadTarget = null;
 let selectedFiles = [];
 let selectedIcon = ICON_LIST[0];
 let selectedColor = COLOR_LIST[0];
+let editingCatId = null;
+
+// ─── SANITIZE FILENAME ───────────────────────────────────
+function sanitizeFileName(name) {
+  const ext = name.includes('.') ? '.' + name.split('.').pop() : '';
+  const base = name.slice(0, name.length - ext.length);
+  const clean = base.replace(/[^a-zA-Z0-9_\-. ]/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  return clean + ext;
+}
 
 // ─── INIT ───────────────────────────────────────────────
 if (isAdmin) {
@@ -363,6 +380,7 @@ function renderMonthGrid() {
     return `<div class="mcell ${has ? 'has' : 'empty'}" ${has ? `onclick="openScmModal('${meeting.id}')"` : ''}>
       <div class="mcell-name">${m}</div>
       <div class="mcell-n">${has ? '●' : '—'}</div>
+      ${has && isAdmin ? `<button class="mcell-edit" onclick="event.stopPropagation();openEditMeeting('${meeting.id}')"><i class="ti ti-pencil"></i></button>` : ''}
     </div>`;
   }).join('');
 }
@@ -375,9 +393,22 @@ window.openScmModal = async function(meetingId) {
   if (isAdmin) {
     document.getElementById('btnAddScmFile').style.display = 'flex';
     document.getElementById('btnDeleteMeeting').style.display = 'flex';
+    document.getElementById('btnEditMeeting').style.display = 'flex';
   }
   await loadScmFiles(meetingId);
   openModal('scmModal');
+};
+
+window.openEditMeeting = function(meetingId) {
+  const meeting = scmMeetings.find(m => m.id === meetingId);
+  if (!meeting) return;
+  activeScmId = meetingId;
+  document.getElementById('newMeetingModalTitle').textContent = 'Edit SCM Meeting';
+  document.getElementById('meetingTitle').value = meeting.title;
+  document.getElementById('meetingDate').value = meeting.meeting_date;
+  document.getElementById('btnSaveMeeting').dataset.mode = 'edit';
+  closeModal('scmModal');
+  openModal('newMeetingModal');
 };
 
 async function loadScmFiles(meetingId) {
@@ -410,9 +441,12 @@ document.getElementById('btnAddScmFile').onclick = () => {
   openModal('uploadModal');
 };
 
+document.getElementById('btnEditMeeting').onclick = () => {
+  openEditMeeting(activeScmId);
+};
+
 document.getElementById('btnDeleteMeeting').onclick = async () => {
   if (!confirm('Delete this meeting and all its files?')) return;
-  const meeting = scmMeetings.find(m => m.id === activeScmId);
   const { data: files } = await supabase.from('scm_documents').select('file_path').eq('meeting_id', activeScmId);
   if (files && files.length > 0) {
     await supabase.storage.from('scm-documents').remove(files.map(f => f.file_path));
@@ -425,10 +459,12 @@ document.getElementById('btnDeleteMeeting').onclick = async () => {
   showToast('Meeting deleted');
 };
 
-// New Meeting
+// New / Edit Meeting
 document.getElementById('btnNewMeeting').onclick = () => {
+  document.getElementById('newMeetingModalTitle').textContent = 'New SCM Meeting';
   document.getElementById('meetingTitle').value = '';
   document.getElementById('meetingDate').value = '';
+  document.getElementById('btnSaveMeeting').dataset.mode = 'new';
   openModal('newMeetingModal');
 };
 
@@ -438,14 +474,20 @@ document.getElementById('btnSaveMeeting').onclick = async () => {
   if (!title || !date) { showToast('Please fill in all fields', true); return; }
   const btn = document.getElementById('btnSaveMeeting');
   btn.disabled = true;
-  const { error } = await supabase.from('scm_meetings').insert({ title, meeting_date: date, created_by: user.id });
+  const mode = btn.dataset.mode || 'new';
+  let error;
+  if (mode === 'edit') {
+    ({ error } = await supabase.from('scm_meetings').update({ title, meeting_date: date }).eq('id', activeScmId));
+  } else {
+    ({ error } = await supabase.from('scm_meetings').insert({ title, meeting_date: date, created_by: user.id }));
+  }
   btn.disabled = false;
-  if (error) { showToast('Error creating meeting', true); return; }
+  if (error) { showToast('Error saving meeting', true); return; }
   closeModal('newMeetingModal');
   await loadSCM();
   renderYearSel();
   renderMonthGrid();
-  showToast('Meeting created');
+  showToast(mode === 'edit' ? 'Meeting updated' : 'Meeting created');
 };
 
 // ─── BUILDING CATEGORIES ────────────────────────────────
@@ -468,6 +510,7 @@ function renderCategories() {
         <div class="cat-name">${c.name}</div>
         <div class="cat-count" id="count-${c.id}">Loading...</div>
       </div>
+      ${isAdmin ? `<button class="cat-edit-btn" onclick="event.stopPropagation();openEditCat('${c.id}')"><i class="ti ti-pencil"></i>Edit</button>` : ''}
       <i class="ti ti-chevron-right cat-arrow"></i>
     </div>`).join('');
   loadCatCounts();
@@ -488,9 +531,29 @@ window.openCatModal = async function(catId) {
   if (isAdmin) {
     document.getElementById('btnAddCatFile').style.display = 'flex';
     document.getElementById('btnDeleteCat').style.display = 'flex';
+    document.getElementById('btnEditCat').style.display = 'flex';
   }
   await loadCatFiles(catId);
   openModal('catModal');
+};
+
+window.openEditCat = function(catId) {
+  const cat = buildingCats.find(c => c.id === catId);
+  if (!cat) return;
+  editingCatId = catId;
+  document.getElementById('addCatModalTitle').textContent = 'Edit Category';
+  document.getElementById('catName').value = cat.name;
+  selectedIcon = cat.icon;
+  selectedColor = cat.color;
+  renderIconGrid();
+  renderColorOpts();
+  document.getElementById('btnSaveCat').dataset.mode = 'edit';
+  closeModal('catModal');
+  openModal('addCatModal');
+};
+
+document.getElementById('btnEditCat').onclick = () => {
+  openEditCat(activeCatId);
 };
 
 async function loadCatFiles(catId) {
@@ -538,13 +601,16 @@ document.getElementById('btnDeleteCat').onclick = async () => {
   showToast('Category deleted');
 };
 
-// Add Category
+// Add / Edit Category
 document.getElementById('btnNewCat').onclick = () => {
+  editingCatId = null;
+  document.getElementById('addCatModalTitle').textContent = 'Add Category';
   document.getElementById('catName').value = '';
   selectedIcon = ICON_LIST[0];
   selectedColor = COLOR_LIST[0];
   renderIconGrid();
   renderColorOpts();
+  document.getElementById('btnSaveCat').dataset.mode = 'new';
   openModal('addCatModal');
 };
 
@@ -568,13 +634,19 @@ document.getElementById('btnSaveCat').onclick = async () => {
   if (!name) { showToast('Please enter a category name', true); return; }
   const btn = document.getElementById('btnSaveCat');
   btn.disabled = true;
-  const position = buildingCats.length + 1;
-  const { error } = await supabase.from('building_categories').insert({ name, icon: selectedIcon, color: selectedColor, position });
+  const mode = btn.dataset.mode || 'new';
+  let error;
+  if (mode === 'edit' && editingCatId) {
+    ({ error } = await supabase.from('building_categories').update({ name, icon: selectedIcon, color: selectedColor }).eq('id', editingCatId));
+  } else {
+    const position = buildingCats.length + 1;
+    ({ error } = await supabase.from('building_categories').insert({ name, icon: selectedIcon, color: selectedColor, position }));
+  }
   btn.disabled = false;
   if (error) { showToast('Error saving category', true); return; }
   closeModal('addCatModal');
   await loadCategories();
-  showToast('Category added');
+  showToast(mode === 'edit' ? 'Category updated' : 'Category added');
 };
 
 // ─── FILE UPLOAD ─────────────────────────────────────────
@@ -625,9 +697,10 @@ document.getElementById('btnUpload').onclick = async () => {
 
   let success = 0;
   for (const file of selectedFiles) {
-    const path = `${uploadTarget.id}/${Date.now()}_${file.name}`;
+    const safeName = sanitizeFileName(file.name);
+    const path = `${uploadTarget.id}/${Date.now()}_${safeName}`;
     const { error: upErr } = await supabase.storage.from(bucket).upload(path, file);
-    if (upErr) continue;
+    if (upErr) { console.error('Upload error:', upErr); continue; }
     await supabase.from(table).insert({ [fkCol]: uploadTarget.id, file_name: file.name, file_path: path, file_size: file.size, uploaded_by: user.id });
     success++;
   }
@@ -643,10 +716,10 @@ document.getElementById('btnUpload').onclick = async () => {
     await loadCategories();
     openModal('catModal');
   }
-  showToast(`${success} file${success !== 1 ? 's' : ''} uploaded`);
+  showToast(success > 0 ? `${success} file${success !== 1 ? 's' : ''} uploaded` : 'Upload failed', success === 0);
 };
 
-// ─── FILE VIEWER (quotes.html 동일 패턴) ─────────────────
+// ─── FILE VIEWER ─────────────────────────────────────────
 window.previewFile = async function(bucket, path, name) {
   const modal = document.getElementById('fileViewerModal');
   modal.style.display = 'flex';
