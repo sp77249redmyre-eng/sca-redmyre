@@ -1273,7 +1273,7 @@ function renderRecent() {
     }
 
     return `
-      <div class="sr-list-row">
+      <div class="sr-list-row" style="cursor:pointer" onclick="openDetailModal('${r.id}')">
         <div class="sr-row-icon" style="${GROUP_ICON_STYLE[cat?.group_label] || ''}">${tablerIcon(icon)}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(r.title)}</div>
