@@ -6,6 +6,23 @@ const { supabase, user, role } = ctx;
 const isManagement = ['admin','committee','observer'].includes(role);
 const isAdmin = role === 'admin';
 
+// ─── EMOJI → TABLER ICON MAPPING ────────────────────────────
+const EMOJI_TO_TABLER = {
+  '🛗':'ti ti-elevator','❄️':'ti ti-snowflake','🔥':'ti ti-flame','🚪':'ti ti-door',
+  '💧':'ti ti-droplet','⚡':'ti ti-bolt','🐜':'ti ti-bug','🧴':'ti ti-bottle',
+  '🗑️':'ti ti-trash','📋':'ti ti-clipboard-list','🔧':'ti ti-tool','🔔':'ti ti-bell',
+  '📎':'ti ti-paperclip','📄':'ti ti-file-text','🖼️':'ti ti-photo','⚠️':'ti ti-alert-triangle',
+  '📅':'ti ti-calendar-event','⚙':'ti ti-settings','📝':'ti ti-edit','✏️':'ti ti-pencil',
+  '🗑':'ti ti-trash','🏢':'ti ti-building','🛠':'ti ti-tools','🛠️':'ti ti-tools',
+  '📞':'ti ti-phone','🔍':'ti ti-search','🚨':'ti ti-alert-circle',
+  '📭':'ti ti-mail-off','🗂️':'ti ti-folders',
+};
+function tablerIcon(emoji, extraClass) {
+  const cls = EMOJI_TO_TABLER[emoji];
+  if (!cls) return emoji;
+  return `<i class="${cls}${extraClass ? ' '+extraClass : ''}"></i>`;
+}
+
 // ─── HELPERS ─────────────────────────────────────────────────
 function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
@@ -204,7 +221,7 @@ const GROUP_DEFAULT_ICONS = {
 function renderCategoryGrid() {
   const grid = document.getElementById('catGrid');
   if (!categories.length) {
-    grid.innerHTML = '<div class="sr-empty" style="grid-column:1/-1"><div class="sr-empty-icon">📋</div><div>No service categories configured.</div></div>';
+    grid.innerHTML = '<div class="sr-empty" style="grid-column:1/-1"><div class="sr-empty-icon">' + tablerIcon('📋') + '</div><div>No service categories configured.</div></div>';
     return;
   }
 
@@ -291,18 +308,18 @@ function renderCategoryGrid() {
     let warning = '';
     if (isManagement && groupWarning) {
       if (groupWarning.status === 'overdue') {
-        warning = `<div class="sr-cat-warning">⚠️ Overdue by ${Math.abs(groupWarning.diff)} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+        warning = `<div class="sr-cat-warning">${tablerIcon('⚠️')} Overdue by ${Math.abs(groupWarning.diff)} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
       } else if (groupWarning.status === 'due') {
-        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">🔔 Due within ${groupWarning.diff} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
+        warning = `<div class="sr-cat-warning" style="background:var(--blue-50);border-color:#bfdbfe;color:var(--blue-700)">${tablerIcon('🔔')} Due within ${groupWarning.diff} days <span style="opacity:0.75;font-weight:500">· ${escHtml(groupWarning.cat.name)}</span></div>`;
       } else if (groupWarning.status === 'first') {
-        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">📋 ${escHtml(groupWarning.cat.name)} — no record yet</div>`;
+        warning = `<div class="sr-cat-warning" style="background:#f1f5f9;border-color:#cbd5e1;color:#475569">${tablerIcon('📋')} ${escHtml(groupWarning.cat.name)} — no record yet</div>`;
       }
     }
 
     return `
       <div class="sr-cat-card sr-cat-card-clickable" data-group="${escHtml(group)}" onclick="openGroupModal('${escHtml(group)}')">
         <div class="sr-cat-head">
-          <div class="sr-cat-icon">${escHtml(groupIcon)}</div>
+          <div class="sr-cat-icon">${tablerIcon(groupIcon)}</div>
           <div class="sr-cat-info">
             <div class="sr-cat-name">${escHtml(group)}</div>
             <div class="sr-cat-vendor">${escHtml(vendor)} · ${catCountTxt}</div>
@@ -351,7 +368,7 @@ function renderUpcoming() {
 
     return `
       <div class="sr-list-row">
-        <div class="sr-row-icon">${escHtml(cat.icon || '📋')}</div>
+        <div class="sr-row-icon">${tablerIcon(cat.icon || '📋')}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(cat.name)}</div>
           <div class="sr-row-sub">${escHtml(cat.group_label)}</div>
@@ -468,8 +485,8 @@ function cellInner(cs) {
   }
   if (cs.state === 'due')         return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
   if (cs.state === 'overdue')     return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
-  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon">📅</span><span class="sr-cell-date">SCHEDULED</span>`;
-  if (cs.state === 'in_progress') return `<span class="sr-cell-icon">⚙</span><span class="sr-cell-date">IN PROGRESS</span>`;
+  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon">${tablerIcon('📅')}</span><span class="sr-cell-date">SCHEDULED</span>`;
+  if (cs.state === 'in_progress') return `<span class="sr-cell-icon">${tablerIcon('⚙')}</span><span class="sr-cell-date">IN PROGRESS</span>`;
   if (cs.state === 'postponed')   return `<span class="sr-cell-icon">↪</span><span class="sr-cell-date">POSTPONED</span>`;
   if (cs.state === 'cancelled')   return `<span class="sr-cell-icon">✕</span><span class="sr-cell-date">CANCELLED</span>`;
   if (cs.state === 'future')      return `<span class="sr-cell-icon">○</span>`;
@@ -521,7 +538,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
     return `<tr>
-      <td class="sr-row-th">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
+      <td class="sr-row-th">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
       ${cells}
     </tr>`;
   }).join('') + '</tbody>';
@@ -551,7 +568,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       </div>`;
     }).join('');
     return `<div class="sr-mobile-row">
-      <div class="sr-mobile-row-title">${escHtml(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
+      <div class="sr-mobile-row-title">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
       <div class="sr-mobile-months">${months}</div>
     </div>`;
   }).join('');
@@ -730,7 +747,7 @@ function renderLiftStats() {
     const warn = (c.key === 'callout' || c.key === 'repair') && v2 >= 4;
     return `
       <div class="sr-lift-stat" style="--bar-color:${c.color};--bg-color:${c.bg}">
-        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${c.icon}</span>${escHtml(c.label)}</div>
+        <div class="sr-lift-stat-label"><span class="sr-lift-stat-icon">${tablerIcon(c.icon)}</span>${escHtml(c.label)}</div>
         <div class="sr-lift-stat-rows">
           <div class="sr-lift-stat-row lift1">
             <span class="sr-lift-stat-row-label">Lift 1</span>
@@ -947,7 +964,7 @@ function renderLiftTimeline() {
   if (!list.length) {
     el.innerHTML = `
       <div class="sr-lift-empty">
-        <div class="sr-lift-empty-icon">📋</div>
+        <div class="sr-lift-empty-icon">${tablerIcon('📋')}</div>
         <div>No service records for ${liftContractYearRange(cy).label}${filter !== 'all' ? ' (current filter)' : ''}.</div>
       </div>`;
     return;
@@ -965,7 +982,7 @@ function renderLiftTimeline() {
     const fallback = r.title ? escHtml(r.title) : '';
     const hasAttach = Array.isArray(r.attachments) && r.attachments.length > 0;
     const attachLabel = hasAttach
-      ? `<span class="sr-lift-event-attach">📎 ${r.attachments.length} file${r.attachments.length > 1 ? 's' : ''}</span>`
+      ? `<span class="sr-lift-event-attach">${tablerIcon('📎')} ${r.attachments.length} file${r.attachments.length > 1 ? 's' : ''}</span>`
       : `<span class="sr-lift-event-attach sr-lift-event-attach-empty">No attachment</span>`;
     const clickable = hasAttach || true; // all open detail modal
     return `
@@ -1056,7 +1073,7 @@ window.openDetailModal = function(reportId) {
 
   const atts = Array.isArray(r.attachments) ? r.attachments : [];
   const attHtml = atts.length ? atts.map(a => {
-    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
+    const icon = (a.type || '').startsWith('image/') ? tablerIcon('🖼️') : (a.type === 'application/pdf' ? tablerIcon('📄') : tablerIcon('📎'));
     return `<a class="sr-attach-item" href="#" onclick="openFileViewer('${escHtml(a.path)}','${escHtml(a.name)}','${escHtml(a.type || '')}');return false;">
       <span class="sr-attach-icon">${icon}</span>
       <span class="sr-attach-name">${escHtml(a.name)}</span>
@@ -1077,7 +1094,7 @@ window.openDetailModal = function(reportId) {
     const hasHTML = /<[a-z][\s\S]*>/i.test(raw);
     const rendered = hasHTML ? raw : escHtml(raw).replace(/\n/g, '<br>');
     issueLine = `<div class="sr-detail-section sr-detail-issue-box">
-         <div class="sr-detail-label">⚠️ Issue — Action Required</div>
+         <div class="sr-detail-label">${tablerIcon('⚠️')} Issue — Action Required</div>
          <div class="sr-detail-val" style="line-height:1.7">${rendered}</div>
        </div>`;
   }
@@ -1098,7 +1115,7 @@ window.openDetailModal = function(reportId) {
   document.getElementById('detailBody').innerHTML = `
     <div class="sr-detail-section">
       <div class="sr-detail-label">Category</div>
-      <div class="sr-detail-val">${escHtml(cat?.icon || '📋')} ${escHtml(cat?.name || '—')}</div>
+      <div class="sr-detail-val">${tablerIcon(cat?.icon || '📋')} ${escHtml(cat?.name || '—')}</div>
     </div>
     <div class="sr-form-row">
       <div class="sr-detail-section">
@@ -1147,7 +1164,7 @@ window.openFileViewer = async function(path, name, type) {
     }
 
     document.getElementById('viewerContent').innerHTML =
-      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">📎 ${escHtml(name)}</div>` + body;
+      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">${tablerIcon('📎')} ${escHtml(name)}</div>` + body;
     document.getElementById('fileViewerModal').style.display = 'flex';
   } catch (e) {
     console.error('openFileViewer failed:', e);
@@ -1222,7 +1239,7 @@ function renderRecent() {
   countEl.textContent = recent.length;
 
   if (!recent.length) {
-    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">📭</div><div>No reports uploaded yet.</div></div>';
+    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">' + tablerIcon('📭') + '</div><div>No reports uploaded yet.</div></div>';
     return;
   }
 
@@ -1236,14 +1253,14 @@ function renderRecent() {
 
     let badge = '';
     if (isManagement && r.has_issues) {
-      badge = `<span class="sr-row-tag tag-warn">⚠️ Issues</span>`;
+      badge = `<span class="sr-row-tag tag-warn">${tablerIcon('⚠️')} Issues</span>`;
     } else if (att > 0) {
-      badge = `<span class="sr-row-tag">📎 ${att}</span>`;
+      badge = `<span class="sr-row-tag">${tablerIcon('📎')} ${att}</span>`;
     }
 
     return `
       <div class="sr-list-row">
-        <div class="sr-row-icon">${escHtml(icon)}</div>
+        <div class="sr-row-icon">${tablerIcon(icon)}</div>
         <div class="sr-row-info">
           <div class="sr-row-title">${escHtml(r.title)}</div>
           <div class="sr-row-sub">${escHtml(catName)} · ${escHtml(vendor)}</div>
@@ -1369,7 +1386,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     filteredCats.map(c => `<option value="${c.id}">${escHtml(c.icon || '')} ${escHtml(c.name)}</option>`).join('');
 
   if (mode === 'edit' && report) {
-    document.getElementById('upModalTitle').textContent = '✏️ Edit Service Report';
+    document.getElementById('upModalTitle').innerHTML = tablerIcon('✏️') + ' Edit Service Report';
     document.getElementById('upSaveBtn').textContent = 'Save Changes';
     upCategoryEl.value = report.category_id || '';
     upDateEl.value = report.report_date || '';
@@ -1455,7 +1472,7 @@ function renderExistingFileList() {
   if (!el) return;
   if (!existingAttachments.length) { el.innerHTML = ''; return; }
   el.innerHTML = existingAttachments.map((a, i) => {
-    const icon = (a.type || '').startsWith('image/') ? '🖼️' : (a.type === 'application/pdf' ? '📄' : '📎');
+    const icon = (a.type || '').startsWith('image/') ? tablerIcon('🖼️') : (a.type === 'application/pdf' ? tablerIcon('📄') : tablerIcon('📎'));
     return `<div class="sr-file-pill" style="background:#f0f9ff;border-color:#bae6fd">
       <span style="flex-shrink:0">${icon}</span>
       <span class="sr-file-pill-name">${escHtml(a.name)}</span>
@@ -1518,7 +1535,7 @@ window.openGroupModal = function(groupLabel) {
   const cats = categories.filter(c => c.group_label === groupLabel);
   if (!cats.length) return;
 
-  document.getElementById('groupModalIcon').textContent = GROUP_ICON[groupLabel] || '📋';
+  document.getElementById('groupModalIcon').innerHTML = tablerIcon(GROUP_ICON[groupLabel] || '📋');
   document.getElementById('groupModalTitle').textContent = groupLabel;
   document.getElementById('groupModalSub').textContent = `${cats.length} ${cats.length > 1 ? 'categories' : 'category'}`;
 
@@ -1529,15 +1546,15 @@ window.openGroupModal = function(groupLabel) {
     const freqTxt = FREQ_LABEL[cat.frequency] || cat.frequency || '—';
     const adminBtns = isAdmin ? `
       <div class="sr-group-modal-actions">
-        <button class="sr-cat-action-edit-btn" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">✏️ Edit</button>
-        <button class="sr-cat-action-delete-btn" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">🗑️</button>
+        <button class="sr-cat-action-edit-btn" onclick="event.stopPropagation(); openCategoryEdit('${cat.id}')">${tablerIcon('✏️')} Edit</button>
+        <button class="sr-cat-action-delete-btn" onclick="event.stopPropagation(); deleteCategoryConfirm('${cat.id}')">${tablerIcon('🗑')}</button>
       </div>
     ` : '';
     const cleanName = cat.name.replace(/^.*–\s*/, '');
     return `
       <div class="sr-group-modal-item">
         <div class="sr-group-modal-item-main">
-          <span class="sr-group-modal-item-icon">${escHtml(cat.icon || '📋')}</span>
+          <span class="sr-group-modal-item-icon">${tablerIcon(cat.icon || '📋')}</span>
           <div style="min-width:0;flex:1">
             <div class="sr-group-modal-item-name">${escHtml(cleanName)}</div>
             <div class="sr-group-modal-item-meta">${escHtml(freqTxt)} · Last: ${escHtml(lastTxt)}</div>
@@ -1629,7 +1646,7 @@ if (categoryModal && catFrequencyEl && catCustomBox && catNameEl) {
   function openCategoryModal(editId = null) {
     editingCategoryId = editId;
     const editing = editId ? categories.find(c => c.id === editId) : null;
-    document.getElementById('catModalTitle').textContent = editing ? '✏️ Edit Category' : '＋ New Category';
+    document.getElementById('catModalTitle').innerHTML = editing ? (tablerIcon('✏️') + ' Edit Category') : '＋ New Category';
     const sb = document.getElementById('catSaveBtn');
     if (sb) sb.textContent = editing ? 'Save Changes' : 'Save Category';
 
@@ -1825,9 +1842,9 @@ window.openCellNoteModal = function(catId, year, month) {
   editingCellNote = { catId, year, month, existing };
 
   // Modal title + subtitle
-  document.getElementById('cellModalTitle').textContent = existing ? '📝 Edit Cell Note' : '📝 Add Cell Note';
-  document.getElementById('cellModalSubtitle').textContent =
-    `${cat.icon || '📋'} ${cat.name} — ${MONTH_LABELS[month - 1]} ${year}`;
+  document.getElementById('cellModalTitle').innerHTML = existing ? (tablerIcon('📝') + ' Edit Cell Note') : (tablerIcon('📝') + ' Add Cell Note');
+  document.getElementById('cellModalSubtitle').innerHTML =
+    `${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name)} — ${MONTH_LABELS[month - 1]} ${year}`;
 
   // Reset / populate form
   cellStatusEl.value = existing ? existing.status : '';
@@ -1980,7 +1997,7 @@ function renderFileList() {
   if (!pendingFiles.length) { upFileListEl.innerHTML = ''; return; }
   upFileListEl.innerHTML = pendingFiles.map((f, i) => `
     <div class="sr-file-pill">
-      <span style="flex-shrink:0">${f.type.startsWith('image/') ? '🖼️' : (f.type === 'application/pdf' ? '📄' : '📎')}</span>
+      <span style="flex-shrink:0">${f.type.startsWith('image/') ? tablerIcon('🖼️') : (f.type === 'application/pdf' ? tablerIcon('📄') : tablerIcon('📎'))}</span>
       <span class="sr-file-pill-name">${escHtml(f.name)}</span>
       <span class="sr-file-pill-size">${fmtSize(f.size)}</span>
       <button class="sr-file-pill-rm" data-idx="${i}" type="button" title="Remove">×</button>
