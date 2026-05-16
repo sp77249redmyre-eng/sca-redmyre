@@ -215,7 +215,7 @@
         </div>
       </div>
       <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-top:none;border-radius:0 0 16px 16px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px">
-        <span style="font-size:16px;flex-shrink:0;line-height:1.4"><i class="ti ti-alert-circle" style="color:#991B1B"></i></span>
+        <span style="font-size:16px;flex-shrink:0;line-height:1.4">🚨</span>
         <span style="font-size:13px;color:#991B1B;font-weight:600;line-height:1.4">Unauthorised vehicles will receive a warning sticker on the driver's windscreen.</span>
       </div>
     </div>
@@ -246,12 +246,12 @@
       <div class="form-field">
         <label class="form-label">Violation Type</label>
         <div class="violation-grid">
-          <button class="vio-btn" data-vio="occupied"><span class="vio-icon"><i class="ti ti-car"></i></span>Someone else's bay</button>
-          <button class="vio-btn" data-vio="disabled"><span class="vio-icon"><i class="ti ti-wheelchair"></i></span>Disabled bay</button>
-          <button class="vio-btn" data-vio="loading"><span class="vio-icon"><i class="ti ti-circle-filled" style="color:#ef4444"></i></span>Loading bay</button>
-          <button class="vio-btn" data-vio="blocking"><span class="vio-icon"><i class="ti ti-barrier-block"></i></span>Blocking access</button>
-          <button class="vio-btn" data-vio="contractor"><span class="vio-icon"><i class="ti ti-hard-hat"></i></span>Contractor bay</button>
-          <button class="vio-btn" data-vio="other"><span class="vio-icon"><i class="ti ti-alert-triangle"></i></span>Other</button>
+          <button class="vio-btn" data-vio="occupied"><span class="vio-icon">🚫</span>Someone else's bay</button>
+          <button class="vio-btn" data-vio="disabled"><span class="vio-icon">♿</span>Disabled bay</button>
+          <button class="vio-btn" data-vio="loading"><span class="vio-icon">🔴</span>Loading bay</button>
+          <button class="vio-btn" data-vio="blocking"><span class="vio-icon">🚧</span>Blocking access</button>
+          <button class="vio-btn" data-vio="contractor"><span class="vio-icon">🏗️</span>Contractor bay</button>
+          <button class="vio-btn" data-vio="other"><span class="vio-icon">⚠️</span>Other</button>
         </div>
       </div>
       <div class="form-field">
@@ -275,7 +275,7 @@
         <div id="pkPhotoPreviewGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
         <div id="pkPhotoCount" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
       </div>
-      <button class="btn-report" id="submitReportBtn"><i class="ti ti-alert-circle"></i> Report Now</button>
+      <button class="btn-report" id="submitReportBtn">🚨 Report Now</button>
     </div>
 
     <div>
@@ -361,7 +361,7 @@ function pkUpdatePreview() {
     if (isPdf) {
       wrap.innerHTML = `
         <div style="width:100%;height:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
-          <span style="font-size:24px"><i class="ti ti-file-text" style="color:#2563eb"></i></span>
+          <span style="font-size:24px">📄</span>
           <span style="font-size:9px;color:var(--muted);text-align:center;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%">${file.name.length>10?file.name.slice(0,8)+'..':file.name}</span>
         </div>
         <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
@@ -436,7 +436,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     try {
       const todayStart = new Date(); todayStart.setHours(0,0,0,0);
       const { count } = await supabase.from('parking_reports').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', todayStart.toISOString());
-      if (count >= 5) { showToast('Daily report limit reached (max 5 per day)', true); btn.disabled=false; btn.innerHTML='<i class="ti ti-alert-circle"></i> Report Now'; return; }
+      if (count >= 5) { showToast('Daily report limit reached (max 5 per day)', true); btn.disabled=false; btn.textContent='🚨 Report Now'; return; }
     } catch(e) {}
   }
 
@@ -449,7 +449,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
       const safePlate = plate.replace(/[^A-Z0-9]/g, '') || 'unknown';
       const fileName = `parking_${Date.now()}_${safePlate}_${Math.random().toString(36).slice(2,6)}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('parking-images').upload(fileName, file, { upsert: true });
-      if (uploadError) { showToast('Image upload failed', true); btn.disabled=false; btn.innerHTML='<i class="ti ti-alert-circle"></i> Report Now'; return; }
+      if (uploadError) { showToast('Image upload failed', true); btn.disabled=false; btn.textContent='🚨 Report Now'; return; }
       const { data: urlData } = supabase.storage.from('parking-images').getPublicUrl(fileName);
       image_urls.push(urlData.publicUrl);
     }
@@ -481,7 +481,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     document.getElementById('pkPhotoCount').style.display = 'none';
     document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
     selectedVio=null;
-    btn.disabled=false; btn.innerHTML='<i class="ti ti-alert-circle"></i> Report Now';
+    btn.disabled=false; btn.textContent='🚨 Report Now';
     pkUpdateButtons();
     
     await logActivity('PARKING_REPORTED', prInserted?.id || null);
@@ -545,7 +545,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
       generateWarningPDF(plate, selectedVio, bay||area);
     }
     await loadReports();
-  } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.innerHTML='<i class="ti ti-alert-circle"></i> Report Now'; }
+  } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.textContent='🚨 Report Now'; }
 });
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -818,15 +818,15 @@ async function loadReports() {
     const suite = vehicle?.unit || '';
     const isRepeat = offenderMap[normPlate] >= 3;
 
-    const tagInternal = isInternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600"><i class="ti ti-building"></i> Suite ${suite}</span>` : '';
-    const tagExternal = isExternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600"><i class="ti ti-alert-triangle"></i> External</span>` : '';
+    const tagInternal = isInternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
+    const tagExternal = isExternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
     const tagRepeat = isRepeat ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600">🔴 Repeat</span>` : '';
 
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
     const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
     const pdfFiles = allImages.filter(url => url.toLowerCase().endsWith('.pdf'));
     const imagesHtml = imageFiles.length ? `<div class="pk-images">${imageFiles.map(url => `<img src="${url}" class="pk-image" onclick="showImage('${url}')">`).join('')}</div>` : '';
-    const pdfsHtml = pdfFiles.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => { const fname = decodeURIComponent(url.split('/').pop()); return `<div onclick="showImage('${url}')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-400)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px"><i class="ti ti-file-text" style="color:#2563eb"></i></span><span style="font-size:12px;font-weight:600;color:var(--blue-600)">${fname.length>25?fname.slice(0,22)+'...':fname}</span></div>`; }).join('')}</div>` : '';
+    const pdfsHtml = pdfFiles.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => { const fname = decodeURIComponent(url.split('/').pop()); return `<div onclick="showImage('${url}')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-400)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📄</span><span style="font-size:12px;font-weight:600;color:var(--blue-600)">${fname.length>25?fname.slice(0,22)+'...':fname}</span></div>`; }).join('')}</div>` : '';
 
     return `
       <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}">
