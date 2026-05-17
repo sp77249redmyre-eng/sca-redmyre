@@ -225,27 +225,19 @@
   <div class="content">
 
     <!-- Page Hero -->
-    <div style="background:linear-gradient(135deg,var(--blue-800,#1e3a8a) 0%,var(--blue-600,#2563eb) 100%);border-radius:16px 16px 0 0;padding:24px 28px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(30,58,138,0.18)">
-      <div style="position:absolute;top:-40%;right:-10%;width:280px;height:280px;background:radial-gradient(circle,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0) 70%);border-radius:50%;pointer-events:none"></div>
-      <div style="position:relative;z-index:1">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;opacity:0.85;margin-bottom:8px">Project Execution</div>
-        <div style="font-size:24px;font-weight:700;letter-spacing:-0.4px;margin-bottom:6px">Ongoing Works <span id="worksCount" style="background:rgba(255,255,255,0.25);padding:3px 12px;border-radius:100px;font-size:14px;font-weight:600;margin-left:8px;vertical-align:middle"></span></div>
-        <div style="font-size:13px;opacity:0.88;letter-spacing:-0.1px;line-height:1.5">Track active building works, repairs, and contractor projects.</div>
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
       </div>
-    </div>
-    <div style="background:#F1F5F9;border:1px solid #CBD5E1;border-top:none;border-radius:0 0 16px 16px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px">
-      <span style="font-size:16px;flex-shrink:0;line-height:1.4">📌</span>
-      <span style="font-size:13px;color:#334155;font-weight:600;line-height:1.4">Approved quotes appear here. Each work order tracks scheduling, progress, and completion.</span>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-      <button class="btn-emergency" id="addWorkBtn" style="display:none" onclick="openAddEmergencyWork()">
-        <span class="btn-em-icon">🚨</span>
-        <span class="btn-em-label">
-          <span class="btn-em-main">Emergency Work</span>
-          <span class="btn-em-sub">No committee approval</span>
-        </span>
-      </button>
+      <div class="page-header-body">
+        <div class="page-header-title-row">
+          <span class="page-header-title">Active Works</span>
+          <span id="worksCount" style="font-size:12px;font-weight:700;background:#dbeafe;color:#1e40af;padding:2px 9px;border-radius:99px;display:none"></span>
+          <button id="addWorkBtn" style="display:none;background:#dc2626;color:#fff;border:none;padding:6px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap" onclick="openAddEmergencyWork()">🚨 Emergency Work</button>
+        </div>
+        <div class="page-header-sub">Track active building works, repairs, and contractor projects.</div>
+      </div>
     </div>
     <div id="worksList">
       <div style="padding:24px;text-align:center;color:#94a3b8">Loading…</div>
@@ -466,7 +458,7 @@ async function loadWorks() {
 
   // 카운트 업데이트
   const cnt = document.getElementById('worksCount');
-  if (cnt) cnt.textContent = allWorks.length || '';
+  if (cnt) { cnt.textContent = allWorks.length || ''; cnt.style.display = allWorks.length ? 'inline-flex' : 'none'; }
 
   renderWorks();
 }
