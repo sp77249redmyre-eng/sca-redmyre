@@ -1032,6 +1032,29 @@ function renderPendingQuotes(quotes) {
         adminRow.appendChild(btn);
       });
       votingSection.appendChild(adminRow);
+
+      const resendBtn = document.createElement('button');
+      resendBtn.className = 'btn-mgmt btn-mgmt-blue';
+      resendBtn.style.cssText = 'margin-top:8px';
+      resendBtn.innerHTML = '📧 Resend Voting Email';
+      resendBtn.onclick = async () => {
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Sending...';
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+            body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', quotes: group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
+          });
+          showToast('Voting email resent successfully');
+        } catch(e) {
+          showToast('Failed to resend email', true);
+        }
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = '📧 Resend Voting Email';
+      };
+      votingSection.appendChild(resendBtn);
     }
 
     // Voting status – full committee grid (RENDERED FIRST, but moved to top via DOM)
