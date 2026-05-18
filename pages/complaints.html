@@ -317,10 +317,7 @@
       <div style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap" id="detailBody">—</div>
     </div>
 
-    <div id="detailPhotosWrap" style="padding:12px 24px;border-bottom:1px solid var(--border-light);display:none;flex-shrink:0">
-      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Attachments</div>
-      <div class="photo-gallery" id="detailPhotoGallery"></div>
-    </div>
+
 
     <div id="messageThread" style="padding:16px 24px;display:flex;flex-direction:column;gap:12px;flex:1"></div>
 
@@ -698,18 +695,25 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
         is_public: document.getElementById('complaintIsPublic').checked,
       }).select().single();
       if (error) throw error;
+      // 첫 번째 메시지 insert (본문 + 사진)
+      const uploadedPaths = [];
       if (pendingPhotos.length > 0) {
-        const failedFiles = [];
         for (const file of pendingPhotos) {
           const ext = file.name.split('.').pop();
           const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
-          const { error: upErr } = await supabase.storage.from('complaint-images').upload(`${inserted.id}/${fileName}`, file, { contentType: file.type });
-          if (upErr) failedFiles.push(file.name);
-        }
-        if (failedFiles.length > 0) {
-          showToast(`Upload failed: ${failedFiles.join(', ')}`, true);
+          const path = `${inserted.id}/${fileName}`;
+          const { error: upErr } = await supabase.storage.from('complaint-images').upload(path, file, { contentType: file.type });
+          if (!upErr) uploadedPaths.push(path);
         }
       }
+      await supabase.from('complaint_messages').insert({
+        complaint_id: inserted.id,
+        user_id: user.id,
+        sender_name: name,
+        sender_role: role,
+        message: body,
+        attachments: uploadedPaths
+      });
       closeModal('complaintModal');
       pendingPhotos = [];
       await loadComplaints();
@@ -891,24 +895,6 @@ window.openDetail = async (id) => {
   document.getElementById('detailSubmitter').textContent = `${c.submitter_name||'Unknown'} · ${catLabel} · ${date}`;
   document.getElementById('detailBody').textContent = c.body || '—';
   document.getElementById('detailProgressWrap').innerHTML = buildProgressBar(c.status);
-  const photosWrap = document.getElementById('detailPhotosWrap');
-  const gallery    = document.getElementById('detailPhotoGallery');
-  if (c.has_photos) {
-    const { data: files } = await supabase.storage.from('complaint-images').list(id);
-    if (files && files.length > 0) {
-      photosWrap.style.display = 'block';
-      gallery.innerHTML = files.map(f => {
-        const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
-        const url = urlData.publicUrl;
-        const isPdf = f.name.toLowerCase().endsWith('.pdf');
-        if (isPdf) {
-          return `<div class="photo-gallery-item" onclick="openPdfLightbox('${url}')" style="background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center"><div style="font-size:32px;margin-bottom:4px">📄</div><div style="font-size:10px;color:#991b1b;word-break:break-all;line-height:1.2">PDF</div></div>`;
-        }
-        return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
-      }).join('');
-    } else { photosWrap.style.display = 'none'; }
-  } else { photosWrap.style.display = 'none'; }
-
   await loadMessageThread(id);
 
   const replyWrap = document.getElementById('replyWrap');
@@ -936,6 +922,9 @@ window.openDetail = async (id) => {
     statusSel.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = c.status !== 'resolved' ? 'inline-flex' : 'none';
+    document.getElementById('replyAttachWrap').style.display = 'block';
+    pendingReplyPhotos = [];
+    document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
   } else {
     replyWrap.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
