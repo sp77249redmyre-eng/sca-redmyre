@@ -327,6 +327,16 @@
     <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
       <textarea class="modal-textarea" id="adminResponse" placeholder="Type your reply…" style="min-height:180px;border-radius:10px;border-width:1.5px"></textarea>
+      <div id="replyAttachWrap" style="display:none;margin-top:10px">
+        <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments (optional)</div>
+        <div style="display:flex;gap:10px">
+          <button type="button" id="replyCameraBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:4px" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📷</span><span>Camera</span></button>
+          <button type="button" id="replyFileBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:4px" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📁</span><span>Photo / PDF</span></button>
+        </div>
+        <input type="file" id="replyPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
+        <input type="file" id="replyPhotoInputFile" accept="image/*,application/pdf" multiple style="display:none">
+        <div class="photo-preview-grid" id="replyPhotoPreviewGrid"></div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <select class="modal-select" id="adminStatusSelect" style="flex:1;min-width:140px;display:none">
           <option value="open">🔴 Open</option>
@@ -431,6 +441,7 @@ let myUnits = [];
 let selectedUnit = null;
 let currentComplaintId = null;
 let pendingPhotos = [];
+let pendingReplyPhotos = [];
 
 async function loadComplaints() {
   let query = supabase.from('complaints').select('*').order('created_at',{ascending:false});
@@ -818,6 +829,9 @@ window.openDetail = async (id) => {
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
     document.getElementById('editComplaintBtn').style.display = 'inline-flex';
+    document.getElementById('replyAttachWrap').style.display = 'block';
+    pendingReplyPhotos = [];
+    document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
   } else if (canSubmit.includes(role) && c.user_id === user.id) {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '';
@@ -850,6 +864,17 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
       sender_role: role,
       message: response
     });
+    if (pendingReplyPhotos.length > 0) {
+      const uploads = pendingReplyPhotos.map(f => {
+        const ext = f.name.split('.').pop();
+        const path = `${currentComplaintId}/reply_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        return supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
+      });
+      await Promise.all(uploads);
+      await supabase.from('complaints').update({ has_photos: true }).eq('id', currentComplaintId);
+      pendingReplyPhotos = [];
+      document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
+    }
     try {
       const c = allComplaints.find(x => x.id === currentComplaintId);
       const { data: { session: pushSession } } = await supabase.auth.getSession();
@@ -873,6 +898,37 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
     showToast('Reply sent ✓');
   } catch(e) { showToast('Failed to save', true); }
 });
+
+// Reply attach buttons
+document.getElementById('replyCameraBtn').addEventListener('click', () => document.getElementById('replyPhotoInputCamera').click());
+document.getElementById('replyFileBtn').addEventListener('click', () => document.getElementById('replyPhotoInputFile').click());
+
+function handleReplyFiles(files) {
+  const grid = document.getElementById('replyPhotoPreviewGrid');
+  Array.from(files).forEach(f => {
+    pendingReplyPhotos.push(f);
+    const idx = pendingReplyPhotos.length - 1;
+    const item = document.createElement('div');
+    item.className = 'photo-preview-item';
+    if (f.type === 'application/pdf') {
+      const pdfUrl = URL.createObjectURL(f);
+      item.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;border-radius:7px;padding:4px;cursor:pointer" onclick="openPdfLightbox('${pdfUrl}')"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;word-break:break-all;text-align:center">${f.name}</div></div><div class="rm-photo" onclick="event.stopPropagation();removeReplyPhoto(${idx},this)">✕</div>`;
+    } else {
+      const url = URL.createObjectURL(f);
+      item.innerHTML = `<img src="${url}" onclick="openLightbox('${url}')" style="cursor:pointer"><div class="rm-photo" onclick="event.stopPropagation();removeReplyPhoto(${idx},this)">✕</div>`;
+    }
+    grid.appendChild(item);
+  });
+}
+
+window.removeReplyPhoto = (idx, el) => {
+  pendingReplyPhotos[idx] = null;
+  el.closest('.photo-preview-item').remove();
+  pendingReplyPhotos = pendingReplyPhotos.filter(x => x !== null);
+};
+
+document.getElementById('replyPhotoInputCamera').addEventListener('change', e => { handleReplyFiles(e.target.files); e.target.value=''; });
+document.getElementById('replyPhotoInputFile').addEventListener('change', e => { handleReplyFiles(e.target.files); e.target.value=''; });
 
 document.getElementById('deleteComplaintBtn').addEventListener('click', async () => {
   if (!confirm('Delete this complaint?')) return;
