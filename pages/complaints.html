@@ -372,6 +372,17 @@
     <div class="modal-field">
       <textarea class="modal-textarea" id="editMsgText" style="min-height:180px;font-size:14px;line-height:1.7"></textarea>
     </div>
+    <div class="modal-field">
+      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments</div>
+      <div id="editMsgExistingPhotos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:10px">
+        <button type="button" id="editMsgCameraBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:4px" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📷</span><span>Camera</span></button>
+        <button type="button" id="editMsgFileBtn" style="flex:1;padding:10px;border:2px dashed var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:4px" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📁</span><span>Photo / PDF</span></button>
+      </div>
+      <input type="file" id="editMsgPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
+      <input type="file" id="editMsgPhotoInputFile" accept="image/*,application/pdf" multiple style="display:none">
+      <div class="photo-preview-grid" id="editMsgNewPhotoGrid"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('editMsgModal')">Cancel</button>
       <button class="btn-primary" id="saveEditMsgBtn">Save Changes</button>
@@ -759,23 +770,97 @@ async function loadMessageThread(complaintId) {
   }).join('');
 }
 
+let editMsgNewPhotos = [];
+let editMsgRemovedPaths = [];
+
 window.editMessage = async function(msgId) {
   const textEl = document.getElementById('msgText-' + msgId);
   if (!textEl) return;
   document.getElementById('editMsgId').value = msgId;
   document.getElementById('editMsgText').value = textEl.textContent;
+  editMsgNewPhotos = [];
+  editMsgRemovedPaths = [];
+  document.getElementById('editMsgNewPhotoGrid').innerHTML = '';
+  // 기존 사진 로드
+  const { data: msg } = await supabase.from('complaint_messages').select('attachments').eq('id', msgId).single();
+  const existing = document.getElementById('editMsgExistingPhotos');
+  existing.innerHTML = '';
+  if (msg && msg.attachments && msg.attachments.length > 0) {
+    msg.attachments.forEach(path => {
+      const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
+      const url = urlData.publicUrl;
+      const isPdf = path.toLowerCase().endsWith('.pdf');
+      const item = document.createElement('div');
+      item.className = 'photo-preview-item';
+      item.dataset.path = path;
+      if (isPdf) {
+        item.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;border-radius:7px;padding:4px;cursor:pointer" onclick="openPdfLightbox('${url}')"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;text-align:center">PDF</div></div><div class="rm-photo" onclick="event.stopPropagation();removeEditExistingPhoto(this,'${path}')">✕</div>`;
+      } else {
+        item.innerHTML = `<img src="${url}" onclick="openLightbox('${url}')" style="cursor:pointer"><div class="rm-photo" onclick="event.stopPropagation();removeEditExistingPhoto(this,'${path}')">✕</div>`;
+      }
+      existing.appendChild(item);
+    });
+  }
   document.getElementById('editMsgModal').classList.add('open');
   setTimeout(() => document.getElementById('editMsgText').focus(), 100);
 };
 
+window.removeEditExistingPhoto = (el, path) => {
+  editMsgRemovedPaths.push(path);
+  el.closest('.photo-preview-item').remove();
+};
+
+function handleEditMsgFiles(files) {
+  const grid = document.getElementById('editMsgNewPhotoGrid');
+  Array.from(files).forEach(f => {
+    editMsgNewPhotos.push(f);
+    const idx = editMsgNewPhotos.length - 1;
+    const item = document.createElement('div');
+    item.className = 'photo-preview-item';
+    if (f.type === 'application/pdf') {
+      const pdfUrl = URL.createObjectURL(f);
+      item.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fef2f2;border-radius:7px;padding:4px;cursor:pointer" onclick="openPdfLightbox('${pdfUrl}')"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;word-break:break-all;text-align:center">${f.name}</div></div><div class="rm-photo" onclick="event.stopPropagation();removeEditNewPhoto(${idx},this)">✕</div>`;
+    } else {
+      const url = URL.createObjectURL(f);
+      item.innerHTML = `<img src="${url}" onclick="openLightbox('${url}')" style="cursor:pointer"><div class="rm-photo" onclick="event.stopPropagation();removeEditNewPhoto(${idx},this)">✕</div>`;
+    }
+    grid.appendChild(item);
+  });
+}
+
+window.removeEditNewPhoto = (idx, el) => {
+  editMsgNewPhotos[idx] = null;
+  el.closest('.photo-preview-item').remove();
+  editMsgNewPhotos = editMsgNewPhotos.filter(x => x !== null);
+};
+
+document.getElementById('editMsgCameraBtn').addEventListener('click', () => document.getElementById('editMsgPhotoInputCamera').click());
+document.getElementById('editMsgFileBtn').addEventListener('click', () => document.getElementById('editMsgPhotoInputFile').click());
+document.getElementById('editMsgPhotoInputCamera').addEventListener('change', e => { handleEditMsgFiles(e.target.files); e.target.value=''; });
+document.getElementById('editMsgPhotoInputFile').addEventListener('change', e => { handleEditMsgFiles(e.target.files); e.target.value=''; });
+
 document.getElementById('saveEditMsgBtn').addEventListener('click', async () => {
   const msgId = document.getElementById('editMsgId').value;
   const newText = document.getElementById('editMsgText').value.trim();
-  const textEl = document.getElementById('msgText-' + msgId);
-  if (!newText || (textEl && newText === textEl.textContent)) { closeModal('editMsgModal'); return; }
+  if (!newText) { closeModal('editMsgModal'); return; }
   try {
-    const { error } = await supabase.from('complaint_messages').update({ message: newText }).eq('id', msgId).eq('user_id', user.id);
-    if (error) throw error;
+    // 기존 사진 가져오기
+    const { data: msg } = await supabase.from('complaint_messages').select('attachments').eq('id', msgId).single();
+    let attachments = (msg && msg.attachments) ? [...msg.attachments] : [];
+    // 삭제된 사진 제거
+    if (editMsgRemovedPaths.length > 0) {
+      await supabase.storage.from('complaint-images').remove(editMsgRemovedPaths);
+      attachments = attachments.filter(p => !editMsgRemovedPaths.includes(p));
+    }
+    // 새 사진 업로드
+    for (const f of editMsgNewPhotos.filter(x => x)) {
+      const ext = f.name.split('.').pop();
+      const path = `${currentComplaintId}/reply_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      await supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
+      attachments.push(path);
+    }
+    await supabase.from('complaint_messages').update({ message: newText, attachments }).eq('id', msgId).eq('user_id', user.id);
+    if (attachments.length > 0) await supabase.from('complaints').update({ has_photos: true }).eq('id', currentComplaintId);
     closeModal('editMsgModal');
     await loadMessageThread(currentComplaintId);
     showToast('Message updated ✓');
