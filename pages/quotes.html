@@ -1037,28 +1037,75 @@ function renderPendingQuotes(quotes) {
       });
       votingSection.appendChild(adminRow);
 
-      const resendBtn = document.createElement('button');
-      resendBtn.className = 'btn-mgmt btn-mgmt-blue';
-      resendBtn.style.cssText = 'margin-top:8px';
-      resendBtn.innerHTML = '📧 Resend Voting Email';
-      resendBtn.onclick = async () => {
-        resendBtn.disabled = true;
-        resendBtn.textContent = 'Sending...';
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-            body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', quotes: group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
-          });
-          showToast('Voting email resent successfully');
-        } catch(e) {
-          showToast('Failed to resend email', true);
-        }
-        resendBtn.disabled = false;
-        resendBtn.innerHTML = '📧 Resend Voting Email';
-      };
-      votingSection.appendChild(resendBtn);
+      const pjId = group[0]?.project_id || projectKey;
+      const pjVotes = allVotes.filter(v => v.project_id === pjId);
+      const votedSet = new Set(pjVotes.map(v => v.user_email));
+      const pendingMs = committeeMembers.filter(m => m.email && !votedSet.has(m.email));
+
+      if (pendingMs.length > 0) {
+        const remindRow = document.createElement('div');
+        remindRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center';
+
+        const buildPayload = (recipients) => ({
+          project: group[0].project || group[0].project_title || 'Project',
+          recipients,
+          quotes: group.filter(q => q.vendor).map(q => ({
+            vendor: q.vendor, amount: q.amount || 0,
+            approvals: pjVotes.filter(v => v.vote === 'approve' && v.selected_quote_id === q.id).length,
+            holds: pjVotes.filter(v => v.vote === 'hold').length,
+            declines: pjVotes.filter(v => v.vote === 'decline').length
+          })),
+          votes: committeeMembers.map(cm => {
+            const vRow = pjVotes.find(v => v.user_email === cm.email);
+            const selQ = vRow?.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+            return { name: cm.name, committeeRole: cm.committeeRole || '', vote: vRow?.vote || '', vendor: selQ?.vendor || '' };
+          }),
+          totalMembers: committeeMembers.length || 8
+        });
+
+        const remindAllBtn = document.createElement('button');
+        remindAllBtn.className = 'btn-mgmt btn-mgmt-blue';
+        remindAllBtn.innerHTML = `🔔 Remind Non-Voters (${pendingMs.length})`;
+        remindAllBtn.onclick = async () => {
+          remindAllBtn.disabled = true; remindAllBtn.textContent = 'Sending...';
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+              body: JSON.stringify(buildPayload(pendingMs.map(m => m.email)))
+            });
+            showToast(`Reminder sent to ${pendingMs.length} members`);
+          } catch(e) { showToast('Failed to send reminder', true); }
+          remindAllBtn.disabled = false; remindAllBtn.innerHTML = `🔔 Remind Non-Voters (${pendingMs.length})`;
+        };
+        remindRow.appendChild(remindAllBtn);
+
+        pendingMs.forEach(m => {
+          const pb = document.createElement('button');
+          pb.className = 'btn-mgmt';
+          pb.style.cssText = 'background:#f0fdf4;color:#166534;border-color:#86efac;font-size:12px;';
+          pb.innerHTML = `✉ ${m.name.split(' ')[0]}`;
+          pb.onclick = async () => {
+            pb.disabled = true; pb.textContent = '✔ Sent';
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify(buildPayload([m.email]))
+              });
+              showToast(`Reminder sent to ${m.name.split(' ')[0]}`);
+            } catch(e) {
+              showToast('Failed to send reminder', true);
+              pb.disabled = false; pb.innerHTML = `✉ ${m.name.split(' ')[0]}`;
+            }
+          };
+          remindRow.appendChild(pb);
+        });
+
+        votingSection.appendChild(remindRow);
+      }
     }
 
     // Voting status – full committee grid (RENDERED FIRST, but moved to top via DOM)
