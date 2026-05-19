@@ -24,11 +24,19 @@
 .type-btn:hover{border-color:var(--blue-400);background:var(--blue-50)}
 .type-btn.hot{border-color:#ef4444;background:#fef2f2}
 .type-btn.cold{border-color:#3b82f6;background:#eff6ff}
-.type-icon{font-size:36px;margin-bottom:8px;display:inline-block}
-@keyframes sweat{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-3px)}}
-@keyframes shiver{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
-#btnHot .type-icon{animation:sweat 0.8s ease-in-out infinite}
-#btnCold .type-icon{animation:shiver 0.5s ease-in-out infinite}
+.type-icon{font-size:36px;margin-bottom:8px;display:flex;justify-content:center;align-items:center}
+@keyframes hvac-sweat1{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(22px)}}
+@keyframes hvac-sweat2{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(18px)}}
+@keyframes hvac-hotbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes hvac-shiver{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+@keyframes hvac-blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}
+.hvac-hot-face{animation:hvac-hotbob 1s ease-in-out infinite}
+.hvac-cold-face{animation:hvac-shiver 0.5s ease-in-out infinite}
+.hvac-sweat1{animation:hvac-sweat1 1.4s ease-in infinite}
+.hvac-sweat2{animation:hvac-sweat2 1.4s ease-in infinite 0.5s}
+.hvac-sweat3{animation:hvac-sweat1 1.4s ease-in infinite 0.9s}
+.hvac-hot-eye{transform-origin:center;animation:hvac-blink 3s ease-in-out infinite}
+.hvac-cold-eye{transform-origin:center;animation:hvac-blink 2.5s ease-in-out infinite}
 .type-label{font-size:14px;font-weight:600}
 .type-sub{font-size:11px;color:var(--muted);margin-top:3px}
 .form-field{margin-bottom:14px}
@@ -173,8 +181,8 @@
 
     <div class="submit-form">
       <div class="type-btns">
-        <button class="type-btn" id="btnHot" data-type="hot"><div class="type-icon">🥵</div><div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered by 0.5°C</div></button>
-        <button class="type-btn" id="btnCold" data-type="cold"><div class="type-icon">🥶</div><div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised by 0.5°C</div></button>
+        <button class="type-btn" id="btnHot" data-type="hot"><div class="type-icon"><svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g class="hvac-hot-face"><circle cx="32" cy="32" r="28" fill="#FF6B35"/><ellipse cx="16" cy="38" rx="7" ry="4" fill="#ff4444" opacity="0.5"/><ellipse cx="48" cy="38" rx="7" ry="4" fill="#ff4444" opacity="0.5"/><g class="hvac-hot-eye"><ellipse cx="22" cy="26" rx="4" ry="5" fill="#222"/><circle cx="23.5" cy="24.5" r="1.5" fill="#fff"/></g><g class="hvac-hot-eye" style="animation-delay:0.15s"><ellipse cx="42" cy="26" rx="4" ry="5" fill="#222"/><circle cx="43.5" cy="24.5" r="1.5" fill="#fff"/></g><path d="M20 42 Q32 52 44 42" fill="#a0200a"/><ellipse cx="32" cy="47" rx="7" ry="5" fill="#ff8888"/><line x1="32" y1="44" x2="32" y2="50" stroke="#cc5555" stroke-width="1"/></g><g class="hvac-sweat1"><ellipse cx="10" cy="18" rx="2.5" ry="3.5" fill="#60b4ff" opacity="0.9"/><path d="M10 15 Q11.5 12 10 10 Q8.5 12 10 15" fill="#60b4ff"/></g><g class="hvac-sweat2"><ellipse cx="52" cy="14" rx="2" ry="3" fill="#60b4ff" opacity="0.9"/><path d="M52 11 Q53.2 9 52 7 Q50.8 9 52 11" fill="#60b4ff"/></g><g class="hvac-sweat3"><ellipse cx="30" cy="6" rx="2" ry="3" fill="#60b4ff" opacity="0.9"/><path d="M30 3 Q31.2 1 30 -1 Q28.8 1 30 3" fill="#60b4ff"/></g></svg></div><div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered by 0.5°C</div></button>
+        <button class="type-btn" id="btnCold" data-type="cold"><div class="type-icon"><svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g class="hvac-cold-face"><circle cx="32" cy="32" r="28" fill="#7BB8E8"/><ellipse cx="16" cy="38" rx="7" ry="4" fill="#aad4f5" opacity="0.6"/><ellipse cx="48" cy="38" rx="7" ry="4" fill="#aad4f5" opacity="0.6"/><g class="hvac-cold-eye"><ellipse cx="22" cy="27" rx="4" ry="4.5" fill="#222"/><circle cx="23.5" cy="25.5" r="1.5" fill="#fff"/></g><g class="hvac-cold-eye" style="animation-delay:0.2s"><ellipse cx="42" cy="27" rx="4" ry="4.5" fill="#222"/><circle cx="43.5" cy="25.5" r="1.5" fill="#fff"/></g><path d="M17 21 Q22 18 27 20" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/><path d="M37 20 Q42 18 47 21" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/><rect x="22" y="41" width="20" height="10" rx="5" fill="#fff" stroke="#5599cc" stroke-width="1.5"/><line x1="29" y1="41" x2="29" y2="51" stroke="#aad4f5" stroke-width="1.5"/><line x1="35" y1="41" x2="35" y2="51" stroke="#aad4f5" stroke-width="1.5"/><path d="M6 20 L14 26" stroke="#aad4f5" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M8 28 L14 30" stroke="#aad4f5" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><path d="M58 20 L50 26" stroke="#aad4f5" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M56 28 L50 30" stroke="#aad4f5" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/></g></svg></div><div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised by 0.5°C</div></button>
       </div>
       
       <!-- Unit Auto Selection (Single Unit) -->
