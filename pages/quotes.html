@@ -1981,7 +1981,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds } })
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: (() => { const pv = allVotes.filter(v => v.project_id === group[0]?.project_id); const t = {}; pv.forEach(v => { if(v.vote === "approve" && v.selected_quote_id){ const q = group.find(q => q.id === v.selected_quote_id); if(q?.vendor) t[q.vendor]=(t[q.vendor]||0)+1; } }); return Object.entries(t).sort((a,b)=>b[1]-a[1])[0]?.[0]||""; })() })
       });
     } catch(pushErr) {}
     await loadData();
