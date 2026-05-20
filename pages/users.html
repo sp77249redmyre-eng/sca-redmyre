@@ -707,11 +707,14 @@ function sortProfilesForDisplay(profiles) {
     }
   }
   
-  // Remaining users: alphabetical by name
+  // Remaining users: sorted by unit (floor-then-letter, e.g. 1A < 1B < 2A)
   rest.sort((a, b) => {
-    const nameA = (a.full_name || a.email?.split('@')[0] || '').toLowerCase();
-    const nameB = (b.full_name || b.email?.split('@')[0] || '').toLowerCase();
-    return nameA.localeCompare(nameB);
+    const unitA = (a.unit || 'ZZZ').toUpperCase();
+    const unitB = (b.unit || 'ZZZ').toUpperCase();
+    const floorA = parseInt(unitA) || 0;
+    const floorB = parseInt(unitB) || 0;
+    if (floorA !== floorB) return floorA - floorB;
+    return unitA.localeCompare(unitB);
   });
   
   return [...fixed, ...rest];
