@@ -44,7 +44,6 @@
 .sb-tab{padding:9px 14px;font-size:12px}
 .sb-entry{flex-direction:column;align-items:flex-start;padding:14px 16px}
 .sb-entry-actions{width:100%;justify-content:flex-end}
-/* iOS 줌인 방지 */
 input[type="text"],input[type="number"],select,textarea{font-size:16px !important}
 }
 @media(max-width:380px){
@@ -73,28 +72,11 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
 .sb-btn-e.del:hover{background:#fef2f2}
 .sb-right-label{font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;font-family:'DM Sans',sans-serif}
 .sb-preview-wrap{background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 24px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center}
-
-/* ========= PREVIEW FRAME - 540x960 FIXED ========= */
-.pv-frame{
-  background:#fff;
-  width:540px;
-  height:960px;
-  position:relative;
-  font-family:'Calibri','Arial',sans-serif;
-  overflow:hidden;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-}
-.pv-frame.fullpage{
-  padding:0;
-}
-
+.pv-frame{background:#fff;width:540px;height:960px;position:relative;font-family:'Calibri','Arial',sans-serif;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column;}
+.pv-frame.fullpage{padding:0;}
 .sb-jpeg-row{display:flex;justify-content:flex-end;margin-top:10px;width:540px}
 .sb-btn-jpeg{padding:7px 18px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:#222;color:#fff;transition:all .15s}
 .sb-btn-jpeg:hover{background:#333}
-
-/* Editor panels */
 .sb-notice-editor{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
 .sb-notice-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .sb-notice-label{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.03em}
@@ -109,7 +91,6 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
 .sb-btn-save:disabled{background:#666;cursor:not-allowed}
 .sb-btn-clear{padding:9px 22px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid #555;background:transparent;color:#aaa;transition:all .15s}
 .sb-btn-clear:hover{background:#2a2a2a;color:#fff}
-
 .sb-modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
 .sb-modal-bg.open{display:flex}
 .sb-modal{background:#fff;border-radius:14px;width:440px;max-width:95vw;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
@@ -130,7 +111,6 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
 <div class="main">
   <div id="topbarPlaceholder"></div>
   <div class="content">
-
     <div class="sb-wrap">
       <div class="sb-top">
         <div><div class="sb-title">Signboard</div><div class="sb-sub">Lobby directory & fullpage board · 540 × 960 (전광판 규격)</div></div>
@@ -145,7 +125,6 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
         <div id="rightPanel"></div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -155,12 +134,23 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
     <input type="hidden" id="editId">
     <label>Page</label>
     <select id="fPage">
-      <option value="1">Page 1 · G~L2</option>
-      <option value="2">Page 2 · L3~L4</option>
-      <option value="3">Page 3 · L5~L6</option>
+      <option value="1">Page 1 · G + L1</option>
+      <option value="2">Page 2 · L2</option>
+      <option value="3">Page 3 · L3</option>
+      <option value="4">Page 4 · L4</option>
+      <option value="5">Page 5 · L5</option>
+      <option value="6">Page 6 · L6</option>
     </select>
     <label>Floor</label>
-    <select id="fFloor"><option value="GROUND">GROUND</option><option value="LEVEL 1">LEVEL 1</option><option value="LEVEL 2">LEVEL 2</option><option value="LEVEL 3">LEVEL 3</option><option value="LEVEL 4">LEVEL 4</option><option value="LEVEL 5">LEVEL 5</option><option value="LEVEL 6">LEVEL 6</option></select>
+    <select id="fFloor">
+      <option value="GROUND">GROUND</option>
+      <option value="LEVEL 1">LEVEL 1</option>
+      <option value="LEVEL 2">LEVEL 2</option>
+      <option value="LEVEL 3">LEVEL 3</option>
+      <option value="LEVEL 4">LEVEL 4</option>
+      <option value="LEVEL 5">LEVEL 5</option>
+      <option value="LEVEL 6">LEVEL 6</option>
+    </select>
     <label>Business Name</label>
     <input type="text" id="fBiz" placeholder="e.g. Redmyre Medical Centre">
     <label>Alt Name (optional)</label>
@@ -192,28 +182,38 @@ const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5',
 const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 3':'fb-l3','LEVEL 4':'fb-l4','LEVEL 5':'fb-l5','LEVEL 6':'fb-l6'};
 const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
 
-// 페이지 구성:
-// 1, 2, 3 = 디렉토리 (DB signboard_entries)
-// 4       = Fullpage 자유HTML (DB signboard_fullpage) - 비상연락망
-const FULLPAGE_PAGE = 4;
-const TOTAL_DIRECTORY_PAGES = 3;
+const TOTAL_DIRECTORY_PAGES = 6;
+const FULLPAGE_PAGE_A = 7;
+const FULLPAGE_PAGE_B = 8;
+
+const TAB_LABELS = {
+  1: 'Page 1 · G+L1',
+  2: 'Page 2 · L2',
+  3: 'Page 3 · L3',
+  4: 'Page 4 · L4',
+  5: 'Page 5 · L5',
+  6: 'Page 6 · L6',
+  7: 'Page 7 · Fullpage A',
+  8: 'Page 8 · Fullpage B',
+};
 
 let allEntries = [];
 let activeTab = 1;
-let fullpageBody = '';
-let savedFullpageBody = '';
+let fullpageBodyA = '';
+let savedFullpageBodyA = '';
+let fullpageBodyB = '';
+let savedFullpageBodyB = '';
 
 async function loadEntries() {
   const { data } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
   allEntries = data || [];
-  
-  // Fullpage 로드
-  const { data: fullData } = await supabase.from('signboard_fullpage').select('content').eq('id', 1).maybeSingle();
-  if (fullData) {
-    fullpageBody = fullData.content || '';
-    savedFullpageBody = fullpageBody;
-  }
-  
+
+  const { data: fdA } = await supabase.from('signboard_fullpage').select('content').eq('id', 1).maybeSingle();
+  if (fdA) { fullpageBodyA = fdA.content || ''; savedFullpageBodyA = fullpageBodyA; }
+
+  const { data: fdB } = await supabase.from('signboard_fullpage2').select('content').eq('id', 1).maybeSingle();
+  if (fdB) { fullpageBodyB = fdB.content || ''; savedFullpageBodyB = fullpageBodyB; }
+
   render();
 }
 
@@ -222,22 +222,22 @@ function render() {
   if (activeTab >= 1 && activeTab <= TOTAL_DIRECTORY_PAGES) {
     renderEntryList();
     renderDirectoryPreview();
-  } else if (activeTab === FULLPAGE_PAGE) {
-    renderFullpageEditor();
-    renderFullpagePreview();
+  } else if (activeTab === FULLPAGE_PAGE_A) {
+    renderFullpageEditor('A');
+    renderFullpagePreview('A');
+  } else if (activeTab === FULLPAGE_PAGE_B) {
+    renderFullpageEditor('B');
+    renderFullpagePreview('B');
   }
 }
 
 function renderTabs() {
   let html = '';
-  html += `<button class="sb-tab ${activeTab===1?'active':''}" onclick="setTab(1)">Page 1 · G~L2</button>`;
-  html += `<button class="sb-tab ${activeTab===2?'active':''}" onclick="setTab(2)">Page 2 · L3~L4</button>`;
-  html += `<button class="sb-tab ${activeTab===3?'active':''}" onclick="setTab(3)">Page 3 · L5~L6</button>`;
-  html += `<button class="sb-tab ${activeTab===FULLPAGE_PAGE?'active':''}" onclick="setTab(${FULLPAGE_PAGE})">Page 4 · Fullpage</button>`;
+  for (let i = 1; i <= 8; i++) {
+    html += `<button class="sb-tab ${activeTab===i?'active':''}" onclick="setTab(${i})">${TAB_LABELS[i]}</button>`;
+  }
   document.getElementById('tabBar').innerHTML = html;
 }
-
-/* ===== Directory (Page 1, 2, 3) ===== */
 
 function renderEntryList() {
   const entries = allEntries.filter(e => e.page === activeTab);
@@ -262,32 +262,32 @@ function renderDirectoryPreview() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
   entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
-  
+
   let rows = '';
   FLOOR_ORDER.filter(f => grouped[f]).forEach((floor, idx) => {
-    rows += `<div style="margin-top:${idx===0?'0':'14px'};margin-bottom:6px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:22px;font-weight:900;letter-spacing:2px;color:#0f172a;text-transform:uppercase;">${floor}</div>
+    rows += `<div style="margin-top:${idx===0?'0':'18px'};margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#0f172a;text-transform:uppercase;">${floor}</div>
       <div style="flex:1;height:3px;background:#fbbf24;"></div>
     </div>`;
     grouped[floor].forEach(e => {
-      const alt = e.display_name_alt ? `<span style="color:#0f172a;margin-left:5px;font-weight:600;">${e.display_name_alt}</span>` : '';
-      rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;gap:10px;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:16px;font-weight:600;color:#0f172a;line-height:1.3;flex:1;">${e.business_name}${alt}</div>
-        <div style="font-size:16px;font-weight:700;color:#0f172a;white-space:nowrap;">${e.unit_display}</div>
+      const alt = e.display_name_alt ? `<span style="color:#0f172a;margin-left:6px;font-weight:600;">${e.display_name_alt}</span>` : '';
+      rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;gap:10px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:19px;font-weight:600;color:#0f172a;line-height:1.3;flex:1;">${e.business_name}${alt}</div>
+        <div style="font-size:19px;font-weight:700;color:#0f172a;white-space:nowrap;">${e.unit_display}</div>
       </div>`;
       if (e.sub_info) {
         e.sub_info.split('||').forEach(line => {
-          rows += `<div style="padding:3px 0 0 2px;font-size:12px;color:#64748b;line-height:1.35;">${line.trim()}</div>`;
+          rows += `<div style="padding:3px 0 0 2px;font-size:14px;color:#64748b;line-height:1.35;">${line.trim()}</div>`;
         });
       }
     });
   });
-  
+
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame" id="pvFrame" style="background:#ffffff;color:#0f172a;position:relative;overflow:hidden;">
-        <div style="flex:1;padding:28px 30px 14px 30px;overflow:hidden;">${rows}</div>
+        <div style="flex:1;padding:32px 34px 16px 34px;overflow:hidden;">${rows}</div>
         <div style="background:#0f172a;padding:18px 28px;display:flex;align-items:center;justify-content:center;gap:18px;border-top:3px solid #c9a961;">
           <img src="/sca-logo.png?v=5" style="height:48px;display:block;flex-shrink:0;">
           <div style="text-align:left;">
@@ -301,113 +301,113 @@ function renderDirectoryPreview() {
   `;
 }
 
-/* ===== Fullpage (Page 4) - 완전 자유 ===== */
-
-function renderFullpageEditor() {
-  const unsaved = fullpageBody !== savedFullpageBody;
+function renderFullpageEditor(which) {
+  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
+  const saved = which === 'A' ? savedFullpageBodyA : savedFullpageBodyB;
+  const unsaved = body !== saved;
+  const label = which === 'A' ? 'Fullpage A' : 'Fullpage B';
   document.getElementById('leftPanel').innerHTML = `
     <div class="sb-notice-editor">
       <div class="sb-notice-header">
-        <div class="sb-notice-label">Fullpage HTML (No header/footer)</div>
+        <div class="sb-notice-label">${label} HTML (No header/footer)</div>
         <div class="sb-notice-status ${unsaved?'unsaved':''}" id="fullpageStatus">${unsaved?'● Unsaved changes':'✓ Saved'}</div>
       </div>
-      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview()" placeholder="Enter full HTML (covers entire 540×960 canvas)...">${escapeHtml(fullpageBody)}</textarea>
+      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview('${which}')" placeholder="Enter full HTML (covers entire 540×960 canvas)...">${escapeHtml(body)}</textarea>
       <div class="sb-notice-hint">Full 540×960 canvas. No auto-logo/footer. Design anything. Click Save to store.</div>
       <div class="sb-notice-actions">
-        <button class="sb-btn-clear" onclick="clearFullpage()">Clear</button>
-        <button class="sb-btn-save" id="saveFullpageBtn" onclick="saveFullpage()">💾 Save Fullpage</button>
+        <button class="sb-btn-clear" onclick="clearFullpage('${which}')">Clear</button>
+        <button class="sb-btn-save" id="saveFullpageBtn" onclick="saveFullpage('${which}')">💾 Save Fullpage</button>
       </div>
     </div>
   `;
 }
 
-function renderFullpagePreview() {
+function renderFullpagePreview(which) {
+  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
+  const label = which === 'A' ? 'Fullpage A' : 'Fullpage B';
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">Preview · 540 × 960 (Fullpage)</div>
+    <div class="sb-right-label">Preview · 540 × 960 (${label})</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame fullpage" id="pvFrame">
-        <div id="fullpagePreviewBody" style="width:100%;height:100%;overflow:hidden">${fullpageBody || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>'}</div>
+        <div id="fullpagePreviewBody" style="width:100%;height:100%;overflow:hidden">${body || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
     </div>
   `;
 }
 
-/* ===== Utility ===== */
-
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function hasUnsaved() {
-  if (activeTab === FULLPAGE_PAGE) return fullpageBody !== savedFullpageBody;
+  if (activeTab === FULLPAGE_PAGE_A) return fullpageBodyA !== savedFullpageBodyA;
+  if (activeTab === FULLPAGE_PAGE_B) return fullpageBodyB !== savedFullpageBodyB;
   return false;
 }
-
-/* ===== Tab switching with unsaved check ===== */
 
 window.setTab = (t) => {
   if (hasUnsaved()) {
     if (!confirm('You have unsaved changes. Leave anyway?')) return;
-    if (activeTab === FULLPAGE_PAGE) fullpageBody = savedFullpageBody;
+    if (activeTab === FULLPAGE_PAGE_A) fullpageBodyA = savedFullpageBodyA;
+    if (activeTab === FULLPAGE_PAGE_B) fullpageBodyB = savedFullpageBodyB;
   }
   activeTab = t;
   render();
 };
 
-/* ===== Fullpage functions ===== */
-
-window.updateFullpagePreview = () => {
-  fullpageBody = document.getElementById('fullpageBody').value;
+window.updateFullpagePreview = (which) => {
+  const val = document.getElementById('fullpageBody').value;
+  if (which === 'A') fullpageBodyA = val;
+  else fullpageBodyB = val;
   const el = document.getElementById('fullpagePreviewBody');
-  if (el) el.innerHTML = fullpageBody || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>';
-  updateFullpageStatus();
+  if (el) el.innerHTML = val || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>';
+  updateFullpageStatus(which);
 };
 
-function updateFullpageStatus() {
+function updateFullpageStatus(which) {
   const el = document.getElementById('fullpageStatus');
   if (!el) return;
-  const unsaved = fullpageBody !== savedFullpageBody;
+  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
+  const saved = which === 'A' ? savedFullpageBodyA : savedFullpageBodyB;
+  const unsaved = body !== saved;
   el.className = 'sb-notice-status' + (unsaved ? ' unsaved' : '');
   el.textContent = unsaved ? '● Unsaved changes' : '✓ Saved';
 }
 
-window.saveFullpage = async () => {
+window.saveFullpage = async (which) => {
   const btn = document.getElementById('saveFullpageBtn');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = 'Saving...';
   try {
-    const { error } = await supabase
-      .from('signboard_fullpage')
-      .upsert({ id: 1, content: fullpageBody, updated_at: new Date().toISOString() });
+    const table = which === 'A' ? 'signboard_fullpage' : 'signboard_fullpage2';
+    const content = which === 'A' ? fullpageBodyA : fullpageBodyB;
+    const { error } = await supabase.from(table).upsert({ id: 1, content, updated_at: new Date().toISOString() });
     if (error) throw error;
-    savedFullpageBody = fullpageBody;
-    updateFullpageStatus();
+    if (which === 'A') savedFullpageBodyA = fullpageBodyA;
+    else savedFullpageBodyB = fullpageBodyB;
+    updateFullpageStatus(which);
     showToast('Fullpage saved successfully');
   } catch (e) {
     showToast('Error saving: ' + e.message, true);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 Save Fullpage';
+    btn.disabled = false; btn.textContent = '💾 Save Fullpage';
   }
 };
 
-window.clearFullpage = () => {
-  if (!confirm('Clear all fullpage content? (Not saved until Save is clicked)')) return;
-  fullpageBody = '';
+window.clearFullpage = (which) => {
+  if (!confirm('Clear all fullpage content?')) return;
+  if (which === 'A') fullpageBodyA = '';
+  else fullpageBodyB = '';
   document.getElementById('fullpageBody').value = '';
   const el = document.getElementById('fullpagePreviewBody');
   if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>';
-  updateFullpageStatus();
+  updateFullpageStatus(which);
 };
-
-/* ===== Entry Modal (for Page 1, 2, 3) ===== */
 
 window.openAddModal = () => {
   if (activeTab < 1 || activeTab > TOTAL_DIRECTORY_PAGES) {
-    showToast('Add entry only works on Page 1, 2, or 3', true);
-    return;
+    showToast('Add entry only works on Page 1–6', true); return;
   }
   document.getElementById('modalTitle').textContent = 'Add Entry';
   document.getElementById('editId').value = '';
@@ -468,14 +468,11 @@ window.deleteEntry = async (id) => {
   await loadEntries();
 };
 
-/* ===== JPEG download - 540x960 고정 ===== */
-
 window.downloadJPEG = async () => {
   const frame = document.getElementById('pvFrame');
   if (!frame) return;
   showToast('Generating JPEG (540×960)...');
   try {
-    // 모든 이미지를 fetch로 가져와서 blob URL로 교체 → html2canvas가 100% 캡처
     const images = frame.querySelectorAll('img');
     await Promise.all(Array.from(images).map(async (img) => {
       try {
@@ -489,38 +486,24 @@ window.downloadJPEG = async () => {
           reader.readAsDataURL(blob);
         });
         img.src = dataUrl;
-        // 로딩 완료까지 대기
         await new Promise((resolve) => {
           if (img.complete && img.naturalHeight !== 0) return resolve();
-          img.onload = resolve;
-          img.onerror = resolve;
+          img.onload = resolve; img.onerror = resolve;
           setTimeout(resolve, 3000);
         });
-      } catch (err) {
-        console.warn('Image preload failed:', err);
-      }
+      } catch (err) { console.warn('Image preload failed:', err); }
     }));
     await new Promise(r => setTimeout(r, 500));
-    
     const canvas = await html2canvas(frame, {
-      width: 540,
-      height: 960,
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      imageTimeout: 15000,
-      logging: false
+      width: 540, height: 960, scale: 2,
+      useCORS: true, allowTaint: true,
+      backgroundColor: '#ffffff', imageTimeout: 15000, logging: false
     });
-    
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = 540;
-    finalCanvas.height = 960;
+    finalCanvas.width = 540; finalCanvas.height = 960;
     const ctx2d = finalCanvas.getContext('2d');
-    ctx2d.imageSmoothingEnabled = true;
-    ctx2d.imageSmoothingQuality = 'high';
+    ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'high';
     ctx2d.drawImage(canvas, 0, 0, 540, 960);
-    
     const link = document.createElement('a');
     link.download = `Signboard_Page${activeTab}.jpg`;
     link.href = finalCanvas.toDataURL('image/jpeg', 0.95);
@@ -531,10 +514,9 @@ window.downloadJPEG = async () => {
 
 window.downloadAllJPEG = async () => {
   showToast('Generating all JPEGs...');
-  const pages = [1, 2, 3, FULLPAGE_PAGE];
+  const pages = [1, 2, 3, 4, 5, 6, FULLPAGE_PAGE_A, FULLPAGE_PAGE_B];
   for (const p of pages) {
-    activeTab = p;
-    render();
+    activeTab = p; render();
     await new Promise(r => setTimeout(r, 600));
     await window.downloadJPEG();
     await new Promise(r => setTimeout(r, 400));
