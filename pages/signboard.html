@@ -72,7 +72,7 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
 .sb-btn-e.del:hover{background:#fef2f2}
 .sb-right-label{font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;font-family:'DM Sans',sans-serif}
 .sb-preview-wrap{background:#fff;border-radius:12px;padding:18px;box-shadow:0 4px 24px rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center}
-.pv-frame{background:#fff;width:540px;height:960px;position:relative;font-family:'Calibri','Arial',sans-serif;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column;}
+.pv-frame{background:#fff;width:540px;height:960px;position:relative;font-family:'Helvetica Neue',Arial,sans-serif;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column;}
 .pv-frame.fullpage{padding:0;}
 .sb-jpeg-row{display:flex;justify-content:flex-end;margin-top:10px;width:540px}
 .sb-btn-jpeg{padding:7px 18px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:#222;color:#fff;transition:all .15s}
@@ -181,39 +181,30 @@ if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
 const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 3':'fb-l3','LEVEL 4':'fb-l4','LEVEL 5':'fb-l5','LEVEL 6':'fb-l6'};
 const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
+const FLOOR_LABEL = {'GROUND':'GROUND','LEVEL 1':'LEVEL 1','LEVEL 2':'LEVEL 2','LEVEL 3':'LEVEL 3','LEVEL 4':'LEVEL 4','LEVEL 5':'LEVEL 5','LEVEL 6':'LEVEL 6'};
 
 const TOTAL_DIRECTORY_PAGES = 6;
 const FULLPAGE_PAGE_A = 7;
 const FULLPAGE_PAGE_B = 8;
 
 const TAB_LABELS = {
-  1: 'Page 1 · G+L1',
-  2: 'Page 2 · L2',
-  3: 'Page 3 · L3',
-  4: 'Page 4 · L4',
-  5: 'Page 5 · L5',
-  6: 'Page 6 · L6',
-  7: 'Page 7 · Fullpage A',
-  8: 'Page 8 · Fullpage B',
+  1:'Page 1 · G+L1', 2:'Page 2 · L2', 3:'Page 3 · L3',
+  4:'Page 4 · L4',   5:'Page 5 · L5', 6:'Page 6 · L6',
+  7:'Page 7 · Fullpage A', 8:'Page 8 · Fullpage B'
 };
 
 let allEntries = [];
 let activeTab = 1;
-let fullpageBodyA = '';
-let savedFullpageBodyA = '';
-let fullpageBodyB = '';
-let savedFullpageBodyB = '';
+let fullpageBodyA = '', savedFullpageBodyA = '';
+let fullpageBodyB = '', savedFullpageBodyB = '';
 
 async function loadEntries() {
   const { data } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
   allEntries = data || [];
-
-  const { data: fdA } = await supabase.from('signboard_fullpage').select('content').eq('id', 1).maybeSingle();
-  if (fdA) { fullpageBodyA = fdA.content || ''; savedFullpageBodyA = fullpageBodyA; }
-
-  const { data: fdB } = await supabase.from('signboard_fullpage2').select('content').eq('id', 1).maybeSingle();
-  if (fdB) { fullpageBodyB = fdB.content || ''; savedFullpageBodyB = fullpageBodyB; }
-
+  const { data: fdA } = await supabase.from('signboard_fullpage').select('content').eq('id',1).maybeSingle();
+  if (fdA) { fullpageBodyA = fdA.content||''; savedFullpageBodyA = fullpageBodyA; }
+  const { data: fdB } = await supabase.from('signboard_fullpage2').select('content').eq('id',1).maybeSingle();
+  if (fdB) { fullpageBodyB = fdB.content||''; savedFullpageBodyB = fullpageBodyB; }
   render();
 }
 
@@ -223,17 +214,15 @@ function render() {
     renderEntryList();
     renderDirectoryPreview();
   } else if (activeTab === FULLPAGE_PAGE_A) {
-    renderFullpageEditor('A');
-    renderFullpagePreview('A');
+    renderFullpageEditor('A'); renderFullpagePreview('A');
   } else if (activeTab === FULLPAGE_PAGE_B) {
-    renderFullpageEditor('B');
-    renderFullpagePreview('B');
+    renderFullpageEditor('B'); renderFullpagePreview('B');
   }
 }
 
 function renderTabs() {
   let html = '';
-  for (let i = 1; i <= 8; i++) {
+  for (let i=1; i<=8; i++) {
     html += `<button class="sb-tab ${activeTab===i?'active':''}" onclick="setTab(${i})">${TAB_LABELS[i]}</button>`;
   }
   document.getElementById('tabBar').innerHTML = html;
@@ -242,7 +231,7 @@ function renderTabs() {
 function renderEntryList() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
   let html = '<div class="sb-card">';
   FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
     grouped[floor].forEach(e => {
@@ -261,40 +250,79 @@ function renderEntryList() {
 function renderDirectoryPreview() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
+
+  // 층 목록 + Suite 범위
+  const floors = FLOOR_ORDER.filter(f => grouped[f]);
+  const firstFloor = floors[0] || '';
+  const floorLabel = floors.length === 1 ? firstFloor : floors.map(f => FLOOR_LABEL[f]).join(' & ');
+
+  // 첫번째 층 suite 범위
+  let suiteRange = '';
+  if (floors.length > 0) {
+    const allUnits = floors.flatMap(f => grouped[f].map(e => e.unit_display));
+    if (allUnits.length === 1) suiteRange = allUnits[0];
+    else suiteRange = allUnits[0] + ' – ' + allUnits[allUnits.length-1];
+  }
 
   let rows = '';
-  FLOOR_ORDER.filter(f => grouped[f]).forEach((floor, idx) => {
-    rows += `<div style="margin-top:${idx===0?'0':'18px'};margin-bottom:8px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#0f172a;text-transform:uppercase;">${floor}</div>
-      <div style="flex:1;height:3px;background:#fbbf24;"></div>
-    </div>`;
-    grouped[floor].forEach(e => {
-      const alt = e.display_name_alt ? `<span style="color:#0f172a;margin-left:6px;font-weight:600;">${e.display_name_alt}</span>` : '';
-      rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;gap:10px;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:19px;font-weight:600;color:#0f172a;line-height:1.3;flex:1;">${e.business_name}${alt}</div>
-        <div style="font-size:19px;font-weight:700;color:#0f172a;white-space:nowrap;">${e.unit_display}</div>
+  floors.forEach((floor, fi) => {
+    // G+L1 처럼 2개 층이면 층 구분 소헤더
+    if (floors.length > 1) {
+      rows += `<div style="font-size:13px;font-weight:700;letter-spacing:3px;color:#94a3b8;text-transform:uppercase;padding:10px 0 4px;${fi>0?'margin-top:8px;':''}border-bottom:2px solid #c9a961;margin-bottom:2px;">${floor}</div>`;
+    }
+    grouped[floor].forEach((e, idx) => {
+      const alt = e.display_name_alt ? ` <span style="font-size:16px;color:#64748b;font-weight:500;">${e.display_name_alt}</span>` : '';
+      const bg = idx % 2 === 1 ? 'background:#fdfcf9;' : '';
+      rows += `<div style="flex:1;display:flex;align-items:center;padding:0 32px;border-bottom:1.5px solid #f0ece0;${bg}min-height:0;">
+        <div style="width:64px;flex-shrink:0;"><div style="font-size:20px;font-weight:900;color:#0f172a;">${e.unit_display}</div></div>
+        <div style="width:4px;align-self:stretch;background:#c9a961;flex-shrink:0;margin:10px 18px 10px 0;border-radius:2px;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:19px;font-weight:800;color:#0f172a;line-height:1.3;">${e.business_name}${alt}</div>
+          ${e.sub_info ? e.sub_info.split('||').map(l=>`<div style="font-size:14px;color:#64748b;margin-top:4px;line-height:1.5;">${l.trim()}</div>`).join('') : ''}
+        </div>
       </div>`;
-      if (e.sub_info) {
-        e.sub_info.split('||').forEach(line => {
-          rows += `<div style="padding:3px 0 0 2px;font-size:14px;color:#64748b;line-height:1.35;">${line.trim()}</div>`;
-        });
-      }
     });
   });
 
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame" id="pvFrame" style="background:#ffffff;color:#0f172a;position:relative;overflow:hidden;">
-        <div style="flex:1;padding:32px 34px 16px 34px;overflow:hidden;">${rows}</div>
-        <div style="background:#0f172a;padding:18px 28px;display:flex;align-items:center;justify-content:center;gap:18px;border-top:3px solid #c9a961;">
-          <img src="/sca-logo.png?v=5" style="height:48px;display:block;flex-shrink:0;">
-          <div style="text-align:left;">
-            <div style="font-size:13px;font-weight:600;letter-spacing:3px;color:#c9a961;margin-bottom:4px;text-transform:uppercase;">SCA Facility Management</div>
-            <div style="font-size:12px;color:#94a3b8;letter-spacing:0.5px;">Redmyre House · 9–13 Redmyre Road</div>
+      <div class="pv-frame" id="pvFrame" style="background:#ffffff;overflow:hidden;">
+
+        <!-- 헤더 -->
+        <div style="background:#0f172a;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #c9a961;flex-shrink:0;position:relative;">
+          <div style="position:absolute;top:11px;left:11px;width:22px;height:22px;border-top:2px solid #c9a961;border-left:2px solid #c9a961;"></div>
+          <div style="position:absolute;top:11px;right:11px;width:22px;height:22px;border-top:2px solid #c9a961;border-right:2px solid #c9a961;"></div>
+          <img src="/sca-logo.png?v=5" style="height:32px;display:block;flex-shrink:0;">
+          <div style="text-align:right;">
+            <div style="font-size:11px;letter-spacing:4px;color:#c9a961;text-transform:uppercase;">Redmyre House</div>
+            <div style="font-size:10px;color:#475569;margin-top:2px;letter-spacing:1px;">9–13 Redmyre Road, Strathfield</div>
           </div>
         </div>
+
+        <!-- 레벨 배너 -->
+        <div style="background:#c9a961;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div>
+            <div style="font-size:11px;letter-spacing:6px;color:#7a6520;text-transform:uppercase;margin-bottom:2px;">Floor Directory</div>
+            <div style="font-size:46px;font-weight:900;color:#0f172a;line-height:1;letter-spacing:-2px;">${floorLabel}</div>
+          </div>
+          <div style="background:#0f172a;border-radius:12px;padding:12px 18px;text-align:center;">
+            <div style="font-size:10px;letter-spacing:2px;color:#c9a961;text-transform:uppercase;margin-bottom:3px;">Suites</div>
+            <div style="font-size:18px;font-weight:900;color:#fff;">${suiteRange}</div>
+          </div>
+        </div>
+
+        <!-- 엔트리 -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+          ${rows}
+        </div>
+
+        <!-- 푸터 -->
+        <div style="background:#0f172a;padding:13px 32px;display:flex;align-items:center;justify-content:center;border-top:4px solid #c9a961;flex-shrink:0;">
+          <div style="font-size:10px;color:#94a3b8;letter-spacing:3px;text-transform:uppercase;">SCA Facility Management · Redmyre House · Strathfield</div>
+        </div>
+
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
     </div>
@@ -302,38 +330,36 @@ function renderDirectoryPreview() {
 }
 
 function renderFullpageEditor(which) {
-  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
-  const saved = which === 'A' ? savedFullpageBodyA : savedFullpageBodyB;
+  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
+  const saved = which==='A' ? savedFullpageBodyA : savedFullpageBodyB;
   const unsaved = body !== saved;
-  const label = which === 'A' ? 'Fullpage A' : 'Fullpage B';
+  const label = which==='A' ? 'Fullpage A' : 'Fullpage B';
   document.getElementById('leftPanel').innerHTML = `
     <div class="sb-notice-editor">
       <div class="sb-notice-header">
-        <div class="sb-notice-label">${label} HTML (No header/footer)</div>
-        <div class="sb-notice-status ${unsaved?'unsaved':''}" id="fullpageStatus">${unsaved?'● Unsaved changes':'✓ Saved'}</div>
+        <div class="sb-notice-label">${label} HTML</div>
+        <div class="sb-notice-status ${unsaved?'unsaved':''}" id="fullpageStatus">${unsaved?'● Unsaved':'✓ Saved'}</div>
       </div>
-      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview('${which}')" placeholder="Enter full HTML (covers entire 540×960 canvas)...">${escapeHtml(body)}</textarea>
-      <div class="sb-notice-hint">Full 540×960 canvas. No auto-logo/footer. Design anything. Click Save to store.</div>
+      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview('${which}')" placeholder="Enter full HTML...">${escapeHtml(body)}</textarea>
+      <div class="sb-notice-hint">Full 540×960 canvas. No auto-logo/footer.</div>
       <div class="sb-notice-actions">
         <button class="sb-btn-clear" onclick="clearFullpage('${which}')">Clear</button>
         <button class="sb-btn-save" id="saveFullpageBtn" onclick="saveFullpage('${which}')">💾 Save Fullpage</button>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderFullpagePreview(which) {
-  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
-  const label = which === 'A' ? 'Fullpage A' : 'Fullpage B';
+  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
+  const label = which==='A' ? 'Fullpage A' : 'Fullpage B';
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960 (${label})</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame fullpage" id="pvFrame">
-        <div id="fullpagePreviewBody" style="width:100%;height:100%;overflow:hidden">${body || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>'}</div>
+        <div id="fullpagePreviewBody" style="width:100%;height:100%;overflow:hidden">${body||'<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
-    </div>
-  `;
+    </div>`;
 }
 
 function escapeHtml(str) {
@@ -342,97 +368,88 @@ function escapeHtml(str) {
 }
 
 function hasUnsaved() {
-  if (activeTab === FULLPAGE_PAGE_A) return fullpageBodyA !== savedFullpageBodyA;
-  if (activeTab === FULLPAGE_PAGE_B) return fullpageBodyB !== savedFullpageBodyB;
+  if (activeTab===FULLPAGE_PAGE_A) return fullpageBodyA!==savedFullpageBodyA;
+  if (activeTab===FULLPAGE_PAGE_B) return fullpageBodyB!==savedFullpageBodyB;
   return false;
 }
 
 window.setTab = (t) => {
   if (hasUnsaved()) {
     if (!confirm('You have unsaved changes. Leave anyway?')) return;
-    if (activeTab === FULLPAGE_PAGE_A) fullpageBodyA = savedFullpageBodyA;
-    if (activeTab === FULLPAGE_PAGE_B) fullpageBodyB = savedFullpageBodyB;
+    if (activeTab===FULLPAGE_PAGE_A) fullpageBodyA=savedFullpageBodyA;
+    if (activeTab===FULLPAGE_PAGE_B) fullpageBodyB=savedFullpageBodyB;
   }
-  activeTab = t;
-  render();
+  activeTab = t; render();
 };
 
 window.updateFullpagePreview = (which) => {
   const val = document.getElementById('fullpageBody').value;
-  if (which === 'A') fullpageBodyA = val;
-  else fullpageBodyB = val;
+  if (which==='A') fullpageBodyA=val; else fullpageBodyB=val;
   const el = document.getElementById('fullpagePreviewBody');
-  if (el) el.innerHTML = val || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>';
+  if (el) el.innerHTML = val||'<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>';
   updateFullpageStatus(which);
 };
 
 function updateFullpageStatus(which) {
   const el = document.getElementById('fullpageStatus');
   if (!el) return;
-  const body = which === 'A' ? fullpageBodyA : fullpageBodyB;
-  const saved = which === 'A' ? savedFullpageBodyA : savedFullpageBodyB;
-  const unsaved = body !== saved;
-  el.className = 'sb-notice-status' + (unsaved ? ' unsaved' : '');
-  el.textContent = unsaved ? '● Unsaved changes' : '✓ Saved';
+  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
+  const saved = which==='A' ? savedFullpageBodyA : savedFullpageBodyB;
+  const unsaved = body!==saved;
+  el.className = 'sb-notice-status'+(unsaved?' unsaved':'');
+  el.textContent = unsaved?'● Unsaved':'✓ Saved';
 }
 
 window.saveFullpage = async (which) => {
   const btn = document.getElementById('saveFullpageBtn');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled=true; btn.textContent='Saving...';
   try {
-    const table = which === 'A' ? 'signboard_fullpage' : 'signboard_fullpage2';
-    const content = which === 'A' ? fullpageBodyA : fullpageBodyB;
-    const { error } = await supabase.from(table).upsert({ id: 1, content, updated_at: new Date().toISOString() });
+    const table = which==='A' ? 'signboard_fullpage' : 'signboard_fullpage2';
+    const content = which==='A' ? fullpageBodyA : fullpageBodyB;
+    const { error } = await supabase.from(table).upsert({ id:1, content, updated_at: new Date().toISOString() });
     if (error) throw error;
-    if (which === 'A') savedFullpageBodyA = fullpageBodyA;
-    else savedFullpageBodyB = fullpageBodyB;
+    if (which==='A') savedFullpageBodyA=fullpageBodyA; else savedFullpageBodyB=fullpageBodyB;
     updateFullpageStatus(which);
-    showToast('Fullpage saved successfully');
-  } catch (e) {
-    showToast('Error saving: ' + e.message, true);
-  } finally {
-    btn.disabled = false; btn.textContent = '💾 Save Fullpage';
-  }
+    showToast('Fullpage saved');
+  } catch(e) { showToast('Error: '+e.message, true); }
+  finally { btn.disabled=false; btn.textContent='💾 Save Fullpage'; }
 };
 
 window.clearFullpage = (which) => {
   if (!confirm('Clear all fullpage content?')) return;
-  if (which === 'A') fullpageBodyA = '';
-  else fullpageBodyB = '';
-  document.getElementById('fullpageBody').value = '';
+  if (which==='A') fullpageBodyA=''; else fullpageBodyB='';
+  document.getElementById('fullpageBody').value='';
   const el = document.getElementById('fullpagePreviewBody');
-  if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;font-family:sans-serif;">Fullpage preview will appear here...</div>';
+  if (el) el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>';
   updateFullpageStatus(which);
 };
 
 window.openAddModal = () => {
-  if (activeTab < 1 || activeTab > TOTAL_DIRECTORY_PAGES) {
-    showToast('Add entry only works on Page 1–6', true); return;
-  }
-  document.getElementById('modalTitle').textContent = 'Add Entry';
-  document.getElementById('editId').value = '';
-  document.getElementById('fPage').value = activeTab;
-  document.getElementById('fFloor').value = 'GROUND';
-  document.getElementById('fBiz').value = '';
-  document.getElementById('fAlt').value = '';
-  document.getElementById('fSub').value = '';
-  document.getElementById('fUnit').value = '';
-  document.getElementById('fSort').value = '1';
+  if (activeTab<1||activeTab>TOTAL_DIRECTORY_PAGES) { showToast('Add entry only works on Page 1–6',true); return; }
+  document.getElementById('modalTitle').textContent='Add Entry';
+  document.getElementById('editId').value='';
+  document.getElementById('fPage').value=activeTab;
+  document.getElementById('fFloor').value='GROUND';
+  document.getElementById('fBiz').value='';
+  document.getElementById('fAlt').value='';
+  document.getElementById('fSub').value='';
+  document.getElementById('fUnit').value='';
+  document.getElementById('fSort').value='1';
   document.getElementById('entryModal').classList.add('open');
 };
 
 window.openEditModal = (id) => {
-  const e = allEntries.find(x => x.id === id);
+  const e = allEntries.find(x=>x.id===id);
   if (!e) return;
-  document.getElementById('modalTitle').textContent = 'Edit Entry';
-  document.getElementById('editId').value = e.id;
-  document.getElementById('fPage').value = e.page;
-  document.getElementById('fFloor').value = e.floor;
-  document.getElementById('fBiz').value = e.business_name;
-  document.getElementById('fAlt').value = e.display_name_alt || '';
-  document.getElementById('fSub').value = e.sub_info || '';
-  document.getElementById('fUnit').value = e.unit_display;
-  document.getElementById('fSort').value = e.sort_order;
+  document.getElementById('modalTitle').textContent='Edit Entry';
+  document.getElementById('editId').value=e.id;
+  document.getElementById('fPage').value=e.page;
+  document.getElementById('fFloor').value=e.floor;
+  document.getElementById('fBiz').value=e.business_name;
+  document.getElementById('fAlt').value=e.display_name_alt||'';
+  document.getElementById('fSub').value=e.sub_info||'';
+  document.getElementById('fUnit').value=e.unit_display;
+  document.getElementById('fSort').value=e.sort_order;
   document.getElementById('entryModal').classList.add('open');
 };
 
@@ -444,26 +461,26 @@ window.saveEntry = async () => {
     page: parseInt(document.getElementById('fPage').value),
     floor: document.getElementById('fFloor').value,
     business_name: document.getElementById('fBiz').value.trim(),
-    display_name_alt: document.getElementById('fAlt').value.trim() || null,
-    sub_info: document.getElementById('fSub').value.trim() || null,
+    display_name_alt: document.getElementById('fAlt').value.trim()||null,
+    sub_info: document.getElementById('fSub').value.trim()||null,
     unit_display: document.getElementById('fUnit').value.trim(),
     sort_order: parseInt(document.getElementById('fSort').value),
     updated_at: new Date().toISOString()
   };
-  if (!obj.business_name || !obj.unit_display) { showToast('Business Name and Unit are required', true); return; }
+  if (!obj.business_name||!obj.unit_display) { showToast('Business Name and Unit required',true); return; }
   let error;
-  if (id) { ({ error } = await supabase.from('signboard_entries').update(obj).eq('id', id)); }
-  else { ({ error } = await supabase.from('signboard_entries').insert(obj)); }
-  if (error) { showToast('Error: ' + error.message, true); return; }
+  if (id) { ({error}=await supabase.from('signboard_entries').update(obj).eq('id',id)); }
+  else { ({error}=await supabase.from('signboard_entries').insert(obj)); }
+  if (error) { showToast('Error: '+error.message,true); return; }
   closeEntryModal();
-  showToast(id ? 'Entry updated' : 'Entry added');
+  showToast(id?'Entry updated':'Entry added');
   await loadEntries();
 };
 
 window.deleteEntry = async (id) => {
   if (!confirm('Delete this entry?')) return;
-  const { error } = await supabase.from('signboard_entries').delete().eq('id', id);
-  if (error) { showToast('Error: ' + error.message, true); return; }
+  const {error} = await supabase.from('signboard_entries').delete().eq('id',id);
+  if (error) { showToast('Error: '+error.message,true); return; }
   showToast('Entry deleted');
   await loadEntries();
 };
@@ -477,8 +494,8 @@ window.downloadJPEG = async () => {
     await Promise.all(Array.from(images).map(async (img) => {
       try {
         const src = img.getAttribute('src');
-        if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
-        const res = await fetch(src, { cache: 'force-cache' });
+        if (!src||src.startsWith('data:')||src.startsWith('blob:')) return;
+        const res = await fetch(src,{cache:'force-cache'});
         const blob = await res.blob();
         const dataUrl = await new Promise((resolve) => {
           const reader = new FileReader();
@@ -487,50 +504,50 @@ window.downloadJPEG = async () => {
         });
         img.src = dataUrl;
         await new Promise((resolve) => {
-          if (img.complete && img.naturalHeight !== 0) return resolve();
-          img.onload = resolve; img.onerror = resolve;
-          setTimeout(resolve, 3000);
+          if (img.complete&&img.naturalHeight!==0) return resolve();
+          img.onload=resolve; img.onerror=resolve;
+          setTimeout(resolve,3000);
         });
-      } catch (err) { console.warn('Image preload failed:', err); }
+      } catch(err) { console.warn('Image preload failed:',err); }
     }));
-    await new Promise(r => setTimeout(r, 500));
-    const canvas = await html2canvas(frame, {
-      width: 540, height: 960, scale: 2,
-      useCORS: true, allowTaint: true,
-      backgroundColor: '#ffffff', imageTimeout: 15000, logging: false
+    await new Promise(r=>setTimeout(r,500));
+    const canvas = await html2canvas(frame,{
+      width:540, height:960, scale:2,
+      useCORS:true, allowTaint:true,
+      backgroundColor:'#ffffff', imageTimeout:15000, logging:false
     });
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = 540; finalCanvas.height = 960;
+    finalCanvas.width=540; finalCanvas.height=960;
     const ctx2d = finalCanvas.getContext('2d');
-    ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'high';
-    ctx2d.drawImage(canvas, 0, 0, 540, 960);
+    ctx2d.imageSmoothingEnabled=true; ctx2d.imageSmoothingQuality='high';
+    ctx2d.drawImage(canvas,0,0,540,960);
     const link = document.createElement('a');
-    link.download = `Signboard_Page${activeTab}.jpg`;
-    link.href = finalCanvas.toDataURL('image/jpeg', 0.95);
+    link.download=`Signboard_Page${activeTab}.jpg`;
+    link.href=finalCanvas.toDataURL('image/jpeg',0.95);
     link.click();
     showToast('JPEG downloaded! (540×960)');
-  } catch (e) { showToast('Download failed: ' + e.message, true); }
+  } catch(e) { showToast('Download failed: '+e.message,true); }
 };
 
 window.downloadAllJPEG = async () => {
   showToast('Generating all JPEGs...');
-  const pages = [1, 2, 3, 4, 5, 6, FULLPAGE_PAGE_A, FULLPAGE_PAGE_B];
+  const pages = [1,2,3,4,5,6,FULLPAGE_PAGE_A,FULLPAGE_PAGE_B];
   for (const p of pages) {
-    activeTab = p; render();
-    await new Promise(r => setTimeout(r, 600));
+    activeTab=p; render();
+    await new Promise(r=>setTimeout(r,600));
     await window.downloadJPEG();
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r=>setTimeout(r,400));
   }
   showToast('All JPEGs downloaded!');
 };
 
-function showToast(msg, isError = false) {
+function showToast(msg, isError=false) {
   const t = document.getElementById('toast');
   if (!t) return;
-  t.textContent = msg;
-  t.style.background = isError ? '#991b1b' : '#0f172a';
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3000);
+  t.textContent=msg;
+  t.style.background=isError?'#991b1b':'#0f172a';
+  t.style.display='block';
+  setTimeout(()=>{t.style.display='none';},3000);
 }
 
 await loadEntries();
