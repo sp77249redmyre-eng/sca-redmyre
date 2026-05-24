@@ -317,28 +317,28 @@ function renderDirectoryPreview() {
       let bizHtml = '';
       items.forEach((e, idx) => {
         const isLastItem = idx === items.length-1;
-        const alt = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize}px;font-weight:700;color:#0f172a;margin-top:2px;">${l.trim()}</div>`).join('') : '';
-        // 첫 상호에만 유닛번호 우측 표시
         const thisBizSize = (unit === '3A') ? 26 : bizSize;
+        const bizLines = e.business_name.split(/\n/);
+        const hasBreak = bizLines.length > 1;
+        const altHtml = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize}px;font-weight:700;color:#0f172a;margin-top:1px;">${l.trim()}</div>`).join('') : '';
+
         if (idx === 0) {
-          const bizLines = e.business_name.split(/\n/);
-          const hasBreak = bizLines.length > 1;
           bizHtml += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
               ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${l}</div>`).join('')}
+              ${altHtml}
             </div>
             <div style="font-size:${thisBizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;padding-top:2px;">${unit}</div>
-          </div>${alt}`;
+          </div>`;
         } else {
-          const bizLines = e.business_name.split(/\n/);
-          const hasBreak = bizLines.length > 1;
-          bizHtml += `<div style="flex:1;${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
+          bizHtml += `<div style="${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
             ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${l}</div>`).join('')}
-          </div>${alt}`;
+            ${altHtml}
+          </div>`;
         }
         bizHtml += renderSub(e.sub_info);
         if (!isLastItem) {
-          bizHtml += `<div style="border-top:1px solid #f0ece0;margin:5px 0;"></div>`;
+          bizHtml += `<div style="border-top:1.5px solid #f0ece0;margin:6px 0;"></div>`;
         }
       });
 
