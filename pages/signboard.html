@@ -263,7 +263,12 @@ function renderEntryList() {
 }
 
 function renderDirectoryPreview() {
-  const entries = allEntries.filter(e => e.page === activeTab);
+  const entries = allEntries.filter(e => e.page === activeTab)
+    .sort((a,b) => {
+      if (a.floor < b.floor) return -1;
+      if (a.floor > b.floor) return 1;
+      return a.sort_order - b.sort_order;
+    });
   const grouped = {};
   entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
 
