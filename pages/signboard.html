@@ -151,12 +151,12 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
       <option value="LEVEL 5">LEVEL 5</option>
       <option value="LEVEL 6">LEVEL 6</option>
     </select>
-    <label>Business Name</label>
-    <input type="text" id="fBiz" placeholder="e.g. Redmyre Medical Centre">
-    <label>Alt Name (optional)</label>
-    <input type="text" id="fAlt" placeholder="e.g. 윤중병원">
-    <label>Sub Info (optional, use || to separate lines)</label>
-    <textarea id="fSub" rows="2" placeholder="e.g. Dr A || Dr B"></textarea>
+    <label>Business Name (엔터로 줄바꿈)</label>
+    <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
+    <label>Alt Name (optional, 엔터로 줄바꿈)</label>
+    <textarea id="fAlt" rows="2" placeholder="e.g. 윤중병원" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
+    <label>Sub Info (optional, 엔터로 줄바꿈)</label>
+    <textarea id="fSub" rows="2" placeholder="e.g. Dr A Wong&#10;Dr B Kim" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <label>Unit Display</label>
     <select id="fUnit" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;"></select>
     <label>Sort Order</label>
@@ -289,7 +289,11 @@ function renderDirectoryPreview() {
   let rows = '';
   floors.forEach((floor, fi) => {
     if (floors.length > 1) {
-      rows += `<div style="font-size:14px;font-weight:800;letter-spacing:2px;color:#0f172a;text-transform:uppercase;padding:10px 32px 6px;border-bottom:1.5px solid #c9a961;">${floor}</div>`;
+      const mt = fi > 0 ? 'margin-top:10px;' : '';
+      rows += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-shrink:0;${mt}">
+        <div style="font-size:16px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floor}</div>
+        <div style="flex:1;height:1.5px;background:#c9a961;"></div>
+      </div>`;
     }
 
     // 같은 unit_display 묶기
@@ -308,15 +312,15 @@ function renderDirectoryPreview() {
       let bizHtml = '';
       items.forEach((e, idx) => {
         const isLastItem = idx === items.length-1;
-        const alt = e.display_name_alt ? ` <span style="font-size:${subSize}px;font-weight:700;color:#0f172a;">${e.display_name_alt}</span>` : '';
+        const alt = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize}px;font-weight:700;color:#0f172a;margin-top:2px;">${l.trim()}</div>`).join('') : '';
         // 첫 상호에만 유닛번호 우측 표시
         if (idx === 0) {
           bizHtml += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
-            <div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}${alt}</div>
+            <div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}</div>
             <div style="font-size:${bizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;">${unit}</div>
-          </div>`;
+          </div>${alt}`;
         } else {
-          bizHtml += `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}${alt}</div>`;
+          bizHtml += `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}</div>${alt}`;
         }
         bizHtml += renderSub(e.sub_info);
         if (!isLastItem) {
@@ -330,21 +334,24 @@ function renderDirectoryPreview() {
     });
   });
 
+  // 단일층: 상단 큰 헤더. 다중층(Page1): rows 안에 층별 헤더만
+  const topHeader = floors.length === 1 ? `
+    <div style="padding:24px 32px 14px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="font-size:36px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floorLabel}</div>
+        <div style="flex:1;height:2px;background:#c9a961;"></div>
+      </div>
+    </div>` : '';
+
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">Preview · 540 × 960</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame" id="pvFrame" style="background:#ffffff;overflow:hidden;">
 
-        <!-- 레벨 헤더 -->
-        <div style="padding:24px 32px 14px;flex-shrink:0;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <div style="font-size:36px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floorLabel}</div>
-            <div style="flex:1;height:2px;background:#c9a961;"></div>
-          </div>
-        </div>
+        ${topHeader}
 
         <!-- 엔트리 -->
-        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:${floors.length>1?'12px 32px 0':'0 32px 0'};">
           ${rows}
         </div>
 
