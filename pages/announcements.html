@@ -187,6 +187,15 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- 첨부파일 모달 -->
+<div id="attachModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column" onclick="if(event.target===this)closeAttachModal()">
+  <div style="position:absolute;top:16px;right:20px;display:flex;gap:12px;align-items:center">
+    <a id="attachDownload" href="" download style="color:#fff;font-size:13px;padding:6px 14px;border:1px solid rgba(255,255,255,0.4);border-radius:8px;text-decoration:none">⬇ Download</a>
+    <button onclick="closeAttachModal()" style="background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1">&times;</button>
+  </div>
+  <div id="attachContent" style="max-width:90vw;max-height:88vh;overflow:auto;display:flex;align-items:center;justify-content:center"></div>
+</div>
+
 <div class="modal-backdrop" id="annDetailModal" onclick="if(event.target===this)closeModal('annDetailModal')">
   <div class="modal-box" style="max-width:1200px;width:95%;max-height:95vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:4px">
@@ -305,8 +314,8 @@ window.openAnnDetail = (id) => {
   const attachmentsHtml = a.attachments && a.attachments.length ? `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
       ${a.attachments.map(att => att.type === 'application/pdf'
-        ? `<a href="${att.url}" onclick="window.open(this.href,'_blank','width=900,height=700,scrollbars=yes');return false;" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);text-decoration:none;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">📄 ${att.name}</a>`
-        : `<a href="${att.url}" onclick="window.open(this.href,'_blank','width=900,height=700,scrollbars=yes');return false;"><img src="${att.url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);transition:opacity 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></a>`
+        ? `<a href="${att.url}" onclick="openAttachModal('${att.url}','pdf','${att.name}');return false;" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);text-decoration:none;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">📄 ${att.name}</a>`
+        : `<a href="${att.url}" onclick="openAttachModal('${att.url}','image','${att.name}');return false;"><img src="${att.url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);transition:opacity 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></a>`
       ).join('')}
     </div>` : '';
 
@@ -786,6 +795,27 @@ document.getElementById('dismissPushBtn').addEventListener('click', () => {
   localStorage.setItem('push-dismissed', '1');
 });
 initServiceWorker();
+
+window.openAttachModal = function(url, type, name) {
+  const modal = document.getElementById('attachModal');
+  const content = document.getElementById('attachContent');
+  const dl = document.getElementById('attachDownload');
+  dl.href = url;
+  dl.download = name;
+  if (type === 'pdf') {
+    content.innerHTML = `<iframe src="${url}" style="width:88vw;height:85vh;border:none;border-radius:8px;background:#fff"></iframe>`;
+  } else {
+    content.innerHTML = `<img src="${url}" style="max-width:88vw;max-height:85vh;object-fit:contain;border-radius:8px">`;
+  }
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+window.closeAttachModal = function() {
+  document.getElementById('attachModal').style.display = 'none';
+  document.getElementById('attachContent').innerHTML = '';
+  document.body.style.overflow = '';
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape') window.closeAttachModal(); });
 
 await loadAnnouncements();
 </script>
