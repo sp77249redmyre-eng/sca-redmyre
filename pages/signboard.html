@@ -153,8 +153,8 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
     </select>
     <label>Business Name (엔터로 줄바꿈)</label>
     <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
-    <label>Alt Name (optional)</label>
-    <input type="text" id="fAlt" placeholder="e.g. 윤중병원">
+    <label>Alt Name (optional, 엔터로 줄바꿈)</label>
+    <textarea id="fAlt" rows="2" placeholder="e.g. 윤중병원" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <label>Sub Info (optional, use || to separate lines)</label>
     <textarea id="fSub" rows="2" placeholder="e.g. Dr A || Dr B"></textarea>
     <label>Unit Display</label>
@@ -305,7 +305,7 @@ function renderDirectoryPreview() {
         const isLastItem = idx === items.length - 1;
         const unitLabel = idx === 0 ? `<div style="font-size:${unitSize}px;font-weight:900;color:#0f172a;flex-shrink:0;">${unit}</div>` : `<div style="min-width:${unitSize+8}px;flex-shrink:0;"></div>`;
         const bizLines = e.business_name.split(/\n/);
-        const altHtml = e.display_name_alt ? ` <span style="font-size:${subSize}px;font-weight:600;color:#334155;">${e.display_name_alt}</span>` : '';
+        const altHtml = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l => `<span style="font-size:${subSize}px;font-weight:700;color:#0f172a;"> ${l}</span>`).join('') : '';
         bizHtml += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
           <div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${bizLines[0]}${bizLines.length===1?altHtml:''}</div>
           ${unitLabel}
