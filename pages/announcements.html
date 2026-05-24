@@ -34,6 +34,13 @@
 .pin-toggle.on { border-color:var(--blue-400);background:var(--blue-50) }
 .archive-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;margin-top:8px }
 .archive-toggle.on { border-color:#94a3b8;background:#f1f5f9 }
+.ann-item.scheduled { background:#f8fafc;border-color:#cbd5e1;opacity:0.85 }
+.ann-item.scheduled .ann-title { color:#64748b }
+.scheduled-badge { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:20px;font-size:11px;font-weight:600;color:#64748b;margin-left:6px }
+.schedule-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;margin-top:8px }
+.schedule-toggle.on { border-color:#7c3aed;background:#f5f3ff }
+.schedule-fields { display:none;margin-top:10px;padding:12px 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px }
+.schedule-fields.show { display:block }
 .push-banner { background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;padding:14px 18px;display:none;align-items:center;gap:12px;margin-bottom:16px }
 .push-banner.show { display:flex }
 .push-banner-btn { padding:7px 14px;border-radius:8px;background:var(--blue-600);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap }
@@ -132,6 +139,27 @@
           <input type="checkbox" id="annArchived">
           <span id="archiveLabel" style="font-size:13px;font-weight:500">📦 Archive this announcement</span>
         </label>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Schedule (optional)</label>
+      <label class="schedule-toggle" id="scheduleToggle">
+        <input type="checkbox" id="annScheduled">
+        <span id="scheduleLabel" style="font-size:13px;font-weight:500">🕐 Schedule for later</span>
+      </label>
+      <div class="schedule-fields" id="scheduleFields">
+        <div style="font-size:11px;color:#7c3aed;font-weight:600;margin-bottom:8px">Sydney time (AEST/AEDT)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">Date</label>
+            <input type="date" id="scheduleDate" class="modal-input" style="font-size:14px">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">Time</label>
+            <input type="time" id="scheduleTime" class="modal-input" style="font-size:14px">
+          </div>
+        </div>
+        <div id="schedulePreview" style="margin-top:8px;font-size:12px;color:#7c3aed;font-weight:500"></div>
       </div>
     </div>
     <div class="modal-field">
@@ -253,16 +281,20 @@ function renderAnns() {
     list.innerHTML = emptyMsg;
     return;
   }
-  list.innerHTML = filtered.map(a => `
-    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}" onclick="openAnnDetail('${a.id}')">
+  list.innerHTML = filtered.map(a => {
+    const isScheduled = a.scheduled_at && !a.push_sent;
+    const scheduledLabel = isScheduled ? `<span class="scheduled-badge">🕐 ${formatSydneyTime(a.scheduled_at)}</span>` : '';
+    return `
+    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}${isScheduled?' scheduled':''}" onclick="openAnnDetail('${a.id}')">
       <div class="ann-top">
         <div>
-          <div class="ann-title">${a.pinned?'📌 ':''}${a.title}</div>
-          <div class="ann-meta">${new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div class="ann-title">${a.pinned?'📌 ':''}${a.title}${scheduledLabel}</div>
+          <div class="ann-meta">${isScheduled?'⏳ Scheduled — '+formatSydneyTime(a.scheduled_at):new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
         </div>
         <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 window.openAnnDetail = (id) => {
@@ -337,6 +369,82 @@ document.getElementById('archiveToggle').addEventListener('click', () => {
   }, 0);
 });
 
+// Schedule toggle
+document.getElementById('scheduleToggle').addEventListener('click', () => {
+  const cb = document.getElementById('annScheduled');
+  setTimeout(() => {
+    const on = cb.checked;
+    document.getElementById('scheduleToggle').classList.toggle('on', on);
+    document.getElementById('scheduleLabel').textContent = on ? '🕐 Scheduled!' : '🕐 Schedule for later';
+    document.getElementById('scheduleFields').classList.toggle('show', on);
+    if (on && !document.getElementById('scheduleDate').value) {
+      // 기본값: 내일 오전 9시 Sydney
+      const tmr = new Date();
+      tmr.setDate(tmr.getDate() + 1);
+      const syd = toSydneyInputValues(tmr.toISOString());
+      document.getElementById('scheduleDate').value = syd.date;
+      document.getElementById('scheduleTime').value = '09:00';
+      updateSchedulePreview();
+    }
+  }, 0);
+});
+
+['scheduleDate','scheduleTime'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateSchedulePreview);
+});
+
+function updateSchedulePreview() {
+  const d = document.getElementById('scheduleDate').value;
+  const t = document.getElementById('scheduleTime').value;
+  if (d && t) {
+    const utc = sydneyInputToUTC(d, t);
+    document.getElementById('schedulePreview').textContent = '📅 Will send: ' + formatSydneyTime(utc);
+  }
+}
+
+// Sydney timezone helpers
+function getSydneyOffset(isoString) {
+  // Australia/Sydney: AEST +10, AEDT +11
+  const d = new Date(isoString || Date.now());
+  // Use Intl to detect offset
+  const fmt = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'shortOffset' });
+  const parts = fmt.formatToParts(d);
+  const tzPart = parts.find(p => p.type === 'timeZoneName')?.value || '+10:00';
+  const match = tzPart.match(/([+-])(\d+)(?::(\d+))?/);
+  if (!match) return 10 * 60;
+  const sign = match[1] === '+' ? 1 : -1;
+  return sign * (parseInt(match[2]) * 60 + parseInt(match[3] || 0));
+}
+
+function sydneyInputToUTC(dateStr, timeStr) {
+  // dateStr: 'YYYY-MM-DD', timeStr: 'HH:MM'
+  // Treat as Sydney local time → UTC ISO string
+  const fake = new Date(`${dateStr}T${timeStr}:00`);
+  const offsetMins = getSydneyOffset(fake.toISOString());
+  const utcMs = fake.getTime() - offsetMins * 60000;
+  return new Date(utcMs).toISOString();
+}
+
+function toSydneyInputValues(isoString) {
+  const d = new Date(isoString);
+  const offsetMins = getSydneyOffset(isoString);
+  const sydMs = d.getTime() + offsetMins * 60000;
+  const syd = new Date(sydMs);
+  const pad = n => String(n).padStart(2,'0');
+  return {
+    date: `${syd.getUTCFullYear()}-${pad(syd.getUTCMonth()+1)}-${pad(syd.getUTCDate())}`,
+    time: `${pad(syd.getUTCHours())}:${pad(syd.getUTCMinutes())}`
+  };
+}
+
+function formatSydneyTime(isoString) {
+  return new Date(isoString).toLocaleString('en-AU', {
+    timeZone: 'Australia/Sydney',
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+}
+
 document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('annModalTitle').textContent = 'New Announcement';
   document.getElementById('annEditId').value = '';
@@ -349,6 +457,14 @@ document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('annArchived').checked = false;
   document.getElementById('archiveToggle').classList.remove('on');
   document.getElementById('archiveLabel').textContent = '📦 Archive this announcement';
+  document.getElementById('annScheduled').checked = false;
+  document.getElementById('scheduleToggle').classList.remove('on');
+  document.getElementById('scheduleLabel').textContent = '🕐 Schedule for later';
+  document.getElementById('scheduleFields').classList.remove('show');
+  document.getElementById('scheduleDate').value = '';
+  document.getElementById('scheduleTime').value = '';
+  document.getElementById('schedulePreview').textContent = '';
+  document.getElementById('saveAnnBtn').textContent = 'Save →';
   document.getElementById('deleteAnnBtn').style.display = 'none';
   annFiles = []; annUpdatePreview(); annUpdateButtons();
   document.getElementById('annModal').classList.add('open');
@@ -366,6 +482,23 @@ window.openEditAnn = (a) => {
   document.getElementById('annArchived').checked = !!a.archived;
   document.getElementById('archiveToggle').classList.toggle('on', !!a.archived);
   document.getElementById('archiveLabel').textContent = a.archived ? '📦 Archived' : '📦 Archive this announcement';
+  // Schedule
+  const hasSchedule = !!a.scheduled_at && !a.push_sent;
+  document.getElementById('annScheduled').checked = hasSchedule;
+  document.getElementById('scheduleToggle').classList.toggle('on', hasSchedule);
+  document.getElementById('scheduleLabel').textContent = hasSchedule ? '🕐 Scheduled!' : '🕐 Schedule for later';
+  document.getElementById('scheduleFields').classList.toggle('show', hasSchedule);
+  if (hasSchedule) {
+    const syd = toSydneyInputValues(a.scheduled_at);
+    document.getElementById('scheduleDate').value = syd.date;
+    document.getElementById('scheduleTime').value = syd.time;
+    document.getElementById('schedulePreview').textContent = '📅 ' + formatSydneyTime(a.scheduled_at);
+  } else {
+    document.getElementById('scheduleDate').value = '';
+    document.getElementById('scheduleTime').value = '';
+    document.getElementById('schedulePreview').textContent = '';
+  }
+  document.getElementById('saveAnnBtn').textContent = 'Save →';
   document.getElementById('deleteAnnBtn').style.display = 'inline-flex';
   document.getElementById('annModal').classList.add('open');
 };
@@ -427,6 +560,17 @@ document.getElementById('annInputFile').addEventListener('change', e => { annHan
 
 document.getElementById('saveAnnBtn').addEventListener('click', async () => {
   const id = document.getElementById('annEditId').value;
+  const isScheduled = document.getElementById('annScheduled').checked;
+  const schedDate = document.getElementById('scheduleDate').value;
+  const schedTime = document.getElementById('scheduleTime').value;
+
+  let scheduledAt = null;
+  if (isScheduled) {
+    if (!schedDate || !schedTime) { showToast('Please set date and time for scheduled announcement', true); return; }
+    scheduledAt = sydneyInputToUTC(schedDate, schedTime);
+    if (scheduledAt <= new Date().toISOString()) { showToast('Scheduled time must be in the future', true); return; }
+  }
+
   const data = {
     title:    document.getElementById('annTitle').value.trim(),
     content:  document.getElementById('annContent').value.trim(),
@@ -434,6 +578,8 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
     pinned:   document.getElementById('annPinned').checked,
     archived: document.getElementById('annArchived').checked,
     author_id: user.id,
+    scheduled_at: scheduledAt,
+    push_sent: isScheduled ? false : null,
   };
   if (!data.title||!data.content) { showToast('Please fill in all fields', true); return; }
 
@@ -441,7 +587,6 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
-    // Upload attachments
     let attachments = [];
     for (const file of annFiles) {
       const ext = file.name.split('.').pop().toLowerCase();
@@ -457,29 +602,29 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
       await supabase.from('announcements').update(data).eq('id', id);
     } else {
       await supabase.from('announcements').insert(data);
-      try {
-        const { data:{ session: pushSession } } = await supabase.auth.getSession();
-        await fetch('/api/send-push', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
-        });
-        await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString() })
-        });
-      } catch(pushErr){}
+      if (!isScheduled) {
+        try {
+          const { data:{ session: pushSession } } = await supabase.auth.getSession();
+          await fetch('/api/send-push', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
+          });
+          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString() })
+          });
+        } catch(pushErr){}
+      }
     }
 
-    // Reset attachments
     annFiles = [];
     annUpdatePreview();
     annUpdateButtons();
-
     closeModal('annModal');
     await loadAnnouncements();
-    showToast(id ? 'Announcement updated ✓' : 'Announcement posted ✓');
+    showToast(id ? 'Announcement updated ✓' : (isScheduled ? `Scheduled for ${formatSydneyTime(scheduledAt)} ✓` : 'Announcement posted ✓'));
   } catch(e) { showToast(e.message||'Failed to save', true); }
   finally { btn.disabled=false; btn.textContent='Save →'; }
 });
