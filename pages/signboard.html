@@ -133,7 +133,7 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
     <h3 id="modalTitle">Add Entry</h3>
     <input type="hidden" id="editId">
     <label>Page</label>
-    <select id="fPage">
+    <select id="fPage" onchange="updateFloorOptions()">
       <option value="1">Page 1 · G + L1</option>
       <option value="2">Page 2 · L2</option>
       <option value="3">Page 3 · L3</option>
@@ -142,15 +142,7 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
       <option value="6">Page 6 · L6</option>
     </select>
     <label>Floor</label>
-    <select id="fFloor">
-      <option value="GROUND">GROUND</option>
-      <option value="LEVEL 1">LEVEL 1</option>
-      <option value="LEVEL 2">LEVEL 2</option>
-      <option value="LEVEL 3">LEVEL 3</option>
-      <option value="LEVEL 4">LEVEL 4</option>
-      <option value="LEVEL 5">LEVEL 5</option>
-      <option value="LEVEL 6">LEVEL 6</option>
-    </select>
+    <select id="fFloor" onchange="updateUnitOptions()"></select>
     <label>Business Name (엔터로 줄바꿈)</label>
     <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <label>Alt Name (optional, 엔터로 줄바꿈)</label>
@@ -158,7 +150,7 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
     <label>Sub Info (optional, use || to separate lines)</label>
     <textarea id="fSub" rows="2" placeholder="e.g. Dr A || Dr B"></textarea>
     <label>Unit Display</label>
-    <input type="text" id="fUnit" placeholder="e.g. 1A, 1B & 1C">
+    <select id="fUnit" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;"></select>
     <label>Sort Order</label>
     <input type="number" id="fSort" value="1">
     <div class="sb-modal-btns">
@@ -178,7 +170,35 @@ const { supabase, user, role } = ctx;
 
 if (role !== 'admin') { window.location.href = '/pages/building.html'; }
 
-const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
+const UNIT_OPTIONS = {
+  'GROUND': ['Unit 1'],
+  'LEVEL 1': ['1A','1B','1C','1D','1E','1F','1G','1H'],
+  'LEVEL 2': ['2A','2B','2C','2D','2E','2F','2G','2H'],
+  'LEVEL 3': ['3A','3B','3C','3D','3E','3F','3G','3H'],
+  'LEVEL 4': ['4A','4B','4C','4D','4E','4F','4G','4H'],
+  'LEVEL 5': ['5A','5B','5C','5D','5E','5F','5G','5H'],
+  'LEVEL 6': ['6A','6B','6C','6D','6E','6F','6G','6H'],
+};
+
+const PAGE_FLOOR = {
+  1: ['GROUND','LEVEL 1'], 2:['LEVEL 2'], 3:['LEVEL 3'],
+  4:['LEVEL 4'], 5:['LEVEL 5'], 6:['LEVEL 6']
+};
+
+window.updateUnitOptions = (currentVal='') => {
+  const floor = document.getElementById('fFloor').value;
+  const sel = document.getElementById('fUnit');
+  const opts = UNIT_OPTIONS[floor] || [];
+  sel.innerHTML = opts.map(u => `<option value="${u}" ${u===currentVal?'selected':''}>${u}</option>`).join('');
+};
+
+window.updateFloorOptions = () => {
+  const page = parseInt(document.getElementById('fPage').value);
+  const floors = PAGE_FLOOR[page] || ['GROUND'];
+  const fFloor = document.getElementById('fFloor');
+  fFloor.innerHTML = floors.map(f => `<option value="${f}">${f}</option>`).join('');
+  updateUnitOptions();
+};
 const FLOOR_BADGE = {'GROUND':'fb-g','LEVEL 1':'fb-l1','LEVEL 2':'fb-l2','LEVEL 3':'fb-l3','LEVEL 4':'fb-l4','LEVEL 5':'fb-l5','LEVEL 6':'fb-l6'};
 const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
 const FLOOR_LABEL = {'GROUND':'GROUND','LEVEL 1':'LEVEL 1','LEVEL 2':'LEVEL 2','LEVEL 3':'LEVEL 3','LEVEL 4':'LEVEL 4','LEVEL 5':'LEVEL 5','LEVEL 6':'LEVEL 6'};
@@ -463,11 +483,10 @@ window.openAddModal = () => {
   document.getElementById('modalTitle').textContent='Add Entry';
   document.getElementById('editId').value='';
   document.getElementById('fPage').value=activeTab;
-  document.getElementById('fFloor').value='GROUND';
+  updateFloorOptions();
   document.getElementById('fBiz').value='';
   document.getElementById('fAlt').value='';
   document.getElementById('fSub').value='';
-  document.getElementById('fUnit').value='';
   document.getElementById('fSort').value='1';
   document.getElementById('entryModal').classList.add('open');
 };
@@ -478,7 +497,9 @@ window.openEditModal = (id) => {
   document.getElementById('modalTitle').textContent='Edit Entry';
   document.getElementById('editId').value=e.id;
   document.getElementById('fPage').value=e.page;
+  updateFloorOptions();
   document.getElementById('fFloor').value=e.floor;
+  updateUnitOptions(e.unit_display);
   document.getElementById('fBiz').value=e.business_name;
   document.getElementById('fAlt').value=e.display_name_alt||'';
   document.getElementById('fSub').value=e.sub_info||'';
