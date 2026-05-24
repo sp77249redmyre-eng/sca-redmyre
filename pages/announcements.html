@@ -403,10 +403,30 @@ function updateSchedulePreview() {
 }
 
 // Sydney timezone helpers
+function sydneyInputToUTC(dateStr, timeStr) {
+  // dateStr: 'YYYY-MM-DD', timeStr: 'HH:MM'
+  // Sydney local time → UTC using Intl API (browser-timezone independent)
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  // Binary search for the UTC ms that corresponds to this Sydney local time
+  // Start with UTC-10 estimate
+  let utcMs = Date.UTC(year, month - 1, day, hour - 10, minute, 0);
+  for (let i = 0; i < 3; i++) {
+    const parts = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Sydney',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(new Date(utcMs));
+    const get = (t) => parseInt(parts.find(p => p.type === t)?.value || '0');
+    const diffH = hour - get('hour');
+    const diffM = minute - get('minute');
+    utcMs -= (diffH * 60 + diffM) * 60000;
+  }
+  return new Date(utcMs).toISOString();
+}
+
 function getSydneyOffset(isoString) {
-  // Australia/Sydney: AEST +10, AEDT +11
   const d = new Date(isoString || Date.now());
-  // Use Intl to detect offset
   const fmt = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'shortOffset' });
   const parts = fmt.formatToParts(d);
   const tzPart = parts.find(p => p.type === 'timeZoneName')?.value || '+10:00';
@@ -414,15 +434,6 @@ function getSydneyOffset(isoString) {
   if (!match) return 10 * 60;
   const sign = match[1] === '+' ? 1 : -1;
   return sign * (parseInt(match[2]) * 60 + parseInt(match[3] || 0));
-}
-
-function sydneyInputToUTC(dateStr, timeStr) {
-  // dateStr: 'YYYY-MM-DD', timeStr: 'HH:MM'
-  // Treat as Sydney local time → UTC ISO string
-  const fake = new Date(`${dateStr}T${timeStr}:00`);
-  const offsetMins = getSydneyOffset(fake.toISOString());
-  const utcMs = fake.getTime() - offsetMins * 60000;
-  return new Date(utcMs).toISOString();
 }
 
 function toSydneyInputValues(isoString) {
