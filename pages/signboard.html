@@ -266,8 +266,12 @@ function renderDirectoryPreview() {
   const unitSize = totalItems <= 4 ? 20 : totalItems <= 6 ? 17 : totalItems <= 8 ? 15 : 13;
   const barW = totalItems <= 6 ? 5 : 4;
 
-  function renderBizName(name) {
-    return name.split(/\n/).map(l => `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;line-height:1.3;">${l}</div>`).join('');
+  function renderBizName(name, alt) {
+    const lines = name.split(/\n/);
+    return lines.map((l, i) => {
+      const altHtml = (i === lines.length - 1 && alt) ? ` <span style="font-size:${subSize}px;font-weight:600;color:#334155;">${alt}</span>` : '';
+      return `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;line-height:1.3;">${l}${altHtml}</div>`;
+    }).join('');
   }
 
   function renderSub(sub) {
@@ -299,7 +303,7 @@ function renderDirectoryPreview() {
       let bizHtml = '';
       items.forEach((e, idx) => {
         const isLastItem = idx === items.length - 1;
-        bizHtml += renderBizName(e.business_name);
+        bizHtml += renderBizName(e.business_name, e.display_name_alt);
         bizHtml += renderSub(e.sub_info);
         if (!isLastItem) {
           bizHtml += `<div style="border-top:1px solid #f0ece0;margin:5px 0;"></div>`;
