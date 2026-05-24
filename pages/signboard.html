@@ -315,12 +315,18 @@ function renderDirectoryPreview() {
         const alt = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize}px;font-weight:700;color:#0f172a;margin-top:2px;">${l.trim()}</div>`).join('') : '';
         // 첫 상호에만 유닛번호 우측 표시
         if (idx === 0) {
-          bizHtml += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
-            <div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}</div>
-            <div style="font-size:${bizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;">${unit}</div>
+          const bizLines = e.business_name.split(/\n/);
+          bizHtml += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;">
+              ${bizLines.map(l=>`<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${l}</div>`).join('')}
+            </div>
+            <div style="font-size:${bizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;padding-top:2px;">${unit}</div>
           </div>${alt}`;
         } else {
-          bizHtml += `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.business_name}</div>${alt}`;
+          const bizLines = e.business_name.split(/\n/);
+          bizHtml += `<div style="flex:1;">
+            ${bizLines.map(l=>`<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${l}</div>`).join('')}
+          </div>${alt}`;
         }
         bizHtml += renderSub(e.sub_info);
         if (!isLastItem) {
