@@ -294,7 +294,7 @@ function renderDirectoryPreview() {
     unitOrder.forEach((unit, ui) => {
       const items = unitMap[unit];
       const isLast = ui === unitOrder.length - 1 && fi === floors.length - 1;
-      const borderBottom = isLast ? 'none' : `1.5px solid #c9a961`;
+      const borderBottom = isLast ? 'none' : `1px solid #c9a961`;
 
       let bizHtml = '';
       items.forEach((e, idx) => {
@@ -302,14 +302,19 @@ function renderDirectoryPreview() {
         bizHtml += renderBizName(e.business_name);
         bizHtml += renderSub(e.sub_info);
         if (!isLastItem) {
-          bizHtml += `<div style="border-top:1px solid #f0ece0;margin:6px 0;"></div>`;
+          bizHtml += `<div style="border-top:1px solid #f0ece0;margin:5px 0;"></div>`;
         }
       });
 
-      rows += `<div style="flex:1;display:flex;align-items:center;padding:0 28px;border-bottom:${borderBottom};min-height:0;">
+      const flexVal = items.reduce((a, e) => {
+        let lines = e.business_name.split(/\n/).length;
+        if (e.sub_info) lines += e.sub_info.split(/\n|\|\|/).filter(Boolean).length;
+        return a + lines;
+      }, 0);
+      rows += `<div style="flex:${Math.max(flexVal,1)};display:flex;align-items:center;padding:0 28px;border-bottom:${borderBottom};min-height:0;">
         <div style="width:52px;flex-shrink:0;"><div style="font-size:${unitSize}px;font-weight:900;color:#0f172a;">${unit}</div></div>
         <div style="width:${barW}px;align-self:stretch;background:#c9a961;flex-shrink:0;margin-right:16px;border-radius:2px;"></div>
-        <div style="flex:1;min-width:0;">${bizHtml}</div>
+        <div style="flex:1;min-width:0;padding:8px 0;">${bizHtml}</div>
       </div>`;
     });
   });
