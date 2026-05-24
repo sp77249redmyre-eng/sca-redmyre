@@ -151,8 +151,8 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
       <option value="LEVEL 5">LEVEL 5</option>
       <option value="LEVEL 6">LEVEL 6</option>
     </select>
-    <label>Business Name</label>
-    <input type="text" id="fBiz" placeholder="e.g. Redmyre Medical Centre">
+    <label>Business Name (엔터로 줄바꿈)</label>
+    <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <label>Alt Name (optional)</label>
     <input type="text" id="fAlt" placeholder="e.g. 윤중병원">
     <label>Sub Info (optional, use || to separate lines)</label>
@@ -252,37 +252,65 @@ function renderDirectoryPreview() {
   const grouped = {};
   entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
 
-  // 층 목록 + Suite 범위
   const floors = FLOOR_ORDER.filter(f => grouped[f]);
-  const firstFloor = floors[0] || '';
-  const floorLabel = floors.length === 1 ? firstFloor : floors.map(f => FLOOR_LABEL[f]).join(' & ');
+  const floorLabel = floors.length === 1 ? floors[0] : floors.map(f => FLOOR_LABEL[f]).join(' & ');
 
-  // 첫번째 층 suite 범위
-  let suiteRange = '';
-  if (floors.length > 0) {
-    const allUnits = floors.flatMap(f => grouped[f].map(e => e.unit_display));
-    if (allUnits.length === 1) suiteRange = allUnits[0];
-    else suiteRange = allUnits[0] + ' – ' + allUnits[allUnits.length-1];
+  // 항목 수 기준 자동 축소
+  const totalItems = floors.reduce((acc, f) => {
+    const units = {};
+    grouped[f].forEach(e => { if (!units[e.unit_display]) units[e.unit_display]=[]; units[e.unit_display].push(e); });
+    return acc + Object.keys(units).length;
+  }, 0);
+  const bizSize = totalItems <= 5 ? 22 : totalItems <= 8 ? 18 : 15;
+  const subSize = totalItems <= 5 ? 14 : totalItems <= 8 ? 12 : 11;
+  const unitSize = totalItems <= 5 ? 16 : totalItems <= 8 ? 13 : 11;
+  const padV = totalItems <= 5 ? 18 : totalItems <= 8 ? 12 : 8;
+  const barW = totalItems <= 5 ? 5 : totalItems <= 8 ? 4 : 3;
+
+  function renderBizName(name) {
+    return name.split(/\n/).map(l => `<div style="font-size:${bizSize}px;font-weight:900;color:#0f172a;line-height:1.3;">${l}</div>`).join('');
+  }
+
+  function renderSub(sub) {
+    if (!sub) return '';
+    return sub.split(/\n|\|\|/).map(l => l.trim()).filter(Boolean)
+      .map(l => `<div style="font-size:${subSize}px;font-weight:600;color:#334155;margin-top:3px;line-height:1.5;">${l}</div>`).join('');
   }
 
   let rows = '';
   floors.forEach((floor, fi) => {
     // G+L1 처럼 2개 층이면 층 구분 소헤더
     if (floors.length > 1) {
-      rows += `<div style="font-size:13px;font-weight:700;letter-spacing:3px;color:#94a3b8;text-transform:uppercase;padding:10px 0 4px;${fi>0?'margin-top:8px;':''}border-bottom:2px solid #c9a961;margin-bottom:2px;">${floor}</div>`;
+      rows += `<div style="font-size:13px;font-weight:800;letter-spacing:3px;color:#0f172a;text-transform:uppercase;padding:10px 32px 6px;border-bottom:1.5px solid #c9a961;">${floor}</div>`;
     }
-    grouped[floor].forEach((e, idx) => {
-      const alt = e.display_name_alt ? ` <span style="font-size:16px;color:#64748b;font-weight:500;">${e.display_name_alt}</span>` : '';
-      const bg = idx % 2 === 1 ? 'background:#fdfcf9;' : '';
-      const hasExtra = e.sub_info || e.business_name.length > 30;
-      const flexVal = hasExtra ? '2' : '1';
-      rows += `<div style="flex:${flexVal};display:flex;align-items:center;padding:0 32px;border-bottom:1.5px solid #f0ece0;${bg}min-height:0;">
-        <div style="width:64px;flex-shrink:0;"><div style="font-size:20px;font-weight:900;color:#0f172a;">${e.unit_display}</div></div>
-        <div style="width:4px;align-self:stretch;background:#c9a961;flex-shrink:0;margin:10px 18px 10px 0;border-radius:2px;"></div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:19px;font-weight:800;color:#0f172a;line-height:1.3;">${e.business_name}${alt}</div>
-          ${e.sub_info ? e.sub_info.split('||').map(l=>`<div style="font-size:14px;color:#64748b;margin-top:4px;line-height:1.5;">${l.trim()}</div>`).join('') : ''}
-        </div>
+
+    // 같은 unit_display 묶기
+    const unitMap = {};
+    const unitOrder = [];
+    grouped[floor].forEach(e => {
+      if (!unitMap[e.unit_display]) { unitMap[e.unit_display]=[]; unitOrder.push(e.unit_display); }
+      unitMap[e.unit_display].push(e);
+    });
+
+    unitOrder.forEach((unit, ui) => {
+      const items = unitMap[unit];
+      const isLast = ui === unitOrder.length - 1 && fi === floors.length - 1;
+      const borderBottom = isLast ? 'none' : `1.5px solid #c9a961`;
+
+      let bizHtml = '';
+      items.forEach((e, idx) => {
+        const isLastItem = idx === items.length - 1;
+        bizHtml += renderBizName(e.business_name);
+        bizHtml += renderSub(e.sub_info);
+        if (!isLastItem) {
+          bizHtml += `<div style="border-top:1px solid #f0ece0;margin:6px 0;"></div>`;
+        }
+      });
+
+      rows += `<div style="display:flex;align-items:flex-start;padding:${padV}px 32px;border-bottom:${borderBottom};min-height:0;">
+        <div style="width:56px;flex-shrink:0;padding-top:2px;"><div style="font-size:${unitSize}px;font-weight:900;color:#0f172a;">${unit}</div></div>
+        <div style="width:${barW}px;align-self:stretch;background:#c9a961;flex-shrink:0;margin-right:16px;border-radius:2px;"></div>
+        <div style="flex:1;min-width:0;">${bizHtml}</div>
       </div>`;
     });
   });
@@ -292,24 +320,12 @@ function renderDirectoryPreview() {
     <div class="sb-preview-wrap">
       <div class="pv-frame" id="pvFrame" style="background:#ffffff;overflow:hidden;">
 
-        <!-- 헤더 -->
-        <div style="background:#0f172a;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #c9a961;flex-shrink:0;position:relative;">
-          <div style="position:absolute;top:11px;left:11px;width:22px;height:22px;border-top:2px solid #c9a961;border-left:2px solid #c9a961;"></div>
-          <div style="position:absolute;top:11px;right:11px;width:22px;height:22px;border-top:2px solid #c9a961;border-right:2px solid #c9a961;"></div>
-          <img src="/sca-logo.png?v=5" style="height:32px;display:block;flex-shrink:0;">
-          <div style="text-align:right;">
-            <div style="font-size:11px;letter-spacing:4px;color:#c9a961;text-transform:uppercase;">Redmyre House</div>
-            <div style="font-size:10px;color:#475569;margin-top:2px;letter-spacing:1px;">9–13 Redmyre Road, Strathfield</div>
+        <!-- 헤더 없음 — 새 디자인은 레벨 텍스트만 -->
+        <div style="padding:28px 32px 16px;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-size:32px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floorLabel}</div>
+            <div style="flex:1;height:2px;background:#c9a961;"></div>
           </div>
-        </div>
-
-        <!-- 레벨 배너 -->
-        <div style="background:#c9a961;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-          <div>
-            <div style="font-size:11px;letter-spacing:6px;color:#7a6520;text-transform:uppercase;margin-bottom:2px;">Floor Directory</div>
-            <div style="font-size:46px;font-weight:900;color:#0f172a;line-height:1;letter-spacing:-2px;">${floorLabel}</div>
-          </div>
-
         </div>
 
         <!-- 엔트리 -->
@@ -318,8 +334,9 @@ function renderDirectoryPreview() {
         </div>
 
         <!-- 푸터 -->
-        <div style="background:#0f172a;padding:13px 32px;display:flex;align-items:center;justify-content:center;border-top:4px solid #c9a961;flex-shrink:0;">
-          <div style="font-size:10px;color:#94a3b8;letter-spacing:3px;text-transform:uppercase;">SCA Facility Management · Redmyre House · Strathfield</div>
+        <div style="background:#0f172a;padding:16px 32px;text-align:center;flex-shrink:0;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:3px;color:#fff;text-transform:uppercase;">SCA Facility Management</div>
+          <div style="font-size:9px;color:#64748b;margin-top:3px;letter-spacing:1px;">Redmyre House · 9–13 Redmyre Road</div>
         </div>
 
       </div>
