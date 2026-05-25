@@ -954,8 +954,8 @@ function renderPendingQuotes(quotes) {
         d.innerHTML = '<span class="detail-label">' + label + '</span><span>' + escHtml(val) + '</span>';
         return d;
       };
-      detailsDiv.appendChild(mkLine('Notes:', q.notes || '—'));
-      detailsDiv.appendChild(mkLine('Internal:', qParsed.note || '—'));
+      if(q.notes){const nd=document.createElement('div');nd.className='detail-line';nd.innerHTML='<span class="detail-label">Notes:</span><span>'+q.notes+'</span>';detailsDiv.appendChild(nd);}else{detailsDiv.appendChild(mkLine('Notes:','—'));}
+      if(qParsed.note){const id=document.createElement('div');id.className='detail-line';id.innerHTML='<span class="detail-label">Internal:</span><span>'+qParsed.note+'</span>';detailsDiv.appendChild(id);}else{detailsDiv.appendChild(mkLine('Internal:','—'));}
       detailsDiv.appendChild(mkLine('Category:', q.category || qParsed.category || '—'));
       detailsDiv.appendChild(mkLine('Priority:', qParsed.priority || '—'));
       const filesLine = document.createElement('div'); filesLine.className = 'detail-line';
@@ -2473,33 +2473,32 @@ window.closeViewer = function() {
   document.getElementById('viewerContent').innerHTML = '';
 };
 
-// Quill dynamic load
-function loadQuillLib(cb){
-  if(window.Quill){ cb(); return; }
-  const link=document.createElement('link'); link.rel='stylesheet'; link.href='https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css'; document.head.appendChild(link);
-  const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js'; s.onload=cb; document.head.appendChild(s);
-}
+init();
+</script>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
+.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
+.ql-editor{min-height:180px;padding:11px 14px}
+.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
 let _qN, _qI;
 window._initQuill = function(notes, note){
-  loadQuillLib(()=>{
-    const notesTA=document.getElementById('quoteNotes');
-    const intTA=document.getElementById('quoteInternalNote');
-    if(!_qN){
-      const nd=document.createElement('div'); nd.id='_qNDiv'; notesTA.parentNode.insertBefore(nd,notesTA); notesTA.style.display='none';
-      const id=document.createElement('div'); id.id='_qIDiv'; intTA.parentNode.insertBefore(id,intTA); intTA.style.display='none';
-      _qN=new Quill('#_qNDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
-      _qI=new Quill('#_qIDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
-      _qN.on('text-change',()=>{ notesTA.value=_qN.root.innerHTML; });
-      _qI.on('text-change',()=>{ intTA.value=_qI.root.innerHTML; });
-      // Add styles
-      const st=document.createElement('style'); st.textContent='.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}.ql-editor{min-height:180px;padding:11px 14px}.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}'; document.head.appendChild(st);
-    }
-    _qN.root.innerHTML=notes||'';
-    _qI.root.innerHTML=note||'';
-  });
+  const notesTA = document.getElementById('quoteNotes');
+  const intTA = document.getElementById('quoteInternalNote');
+  if(!_qN){
+    const nd = document.createElement('div'); nd.id='_qNDiv'; notesTA.parentNode.insertBefore(nd, notesTA); notesTA.style.display='none';
+    const id = document.createElement('div'); id.id='_qIDiv'; intTA.parentNode.insertBefore(id, intTA); intTA.style.display='none';
+    _qN = new Quill('#_qNDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
+    _qI = new Quill('#_qIDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
+    _qN.on('text-change',()=>{ notesTA.value=_qN.root.innerHTML; });
+    _qI.on('text-change',()=>{ intTA.value=_qI.root.innerHTML; });
+  }
+  _qN.root.innerHTML = notes||'';
+  _qI.root.innerHTML = note||'';
 };
-
-init();
 </script>
 </body>
 </html>
