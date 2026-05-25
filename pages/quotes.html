@@ -2488,16 +2488,16 @@ function initQuill(){
   const intTA = document.getElementById('quoteInternalNote');
   const notesDiv = document.createElement('div'); notesDiv.id='quoteNotesEditor'; notesTA.parentNode.insertBefore(notesDiv, notesTA); notesTA.style.display='none';
   const intDiv = document.createElement('div'); intDiv.id='quoteInternalNoteEditor'; intTA.parentNode.insertBefore(intDiv, intTA); intTA.style.display='none';
-  quillNotes = new Quill('#quoteNotesEditor',{theme:'snow',modules:{toolbar:[['bold','italic','underline'],[{color:[]}],[{list:'ordered'},{list:'bullet'}],['clean']]},placeholder:'Brief description visible to voters…'});
-  quillInternal = new Quill('#quoteInternalNoteEditor',{theme:'snow',modules:{toolbar:[['bold','italic','underline'],[{color:[]}],[{list:'ordered'},{list:'bullet'}],['clean']]},placeholder:'Private notes for committee...'});
+  quillNotes = new Quill('#quoteNotesEditor',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
+  quillInternal = new Quill('#quoteInternalNoteEditor',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
   quillNotes.on('text-change',()=>{ notesTA.value=quillNotes.root.innerHTML; });
   quillInternal.on('text-change',()=>{ intTA.value=quillInternal.root.innerHTML; });
 }
 function resetQuill(){ if(quillNotes){ quillNotes.root.innerHTML=''; quillInternal.root.innerHTML=''; } }
 function loadQuill(notes, note){ if(quillNotes){ quillNotes.root.innerHTML=notes||''; quillInternal.root.innerHTML=note||''; } }
-const _oCP=openCreateProject; openCreateProject=function(){_oCP(); setTimeout(initQuill,50);};
-const _oAQ=openAddQuoteToProject; openAddQuoteToProject=function(a,b,c,d){_oAQ(a,b,c,d); setTimeout(initQuill,50);};
-const _oEQ=editQuote; editQuote=function(id){ _oEQ(id); setTimeout(()=>{ initQuill(); const q=allQuotes.find(x=>x.id===id); if(!q)return; const p=parseComment(q.comment); loadQuill(q.notes, p.note); },100);};
+const _oCP=window.openCreateProject; window.openCreateProject=function(){_oCP(); setTimeout(initQuill,50);};
+const _oAQ=window.openAddQuoteToProject; window.openAddQuoteToProject=function(a,b,c,d){_oAQ(a,b,c,d); setTimeout(initQuill,50);};
+const _oEQ=window.editQuote; window.editQuote=function(id){ _oEQ(id); setTimeout(()=>{ initQuill(); const q=allQuotes.find(x=>x.id===id); if(!q)return; const p=parseComment(q.comment); loadQuill(q.notes, p.note); },100);};
 </script>
 </body>
 </html>
