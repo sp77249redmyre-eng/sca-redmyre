@@ -2059,6 +2059,7 @@ window.editQuote = function(id) {
   renderExistingFilesList();
 
   document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill(q.notes||'', parsed.note||''); },50);
 };
 
 window.renderExistingFilesList = function() {
@@ -2203,6 +2204,7 @@ window.openAddQuoteToProject = function(projectId, projectName, category, priori
   document.getElementById('quoteNotes').value   = '';
   document.getElementById('quoteInternalNote').value = '';
   document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill('',''); },50);
 };
 
 // File upload
@@ -2268,6 +2270,7 @@ window.openCreateProject = function() {
   document.getElementById('quoteNotes').value    = '';
   document.getElementById('quoteInternalNote').value = '';
   document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill('',''); },50);
 };
 
 window.handleProjectSelect = function() {
@@ -2481,23 +2484,21 @@ init();
 </style>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script>
-let quillNotes, quillInternal;
-function initQuill(){
-  if(quillNotes) return;
+let _qN, _qI;
+window._initQuill = function(notes, note){
   const notesTA = document.getElementById('quoteNotes');
   const intTA = document.getElementById('quoteInternalNote');
-  const notesDiv = document.createElement('div'); notesDiv.id='quoteNotesEditor'; notesTA.parentNode.insertBefore(notesDiv, notesTA); notesTA.style.display='none';
-  const intDiv = document.createElement('div'); intDiv.id='quoteInternalNoteEditor'; intTA.parentNode.insertBefore(intDiv, intTA); intTA.style.display='none';
-  quillNotes = new Quill('#quoteNotesEditor',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
-  quillInternal = new Quill('#quoteInternalNoteEditor',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
-  quillNotes.on('text-change',()=>{ notesTA.value=quillNotes.root.innerHTML; });
-  quillInternal.on('text-change',()=>{ intTA.value=quillInternal.root.innerHTML; });
-}
-function resetQuill(){ if(quillNotes){ quillNotes.root.innerHTML=''; quillInternal.root.innerHTML=''; } }
-function loadQuill(notes, note){ if(quillNotes){ quillNotes.root.innerHTML=notes||''; quillInternal.root.innerHTML=note||''; } }
-const _oCP=window.openCreateProject; window.openCreateProject=function(){_oCP(); setTimeout(initQuill,50);};
-const _oAQ=window.openAddQuoteToProject; window.openAddQuoteToProject=function(a,b,c,d){_oAQ(a,b,c,d); setTimeout(initQuill,50);};
-const _oEQ=window.editQuote; window.editQuote=function(id){ _oEQ(id); setTimeout(()=>{ initQuill(); const q=allQuotes.find(x=>x.id===id); if(!q)return; const p=parseComment(q.comment); loadQuill(q.notes, p.note); },100);};
+  if(!_qN){
+    const nd = document.createElement('div'); nd.id='_qNDiv'; notesTA.parentNode.insertBefore(nd, notesTA); notesTA.style.display='none';
+    const id = document.createElement('div'); id.id='_qIDiv'; intTA.parentNode.insertBefore(id, intTA); intTA.style.display='none';
+    _qN = new Quill('#_qNDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
+    _qI = new Quill('#_qIDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
+    _qN.on('text-change',()=>{ notesTA.value=_qN.root.innerHTML; });
+    _qI.on('text-change',()=>{ intTA.value=_qI.root.innerHTML; });
+  }
+  _qN.root.innerHTML = notes||'';
+  _qI.root.innerHTML = note||'';
+};
 </script>
 </body>
 </html>
