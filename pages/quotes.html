@@ -461,11 +461,11 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Scope / Notes (Public)</label>
-      <div id="quoteNotesEditor"></div><input type="hidden" id="quoteNotes">
+      <textarea class="modal-textarea" id="quoteNotes" placeholder="Brief description visible to voters…"></textarea>
     </div>
     <div class="modal-field">
       <label class="modal-label">🔒 Internal Notes</label>
-      <div id="quoteInternalNoteEditor"></div><input type="hidden" id="quoteInternalNote">
+      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes for committee..."></textarea>
     </div>
     <div class="modal-field">
       <label class="modal-label">📎 Attachments</label>
@@ -954,7 +954,7 @@ function renderPendingQuotes(quotes) {
         d.innerHTML = '<span class="detail-label">' + label + '</span><span>' + escHtml(val) + '</span>';
         return d;
       };
-      if(q.notes){const nd=document.createElement('div');nd.className='detail-line';nd.innerHTML='<span class='detail-label'>Notes:</span><span class='detail-value'>'+q.notes+'</span>';detailsDiv.appendChild(nd);}
+      if(q.notes){const nd=document.createElement('div');nd.className='detail-line';nd.innerHTML='<span class="detail-label">Notes:</span><span class="detail-value">'+q.notes+'</span>';detailsDiv.appendChild(nd);}
       detailsDiv.appendChild(mkLine('Internal:', qParsed.note || '—'));
       detailsDiv.appendChild(mkLine('Category:', q.category || qParsed.category || '—'));
       detailsDiv.appendChild(mkLine('Priority:', qParsed.priority || '—'));
@@ -2202,7 +2202,7 @@ window.openAddQuoteToProject = function(projectId, projectName, category, priori
   document.getElementById('quoteAmount').value  = '';
   document.getElementById('quoteNotes').value   = '';
   document.getElementById('quoteInternalNote').value = '';
-  if(quillNotes){quillNotes.root.innerHTML='';quillInternal.root.innerHTML='';}
+  resetQuill();
   document.getElementById('quoteModal').classList.add('open');
 };
 
@@ -2268,7 +2268,7 @@ window.openCreateProject = function() {
   document.getElementById('quotePriority').disabled = false;
   document.getElementById('quoteNotes').value    = '';
   document.getElementById('quoteInternalNote').value = '';
-  if(quillNotes){quillNotes.root.innerHTML='';quillInternal.root.innerHTML='';}
+  resetQuill();
   document.getElementById('quoteModal').classList.add('open');
 };
 
@@ -2474,22 +2474,41 @@ window.closeViewer = function() {
 
 init();
 </script>
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet"><style>.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}.ql-editor{min-height:180px;padding:11px 14px}.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}</style><script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
+.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
+.ql-editor{min-height:180px;padding:11px 14px}
+.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script>
 let quillNotes, quillInternal;
 function initQuill(){
   if(quillNotes) return;
-  quillNotes = new Quill("#quoteNotesEditor",{theme:"snow",modules:{toolbar:[["bold","italic","underline"],[{color:[]}],[{list:"ordered"},{list:"bullet"}],["clean"]]},placeholder:"Brief description visible to voters…"});
-  quillInternal = new Quill("#quoteInternalNoteEditor",{theme:"snow",modules:{toolbar:[["bold","italic","underline"],[{color:[]}],[{list:"ordered"},{list:"bullet"}],["clean"]]},placeholder:"Private notes for committee..."});
-  quillNotes.on("text-change",()=>document.getElementById("quoteNotes").value=quillNotes.root.innerHTML);
-  quillInternal.on("text-change",()=>document.getElementById("quoteInternalNote").value=quillInternal.root.innerHTML);
+  quillNotes = new Quill('#quoteNotesEditor',{theme:'snow',modules:{toolbar:[['bold','italic','underline'],[{color:[]}],[{list:'ordered'},{list:'bullet'}],['clean']]},placeholder:'Brief description visible to voters…'});
+  quillInternal = new Quill('#quoteInternalNoteEditor',{theme:'snow',modules:{toolbar:[['bold','italic','underline'],[{color:[]}],[{list:'ordered'},{list:'bullet'}],['clean']]},placeholder:'Private notes for committee...'});
+  quillNotes.on('text-change',()=>document.getElementById('quoteNotes').value=quillNotes.root.innerHTML);
+  quillInternal.on('text-change',()=>document.getElementById('quoteInternalNote').value=quillInternal.root.innerHTML);
 }
 const _origOpenCreateProject = openCreateProject;
 openCreateProject = function(){_origOpenCreateProject(); setTimeout(initQuill,50);};
 const _origOpenAddQuote = openAddQuoteToProject;
 openAddQuoteToProject = function(a,b,c,d){_origOpenAddQuote(a,b,c,d); setTimeout(initQuill,50);};
 const _origEditQuote = editQuote;
-editQuote = function(id){_origEditQuote(id); setTimeout(()=>{initQuill(); const q=allQuotes.find(x=>x.id===id); if(!q)return; quillNotes.root.innerHTML=q.notes||""; const p=parseComment(q.comment); quillInternal.root.innerHTML=p.note||"";},100);};
+editQuote = function(id){
+  _origEditQuote(id);
+  setTimeout(()=>{
+    initQuill();
+    const q=allQuotes.find(x=>x.id===id);
+    if(!q) return;
+    quillNotes.root.innerHTML=q.notes||'';
+    const p=parseComment(q.comment);
+    quillInternal.root.innerHTML=p.note||'';
+  },100);
+};
+function resetQuill(){if(quillNotes){quillNotes.root.innerHTML='';quillInternal.root.innerHTML='';}}
 </script>
 </body>
 </html>
