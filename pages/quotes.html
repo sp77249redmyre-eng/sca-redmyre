@@ -500,7 +500,7 @@ window.editPc = function(id, el) {
   const msgDiv = el.closest('.pc-msg');
   const bodyDiv = msgDiv.querySelector('.pc-msg-body');
   if (!bodyDiv) return;
-  const original = bodyDiv.innerText;
+  const original = bodyDiv.innerHTML;
   // Build modal
   const overlay = document.createElement('div');
   overlay.id = 'pc-edit-modal-overlay';
@@ -510,9 +510,8 @@ window.editPc = function(id, el) {
   const title = document.createElement('div');
   title.textContent = 'Edit Comment';
   title.style.cssText = 'font-size:16px;font-weight:700;color:#1e293b';
-  const ta = document.createElement('textarea');
-  ta.value = original;
-  ta.style.cssText = 'width:100%;min-height:300px;padding:14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.7;color:#1e293b';
+  const editorWrap = document.createElement('div');
+  editorWrap.id = 'pc-edit-quill';
   const btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
   const cancelBtn = document.createElement('button');
@@ -525,24 +524,31 @@ window.editPc = function(id, el) {
   cancelBtn.onclick = close;
   overlay.onclick = (e) => { if (e.target === overlay) close(); };
   saveBtn.onclick = async () => {
-    const txt = ta.value.trim();
-    if (!txt) return;
+    const qEdit = modal._quill;
+    const txt = qEdit ? qEdit.root.innerHTML : '';
+    const plain = qEdit ? qEdit.getText().trim() : '';
+    if (!plain) return;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
     const { error } = await supabase.from('project_comments').update({ comment: txt }).eq('id', id);
     if (error) { showToast('Failed to update', true); saveBtn.disabled = false; saveBtn.textContent = 'Save'; return; }
-    bodyDiv.innerText = txt;
+    bodyDiv.innerHTML = txt;
     close();
     showToast('Comment updated');
   };
   btnRow.appendChild(cancelBtn);
   btnRow.appendChild(saveBtn);
   modal.appendChild(title);
-  modal.appendChild(ta);
+  modal.appendChild(editorWrap);
   modal.appendChild(btnRow);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-  ta.focus();
+  setTimeout(()=>{
+    if(window.Quill){
+      modal._quill = new Quill('#pc-edit-quill',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your comment...'});
+      modal._quill.root.innerHTML = original;
+    }
+  }, 100);
   ta.setSelectionRange(ta.value.length, ta.value.length);
 };
 import { getSupabase } from '/js/auth.js';
@@ -1248,7 +1254,7 @@ function renderPendingQuotes(quotes) {
         const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
         const nameColor = isEven ? '#2563eb' : '#166534';
         const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div>${isOwn ? '<div style="display:flex;gap:5px;margin-left:auto"><button onclick="editPc(\'' + pc.id + '\', this)" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Edit</button><button onclick="deletePc(\'' + pc.id + '\', this)" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Delete</button></div>' : ''}</div><div class="pc-msg-body" style="white-space:pre-wrap">${escHtml(pc.comment)}</div>`;
+        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div>${isOwn ? '<div style="display:flex;gap:5px;margin-left:auto"><button onclick="editPc(\'' + pc.id + '\', this)" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Edit</button><button onclick="deletePc(\'' + pc.id + '\', this)" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Delete</button></div>' : ''}</div><div class="pc-msg-body">${pc.comment}</div>`;
         thread.appendChild(msgDiv);
       });
       thread.scrollTop = thread.scrollHeight;
@@ -1264,14 +1270,16 @@ function renderPendingQuotes(quotes) {
     if (role !== 'observer') {
       const inputArea = document.createElement('div');
       inputArea.className = 'input-area';
-      const textarea = document.createElement('textarea');
-      textarea.placeholder = 'Type your comment...';
+      const editorDiv = document.createElement('div');
+      editorDiv.id = 'commentEditor_' + projectKey;
       const submitBtn = document.createElement('button');
       submitBtn.className = 'submit-btn';
       submitBtn.textContent = 'Send';
       submitBtn.onclick = async () => {
-        const txt = textarea.value.trim();
-        if (!txt) { showToast('Please enter a comment', true); return; }
+        const qEditor = inputArea._quill;
+        const txt = qEditor ? qEditor.root.innerHTML : '';
+        const plainTxt = qEditor ? qEditor.getText().trim() : '';
+        if (!plainTxt) { showToast('Please enter a comment', true); return; }
         submitBtn.disabled = true;
         const { error } = await supabase.from('project_comments').insert({
           project_id: projectKey,
@@ -1280,10 +1288,19 @@ function renderPendingQuotes(quotes) {
           comment: txt
         });
         if (error) { showToast('Failed to send', true); }
-        else { textarea.value = ''; await loadProjectComments(); if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey); }
+        else {
+          if(qEditor) qEditor.root.innerHTML = '';
+          await loadProjectComments();
+          if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
+        }
         submitBtn.disabled = false;
       };
-      inputArea.appendChild(textarea);
+      inputArea.appendChild(editorDiv);
+      setTimeout(()=>{
+        if(window.Quill){
+          inputArea._quill = new Quill('#commentEditor_' + projectKey, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your comment...'});
+        }
+      }, 100);
       const submitRow = document.createElement('div');
       submitRow.className = 'submit-row';
       submitRow.appendChild(submitBtn);
