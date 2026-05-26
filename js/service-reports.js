@@ -1153,6 +1153,7 @@ window.openDetailModal = function(reportId) {
 };
 
 // In-page file viewer popup (image inline / PDF iframe)
+let _viewerCurrentUrl = '';
 window.openFileViewer = async function(path, name, type) {
   try {
     const { data, error } = await supabase.storage
@@ -1160,25 +1161,21 @@ window.openFileViewer = async function(path, name, type) {
       .createSignedUrl(path, 3600);
     if (error || !data?.signedUrl) throw new Error('Signed URL failed');
     const url = data.signedUrl;
+    _viewerCurrentUrl = url;
 
     const isPdf = (type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'));
-    const isImg = (type && type.startsWith('image/')) ||
-                  /\.(jpe?g|png|webp|gif)$/i.test(name || '');
+    const isImg = (type && type.startsWith('image/')) || /\.(jpe?g|png|webp|gif)$/i.test(name || '');
 
-    let body = '';
+    document.getElementById('viewerFileName').textContent = name || '';
+    let html = '';
     if (isPdf) {
-      body = `<iframe src="${url}" style="width:100%;height:75vh;border:none;border-radius:8px;background:#f8fafc"></iframe>`;
+      html = `<iframe src="${url}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
     } else if (isImg) {
-      body = `<img src="${url}" alt="${escHtml(name)}" style="max-width:100%;max-height:78vh;border-radius:8px;display:block;margin:0 auto">`;
+      html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" alt="${escHtml(name)}" style="max-width:100%;max-height:100%;object-fit:contain;display:block"></div>`;
     } else {
-      body = `<div style="padding:30px;text-align:center;color:#64748b;font-size:13px">
-        Preview not available for this file type.<br>
-        <a href="${url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;padding:10px 20px;background:#1e3a8a;color:#fff;border-radius:8px;font-weight:600;text-decoration:none">Open in new tab ↗</a>
-      </div>`;
+      html = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="font-size:52px">📎</div><a href="${url}" download="${escHtml(name)}" style="padding:12px 28px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">⬇ Download ${escHtml(name)}</a></div>`;
     }
-
-    document.getElementById('viewerContent').innerHTML =
-      `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">${tablerIcon('📎')} ${escHtml(name)}</div>` + body;
+    document.getElementById('viewerContent').innerHTML = html;
     document.getElementById('fileViewerModal').style.display = 'flex';
   } catch (e) {
     console.error('openFileViewer failed:', e);
@@ -1190,6 +1187,16 @@ window.closeViewer = function() {
   document.getElementById('fileViewerModal').style.display = 'none';
   document.getElementById('viewerContent').innerHTML = '';
 };
+
+window.printViewer = function() {
+  if (!_viewerCurrentUrl) return;
+  const w = window.open(_viewerCurrentUrl, '_blank');
+  if (w) w.onload = () => { w.focus(); w.print(); };
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('fileViewerModal').style.display === 'flex') closeViewer();
+});
 
 // ─── EDIT / DELETE (admin only) ──────────────────────────────
 document.getElementById('detailEditBtn').addEventListener('click', () => {
