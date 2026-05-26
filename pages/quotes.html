@@ -2456,6 +2456,7 @@ function showToast(message, isError = false) {
   setTimeout(() => el.classList.remove('show'), 2800);
 }
 
+let _viewerCurrentUrl = '';
 window.openFileViewer = async function(path, name, type) {
   if (!path) return;
   try {
@@ -2468,11 +2469,11 @@ window.openFileViewer = async function(path, name, type) {
       url = data?.signedUrl;
     }
     if (!url) throw new Error('No URL');
+    _viewerCurrentUrl = url;
     let html = '';
     document.getElementById('viewerFileName').textContent = name || '';
     if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
-      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-      html = `<iframe src="${viewerUrl}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
+      html = `<iframe src="${url}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
     } else if (['png','jpg','jpeg','gif','webp','svg'].some(e => name?.toLowerCase().endsWith('.'+e))) {
       html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="${name}"></div>`;
     } else {
@@ -2492,16 +2493,9 @@ window.closeViewer = function() {
 };
 
 window.printViewer = function() {
-  const iframe = document.querySelector('#viewerContent iframe');
-  const img = document.querySelector('#viewerContent img');
-  if (iframe) {
-    try { iframe.contentWindow.print(); } catch(e) { window.open(iframe.src, '_blank'); }
-  } else if (img) {
-    const w = window.open('', '_blank');
-    w.document.write(`<html><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${img.src}" style="max-width:100%"></body></html>`);
-    w.document.close();
-    w.onload = () => w.print();
-  }
+  if (!_viewerCurrentUrl) return;
+  const w = window.open(_viewerCurrentUrl, '_blank');
+  if (w) w.onload = () => { w.focus(); w.print(); };
 };
 
 init();
