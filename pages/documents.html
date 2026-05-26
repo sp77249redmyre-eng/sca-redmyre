@@ -306,7 +306,7 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;padding:16px" onclick="if(event.target===this)closeViewer()">
+<div id="fileViewerModal" tabindex="-1" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;padding:16px;outline:none" onclick="if(event.target===this)closeViewer()">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0" onclick="event.stopPropagation()">
     <span id="viewerFileName" style="color:#e5e7eb;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 120px)"></span>
     <div style="display:flex;gap:8px;flex-shrink:0">
@@ -729,6 +729,7 @@ window.previewFile = async function(bucket, path, name) {
   document.getElementById('viewerFileName').textContent = name || '';
   document.getElementById('viewerContent').innerHTML = '<div style="color:#9CA3AF;font-size:13px;text-align:center;padding:40px">Loading...</div>';
   document.getElementById('fileViewerModal').style.display = 'flex';
+    document.getElementById('fileViewerModal').focus();
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
   if (error || !data) {
     document.getElementById('viewerContent').innerHTML = '<div style="color:#EF4444;font-size:13px;text-align:center;padding:40px">Preview failed.</div>';
