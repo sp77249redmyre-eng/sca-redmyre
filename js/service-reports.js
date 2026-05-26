@@ -1177,6 +1177,7 @@ window.openFileViewer = async function(path, name, type) {
     }
     document.getElementById('viewerContent').innerHTML = html;
     document.getElementById('fileViewerModal').style.display = 'flex';
+    document.getElementById('fileViewerModal').focus();
   } catch (e) {
     console.error('openFileViewer failed:', e);
     showToast(e.message || 'Failed to open file.', 'err');
