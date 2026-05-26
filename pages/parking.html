@@ -298,9 +298,15 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;">
-  <img id="modalImage" style="max-width:92%;max-height:92%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6);" onclick="this.parentElement.style.display='none'">
-  <iframe id="modalPdf" style="display:none;width:90%;height:90%;border:none;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6);background:#fff;"></iframe>
+<div id="imageModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;padding:16px" onclick="if(event.target===this)closeImageModal()">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0" onclick="event.stopPropagation()">
+    <span id="imageModalName" style="color:#e5e7eb;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 120px)"></span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="printImageModal()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;padding:6px 14px">🖨 Print</button>
+      <button onclick="closeImageModal()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+  </div>
+  <div id="imageModalContent" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;border-radius:10px;overflow:hidden" onclick="event.stopPropagation()"></div>
 </div>
 
 <script type="module">
@@ -574,23 +580,32 @@ window.deleteReport = async (id) => {
   await loadReports();
 };
 
-window.showImage = function(url) {
+let _imageModalUrl = '';
+window.showImage = function(url, name='') {
   if (!url) return;
-  const modal = document.getElementById('imageModal');
-  const img = document.getElementById('modalImage');
-  const pdf = document.getElementById('modalPdf');
+  _imageModalUrl = url;
+  document.getElementById('imageModalName').textContent = name;
+  let html = '';
   if (url.toLowerCase().endsWith('.pdf')) {
-    img.style.display = 'none';
-    pdf.src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-    pdf.style.display = 'block';
+    html = `<iframe src="${url}" style="width:100%;height:100%;border:none"></iframe>`;
   } else {
-    pdf.style.display = 'none';
-    pdf.src = '';
-    img.src = url;
-    img.style.display = 'block';
+    html = `<img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px" alt="${name}">`;
   }
-  modal.style.display = 'flex';
+  document.getElementById('imageModalContent').innerHTML = html;
+  document.getElementById('imageModal').style.display = 'flex';
 };
+window.closeImageModal = function() {
+  document.getElementById('imageModal').style.display = 'none';
+  document.getElementById('imageModalContent').innerHTML = '';
+};
+window.printImageModal = function() {
+  if (!_imageModalUrl) return;
+  const w = window.open(_imageModalUrl, '_blank');
+  if (w) w.onload = () => { w.focus(); w.print(); };
+};
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('imageModal').style.display === 'flex') closeImageModal();
+});
 
 window.generateWarningPDF = function(plate, violation, location, createdAt) {
   const when = createdAt ? new Date(createdAt) : new Date();

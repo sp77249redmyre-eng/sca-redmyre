@@ -219,13 +219,15 @@
     </div>
   </div>
 </div>
-<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px)" onclick="if(event.target===this)closeViewer()">
-  <div style="background:#fff;border-radius:16px;padding:20px;max-width:1400px;width:95%;max-height:95vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.3)">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-      <button onclick="closeViewer()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1">&times;</button>
+<div id="fileViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;padding:16px" onclick="if(event.target===this)closeViewer()">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0" onclick="event.stopPropagation()">
+    <span id="viewerFileName" style="color:#e5e7eb;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 120px)"></span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="printViewer()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;padding:6px 14px;display:flex;align-items:center;gap:6px">🖨 Print</button>
+      <button onclick="closeViewer()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
-    <div id="viewerContent"></div>
   </div>
+  <div id="viewerContent" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;border-radius:10px" onclick="event.stopPropagation()"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -263,6 +265,7 @@ let currentSortDir='desc';
 
 
 
+let _viewerCurrentUrl = '';
 window.openFileViewer = async function(path, name, type) {
   try {
     let url;
@@ -274,14 +277,17 @@ window.openFileViewer = async function(path, name, type) {
       if (error || !data?.signedUrl) throw new Error('Signed URL failed');
       url = data.signedUrl;
     }
+    _viewerCurrentUrl = url;
+    document.getElementById('viewerFileName').textContent = name || '';
     let html = '';
     if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
-      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-      html = `<iframe src="${viewerUrl}" style="width:100%;height:85vh;border:none;border-radius:6px"></iframe>`;
+      html = `<iframe src="${url}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
+    } else if (['png','jpg','jpeg','gif','webp','svg'].some(e => name?.toLowerCase().endsWith('.'+e))) {
+      html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="${name}"></div>`;
     } else {
-      html = `<img src="${url}" style="max-width:100%;max-height:85vh;border-radius:6px;display:block;margin:auto" alt="${name}">`;
+      html = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="font-size:52px">📎</div><a href="${url}" download="${name}" style="padding:12px 28px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">⬇ Download ${name}</a></div>`;
     }
-    document.getElementById('viewerContent').innerHTML = `<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px">📎 ${name}</div>` + html;
+    document.getElementById('viewerContent').innerHTML = html;
     document.getElementById('fileViewerModal').style.display = 'flex';
   } catch(e) {
     console.error('openFileViewer failed:', e);
@@ -293,6 +299,16 @@ window.closeViewer = function() {
   document.getElementById('fileViewerModal').style.display = 'none';
   document.getElementById('viewerContent').innerHTML = '';
 };
+
+window.printViewer = function() {
+  if (!_viewerCurrentUrl) return;
+  const w = window.open(_viewerCurrentUrl, '_blank');
+  if (w) w.onload = () => { w.focus(); w.print(); };
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('fileViewerModal').style.display === 'flex') closeViewer();
+});
 
 window.deleteFile = async function(quoteId, filePath, fileName) {
   if (!confirm(`⚠️ 파일을 영구 삭제하시겠습니까?\n\n${fileName}\n\n삭제 후 복구 불가능합니다.`)) return;
