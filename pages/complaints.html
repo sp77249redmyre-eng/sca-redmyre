@@ -340,7 +340,7 @@
           <option value="inprog">🟡 In Progress</option>
           <option value="resolved">✅ Resolved</option>
         </select>
-        <button class="btn-primary" id="saveAdminResponseBtn">Send Reply →</button>
+        <button class="btn-primary" id="saveAdminResponseBtn">Save →</button>
       </div>
     </div>
 
@@ -912,8 +912,7 @@ window.openDetail = async (id) => {
     replyWrap.style.background = '#f0fdf4';
     document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
     document.getElementById('adminResponse').style.background = '#f0fdf4';
-    document.getElementById('adminResponse').value = '\n\nJacob Kim\nBuilding Manager\nSCA Facility Management Pty Ltd';
-    document.getElementById('adminResponse').setSelectionRange(0, 0);
+    document.getElementById('adminResponse').value = '';
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
@@ -944,18 +943,24 @@ window.openDetail = async (id) => {
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
   const response = document.getElementById('adminResponse').value.trim();
   const status   = document.getElementById('adminStatusSelect').value || null;
-  if (!response) { showToast('Please enter a reply', true); return; }
+  if (!response && !status) { showToast('Please enter a reply or change status', true); return; }
   try {
     if (role === 'admin' && status) {
-      await supabase.from('complaints').update({ admin_response: response, status, updated_at: new Date().toISOString() }).eq('id', currentComplaintId);
+      const updateData = { updated_at: new Date().toISOString(), status };
+      if (response) updateData.admin_response = response;
+      await supabase.from('complaints').update(updateData).eq('id', currentComplaintId);
     }
-    const { data: insertedMsg } = await supabase.from('complaint_messages').insert({
-      complaint_id: currentComplaintId,
-      user_id: user.id,
-      sender_name: name,
-      sender_role: role,
-      message: response
-    }).select('id').single();
+    let insertedMsg = null;
+    if (response) {
+      const { data: _msg } = await supabase.from('complaint_messages').insert({
+        complaint_id: currentComplaintId,
+        user_id: user.id,
+        sender_name: name,
+        sender_role: role,
+        message: response
+      }).select('id').single();
+      insertedMsg = _msg;
+    }
     if (pendingReplyPhotos.length > 0 && insertedMsg) {
       const uploadedPaths = [];
       for (const f of pendingReplyPhotos) {
@@ -989,7 +994,7 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
     document.getElementById('adminResponse').value = '';
     await loadMessageThread(currentComplaintId);
     await loadComplaints();
-    showToast('Reply sent ✓');
+    showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
   } catch(e) { showToast('Failed to save', true); }
 });
 
@@ -1060,8 +1065,6 @@ document.addEventListener('keydown', e => {
 });
 
 // Backdrop click to close — with unsaved content warning
-const ADMIN_SIGNATURE = '\n\nJacob Kim\nBuilding Manager\nSCA Facility Management Pty Ltd';
-
 function handleBackdropClick(e, modalId, checkFn) {
   if (e.target.id !== modalId) return;
   if (checkFn()) {
@@ -1073,8 +1076,7 @@ function handleBackdropClick(e, modalId, checkFn) {
 document.getElementById('detailModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'detailModal', () => {
     const v = (document.getElementById('adminResponse').value || '').trim();
-    const sig = ADMIN_SIGNATURE.trim();
-    return v.length > 0 && v !== sig;
+    return v.length > 0;
   });
 });
 
