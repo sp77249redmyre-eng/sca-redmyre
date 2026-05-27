@@ -42,15 +42,9 @@
 .person-card.green{border-top:3px solid #16a34a}
 .person-card.clickable{cursor:pointer;transition:transform 0.15s, box-shadow 0.15s, border-color 0.15s}
 .person-card.clickable:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(22,163,74,0.15);border-color:#86efac}
-.committee-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-@media(max-width:900px){.committee-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:520px){.committee-grid{grid-template-columns:1fr}}
+
 .av-green{background:#dcfce7;color:#15803d}
 .btn-green{background:#16a34a;color:#fff}
-.committee-role-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:#dcfce7;color:#15803d;margin-top:3px;text-transform:uppercase;letter-spacing:0.05em}
-.committee-role-badge.chair{background:#fef3c7;color:#92400e}
-.committee-role-badge.treas{background:#dbeafe;color:#1e40af}
-.committee-role-badge.sec{background:#f3e8ff;color:#6b21a8}
 .person-unit-info{font-size:11px;color:var(--muted);margin:6px 0 4px;font-weight:600}
 .person-business-info{font-size:12px;color:var(--text-2);margin-bottom:10px;line-height:1.4}
 .person-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -89,7 +83,6 @@
 @media(max-width:768px){.emg-grid{grid-template-columns:repeat(2,1fr)}.contact-grid{grid-template-columns:1fr}}
 @media(max-width:380px){
   .emg-grid{grid-template-columns:1fr}
-  .committee-grid{grid-template-columns:1fr}
 }
 
 /* Contractor highlight (URL ?contractor=... 로 진입 시) */
@@ -119,7 +112,7 @@
         <div class="page-header-title-row">
           <span class="page-header-title">Emergency Contacts</span>
         </div>
-        <div class="page-header-sub">Building management, committee, and after-hours contacts.</div>
+        <div class="page-header-sub">Building management and after-hours contacts.</div>
       </div>
     </div>
     <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;padding:11px 18px;display:flex;align-items:center;gap:10px">
@@ -133,13 +126,6 @@
       </div>
     </div>
 
-    <!-- COMMITTEE MEMBERS (전체 입주자 공개) -->
-    <div>
-      <div class="section-hdr">Committee Members</div>
-      <div class="committee-grid" id="committeeGrid">
-        <div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
-      </div>
-    </div>
 
     <!-- MANAGEMENT -->
     <div>
@@ -220,35 +206,6 @@
   </div>
 </div>
 
-<!-- COMMITTEE EDIT MODAL -->
-<div class="modal-backdrop" id="committeeModal">
-  <div class="modal-box">
-    <div class="modal-title" id="committeeModalTitle">Edit Committee Member</div>
-    <input type="hidden" id="committeeEditPerson">
-    <div class="modal-field">
-      <label class="modal-label">Contact Person (멤버 이름 — 변경 시 모든 unit에 동기화)</label>
-      <input id="cmName" class="modal-input" placeholder="e.g. Jimmy Gupta">
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Committee Role</label>
-      <select id="cmRole" class="modal-select">
-        <option value="Member">Member</option>
-        <option value="Chairman">Chairman</option>
-        <option value="Treasurer">Treasurer</option>
-        <option value="Secretary">Secretary</option>
-      </select>
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Primary Unit (대표 유닛 — emergency 카드)</label>
-      <select id="cmPrimaryUnit" class="modal-select"></select>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="cmRemoveBtn" style="margin-right:auto">Remove from Committee</button>
-      <button class="btn-secondary" onclick="closeModal('committeeModal')">Cancel</button>
-      <button class="btn-primary" id="saveCommitteeBtn">Save →</button>
-    </div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -446,221 +403,9 @@ async function loadStrataManager() {
   }
 }
 
-// ── COMMITTEE MEMBERS 로드 (전체 입주자 공개) ──
-async function loadCommitteeMembers() {
-  const { data, error } = await supabase.rpc('get_committee_members');
-
-  const grid = document.getElementById('committeeGrid');
-  if (error || !data || !data.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--muted);font-size:13px">No committee members found.</div>';
-    return;
-  }
-
-  // contact_person 기준으로 그룹핑 (같은 사람 여러 유닛 → 하나의 카드)
-  // is_primary=true인 unit이 있으면 그 row의 contact_person/business_name/email/phone 사용
-  const groupMap = new Map();
-  data.forEach(row => {
-    const key = row.contact_person;
-    if (!groupMap.has(key)) {
-      groupMap.set(key, { units: [], primaryUnit: null, ...row });
-    }
-    const g = groupMap.get(key);
-    g.units.push(row.unit);
-    if (row.is_primary) {
-      g.primaryUnit = row.unit;
-      // primary unit의 정보로 덮어쓰기 (사장님이 대표 unit 데이터를 카드에 표시 원함)
-      g.contact_person = row.contact_person;
-      g.business_name = row.business_name;
-      g.primary_email = row.primary_email;
-      g.phone = row.phone;
-      g.committee_role = row.committee_role;
-    }
-  });
-
-  // 직책 순서: Chairman → Treasurer → Secretary → Committee Member
-  const roleOrder = { 'Chairman': 1, 'Treasurer': 2, 'Secretary': 3, 'Committee Member': 4 };
-  const members = [...groupMap.values()].sort((a, b) => {
-    return (roleOrder[a.committee_role] || 99) - (roleOrder[b.committee_role] || 99);
-  });
-  window._committeeMembers = members;
-
-  // 대표 유닛: occupants.is_primary=true로 지정 (없으면 첫 번째 유닛)
-  function getPrimaryUnit(member) {
-    return member.primaryUnit || member.units[0];
-  }
-
-  // 권한: admin/observer/committee 카드 클릭 → Occupants로 이동
-  const canNavigate = ['admin', 'observer', 'committee'].includes(role);
-
-  // 이름 분리: "Michelle on behalf of Dr. Jung Sook Kim" → "Michelle" + "on behalf of Dr. Jung Sook Kim"
-  function splitName(name) {
-    const match = name.match(/^(.+?)\s+(on behalf of\s+.+)$/i);
-    if (match) {
-      return { main: match[1].trim(), sub: match[2].trim() };
-    }
-    return { main: name, sub: null };
-  }
-  function getInitials(name) {
-    const first = name.split(/\s|on behalf of/i)[0].trim();
-    return first.slice(0, 2).toUpperCase();
-  }
-  function badgeClass(role) {
-    if (role === 'Chairman') return 'chair';
-    if (role === 'Treasurer') return 'treas';
-    if (role === 'Secretary') return 'sec';
-    return '';
-  }
-  function primaryPhone(phone) {
-    if (!phone) return '';
-    const nums = phone.split(/[,\/\-]/).map(s => s.trim()).filter(Boolean);
-    if (!nums.length) return '';
-    // 유선번호(landline) 우선: 04로 시작하지 않는 번호 찾기
-    const landline = nums.find(n => {
-      const clean = n.replace(/[\s\(\)\+]/g,'');
-      return !clean.startsWith('04') && !clean.startsWith('614');
-    });
-    return landline || nums[0];
-  }
-
-  grid.innerHTML = members.map(m => {
-    const primaryUnit = getPrimaryUnit(m);
-    const otherUnits = m.units.filter(u => u !== primaryUnit);
-    const units = otherUnits.length > 0
-      ? `Unit ${primaryUnit} <span style="opacity:0.7">(${otherUnits.join(' / ')})</span>`
-      : `Unit ${primaryUnit}`;
-    const phone = primaryPhone(m.phone);
-    const email = m.primary_email ? m.primary_email.split(',')[0].trim() : '';
-    const nameParts = splitName(m.contact_person);
-    const nameHtml = nameParts.sub 
-      ? `<div class="person-name">${nameParts.main}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3">${nameParts.sub}</div>`
-      : `<div class="person-name">${nameParts.main}</div>`;
-    const clickableAttr = canNavigate 
-      ? `class="person-card green clickable" onclick="navigateToOccupant('${primaryUnit}', event)"` 
-      : `class="person-card green"`;
-    return `
-      <div ${clickableAttr}>
-        <div class="person-header">
-          <div class="person-av av-green">${getInitials(m.contact_person)}</div>
-          <div style="flex:1;min-width:0">
-            ${nameHtml}
-            <div class="committee-role-badge ${badgeClass(m.committee_role)}">${m.committee_role}</div>
-          </div>
-          ${role==='admin'?`<button class="committee-edit-btn" data-person="${m.contact_person}" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-pencil"></i> Edit</button>`:''}
-        </div>
-        <div class="person-unit-info">${units}</div>
-        ${m.business_name ? `<div class="person-business-info">${m.business_name.split('/')[0].trim()}</div>` : ''}
-        ${email ? `<a class="person-email" href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>` : ''}
-        <div class="person-actions">
-          ${email ? `<a class="call-btn btn-green" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px" href="mailto:${email}" onclick="event.stopPropagation()"><i class="ti ti-mail"></i> Email</a>` : '<span></span>'}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Edit 버튼 이벤트 위임 (admin) — innerHTML 렌더 후에 실행
-  document.querySelectorAll('.committee-edit-btn').forEach(btn => {
-    btn.onclick = (ev) => {
-      ev.stopPropagation();
-      window.openCommitteeEdit(btn.dataset.person);
-    };
-  });
-}
-
-// Committee Edit 모달 열기 (admin)
-window.openCommitteeEdit = function(contactPerson) {
-  if (role !== 'admin') return;
-  const m = (window._committeeMembers || []).find(x => x.contact_person === contactPerson);
-  if (!m) { showToast('Member not found', true); return; }
-
-  document.getElementById('committeeModalTitle').textContent = 'Edit Committee Member';
-  document.getElementById('committeeEditPerson').value = contactPerson;
-  document.getElementById('cmName').value = m.contact_person;
-  document.getElementById('cmRole').value = m.committee_role || 'Member';
-
-  const sel = document.getElementById('cmPrimaryUnit');
-  sel.innerHTML = m.units.map(u => `<option value="${u}"${(m.primaryUnit || m.units[0]) === u ? ' selected' : ''}>${u}</option>`).join('');
-
-  document.getElementById('committeeModal').classList.add('open');
-};
-
-document.getElementById('saveCommitteeBtn').addEventListener('click', async () => {
-  const oldPerson = document.getElementById('committeeEditPerson').value;
-  const newPerson = document.getElementById('cmName').value.trim();
-  const newRole = document.getElementById('cmRole').value;
-  const newPrimaryUnit = document.getElementById('cmPrimaryUnit').value;
-
-  if (!newPerson) { showToast('Name cannot be empty', true); return; }
-
-  try {
-    // 1. contact_person 변경: 해당 oldPerson의 모든 행 동기화
-    if (newPerson !== oldPerson) {
-      const { error: eName } = await supabase
-        .from('occupants')
-        .update({ contact_person: newPerson })
-        .eq('contact_person', oldPerson);
-      if (eName) throw eName;
-    }
-
-    // 2. committee_role: 해당 멤버 모든 유닛에 적용
-    const { error: e1 } = await supabase
-      .from('occupants')
-      .update({ committee_role: newRole })
-      .eq('contact_person', newPerson)
-      .eq('is_committee', true);
-    if (e1) throw e1;
-
-    // 3. is_primary: 멤버의 모든 유닛 false → 선택한 1개만 true
-    const { error: e2 } = await supabase
-      .from('occupants')
-      .update({ is_primary: false })
-      .eq('contact_person', newPerson);
-    if (e2) throw e2;
-
-    const { error: e3 } = await supabase
-      .from('occupants')
-      .update({ is_primary: true })
-      .eq('contact_person', newPerson)
-      .eq('unit', newPrimaryUnit);
-    if (e3) throw e3;
-
-    closeModal('committeeModal');
-    await loadCommitteeMembers();
-    showToast('Committee updated ✓');
-  } catch (e) {
-    showToast(e.message || 'Failed to save', true);
-  }
-});
-
-// Remove from Committee 버튼 (위원회에서만 빼기 — 입주자 정보는 유지)
-document.getElementById('cmRemoveBtn').addEventListener('click', async () => {
-  const person = document.getElementById('committeeEditPerson').value;
-  if (!confirm(`Remove ${person} from the committee? (Occupant data will be preserved.)`)) return;
-
-  try {
-    const { error } = await supabase
-      .from('occupants')
-      .update({ is_committee: false, committee_role: null, is_primary: false })
-      .eq('contact_person', person);
-    if (error) throw error;
-
-    closeModal('committeeModal');
-    await loadCommitteeMembers();
-    showToast('Removed from committee ✓');
-  } catch (e) {
-    showToast(e.message || 'Failed to remove', true);
-  }
-});
-
-// 카드 클릭 시 Occupants 페이지로 이동 (권한 있는 유저만)
-window.navigateToOccupant = function(unit, event) {
-  // 버튼 클릭 시 카드 클릭 안 되게
-  if (event.target.closest('a, button')) return;
-  window.location.href = '/pages/occupants.html?unit=' + encodeURIComponent(unit);
-};
 
 await Promise.all([
   renderManagerCard(),
-  loadCommitteeMembers(),
   loadContractors()
 ]);
 await loadStrataManager();
