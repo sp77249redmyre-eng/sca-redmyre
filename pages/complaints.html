@@ -1133,16 +1133,18 @@ window.openPublicDetail = async (id) => {
   // Photos
   const photosWrap = document.getElementById('detailPhotosWrap');
   const gallery = document.getElementById('detailPhotoGallery');
-  if (c.has_photos) {
-    const { data: files } = await supabase.storage.from('complaint-images').list(id);
-    if (files && files.length > 0) {
-      photosWrap.style.display = 'block';
-      gallery.innerHTML = files.map(f => {
-        const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
-        return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
-      }).join('');
+  if (photosWrap && gallery) {
+    if (c.has_photos) {
+      const { data: files } = await supabase.storage.from('complaint-images').list(id);
+      if (files && files.length > 0) {
+        photosWrap.style.display = 'block';
+        gallery.innerHTML = files.map(f => {
+          const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
+          return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
+        }).join('');
+      } else { photosWrap.style.display = 'none'; }
     } else { photosWrap.style.display = 'none'; }
-  } else { photosWrap.style.display = 'none'; }
+  }
   
   // 공개 요청: 대화 스레드 전체 공개 (Admin 답변 + 요청자 댓글 모두)
   await loadPublicMessageThread(id, isOwn);
