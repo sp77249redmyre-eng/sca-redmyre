@@ -1177,12 +1177,13 @@ async function loadPublicMessageThread(complaintId, isOwn) {
     return;
   }
   
-  if (!messages || messages.length === 0) {
+  const threadMessages = (messages || []).slice(1);
+  if (threadMessages.length === 0) {
     thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
     return;
   }
   
-  thread.innerHTML = messages.map(m => {
+  thread.innerHTML = threadMessages.map(m => {
     const isAdmin = m.sender_role === 'admin';
     const isMine = m.user_id === user.id;
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
@@ -1198,6 +1199,16 @@ async function loadPublicMessageThread(complaintId, isOwn) {
     }
     
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
+    const attachments = m.attachments && m.attachments.length > 0 ? `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:10px">
+        ${m.attachments.map(path => {
+          const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
+          const url = urlData.publicUrl;
+          const isPdf = path.toLowerCase().endsWith('.pdf');
+          if (isPdf) return `<div onclick="openPdfLightbox('${url}')" style="border-radius:7px;overflow:hidden;aspect-ratio:1;background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;cursor:pointer"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;text-align:center">PDF</div></div>`;
+          return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
+        }).join('')}
+      </div>` : '';
     
     return `
       <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
@@ -1206,6 +1217,7 @@ async function loadPublicMessageThread(complaintId, isOwn) {
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
         <div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap">${m.message}</div>
+        ${attachments}
         ${editBtns}
       </div>`;
   }).join('');
