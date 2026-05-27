@@ -581,35 +581,44 @@ let pendingFiles    = [];
 const actionLocks = new Map();
 const resultEmailSent = new Set(); // PATCH 5: track projects where result email was sent
 
-const RULES = { approvalsRequired: 5, declinesToAutoDecline: 4, holdsToAutoHold: 3 };
+const RULES = { approvalsRequired: 5, declinesToAutoDecline: 5, holdsToAutoHold: 4 };
+const TOTAL_VOTERS = 8;
 
 // ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
-// Priority order: conflict(4A+4D) → approved → declined → hold → pending
-function calculateResult({ approvals, declines, holds, hasTie = false }) {
-  if (hasTie && approvals >= 4) return 'hold';   // Tie → hold when 4+ approvals (deadlock)
-  const hasConflict = approvals >= 4 && declines >= 4;               // 4A+4D conflict → hold
-  if (hasConflict) return 'hold';
-  if (approvals >= RULES.approvalsRequired) return 'approved';
-  if (declines  >= RULES.declinesToAutoDecline) return 'declined';
-  if (holds     >= RULES.holdsToAutoHold) return 'hold';
+// 8명 committee 기준:
+// 5+ Approve → approved
+// 5+ Decline → declined
+// 4+ Hold    → hold
+// 8명 전원 투표 후 과반 없음 → hold (재투표)
+// 복수견적: 어느 vendor도 5A 못 받으면 → hold (재투표)
+function calculateResult({ approvals, declines, holds, hasTie = false, totalVoted = 0 }) {
+  if (approvals >= RULES.approvalsRequired)       return 'approved';
+  if (declines  >= RULES.declinesToAutoDecline)   return 'declined';
+  if (holds     >= RULES.holdsToAutoHold)         return 'hold';
+  if (hasTie    && approvals > 0)                 return 'hold';
+  if (totalVoted >= TOTAL_VOTERS)                 return 'hold';
   return 'pending';
 }
 
 // ── Internal validation (runs once on load, logs to console) ──────
 (function validateCalculateResult() {
   const cases = [
-    { input: { approvals:5, declines:0, holds:0 }, expected:'approved',  label:'5A → approved'      },
-    { input: { approvals:0, declines:4, holds:0 }, expected:'declined',  label:'4D → declined'      },
-    { input: { approvals:0, declines:0, holds:3 }, expected:'hold',      label:'3H → hold'          },
-    { input: { approvals:4, declines:4, holds:0 }, expected:'hold',      label:'4A 4D → hold'       },
-    { input: { approvals:5, declines:4, holds:0 }, expected:'hold',      label:'5A 4D → hold'       },
-    { input: { approvals:5, declines:3, holds:0 }, expected:'approved',  label:'5A 3D → approved'   },
-    { input: { approvals:0, declines:4, holds:3 }, expected:'declined',  label:'4D 3H → declined'   },
-    { input: { approvals:3, declines:0, holds:3 }, expected:'hold',      label:'3A 3H → hold'       },
-    { input: { approvals:2, declines:2, holds:2 }, expected:'pending',   label:'2A 2D 2H → pending' },
-    { input: { approvals:4, declines:3, holds:0 }, expected:'pending',   label:'4A 3D → pending'    },
-    { input: { approvals:5, declines:2, holds:0, hasTie:true }, expected:'hold',    label:'5A Tie → hold'      },
-    { input: { approvals:3, declines:2, holds:0, hasTie:true }, expected:'pending', label:'3A Tie → pending'   },
+    { input: { approvals:5, declines:0, holds:0, totalVoted:5 }, expected:'approved', label:'5A → approved'                        },
+    { input: { approvals:6, declines:0, holds:0, totalVoted:6 }, expected:'approved', label:'6A → approved'                        },
+    { input: { approvals:0, declines:5, holds:0, totalVoted:5 }, expected:'declined', label:'5D → declined'                        },
+    { input: { approvals:0, declines:0, holds:4, totalVoted:4 }, expected:'hold',     label:'4H → hold'                            },
+    { input: { approvals:5, declines:3, holds:0, totalVoted:8 }, expected:'approved', label:'5A 3D → approved'                     },
+    { input: { approvals:3, declines:5, holds:0, totalVoted:8 }, expected:'declined', label:'3A 5D → declined'                     },
+    { input: { approvals:4, declines:4, holds:0, totalVoted:8 }, expected:'hold',     label:'4A 4D 전원투표 → hold'                },
+    { input: { approvals:3, declines:3, holds:2, totalVoted:8 }, expected:'hold',     label:'3A 3D 2H 전원투표 → hold'             },
+    { input: { approvals:4, declines:3, holds:1, totalVoted:8 }, expected:'hold',     label:'4A 3D 1H 전원투표 → hold'             },
+    { input: { approvals:4, declines:0, holds:0, totalVoted:4 }, expected:'pending',  label:'4A 4명만 투표 → pending'              },
+    { input: { approvals:0, declines:4, holds:0, totalVoted:4 }, expected:'pending',  label:'4D 4명만 투표 → pending'              },
+    { input: { approvals:0, declines:0, holds:3, totalVoted:3 }, expected:'pending',  label:'3H 3명만 투표 → pending'              },
+    { input: { approvals:2, declines:2, holds:4, totalVoted:8 }, expected:'hold',     label:'2A 2D 4H → hold'                      },
+    { input: { approvals:3, declines:0, holds:0, totalVoted:8, hasTie:true }, expected:'hold', label:'Tie 전원투표 → hold'          },
+    { input: { approvals:2, declines:0, holds:0, totalVoted:4, hasTie:true }, expected:'hold', label:'Tie hasTie → hold'            },
+    { input: { approvals:0, declines:0, holds:0, totalVoted:0 }, expected:'pending',  label:'0 → pending'                          },
   ];
   let passed = 0; let failed = 0;
   cases.forEach(({ input, expected, label }) => {
@@ -774,7 +783,7 @@ function renderPendingQuotes(quotes) {
     const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
 
     // ── Single source of truth: calculateResult() ─────────
-    const calcResult       = calculateResult({ approvals, declines, holds, hasTie });
+    const calcResult       = calculateResult({ approvals, declines, holds, hasTie, totalVoted: votedRows.length });
     const resultApproved   = calcResult === 'approved';
     const resultDeclined   = calcResult === 'declined';
     const resultHold       = calcResult === 'hold';
@@ -1739,7 +1748,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
       const gHasTie      = !guardSingle && gCntMax > 1 && gMaxA > 0;
       const gDec         = guardVoted.filter(v => v.vote === 'decline').length;
       const gHold        = guardVoted.filter(v => v.vote === 'hold').length;
-      const gResult      = calculateResult({ approvals: gMaxA, declines: gDec, holds: gHold, hasTie: gHasTie });
+      const gResult      = calculateResult({ approvals: gMaxA, declines: gDec, holds: gHold, hasTie: gHasTie, totalVoted: guardVoted.length });
       if (gResult !== 'pending' && !(gResult === 'hold' && gHasTie)) {
         showToast('Voting is already closed – result determined', true);
         if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
@@ -1807,7 +1816,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
           const pHasTie     = !pIsSingle && cntAtMax > 1 && maxA > 0;
           const pDec        = pVoted.filter(v => v.vote === 'decline').length;
           const pHold       = pVoted.filter(v => v.vote === 'hold').length;
-          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pHold, hasTie: pHasTie });
+          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pHold, hasTie: pHasTie, totalVoted: pVoted.length });
           if (pCalcResult !== 'pending' && !resultEmailSent.has(projectId)) {
             resultEmailSent.add(projectId);
             const resultLabel = pCalcResult === 'approved' ? 'Approved' : pCalcResult === 'declined' ? 'Declined' : 'On Hold';
@@ -1940,7 +1949,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
     const pHolds       = pVoted.filter(v => v.vote === 'hold').length;
     const tieCnt       = vVals.filter(c => c === maxApprovals && c > 0).length;
     const pHasTie      = !pIsSingle && tieCnt > 1;
-    calcResult = calculateResult({ approvals: maxApprovals, declines: pDeclines, holds: pHolds, hasTie: pHasTie });
+    calcResult = calculateResult({ approvals: maxApprovals, declines: pDeclines, holds: pHolds, hasTie: pHasTie, totalVoted: pVoted.length });
 
     const allIds   = group.map(q => q.id).filter(Boolean);
     const otherIds = quoteId ? allIds.filter(id => id !== quoteId) : allIds;
