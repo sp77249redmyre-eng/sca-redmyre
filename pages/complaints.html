@@ -747,12 +747,13 @@ async function loadMessageThread(complaintId) {
     .eq('complaint_id', complaintId)
     .order('created_at', { ascending: true });
 
-  if (!messages || messages.length === 0) {
+  const threadMessages = (messages || []).slice(1);
+  if (threadMessages.length === 0) {
     thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
     return;
   }
 
-  thread.innerHTML = messages.map(m => {
+  thread.innerHTML = threadMessages.map(m => {
     const isAdmin = m.sender_role === 'admin';
     const isMine = m.user_id === user.id;
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
