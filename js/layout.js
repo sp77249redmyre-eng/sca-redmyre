@@ -2,7 +2,7 @@ import { getSupabase } from '/js/auth.js';
 import '/js/my-profile.js';
 
 const PAGE_CONFIG = {
-  'building':       { title: 'Overview',             allowedRoles: null },
+  'building':       { title: 'Overview',             allowedRoles: ['admin'] },
   'service-reports':{ title: 'Service Reports',       allowedRoles: null },
   'announcements':  { title: 'Announcements',         allowedRoles: null },
   'parking':        { title: 'Parking Management',    allowedRoles: null },
@@ -97,10 +97,10 @@ async function applyRoleMenuControl(role, supabase) {
     } else {
       // DB 조회 실패 시 기본 권한 (fallback)
       const defaultPermissions = {
-        committee: ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
-        observer:  ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
-        owner:     ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'documents', 'guide-resident'],
-        tenant:    ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
+        committee: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
+        observer:  ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
+        owner:     ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'documents', 'guide-resident'],
+        tenant:    ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
       };
       allowedPages = defaultPermissions[role] || ['building'];
     }
@@ -138,7 +138,7 @@ function checkPageAccess(role) {
   if (!config) return;
   if (!config.allowedRoles) return;
   if (!config.allowedRoles.includes(role)) {
-    window.location.href = '/pages/building.html';
+    window.location.href = '/pages/announcements.html';
   }
 }
 
