@@ -47,8 +47,8 @@
 .wcat-Other     {border-left:5px solid #94a3b8}
 
 /* Emergency card */
-.work-card.is-emergency{border-color:#fecaca;border-left:5px solid #ef4444}
-.work-card.is-emergency .wcard-hdr{background:#fff5f5}
+.work-card.is-emergency{border-color:#bfdbfe;border-left:5px solid #1e3a8a}
+.work-card.is-emergency .wcard-hdr{background:#eff6ff}
 
 /* ── Card Header ── */
 .wcard-hdr{padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:#f8fafc;border-bottom:0.5px solid #f1f5f9}
@@ -61,7 +61,7 @@
 .meta-sep{width:3px;height:3px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
 
 /* Emergency badge */
-.badge-emergency{background:#fee2e2;color:#991b1b;border:0.5px solid #fecaca;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px}
+.badge-emergency{background:#dbeafe;color:#1e40af;border:0.5px solid #bfdbfe;font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px}
 
 /* Status badge in header */
 .badge{display:inline-flex;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
@@ -596,11 +596,11 @@ function workCard(w) {
     <div class="work-card ${emergencyClass}" id="card-${w.id}">
       <div class="wcard-hdr">
         <div class="wcard-hdr-left">
-          <div class="wcard-icon" style="background:${isEmergency?'#fee2e2':iconBg}">${isEmergency?'🚨':icon}</div>
+          <div class="wcard-icon" style="background:${isEmergency?'#eff6ff':iconBg}">${isEmergency?'📋':icon}</div>
           <div class="wcard-info">
             <div class="wcard-title">
               ${w.project || 'Untitled'}
-              ${isEmergency?'<span class="badge-emergency">EMERGENCY</span>':''}
+              ${isEmergency?'<span class="badge-emergency">DIRECT WORK ORDER</span>':''}
             </div>
             <div class="wcard-meta">
               <span class="meta-chip">📅 ${new Date(w.work_start_date||w.created_at).toLocaleDateString('en-AU')}</span>
@@ -811,7 +811,7 @@ window.saveEmergencyWork = async () => {
     }
 
     const commentPayload = {
-      note: 'Emergency work — authorised by management to ensure building safety',
+      note: 'Direct work order — authorised by Building Manager',
       files: fileData,
       category: category,
       priority: 'Urgent'
@@ -834,7 +834,7 @@ window.saveEmergencyWork = async () => {
 
     if (error) throw error;
 
-    showToast('Emergency work saved');
+    showToast('Direct work order saved');
     closeModal('emergencyModal');
     await loadWorks();
   } catch(e) {
