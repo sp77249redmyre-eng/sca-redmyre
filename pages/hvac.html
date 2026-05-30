@@ -493,7 +493,14 @@ if (role === 'admin') {
     .subscribe();
 
 } else if (role === 'observer') {
-  document.querySelector('.submit-form').style.display = 'none';
+  const sf = document.querySelector('.submit-form');
+  sf.style.opacity = '0.45';
+  sf.style.pointerEvents = 'none';
+  sf.style.userSelect = 'none';
+  const obs_notice = document.createElement('div');
+  obs_notice.style.cssText = 'background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;color:#92400e;margin-bottom:12px;text-align:center';
+  obs_notice.textContent = 'Observer (Strata) accounts cannot submit temperature requests.';
+  sf.insertBefore(obs_notice, sf.firstChild);
   document.getElementById('observerPanel').style.display = 'block';
   await loadObserverData();
 
