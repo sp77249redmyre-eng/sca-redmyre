@@ -14,7 +14,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <style>
 .btn-new-request{padding:11px 22px!important;font-size:14px!important;font-weight:700!important;border-radius:10px!important;transform:scale(1.05);animation:newReqPulse 2s ease-in-out infinite;letter-spacing:0.02em}
 .btn-new-request:hover{transform:scale(1.08);animation:none}
@@ -265,7 +264,7 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Details</label>
-      <div id="complaintBodyWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
+      <textarea class="modal-textarea" id="complaintBody" placeholder="Please describe the issue in detail — location, time, frequency…" style="min-height:180px"></textarea>
     </div>
     <div class="modal-field">
       <label class="modal-label">Photos (optional)</label>
@@ -324,7 +323,7 @@
 
     <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
-      <div id="adminResponseWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
+      <textarea class="modal-textarea" id="adminResponse" placeholder="Type your reply…" style="min-height:180px;border-radius:10px;border-width:1.5px"></textarea>
       <div id="replyAttachWrap" style="display:none;margin-top:10px">
         <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments (optional)</div>
         <div style="display:flex;gap:10px">
@@ -374,7 +373,7 @@
     <div class="modal-title">Edit Message</div>
     <input type="hidden" id="editMsgId">
     <div class="modal-field">
-      <div id="editMsgTextWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
+      <textarea class="modal-textarea" id="editMsgText" style="min-height:180px;font-size:14px;line-height:1.7"></textarea>
     </div>
     <div class="modal-field">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments</div>
@@ -637,24 +636,18 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   document.getElementById('complaintEditId').value = '';
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
+  document.getElementById('complaintBody').value = '';
   document.getElementById('complaintIsPublic').checked = false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   renderUnitSelection();
-  // Quill init
-  const wrap = document.getElementById('complaintBodyWrap');
-  wrap.innerHTML = '';
-  const qDiv = document.createElement('div');
-  wrap.appendChild(qDiv);
-  if (window.Quill) {
-    window._qComplaintBody = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
-  }
   document.getElementById('complaintModal').classList.add('open');
+  setTimeout(() => { if(window._initQuillBody) window._initQuillBody(''); }, 50);
 });
 
 document.getElementById('saveComplaintBtn').addEventListener('click', async () => {
   const title    = document.getElementById('complaintTitle').value.trim();
-  const body     = window._qComplaintBody ? window._qComplaintBody.root.innerHTML.trim() : '';
+  const body     = document.getElementById('complaintBody').value.trim();
   const category = document.getElementById('complaintCategory').value;
   const btn = document.getElementById('saveComplaintBtn');
   if (!title || !body) { showToast('Please fill in all fields', true); return; }
@@ -796,18 +789,10 @@ window.editMessage = async function(msgId) {
   const textEl = document.getElementById('msgText-' + msgId);
   if (!textEl) return;
   document.getElementById('editMsgId').value = msgId;
+  document.getElementById('editMsgText').value = textEl.textContent;
   editMsgNewPhotos = [];
   editMsgRemovedPaths = [];
   document.getElementById('editMsgNewPhotoGrid').innerHTML = '';
-  // Quill init
-  const wrap = document.getElementById('editMsgTextWrap');
-  wrap.innerHTML = '';
-  const qDiv = document.createElement('div');
-  wrap.appendChild(qDiv);
-  if (window.Quill) {
-    window._qEditMsg = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your message…'});
-    window._qEditMsg.root.innerHTML = textEl.innerHTML || textEl.textContent;
-  }
   // 기존 사진 로드
   const { data: msg } = await supabase.from('complaint_messages').select('attachments').eq('id', msgId).single();
   const existing = document.getElementById('editMsgExistingPhotos');
@@ -829,7 +814,8 @@ window.editMessage = async function(msgId) {
     });
   }
   document.getElementById('editMsgModal').classList.add('open');
-  setTimeout(() => { if (window._qEditMsg) window._qEditMsg.focus(); }, 100);
+  setTimeout(() => document.getElementById('editMsgText').focus(), 100);
+  setTimeout(() => { if(window._initQuillEdit) window._initQuillEdit(textEl.textContent); }, 50);
 };
 
 window.removeEditExistingPhoto = (el, path) => {
@@ -868,7 +854,7 @@ document.getElementById('editMsgPhotoInputFile').addEventListener('change', e =>
 
 document.getElementById('saveEditMsgBtn').addEventListener('click', async () => {
   const msgId = document.getElementById('editMsgId').value;
-  const newText = window._qEditMsg ? window._qEditMsg.root.innerHTML.trim() : '';
+  const newText = document.getElementById('editMsgText').value.trim();
   if (!newText) { closeModal('editMsgModal'); return; }
   try {
     // 기존 사진 가져오기
@@ -926,6 +912,9 @@ window.openDetail = async (id) => {
   if (role === 'admin') {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '#f0fdf4';
+    document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
+    document.getElementById('adminResponse').style.background = '#f0fdf4';
+    document.getElementById('adminResponse').value = '';
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
@@ -936,6 +925,8 @@ window.openDetail = async (id) => {
   } else if (canSubmit.includes(role) && c.user_id === user.id) {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '';
+    document.getElementById('adminResponse').style.borderColor = '';
+    document.getElementById('adminResponse').style.background = '';
     statusSel.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = c.status !== 'resolved' ? 'inline-flex' : 'none';
@@ -947,22 +938,13 @@ window.openDetail = async (id) => {
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = 'none';
   }
-  // Quill init for reply
-  if (replyWrap.style.display !== 'none') {
-    const wrap = document.getElementById('adminResponseWrap');
-    wrap.innerHTML = '';
-    const qDiv = document.createElement('div');
-    wrap.appendChild(qDiv);
-    if (window.Quill) {
-      window._qAdminResponse = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your reply…'});
-    }
-  }
   
   document.getElementById('detailModal').classList.add('open');
+  setTimeout(() => { if(window._initQuillReply) window._initQuillReply(''); }, 50);
 };
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
-  const response = window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '';
+  const response = document.getElementById('adminResponse').value.trim();
   const status   = document.getElementById('adminStatusSelect').value || null;
   if (!response && !status) { showToast('Please enter a reply or change status', true); return; }
   try {
@@ -1012,7 +994,7 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
         });
       }
     } catch(pushErr) {}
-    if (window._qAdminResponse) window._qAdminResponse.setContents([]);
+    document.getElementById('adminResponse').value = '';
     await loadMessageThread(currentComplaintId);
     await loadComplaints();
     showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
@@ -1096,7 +1078,7 @@ function handleBackdropClick(e, modalId, checkFn) {
 
 document.getElementById('detailModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'detailModal', () => {
-    const v = window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '';
+    const v = (document.getElementById('adminResponse').value || '').trim();
     return v.length > 0;
   });
 });
@@ -1104,14 +1086,14 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
 document.getElementById('complaintModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'complaintModal', () => {
     const t = (document.getElementById('complaintTitle').value || '').trim();
-    const b = window._qComplaintBody ? window._qComplaintBody.root.innerHTML.trim() : '';
+    const b = (document.getElementById('complaintBody').value || '').trim();
     return t.length > 0 || b.length > 0;
   });
 });
 
 document.getElementById('editMsgModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'editMsgModal', () => {
-    return window._qEditMsg ? window._qEditMsg.root.innerHTML.trim().length > 0 : false;
+    return (document.getElementById('editMsgText').value || '').trim().length > 0;
   });
 });
 
@@ -1123,22 +1105,15 @@ window.openEditComplaint = () => {
   document.getElementById('complaintEditId').value = c.id;
   document.getElementById('complaintCategory').value = c.category || 'other';
   document.getElementById('complaintTitle').value = c.title || '';
+  document.getElementById('complaintBody').value = c.body || '';
   document.getElementById('complaintIsPublic').checked = c.is_public || false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   document.getElementById('unitAutoBox').style.display = 'none';
   document.getElementById('unitRadioBox').style.display = 'none';
-  // Quill init
-  const wrap = document.getElementById('complaintBodyWrap');
-  wrap.innerHTML = '';
-  const qDiv = document.createElement('div');
-  wrap.appendChild(qDiv);
-  if (window.Quill) {
-    window._qComplaintBody = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
-    window._qComplaintBody.root.innerHTML = c.body || '';
-  }
   closeModal('detailModal');
   document.getElementById('complaintModal').classList.add('open');
+  setTimeout(() => { if(window._initQuillBody) window._initQuillBody(c.body || ''); }, 50);
 };
 
 window.openPublicDetail = async (id) => {
@@ -1345,6 +1320,46 @@ supabase.channel('complaints-realtime')
   })
   .subscribe();
 </script>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
+.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
+.ql-editor{min-height:160px;padding:11px 14px}
+.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
+let _qBody, _qReply, _qEdit;
+window._initQuillBody = function(val) {
+  const ta = document.getElementById('complaintBody');
+  if (!_qBody) {
+    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
+    _qBody = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
+    _qBody.on('text-change', () => { ta.value = _qBody.root.innerHTML; });
+  }
+  _qBody.root.innerHTML = val || '';
+  ta.value = val || '';
+};
+window._initQuillReply = function(val) {
+  const ta = document.getElementById('adminResponse');
+  if (!_qReply) {
+    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
+    _qReply = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your reply…'});
+    _qReply.on('text-change', () => { ta.value = _qReply.root.innerHTML; });
+  }
+  _qReply.root.innerHTML = val || '';
+  ta.value = val || '';
+};
+window._initQuillEdit = function(val) {
+  const ta = document.getElementById('editMsgText');
+  if (!_qEdit) {
+    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
+    _qEdit = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your message…'});
+    _qEdit.on('text-change', () => { ta.value = _qEdit.root.innerHTML; });
+  }
+  _qEdit.root.innerHTML = val || '';
+  ta.value = val || '';
+};
+</script>
 </body>
 </html>
