@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <style>
 .btn-new-request{padding:11px 22px!important;font-size:14px!important;font-weight:700!important;border-radius:10px!important;transform:scale(1.05);animation:newReqPulse 2s ease-in-out infinite;letter-spacing:0.02em}
 .btn-new-request:hover{transform:scale(1.08);animation:none}
@@ -264,7 +265,7 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Details</label>
-      <textarea class="modal-textarea" id="complaintBody" placeholder="Please describe the issue in detail — location, time, frequency…" style="min-height:180px"></textarea>
+      <div id="complaintBodyEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Photos (optional)</label>
@@ -323,7 +324,7 @@
 
     <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
-      <textarea class="modal-textarea" id="adminResponse" placeholder="Type your reply…" style="min-height:180px;border-radius:10px;border-width:1.5px"></textarea>
+      <div id="adminResponseEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
       <div id="replyAttachWrap" style="display:none;margin-top:10px">
         <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments (optional)</div>
         <div style="display:flex;gap:10px">
@@ -373,7 +374,7 @@
     <div class="modal-title">Edit Message</div>
     <input type="hidden" id="editMsgId">
     <div class="modal-field">
-      <textarea class="modal-textarea" id="editMsgText" style="min-height:180px;font-size:14px;line-height:1.7"></textarea>
+      <div id="editMsgTextEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
     </div>
     <div class="modal-field">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments</div>
@@ -636,7 +637,7 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   document.getElementById('complaintEditId').value = '';
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
-  document.getElementById('complaintBody').value = '';
+  if (window._qComplaintBody) window._qComplaintBody.setContents([]);
   document.getElementById('complaintIsPublic').checked = false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
@@ -646,7 +647,7 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
 
 document.getElementById('saveComplaintBtn').addEventListener('click', async () => {
   const title    = document.getElementById('complaintTitle').value.trim();
-  const body     = document.getElementById('complaintBody').value.trim();
+  const body     = window._qComplaintBody ? window._qComplaintBody.root.innerHTML.trim() : '';
   const category = document.getElementById('complaintCategory').value;
   const btn = document.getElementById('saveComplaintBtn');
   if (!title || !body) { showToast('Please fill in all fields', true); return; }
@@ -788,7 +789,7 @@ window.editMessage = async function(msgId) {
   const textEl = document.getElementById('msgText-' + msgId);
   if (!textEl) return;
   document.getElementById('editMsgId').value = msgId;
-  document.getElementById('editMsgText').value = textEl.textContent;
+  if (window._qEditMsg) window._qEditMsg.root.innerHTML = textEl.innerHTML || textEl.textContent;
   editMsgNewPhotos = [];
   editMsgRemovedPaths = [];
   document.getElementById('editMsgNewPhotoGrid').innerHTML = '';
@@ -813,7 +814,7 @@ window.editMessage = async function(msgId) {
     });
   }
   document.getElementById('editMsgModal').classList.add('open');
-  setTimeout(() => document.getElementById('editMsgText').focus(), 100);
+  setTimeout(() => { if (window._qEditMsg) window._qEditMsg.focus(); }, 100);
 };
 
 window.removeEditExistingPhoto = (el, path) => {
@@ -852,7 +853,7 @@ document.getElementById('editMsgPhotoInputFile').addEventListener('change', e =>
 
 document.getElementById('saveEditMsgBtn').addEventListener('click', async () => {
   const msgId = document.getElementById('editMsgId').value;
-  const newText = document.getElementById('editMsgText').value.trim();
+  const newText = window._qEditMsg ? window._qEditMsg.root.innerHTML.trim() : '';
   if (!newText) { closeModal('editMsgModal'); return; }
   try {
     // 기존 사진 가져오기
@@ -906,13 +907,13 @@ window.openDetail = async (id) => {
 
   const replyWrap = document.getElementById('replyWrap');
   const statusSel = document.getElementById('adminStatusSelect');
-  document.getElementById('adminResponse').value = '';
+  if (window._qAdminResponse) window._qAdminResponse.setContents([]);
   if (role === 'admin') {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '#f0fdf4';
     document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
     document.getElementById('adminResponse').style.background = '#f0fdf4';
-    document.getElementById('adminResponse').value = '';
+    if (window._qAdminResponse) window._qAdminResponse.setContents([]);
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
@@ -941,7 +942,7 @@ window.openDetail = async (id) => {
 };
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
-  const response = document.getElementById('adminResponse').value.trim();
+  const response = window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '';
   const status   = document.getElementById('adminStatusSelect').value || null;
   if (!response && !status) { showToast('Please enter a reply or change status', true); return; }
   try {
@@ -991,7 +992,7 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
         });
       }
     } catch(pushErr) {}
-    document.getElementById('adminResponse').value = '';
+    if (window._qAdminResponse) window._qAdminResponse.setContents([]);
     await loadMessageThread(currentComplaintId);
     await loadComplaints();
     showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
@@ -1075,7 +1076,7 @@ function handleBackdropClick(e, modalId, checkFn) {
 
 document.getElementById('detailModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'detailModal', () => {
-    const v = (document.getElementById('adminResponse').value || '').trim();
+    const v = (window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '');
     return v.length > 0;
   });
 });
@@ -1090,7 +1091,7 @@ document.getElementById('complaintModal').addEventListener('click', (e) => {
 
 document.getElementById('editMsgModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'editMsgModal', () => {
-    return (document.getElementById('editMsgText').value || '').trim().length > 0;
+    return (window._qEditMsg ? window._qEditMsg.root.innerHTML.trim().length > 0 : false);
   });
 });
 
@@ -1102,7 +1103,7 @@ window.openEditComplaint = () => {
   document.getElementById('complaintEditId').value = c.id;
   document.getElementById('complaintCategory').value = c.category || 'other';
   document.getElementById('complaintTitle').value = c.title || '';
-  document.getElementById('complaintBody').value = c.body || '';
+  if (window._qComplaintBody) window._qComplaintBody.root.innerHTML = c.body || '';
   document.getElementById('complaintIsPublic').checked = c.is_public || false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
@@ -1315,6 +1316,27 @@ supabase.channel('complaints-realtime')
     }
   })
   .subscribe();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
+window.addEventListener('load', () => {
+  if (!window.Quill) return;
+  window._qComplaintBody = new Quill('#complaintBodyEditor', {
+    theme: 'snow',
+    modules: { toolbar: [['bold','italic',{color:[]}]] },
+    placeholder: 'Please describe the issue in detail — location, time, frequency…'
+  });
+  window._qAdminResponse = new Quill('#adminResponseEditor', {
+    theme: 'snow',
+    modules: { toolbar: [['bold','italic',{color:[]}]] },
+    placeholder: 'Type your reply…'
+  });
+  window._qEditMsg = new Quill('#editMsgTextEditor', {
+    theme: 'snow',
+    modules: { toolbar: [['bold','italic',{color:[]}]] },
+    placeholder: 'Edit your message…'
+  });
+});
 </script>
 </body>
 </html>
