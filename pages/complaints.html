@@ -265,7 +265,7 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Details</label>
-      <div id="complaintBodyEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
+      <div id="complaintBodyWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Photos (optional)</label>
@@ -324,7 +324,7 @@
 
     <div id="replyWrap" style="display:none;padding:16px 24px;border-top:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Your Reply</div>
-      <div id="adminResponseEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
+      <div id="adminResponseWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
       <div id="replyAttachWrap" style="display:none;margin-top:10px">
         <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments (optional)</div>
         <div style="display:flex;gap:10px">
@@ -374,7 +374,7 @@
     <div class="modal-title">Edit Message</div>
     <input type="hidden" id="editMsgId">
     <div class="modal-field">
-      <div id="editMsgTextEditor" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px"></div>
+      <div id="editMsgTextWrap" style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:180px;background:var(--bg)"></div>
     </div>
     <div class="modal-field">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Attachments</div>
@@ -637,11 +637,18 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   document.getElementById('complaintEditId').value = '';
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
-  if (window._qComplaintBody) window._qComplaintBody.setContents([]);
   document.getElementById('complaintIsPublic').checked = false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   renderUnitSelection();
+  // Quill init
+  const wrap = document.getElementById('complaintBodyWrap');
+  wrap.innerHTML = '';
+  const qDiv = document.createElement('div');
+  wrap.appendChild(qDiv);
+  if (window.Quill) {
+    window._qComplaintBody = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
+  }
   document.getElementById('complaintModal').classList.add('open');
 });
 
@@ -789,10 +796,18 @@ window.editMessage = async function(msgId) {
   const textEl = document.getElementById('msgText-' + msgId);
   if (!textEl) return;
   document.getElementById('editMsgId').value = msgId;
-  if (window._qEditMsg) window._qEditMsg.root.innerHTML = textEl.innerHTML || textEl.textContent;
   editMsgNewPhotos = [];
   editMsgRemovedPaths = [];
   document.getElementById('editMsgNewPhotoGrid').innerHTML = '';
+  // Quill init
+  const wrap = document.getElementById('editMsgTextWrap');
+  wrap.innerHTML = '';
+  const qDiv = document.createElement('div');
+  wrap.appendChild(qDiv);
+  if (window.Quill) {
+    window._qEditMsg = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your message…'});
+    window._qEditMsg.root.innerHTML = textEl.innerHTML || textEl.textContent;
+  }
   // 기존 사진 로드
   const { data: msg } = await supabase.from('complaint_messages').select('attachments').eq('id', msgId).single();
   const existing = document.getElementById('editMsgExistingPhotos');
@@ -907,13 +922,10 @@ window.openDetail = async (id) => {
 
   const replyWrap = document.getElementById('replyWrap');
   const statusSel = document.getElementById('adminStatusSelect');
-  if (window._qAdminResponse) window._qAdminResponse.setContents([]);
+  document.getElementById('adminResponse').value = '';
   if (role === 'admin') {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '#f0fdf4';
-    document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
-    document.getElementById('adminResponse').style.background = '#f0fdf4';
-    if (window._qAdminResponse) window._qAdminResponse.setContents([]);
     statusSel.style.display = 'block';
     statusSel.value = c.status;
     document.getElementById('deleteComplaintBtn').style.display = 'inline-flex';
@@ -924,8 +936,6 @@ window.openDetail = async (id) => {
   } else if (canSubmit.includes(role) && c.user_id === user.id) {
     replyWrap.style.display = 'block';
     replyWrap.style.background = '';
-    document.getElementById('adminResponse').style.borderColor = '';
-    document.getElementById('adminResponse').style.background = '';
     statusSel.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = c.status !== 'resolved' ? 'inline-flex' : 'none';
@@ -936,6 +946,16 @@ window.openDetail = async (id) => {
     replyWrap.style.display = 'none';
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = 'none';
+  }
+  // Quill init for reply
+  if (replyWrap.style.display !== 'none') {
+    const wrap = document.getElementById('adminResponseWrap');
+    wrap.innerHTML = '';
+    const qDiv = document.createElement('div');
+    wrap.appendChild(qDiv);
+    if (window.Quill) {
+      window._qAdminResponse = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your reply…'});
+    }
   }
   
   document.getElementById('detailModal').classList.add('open');
@@ -1076,7 +1096,7 @@ function handleBackdropClick(e, modalId, checkFn) {
 
 document.getElementById('detailModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'detailModal', () => {
-    const v = (window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '');
+    const v = window._qAdminResponse ? window._qAdminResponse.root.innerHTML.trim() : '';
     return v.length > 0;
   });
 });
@@ -1084,14 +1104,14 @@ document.getElementById('detailModal').addEventListener('click', (e) => {
 document.getElementById('complaintModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'complaintModal', () => {
     const t = (document.getElementById('complaintTitle').value || '').trim();
-    const b = (document.getElementById('complaintBody').value || '').trim();
+    const b = window._qComplaintBody ? window._qComplaintBody.root.innerHTML.trim() : '';
     return t.length > 0 || b.length > 0;
   });
 });
 
 document.getElementById('editMsgModal').addEventListener('click', (e) => {
   handleBackdropClick(e, 'editMsgModal', () => {
-    return (window._qEditMsg ? window._qEditMsg.root.innerHTML.trim().length > 0 : false);
+    return window._qEditMsg ? window._qEditMsg.root.innerHTML.trim().length > 0 : false;
   });
 });
 
@@ -1103,12 +1123,20 @@ window.openEditComplaint = () => {
   document.getElementById('complaintEditId').value = c.id;
   document.getElementById('complaintCategory').value = c.category || 'other';
   document.getElementById('complaintTitle').value = c.title || '';
-  if (window._qComplaintBody) window._qComplaintBody.root.innerHTML = c.body || '';
   document.getElementById('complaintIsPublic').checked = c.is_public || false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   document.getElementById('unitAutoBox').style.display = 'none';
   document.getElementById('unitRadioBox').style.display = 'none';
+  // Quill init
+  const wrap = document.getElementById('complaintBodyWrap');
+  wrap.innerHTML = '';
+  const qDiv = document.createElement('div');
+  wrap.appendChild(qDiv);
+  if (window.Quill) {
+    window._qComplaintBody = new Quill(qDiv, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
+    window._qComplaintBody.root.innerHTML = c.body || '';
+  }
   closeModal('detailModal');
   document.getElementById('complaintModal').classList.add('open');
 };
@@ -1318,25 +1346,5 @@ supabase.channel('complaints-realtime')
   .subscribe();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-<script>
-window.addEventListener('load', () => {
-  if (!window.Quill) return;
-  window._qComplaintBody = new Quill('#complaintBodyEditor', {
-    theme: 'snow',
-    modules: { toolbar: [['bold','italic',{color:[]}]] },
-    placeholder: 'Please describe the issue in detail — location, time, frequency…'
-  });
-  window._qAdminResponse = new Quill('#adminResponseEditor', {
-    theme: 'snow',
-    modules: { toolbar: [['bold','italic',{color:[]}]] },
-    placeholder: 'Type your reply…'
-  });
-  window._qEditMsg = new Quill('#editMsgTextEditor', {
-    theme: 'snow',
-    modules: { toolbar: [['bold','italic',{color:[]}]] },
-    placeholder: 'Edit your message…'
-  });
-});
-</script>
 </body>
 </html>
