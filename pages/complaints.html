@@ -14,6 +14,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
+.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
+.ql-editor{min-height:160px;padding:11px 14px}
+.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
+</style>
 <style>
 .btn-new-request{padding:11px 22px!important;font-size:14px!important;font-weight:700!important;border-radius:10px!important;transform:scale(1.05);animation:newReqPulse 2s ease-in-out infinite;letter-spacing:0.02em}
 .btn-new-request:hover{transform:scale(1.08);animation:none}
@@ -314,7 +321,7 @@
 
     <div style="padding:16px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Details</div>
-      <div style="font-size:14px;color:#374151;line-height:1.7;id="detailBody">—</div>
+      <div style="font-size:14px;color:#374151;line-height:1.7" id="detailBody">—</div>
     </div>
 
 
@@ -642,7 +649,7 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   pendingPhotos = [];
   renderUnitSelection();
   document.getElementById('complaintModal').classList.add('open');
-  setTimeout(() => { if(window._initQuillBody) window._initQuillBody(''); }, 50);
+  setTimeout(() => window._initQuillBody && window._initQuillBody(''), 50);
 });
 
 document.getElementById('saveComplaintBtn').addEventListener('click', async () => {
@@ -814,8 +821,8 @@ window.editMessage = async function(msgId) {
     });
   }
   document.getElementById('editMsgModal').classList.add('open');
+  setTimeout(() => window._initQuillEdit && window._initQuillEdit(document.getElementById('editMsgText').value), 50);
   setTimeout(() => document.getElementById('editMsgText').focus(), 100);
-  setTimeout(() => { if(window._initQuillEdit) window._initQuillEdit(textEl.textContent); }, 50);
 };
 
 window.removeEditExistingPhoto = (el, path) => {
@@ -940,7 +947,7 @@ window.openDetail = async (id) => {
   }
   
   document.getElementById('detailModal').classList.add('open');
-  setTimeout(() => { if(window._initQuillReply) window._initQuillReply(''); }, 50);
+  setTimeout(() => window._initQuillReply && window._initQuillReply(''), 50);
 };
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
@@ -1113,7 +1120,7 @@ window.openEditComplaint = () => {
   document.getElementById('unitRadioBox').style.display = 'none';
   closeModal('detailModal');
   document.getElementById('complaintModal').classList.add('open');
-  setTimeout(() => { if(window._initQuillBody) window._initQuillBody(c.body || ''); }, 50);
+  setTimeout(() => window._initQuillBody && window._initQuillBody(document.getElementById('complaintBody').value), 50);
 };
 
 window.openPublicDetail = async (id) => {
@@ -1171,6 +1178,7 @@ window.openPublicDetail = async (id) => {
   }
   
   document.getElementById('detailModal').classList.add('open');
+  setTimeout(() => window._initQuillReply && window._initQuillReply(''), 50);
 };
 
 // 공개 요청용 대화 스레드 로드 (SECURITY DEFINER 함수 사용, RLS 우회)
@@ -1320,46 +1328,25 @@ supabase.channel('complaints-realtime')
   })
   .subscribe();
 </script>
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-<style>
-.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
-.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
-.ql-editor{min-height:160px;padding:11px 14px}
-.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
-</style>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script>
 let _qBody, _qReply, _qEdit;
-window._initQuillBody = function(val) {
-  const ta = document.getElementById('complaintBody');
-  if (!_qBody) {
-    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
-    _qBody = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Please describe the issue in detail — location, time, frequency…'});
-    _qBody.on('text-change', () => { ta.value = _qBody.root.innerHTML; });
+function _initQ(varRef, taId, placeholder, val) {
+  const ta = document.getElementById(taId);
+  if (!ta || !window.Quill) return;
+  if (!varRef.q) {
+    const d = document.createElement('div');
+    ta.parentNode.insertBefore(d, ta);
+    ta.style.display = 'none';
+    varRef.q = new Quill(d, {theme:'snow', modules:{toolbar:[['bold','italic',{color:[]}]]}, placeholder});
+    varRef.q.on('text-change', () => { ta.value = varRef.q.root.innerHTML; });
   }
-  _qBody.root.innerHTML = val || '';
+  varRef.q.root.innerHTML = val || '';
   ta.value = val || '';
-};
-window._initQuillReply = function(val) {
-  const ta = document.getElementById('adminResponse');
-  if (!_qReply) {
-    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
-    _qReply = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your reply…'});
-    _qReply.on('text-change', () => { ta.value = _qReply.root.innerHTML; });
-  }
-  _qReply.root.innerHTML = val || '';
-  ta.value = val || '';
-};
-window._initQuillEdit = function(val) {
-  const ta = document.getElementById('editMsgText');
-  if (!_qEdit) {
-    const d = document.createElement('div'); ta.parentNode.insertBefore(d, ta); ta.style.display='none';
-    _qEdit = new Quill(d, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your message…'});
-    _qEdit.on('text-change', () => { ta.value = _qEdit.root.innerHTML; });
-  }
-  _qEdit.root.innerHTML = val || '';
-  ta.value = val || '';
-};
+}
+window._initQuillBody  = (v) => _initQ(_qBody  = _qBody  || {}, 'complaintBody',  'Please describe the issue in detail…', v);
+window._initQuillReply = (v) => _initQ(_qReply = _qReply || {}, 'adminResponse',  'Type your reply…', v);
+window._initQuillEdit  = (v) => _initQ(_qEdit  = _qEdit  || {}, 'editMsgText',    'Edit your message…', v);
 </script>
 </body>
 </html>
