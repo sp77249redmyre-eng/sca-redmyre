@@ -452,8 +452,8 @@
         </div>
       </div>
 
-      <!-- Password field: only shown when ready -->
-      <div class="form-group" id="passwordGroup" style="display:none">
+      <!-- Password field -->
+      <div class="form-group" id="passwordGroup">
         <label class="form-label">Password</label>
         <input class="form-input" type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
         <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
@@ -559,9 +559,7 @@ function resetStatus() {
   notfoundBox.classList.remove('show');
   setupBox.classList.remove('show');
   errorMsg.classList.remove('show');
-  passwordGroup.style.display = 'none';
-  btnText.textContent = 'Continue →';
-  passwordInput.value = '';
+  btnText.textContent = 'Sign In →';
 }
 
 // 이메일 체크 함수
@@ -600,14 +598,8 @@ async function checkEmail() {
 
     if (data.status === 'not_found') {
       notfoundBox.classList.add('show');
-      btnText.textContent = 'Continue →';
     } else if (data.status === 'needs_setup') {
       setupBox.classList.add('show');
-      btnText.textContent = 'Set Up Account →';
-    } else if (data.status === 'ready') {
-      passwordGroup.style.display = 'block';
-      btnText.textContent = 'Sign In →';
-      setTimeout(() => passwordInput.focus(), 100);
     }
 
   } catch (err) {
@@ -618,19 +610,13 @@ async function checkEmail() {
 }
 
 // 이메일 입력 이벤트
-let checkTimer = null;
 emailInput.addEventListener('input', () => {
-  clearTimeout(checkTimer);
   resetStatus();
-});
-emailInput.addEventListener('blur', () => {
-  clearTimeout(checkTimer);
-  checkTimer = setTimeout(checkEmail, 200);
 });
 emailInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    handleMainButton();
+    passwordInput.focus();
   }
 });
 
