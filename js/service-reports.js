@@ -181,11 +181,17 @@ function nextDueFor(cat) {
   }
   if (cat.frequency === 'custom' && Array.isArray(cat.custom_months) && cat.custom_months.length) {
     if (!last) return { date: null, status: 'first', diff: null };
-    // next month in custom_months ahead of today's month
+    // if last report is in current month, skip to next custom month
+    const lastDate = new Date(last.report_date);
+    const lastM = lastDate.getMonth() + 1;
+    const lastY = lastDate.getFullYear();
     const m = today.getMonth() + 1;
     const y = today.getFullYear();
     const sortedMonths = [...cat.custom_months].sort((a,b)=>a-b);
-    let target = sortedMonths.find(mm => mm >= m);
+    // if last report already covers current month this year, find next month after it
+    let startM = m;
+    if (lastY === y && lastM === m) startM = m + 1;
+    let target = sortedMonths.find(mm => mm >= startM);
     let targetYear = y;
     if (target === undefined) { target = sortedMonths[0]; targetYear = y + 1; }
     const d = new Date(targetYear, target - 1, 15);
