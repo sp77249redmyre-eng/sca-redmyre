@@ -1118,7 +1118,7 @@ window.openDetailModal = function(reportId) {
   if (r.summary) {
     const hasHTML = /<[a-z][\s\S]*>/i.test(r.summary);
     const rendered = hasHTML
-      ? r.summary
+      ? r.summary.replace(/\n/g, '<br>')
       : escHtml(r.summary).replace(/\n/g, '<br>');
     summaryHtml = `<div class="sr-detail-section">
       <div class="sr-detail-label">Summary</div>
