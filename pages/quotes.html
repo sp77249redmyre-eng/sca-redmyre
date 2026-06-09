@@ -714,7 +714,12 @@ function getProjectVotes(projectId) {
 }
 
 function renderQuotes() {
-  const active   = allQuotes.filter(q => (q.status === 'draft' || q.status === 'voting' || q.status === 'pending') && q.status !== 'approved' && q.status !== 'removed' && q.work_status === null && q.completion_date === null && !q.archived && q.is_emergency !== true);
+  const active   = allQuotes.filter(q => {
+    if (q.status === 'approved' || q.status === 'removed') return false;
+    if (q.work_status !== null || q.completion_date !== null || q.archived || q.is_emergency === true) return false;
+    if (q.status === 'draft' && role !== 'admin') return false;
+    return (q.status === 'draft' || q.status === 'voting' || q.status === 'pending');
+  });
   const archived = allQuotes.filter(q => ['onhold','declined','expired'].includes(q.status) && q.status !== 'approved' && q.status !== 'removed' && q.is_emergency !== true);
   renderPendingQuotes(active);
   renderArchiveTable(archived);
