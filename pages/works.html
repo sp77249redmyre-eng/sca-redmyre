@@ -160,14 +160,27 @@
 /* Modal */
 .modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);display:none;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;backdrop-filter:blur(2px)}
 .modal-backdrop.open{display:flex}
-.modal-box{background:#fff;border-radius:18px;padding:28px;max-width:640px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.modal-box{background:#fff;border-radius:18px;padding:32px;max-width:780px;width:95%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
 .modal-title{font-size:20px;font-weight:600;color:#1e293b;margin-bottom:24px}
 .modal-field{margin-bottom:18px}
 .modal-label{font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:7px}
 .modal-input{width:100%;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;box-sizing:border-box}
 .modal-select{width:100%;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;box-sizing:border-box}
-.modal-textarea{width:100%;min-height:80px;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box}
+.modal-textarea{width:100%;min-height:120px;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;resize:vertical;box-sizing:border-box}
 .modal-footer{display:flex;gap:12px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Rich Text Toolbar ── */
+.rte-wrap{display:flex;flex-direction:column;gap:0}
+.rte-toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;background:#f8fafc;border:0.5px solid #e2e8f0;border-bottom:none;border-radius:10px 10px 0 0;flex-wrap:wrap}
+.rte-toolbar button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0.5px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#475569;transition:all 0.12s;flex-shrink:0}
+.rte-toolbar button:hover{background:#dbeafe;border-color:#2563eb;color:#2563eb}
+.rte-toolbar button.active{background:#dbeafe;border-color:#2563eb;color:#2563eb}
+.rte-sep{width:1px;height:18px;background:#e2e8f0;margin:0 2px;flex-shrink:0}
+.rte-color-btn{width:28px!important;height:28px!important;padding:3px!important;cursor:pointer}
+.rte-color-btn input[type=color]{width:18px;height:18px;border:none;padding:0;cursor:pointer;background:none}
+.rte-textarea{border-radius:0 0 10px 10px!important;border-top:0.5px solid #e2e8f0!important}
+.rte-toolbar-inote{background:#e8f1ff;border-color:#dbeafe}
+.rte-textarea-inote{background:#f0f7ff!important;border-color:#dbeafe!important}
 
 /* Mobile */
 @media(max-width:768px){
@@ -204,11 +217,8 @@
   .completion-date-row{flex-direction:column}
   .completion-date-row .btn-primary{width:100%;justify-content:center;padding:10px}
   .modal-box{border-radius:14px;padding:20px}
-  .modal-title{font-size:17px}
-  .btn-em-sub{display:none}
-  /* iOS 줌인 방지 (works 자체 정의 덮어씀) */
   .modal-input,.modal-select,.modal-textarea{font-size:16px !important;height:48px}
-  .modal-textarea{height:auto;min-height:110px}
+  .modal-textarea{height:auto;min-height:120px}
 }
 @media(max-width:380px){
   .wcard-title{font-size:13px}
@@ -275,7 +285,22 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Notes</label>
-      <textarea class="modal-textarea" id="emergencyNotes" placeholder="Reason for emergency work"></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmd('emergencyNotes','bold')"><b>B</b></button>
+          <button type="button" onclick="rteCmd('emergencyNotes','italic')"><i>I</i></button>
+          <button type="button" onclick="rteCmd('emergencyNotes','underline')"><u>U</u></button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteColor('emergencyNotes','#dc2626')" style="color:#dc2626">A</button>
+          <button type="button" onclick="rteColor('emergencyNotes','#d97706')" style="color:#d97706">A</button>
+          <button type="button" onclick="rteColor('emergencyNotes','#2563eb')" style="color:#2563eb">A</button>
+          <button type="button" onclick="rteColor('emergencyNotes','#16a34a')" style="color:#16a34a">A</button>
+          <button type="button" onclick="rteColor('emergencyNotes','inherit')" style="color:#94a3b8;font-size:11px">&#10005;</button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteClear('emergencyNotes')" style="font-size:10px">CLR</button>
+        </div>
+        <div class="modal-textarea rte-textarea" id="emergencyNotes" contenteditable="true" style="min-height:140px;outline:none"></div>
+      </div>
     </div>
     <div class="modal-field">
       <label class="modal-label">📎 Attach Files (Internal Only)</label>
@@ -321,11 +346,41 @@
     </div>
     <div class="modal-field">
       <label class="modal-label">Notes</label>
-      <textarea class="modal-textarea" id="editNotes"></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmd('editNotes','bold')"><b>B</b></button>
+          <button type="button" onclick="rteCmd('editNotes','italic')"><i>I</i></button>
+          <button type="button" onclick="rteCmd('editNotes','underline')"><u>U</u></button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteColor('editNotes','#dc2626')" style="color:#dc2626">A</button>
+          <button type="button" onclick="rteColor('editNotes','#d97706')" style="color:#d97706">A</button>
+          <button type="button" onclick="rteColor('editNotes','#2563eb')" style="color:#2563eb">A</button>
+          <button type="button" onclick="rteColor('editNotes','#16a34a')" style="color:#16a34a">A</button>
+          <button type="button" onclick="rteColor('editNotes','inherit')" style="color:#94a3b8;font-size:11px">&#10005;</button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteClear('editNotes')" style="font-size:10px">CLR</button>
+        </div>
+        <div class="modal-textarea rte-textarea" id="editNotes" contenteditable="true" style="min-height:140px;outline:none"></div>
+      </div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Internal Notes</label>
-      <textarea class="modal-textarea" id="editInternalNotes" style="background:#f0f7ff;border-color:#dbeafe"></textarea>
+      <div class="rte-wrap">
+        <div class="rte-toolbar rte-toolbar-inote">
+          <button type="button" onclick="rteCmd('editInternalNotes','bold')"><b>B</b></button>
+          <button type="button" onclick="rteCmd('editInternalNotes','italic')"><i>I</i></button>
+          <button type="button" onclick="rteCmd('editInternalNotes','underline')"><u>U</u></button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteColor('editInternalNotes','#dc2626')" style="color:#dc2626">A</button>
+          <button type="button" onclick="rteColor('editInternalNotes','#d97706')" style="color:#d97706">A</button>
+          <button type="button" onclick="rteColor('editInternalNotes','#2563eb')" style="color:#2563eb">A</button>
+          <button type="button" onclick="rteColor('editInternalNotes','#16a34a')" style="color:#16a34a">A</button>
+          <button type="button" onclick="rteColor('editInternalNotes','inherit')" style="color:#94a3b8;font-size:11px">&#10005;</button>
+          <div class="rte-sep"></div>
+          <button type="button" onclick="rteClear('editInternalNotes')" style="font-size:10px">CLR</button>
+        </div>
+        <div class="modal-textarea rte-textarea rte-textarea-inote" id="editInternalNotes" contenteditable="true" style="min-height:140px;outline:none"></div>
+      </div>
     </div>
     <div class="modal-field">
       <label class="modal-label">Work Start Date</label>
@@ -373,6 +428,11 @@ window._canViewInternal = canViewInternal;
 if (role === 'admin') {
   document.getElementById('addWorkBtn').style.display = 'inline-flex';
 }
+
+// ── RTE helpers ──
+window.rteCmd = (id, cmd) => { document.getElementById(id).focus(); document.execCommand(cmd, false, null); };
+window.rteColor = (id, color) => { document.getElementById(id).focus(); document.execCommand('foreColor', false, color); };
+window.rteClear = (id) => { document.getElementById(id).focus(); document.execCommand('removeFormat', false, null); };
 
 window.showToast = (msg, isError=false) => {
   const t = document.getElementById('toast');
@@ -726,7 +786,7 @@ window.openAddEmergencyWork = () => {
   document.getElementById('emergencyVendor').value = '';
   document.getElementById('emergencyAmount').value = '';
   document.getElementById('emergencyCategory').value = 'General';
-  document.getElementById('emergencyNotes').value = '';
+  document.getElementById('emergencyNotes').innerHTML = '';
   emergencyFiles = [];
   document.getElementById('emergencyFilePreview').innerHTML = '';
   document.getElementById('emergencyModal').classList.add('open');
@@ -781,7 +841,7 @@ window.saveEmergencyWork = async () => {
   let amountStr = document.getElementById('emergencyAmount').value.replace(/[^0-9.]/g, '');
   const amount = parseFloat(amountStr) || 0;
   const category = document.getElementById('emergencyCategory').value;
-  const notes = document.getElementById('emergencyNotes').value.trim();
+  const notes = document.getElementById('emergencyNotes').innerHTML.trim();
 
   if (!project || !vendor || amount <= 0) {
     alert('Required: Project, Vendor, Amount');
@@ -861,8 +921,8 @@ window.openEditWork = (quoteId) => {
   document.getElementById('editVendor').value = work.vendor || '';
   document.getElementById('editAmount').value = work.amount ? Number(work.amount).toLocaleString('en-AU') : '';
   document.getElementById('editCategory').value = work.category || 'General';
-  document.getElementById('editNotes').value = work.notes || '';
-  document.getElementById('editInternalNotes').value = parsed.note || '';
+  document.getElementById('editNotes').innerHTML = work.notes || '';
+  document.getElementById('editInternalNotes').innerHTML = parsed.note || '';
   
   const workStartDate = work.work_start_date
     ? new Date(work.work_start_date).toISOString().split('T')[0]
@@ -901,8 +961,8 @@ window.saveEdit = async () => {
   let amountStr = document.getElementById('editAmount').value.replace(/[^0-9.]/g, '');
   const amount = parseFloat(amountStr) || 0;
   const category = document.getElementById('editCategory').value;
-  const notes = document.getElementById('editNotes').value.trim();
-  const internalNote = document.getElementById('editInternalNotes').value.trim();
+  const notes = document.getElementById('editNotes').innerHTML.trim();
+  const internalNote = document.getElementById('editInternalNotes').innerHTML.trim();
   const workStartDate = document.getElementById('editWorkDate').value;
 
   if (!project || !vendor || amount <= 0) {
