@@ -90,7 +90,6 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
 .forgot{font-size:12.5px;color:#2563eb;cursor:pointer;background:none;border:none;font-family:inherit;padding:0;font-weight:500}
 .forgot:hover{color:#1d4ed8}
 
-/* 메시지 박스 */
 .notfound-box{background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:14px 16px;display:none;margin-bottom:14px}
 .notfound-box.show{display:block}
 .nf-lang{font-size:12.5px;color:#dc2626;line-height:1.6;padding:5px 0}
@@ -101,10 +100,8 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
 .setup-box.show{display:block}
 .setup-title{font-size:13px;font-weight:700;color:#1e40af;margin-bottom:5px}
 .setup-sub{font-size:12.5px;color:#1d4ed8;line-height:1.5}
-
 .error-msg{background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:11px 14px;font-size:13px;color:#dc2626;display:none;margin-bottom:14px;line-height:1.5}
 .error-msg.show{display:block}
-
 .check-spinner{display:none;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:10px}
 .check-spinner.show{display:flex}
 .check-spinner-icon{width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin 0.7s linear infinite}
@@ -115,7 +112,6 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
 .signin-btn:disabled{opacity:0.50;cursor:not-allowed;transform:none}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
 
-/* 모달 */
 .modal-bg{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center}
 .modal-bg.show{display:flex}
 .modal{background:#fff;border-radius:18px;padding:32px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
@@ -140,7 +136,7 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
 </head>
 <body>
 
-<!-- ===== CHOICE SCREEN ===== -->
+<!-- CHOICE SCREEN -->
 <div class="screen active" id="choiceScreen">
   <div class="choice-overlay"></div>
   <div class="choice-inner">
@@ -165,7 +161,7 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
   </div>
 </div>
 
-<!-- ===== LOGIN SCREEN ===== -->
+<!-- LOGIN SCREEN -->
 <div class="screen" id="loginScreen">
   <div class="login-left">
     <div class="ll-overlay"></div>
@@ -235,7 +231,6 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
           <button type="button" class="forgot" id="forgotLink">Forgot password?</button>
         </div>
       </div>
-
       <button class="signin-btn" type="submit" id="signInBtn">
         <div class="spinner" id="spinner"></div>
         <span id="btnText">Sign In →</span>
@@ -244,7 +239,7 @@ body{font-family:'Inter',system-ui,sans-serif;height:100dvh;overflow:hidden;back
   </div>
 </div>
 
-<!-- 모달 -->
+<!-- FORGOT MODAL -->
 <div class="modal-bg" id="forgotModal">
   <div class="modal">
     <div class="modal-title">Reset password</div>
@@ -272,7 +267,6 @@ if (session) window.location.href = '/pages/announcements.html';
 async function trackQR(eventType) {
   try { await supabase.from('qr_analytics').insert({ event_type: eventType }); } catch(e) {}
 }
-
 if (!sessionStorage.getItem('qr_lift_entry_tracked')) {
   sessionStorage.setItem('qr_lift_entry_tracked', '1');
   trackQR('lift_entry');
@@ -284,7 +278,6 @@ window.showLoginForm = () => {
   document.getElementById('loginScreen').className = 'screen active';
   setTimeout(() => { const el = document.getElementById('emailInput'); if (el) el.focus(); }, 50);
 };
-
 window.goToVisitor = () => {
   trackQR('lift_visitor');
   sessionStorage.setItem('qr_from_lift', '1');
@@ -305,11 +298,8 @@ const spinner = document.getElementById('spinner');
 const checkSpinner = document.getElementById('checkSpinner');
 
 function resetStatus() {
-  currentStatus = null;
-  currentEmail = null;
-  notfoundBox.classList.remove('show');
-  setupBox.classList.remove('show');
-  errorMsg.classList.remove('show');
+  currentStatus = null; currentEmail = null;
+  notfoundBox.classList.remove('show'); setupBox.classList.remove('show'); errorMsg.classList.remove('show');
   btnText.textContent = 'Sign In →';
 }
 
@@ -317,8 +307,7 @@ async function checkEmail() {
   const email = emailInput.value.trim().toLowerCase();
   if (!email || !email.includes('@')) { resetStatus(); return; }
   if (email === currentEmail && currentStatus) return;
-  resetStatus();
-  currentEmail = email;
+  resetStatus(); currentEmail = email;
   checkSpinner.classList.add('show');
   try {
     const res = await fetch('/api/check-email', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) });
@@ -330,15 +319,13 @@ async function checkEmail() {
     else if (data.status === 'needs_setup') setupBox.classList.add('show');
   } catch(err) {
     checkSpinner.classList.remove('show');
-    errorMsg.textContent = 'Connection error. Please try again.';
-    errorMsg.classList.add('show');
+    errorMsg.textContent = 'Connection error. Please try again.'; errorMsg.classList.add('show');
   }
 }
 
 emailInput.addEventListener('input', resetStatus);
 emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); passwordInput.focus(); } });
 passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); handleMainButton(); } });
-
 document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleMainButton(); });
 
 async function handleMainButton() {
@@ -354,10 +341,7 @@ async function handleLogin() {
   const email = emailInput.value.trim().toLowerCase();
   const password = passwordInput.value;
   if (!password) { errorMsg.textContent = 'Please enter your password.'; errorMsg.classList.add('show'); return; }
-  signInBtn.disabled = true;
-  spinner.style.display = 'block';
-  btnText.textContent = 'Signing in…';
-  errorMsg.classList.remove('show');
+  signInBtn.disabled = true; spinner.style.display = 'block'; btnText.textContent = 'Signing in…'; errorMsg.classList.remove('show');
   try {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -376,10 +360,7 @@ async function handleLogin() {
     window.location.href = '/pages/announcements.html';
   } catch(err) {
     errorMsg.textContent = err.message || 'Sign in failed. Please try again.';
-    errorMsg.classList.add('show');
-    signInBtn.disabled = false;
-    spinner.style.display = 'none';
-    btnText.textContent = 'Sign In →';
+    errorMsg.classList.add('show'); signInBtn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'Sign In →';
   }
 }
 
