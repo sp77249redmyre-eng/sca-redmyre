@@ -229,6 +229,13 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
+
+const _origClose = window.closeModal;
+window.closeModal = (id) => {
+  _origClose(id);
+  if (!document.querySelector('.modal-backdrop.open')) document.body.style.overflow = '';
+};
+
 async function logActivity(action, record_id = null) {
   try {
     if (role === 'admin') return;
@@ -352,6 +359,7 @@ window.openAnnDetail = (id) => {
     ${adminFooterHtml}
   `;
   document.getElementById('annDetailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
 };
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
