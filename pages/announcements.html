@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
+html { scrollbar-gutter: stable; }
 .content { padding: 24px; }
 .ann-list { display:flex;flex-direction:column;gap:12px }
 .ann-item { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;transition:box-shadow 0.15s }
@@ -229,13 +230,6 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
-
-const _origClose = window.closeModal;
-window.closeModal = (id) => {
-  _origClose(id);
-  if (!document.querySelector('.modal-backdrop.open')) document.body.style.overflow = '';
-};
-
 async function logActivity(action, record_id = null) {
   try {
     if (role === 'admin') return;
@@ -359,7 +353,6 @@ window.openAnnDetail = (id) => {
     ${adminFooterHtml}
   `;
   document.getElementById('annDetailModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
 };
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
