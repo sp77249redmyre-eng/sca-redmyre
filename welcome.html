@@ -473,6 +473,9 @@ document.querySelectorAll('.floor-btn').forEach(btn => {
 });
 
 const searchInput = document.getElementById('searchInput');
+let searchDebounce = null;
+let lastLoggedTerm = '';
+
 searchInput.addEventListener('input', e => {
   searchTerm = e.target.value;
   if (searchTerm.trim()) {
@@ -483,6 +486,20 @@ searchInput.addEventListener('input', e => {
     });
   }
   render();
+
+  clearTimeout(searchDebounce);
+  const term = searchTerm.trim().toLowerCase();
+  if (term.length >= 2 && term !== lastLoggedTerm) {
+    searchDebounce = setTimeout(async () => {
+      lastLoggedTerm = term;
+      const hasResults = allEntries.some(e => {
+        const hay = [e.business_name||'',e.display_name_alt||'',e.unit_display||'',e.sub_info||'',e.floor||''].join(' ').toLowerCase();
+        return hay.includes(term);
+      });
+      const eventType = hasResults ? 'search_query' : 'search_no_result';
+      try { await supabase.from('qr_analytics').insert({ event_type: eventType, detail: term }); } catch(e) {}
+    }, 1000);
+  }
 });
 
 loadEntries();
