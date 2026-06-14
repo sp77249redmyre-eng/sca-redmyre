@@ -469,6 +469,7 @@ function formatSydneyTime(isoString) {
 document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('annModalTitle').textContent = 'New Announcement';
   document.getElementById('annEditId').value = '';
+  editWasScheduled = false;
   document.getElementById('annTitle').value = '';
   document.getElementById('annContent').value = '';
   document.getElementById('annCategory').value = 'urgent';
@@ -505,6 +506,7 @@ window.openEditAnn = (a) => {
   document.getElementById('archiveLabel').textContent = a.archived ? '📦 Archived' : '📦 Archive this announcement';
   // Schedule
   const hasSchedule = !!a.scheduled_at && !a.push_sent;
+  editWasScheduled = hasSchedule;
   document.getElementById('annScheduled').checked = hasSchedule;
   document.getElementById('scheduleToggle').classList.toggle('on', hasSchedule);
   document.getElementById('scheduleLabel').textContent = hasSchedule ? '🕐 Scheduled!' : '🕐 Schedule for later';
@@ -535,6 +537,7 @@ const ANN_MAX_FILES = 10;
 const ANN_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 let annFiles = [];
 let existingAttachments = []; // 기존 첨부파일 (edit 시)
+let editWasScheduled = false; // edit 시작 시점에 예약 상태였는지
 
 function annRenderExisting() {
   const grid = document.getElementById('annExistingAttach');
@@ -657,6 +660,26 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
 
     if (id) {
       await supabase.from('announcements').update(data).eq('id', id);
+      // 예약 → 즉시 발송으로 변경된 경우: 지금 발송
+      if (editWasScheduled && !isScheduled) {
+        const { data:{ session: pushSession } } = await supabase.auth.getSession();
+        try {
+          const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString(), attachments: attachments })
+          });
+          const emailJson = await emailRes.json();
+          console.log('email-announcement response:', emailRes.status, emailJson);
+        } catch(emailErr){ console.error('email-announcement failed:', emailErr); }
+        try {
+          await fetch('/api/send-push', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
+          });
+        } catch(pushErr){ console.error('send-push failed:', pushErr); }
+      }
     } else {
       await supabase.from('announcements').insert(data);
       if (!isScheduled) {
@@ -705,12 +728,14 @@ window.resendAnnouncement = async (id) => {
     await supabase.from('audit_logs').delete().eq('action', 'ANNOUNCEMENT_VIEWED').eq('record_id', id);
     const { data:{ session: pushSession } } = await supabase.auth.getSession();
     try {
-      await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+      const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
         method:'POST',
         headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
         body: JSON.stringify({ title: a.title, content: a.content, created_at: a.created_at, attachments: a.attachments ?? [] })
       });
-    } catch(emailErr){}
+      const emailJson = await emailRes.json();
+      console.log('email-announcement response:', emailRes.status, emailJson);
+    } catch(emailErr){ console.error('email-announcement failed:', emailErr); }
     try {
       await fetch('/api/send-push', {
         method:'POST',
