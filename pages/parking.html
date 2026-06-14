@@ -642,6 +642,7 @@ window.generateWarningPDF = function(plate, violation, location, createdAt) {
   modal.dataset.loc = location || '—';
   modal.dataset.date = dateStr;
   modal.dataset.time = timeStr;
+  modal.dataset.rawDate = createdAt || new Date().toISOString();
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
@@ -708,54 +709,75 @@ window.printWarning = function() {
 
   const iframe = document.createElement('iframe');
   iframe.id = 'printFrame';
-  iframe.style.cssText = 'position:fixed;right:-9999px;bottom:-9999px;width:210mm;height:297mm;border:0';
+  iframe.style.cssText = 'position:fixed;right:-9999px;bottom:-9999px;width:148mm;height:105mm;border:0';
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument || iframe.contentWindow.document;
+  const when2 = modal.dataset.date ? new Date(modal.dataset.rawDate || Date.now()) : new Date();
+  const shortDate = when2.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
   doc.open();
-  doc.write(`<!DOCTYPE html><html><head><title>Parking Warning</title>
+  doc.write(`<!DOCTYPE html><html><head><title>Parking Warning Sticker</title>
 <style>
-@page{size:A4;margin:10mm}
+@page{size:A5 landscape;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.banner{background:#dc2626;padding:16mm 20mm 14mm;text-align:center}
-.banner h1{color:#fff;font-size:28pt;font-weight:bold;letter-spacing:1mm}
-.banner p{color:rgba(255,255,255,0.85);font-size:9pt;margin-top:3mm;letter-spacing:0.8mm}
-.body{padding:10mm 18mm}
-.bldg{font-size:16pt;font-weight:bold;color:#1e3a8a}
-.addr{font-size:11pt;color:#64748b;margin-top:2mm;line-height:1.5}
-hr{border:none;border-top:0.5pt solid #e2e8f0;margin:5mm 0}
-table{width:100%;border-collapse:collapse}
-table td{padding:2.5mm 0;font-size:13pt;vertical-align:top}
-.lbl{font-weight:bold;color:#0f172a;width:55mm}
-.plate{font-size:22pt;font-weight:bold;color:#dc2626;letter-spacing:1.5mm;font-family:monospace}
-.val{color:#374151}
-.box{border-radius:3mm;padding:5mm 6mm;margin-bottom:5mm}
-.notice{background:#fef2f2;border:0.5pt solid #fecaca}
-.notice h3{font-size:12pt;font-weight:bold;color:#991b1b;margin-bottom:2mm}
-.notice p{font-size:10pt;color:#991b1b;line-height:1.6}
-.visitor{background:#eff6ff;border:0.5pt solid #bfdbfe}
-.visitor h3{font-size:12pt;font-weight:bold;color:#1e40af;margin-bottom:2mm}
-.visitor p{font-size:10pt;color:#1e3a8a;line-height:1.6}
-.footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8mm}
-.footer .left{font-size:9pt;color:#64748b;line-height:1.9}
-.footer .right{font-size:9pt;font-weight:bold;color:#dc2626;text-align:right}
+body{width:210mm;height:148mm;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;overflow:hidden}
+.outer{width:210mm;height:148mm;position:relative}
+svg.bg{position:absolute;top:0;left:0;width:100%;height:100%}
+.inner{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:11mm 16mm;box-sizing:border-box}
+.top-label{font-size:7pt;font-weight:700;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:2mm}
+.warning-word{font-size:52pt;font-weight:900;color:#e8000d;line-height:1;letter-spacing:-1px}
+.sub-title{font-size:17pt;font-weight:900;color:#111;margin-top:1.5mm}
+.info-block{border-top:2pt solid #111;padding-top:3mm;margin-top:3mm}
+.rego-row{display:flex;align-items:baseline;gap:8px;margin-bottom:1.5mm}
+.lbl{font-size:8pt;font-weight:900;color:#555;text-transform:uppercase;letter-spacing:1px;min-width:10mm}
+.rego-val{font-size:22pt;font-weight:900;font-family:monospace;color:#111;letter-spacing:2px}
+.dt-row{display:flex;align-items:baseline;gap:24px}
+.dt-val{font-size:13pt;font-weight:900;color:#111}
+.divider{border-top:2pt solid #111;padding-top:4mm}
+.body-text{font-size:13pt;color:#111;line-height:1.7;font-weight:600}
+.do-not{font-size:17pt;font-weight:900;color:#e8000d;letter-spacing:1px}
 </style></head><body>
-<div class="banner"><h1>PARKING WARNING</h1><p>UNAUTHORISED VEHICLE — IMMEDIATE ACTION REQUIRED</p></div>
-<div class="body">
-<div class="bldg">Redmyre House</div>
-<div class="addr">9-13 Redmyre Road, Strathfield NSW 2135<br>Strata Plan 77249</div>
-<hr>
-<table>
-<tr><td class="lbl">Vehicle Registration:</td><td class="plate">${plate}</td></tr>
-<tr><td class="lbl">Violation:</td><td class="val">${vio}</td></tr>
-<tr><td class="lbl">Location:</td><td class="val">${loc}</td></tr>
-<tr><td class="lbl">Date / Time:</td><td class="val">${date}, ${time}</td></tr>
-</table>
-<hr>
-<div class="box notice"><h3>NOTICE:</h3><p>Your vehicle has been parked in violation of the building by-laws. This area is NOT available for general parking. Repeated offences will result in a warning sticker being affixed to your windscreen and further action under strata law.</p></div>
-<div class="box visitor"><h3>VISITOR PARKING:</h3><p>This building does NOT have visitor parking. Please use the adjacent Strathfield Plaza car park.</p></div>
-<div class="footer"><div class="left">Building Manager: Jacob Kim<br>SCA Facility Management Pty Ltd<br>M 0478 705 406 &nbsp;|&nbsp; T 1300 785 007</div><div class="right">This area is monitored<br>by CCTV</div></div>
+<div class="outer">
+<svg class="bg" viewBox="0 0 793 561" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <pattern id="hz" patternUnits="userSpaceOnUse" width="24" height="24" patternTransform="rotate(45)">
+      <rect width="12" height="24" fill="#111"/>
+      <rect x="12" width="12" height="24" fill="#ffe600"/>
+    </pattern>
+  </defs>
+  <rect width="793" height="561" fill="url(#hz)"/>
+  <rect x="14" y="14" width="765" height="533" fill="#ffe600"/>
+</svg>
+<div class="inner">
+  <div>
+    <div class="top-label">Redmyre House — Building Management</div>
+    <div class="warning-word">WARNING</div>
+    <div class="sub-title">Unauthorised Parking</div>
+    <div class="info-block">
+      <div class="rego-row">
+        <span class="lbl">Rego</span>
+        <span class="rego-val">${plate}</span>
+      </div>
+      <div class="dt-row">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span class="lbl">Date</span>
+          <span class="dt-val">${shortDate}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span class="lbl">Time</span>
+          <span class="dt-val">${time}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="divider">
+    <div class="body-text">
+      Your vehicle has been recorded by <strong>CCTV.</strong><br>
+      Photographic evidence has been retained.
+    </div>
+  </div>
+  <div class="do-not">DO NOT PARK HERE AGAIN.</div>
+</div>
 </div>
 </body></html>`);
   doc.close();
