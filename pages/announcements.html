@@ -662,12 +662,14 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
       if (!isScheduled) {
         const { data:{ session: pushSession } } = await supabase.auth.getSession();
         try {
-          await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+          const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
             method:'POST',
             headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
             body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString(), attachments: attachments })
           });
-        } catch(emailErr){}
+          const emailJson = await emailRes.json();
+          console.log('email-announcement response:', emailRes.status, emailJson);
+        } catch(emailErr){ console.error('email-announcement failed:', emailErr); }
         try {
           await fetch('/api/send-push', {
             method:'POST',
