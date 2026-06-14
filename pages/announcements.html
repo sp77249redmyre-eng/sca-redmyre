@@ -665,7 +665,7 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
           await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
             method:'POST',
             headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString() })
+            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString(), attachments: attachments })
           });
         } catch(emailErr){}
         try {
@@ -706,7 +706,7 @@ window.resendAnnouncement = async (id) => {
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
         method:'POST',
         headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ title: a.title, content: a.content, created_at: a.created_at })
+        body: JSON.stringify({ title: a.title, content: a.content, created_at: a.created_at, attachments: a.attachments ?? [] })
       });
     } catch(emailErr){}
     try {
