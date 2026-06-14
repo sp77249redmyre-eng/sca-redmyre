@@ -331,6 +331,14 @@ window.openAnnDetail = (id) => {
         <button class="btn-secondary" onclick="closeModal('annDetailModal');openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')})">✏️ Edit</button>
         <button class="btn-danger" onclick="confirmDeleteAnn('${a.id}')">Delete</button>
       </div>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:#f8fafc;border:0.5px solid var(--border-light);border-radius:8px" onclick="event.stopPropagation();">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px">🧪 Test send — no save, no push</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="testEmail_${a.id}" placeholder="sp77249.redmyre@gmail.com (default)" style="flex:1;border:0.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--text)" onclick="event.stopPropagation();">
+        <button class="btn-secondary" style="white-space:nowrap" onclick="testAnnouncement('${a.id}');event.stopPropagation();">Send test</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Leave blank to send to yourself.</div>
     </div>` : '';
 
   // HTML 태그 포함 여부 자동 감지: 있으면 그대로 렌더, 없으면 \n을 <br>로 변환
@@ -718,6 +726,25 @@ window.confirmDeleteAnn = async (id) => {
   await supabase.from('announcements').delete().eq('id', id);
   await loadAnnouncements();
   showToast('Announcement deleted');
+};
+
+window.testAnnouncement = async (id) => {
+  const a = allAnns.find(x => x.id === id);
+  if (!a) return;
+  const input = document.getElementById('testEmail_' + id);
+  const testEmail = (input && input.value.trim()) ? input.value.trim() : 'sp77249.redmyre@gmail.com';
+  try {
+    const { data:{ session: pushSession } } = await supabase.auth.getSession();
+    const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+      body: JSON.stringify({ title: a.title, content: a.content, created_at: a.created_at, attachments: a.attachments ?? [], testEmail: testEmail })
+    });
+    const emailJson = await emailRes.json();
+    console.log('test-announcement response:', emailRes.status, emailJson);
+    if (emailRes.ok) showToast('Test sent to ' + testEmail + ' ✓');
+    else showToast('Test failed — check console', true);
+  } catch(e) { console.error('test failed:', e); showToast('Test failed', true); }
 };
 
 window.resendAnnouncement = async (id) => {
