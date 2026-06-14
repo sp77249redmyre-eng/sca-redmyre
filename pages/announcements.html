@@ -179,6 +179,15 @@
       <div id="annAttachCount" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
     </div>
 
+    <div style="margin:0 0 4px;padding:12px;background:#f8fafc;border:0.5px solid var(--border-light);border-radius:8px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px">🧪 Test send — preview before publishing (no save, no push)</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="annTestEmail" placeholder="sp77249.redmyre@gmail.com (default)" style="flex:1;border:0.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--text)">
+        <button type="button" class="btn-secondary" style="white-space:nowrap" id="annTestBtn">Send test</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Leave blank to send to yourself.</div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-danger" id="deleteAnnBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" onclick="closeModal('annModal')">Cancel</button>
@@ -497,6 +506,7 @@ document.getElementById('addAnnBtn').addEventListener('click', () => {
   document.getElementById('saveAnnBtn').textContent = 'Save →';
   document.getElementById('deleteAnnBtn').style.display = 'none';
   annFiles = []; existingAttachments = []; annRenderExisting(); annUpdatePreview(); annUpdateButtons();
+  const te = document.getElementById('annTestEmail'); if (te) te.value = '';
   document.getElementById('annModal').classList.add('open');
 });
 
@@ -625,6 +635,43 @@ document.getElementById('annCameraBtn').addEventListener('click', () => { if (an
 document.getElementById('annFileBtn').addEventListener('click', () => { if (annFiles.length < ANN_MAX_FILES) document.getElementById('annInputFile').click(); });
 document.getElementById('annInputCamera').addEventListener('change', e => { annHandleFiles(e.target.files); e.target.value=''; });
 document.getElementById('annInputFile').addEventListener('change', e => { annHandleFiles(e.target.files); e.target.value=''; });
+
+document.getElementById('annTestBtn').addEventListener('click', async () => {
+  const title = document.getElementById('annTitle').value.trim();
+  const content = document.getElementById('annContent').value.trim();
+  if (!title || !content) { showToast('Please fill in title and content first', true); return; }
+
+  const input = document.getElementById('annTestEmail');
+  const testEmail = (input && input.value.trim()) ? input.value.trim() : 'sp77249.redmyre@gmail.com';
+
+  const btn = document.getElementById('annTestBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try {
+    let attachments = [...existingAttachments];
+    for (const file of annFiles) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const fileName = `ann_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('announcements').upload(fileName, file, { upsert: true });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('announcements').getPublicUrl(fileName);
+        attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type });
+      }
+    }
+
+    const { data:{ session: pushSession } } = await supabase.auth.getSession();
+    const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+      body: JSON.stringify({ title, content, created_at: new Date().toISOString(), attachments, testEmail })
+    });
+    const emailJson = await emailRes.json();
+    console.log('test-announcement response:', emailRes.status, emailJson);
+    if (emailRes.ok) showToast('Test sent to ' + testEmail + ' ✓');
+    else showToast('Test failed — check console', true);
+  } catch(e) { console.error('test failed:', e); showToast('Test failed', true); }
+  finally { btn.disabled=false; btn.textContent='Send test'; }
+});
 
 document.getElementById('saveAnnBtn').addEventListener('click', async () => {
   const id = document.getElementById('annEditId').value;
