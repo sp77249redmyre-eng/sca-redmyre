@@ -626,7 +626,9 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('imageModal').style.display === 'flex') closeImageModal();
 });
 
-window.generateWarningPDF = function(plate, violation, location, createdAt, photoUrl) {
+window.generateWarningPDF = function(plate, violation, location, createdAt) {
+  const btnEl = event?.target;
+  const photoUrl = btnEl?.dataset?.photo || '';
   const when = createdAt ? new Date(createdAt) : new Date();
   const dateStr = when.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
   const timeStr = when.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
@@ -871,7 +873,7 @@ async function loadReports() {
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
-            ${!isResolved?`<button onclick="generateWarningPDF('${r.plate||''}','${r.violation||''}','${r.location||''}','${r.created_at||''}','${(r.image_urls&&r.image_urls.filter(u=>!u.toLowerCase().endsWith('.pdf'))[0])||r.image_url||''}')" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
+            ${!isResolved?`<button onclick="generateWarningPDF('${r.plate||''}','${r.violation||''}','${r.location||''}','${r.created_at||''}')" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.toLowerCase().endsWith('.pdf'))[0])||r.image_url||''}" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
             ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
