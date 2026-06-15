@@ -394,6 +394,9 @@ function pkUpdatePreview() {
       });
       grid.appendChild(wrap);
     };
+    reader.onerror = err => {
+      alert('FileReader failed: ' + JSON.stringify(err));
+    };
     reader.readAsDataURL(file);
     }
   });
@@ -414,6 +417,7 @@ function pkUpdateButtons() {
 }
 
 function pkHandleFiles(files) {
+  alert('pkHandleFiles: ' + files.length);
   for (const file of files) {
     if (window._pkFiles.length >= MAX_PHOTOS) { showToast(`Max ${MAX_PHOTOS} photos allowed`, true); break; }
     if (file.size > MAX_SIZE) { showToast(`${file.name} exceeds 5MB`, true); continue; }
