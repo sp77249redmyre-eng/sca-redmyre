@@ -357,7 +357,7 @@ document.querySelectorAll('.vio-btn').forEach(btn => {
 });
 
 const MAX_PHOTOS = 3;
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 20 * 1024 * 1024; // 20MB
 window._pkFiles = [];
 
 function pkUpdatePreview() {
@@ -416,10 +416,32 @@ function pkUpdateButtons() {
   document.getElementById('pkFileBtn').disabled = disabled;
 }
 
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        const maxWidth = 1600;
+        if (width > maxWidth) { height = Math.round(height * (maxWidth / width)); width = maxWidth; }
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => {
+          resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.75);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function pkHandleFiles(files) {
   for (const file of files) {
     if (window._pkFiles.length >= MAX_PHOTOS) { showToast(`Max ${MAX_PHOTOS} photos allowed`, true); break; }
-    if (file.size > MAX_SIZE) { showToast(`${file.name} exceeds 5MB`, true); continue; }
+    if (file.size > MAX_SIZE) { showToast(`${file.name} exceeds 20MB`, true); continue; }
     window._pkFiles.push(file);
   }
   pkUpdatePreview();
@@ -433,9 +455,31 @@ cameraInput.addEventListener('change', function(e) {
   const files = [...(e.target.files || [])];
   if (!files.length) return;
   setTimeout(() => {
-    pkHandleFiles(files);
+    const compressed = [];
+    let done = 0;
+    files.forEach((file, i) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = function() {
+        const MAX = 1920;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => {
+          const newFile = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
+          compressed[i] = newFile;
+          URL.revokeObjectURL(url);
+          done++;
+          if (done === files.length) pkHandleFiles(compressed);
+        }, 'image/jpeg', 0.82);
+      };
+      img.src = url;
+    });
     setTimeout(() => { cameraInput.value = ''; }, 500);
-  }, 1000);
+  }, 500);
 });
 document.getElementById('photoInputFile').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
 
