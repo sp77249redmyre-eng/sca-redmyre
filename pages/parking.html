@@ -274,7 +274,7 @@
             <span>Browse File</span>
           </button>
         </div>
-        <input type="file" id="photoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
+        <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="position:absolute;left:-9999px">
         <input type="file" id="photoInputFile" accept="image/*,application/pdf" multiple style="display:none">
         <div id="pkPhotoPreviewGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
         <div id="pkPhotoCount" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
@@ -425,9 +425,12 @@ function pkHandleFiles(files) {
 
 document.getElementById('pkCameraBtn').addEventListener('click', () => { if (window._pkFiles.length < MAX_PHOTOS) document.getElementById('photoInputCamera').click(); });
 document.getElementById('pkFileBtn').addEventListener('click', () => { if (window._pkFiles.length < MAX_PHOTOS) document.getElementById('photoInputFile').click(); });
-document.getElementById('photoInputCamera').addEventListener('change', e => {
-  if(e.target.files && e.target.files.length > 0){ pkHandleFiles(e.target.files); }
-  e.target.value = '';
+const cameraInput = document.getElementById('photoInputCamera');
+cameraInput.addEventListener('change', function(e) {
+  const files = [...(e.target.files || [])];
+  if (!files.length) return;
+  pkHandleFiles(files);
+  setTimeout(() => { cameraInput.value = ''; }, 200);
 });
 document.getElementById('photoInputFile').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
 
