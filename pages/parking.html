@@ -454,32 +454,43 @@ const cameraInput = document.getElementById('photoInputCamera');
 cameraInput.addEventListener('change', function(e) {
   const files = [...(e.target.files || [])];
   if (!files.length) return;
-  setTimeout(() => {
-    const compressed = [];
-    let done = 0;
-    files.forEach((file, i) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = function() {
-        const MAX = 1920;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(blob => {
-          const newFile = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
-          compressed[i] = newFile;
-          URL.revokeObjectURL(url);
+  const compressed = [];
+  let done = 0;
+  files.forEach((file, i) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = function() {
+      const MAX = 1920;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if (!blob) {
+          compressed[i] = file;
           done++;
-          if (done === files.length) pkHandleFiles(compressed);
-        }, 'image/jpeg', 0.82);
-      };
-      img.src = url;
-    });
-    setTimeout(() => { cameraInput.value = ''; }, 500);
-  }, 500);
+          URL.revokeObjectURL(url);
+          if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
+          return;
+        }
+        compressed[i] = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
+        URL.revokeObjectURL(url);
+        done++;
+        if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
+      }, 'image/jpeg', 0.75);
+    };
+    img.onerror = function(err) {
+      alert('IMAGE LOAD FAILED');
+      console.error(err);
+      URL.revokeObjectURL(url);
+      compressed[i] = file;
+      done++;
+      if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
+    };
+    img.src = url;
+  });
 });
 document.getElementById('photoInputFile').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
 
