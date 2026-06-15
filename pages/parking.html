@@ -626,7 +626,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('imageModal').style.display === 'flex') closeImageModal();
 });
 
-window.generateWarningPDF = function(plate, violation, location, createdAt) {
+window.generateWarningPDF = function(plate, violation, location, createdAt, photoUrl) {
   const when = createdAt ? new Date(createdAt) : new Date();
   const dateStr = when.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
   const timeStr = when.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
@@ -643,6 +643,7 @@ window.generateWarningPDF = function(plate, violation, location, createdAt) {
   modal.dataset.date = dateStr;
   modal.dataset.time = timeStr;
   modal.dataset.rawDate = createdAt || new Date().toISOString();
+  modal.dataset.photoUrl = photoUrl || '';
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:14px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
@@ -706,72 +707,46 @@ window.printWarning = function() {
   const when2 = modal.dataset.date ? new Date(modal.dataset.rawDate || Date.now()) : new Date();
   const shortDate = when2.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
 
-  const win = window.open('','_blank','width=1200,height=850');
+  const photoUrl = modal.dataset.photoUrl || '';
+  const win = window.open('','_blank','width=900,height=1200');
   win.document.open();
   win.document.write(`<!DOCTYPE html><html><head><title>Parking Warning Notice</title>
 <style>
 @page{size:A4 portrait;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:210mm;height:297mm;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;overflow:hidden;background:#fff}
-.outer{width:210mm;height:148mm;position:relative}
-svg.bg{position:absolute;top:0;left:0;width:100%;height:100%}
-.inner{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:10mm 16mm;box-sizing:border-box}
-.top-label{font-size:9pt;font-weight:700;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:3mm;text-align:center}
-.warning-word{font-size:72pt;font-weight:900;color:#e8000d;line-height:1;letter-spacing:-1px;text-align:center}
-.sub-title{font-size:18pt;font-weight:900;color:#111;margin-top:2mm;text-align:center}
-.info-block{border-top:2pt solid #111;padding-top:4mm;margin-top:4mm}
-.rego-row{display:flex;align-items:baseline;gap:10px;margin-bottom:3mm}
-.lbl{font-size:10pt;font-weight:900;color:#555;text-transform:uppercase;letter-spacing:1px;min-width:14mm}
-.rego-val{font-size:26pt;font-weight:900;font-family:monospace;color:#111;letter-spacing:2px}
-.dt-row{display:flex;align-items:baseline;gap:28px}
-.dt-val{font-size:14pt;font-weight:900;color:#111}
-.divider{border-top:2pt solid #111;padding-top:5mm}
-.body-text{font-size:12pt;color:#111;line-height:1.8;font-weight:600}
-.do-not{font-size:20pt;font-weight:900;color:#e8000d;letter-spacing:1px;text-align:center}
+html,body{width:210mm;height:297mm;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;overflow:hidden}
+.page{width:210mm;height:297mm;display:flex;flex-direction:column}
+.warn-section{position:relative;flex-shrink:0}
+.photo-section{flex:1;overflow:hidden;position:relative}
+.photo-section img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-section .no-photo{width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:14px}
+.donotpark{background:#e8000d;padding:10px 0;text-align:center;font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;flex-shrink:0}
 </style></head><body>
-<div class="outer">
-<svg class="bg" viewBox="0 0 794 561" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-  <defs>
-    <pattern id="hz" patternUnits="userSpaceOnUse" width="24" height="24" patternTransform="rotate(45)">
-      <rect width="12" height="24" fill="#111"/>
-      <rect x="12" width="12" height="24" fill="#ffe600"/>
-    </pattern>
-  </defs>
-  <rect width="794" height="561" fill="url(#hz)"/>
-  <rect x="12" y="12" width="770" height="537" fill="#ffe600"/>
-</svg>
-<div class="inner">
-  <div>
-    <div class="top-label">Redmyre House — Building Management</div>
-    <div class="warning-word">WARNING</div>
-    <div class="sub-title">Unauthorised Parking</div>
-    <div class="info-block">
-      <div class="rego-row">
-        <span class="lbl">Rego</span>
-        <span class="rego-val">${plate}</span>
-      </div>
-      <div class="dt-row">
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span class="lbl">Date</span>
-          <span class="dt-val">${shortDate}</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span class="lbl">Time</span>
-          <span class="dt-val">${time}</span>
-        </div>
-      </div>
-    </div>
+<div class="page">
+  <div class="warn-section">
+    <svg viewBox="0 0 794 420" xmlns="http://www.w3.org/2000/svg" font-family="Arial,Helvetica,sans-serif" width="100%" height="auto">
+      <defs><pattern id="hz" patternUnits="userSpaceOnUse" width="20" height="20" patternTransform="rotate(45)"><rect width="10" height="20" fill="#111"/><rect x="10" width="10" height="20" fill="#ffe600"/></pattern></defs>
+      <rect width="794" height="420" fill="url(#hz)"/>
+      <rect x="12" y="12" width="770" height="396" fill="#ffe600"/>
+      <text x="397" y="140" text-anchor="middle" font-size="170" font-weight="900" fill="#e8000d" textLength="740" lengthAdjust="spacingAndGlyphs">WARNING</text>
+      <text x="397" y="200" text-anchor="middle" font-size="44" font-weight="900" fill="#111">Unauthorised Parking</text>
+      <line x1="24" y1="220" x2="770" y2="220" stroke="#111" stroke-width="2"/>
+      <text x="60" y="258" font-size="28" font-weight="900" fill="#555">REGO</text>
+      <text x="150" y="258" font-size="36" font-weight="900" fill="#111" font-family="monospace">${plate}</text>
+      <text x="60" y="298" font-size="28" font-weight="900" fill="#555">DATE</text>
+      <text x="150" y="298" font-size="30" font-weight="700" fill="#111">${shortDate}</text>
+      <text x="430" y="298" font-size="28" font-weight="900" fill="#555">TIME</text>
+      <text x="520" y="298" font-size="30" font-weight="700" fill="#111">${time}</text>
+      <line x1="24" y1="316" x2="770" y2="316" stroke="#111" stroke-width="2"/>
+      <text x="397" y="372" text-anchor="middle" font-size="30" font-weight="600" fill="#111">Your vehicle has been recorded by CCTV.</text>
+    </svg>
   </div>
-  <div class="divider">
-    <div class="body-text">
-      Your vehicle has been recorded by <strong>CCTV.</strong><br>
-      Photographic evidence has been retained.
-    </div>
+  <div class="photo-section">
+    ${photoUrl ? \`<img src="\${photoUrl}" alt="Evidence">\` : '<div class="no-photo">No photo available</div>'}
   </div>
-  <div class="do-not">DO NOT PARK HERE AGAIN.</div>
+  <div class="donotpark">DO NOT PARK HERE AGAIN.</div>
 </div>
-</div>
-</body></html>`);
+</body></html>\`);
   win.document.close();
   setTimeout(() => {
     win.focus();
@@ -896,7 +871,7 @@ async function loadReports() {
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
-            ${!isResolved?`<button onclick="generateWarningPDF('${r.plate||''}','${r.violation||''}','${r.location||''}','${r.created_at||''}')" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
+            ${!isResolved?`<button onclick="generateWarningPDF('${r.plate||''}','${r.violation||''}','${r.location||''}','${r.created_at||''}','${(r.image_urls&&r.image_urls.filter(u=>!u.toLowerCase().endsWith('.pdf'))[0])||r.image_url||''}')" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
             ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
