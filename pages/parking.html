@@ -382,23 +382,17 @@ function pkUpdatePreview() {
       });
       grid.appendChild(wrap);
     } else {
-    const reader = new FileReader();
-    reader.onload = e => {
-      wrap.innerHTML = `
-        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">
-        <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
-      wrap.querySelector('button').addEventListener('click', () => {
-        window._pkFiles.splice(idx, 1);
-        pkUpdatePreview();
-        pkUpdateButtons();
-      });
-      grid.appendChild(wrap);
-    };
-    reader.onerror = err => {
-      alert('FileReader failed: ' + JSON.stringify(err));
-    };
-    reader.readAsDataURL(file);
-    }
+    const objUrl = URL.createObjectURL(file);
+    wrap.innerHTML = `
+      <img src="${objUrl}" style="width:100%;height:100%;object-fit:cover">
+      <button type="button" data-idx="${idx}" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>`;
+    wrap.querySelector('button').addEventListener('click', () => {
+      window._pkFiles.splice(idx, 1);
+      pkUpdatePreview();
+      pkUpdateButtons();
+    });
+    wrap.querySelector('img').onload = () => URL.revokeObjectURL(objUrl);
+    grid.appendChild(wrap);
   });
   if (window._pkFiles.length > 0) {
     countEl.textContent = `${window._pkFiles.length} / ${MAX_PHOTOS} photo${window._pkFiles.length > 1 ? 's' : ''} selected`;
@@ -454,11 +448,17 @@ const cameraInput = document.getElementById('photoInputCamera');
 cameraInput.addEventListener('change', function(e) {
   const files = [...(e.target.files || [])];
   if (!files.length) return;
-  const compressed = [];
-  let done = 0;
-  files.forEach((file, i) => {
-    const img = new Image();
+  files.forEach((file) => {
+    if (window._pkFiles.length >= MAX_PHOTOS) { showToast(`Max ${MAX_PHOTOS} photos allowed`, true); return; }
+    if (file.size > MAX_SIZE) { showToast(`${file.name} exceeds 20MB`, true); return; }
+    // 즉시 썸네일용 임시 파일 추가
+    const idx = window._pkFiles.length;
+    window._pkFiles.push(file);
+    pkUpdatePreview();
+    pkUpdateButtons();
+    // 백그라운드 압축
     const url = URL.createObjectURL(file);
+    const img = new Image();
     img.onload = function() {
       const MAX = 1920;
       let w = img.width, h = img.height;
@@ -468,29 +468,17 @@ cameraInput.addEventListener('change', function(e) {
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       canvas.toBlob(blob => {
-        if (!blob) {
-          compressed[i] = file;
-          done++;
-          URL.revokeObjectURL(url);
-          if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
-          return;
-        }
-        compressed[i] = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
         URL.revokeObjectURL(url);
-        done++;
-        if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
+        if (blob) {
+          const currentIndex = window._pkFiles.indexOf(file);
+          if (currentIndex !== -1) window._pkFiles[currentIndex] = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
+        }
       }, 'image/jpeg', 0.75);
     };
-    img.onerror = function(err) {
-      alert('IMAGE LOAD FAILED');
-      console.error(err);
-      URL.revokeObjectURL(url);
-      compressed[i] = file;
-      done++;
-      if (done === files.length) { pkHandleFiles(compressed); cameraInput.value = ''; }
-    };
+    img.onerror = function() { URL.revokeObjectURL(url); };
     img.src = url;
   });
+  cameraInput.value = '';
 });
 document.getElementById('photoInputFile').addEventListener('change', e => { pkHandleFiles(e.target.files); e.target.value=''; });
 
