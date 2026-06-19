@@ -756,17 +756,9 @@ window.printWarning = function() {
   const shortDate = when2.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
   const photoUrl = modal.dataset.photoUrl || '';
 
-  const existing = document.getElementById('printFrame');
-  if (existing) existing.remove();
-
-  const iframe = document.createElement('iframe');
-  iframe.id = 'printFrame';
-  iframe.style.cssText = 'position:fixed;right:-9999px;bottom:-9999px;width:100vw;height:100vh;border:0';
-  document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write('<!DOCTYPE html><html><head><title>Parking Warning Notice</title>'
+  const w = window.open('', '_blank');
+  if (!w) return;
+  w.document.write('<!DOCTYPE html><html><head><title>Parking Warning Notice</title>'
     +'<style>'
     +'@page{size:A4 portrait;margin:0}'
     +'*{box-sizing:border-box;margin:0;padding:0}'
@@ -803,11 +795,21 @@ window.printWarning = function() {
     +'</div>'
     +'</div>'
     +'</body></html>');
-  doc.close();
-  setTimeout(() => {
-    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e) {}
-    setTimeout(() => { iframe.remove(); }, 1000);
-  }, 400);
+  w.document.close();
+  w.focus();
+  w.onload = function() {
+    if (photoUrl) {
+      const img = w.document.querySelector('img');
+      if (img && !img.complete) {
+        img.onload = () => { w.print(); w.close(); };
+        img.onerror = () => { w.print(); w.close(); };
+      } else {
+        w.print(); w.close();
+      }
+    } else {
+      w.print(); w.close();
+    }
+  };
 }
 window.togglePk = function(id) {
   const body = document.getElementById('body-' + id);
