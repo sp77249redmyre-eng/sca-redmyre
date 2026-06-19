@@ -796,18 +796,19 @@ window.printWarning = function() {
     +'</div>'
     +'</body></html>');
   w.document.close();
-  w.focus();
+  if (!/Android|iPhone|iPad/i.test(navigator.userAgent)) w.focus();
   w.onload = function() {
+    const doPrint = () => w.requestAnimationFrame(() => w.requestAnimationFrame(() => w.print()));
     if (photoUrl) {
       const img = w.document.querySelector('img');
       if (img && !img.complete) {
-        img.onload = () => { w.print(); w.close(); };
-        img.onerror = () => { w.print(); w.close(); };
+        img.onload = doPrint;
+        img.onerror = doPrint;
       } else {
-        w.print(); w.close();
+        doPrint();
       }
     } else {
-      w.print(); w.close();
+      doPrint();
     }
   };
 }
