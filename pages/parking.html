@@ -637,6 +637,83 @@ window.deleteReport = async (id) => {
   await loadReports();
 };
 
+window.editLocation = function(id, currentLoc) {
+  let existing = document.getElementById('editLocModal');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'editLocModal';
+  m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  let areaOpts = '<option value="">Select area</option><option value="entry">Entry / Loading</option><option value="ground">Ground Floor</option><option value="b1">Basement 1</option><option value="b2">Basement 2</option>';
+  m.innerHTML = '<div style="background:#fff;border-radius:14px;width:95%;max-width:420px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.4)">'
+    +'<div style="font-size:16px;font-weight:700;color:#111;margin-bottom:16px">Edit Location</div>'
+    +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Area</label>'
+    +'<select id="editLocArea" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:12px">'+areaOpts+'</select>'
+    +'<div id="editLocBayField" style="display:none"><label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Bay</label>'
+    +'<select id="editLocBay" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:12px"></select></div>'
+    +'<div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Current: '+(currentLoc||'\u2014')+'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+    +'<button onclick="document.getElementById(\'editLocModal\').remove()" style="padding:9px 18px;border-radius:9px;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Cancel</button>'
+    +'<button onclick="saveLocation(\''+id+'\')" style="padding:9px 18px;border-radius:9px;border:1px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Save</button>'
+    +'</div></div>';
+  document.body.appendChild(m);
+  m.addEventListener('click', function(e){ if(e.target===m) m.remove(); });
+  document.getElementById('editLocArea').addEventListener('change', function(){
+    const area = this.value;
+    const bf = document.getElementById('editLocBayField');
+    const bs = document.getElementById('editLocBay');
+    if (area && BAYS[area]) {
+      bf.style.display = 'block';
+      bs.innerHTML = '<option value="">Whole area ('+area+')</option>' + BAYS[area].map(b=>'<option value="'+b+'">'+b+'</option>').join('');
+    } else { bf.style.display='none'; bs.innerHTML=''; }
+  });
+};
+
+window.saveLocation = async function(id) {
+  const area = document.getElementById('editLocArea').value;
+  const bay = document.getElementById('editLocBay') ? document.getElementById('editLocBay').value : '';
+  if (!area) { showToast('Please select an area', true); return; }
+  const newLoc = bay || area;
+  await supabase.from('parking_reports').update({ location: newLoc }).eq('id', id);
+  const m = document.getElementById('editLocModal'); if (m) m.remove();
+  showToast('Location updated \u2713');
+  await loadReports();
+};
+
+window.addPhotos = function(id) {
+  let existing = document.getElementById('addPhotoInput');
+  if (existing) existing.remove();
+  const inp = document.createElement('input');
+  inp.id = 'addPhotoInput';
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.multiple = true;
+  inp.style.display = 'none';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', async function() {
+    const files = Array.from(this.files || []);
+    if (!files.length) { inp.remove(); return; }
+    showToast('Uploading photos...');
+    try {
+      const { data: rep } = await supabase.from('parking_reports').select('image_urls,image_url,plate').eq('id', id).single();
+      let urls = (rep && rep.image_urls && rep.image_urls.length) ? rep.image_urls.slice() : (rep && rep.image_url ? [rep.image_url] : []);
+      const safePlate = (rep && rep.plate ? rep.plate : 'unknown').replace(/[^A-Z0-9]/g,'') || 'unknown';
+      for (const file of files) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const fname = 'parking_'+Date.now()+'_'+safePlate+'_'+Math.random().toString(36).slice(2,6)+'.'+ext;
+        const { error: upErr } = await supabase.storage.from('parking-images').upload(fname, file, { upsert: true });
+        if (upErr) { showToast('Upload failed', true); inp.remove(); return; }
+        const { data: ud } = supabase.storage.from('parking-images').getPublicUrl(fname);
+        urls.push(ud.publicUrl);
+      }
+      await supabase.from('parking_reports').update({ image_urls: urls, image_url: urls[0] }).eq('id', id);
+      showToast('Photos added \u2713');
+      inp.remove();
+      await loadReports();
+    } catch(e) { showToast(e.message||'Failed to add photos', true); inp.remove(); }
+  });
+  inp.click();
+};
+
 let _imageModalUrl = '';
 window.showImage = function(url, name='') {
   if (!url) return;
@@ -989,6 +1066,8 @@ async function loadReports() {
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
             ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
+            ${role==='admin'?`<button onclick="editLocation('${r.id}','${(r.location||'').replace(/'/g,"\\'")}')'" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📍 Edit Location</button>`:''}
+            ${role==='admin'?`<button onclick="addPhotos('${r.id}')" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📷 Add Photo</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
             ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
