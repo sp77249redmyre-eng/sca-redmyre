@@ -34,6 +34,8 @@
 .vendor-item{border:0.5px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color 0.15s,box-shadow 0.15s}
 .vendor-item:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06)}
 .vendor-item.is-selected{border-color:#4ade80;box-shadow:0 2px 10px rgba(34,197,94,0.12)}
+.vendor-item.is-winner{animation:winnerPulse 1.8s ease-in-out infinite}
+@keyframes winnerPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.35)}50%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
 .vendor-item:last-child{margin-bottom:4px}
 .vendor-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background 0.15s;background:#fff}
 .vendor-header:hover{background:#f8fafc}
@@ -876,7 +878,8 @@ function renderPendingQuotes(quotes) {
       const hasSelection = !!selectedQuoteId;
 
       const vendorItem = document.createElement('div');
-      vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}`;
+      const isWinner = resultApproved && (isSingle || quoteId === winnerQuoteId);
+      vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}${isWinner ? ' is-winner' : ''}`;
       vendorItem.id = `vendor-${quoteId}`;
       const vColor = vendorColorMap[quoteId];
       // Option D: white background + colored left bar only
@@ -908,7 +911,7 @@ function renderPendingQuotes(quotes) {
           // Single quote – auto-selected, badge already in vendor-content
         } else if (isSelected) {
           // Selected badge already in vendor-content, only show Change button here
-          if (role === 'committee') {
+          if (role === 'committee' && !isLocked) {
             const deselBtn = document.createElement('button');
             deselBtn.className = 'deselect-btn';
             deselBtn.textContent = 'Change';
@@ -920,9 +923,7 @@ function renderPendingQuotes(quotes) {
           }
         } else if (hasSelection) {
           statusDiv.innerHTML = '<span class="badge-x">✕</span>';
-        } else if (role === 'committee') {
-          const btn = document.createElement('button');
-          btn.className = 'select-btn';
+        } else if (role === 'committee' && !isLocked) {
           btn.textContent = 'Select';
           btn.onclick = (e) => {
             e.stopImmediatePropagation();
