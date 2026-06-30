@@ -1103,6 +1103,25 @@ function renderPendingQuotes(quotes) {
         };
         remindRow.appendChild(remindAllBtn);
 
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn-mgmt';
+        testBtn.style.cssText = 'background:#fff7ed;color:#9a3412;border-color:#fdba74;font-size:12px;';
+        testBtn.innerHTML = `🧪 Test (Me)`;
+        testBtn.onclick = async () => {
+          testBtn.disabled = true; testBtn.textContent = 'Sending...';
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+              body: JSON.stringify(buildPayload(['sp77249.redmyre@gmail.com']))
+            });
+            showToast('Test reminder sent to yourself');
+          } catch(e) { showToast('Failed to send test', true); }
+          testBtn.disabled = false; testBtn.innerHTML = `🧪 Test (Me)`;
+        };
+        remindRow.appendChild(testBtn);
+
         pendingMs.forEach(m => {
           const pb = document.createElement('button');
           pb.className = 'btn-mgmt';
