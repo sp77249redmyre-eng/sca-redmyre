@@ -413,6 +413,7 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 6', floors:['LEVEL 6'] },
   ];
   const CELL_CONTENT_H = 220; // 박스 하나당 리스트 영역 확보 높이(px, 타이틀 제외)
+  const NAME_AREA_W = 190;    // suite 칸 제외한 업체명 영역 대략 폭(px)
   const cells = groups.map(g => {
     const entries = allEntries
       .filter(e => g.floors.includes(e.floor))
@@ -420,16 +421,24 @@ function buildAllFloorsHTML() {
         const fi = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
         if (fi !== 0) return fi;
         return (a.sort_order||0) - (b.sort_order||0);
-      });
-    const lineCount = Math.max(entries.length, 1);
-    const rawSize = CELL_CONTENT_H / (lineCount * 1.45);
-    const fontSize = Math.min(16, Math.max(11, Math.round(rawSize * 2) / 2));
-    const rows = entries.map(e => {
-      const name = (e.business_name||'').split('\n')[0].trim();
-      const suite = e.unit_display || '';
-      return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span><span style="font-weight:900;flex-shrink:0">${suite}</span></div>`;
+      })
+      .map(e => ({
+        name: (e.business_name||'').split('\n')[0].trim(),
+        suite: e.unit_display || ''
+      }));
+
+    // 폰트 16→11까지 0.5 단위로 내려가며, 줄바꿈 포함 실제 줄 수가 칸 안에 들어가는 첫 크기를 채택
+    let fontSize = 11;
+    for (let fs = 16; fs >= 11; fs -= 0.5) {
+      const charsPerLine = Math.max(8, Math.floor(NAME_AREA_W / (fs * 0.56)));
+      const totalLines = entries.reduce((sum, en) => sum + Math.max(1, Math.ceil(en.name.length / charsPerLine)), 0);
+      if (totalLines * fs * 1.28 <= CELL_CONTENT_H) { fontSize = fs; break; }
+    }
+
+    const rows = entries.map(en => {
+      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px"><span style="flex:1;min-width:0">${en.name}</span><span style="font-weight:900;flex-shrink:0;white-space:nowrap">${en.suite}</span></div>`;
     }).join('');
-    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:16px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:4px 0;margin-bottom:5px;letter-spacing:0.5px">${g.title}</div><div style="font-size:${fontSize}px;line-height:1.45;color:#0f172a;font-weight:600">${rows}</div></div>`;
+    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:16px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:4px 0;margin-bottom:5px;letter-spacing:0.5px">${g.title}</div><div style="font-size:${fontSize}px;line-height:1.28;color:#0f172a;font-weight:600">${rows}</div></div>`;
   }).join('');
 
   return `<div style="width:540px;height:960px;background:#ffffff;position:relative;overflow:hidden;font-family:'DM Sans','Segoe UI',sans-serif;color:#0f172a;box-sizing:border-box;display:flex;flex-direction:column;">
