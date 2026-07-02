@@ -159,6 +159,8 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
     <textarea id="fSub" rows="2" placeholder="e.g. Dr A Wong&#10;Dr B Kim" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <label>Unit Display</label>
     <select id="fUnit" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;"></select>
+    <label>Short Name (Page 9 전체층 요약용, 비우면 Business Name 그대로 사용)</label>
+    <input type="text" id="fShort" placeholder="e.g. Unification Council" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;">
     <label>Sort Order</label>
     <input type="number" id="fSort" value="1">
     <div class="sb-modal-btns">
@@ -581,6 +583,7 @@ window.openAddModal = () => {
   document.getElementById('fAlt').value='';
   document.getElementById('fSub').value='';
   document.getElementById('fUnit').value='';
+  document.getElementById('fShort').value='';
   document.getElementById('fSort').value='1';
   document.getElementById('entryModal').classList.add('open');
 };
@@ -597,6 +600,7 @@ window.openEditModal = (id) => {
   document.getElementById('fAlt').value=e.display_name_alt||'';
   document.getElementById('fSub').value=e.sub_info||'';
   document.getElementById('fUnit').value=e.unit_display;
+  document.getElementById('fShort').value=e.short_name||'';
   document.getElementById('fSort').value=e.sort_order;
   document.getElementById('entryModal').classList.add('open');
 };
@@ -612,6 +616,7 @@ window.saveEntry = async () => {
     display_name_alt: document.getElementById('fAlt').value.trim()||null,
     sub_info: document.getElementById('fSub').value.trim()||null,
     unit_display: document.getElementById('fUnit').value.trim(),
+    short_name: document.getElementById('fShort').value.trim()||null,
     sort_order: parseInt(document.getElementById('fSort').value),
     updated_at: new Date().toISOString()
   };
