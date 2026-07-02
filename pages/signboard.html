@@ -412,6 +412,7 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 5', floors:['LEVEL 5'] },
     { title:'LEVEL 6', floors:['LEVEL 6'] },
   ];
+  const CELL_CONTENT_H = 220; // 박스 하나당 리스트 영역 확보 높이(px, 타이틀 제외)
   const cells = groups.map(g => {
     const entries = allEntries
       .filter(e => g.floors.includes(e.floor))
@@ -420,12 +421,15 @@ function buildAllFloorsHTML() {
         if (fi !== 0) return fi;
         return (a.sort_order||0) - (b.sort_order||0);
       });
+    const lineCount = Math.max(entries.length, 1);
+    const rawSize = CELL_CONTENT_H / (lineCount * 1.45);
+    const fontSize = Math.min(16, Math.max(11, Math.round(rawSize * 2) / 2));
     const rows = entries.map(e => {
       const name = (e.business_name||'').split('\n')[0].trim();
       const suite = e.unit_display || '';
-      return `<div style="display:flex;justify-content:space-between;gap:6px"><span>${name}</span><span style="font-weight:900">${suite}</span></div>`;
+      return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</span><span style="font-weight:900;flex-shrink:0">${suite}</span></div>`;
     }).join('');
-    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:17px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:5px 0;margin-bottom:6px;letter-spacing:0.5px">${g.title}</div><div style="font-size:14.5px;line-height:1.55;color:#0f172a;font-weight:600">${rows}</div></div>`;
+    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:16px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:4px 0;margin-bottom:5px;letter-spacing:0.5px">${g.title}</div><div style="font-size:${fontSize}px;line-height:1.45;color:#0f172a;font-weight:600">${rows}</div></div>`;
   }).join('');
 
   return `<div style="width:540px;height:960px;background:#ffffff;position:relative;overflow:hidden;font-family:'DM Sans','Segoe UI',sans-serif;color:#0f172a;box-sizing:border-box;display:flex;flex-direction:column;">
