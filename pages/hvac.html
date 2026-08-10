@@ -103,6 +103,22 @@
 .cooldown-msg{font-size:14px;color:#374151;line-height:1.6;margin-bottom:20px}
 .cooldown-time{font-size:28px;font-weight:800;color:#dc2626;margin-bottom:20px}
 .cooldown-close{padding:10px 28px;border-radius:10px;background:#dc2626;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Rejection / Admin Notice - clickable alert */
+.req-alert{font-size:13px;font-weight:600;color:var(--red-text);margin-top:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.req-alert:hover{opacity:0.8}
+
+/* Reason Modal */
+.reason-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+.reason-overlay.show{display:flex}
+.reason-box{background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;text-align:left;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.reason-icon{font-size:36px;margin-bottom:12px;text-align:center}
+.reason-title{font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center}
+.reason-msg{font-size:14px;color:#374151;line-height:1.6;margin-bottom:20px;white-space:pre-wrap;word-break:break-word}
+.reason-close{display:block;margin:0 auto;padding:10px 28px;border-radius:10px;background:#1e3a8a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+@media(max-width:768px){
+  .req-alert{white-space:normal}
+}
 @media(max-width:768px){
   .content{padding:16px;gap:14px}
   .submit-form{padding:16px}
@@ -409,6 +425,15 @@ function getProgressBar(status, type) {
   return html;
 }
 
+function escapeAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+window.showReasonModal = (el) => {
+  document.getElementById('reasonMsgText').textContent = el.dataset.comment;
+  document.getElementById('reasonModal').classList.add('show');
+};
+
 function renderMyRequests() {
   const list = document.getElementById('myList');
   
@@ -433,7 +458,7 @@ function renderMyRequests() {
         ${r.comment ? `<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>` : ''}
         ${['pending', 'approved', 'processing'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
         ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
-        ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
+        ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
       </div>
       <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
     </div>
@@ -820,6 +845,16 @@ window.deleteHvacRequest = async (id) => {
     <div class="cooldown-msg">This tenancy has already submitted a temperature request. Please wait before trying again.</div>
     <div class="cooldown-time" id="cooldownTime"></div>
     <button class="cooldown-close" onclick="document.getElementById('cooldownModal').classList.remove('show')">OK, I understand</button>
+  </div>
+</div>
+
+<!-- Reason Modal -->
+<div class="reason-overlay" id="reasonModal">
+  <div class="reason-box">
+    <div class="reason-icon">⚠️</div>
+    <div class="reason-title">Notice</div>
+    <div class="reason-msg" id="reasonMsgText"></div>
+    <button class="reason-close" onclick="document.getElementById('reasonModal').classList.remove('show')">Close</button>
   </div>
 </div>
 
