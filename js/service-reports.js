@@ -427,6 +427,24 @@ function cellStateFor(cat, year, month) {
   const curY = today.getFullYear();
   const curM = today.getMonth() + 1;
 
+  // If a later report exists (this cycle already got superseded by a more recent
+  // completed service), don't retroactively mark earlier empty months as MISSED.
+  const supersededByLater = (cat.frequency !== 'monthly') && reportsForCategoryYear(cat.id, year)
+    .concat(reportsForCategoryYear(cat.id, year + 1))
+    .some(r => {
+      const d = new Date(r.report_date);
+      const rY = d.getFullYear(), rM = d.getMonth() + 1;
+      return (rY > year) || (rY === year && rM > month);
+    });
+  if (supersededByLater) {
+    const slotReportsCheck = reportsForCategoryYear(cat.id, year).filter(r => r.period_month === month);
+    if (!slotReportsCheck.length) {
+      const note = getCellNote(cat.id, year, month);
+      if (note) return { state: note.status, report: null, isScheduled: false, note };
+      return { state: 'na', report: null, isScheduled: false, note: null };
+    }
+  }
+
   // Find report in this slot (latest if multiple)
   const slotReports = reportsForCategoryYear(cat.id, year)
     .filter(r => r.period_month === month)
