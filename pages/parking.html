@@ -227,6 +227,12 @@
     </div>
 
     <div class="report-form">
+      <div class="form-field" style="margin-bottom:16px">
+        <label class="form-label">🔍 Search Vehicle</label>
+        <input class="form-input" id="plateSearchInput" placeholder="Enter plate to check owner & history..." maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); onPlateSearch();">
+        <div id="plateSearchResult" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-bottom:16px"></div>
       <div class="anon-notice">
         <span class="anon-icon">🔒</span>
         <div class="anon-text"><strong>Your report is anonymous.</strong> The reported driver will not see who submitted it.</div>
@@ -1022,13 +1028,22 @@ document.getElementById('imageModal').addEventListener('click', function(e) {
   if (e.target === this) closeImageModal();
 });
 
+let plateSearchTerm = '';
+window.onPlateSearch = function() {
+  plateSearchTerm = document.getElementById('plateSearchInput').value.trim();
+  loadReports();
+};
+
 async function loadReports() {
   let query = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
   if (currentFilter==='active')   query = query.eq('status','active');
   else if (currentFilter==='resolved') query = query.eq('status','resolved');
   
   const { data: reportsData } = await query;
-  const reports = reportsData || [];
+  let reports = reportsData || [];
+  if (plateSearchTerm) {
+    reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
+  }
 
   const { data: activeData } = await supabase.from('parking_reports').select('id').eq('status','active');
   const activeCount = activeData?.length||0;
@@ -1048,14 +1063,32 @@ async function loadReports() {
     vehicleMap = {};
   }
 
-  const { data: allPlatesData } = await supabase.from('parking_reports').select('plate');
-  const offenderMap = {};
+  const { data: allPlatesData } = await supabase.from('parking_reports').select('id,plate,created_at').order('created_at', {ascending: true});
+  const offenderMap = {};      // plate -> total count
+  const occurrenceMap = {};    // report id -> which occurrence number (1st, 2nd, 3rd...) this report was
+  const runningCount = {};
   (allPlatesData || []).forEach(r => {
     if (!r.plate) return;
     const key = r.plate.replace(/\s/g,'').toUpperCase();
-    if (!offenderMap[key]) offenderMap[key] = 0;
-    offenderMap[key]++;
+    runningCount[key] = (runningCount[key] || 0) + 1;
+    occurrenceMap[r.id] = runningCount[key];
+    offenderMap[key] = runningCount[key];
   });
+
+  const searchResultBox = document.getElementById('plateSearchResult');
+  if (plateSearchTerm) {
+    const total = offenderMap[plateSearchTerm] || 0;
+    const matchedVehicle = vehicleMap[plateSearchTerm];
+    const ownershipHtml = matchedVehicle
+      ? `<div style="margin-bottom:6px"><span style="font-size:12px;padding:2px 8px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:700">🏢 Building vehicle — Suite ${matchedVehicle.unit||'—'}</span></div>`
+      : `<div style="margin-bottom:6px"><span style="font-size:12px;padding:2px 8px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:700">⚠️ Not a registered building vehicle</span></div>`;
+    searchResultBox.style.display = 'block';
+    searchResultBox.innerHTML = ownershipHtml + (total > 0
+      ? `<strong>${plateSearchTerm}</strong> — ${total} violation${total>1?'s':''} on file${total>=2?` <span style="color:#e8000d;font-weight:700">(currently ${ordinalOffence(total)})</span>`:''}`
+      : `<strong>${plateSearchTerm}</strong> — no violations on file`);
+  } else {
+    searchResultBox.style.display = 'none';
+  }
 
   const list = document.getElementById('reportsList');
   if (!reports.length) {
@@ -1086,11 +1119,12 @@ async function loadReports() {
     const isInternal = !!vehicle;
     const isExternal = !vehicle;
     const suite = vehicle?.unit || '';
-    const isRepeat = offenderMap[normPlate] >= 2;
+    const occurrenceN = occurrenceMap[r.id] || 1;
+    const isRepeat = occurrenceN >= 2;
 
     const tagInternal = isInternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
     const tagExternal = isExternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
-    const repeatLabel = isRepeat ? `<span style="font-size:14px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(offenderMap[normPlate])}</span>` : '';
+    const repeatLabel = isRepeat ? `<span style="font-size:14px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(occurrenceN)}</span>` : '';
 
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
     const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
@@ -1123,7 +1157,7 @@ async function loadReports() {
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
-            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" data-count="${offenderMap[normPlate]||1}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
+            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
