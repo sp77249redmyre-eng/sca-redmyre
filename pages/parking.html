@@ -36,6 +36,7 @@
 .btn-report{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
 .notice-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .parking-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
+.parking-card[style*="border-left"]{border-top-left-radius:4px;border-bottom-left-radius:4px}
 .parking-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
 .parking-card.resolved{opacity:0.7}
 .pk-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.12s;gap:12px;flex-wrap:wrap}
@@ -609,7 +610,12 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
 
     showToast('Report submitted! All residents have been notified 🚨');
     if (confirm('Print warning notice for this vehicle?')) {
-      generateWarningPDF(plate, selectedVio, bay||area);
+      let repeatN = 1;
+      try {
+        const { count: totalCount } = await supabase.from('parking_reports').select('id', { count: 'exact', head: true }).eq('plate', plate);
+        repeatN = totalCount || 1;
+      } catch(e) {}
+      generateWarningPDF(plate, selectedVio, bay||area, null, null, repeatN);
     }
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.textContent='🚨 Report Now'; }
@@ -659,7 +665,7 @@ window.openEditReport = async function(id) {
     +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:block">Photos</label>'
     +'<div id="editPhotoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>'
     +'<button onclick="document.getElementById(\'editAddPhotoInput\').click()" style="width:100%;padding:10px;border:1.5px dashed #cbd5e1;border-radius:10px;background:#f8fafc;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-bottom:18px">📷 Add Photo</button>'
-    +'<input type="file" id="editAddPhotoInput" accept="image/*" multiple capture="environment" style="display:none">'
+    +'<input type="file" id="editAddPhotoInput" accept="image/*" multiple style="display:none">'
     +'<div style="display:flex;gap:10px;justify-content:flex-end">'
     +'<button onclick="document.getElementById(\'editReportModal\').remove()" style="padding:9px 18px;border-radius:9px;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Cancel</button>'
     +'<button id="editSaveBtn" onclick="saveEditReport()" style="padding:9px 18px;border-radius:9px;border:1px solid #16a34a;background:#16a34a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Save</button>'
@@ -794,11 +800,22 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('imageModal').style.display === 'flex') closeImageModal();
 });
 
-window.generateWarningPDF = function(plate, violation, location, createdAt, photoUrl) {
+function ordinalOffence(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  const suf = (s[(v-20)%10] || s[v] || s[0]).toUpperCase();
+  return n + suf + ' OFFENCE';
+}
+
+window.generateWarningPDF = function(plate, violation, location, createdAt, photoUrl, repeatCount) {
   const when = createdAt ? new Date(createdAt) : new Date();
   const dateStr = when.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
   const timeStr = when.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
   const vioLabel = VIO_LABELS[violation] || violation || 'Parking violation';
+  const repeatN = parseInt(repeatCount) || 1;
+  const timeSlot = repeatN >= 2
+    ? `<text x="450" y="304" font-size="26" font-weight="900" fill="#e8000d">${ordinalOffence(repeatN)}</text>`
+    : `<text x="450" y="304" font-size="28" font-weight="900" fill="#555">TIME</text><text x="546" y="304" font-size="32" font-weight="700" fill="#111">${timeStr}</text>`;
 
   let existing = document.getElementById('warningModal');
   if (existing) existing.remove();
@@ -812,6 +829,7 @@ window.generateWarningPDF = function(plate, violation, location, createdAt, phot
   modal.dataset.time = timeStr;
   modal.dataset.rawDate = createdAt || new Date().toISOString();
   modal.dataset.photoUrl = photoUrl || '';
+  modal.dataset.repeat = repeatN;
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:14px;width:95%;max-width:800px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
@@ -836,8 +854,7 @@ window.generateWarningPDF = function(plate, violation, location, createdAt, phot
           <text x="510" y="256" font-size="28" font-weight="700" fill="#111">${location||'—'}</text>
           <text x="46" y="304" font-size="28" font-weight="900" fill="#555">DATE</text>
           <text x="158" y="304" font-size="32" font-weight="700" fill="#111">${dateStr}</text>
-          <text x="450" y="304" font-size="28" font-weight="900" fill="#555">TIME</text>
-          <text x="546" y="304" font-size="32" font-weight="700" fill="#111">${timeStr}</text>
+          ${timeSlot}
         </svg>
         <div style="border-top:3px solid #111;">
           <div style="display:grid;grid-template-columns:0.7fr 1.3fr;align-items:stretch;border-bottom:3px solid #111;">
@@ -894,6 +911,10 @@ window.printWarning = function() {
   const shortDate = when2.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
   const photoUrl = modal.dataset.photoUrl || '';
   const loc = modal.dataset.loc || '—';
+  const repeatN = parseInt(modal.dataset.repeat) || 1;
+  const timeSlotPrint = repeatN >= 2
+    ? '<text x="450" y="304" font-size="26" font-weight="900" fill="#e8000d">'+ordinalOffence(repeatN)+'</text>'
+    : '<text x="450" y="304" font-size="28" font-weight="900" fill="#555">TIME</text><text x="546" y="304" font-size="32" font-weight="700" fill="#111">'+time+'</text>';
 
   const w = window.open('', '_blank');
   if (!w) return;
@@ -920,8 +941,7 @@ window.printWarning = function() {
     +'<text x="510" y="256" font-size="28" font-weight="700" fill="#111">'+loc+'</text>'
     +'<text x="46" y="304" font-size="28" font-weight="900" fill="#555">DATE</text>'
     +'<text x="158" y="304" font-size="32" font-weight="700" fill="#111">'+shortDate+'</text>'
-    +'<text x="450" y="304" font-size="28" font-weight="900" fill="#555">TIME</text>'
-    +'<text x="546" y="304" font-size="32" font-weight="700" fill="#111">'+time+'</text>'
+    +timeSlotPrint
     +'</svg></div>'
     +'<div style="width:210mm;height:177mm;border-top:3px solid #111;">'
     +'<div style="display:grid;grid-template-columns:0.7fr 1.3fr;align-items:stretch;border-bottom:3px solid #111;height:62mm;">'
@@ -1064,11 +1084,11 @@ async function loadReports() {
     const isInternal = !!vehicle;
     const isExternal = !vehicle;
     const suite = vehicle?.unit || '';
-    const isRepeat = offenderMap[normPlate] >= 3;
+    const isRepeat = offenderMap[normPlate] >= 2;
 
     const tagInternal = isInternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
     const tagExternal = isExternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
-    const tagRepeat = isRepeat ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fee2e2;color:#b91c1c;font-weight:600">🔴 Repeat</span>` : '';
+    const repeatLabel = isRepeat ? `<span style="font-size:11px;font-weight:800;color:#e8000d;letter-spacing:0.02em">${ordinalOffence(offenderMap[normPlate])}</span>` : '';
 
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
     const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
@@ -1077,14 +1097,15 @@ async function loadReports() {
     const pdfsHtml = pdfFiles.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => { const fname = decodeURIComponent(url.split('/').pop()); return `<div onclick="showImage('${url}')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-400)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px">📄</span><span style="font-size:12px;font-weight:600;color:var(--blue-600)">${fname.length>25?fname.slice(0,22)+'...':fname}</span></div>`; }).join('')}</div>` : '';
 
     return `
-      <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}">
+      <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}" style="${isRepeat&&!isResolved?'border-left:4px solid #e8000d':''}">
         <div class="pk-header ${isResolved?'resolved':''}" onclick="togglePk('${r.id}')">
           <div class="pk-header-left">
             <span class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</span>
+            ${!isResolved?repeatLabel:''}
             <div class="pk-info">
               <span>📍 ${r.location || '—'}</span>
               <span class="badge ${isResolved?'badge-green':'badge-red'}">${isResolved?'Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
-              ${tagInternal}${tagExternal}${tagRepeat}
+              ${tagInternal}${tagExternal}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -1100,7 +1121,7 @@ async function loadReports() {
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
           <div class="pk-actions">
-            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
+            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" data-count="${offenderMap[normPlate]||1}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
