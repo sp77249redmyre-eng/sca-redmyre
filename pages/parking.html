@@ -1048,8 +1048,9 @@ async function loadReports() {
     vehicleMap = {};
   }
 
+  const { data: allPlatesData } = await supabase.from('parking_reports').select('plate');
   const offenderMap = {};
-  reports.forEach(r => {
+  (allPlatesData || []).forEach(r => {
     if (!r.plate) return;
     const key = r.plate.replace(/\s/g,'').toUpperCase();
     if (!offenderMap[key]) offenderMap[key] = 0;
