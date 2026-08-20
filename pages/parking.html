@@ -44,10 +44,11 @@
 .pk-header.resolved{background:var(--bg)}
 .pk-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .pk-plate{font-size:16px;font-weight:700;color:var(--text);letter-spacing:0.1em;font-family:monospace;flex-shrink:0}
-.pk-plate.resolved{color:var(--muted)}
+.pk-plate.resolved{color:#57534e}
+.pk-info .resolved-text{color:#57534e}
 .pk-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text)}
 .pk-time{font-size:12px;color:var(--text-2);text-align:right;flex-shrink:0}
-.pk-time.resolved{color:var(--muted)}
+.pk-time.resolved{color:#57534e}
 .pk-body{display:none;padding:18px;background:var(--bg);border-top:0.5px solid var(--border-light)}
 .pk-body.open{display:block}
 .pk-location{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
@@ -1103,7 +1104,7 @@ async function loadReports() {
             <span class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</span>
             ${repeatLabel}
             <div class="pk-info">
-              <span>📍 ${r.location || '—'}</span>
+              <span style="${isResolved?'color:#57534e':''}">📍 ${r.location || '—'}</span>
               <span class="badge ${isResolved?'badge-green':'badge-red'}" style="${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
               ${tagInternal}${tagExternal}
             </div>
@@ -1125,7 +1126,7 @@ async function loadReports() {
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
-            ${isResolved?`<span style="font-size:12px;color:var(--muted)">Resolved ${timeAgo}</span>`:''}
+            ${isResolved?`<span style="font-size:12px;color:#57534e">Resolved ${timeAgo}</span>`:''}
           </div>
         </div>
       </div>`;
