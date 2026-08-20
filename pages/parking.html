@@ -43,23 +43,23 @@
 .pk-header:hover{background:var(--bg)}
 .pk-header.resolved{background:var(--bg)}
 .pk-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
-.pk-plate{font-size:16px;font-weight:700;color:var(--text);letter-spacing:0.1em;font-family:monospace;flex-shrink:0}
+.pk-plate{font-size:20px;font-weight:700;color:var(--text);letter-spacing:0.1em;font-family:monospace;flex-shrink:0}
 .pk-plate.resolved{color:#57534e}
 .pk-info .resolved-text{color:#57534e}
-.pk-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text)}
-.pk-time{font-size:12px;color:var(--text-2);text-align:right;flex-shrink:0}
+.pk-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;color:var(--text)}
+.pk-time{font-size:15px;font-weight:600;color:var(--text-2);text-align:right;flex-shrink:0}
 .pk-time.resolved{color:#57534e}
 .pk-body{display:none;padding:18px;background:var(--bg);border-top:0.5px solid var(--border-light)}
 .pk-body.open{display:block}
 .pk-location{font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
 .pk-violation{display:inline-block;margin-bottom:10px}
-.pk-reporter{font-size:12px;color:var(--text-2);margin-bottom:10px}
-.pk-comment{font-size:13px;color:var(--text-2);background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-wrap}
+.pk-reporter{font-size:14px;color:var(--text-2);margin-bottom:10px}
+.pk-comment{font-size:15px;color:var(--text-2);background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-wrap}
 .pk-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .pk-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:12px 0}
 .pk-image{width:100%;border-radius:10px;cursor:pointer;transition:transform 0.15s;object-fit:cover;max-height:300px}
 .pk-image:hover{transform:scale(1.02)}
-.pk-chevron{font-size:11px;color:var(--muted);transition:transform 0.2s;flex-shrink:0}
+.pk-chevron{font-size:14px;color:var(--muted);transition:transform 0.2s;flex-shrink:0}
 .pk-chevron.open{transform:rotate(180deg)}
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 @media(max-width:768px){
@@ -1088,9 +1088,9 @@ async function loadReports() {
     const suite = vehicle?.unit || '';
     const isRepeat = offenderMap[normPlate] >= 2;
 
-    const tagInternal = isInternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
-    const tagExternal = isExternal ? `<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
-    const repeatLabel = isRepeat ? `<span style="font-size:11px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(offenderMap[normPlate])}</span>` : '';
+    const tagInternal = isInternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600">🏢 Suite ${suite}</span>` : '';
+    const tagExternal = isExternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600">⚠️ External</span>` : '';
+    const repeatLabel = isRepeat ? `<span style="font-size:14px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(offenderMap[normPlate])}</span>` : '';
 
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
     const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
@@ -1106,7 +1106,7 @@ async function loadReports() {
             ${repeatLabel}
             <div class="pk-info">
               <span style="${isResolved?'color:#57534e':''}">📍 ${r.location || '—'}</span>
-              <span class="badge ${isResolved?'badge-green':'badge-red'}" style="${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
+              <span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:3px 9px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
               ${tagInternal}${tagExternal}
             </div>
           </div>
@@ -1117,7 +1117,7 @@ async function loadReports() {
         </div>
         <div class="pk-body" id="body-${r.id}">
           <div class="pk-location">📍 ${r.location || '—'}</div>
-          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 14px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
+          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:15px;padding:6px 16px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
           <div class="pk-reporter">${role==='admin' ? `Reported by ${r.reporter_name||'Unknown'} · ` : ''}${absTime}</div>
           ${imagesHtml}
           ${pdfsHtml}
