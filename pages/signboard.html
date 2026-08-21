@@ -104,6 +104,8 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
 .sb-btn-cancel:hover{background:#eee}
 .sb-btn-modal-save{background:#dc2626;color:#fff}
 .sb-btn-modal-save:hover{background:#b91c1c}
+.sb-swatch{width:26px;height:26px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 0 1px #ccc;cursor:pointer;transition:transform .1s;}
+.sb-swatch:hover{transform:scale(1.15);box-shadow:0 0 0 1px #999;}
 </style>
 </head>
 <body>
@@ -151,28 +153,37 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
       <option value="LEVEL 5">LEVEL 5</option>
       <option value="LEVEL 6">LEVEL 6</option>
     </select>
-    <div style="display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:4px 0 10px 0;">
-      <span style="font-size:12px;font-weight:600;color:#92400e;">색칠할 색:</span>
-      <input type="color" id="fInlineColor" value="#dc2626" style="width:36px;height:30px;padding:1px;border:1px solid #ddd;border-radius:6px;cursor:pointer;">
-      <span style="font-size:11px;color:#92400e;">글자 드래그해서 선택 → 아래 [칠하기] 버튼</span>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:4px 0 4px 0;">
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;">아래 칸에서 글자를 드래그로 선택한 다음, 원하는 색을 클릭하세요 — 바로 적용됩니다.</div>
+      <div id="colorSwatches" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="sb-swatch" data-color="#dc2626" style="background:#dc2626"></div>
+        <div class="sb-swatch" data-color="#ea580c" style="background:#ea580c"></div>
+        <div class="sb-swatch" data-color="#d97706" style="background:#d97706"></div>
+        <div class="sb-swatch" data-color="#16a34a" style="background:#16a34a"></div>
+        <div class="sb-swatch" data-color="#0891b2" style="background:#0891b2"></div>
+        <div class="sb-swatch" data-color="#2563eb" style="background:#2563eb"></div>
+        <div class="sb-swatch" data-color="#7c3aed" style="background:#7c3aed"></div>
+        <div class="sb-swatch" data-color="#db2777" style="background:#db2777"></div>
+        <div class="sb-swatch" data-color="#0f172a" style="background:#0f172a" title="기본 검정"></div>
+        <label style="width:26px;height:26px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 0 1px #ccc;cursor:pointer;background:conic-gradient(red,orange,yellow,green,blue,violet,red);display:inline-block;position:relative;">
+          <input type="color" id="fCustomColor" style="opacity:0;width:100%;height:100%;cursor:pointer;position:absolute;top:0;left:0;">
+        </label>
+      </div>
     </div>
     <label>Business Name (엔터로 줄바꿈)</label>
     <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
-      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fBiz')">🎨 선택 부분 칠하기</button>
-      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fBiz')">지우기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fBiz')">이 칸 색 전부 지우기</button>
     </div>
     <label>Alt Name (optional, 엔터로 줄바꿈)</label>
     <textarea id="fAlt" rows="2" placeholder="e.g. 윤중병원" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
-      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fAlt')">🎨 선택 부분 칠하기</button>
-      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fAlt')">지우기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fAlt')">이 칸 색 전부 지우기</button>
     </div>
     <label>Sub Info (optional, 엔터로 줄바꿈)</label>
     <textarea id="fSub" rows="2" placeholder="e.g. Dr A Wong&#10;Dr B Kim" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
     <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
-      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fSub')">🎨 선택 부분 칠하기</button>
-      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fSub')">지우기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fSub')">이 칸 색 전부 지우기</button>
     </div>
     <label>Unit Display</label>
     <select id="fUnit" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;"></select>
@@ -592,33 +603,54 @@ window.clearFullpage = (which) => {
   updateFullpageStatus(which);
 };
 
-window.applyInlineColor = (taId) => {
+// 드래그로 선택한 글자를 기억해뒀다가, 색상 박스에서 색을 고르는 즉시 그 글자에 색을 입힌다.
+let _lastTextSelection = null; // { taId, start, end }
+
+['fBiz','fAlt','fSub'].forEach(taId => {
   const ta = document.getElementById(taId);
-  const color = document.getElementById('fInlineColor').value;
-  const start = ta.selectionStart, end = ta.selectionEnd;
-  if (start === end) { showToast('먼저 색칠할 글자를 마우스로 드래그해서 선택하세요', true); return; }
+  if (!ta) return;
+  const remember = () => {
+    if (ta.selectionStart !== ta.selectionEnd) {
+      _lastTextSelection = { taId, start: ta.selectionStart, end: ta.selectionEnd };
+    }
+  };
+  ta.addEventListener('mouseup', remember);
+  ta.addEventListener('keyup', remember);
+  ta.addEventListener('select', remember);
+});
+
+function applyColorToSelection(color) {
+  if (!_lastTextSelection) { showToast('먼저 글자를 마우스로 드래그해서 선택한 다음 색을 고르세요', true); return; }
+  const { taId, start, end } = _lastTextSelection;
+  const ta = document.getElementById(taId);
+  if (!ta) return;
   const before = ta.value.slice(0, start);
   const sel = ta.value.slice(start, end);
   const after = ta.value.slice(end);
   // 이미 색칠된 구간을 다시 선택했으면 태그 벗기고 새로 씌움
   const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
   ta.value = before + '{{' + color + '|' + stripped + '}}' + after;
+  // 새로 칠해진 글자 그대로 다시 선택 상태로 둬서, 색을 더 눌러보며 바꿔볼 수 있게 함
+  const newEnd = start + ('{{' + color + '|' + stripped + '}}').length;
   ta.focus();
-};
+  ta.setSelectionRange(start, newEnd);
+  _lastTextSelection = { taId, start, end: newEnd };
+}
+
+document.getElementById('colorSwatches').addEventListener('click', (ev) => {
+  const sw = ev.target.closest('.sb-swatch');
+  if (!sw) return;
+  applyColorToSelection(sw.dataset.color);
+});
+
+document.getElementById('fCustomColor').addEventListener('input', (ev) => {
+  applyColorToSelection(ev.target.value);
+});
 
 window.clearInlineColor = (taId) => {
   const ta = document.getElementById(taId);
-  const start = ta.selectionStart, end = ta.selectionEnd;
-  if (start !== end) {
-    const before = ta.value.slice(0, start);
-    const sel = ta.value.slice(start, end);
-    const after = ta.value.slice(end);
-    const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-    ta.value = before + stripped + after;
-  } else {
-    // 선택 없으면 전체에서 색 태그 전부 제거
-    ta.value = ta.value.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-  }
+  ta.value = ta.value.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+  _lastTextSelection = null;
   ta.focus();
 };
 
