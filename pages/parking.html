@@ -655,20 +655,29 @@ window._editReportState = { id:null, urls:[], newFiles:[] };
 window.openEditReport = async function(id) {
   let existing = document.getElementById('editReportModal');
   if (existing) existing.remove();
-  const { data: rep } = await supabase.from('parking_reports').select('location,image_urls,image_url,plate').eq('id', id).single();
+  const { data: rep } = await supabase.from('parking_reports').select('location,image_urls,image_url,plate,violation,comment,admin_reply').eq('id', id).single();
   let urls = (rep && rep.image_urls && rep.image_urls.length) ? rep.image_urls.slice() : (rep && rep.image_url ? [rep.image_url] : []);
   window._editReportState = { id:id, urls:urls, newFiles:[] };
 
   const areaOpts = '<option value="">Select area</option><option value="entry">Entry / Loading</option><option value="ground">Ground Floor</option><option value="b1">Basement 1</option><option value="b2">Basement 2</option>';
+  const vioOpts = Object.entries(VIO_LABELS).map(([k,v]) => '<option value="'+k+'"'+((rep&&rep.violation===k)?' selected':'')+'>'+v+'</option>').join('');
   const m = document.createElement('div');
   m.id = 'editReportModal';
   m.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
   m.innerHTML = '<div style="background:#fff;border-radius:14px;width:95%;max-width:460px;max-height:90vh;overflow-y:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.4)">'
     +'<div style="font-size:16px;font-weight:700;color:#111;margin-bottom:18px">Edit Report</div>'
+    +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Number Plate</label>'
+    +'<input id="editPlate" value="'+((rep&&rep.plate)||'')+'" maxlength="10" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:monospace;color:#111;background:#f8fafc;margin-bottom:14px;text-transform:uppercase" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,\'\').toUpperCase()">'
+    +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Violation Type</label>'
+    +'<select id="editVio" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:14px">'+vioOpts+'</select>'
     +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Location</label>'
     +'<select id="editLocArea" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:10px">'+areaOpts+'</select>'
     +'<div id="editLocBayField" style="display:none"><select id="editLocBay" style="width:100%;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:10px"></select></div>'
     +'<div style="font-size:12px;color:#94a3b8;margin-bottom:18px">Current: '+(rep && rep.location ? rep.location : '\u2014')+'</div>'
+    +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Reporter Comment</label>'
+    +'<textarea id="editComment" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:14px;resize:vertical">'+((rep&&rep.comment)||'')+'</textarea>'
+    +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block">Admin Reply <span style="font-weight:400;color:#94a3b8;text-transform:none">(visible on the incident)</span></label>'
+    +'<textarea id="editAdminReply" rows="2" placeholder="Add a reply or note..." style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:\'DM Sans\',sans-serif;color:#111;background:#f8fafc;margin-bottom:18px;resize:vertical">'+((rep&&rep.admin_reply)||'')+'</textarea>'
     +'<label style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:block">Photos</label>'
     +'<div id="editPhotoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>'
     +'<button onclick="document.getElementById(\'editAddPhotoInput\').click()" style="width:100%;padding:10px;border:1.5px dashed #cbd5e1;border-radius:10px;background:#f8fafc;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-bottom:18px">📷 Add Photo</button>'
@@ -748,6 +757,14 @@ window.saveEditReport = async function() {
       urls.push(ud.publicUrl);
     }
     const update = { image_urls: urls, image_url: urls[0] || null };
+    const plateEl = document.getElementById('editPlate');
+    if (plateEl) update.plate = plateEl.value.trim();
+    const vioEl = document.getElementById('editVio');
+    if (vioEl) update.violation = vioEl.value;
+    const commentEl = document.getElementById('editComment');
+    if (commentEl) update.comment = commentEl.value.trim() || null;
+    const adminReplyEl = document.getElementById('editAdminReply');
+    if (adminReplyEl) update.admin_reply = adminReplyEl.value.trim() || null;
     const area = document.getElementById('editLocArea').value;
     const bayEl = document.getElementById('editLocBay');
     const bay = bayEl ? bayEl.value : '';
@@ -986,7 +1003,7 @@ window.printWarning = function() {
     +'</div>'
     +'</div>'
     +'<div style="width:210mm;height:115mm;background:#0f172a;display:flex;align-items:center;justify-content:center;">'
-    +(photoUrl?'<img src="'+photoUrl+'" style="max-width:100%;max-height:115mm;object-fit:contain;display:block">':'<div style="width:100%;height:115mm;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:14px;">No photo available</div>')
+    +(photoUrl?'<img src="'+photoUrl+'" style="width:100%;height:115mm;object-fit:cover;display:block">':'<div style="width:100%;height:115mm;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:14px;">No photo available</div>')
     +'</div>'
     +'</div>'
     +'<div style="width:210mm;height:24mm;background:#e8000d;display:flex;align-items:center;justify-content:center;border-top:3px solid #111;">'
@@ -1156,6 +1173,7 @@ async function loadReports() {
           ${imagesHtml}
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment">"${r.comment}"</div>`:''}
+          ${r.admin_reply?`<div class="pk-comment" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8"><strong>Admin reply:</strong> ${r.admin_reply}</div>`:''}
           <div class="pk-actions">
             ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🖨️ Warning Notice</button>`:''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button>`:''}
