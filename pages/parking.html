@@ -1069,10 +1069,11 @@ async function loadReports() {
   try {
     const { data: vehicles } = await supabase
       .rpc('lookup_vehicle_plates');
-    (vehicles || []).forEach(v => {
+    const sorted = (vehicles || []).slice().sort((a,b) => (a?.unit||'').localeCompare(b?.unit||'', undefined, {numeric:true}));
+    sorted.forEach(v => {
       if (!v?.plate) return;
       const normalized = v.plate.replace(/\s/g,'').toUpperCase();
-      vehicleMap[normalized] = v;
+      if (!vehicleMap[normalized]) vehicleMap[normalized] = v;  // first (smallest unit) wins
     });
   } catch(e) {
     console.warn('Vehicle matching failed, continuing without owner info');
