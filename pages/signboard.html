@@ -151,22 +151,33 @@ input[type="text"],input[type="number"],select,textarea{font-size:16px !importan
       <option value="LEVEL 5">LEVEL 5</option>
       <option value="LEVEL 6">LEVEL 6</option>
     </select>
+    <div style="display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:4px 0 10px 0;">
+      <span style="font-size:12px;font-weight:600;color:#92400e;">색칠할 색:</span>
+      <input type="color" id="fInlineColor" value="#dc2626" style="width:36px;height:30px;padding:1px;border:1px solid #ddd;border-radius:6px;cursor:pointer;">
+      <span style="font-size:11px;color:#92400e;">글자 드래그해서 선택 → 아래 [칠하기] 버튼</span>
+    </div>
     <label>Business Name (엔터로 줄바꿈)</label>
     <textarea id="fBiz" rows="2" placeholder="e.g. Redmyre Medical Centre" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
+    <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
+      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fBiz')">🎨 선택 부분 칠하기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fBiz')">지우기</button>
+    </div>
     <label>Alt Name (optional, 엔터로 줄바꿈)</label>
     <textarea id="fAlt" rows="2" placeholder="e.g. 윤중병원" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
+    <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
+      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fAlt')">🎨 선택 부분 칠하기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fAlt')">지우기</button>
+    </div>
     <label>Sub Info (optional, 엔터로 줄바꿈)</label>
     <textarea id="fSub" rows="2" placeholder="e.g. Dr A Wong&#10;Dr B Kim" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;resize:vertical;"></textarea>
+    <div style="display:flex;gap:6px;margin:4px 0 10px 0;">
+      <button type="button" class="sb-btn-e" onclick="applyInlineColor('fSub')">🎨 선택 부분 칠하기</button>
+      <button type="button" class="sb-btn-e" onclick="clearInlineColor('fSub')">지우기</button>
+    </div>
     <label>Unit Display</label>
     <select id="fUnit" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;"></select>
     <label>Short Name (Page 9 전체층 요약용, 비우면 Business Name 그대로 사용)</label>
     <input type="text" id="fShort" placeholder="e.g. Unification Council" style="width:100%;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;">
-    <label>Text Color (전광판 업체명 색상, 비우면 기본 검정)</label>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <input type="color" id="fColor" value="#0f172a" style="width:48px;height:38px;padding:2px;border:1px solid #ddd;border-radius:8px;cursor:pointer;">
-      <input type="text" id="fColorHex" placeholder="#0f172a" style="flex:1;padding:9px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:'DM Sans',sans-serif;color:#222;" oninput="syncColorFromHex()">
-      <button type="button" class="sb-btn-e" onclick="clearColor()" style="flex-shrink:0;">Reset</button>
-    </div>
     <label>Sort Order</label>
     <input type="number" id="fSort" value="1">
     <div class="sb-modal-btns">
@@ -264,11 +275,12 @@ function renderEntryList() {
     grouped[floor].forEach(e => {
       const badge = FLOOR_BADGE[floor]||'fb-g';
       const short = FLOOR_SHORT[floor]||'?';
-      const alt = e.display_name_alt ? `<span class="sb-entry-alt">${e.display_name_alt}</span>` : '';
-      const sub = e.sub_info ? e.sub_info.split('||')[0] : '';
+      const alt = e.display_name_alt ? `<span class="sb-entry-alt">${stripInlineColor(e.display_name_alt)}</span>` : '';
+      const sub = e.sub_info ? stripInlineColor(e.sub_info.split('||')[0]) : '';
       const meta = [e.unit_display, sub].filter(Boolean).join(' · ');
-      const colorDot = e.highlight_color ? `<span title="${e.highlight_color}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e.highlight_color};border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
-      html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${colorDot}${e.business_name}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
+      const hasColor = /\{\{#[0-9a-fA-F]{6}\|/.test(e.business_name||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.display_name_alt||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.sub_info||'');
+      const colorDot = hasColor ? `<span title="일부 텍스트에 색 지정됨" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:conic-gradient(from 0deg,red,orange,yellow,green,blue,violet,red);border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
+      html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${colorDot}${stripInlineColor(e.business_name)}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
     });
   });
   html += '</div>';
@@ -301,7 +313,7 @@ function renderDirectoryPreview() {
   function renderSub(sub) {
     if (!sub) return '';
     return sub.split(/\n|\|\|/).map(l=>l.trim()).filter(Boolean)
-      .map(l=>`<div style="font-size:${subSize+3}px;font-weight:500;color:#334155;margin-top:2px;line-height:1.5;font-style:italic;">${l}</div>`).join('');
+      .map(l=>`<div style="font-size:${subSize+3}px;font-weight:500;color:#334155;margin-top:2px;line-height:1.5;font-style:italic;">${parseInlineColor(l)}</div>`).join('');
   }
 
   let rows = '';
@@ -336,23 +348,23 @@ function renderDirectoryPreview() {
           'Hansung Accounting & Taxation Services': 17,
           'Calculus Accounting & Taxation Services': 17.5,
         };
-        const thisBizSize = (unit === '3A') ? 26 : (SMALL_BIZ[e.business_name] || bizSize);
-        const bizColor = e.highlight_color || '#0f172a';
+        const bizNamePlain = stripInlineColor(e.business_name);
+        const thisBizSize = (unit === '3A') ? 26 : (SMALL_BIZ[bizNamePlain] || bizSize);
         const bizLines = e.business_name.split(/\n/);
         const hasBreak = bizLines.length > 1;
-        const altHtml = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize+3}px;font-weight:700;color:${bizColor};margin-top:1px;">${l.trim()}</div>`).join('') : '';
+        const altHtml = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize+3}px;font-weight:700;color:#0f172a;margin-top:1px;">${parseInlineColor(l.trim())}</div>`).join('') : '';
 
         if (idx === 0) {
           bizHtml += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
-              ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:${bizColor};line-height:1.25;">${l}</div>`).join('')}
+              ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${parseInlineColor(l)}</div>`).join('')}
               ${altHtml}
             </div>
             <div style="font-size:${bizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;padding-top:2px;">${unit}</div>
           </div>`;
         } else {
           bizHtml += `<div style="${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
-            ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:${bizColor};line-height:1.25;">${l}</div>`).join('')}
+            ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${parseInlineColor(l)}</div>`).join('')}
             ${altHtml}
           </div>`;
         }
@@ -580,19 +592,46 @@ window.clearFullpage = (which) => {
   updateFullpageStatus(which);
 };
 
-window.syncColorFromHex = () => {
-  const hex = document.getElementById('fColorHex').value.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(hex)) { document.getElementById('fColor').value = hex; }
+window.applyInlineColor = (taId) => {
+  const ta = document.getElementById(taId);
+  const color = document.getElementById('fInlineColor').value;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  if (start === end) { showToast('먼저 색칠할 글자를 마우스로 드래그해서 선택하세요', true); return; }
+  const before = ta.value.slice(0, start);
+  const sel = ta.value.slice(start, end);
+  const after = ta.value.slice(end);
+  // 이미 색칠된 구간을 다시 선택했으면 태그 벗기고 새로 씌움
+  const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+  ta.value = before + '{{' + color + '|' + stripped + '}}' + after;
+  ta.focus();
 };
-document.addEventListener('input', (ev) => {
-  if (ev.target && ev.target.id === 'fColor') {
-    document.getElementById('fColorHex').value = ev.target.value;
+
+window.clearInlineColor = (taId) => {
+  const ta = document.getElementById(taId);
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  if (start !== end) {
+    const before = ta.value.slice(0, start);
+    const sel = ta.value.slice(start, end);
+    const after = ta.value.slice(end);
+    const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+    ta.value = before + stripped + after;
+  } else {
+    // 선택 없으면 전체에서 색 태그 전부 제거
+    ta.value = ta.value.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
   }
-});
-window.clearColor = () => {
-  document.getElementById('fColor').value = '#0f172a';
-  document.getElementById('fColorHex').value = '';
+  ta.focus();
 };
+
+// {{#rrggbb|텍스트}} 태그를 <span style="color:#rrggbb">텍스트</span>로 변환
+function parseInlineColor(text) {
+  if (!text) return '';
+  return text.replace(/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g, (m, color, inner) => `<span style="color:${color}">${inner}</span>`);
+}
+// 관리자 리스트 등 plain text 표시용 — 태그 벗기기만
+function stripInlineColor(text) {
+  if (!text) return '';
+  return text.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+}
 
 window.openAddModal = () => {
   if (activeTab<1||activeTab>TOTAL_DIRECTORY_PAGES) { showToast('Add entry only works on Page 1–6',true); return; }
@@ -607,8 +646,6 @@ window.openAddModal = () => {
   document.getElementById('fUnit').value='';
   document.getElementById('fShort').value='';
   document.getElementById('fSort').value='1';
-  document.getElementById('fColor').value='#0f172a';
-  document.getElementById('fColorHex').value='';
   document.getElementById('entryModal').classList.add('open');
 };
 
@@ -626,8 +663,6 @@ window.openEditModal = (id) => {
   document.getElementById('fUnit').value=e.unit_display;
   document.getElementById('fShort').value=e.short_name||'';
   document.getElementById('fSort').value=e.sort_order;
-  document.getElementById('fColor').value=e.highlight_color||'#0f172a';
-  document.getElementById('fColorHex').value=e.highlight_color||'';
   document.getElementById('entryModal').classList.add('open');
 };
 
@@ -643,7 +678,6 @@ window.saveEntry = async () => {
     sub_info: document.getElementById('fSub').value.trim()||null,
     unit_display: document.getElementById('fUnit').value.trim(),
     short_name: document.getElementById('fShort').value.trim()||null,
-    highlight_color: document.getElementById('fColorHex').value.trim()||null,
     sort_order: parseInt(document.getElementById('fSort').value),
     updated_at: new Date().toISOString()
   };
