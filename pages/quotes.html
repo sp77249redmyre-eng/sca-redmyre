@@ -554,7 +554,6 @@ window.editPc = function(id, el) {
       modal._quill.root.innerHTML = original;
     }
   }, 100);
-  ta.setSelectionRange(ta.value.length, ta.value.length);
 };
 import { getSupabase } from '/js/auth.js';
 
@@ -925,12 +924,14 @@ function renderPendingQuotes(quotes) {
         } else if (hasSelection) {
           statusDiv.innerHTML = '<span class="badge-x">✕</span>';
         } else if (role === 'committee' && !isLocked) {
-          btn.textContent = 'Select';
-          btn.onclick = (e) => {
+          const selectBtn = document.createElement('button');
+          selectBtn.className = 'select-btn';
+          selectBtn.textContent = 'Select';
+          selectBtn.onclick = (e) => {
             e.stopImmediatePropagation();
-            doUpsert(projectKey, { selected_quote_id: quoteId }, btn, 'Select');
+            doUpsert(projectKey, { selected_quote_id: quoteId }, selectBtn, 'Select');
           };
-          statusDiv.appendChild(btn);
+          statusDiv.appendChild(selectBtn);
         }
       }
       vendorHeader.appendChild(statusDiv);
@@ -1070,18 +1071,24 @@ function renderPendingQuotes(quotes) {
         const remindRow = document.createElement('div');
         remindRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center';
 
+        const isSingleVendor = group.length === 1;
+
         const buildPayload = (recipients) => ({
           project: group[0].project || group[0].project_title || 'Project',
           recipients,
           quotes: group.filter(q => q.vendor).map(q => ({
             vendor: q.vendor, amount: q.amount || 0,
-            approvals: pjVotes.filter(v => v.vote === 'approve' && v.selected_quote_id === q.id).length,
+            approvals: isSingleVendor
+              ? pjVotes.filter(v => v.vote === 'approve').length
+              : pjVotes.filter(v => v.vote === 'approve' && v.selected_quote_id === q.id).length,
             holds: pjVotes.filter(v => v.vote === 'hold').length,
             declines: pjVotes.filter(v => v.vote === 'decline').length
           })),
           votes: committeeMembers.map(cm => {
             const vRow = pjVotes.find(v => v.user_email === cm.email);
-            const selQ = vRow?.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+            const selQ = vRow?.selected_quote_id
+              ? group.find(q => q.id === vRow.selected_quote_id)
+              : (isSingleVendor && vRow?.vote === 'approve' ? group[0] : null);
             return { name: cm.name, committeeRole: cm.committeeRole || '', vote: vRow?.vote || '', vendor: selQ?.vendor || '' };
           }),
           totalMembers: committeeMembers.length || 8
@@ -1178,7 +1185,9 @@ function renderPendingQuotes(quotes) {
       const myVoteBanner = document.createElement('div');
       if (hasVoted) {
         const myVoteLabel = myVoteRow.vote === 'approve' ? '✅ Approve' : myVoteRow.vote === 'hold' ? '⏸ Hold' : '❌ Decline';
-        const mySelQ = myVoteRow.selected_quote_id ? group.find(q => q.id === myVoteRow.selected_quote_id) : null;
+        const mySelQ = myVoteRow.selected_quote_id
+          ? group.find(q => q.id === myVoteRow.selected_quote_id)
+          : (isSingle && myVoteRow.vote === 'approve' ? group[0] : null);
         const myVendorText = mySelQ ? ' → ' + escHtml(mySelQ.vendor) : '';
         myVoteBanner.style.cssText = 'padding:6px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:8px;font-size:13px;font-weight:800;color:#14532d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto';
         myVoteBanner.innerHTML = '✅ YOU VOTED: ' + myVoteLabel + myVendorText;
@@ -1216,7 +1225,7 @@ function renderPendingQuotes(quotes) {
             inlineActions.querySelectorAll('button').forEach(b => { b.disabled = true; });
             const payload = { vote: type };
             if (!isSingle && type === 'approve' && !myVoteRow?.selected_quote_id && selectedQuote) {
-              payload.selected_quote_id = selectedQuote;
+              payload.selected_quote_id = selectedQuote.id;
             }
             await doUpsert(projectKey, payload, btn, btn.textContent);
             inlineActions.querySelectorAll('button').forEach(b => { b.disabled = false; });
@@ -1240,7 +1249,9 @@ function renderPendingQuotes(quotes) {
         let valueCls  = 'v-pending';
 
         if (vRow && vRow.vote && vRow.vote !== '') {
-          const selQ = vRow.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+          const selQ = vRow.selected_quote_id
+            ? group.find(q => q.id === vRow.selected_quote_id)
+            : (group.length === 1 && vRow.vote === 'approve' ? group[0] : null);
           const voteLabel = vRow.vote === 'approve' ? '✓ Approve' : vRow.vote === 'hold' ? '⏸ Hold' : '✕ Decline';
           valueCls  = vRow.vote === 'approve' ? 'v-approve' : vRow.vote === 'hold' ? 'v-hold' : 'v-decline';
           valueText = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + voteLabel;
@@ -1473,8 +1484,12 @@ function renderArchiveTable(quotes) {
     // Vendor vote distribution
     const vendorMap = {};
     group.forEach(q => { vendorMap[q.id] = { name: q.vendor || '—', count: 0 }; });
+    const isSingleVendorArchive = group.length === 1;
     votedRows.forEach(v => {
-      if (v.vote === 'approve' && v.selected_quote_id && vendorMap[v.selected_quote_id]) {
+      if (v.vote !== 'approve') return;
+      if (isSingleVendorArchive) {
+        vendorMap[group[0].id].count++;
+      } else if (v.selected_quote_id && vendorMap[v.selected_quote_id]) {
         vendorMap[v.selected_quote_id].count++;
       }
     });
@@ -1651,7 +1666,9 @@ function renderArchiveTable(quotes) {
         cell.className = 'mgmt-vote-cell';
         let vLabel = 'Pending'; let vColor = '#9ca3af';
         if (vRow?.vote && vRow.vote !== '') {
-          const selQ = vRow.selected_quote_id ? group.find(q => q.id === vRow.selected_quote_id) : null;
+          const selQ = vRow.selected_quote_id
+            ? group.find(q => q.id === vRow.selected_quote_id)
+            : (group.length === 1 && vRow.vote === 'approve' ? group[0] : null);
           vLabel = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + (vRow.vote === 'approve' ? 'Approve' : vRow.vote === 'hold' ? 'Hold' : 'Decline');
           vColor = vRow.vote === 'approve' ? '#16a34a' : vRow.vote === 'hold' ? '#ca8a04' : '#dc2626';
         }
@@ -2035,7 +2052,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: (() => { const pv = allVotes.filter(v => v.project_id === group[0]?.project_id); const t = {}; pv.forEach(v => { if(v.vote === "approve" && v.selected_quote_id){ const q = group.find(q => q.id === v.selected_quote_id); if(q?.vendor) t[q.vendor]=(t[q.vendor]||0)+1; } }); return Object.entries(t).sort((a,b)=>b[1]-a[1])[0]?.[0]||""; })() })
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '' })
       });
     } catch(pushErr) {}
     await loadData();
