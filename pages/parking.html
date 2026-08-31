@@ -257,12 +257,12 @@
       </div>
       <div class="form-field">
         <label class="form-label">Violation Type</label>
-        <div id="vioAutoNotice" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:#e0f2fe;border-radius:8px;margin-bottom:8px;font-size:13px;color:#0369a1;font-weight:600">
-          <span>✓</span><span id="vioAutoText"></span>
-        </div>
-        <div class="violation-grid" id="vioGrid">
+        <div class="violation-grid">
           <button class="vio-btn" data-vio="occupied"><span class="vio-icon">🚫</span>Someone else's bay</button>
+          <button class="vio-btn" data-vio="disabled"><span class="vio-icon">♿</span>Disabled bay</button>
+          <button class="vio-btn" data-vio="loading"><span class="vio-icon">🔴</span>Loading bay</button>
           <button class="vio-btn" data-vio="blocking"><span class="vio-icon">🚧</span>Blocking access</button>
+          <button class="vio-btn" data-vio="contractor"><span class="vio-icon">🏗️</span>Contractor bay</button>
           <button class="vio-btn" data-vio="other"><span class="vio-icon">⚠️</span>Other</button>
         </div>
       </div>
@@ -294,10 +294,6 @@
       <div class="notice-header">
         <div class="section-title">Active Incidents</div>
         <span id="activeCount" style="font-size:13px;font-weight:600;color:var(--red-text)"></span>
-      </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="active">Active</button>
-        <button class="filter-btn" data-filter="resolved">Resolved</button>
       </div>
       <div id="reportsList"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div></div>
     </div>
@@ -342,50 +338,17 @@ const BAYS = {
   b2: ['B2 1A','B2 1B','B2 1C','B2 1D','B2 1E','B2 1F','B2 1G','B2 1H','B2 2A','B2 2B','B2 2C','B2 2D','B2 2E','B2 2F','B2 2G','B2 2H','B2 3A','B2 3B','B2 3C','B2 3D','B2 3E','B2 3F','B2 3G','B2 3H','B2 4A','B2 4B','B2 4C','B2 4D','B2 4E','B2 4F','B2 4G','B2 4H','B2 5A','B2 5B','B2 5C','B2 5D','B2 5E','B2 5F','B2 5G','B2 5H','B2 6A','B2 6B','B2 6C','B2 6D','B2 6E','B2 6F','B2 6G','B2 6H'],
 };
 const VIO_LABELS = { occupied:"Someone else's bay",disabled:"Disabled bay violation",loading:"Loading bay violation",blocking:"Blocking access",contractor:"Contractor bay violation",other:"Other violation" };
-const BAY_VIOLATION_MAP = {
-  'Disabled Bay 1':'disabled','Disabled Bay 2':'disabled',
-  'Loading Bay 1':'loading','Loading Bay 2':'loading',
-  'Contractor Bay':'contractor',
-  'Management Bay':'other'
-};
 
 let selectedVio = null;
-let currentFilter = 'active';
-
-function updateViolationForBay() {
-  const bay = document.getElementById('baySelect').value;
-  const grid = document.getElementById('vioGrid');
-  const notice = document.getElementById('vioAutoNotice');
-  const noticeText = document.getElementById('vioAutoText');
-  const autoVio = BAY_VIOLATION_MAP[bay];
-
-  document.querySelectorAll('.vio-btn').forEach(b=>b.classList.remove('active'));
-
-  if (autoVio) {
-    selectedVio = autoVio;
-    grid.style.display = 'none';
-    notice.style.display = 'flex';
-    noticeText.textContent = `Violation: ${VIO_LABELS[autoVio]} — set automatically`;
-  } else {
-    selectedVio = null;
-    grid.style.display = 'grid';
-    notice.style.display = 'none';
-  }
-}
 
 document.getElementById('locationArea').addEventListener('change', () => {
   const area = document.getElementById('locationArea').value;
   const bayField = document.getElementById('bayField');
   const baySelect = document.getElementById('baySelect');
-  const notice = document.getElementById('vioAutoNotice');
-  const grid = document.getElementById('vioGrid');
-  if (!area) { bayField.style.display='none'; notice.style.display='none'; grid.style.display='grid'; selectedVio=null; return; }
+  if (!area) { bayField.style.display='none'; return; }
   bayField.style.display = 'block';
   baySelect.innerHTML = BAYS[area].map(b=>`<option value="${b}">${b}</option>`).join('');
-  updateViolationForBay();
 });
-
-document.getElementById('baySelect').addEventListener('change', updateViolationForBay);
 
 document.querySelectorAll('.vio-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -562,13 +525,11 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     image_url = image_urls[0];
   }
 
-  const submittedViolation = selectedVio;
-
   try {
     const { data: prInserted } = await supabase.from('parking_reports').insert({ 
       plate, 
       location:bay||area, 
-      violation:submittedViolation, 
+      violation:selectedVio, 
       comment, 
       image_url,
       image_urls,
@@ -581,8 +542,6 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     document.getElementById('plateInput').value='';
     document.getElementById('locationArea').value='';
     document.getElementById('bayField').style.display='none';
-    document.getElementById('vioAutoNotice').style.display='none';
-    document.getElementById('vioGrid').style.display='grid';
     document.getElementById('pkComment').value='';
     document.getElementById('photoInputCamera').value = '';
     document.getElementById('photoInputFile').value = '';
@@ -615,7 +574,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
           body: {
             units: matchedUnits,
             plate: plate,
-            violation: submittedViolation || 'Parking violation',
+            violation: selectedVio || 'Parking violation',
             location: bay || area || '',
             date: dateStr,
             time: timeStr
@@ -657,19 +616,10 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
         const { count: totalCount } = await supabase.from('parking_reports').select('id', { count: 'exact', head: true }).eq('plate', plate);
         repeatN = totalCount || 1;
       } catch(e) {}
-      generateWarningPDF(plate, submittedViolation, bay||area, null, null, repeatN);
+      generateWarningPDF(plate, selectedVio, bay||area, null, null, repeatN);
     }
     await loadReports();
   } catch(e) { showToast(e.message||'Failed to submit', true); btn.disabled=false; btn.textContent='🚨 Report Now'; }
-});
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentFilter = btn.dataset.filter;
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    loadReports();
-  });
 });
 
 window.resolveReport = async (id) => {
@@ -950,8 +900,8 @@ window.generateWarningPDF = function(plate, violation, location, createdAt, phot
               </svg>
             </div>
           </div>
-          <div style="background:#0f172a;display:flex;align-items:center;justify-content:center;height:320px;overflow:hidden;">
-            ${photoUrl ? '<img src="'+photoUrl+'" style="width:100%;height:100%;object-fit:contain;display:block">' : '<div style="width:100%;height:100%;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:13px;">No photo available</div>'}
+          <div style="background:#0f172a;display:block;">
+            ${photoUrl ? '<img src="'+photoUrl+'" style="width:100%;height:auto;display:block">' : '<div style="width:100%;height:200px;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:13px;">No photo available</div>'}
           </div>
         </div>
         <div style="background:#e8000d;padding:12px 0;text-align:center;font-size:20px;font-weight:900;color:#fff;letter-spacing:1px;border-top:3px solid #111;border-radius:0 0 14px 14px">DO NOT PARK HERE AGAIN.</div>
@@ -1038,7 +988,7 @@ window.printWarning = function() {
     +'</div>'
     +'</div>'
     +'<div style="width:210mm;height:115mm;background:#0f172a;display:flex;align-items:center;justify-content:center;">'
-    +(photoUrl?'<img src="'+photoUrl+'" style="max-width:100%;max-height:115mm;width:auto;height:auto;object-fit:contain;display:block;margin:0 auto">':'<div style="width:100%;height:115mm;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:14px;">No photo available</div>')
+    +(photoUrl?'<img src="'+photoUrl+'" style="width:100%;height:115mm;object-fit:cover;display:block">':'<div style="width:100%;height:115mm;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:14px;">No photo available</div>')
     +'</div>'
     +'</div>'
     +'<div style="width:210mm;height:24mm;background:#e8000d;display:flex;align-items:center;justify-content:center;border-top:3px solid #111;">'
@@ -1086,28 +1036,8 @@ window.onPlateSearch = function() {
   loadReports();
 };
 
-window.openIncidentFromHistory = async function(id, status) {
-  const targetFilter = status === 'resolved' ? 'resolved' : 'active';
-  if (currentFilter !== targetFilter) {
-    currentFilter = targetFilter;
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    const targetBtn = document.querySelector(`.filter-btn[data-filter="${targetFilter}"]`);
-    if (targetBtn) targetBtn.classList.add('active');
-  }
-  await loadReports();
-  const el = document.getElementById('pk-' + id);
-  if (el) {
-    el.scrollIntoView({behavior:'smooth', block:'center'});
-    togglePk(id);
-  }
-};
-
 async function loadReports() {
-  let query = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
-  if (currentFilter==='active')   query = query.eq('status','active');
-  else if (currentFilter==='resolved') query = query.eq('status','resolved');
-  
-  const { data: reportsData } = await query;
+  const { data: reportsData } = await supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
   let reports = reportsData || [];
   if (plateSearchTerm) {
     reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
@@ -1132,10 +1062,9 @@ async function loadReports() {
     vehicleMap = {};
   }
 
-  const { data: allPlatesData } = await supabase.from('parking_reports').select('id,plate,created_at,location,violation,status').order('created_at', {ascending: true});
+  const { data: allPlatesData } = await supabase.from('parking_reports').select('id,plate,created_at').order('created_at', {ascending: true});
   const offenderMap = {};      // plate -> total count
   const occurrenceMap = {};    // report id -> which occurrence number (1st, 2nd, 3rd...) this report was
-  const historyMap = {};       // plate -> array of {id, occurrence, created_at, location, violation, status}
   const runningCount = {};
   (allPlatesData || []).forEach(r => {
     if (!r.plate) return;
@@ -1143,39 +1072,19 @@ async function loadReports() {
     runningCount[key] = (runningCount[key] || 0) + 1;
     occurrenceMap[r.id] = runningCount[key];
     offenderMap[key] = runningCount[key];
-    if (!historyMap[key]) historyMap[key] = [];
-    historyMap[key].push({ id:r.id, occurrence:runningCount[key], created_at:r.created_at, location:r.location, violation:r.violation, status:r.status });
   });
 
   const searchResultBox = document.getElementById('plateSearchResult');
   if (plateSearchTerm) {
     const total = offenderMap[plateSearchTerm] || 0;
     const matchedVehicle = vehicleMap[plateSearchTerm];
-    const history = (historyMap[plateSearchTerm] || []).slice().sort((a,b) => b.occurrence - a.occurrence);
     const ownershipHtml = matchedVehicle
       ? `<div style="margin-bottom:6px"><span style="font-size:12px;padding:2px 8px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:700">🏢 Building vehicle — Suite ${matchedVehicle.unit||'—'}</span></div>`
       : `<div style="margin-bottom:6px"><span style="font-size:12px;padding:2px 8px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:700">⚠️ Not a registered building vehicle</span></div>`;
-
-    let historyHtml = '';
-    if (history.length) {
-      historyHtml = `<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">` + history.map(h => {
-        const isCurrent = h.occurrence === total;
-        let dateStr = '—';
-        try { if (h.created_at) dateStr = new Date(h.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}); } catch(e) {}
-        const vioLabel = VIO_LABELS[h.violation] || h.violation || '—';
-        const isResolvedRow = h.status === 'resolved';
-        return `<div onclick="openIncidentFromHistory('${h.id}','${h.status}')" style="cursor:pointer;padding:8px 10px;border:1px solid ${isCurrent?'#e8000d':'var(--border)'};border-radius:8px;background:${isCurrent?'#fef2f2':'var(--surface)'}">
-          <div style="font-size:12px;font-weight:700;color:${isCurrent?'#e8000d':'var(--text-2)'}">${ordinalOffence(h.occurrence)}${isResolvedRow?' · Resolved':''}</div>
-          <div style="font-size:13px;color:var(--text);margin-top:2px">${dateStr}</div>
-          <div style="font-size:12px;color:var(--text-2);margin-top:1px">${h.location||'—'} · ${vioLabel}</div>
-        </div>`;
-      }).join('') + `</div>`;
-    }
-
     searchResultBox.style.display = 'block';
     searchResultBox.innerHTML = ownershipHtml + (total > 0
       ? `<strong>${plateSearchTerm}</strong> — ${total} violation${total>1?'s':''} on file${total>=2?` <span style="color:#e8000d;font-weight:700">(currently ${ordinalOffence(total)})</span>`:''}`
-      : `<strong>${plateSearchTerm}</strong> — no violations on file`) + historyHtml;
+      : `<strong>${plateSearchTerm}</strong> — no violations on file`);
   } else {
     searchResultBox.style.display = 'none';
   }
@@ -1186,7 +1095,7 @@ async function loadReports() {
     return;
   }
 
-  list.innerHTML = reports.map(r => {
+  const cardHtml = (r) => {
     const isResolved = r.status==='resolved';
     
     let timeAgo = '—';
@@ -1256,7 +1165,28 @@ async function loadReports() {
           </div>
         </div>
       </div>`;
-  }).join('');
+  };
+
+  const activeReports = reports.filter(r => r.status !== 'resolved');
+  const resolvedReports = reports.filter(r => r.status === 'resolved');
+
+  let html = '';
+  if (activeReports.length) {
+    html += activeReports.map(cardHtml).join('');
+  }
+  if (activeReports.length && resolvedReports.length) {
+    html += `<div style="display:flex;align-items:center;gap:10px;margin:22px 0 14px">
+      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;white-space:nowrap">Resolved</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>`;
+  }
+  if (resolvedReports.length) {
+    html += resolvedReports.map(cardHtml).join('');
+  }
+  if (!activeReports.length && !resolvedReports.length) {
+    html = `<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No reports found</div>`;
+  }
+  list.innerHTML = html;
 }
 
 await loadReports();
