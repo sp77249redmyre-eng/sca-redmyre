@@ -1424,7 +1424,7 @@ function renderPendingQuotes(quotes) {
       testBtn.className = 'confirm-btn';
       testBtn.style.cssText = 'background:#f59e0b;margin-left:8px;';
       testBtn.innerHTML = '🧪 Send Test Email';
-      testBtn.onclick = () => sendTestEmail(confirmQuoteId, group, calcResult, votedRows, approvals, declines, holds, winnerQuote, testBtn);
+      testBtn.onclick = () => sendTestEmail(confirmQuoteId, group, calcResult, votedRows, approvals, declines, holds, testBtn);
       resultRow.appendChild(testBtn);
     }
 
@@ -1985,7 +1985,7 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
 // Confirm – selected → approved, others → declined (always)
 // NEW: Test Email — preview the confirmation email without touching quotes/votes tables.
 // Sends only to the admin's own inbox (testRecipient), never to the full committee.
-window.sendTestEmail = async function(quoteId, group, calcResult, votedRows, approvals, declines, holds, winnerQuote, triggerBtn) {
+window.sendTestEmail = async function(quoteId, group, calcResult, votedRows, approvals, declines, holds, triggerBtn) {
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Sending test…'; }
   try {
     const voteDetails = votedRows.map(v => ({
@@ -2003,7 +2003,7 @@ window.sendTestEmail = async function(quoteId, group, calcResult, votedRows, app
         quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })),
         voteCounts: { approvals, declines, holds },
         project_id: group[0]?.project_id || null,
-        selectedVendor: calcResult === 'approved' ? (winnerQuote?.vendor || '') : '',
+        selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '',
         voteDetails,
         testRecipient: user.email
       })
