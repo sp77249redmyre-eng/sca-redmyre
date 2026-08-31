@@ -2036,6 +2036,13 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       return;
     }
 
+    // NEW: votes 삭제되기 전에 이름별 투표 내역 스냅샷 (email-quote-confirm 이메일용)
+    const voteDetails = pVoted.map(v => ({
+      name: allProfiles[v.user_email] || v.user_email,
+      email: v.user_email,
+      vote: v.vote
+    }));
+
     // 투표 완료 후 votes 삭제 (프로젝트 완료 시 깨끗하게)
     const projectIdToClean = group[0]?.project_id || group[0]?.id;
     if (projectIdToClean) {
@@ -2052,7 +2059,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
       await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '' })
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '', voteDetails })
       });
     } catch(pushErr) {}
     await loadData();
