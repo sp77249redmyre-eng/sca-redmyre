@@ -569,8 +569,8 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       if (cs.state === 'done') {
         clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
       } else if (isAdmin) {
-        // admin: empty cell click -> cell status/note modal
-        clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})" style="cursor:pointer"`;
+        // admin: empty cell click -> view popup first (or straight to edit if no note yet)
+        clickAttr = `onclick="openCellNoteView('${cat.id}', ${year}, ${month})" style="cursor:pointer"`;
       }
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
@@ -591,7 +591,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       if (cs.state === 'done') {
         clickAttr = `onclick="highlightCellAndOpen(this, '${cs.report.id}')"`;
       } else if (isAdmin) {
-        clickAttr = `onclick="openCellNoteModal('${cat.id}', ${year}, ${month})"`;
+        clickAttr = `onclick="openCellNoteView('${cat.id}', ${year}, ${month})"`;
       }
       const inner = cs.state === 'done'
         ? `<span class="sr-mobile-cell-icon">✓</span><span class="sr-mobile-cell-date">${fmtCellDate(cs.report.report_date).split(' ')[0]}</span>`
@@ -1221,6 +1221,7 @@ window.printViewer = function() {
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('fileViewerModal').style.display === 'flex') closeViewer();
+  if (e.key === 'Escape' && cellViewOverlay) closeCellNoteView();
 });
 
 // ─── EDIT / DELETE (admin only) ──────────────────────────────
@@ -1878,6 +1879,72 @@ window.deleteCategoryConfirm = async function(catId) {
   }
 };
 
+// ─── CELL NOTE VIEW POPUP (read-only first, Edit button -> edit form) ───
+// Built dynamically so no HTML/CSS file changes are needed.
+const CELL_STATUS_LABELS = {
+  scheduled:   { label: 'Scheduled',    color: '#2563eb', bg: '#eff6ff' },
+  in_progress: { label: 'In Progress',  color: '#b45309', bg: '#fffbeb' },
+  postponed:   { label: 'Postponed',    color: '#7c3aed', bg: '#f5f3ff' },
+  cancelled:   { label: 'Cancelled',    color: '#991b1b', bg: '#fef2f2' }
+};
+
+let cellViewOverlay = null;
+
+function closeCellNoteView() {
+  if (cellViewOverlay) {
+    cellViewOverlay.remove();
+    cellViewOverlay = null;
+  }
+}
+
+window.openCellNoteView = function(catId, year, month) {
+  if (!isAdmin) return;
+
+  const existing = getCellNote(catId, year, month);
+
+  // No note yet -> nothing to view, go straight to add form
+  if (!existing) {
+    openCellNoteModal(catId, year, month);
+    return;
+  }
+
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return;
+
+  const statusInfo = CELL_STATUS_LABELS[existing.status] || { label: existing.status || '—', color: '#334155', bg: '#f1f5f9' };
+  const noteText = existing.note
+    ? escHtml(existing.note).replace(/\n/g, '<br>')
+    : '<span style="color:#94a3b8">No note added.</span>';
+
+  closeCellNoteView();
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,Helvetica,sans-serif;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25);">
+      <div style="font-size:12px;color:#64748b;margin-bottom:4px;">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name)} — ${MONTH_LABELS[month - 1]} ${year}</div>
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:700;color:${statusInfo.color};background:${statusInfo.bg};margin:8px 0 16px;">
+        ${escHtml(statusInfo.label)}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;">Note</div>
+      <div style="font-size:14px;line-height:1.7;color:#1e293b;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:20px;">${noteText}</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button id="cellViewCloseBtn" style="padding:9px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:14px;font-weight:600;cursor:pointer;">Close</button>
+        <button id="cellViewEditBtn" style="padding:9px 18px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Edit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  cellViewOverlay = overlay;
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCellNoteView(); });
+  document.getElementById('cellViewCloseBtn').addEventListener('click', closeCellNoteView);
+  document.getElementById('cellViewEditBtn').addEventListener('click', () => {
+    closeCellNoteView();
+    openCellNoteModal(catId, year, month);
+  });
+};
+
 window.openCellNoteModal = function(catId, year, month) {
   if (!isAdmin) return;
   if (!cellNoteModal) return;
@@ -1899,6 +1966,19 @@ window.openCellNoteModal = function(catId, year, month) {
 
   // Delete button only shown when existing note
   document.getElementById('cellDeleteBtn').style.display = existing ? 'inline-flex' : 'none';
+
+  // Enlarge the modal + textarea (was too small) — applied inline so no CSS file edit needed
+  const modalCard = cellNoteModal.querySelector('.sr-modal-card') || cellNoteModal.firstElementChild;
+  if (modalCard) {
+    modalCard.style.maxWidth = '560px';
+    modalCard.style.width = '100%';
+  }
+  cellStatusEl.style.fontSize = '15px';
+  cellStatusEl.style.padding = '12px 14px';
+  cellNoteEl.style.minHeight = '160px';
+  cellNoteEl.style.fontSize = '15px';
+  cellNoteEl.style.lineHeight = '1.6';
+  cellNoteEl.rows = 7;
 
   cellNoteModal.classList.add('open');
   setTimeout(() => cellStatusEl.focus(), 50);
