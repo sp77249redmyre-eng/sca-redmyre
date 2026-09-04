@@ -1047,6 +1047,8 @@ const detailModal = document.getElementById('detailModal');
 
 // State for current detail modal
 let currentDetailReportId = null;
+let currentDetailMode = 'report'; // 'report' | 'cellnote'
+let currentDetailCell = null;      // {catId, year, month, existing} when mode === 'cellnote'
 
 /* ─────────────────────────────────────────────
    Click feedback helpers — used across all entry points
@@ -1100,6 +1102,16 @@ window.openDetailModal = function(reportId) {
   const r = reports.find(x => x.id === reportId);
   if (!r) { showToast('Report not found.', 'err'); return; }
   currentDetailReportId = reportId;
+  currentDetailMode = 'report';
+  currentDetailCell = null;
+
+  // Reset any forced width from cell-note view so report modal uses default CSS sizing
+  const dCardReset = detailModal.querySelector('.sr-modal-card') || detailModal.firstElementChild;
+  if (dCardReset) {
+    dCardReset.style.width = '';
+    dCardReset.style.maxWidth = '';
+    dCardReset.style.minWidth = '';
+  }
   const cat = categories.find(c => c.id === r.category_id);
   const contractor = contractors.find(c => c.id === r.contractor_id);
 
@@ -1226,7 +1238,17 @@ document.addEventListener('keydown', function(e) {
 
 // ─── EDIT / DELETE (admin only) ──────────────────────────────
 document.getElementById('detailEditBtn').addEventListener('click', () => {
-  if (!isAdmin || !currentDetailReportId) return;
+  if (!isAdmin) return;
+
+  if (currentDetailMode === 'cellnote') {
+    if (!currentDetailCell) return;
+    const { catId, year, month } = currentDetailCell;
+    detailModal.classList.remove('open');
+    openCellNoteModal(catId, year, month);
+    return;
+  }
+
+  if (!currentDetailReportId) return;
   const r = reports.find(x => x.id === currentDetailReportId);
   if (!r) return;
   detailModal.classList.remove('open');
@@ -1234,7 +1256,32 @@ document.getElementById('detailEditBtn').addEventListener('click', () => {
 });
 
 document.getElementById('detailDeleteBtn').addEventListener('click', async () => {
-  if (!isAdmin || !currentDetailReportId) return;
+  if (!isAdmin) return;
+
+  if (currentDetailMode === 'cellnote') {
+    if (!currentDetailCell || !currentDetailCell.existing) return;
+    if (!confirm('Delete this cell note?')) return;
+    try {
+      const { error } = await supabase
+        .from('service_cell_notes')
+        .delete()
+        .eq('id', currentDetailCell.existing.id);
+      if (error) throw error;
+      showToast('Cell note deleted.', 'ok');
+      detailModal.classList.remove('open');
+      currentDetailCell = null;
+      await loadCellNotes();
+      renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
+      renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
+      renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
+    } catch (e) {
+      console.error('Cell note delete failed:', e);
+      showToast(e.message || 'Failed to delete.', 'err');
+    }
+    return;
+  }
+
+  if (!currentDetailReportId) return;
   const r = reports.find(x => x.id === currentDetailReportId);
   if (!r) return;
   if (!confirm(`⚠️ Permanently delete this report?\n\n"${r.title}"\n\nAll attachments will also be removed.\nThis cannot be undone.`)) return;
@@ -1879,23 +1926,16 @@ window.deleteCategoryConfirm = async function(catId) {
   }
 };
 
-// ─── CELL NOTE VIEW POPUP (read-only first, Edit button -> edit form) ───
-// Built dynamically so no HTML/CSS file changes are needed.
+// ─── CELL NOTE VIEW POPUP ───
+// Reuses the SAME detailModal used for report cards (Category/Report Date/
+// Contractor/Summary layout + Edit/Delete/Close buttons) so it looks and
+// behaves identically to a real report — no separate design.
 const CELL_STATUS_LABELS = {
-  scheduled:   { label: 'Scheduled',    color: '#2563eb', bg: '#eff6ff' },
-  in_progress: { label: 'In Progress',  color: '#b45309', bg: '#fffbeb' },
-  postponed:   { label: 'Postponed',    color: '#7c3aed', bg: '#f5f3ff' },
-  cancelled:   { label: 'Cancelled',    color: '#991b1b', bg: '#fef2f2' }
+  scheduled:   'Scheduled',
+  in_progress: 'In Progress',
+  postponed:   'Postponed',
+  cancelled:   'Cancelled'
 };
-
-let cellViewOverlay = null;
-
-function closeCellNoteView() {
-  if (cellViewOverlay) {
-    cellViewOverlay.remove();
-    cellViewOverlay = null;
-  }
-}
 
 window.openCellNoteView = function(catId, year, month) {
   if (!isAdmin) return;
@@ -1911,38 +1951,45 @@ window.openCellNoteView = function(catId, year, month) {
   const cat = categories.find(c => c.id === catId);
   if (!cat) return;
 
-  const statusInfo = CELL_STATUS_LABELS[existing.status] || { label: existing.status || '—', color: '#334155', bg: '#f1f5f9' };
-  const noteText = existing.note
+  currentDetailMode = 'cellnote';
+  currentDetailCell = { catId, year, month, existing };
+  currentDetailReportId = null;
+
+  const statusLabel = CELL_STATUS_LABELS[existing.status] || existing.status || '—';
+  const noteHtml = existing.note
     ? escHtml(existing.note).replace(/\n/g, '<br>')
     : '<span style="color:#94a3b8">No note added.</span>';
 
-  closeCellNoteView();
+  document.getElementById('detailTitle').textContent = `${cat.name.replace(/^.*–\s*/, '')} — ${MONTH_LABELS[month - 1]} ${year}`;
 
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,Helvetica,sans-serif;';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25);">
-      <div style="font-size:12px;color:#64748b;margin-bottom:4px;">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name)} — ${MONTH_LABELS[month - 1]} ${year}</div>
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:700;color:${statusInfo.color};background:${statusInfo.bg};margin:8px 0 16px;">
-        ${escHtml(statusInfo.label)}
-      </div>
-      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;">Note</div>
-      <div style="font-size:14px;line-height:1.7;color:#1e293b;white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:20px;">${noteText}</div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;">
-        <button id="cellViewCloseBtn" style="padding:9px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:14px;font-weight:600;cursor:pointer;">Close</button>
-        <button id="cellViewEditBtn" style="padding:9px 18px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Edit</button>
-      </div>
+  const adminBox = document.getElementById('detailAdminActions');
+  adminBox.style.display = isAdmin ? 'flex' : 'none';
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="sr-detail-section">
+      <div class="sr-detail-label">Category</div>
+      <div class="sr-detail-val">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name)}</div>
+    </div>
+    <div class="sr-detail-section">
+      <div class="sr-detail-label">Status</div>
+      <div class="sr-detail-val">${escHtml(statusLabel)}</div>
+    </div>
+    <div class="sr-detail-section">
+      <div class="sr-detail-label">Note</div>
+      <div class="sr-detail-val" style="line-height:1.7">${noteHtml}</div>
     </div>
   `;
-  document.body.appendChild(overlay);
-  cellViewOverlay = overlay;
 
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCellNoteView(); });
-  document.getElementById('cellViewCloseBtn').addEventListener('click', closeCellNoteView);
-  document.getElementById('cellViewEditBtn').addEventListener('click', () => {
-    closeCellNoteView();
-    openCellNoteModal(catId, year, month);
-  });
+  // Force same width as the report detail modal — this popup has fewer
+  // fields (no two-column row) so it would otherwise shrink to content.
+  const dCard = detailModal.querySelector('.sr-modal-card') || detailModal.firstElementChild;
+  if (dCard) {
+    dCard.style.width = '100%';
+    dCard.style.maxWidth = '640px';
+    dCard.style.minWidth = '320px';
+  }
+
+  detailModal.classList.add('open');
 };
 
 window.openCellNoteModal = function(catId, year, month) {
