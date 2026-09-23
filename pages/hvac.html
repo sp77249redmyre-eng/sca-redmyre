@@ -92,6 +92,12 @@
 .unit-radio-unit{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
 .unit-radio-detail{font-size:12px;color:var(--muted)}
 
+/* Current HVAC Setting (STEP 4) */
+.setpoint-box{padding:18px 16px;background:linear-gradient(135deg,var(--blue-50),var(--surface));border:1.5px solid var(--blue-200);border-radius:12px;margin-bottom:18px;text-align:center}
+.setpoint-label{font-size:11px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.setpoint-value{font-size:32px;font-weight:700;color:var(--text);line-height:1.2}
+.setpoint-updated{font-size:11px;color:var(--muted);margin-top:4px}
+
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 
 /* Cooldown Modal */
@@ -202,7 +208,7 @@
         <button class="type-btn" id="btnHot" data-type="hot"><div class="type-icon"><svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g class="hvac-hot-face"><circle cx="32" cy="32" r="28" fill="#FF6B35"/><ellipse cx="16" cy="38" rx="7" ry="4" fill="#ff4444" opacity="0.5"/><ellipse cx="48" cy="38" rx="7" ry="4" fill="#ff4444" opacity="0.5"/><g class="hvac-hot-eye"><ellipse cx="22" cy="26" rx="4" ry="5" fill="#222"/><circle cx="23.5" cy="24.5" r="1.5" fill="#fff"/></g><g class="hvac-hot-eye" style="animation-delay:0.15s"><ellipse cx="42" cy="26" rx="4" ry="5" fill="#222"/><circle cx="43.5" cy="24.5" r="1.5" fill="#fff"/></g><path d="M20 42 Q32 52 44 42" fill="#a0200a"/><ellipse cx="32" cy="47" rx="7" ry="5" fill="#ff8888"/><line x1="32" y1="44" x2="32" y2="50" stroke="#cc5555" stroke-width="1"/></g><g class="hvac-sweat1"><ellipse cx="10" cy="18" rx="2.5" ry="3.5" fill="#60b4ff" opacity="0.9"/><path d="M10 15 Q11.5 12 10 10 Q8.5 12 10 15" fill="#60b4ff"/></g><g class="hvac-sweat2"><ellipse cx="52" cy="14" rx="2" ry="3" fill="#60b4ff" opacity="0.9"/><path d="M52 11 Q53.2 9 52 7 Q50.8 9 52 11" fill="#60b4ff"/></g><g class="hvac-sweat3"><ellipse cx="30" cy="6" rx="2" ry="3" fill="#60b4ff" opacity="0.9"/><path d="M30 3 Q31.2 1 30 -1 Q28.8 1 30 3" fill="#60b4ff"/></g></svg></div><div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered by 0.5°C</div></button>
         <button class="type-btn" id="btnCold" data-type="cold"><div class="type-icon"><svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g class="hvac-cold-face"><circle cx="32" cy="32" r="28" fill="#7BB8E8"/><ellipse cx="16" cy="38" rx="7" ry="4" fill="#aad4f5" opacity="0.6"/><ellipse cx="48" cy="38" rx="7" ry="4" fill="#aad4f5" opacity="0.6"/><g class="hvac-cold-eye"><ellipse cx="22" cy="27" rx="4" ry="4.5" fill="#222"/><circle cx="23.5" cy="25.5" r="1.5" fill="#fff"/></g><g class="hvac-cold-eye" style="animation-delay:0.2s"><ellipse cx="42" cy="27" rx="4" ry="4.5" fill="#222"/><circle cx="43.5" cy="25.5" r="1.5" fill="#fff"/></g><path d="M17 21 Q22 18 27 20" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/><path d="M37 20 Q42 18 47 21" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/><rect x="22" y="41" width="20" height="10" rx="5" fill="#fff" stroke="#5599cc" stroke-width="1.5"/><line x1="29" y1="41" x2="29" y2="51" stroke="#aad4f5" stroke-width="1.5"/><line x1="35" y1="41" x2="35" y2="51" stroke="#aad4f5" stroke-width="1.5"/><path d="M6 20 L14 26" stroke="#aad4f5" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M8 28 L14 30" stroke="#aad4f5" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><path d="M58 20 L50 26" stroke="#aad4f5" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M56 28 L50 30" stroke="#aad4f5" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/></g></svg></div><div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised by 0.5°C</div></button>
       </div>
-      
+
       <!-- Unit Auto Selection (Single Unit) -->
       <div id="unitAutoBox" style="display:none">
         <div class="unit-auto-box">
@@ -211,7 +217,7 @@
           <div class="unit-auto-detail" id="unitAutoDetail">—</div>
         </div>
       </div>
-      
+
       <!-- Unit Radio Selection (Multiple Units) -->
       <div id="unitRadioBox" style="display:none">
         <div class="form-field">
@@ -219,7 +225,7 @@
           <div class="unit-radio-list" id="unitRadioList"></div>
         </div>
       </div>
-      
+
       <div class="form-field" id="floorField">
         <label class="form-label">Floor</label>
         <select class="form-select" id="hvacLevel">
@@ -237,6 +243,14 @@
           <option>Tenancy G</option><option>Tenancy H</option>
         </select>
       </div>
+
+      <!-- Current HVAC Setting (STEP 4) -->
+      <div id="currentSetpointBox" class="setpoint-box" style="display:none">
+        <div class="setpoint-label">Current HVAC Setting</div>
+        <div class="setpoint-value" id="currentSetpointValue">—</div>
+        <div class="setpoint-updated" id="currentSetpointUpdated">—</div>
+      </div>
+
       <div class="form-field">
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
@@ -329,11 +343,79 @@ document.querySelectorAll('.type-btn').forEach(btn => {
   });
 });
 
+// --- Current HVAC Setting (STEP 4) ---
+// Reuses the exact same Suite->Tenancy conversion already used at submit time,
+// and only ever performs a read (SELECT) against hvac_setpoints. No writes,
+// no BMS access, no changes to hvac_requests or existing Submit/My Requests logic.
+function toTenancyLabel(suite) {
+  return (suite || '').replace('Suite', 'Tenancy');
+}
+
+let setpointReqToken = 0;
+async function loadCurrentSetpoint(level, tenancy) {
+  const box = document.getElementById('currentSetpointBox');
+  const valueEl = document.getElementById('currentSetpointValue');
+  const updatedEl = document.getElementById('currentSetpointUpdated');
+  if (!level || !tenancy) { box.style.display = 'none'; return; }
+
+  const myToken = ++setpointReqToken; // avoid race conditions when switching units quickly
+  box.style.display = 'block';
+  valueEl.textContent = '—';
+  updatedEl.textContent = 'Loading…';
+
+  try {
+    const { data, error } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint, updated_at')
+      .eq('level', level)
+      .eq('tenancy', tenancy)
+      .maybeSingle();
+
+    if (myToken !== setpointReqToken) return; // a newer request superseded this one
+
+    if (error || !data) {
+      valueEl.textContent = '—';
+      updatedEl.textContent = 'Not available yet';
+      return;
+    }
+    valueEl.textContent = `${data.current_setpoint}°C`;
+    updatedEl.textContent = `Updated ${timeAgo(data.updated_at)}`;
+  } catch (e) {
+    if (myToken !== setpointReqToken) return;
+    valueEl.textContent = '—';
+    updatedEl.textContent = 'Not available yet';
+  }
+}
+
+function timeAgo(isoString) {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+// Manual Level/Tenancy fallback (used only when the user has no matched unit)
+document.getElementById('hvacLevel').addEventListener('change', () => {
+  if (selectedUnit) return; // auto/radio unit takes priority
+  const level = document.getElementById('hvacLevel').value;
+  const tenancy = document.getElementById('hvacTenancy').value;
+  loadCurrentSetpoint(level, tenancy);
+});
+document.getElementById('hvacTenancy').addEventListener('change', () => {
+  if (selectedUnit) return;
+  const level = document.getElementById('hvacLevel').value;
+  const tenancy = document.getElementById('hvacTenancy').value;
+  loadCurrentSetpoint(level, tenancy);
+});
+
 document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
-  
+
   let level, tenancy;
-  
+
   if (selectedUnit) {
     level = selectedUnit.level;
     tenancy = selectedUnit.suite.replace('Suite', 'Tenancy');
@@ -358,7 +440,7 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
       }
     } catch(e) { showToast('Unable to verify cooldown. Please try again.', true); return; }
   }
-  
+
   try {
     await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
     try { await supabase.from('audit_logs').insert({ user_email:user.email, user_role:role, action:'HVAC_REQUESTED', details:{ type:selectedType, level, tenancy } }); } catch(e) {}
@@ -403,24 +485,24 @@ function getProgressBar(status, type) {
 
   const statusOrder = ['pending', 'approved', 'processing', 'completed'];
   const currentIndex = statusOrder.indexOf(status);
-  
+
   let html = '<div class="progress-bar">';
-  
+
   steps.forEach((step, idx) => {
-    const stepClass = idx < currentIndex ? 'step-completed' : 
+    const stepClass = idx < currentIndex ? 'step-completed' :
                      idx === currentIndex ? 'step-active' : 'step-pending';
-    
+
     html += `<div class="progress-step ${stepClass}">
       <div class="progress-icon">${step.icon}</div>
       <div class="progress-label">${step.label}</div>
     </div>`;
-    
+
     if (idx < steps.length - 1) {
       const lineClass = idx < currentIndex ? 'active' : '';
       html += `<div class="progress-line ${lineClass}"></div>`;
     }
   });
-  
+
   html += '</div>';
   return html;
 }
@@ -436,19 +518,19 @@ window.showReasonModal = (el) => {
 
 function renderMyRequests() {
   const list = document.getElementById('myList');
-  
+
   let filtered = allMyRequests;
   if (currentFilter === 'ongoing') {
     filtered = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
   } else if (currentFilter === 'completed') {
     filtered = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
   }
-  
+
   if (!filtered.length) {
     list.innerHTML = '<div class="empty-state">No requests in this category</div>';
     return;
   }
-  
+
   list.innerHTML = filtered.map(r => `
     <div class="my-req-row">
       <div style="font-size:20px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
@@ -496,13 +578,13 @@ async function loadMyRequests() {
 if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
   await loadAdminData();
-  
+
   supabase.channel('admin-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadAdminData();
     })
     .subscribe();
-    
+
 } else if (role === 'committee') {
   document.getElementById('userPanel').style.display = 'block';
   document.getElementById('observerPanel').style.display = 'block';
@@ -538,7 +620,7 @@ if (role === 'admin') {
   document.getElementById('userPanel').style.display = 'block';
   await loadMyUnits();
   await loadMyRequests();
-  
+
   // User realtime - filter 제거 (Supabase Free 플랜 호환)
   supabase.channel('user-hvac-updates')
     .on('postgres_changes', {
@@ -557,16 +639,16 @@ async function loadMyUnits() {
     const { data, error } = await supabase
       .from('occupants')
       .select('*');
-    
+
     if (error) throw error;
-    
+
     const userEmail = user.email.toLowerCase();
     myUnits = (data || []).filter(occ => {
       const primaryEmails = (occ.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
       const businessEmails = (occ.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
       return primaryEmails.includes(userEmail) || businessEmails.includes(userEmail);
     });
-    
+
     if (myUnits.length > 0 && myUnits.every(u => u.level === 'External')) {
       document.querySelector('.submit-form').style.opacity = '0.4';
       document.querySelector('.submit-form').style.pointerEvents = 'none';
@@ -585,17 +667,18 @@ function renderUnitSelection() {
   const radioBox = document.getElementById('unitRadioBox');
   const floorField = document.getElementById('floorField');
   const suiteField = document.getElementById('suiteField');
-  
+
   autoBox.style.display = 'none';
   radioBox.style.display = 'none';
   floorField.style.display = 'none';
   suiteField.style.display = 'none';
-  
+
   if (myUnits.length === 1) {
     selectedUnit = myUnits[0];
     document.getElementById('unitAutoUnit').textContent = `Unit ${selectedUnit.unit}`;
     document.getElementById('unitAutoDetail').textContent = `${selectedUnit.level}, ${selectedUnit.suite}${selectedUnit.business_name ? ' — ' + selectedUnit.business_name : ''}`;
     autoBox.style.display = 'block';
+    loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
   } else if (myUnits.length > 1) {
     const list = document.getElementById('unitRadioList');
     list.innerHTML = myUnits.map((u, idx) => `
@@ -607,43 +690,46 @@ function renderUnitSelection() {
         </div>
       </label>
     `).join('');
-    
+
     selectedUnit = myUnits[0];
-    
+
     document.querySelectorAll('input[name="unitRadio"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const idx = parseInt(e.target.value);
         selectedUnit = myUnits[idx];
         document.querySelectorAll('.unit-radio-item').forEach(item => item.classList.remove('selected'));
         e.target.closest('.unit-radio-item').classList.add('selected');
+        loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
       });
     });
-    
+
     document.querySelector('.unit-radio-item').classList.add('selected');
     radioBox.style.display = 'block';
+    loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
   } else {
     selectedUnit = null;
     floorField.style.display = 'block';
     suiteField.style.display = 'block';
+    document.getElementById('currentSetpointBox').style.display = 'none';
   }
 }
 
 async function loadAdminData() {
   try {
     const { data: settings } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
-    settings?.forEach(s => { 
-      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value; 
-      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value; 
+    settings?.forEach(s => {
+      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value;
+      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value;
     });
   } catch(e) {}
-  
+
   const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
   const pList = document.getElementById('pendingList');
   const pCount = document.getElementById('pendingCount');
-  
-  if (!pending?.length) { 
-    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>'; 
-    pCount.textContent = ''; 
+
+  if (!pending?.length) {
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>';
+    pCount.textContent = '';
   } else {
     pCount.textContent = `${pending.length} pending`;
     pList.innerHTML = pending.map(r => `
@@ -661,14 +747,14 @@ async function loadAdminData() {
       </div>
     `).join('');
   }
-  
+
   const { data: progress } = await supabase.from('hvac_requests').select('*').in('status', ['approved', 'processing']).order('created_at', {ascending: false});
   const prList = document.getElementById('progressList');
   const prCount = document.getElementById('progressCount');
-  
-  if (!progress?.length) { 
-    prList.innerHTML = '<div class="empty-state">No requests in progress</div>'; 
-    prCount.textContent = ''; 
+
+  if (!progress?.length) {
+    prList.innerHTML = '<div class="empty-state">No requests in progress</div>';
+    prCount.textContent = '';
   } else {
     prCount.textContent = `${progress.length} in progress`;
     prList.innerHTML = progress.map(r => `
@@ -683,7 +769,7 @@ async function loadAdminData() {
       </div>
     `).join('');
   }
-  
+
   const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('completedList');
   window._adminCompleted = completed || [];
