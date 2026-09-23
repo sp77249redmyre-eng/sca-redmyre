@@ -61,6 +61,10 @@
 .limits-save{padding:6px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 .my-req-row{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
 .my-req-row:last-child{border-bottom:none}
+#myList .my-req-row{flex-direction:column;align-items:stretch;padding:0}
+#myList .my-req-summary{padding:16px 20px}
+.my-req-chevron{font-size:16px;color:var(--muted);flex-shrink:0;line-height:1;padding-top:2px}
+.my-req-detail{padding:0 20px 16px 52px}
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 .filter-tabs{display:flex;gap:8px;margin-bottom:12px}
 .filter-tab{padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--muted)}
@@ -134,6 +138,9 @@
   .req-actions{width:100%}
   .req-actions button{flex:1}
   .my-req-row{flex-direction:column;gap:8px;padding:12px 14px}
+  #myList .my-req-row{padding:0}
+  #myList .my-req-summary{padding:12px 14px}
+  .my-req-detail{padding-left:14px}
   .limits-bar{flex-direction:column;align-items:stretch;gap:6px}
   .filter-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:4px}
   .filter-tabs::-webkit-scrollbar{display:none}
@@ -516,6 +523,8 @@ window.showReasonModal = (el) => {
   document.getElementById('reasonModal').classList.add('show');
 };
 
+let expandedRequestIds = new Set();
+
 function renderMyRequests() {
   const list = document.getElementById('myList');
 
@@ -531,20 +540,38 @@ function renderMyRequests() {
     return;
   }
 
-  list.innerHTML = filtered.map(r => `
-    <div class="my-req-row">
-      <div style="font-size:20px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-        <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
+  list.innerHTML = filtered.map(r => {
+    const isOpen = expandedRequestIds.has(String(r.id));
+    return `
+    <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
+      <div class="my-req-summary" data-id="${r.id}" style="display:flex;align-items:start;gap:12px;cursor:pointer;width:100%">
+        <div style="font-size:20px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
+        </div>
+        <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
+        <span class="my-req-chevron">${isOpen ? '˄' : '›'}</span>
+      </div>
+      ${isOpen ? `
+      <div class="my-req-detail">
         ${r.comment ? `<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>` : ''}
         ${['pending', 'approved', 'processing'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
         ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
         ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
-      </div>
-      <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
+      </div>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
+
+  list.querySelectorAll('.my-req-summary').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      if (expandedRequestIds.has(id)) expandedRequestIds.delete(id);
+      else expandedRequestIds.add(id);
+      renderMyRequests();
+    });
+  });
 }
 
 async function loadMyRequests() {
