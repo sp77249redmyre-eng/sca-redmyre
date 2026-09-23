@@ -1086,8 +1086,8 @@ function renderConvMessagesHtml(reqId) {
     return '<div class="hvac-conv-empty">No messages yet</div>';
   }
   return msgs.map(m => {
-    const isOwn = m.sender_id === user.id;
-    const isEditing = editingMessageId === m.id;
+    const isOwn = String(m.sender_id) === String(user.id);
+    const isEditing = editingMessageId != null && String(editingMessageId) === String(m.id);
     const bodyHtml = isEditing ? `
       <textarea class="hvac-conv-edit-textarea" id="editInput-${m.id}" rows="2">${escapeAttr(m.message)}</textarea>
       <div class="hvac-conv-edit-actions">
