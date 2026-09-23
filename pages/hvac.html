@@ -481,11 +481,6 @@
       <div id="userPanel" style="display:none">
         <div class="requests-header">
           <div class="requests-heading"><span class="requests-heading-icon">▤</span><div><div class="section-title">My Requests</div><div class="requests-subtitle">View and track your A/C temperature requests.</div></div></div>
-          <div class="request-filters" id="requestFilters">
-            <button type="button" class="request-filter active" data-filter="all">All</button>
-            <button type="button" class="request-filter" data-filter="ongoing">Ongoing</button>
-            <button type="button" class="request-filter" data-filter="completed">Completed</button>
-          </div>
         </div>
         <div id="activeReqSection"></div>
         <div id="historyTableWrap" class="request-history-table-wrap">
@@ -753,7 +748,6 @@ window.showReasonModal = (el) => {
 };
 
 let expandedRequestIds = new Set();
-let requestFilter = 'all';
 
 function reqRowHtml(r, forceOpen) {
   const isOpen = forceOpen || expandedRequestIds.has(String(r.id));
@@ -1147,14 +1141,8 @@ function renderMyRequests() {
 
   checkForCompletionCelebration(allMyRequests);
 
-  const activeAll = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
-  const historyAll = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
-  // Active Request section always covers every in-progress request (unless the
-  // "Completed" filter hides it). The History table below must never repeat
-  // those same rows — it only ever shows completed/rejected/failed requests,
-  // and the "Ongoing" filter simply empties it since Active already has them.
-  const active = requestFilter === 'completed' ? [] : activeAll;
-  const visible = requestFilter === 'ongoing' ? [] : historyAll;
+  const active = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
+  const visible = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
 
   activeSection.innerHTML = active.length ? `
     <div class="active-request-label">ACTIVE REQUEST${active.length > 1 ? 'S' : ''}</div>
@@ -1172,14 +1160,6 @@ function renderMyRequests() {
   expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
   active.filter(r => r.status === 'processing').forEach(ensureAdjustingSetpoint);
 }
-
-document.querySelectorAll('#requestFilters .request-filter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    requestFilter = btn.dataset.filter || 'all';
-    document.querySelectorAll('#requestFilters .request-filter').forEach(b => b.classList.toggle('active', b === btn));
-    renderMyRequests();
-  });
-});
 
 async function loadMyRequests() {
   const { data: occs } = await supabase.from('occupants')
