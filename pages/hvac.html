@@ -65,6 +65,21 @@
 #myList .my-req-summary{padding:16px 20px}
 .my-req-chevron{font-size:16px;color:var(--muted);flex-shrink:0;line-height:1;padding-top:2px}
 .my-req-detail{padding:0 20px 16px 52px}
+.hvac-conv{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-light)}
+.hvac-conv-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.hvac-conv-messages{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:220px;overflow-y:auto}
+.hvac-conv-empty{font-size:12px;color:var(--muted);padding:6px 0}
+.hvac-conv-msg{padding:8px 10px;border-radius:8px;max-width:85%}
+.hvac-conv-msg.is-tenant{background:var(--blue-50);align-self:flex-start}
+.hvac-conv-msg.is-staff{background:var(--bg);align-self:flex-end;text-align:right}
+.hvac-conv-msg-head{display:flex;gap:8px;font-size:10px;font-weight:600;color:var(--muted);margin-bottom:2px}
+.hvac-conv-msg.is-staff .hvac-conv-msg-head{justify-content:flex-end}
+.hvac-conv-msg-text{font-size:12px;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+.hvac-conv-input{display:flex;gap:8px;align-items:flex-end}
+.hvac-conv-textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif}
+.hvac-conv-textarea:focus{outline:none;border-color:var(--blue-600)}
+.hvac-conv-send{padding:8px 14px;border-radius:8px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.hvac-conv-send:hover{background:var(--blue-800)}
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 .filter-tabs{display:flex;gap:8px;margin-bottom:12px}
 .filter-tab{padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--muted)}
@@ -533,9 +548,105 @@ function reqRowHtml(r) {
         ${['pending', 'approved', 'processing'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
         ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
         ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
+        <div class="hvac-conv">
+          <div class="hvac-conv-title">Conversation</div>
+          <div class="hvac-conv-messages" id="conv-${r.id}">${renderConvMessagesHtml(r.id)}</div>
+          <div class="hvac-conv-input">
+            <textarea class="hvac-conv-textarea" id="convInput-${r.id}" placeholder="Write a message..." rows="2"></textarea>
+            <button type="button" class="hvac-conv-send" data-conv-send="${r.id}">Send</button>
+          </div>
+        </div>
       </div>` : ''}
     </div>
   `;
+}
+
+// ---- Conversation (hvac_messages) ----
+let messagesCache = {};
+let messagesLoaded = {};
+let messagesLoading = {};
+
+function renderConvMessagesHtml(reqId) {
+  if (messagesLoading[reqId] && !messagesLoaded[reqId]) {
+    return '<div class="hvac-conv-empty">Loading messages…</div>';
+  }
+  const msgs = messagesCache[reqId] || [];
+  if (!msgs.length) {
+    return '<div class="hvac-conv-empty">No messages yet</div>';
+  }
+  return msgs.map(m => `
+    <div class="hvac-conv-msg ${m.sender_role === 'tenant' || m.sender_role === 'owner' ? 'is-tenant' : 'is-staff'}">
+      <div class="hvac-conv-msg-head">
+        <span>${escapeAttr(m.sender_name)}</span>
+        <span>${timeAgo(m.created_at)}</span>
+      </div>
+      <div class="hvac-conv-msg-text">${escapeAttr(m.message)}</div>
+    </div>
+  `).join('');
+}
+
+function updateConvDom(reqId) {
+  const el = document.getElementById('conv-' + reqId);
+  if (el) el.innerHTML = renderConvMessagesHtml(reqId);
+}
+
+async function ensureMessagesLoaded(reqId) {
+  if (messagesLoaded[reqId] || messagesLoading[reqId]) return;
+  messagesLoading[reqId] = true;
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .select('id, sender_role, sender_name, message, created_at')
+      .eq('request_id', reqId)
+      .order('created_at', { ascending: true });
+    if (!error) {
+      messagesCache[reqId] = data || [];
+      messagesLoaded[reqId] = true;
+    }
+  } catch (e) {}
+  messagesLoading[reqId] = false;
+  updateConvDom(reqId);
+}
+
+function addMessageToCache(reqId, msg) {
+  const list = messagesCache[reqId] || (messagesCache[reqId] = []);
+  if (list.some(m => m.id === msg.id)) return;
+  list.push(msg);
+  updateConvDom(reqId);
+}
+
+async function sendConvMessage(reqId) {
+  const ta = document.getElementById('convInput-' + reqId);
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) return;
+  ta.disabled = true;
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .insert({ request_id: reqId, sender_id: user.id, sender_role: role, sender_name: name, message: text })
+      .select('id, sender_role, sender_name, message, created_at')
+      .single();
+    if (!error && data) {
+      ta.value = '';
+      addMessageToCache(reqId, data);
+    } else if (error) {
+      showToast(error.message || 'Failed to send message', true);
+    }
+  } catch (e) {
+    showToast('Failed to send message', true);
+  }
+  ta.disabled = false;
+  ta.focus();
+}
+
+function setupMessagesRealtime() {
+  supabase.channel('hvac-messages-updates')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const msg = payload.new;
+      if (expandedRequestIds.has(String(msg.request_id)) && messagesLoaded[msg.request_id]) {
+        addMessageToCache(msg.request_id, msg);
+      }
+    })
+    .subscribe();
 }
 
 function attachReqRowListeners(container) {
@@ -545,6 +656,17 @@ function attachReqRowListeners(container) {
       if (expandedRequestIds.has(id)) expandedRequestIds.delete(id);
       else expandedRequestIds.add(id);
       renderMyRequests();
+    });
+  });
+  container.querySelectorAll('[data-conv-send]').forEach(btn => {
+    btn.addEventListener('click', () => sendConvMessage(btn.dataset.convSend));
+  });
+  container.querySelectorAll('.hvac-conv-textarea').forEach(ta => {
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendConvMessage(ta.id.replace('convInput-', ''));
+      }
     });
   });
 }
@@ -569,6 +691,8 @@ function renderMyRequests() {
 
   attachReqRowListeners(activeSection);
   attachReqRowListeners(list);
+
+  expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
 }
 
 async function loadMyRequests() {
@@ -615,6 +739,7 @@ if (role === 'admin') {
   await loadMyUnits();
   await loadMyRequests();
   await loadObserverData();
+  setupMessagesRealtime();
 
   supabase.channel('committee-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
@@ -644,6 +769,7 @@ if (role === 'admin') {
   document.getElementById('userPanel').style.display = 'block';
   await loadMyUnits();
   await loadMyRequests();
+  setupMessagesRealtime();
 
   // User realtime - filter 제거 (Supabase Free 플랜 호환)
   supabase.channel('user-hvac-updates')
