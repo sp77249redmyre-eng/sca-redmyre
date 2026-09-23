@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.content{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.content{padding:24px;display:grid;grid-template-columns:0.78fr 1.22fr;gap:20px;align-items:start}
 .submit-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
 .form-title{font-size:16px;font-weight:600;margin-bottom:4px}
 .form-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
@@ -42,7 +42,7 @@
 .type-label{font-size:14px;font-weight:600}
 .type-sub{font-size:11px;color:var(--muted);margin-top:3px}
 .form-field{margin-bottom:14px}
-.form-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block}
+.form-label{font-size:13px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px;display:block}
 .form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
 .form-select:focus{border-color:var(--blue-600);outline:none}
 .form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none}
@@ -268,6 +268,8 @@
 .target-cold-icon svg{stroke:#1268e8}
 .type-label{font-size:16px;font-weight:700;color:#1e293b}
 .type-sub{font-size:13px;color:#334155;font-weight:500;margin-top:4px}
+#btnHot .type-label,#btnHot .type-sub{color:#b91c1c}
+#btnCold .type-label,#btnCold .type-sub{color:#1d4ed8}
 .location-section{margin-bottom:16px}
 .location-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .location-section-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
@@ -1158,6 +1160,15 @@ function removeMessageFromCache(reqId, msgId) {
   updateConvDom(reqId);
 }
 
+// Forces a fresh fetch for one conversation and re-renders it immediately —
+// used right after edit/delete so the UI updates without needing F5, even if
+// the incremental cache patch above ever falls out of sync (e.g. realtime
+// firing before/after the direct call, or a payload shape mismatch).
+async function reloadMessages(reqId) {
+  messagesLoaded[reqId] = false;
+  await ensureMessagesLoaded(reqId);
+}
+
 // Tenant/committee members may edit or delete only their own messages
 // (sender_id = auth.uid()), enforced both here (UI only shows the buttons
 // for isOwn rows) and, more importantly, by the hvac_messages UPDATE/DELETE
@@ -1188,7 +1199,8 @@ async function saveEditedMessage(reqId, msgId) {
       .single();
     if (error) { showToast(error.message || 'Failed to save edit', true); return; }
     editingMessageId = null;
-    updateMessageInCache(reqId, data);
+    if (data) updateMessageInCache(reqId, data);
+    await reloadMessages(reqId);
   } catch (e) {
     showToast('Failed to save edit', true);
   }
@@ -1197,9 +1209,11 @@ async function saveEditedMessage(reqId, msgId) {
 async function deleteConvMessage(reqId, msgId) {
   if (!confirm('Delete this message?')) return;
   try {
-    const { error } = await supabase.from('hvac_messages').delete().eq('id', msgId);
+    const { error, count } = await supabase.from('hvac_messages').delete({ count: 'exact' }).eq('id', msgId);
     if (error) { showToast(error.message || 'Failed to delete message', true); return; }
+    if (!count) { showToast('Message not deleted — you may not have permission.', true); }
     removeMessageFromCache(reqId, msgId);
+    await reloadMessages(reqId);
   } catch (e) {
     showToast('Failed to delete message', true);
   }
