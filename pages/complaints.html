@@ -327,7 +327,7 @@
 
     <div id="detailProgressWrap" style="padding:14px 24px;border-bottom:1px solid var(--border-light);flex-shrink:0"></div>
 
-    <div style="padding:16px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-shrink:0">
+    <div style="padding:16px 24px;background:rgba(255,255,255,0.5);border-bottom:1px solid var(--border-light);flex-shrink:0">
       <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Description</div>
       <div style="font-size:14px;color:#374151;line-height:1.7" id="detailBody">—</div>
     </div>
@@ -590,21 +590,25 @@ async function openInlineDetail(id, isPublic) {
   if (!tr || !box) return;
   const c = (isPublic ? publicComplaints : allComplaints).find(x => x.id === id);
   const status = c ? c.status : 'open';
+  const PASTEL = { open:'#fef6f6', inprog:'#fffcf3', resolved:'#f4fdf8' };
   tr.classList.add('cpl-row-expanded', `status-${status}`);
   const colCount = tr.children.length;
   const detailTr = document.createElement('tr');
   detailTr.className = 'cpl-detail-row';
   detailTr.innerHTML = `<td colspan="${colCount}"><div class="cpl-detail-box status-${status}"><div id="cplDetailSlot"></div></div></td>`;
   tr.after(detailTr);
+  box.style.background = PASTEL[status] || PASTEL.open;
   document.getElementById('cplDetailSlot').appendChild(box);
 }
 
 function closeInlineDetail() {
-  document.querySelectorAll('.cpl-detail-row').forEach(el => el.remove());
-  document.querySelectorAll('tr.cpl-row-expanded').forEach(el => el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved'));
   const modal = document.getElementById('detailModal');
-  const box = document.getElementById('detailModalBox');
-  if (modal && box && box.parentElement !== modal) modal.appendChild(box);
+  document.querySelectorAll('.cpl-detail-row').forEach(el => {
+    const box = el.querySelector('#detailModalBox');
+    if (box && modal) modal.appendChild(box);
+    el.remove();
+  });
+  document.querySelectorAll('tr.cpl-row-expanded').forEach(el => el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved'));
 }
 
 window.toggleDetail = async (id, isPublic) => {
@@ -832,9 +836,9 @@ async function loadMessageThread(complaintId) {
         }).join('')}
       </div>` : '';
     return `
-      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
+      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· SCA Management' : ''}</div>
+          <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· SCA Management' : ''}</div>
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
         ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7">${rendered}</div>`; })()}
@@ -972,9 +976,9 @@ window.openDetail = async (id) => {
   document.getElementById('adminResponse').value = '';
   if (role === 'admin') {
     replyWrap.style.display = 'block';
-    replyWrap.style.background = '#f0fdf4';
-    document.getElementById('adminResponse').style.borderColor = '#bbf7d0';
-    document.getElementById('adminResponse').style.background = '#f0fdf4';
+    replyWrap.style.background = 'transparent';
+    document.getElementById('adminResponse').style.borderColor = '';
+    document.getElementById('adminResponse').style.background = 'rgba(255,255,255,0.7)';
     document.getElementById('adminResponse').value = '';
     statusSel.style.display = 'block';
     statusSel.value = c.status;
@@ -1280,9 +1284,9 @@ async function loadPublicMessageThread(complaintId, isOwn) {
       </div>` : '';
     
     return `
-      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;${isAdmin ? 'background:#f0fdf4;border:1px solid #a7f3d0;' : 'background:var(--bg);border:1px solid var(--border-light);'}">
+      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:600;color:${isAdmin ? '#166534' : 'var(--text)'};">${senderName} ${isAdmin ? '· SCA Management' : ''}</div>
+          <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${senderName} ${isAdmin ? '· SCA Management' : ''}</div>
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
         ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7">${rendered}</div>`; })()}
