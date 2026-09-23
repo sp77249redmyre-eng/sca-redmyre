@@ -83,8 +83,14 @@
 .hvac-conv-msg{padding:10px 12px;border-radius:8px;max-width:88%}
 .hvac-conv-msg.is-tenant{background:var(--blue-50);align-self:flex-start}
 .hvac-conv-msg.is-staff{background:var(--bg);align-self:flex-end;text-align:right}
-.hvac-conv-msg-head{display:flex;gap:8px;font-size:12px;font-weight:600;color:#64748b;margin-bottom:3px}
+.hvac-conv-msg-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#64748b;margin-bottom:3px}
 .hvac-conv-msg.is-staff .hvac-conv-msg-head{justify-content:flex-end}
+.hvac-conv-msg-action{border:none;background:transparent;cursor:pointer;font-size:11px;padding:1px 3px;opacity:0.55;line-height:1}
+.hvac-conv-msg-action:hover{opacity:1}
+.hvac-conv-edit-textarea{width:100%;resize:none;border:1px solid var(--blue-400);border-radius:8px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;box-sizing:border-box}
+.hvac-conv-edit-actions{display:flex;gap:8px;margin-top:6px}
+.hvac-conv-edit-save{padding:5px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.hvac-conv-edit-cancel{padding:5px 12px;border-radius:7px;background:#e2e8f0;color:#334155;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 .hvac-conv-msg-text{font-size:14px;color:#1e293b;white-space:pre-wrap;word-break:break-word}
 .hvac-conv-input{display:flex;gap:10px;align-items:flex-end}
 .hvac-conv-attach{flex-shrink:0;font-size:17px;color:#64748b;padding:9px 2px;cursor:not-allowed;opacity:0.6}
@@ -277,7 +283,7 @@
 .location-card-main{display:flex;align-items:center;gap:12px;min-width:0}
 .location-building-icon{width:30px;height:34px;border:2px solid #1769ff;color:#1769ff;border-radius:3px;font-size:28px;line-height:28px;text-align:center;font-weight:700;flex-shrink:0}
 .location-unit-name{font-size:17px;font-weight:700;color:var(--text)}
-.location-unit-detail{font-size:14px;color:#334155;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.location-unit-detail{font-size:16px;font-weight:500;color:#334155;margin-top:4px;line-height:1.35}
 .location-level{padding-left:16px;border-left:1px solid #cbdcf2;text-align:center;min-width:70px}
 .location-level span{display:block;font-size:12px;color:#334155;font-weight:600}
 .location-level strong{font-size:26px;color:#1e3a8a;line-height:1.1}
@@ -292,10 +298,14 @@
 .setpoint-fill{transition:width 0.3s,background 0.3s}
 .setpoint-baseline{position:absolute;top:-4px;width:2px;height:13px;background:#94a3b8;transform:translateX(-50%);display:none}
 .setpoint-scale{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#334155;margin-top:8px}
+.setpoint-min-label{color:#1d4ed8;font-size:15px;font-weight:800}
+.setpoint-max-label{color:#dc2626;font-size:15px;font-weight:800}
 .setpoint-range{display:none}
 .requests-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
 .requests-heading{display:flex;align-items:center;gap:10px}
 .requests-heading-icon{width:30px;height:30px;border:2px solid #1769ff;color:#1769ff;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.requests-heading .section-title{font-size:20px;font-weight:800;color:#0f172a}
+.request-history-table-wrap .my-req-row.my-req-open{background:#f0fdf4;box-shadow:inset 0 0 0 2px #22c55e}
 .requests-subtitle{font-size:13px;color:#475569;margin-top:2px}
 .request-filters{display:flex;gap:7px}
 .request-filter{border:1px solid var(--border);background:#f8fafc;color:#475569;border-radius:8px;padding:8px 14px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
@@ -438,7 +448,7 @@
         <div class="setpoint-updated" id="currentSetpointUpdated">—</div>
         <div class="setpoint-visual" aria-hidden="true">
           <div class="setpoint-track"><div class="setpoint-fill" id="setpointFill"></div><div class="setpoint-baseline" id="setpointBaseline" title="20°C"></div><div class="setpoint-dot" id="setpointDot"></div></div>
-          <div class="setpoint-scale"><span id="setpointMinLabel">—</span><span id="setpointMidLabel">—</span><span id="setpointMaxLabel">—</span></div>
+          <div class="setpoint-scale"><span id="setpointMinLabel" class="setpoint-min-label">—</span><span id="setpointMidLabel">—</span><span id="setpointMaxLabel" class="setpoint-max-label">—</span></div>
         </div>
         <div class="setpoint-range" id="currentSetpointRange"></div>
       </div>
@@ -1063,6 +1073,8 @@ let messagesCache = {};
 let messagesLoaded = {};
 let messagesLoading = {};
 
+let editingMessageId = null;
+
 function renderConvMessagesHtml(reqId) {
   if (messagesLoading[reqId] && !messagesLoaded[reqId]) {
     return '<div class="hvac-conv-empty">Loading messages…</div>';
@@ -1071,15 +1083,30 @@ function renderConvMessagesHtml(reqId) {
   if (!msgs.length) {
     return '<div class="hvac-conv-empty">No messages yet</div>';
   }
-  return msgs.map(m => `
+  return msgs.map(m => {
+    const isOwn = m.sender_id === user.id;
+    const isEditing = editingMessageId === m.id;
+    const bodyHtml = isEditing ? `
+      <textarea class="hvac-conv-edit-textarea" id="editInput-${m.id}" rows="2">${escapeAttr(m.message)}</textarea>
+      <div class="hvac-conv-edit-actions">
+        <button type="button" class="hvac-conv-edit-save" data-edit-save="${m.id}" data-req-id="${reqId}">Save</button>
+        <button type="button" class="hvac-conv-edit-cancel" data-edit-cancel="1">Cancel</button>
+      </div>
+    ` : `<div class="hvac-conv-msg-text">${escapeAttr(m.message)}</div>`;
+    return `
     <div class="hvac-conv-msg ${m.sender_role === 'tenant' || m.sender_role === 'owner' ? 'is-tenant' : 'is-staff'}">
       <div class="hvac-conv-msg-head">
         <span>${escapeAttr(m.sender_name)}</span>
         <span>${timeAgo(m.created_at)}</span>
+        ${isOwn && !isEditing ? `
+          <button type="button" class="hvac-conv-msg-action" data-msg-edit="${m.id}" title="Edit">✏️</button>
+          <button type="button" class="hvac-conv-msg-action" data-msg-delete="${m.id}" data-req-id="${reqId}" title="Delete">🗑️</button>
+        ` : ''}
       </div>
-      <div class="hvac-conv-msg-text">${escapeAttr(m.message)}</div>
+      ${bodyHtml}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function updateConvDom(reqId) {
@@ -1097,7 +1124,7 @@ async function ensureMessagesLoaded(reqId) {
   messagesLoading[reqId] = true;
   try {
     const { data, error } = await supabase.from('hvac_messages')
-      .select('id, sender_role, sender_name, message, created_at')
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
       .eq('request_id', reqId)
       .order('created_at', { ascending: true });
     if (!error) {
@@ -1116,6 +1143,68 @@ function addMessageToCache(reqId, msg) {
   updateConvDom(reqId);
 }
 
+function updateMessageInCache(reqId, msg) {
+  const list = messagesCache[reqId];
+  if (!list) return;
+  const idx = list.findIndex(m => m.id === msg.id);
+  if (idx !== -1) list[idx] = { ...list[idx], ...msg };
+  updateConvDom(reqId);
+}
+
+function removeMessageFromCache(reqId, msgId) {
+  const list = messagesCache[reqId];
+  if (!list) return;
+  messagesCache[reqId] = list.filter(m => m.id !== msgId);
+  updateConvDom(reqId);
+}
+
+// Tenant/committee members may edit or delete only their own messages
+// (sender_id = auth.uid()), enforced both here (UI only shows the buttons
+// for isOwn rows) and, more importantly, by the hvac_messages UPDATE/DELETE
+// RLS policies in Supabase — the same "own row only" pattern already used
+// for INSERT.
+function startEditMessage(reqId, msgId) {
+  editingMessageId = msgId;
+  updateConvDom(reqId);
+  const ta = document.getElementById('editInput-' + msgId);
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function cancelEditMessage(reqId) {
+  editingMessageId = null;
+  updateConvDom(reqId);
+}
+
+async function saveEditedMessage(reqId, msgId) {
+  const ta = document.getElementById('editInput-' + msgId);
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) { showToast('Message cannot be empty', true); return; }
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .update({ message: text })
+      .eq('id', msgId)
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
+      .single();
+    if (error) { showToast(error.message || 'Failed to save edit', true); return; }
+    editingMessageId = null;
+    updateMessageInCache(reqId, data);
+  } catch (e) {
+    showToast('Failed to save edit', true);
+  }
+}
+
+async function deleteConvMessage(reqId, msgId) {
+  if (!confirm('Delete this message?')) return;
+  try {
+    const { error } = await supabase.from('hvac_messages').delete().eq('id', msgId);
+    if (error) { showToast(error.message || 'Failed to delete message', true); return; }
+    removeMessageFromCache(reqId, msgId);
+  } catch (e) {
+    showToast('Failed to delete message', true);
+  }
+}
+
 async function sendConvMessage(reqId) {
   const ta = document.getElementById('convInput-' + reqId);
   if (!ta) return;
@@ -1125,7 +1214,7 @@ async function sendConvMessage(reqId) {
   try {
     const { data, error } = await supabase.from('hvac_messages')
       .insert({ request_id: reqId, sender_id: user.id, sender_role: role, sender_name: name, message: text })
-      .select('id, sender_role, sender_name, message, created_at')
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
       .single();
     if (!error && data) {
       ta.value = '';
@@ -1151,8 +1240,45 @@ function setupMessagesRealtime() {
         addMessageToCache(msg.request_id, msg);
       }
     })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const msg = payload.new;
+      if (messagesLoaded[msg.request_id]) updateMessageInCache(msg.request_id, msg);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const old = payload.old;
+      if (old && messagesLoaded[old.request_id]) removeMessageFromCache(old.request_id, old.id);
+    })
     .subscribe();
 }
+
+// Message edit/delete/save/cancel controls live inside #conv-<id>, which is
+// replaced wholesale on every updateConvDom() call — so instead of rebinding
+// per-render (which would either miss new nodes or stack duplicate listeners
+// on the stable container), this single delegated listener is registered
+// once for the whole document and just checks the click target.
+document.addEventListener('click', (e) => {
+  const editBtn = e.target.closest('[data-msg-edit]');
+  if (editBtn) {
+    const reqId = editBtn.closest('.hvac-conv-messages')?.id.replace('conv-', '');
+    if (reqId) startEditMessage(reqId, editBtn.dataset.msgEdit);
+    return;
+  }
+  const delBtn = e.target.closest('[data-msg-delete]');
+  if (delBtn) {
+    deleteConvMessage(delBtn.dataset.reqId, delBtn.dataset.msgDelete);
+    return;
+  }
+  const saveBtn = e.target.closest('[data-edit-save]');
+  if (saveBtn) {
+    saveEditedMessage(saveBtn.dataset.reqId, saveBtn.dataset.editSave);
+    return;
+  }
+  const cancelBtn = e.target.closest('[data-edit-cancel]');
+  if (cancelBtn) {
+    const reqId = cancelBtn.closest('.hvac-conv-messages')?.id.replace('conv-', '');
+    if (reqId) cancelEditMessage(reqId);
+  }
+});
 
 function attachReqRowListeners(container) {
   container.querySelectorAll('.my-req-summary').forEach(el => {
