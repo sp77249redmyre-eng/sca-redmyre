@@ -37,9 +37,18 @@
 .hist-icon svg{width:20px;height:20px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .hist-icon.hot svg{stroke:#ef3030}.hist-icon.hot svg circle{fill:#ef3030;stroke:#ef3030}
 .hist-icon.cold svg{stroke:#1268e8}
-.hist-row{display:grid;grid-template-columns:160px 130px 90px 100px 100px 100px 1fr;gap:10px;padding:13px 20px;border-bottom:1px solid var(--border-light);align-items:center;transition:background 0.12s}
-.hist-row:last-child{border-bottom:none}
+.hist-entry{border-bottom:1px solid var(--border-light)}
+.hist-entry:last-child{border-bottom:none}
+.hist-entry.expanded.hot{box-shadow:inset 3px 0 0 #ef4444}
+.hist-entry.expanded.cold{box-shadow:inset 3px 0 0 #2563eb}
+.hist-row{display:grid;grid-template-columns:160px 130px 90px 100px 100px 100px 1fr;gap:10px;padding:13px 20px;align-items:center;transition:background 0.12s;cursor:pointer}
 .hist-row:hover{background:var(--bg)}
+.hist-conv-panel{padding:16px 20px 20px 23px;background:var(--bg)}
+.hist-conv-title{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+.hist-msg{max-width:70%;margin-bottom:10px;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5}
+.hist-msg.mine{margin-left:auto;background:var(--blue-600);color:#fff}
+.hist-msg.theirs{background:var(--surface);border:1px solid var(--border)}
+.hist-msg-meta{font-size:10px;opacity:0.7;margin-bottom:2px;font-weight:600}
 
 /* 모바일 최적화 */
 @media(max-width:768px){
@@ -54,20 +63,21 @@
   .bar-fill{height:20px;font-size:10px;padding:0 6px}
   .bar-count{font-size:11px}
   .chart-container{padding:14px}
-  .chart-container canvas{max-width:100%!important;height:auto!important}
   .filter-bar{gap:6px}
   .filter-select{padding:10px 12px;font-size:16px;width:100%}
   .btn-secondary{width:100%;padding:10px;justify-content:center}
   
   /* 테이블을 카드형으로 변경 */
   .table-head{display:none}
-  .hist-row{
-    display:block;
-    padding:14px;
+  .hist-entry{
     border:1px solid var(--border-light);
     border-radius:10px;
     margin-bottom:10px;
     background:var(--surface)
+  }
+  .hist-row{
+    display:block;
+    padding:14px;
   }
   .hist-row:hover{background:var(--bg)}
   .hist-row > div{
@@ -160,7 +170,9 @@
     <!-- 월별 트렌드 차트 -->
     <div class="chart-container">
       <div class="chart-title">Monthly Trend (Last 12 Months)</div>
-      <canvas id="monthlyChart" height="80"></canvas>
+      <div style="position:relative;height:160px">
+        <canvas id="monthlyChart"></canvas>
+      </div>
     </div>
 
     <div class="filter-bar">
@@ -190,10 +202,45 @@
 import { initLayout } from '../js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
-const { supabase } = ctx;
+const { supabase, user } = ctx;
 
 const ST_CLS = { completed:'badge-green',failed:'badge-red',rejected:'badge-red',approved:'badge-yellow',pending:'badge-yellow',processing:'badge-blue' };
 let monthlyChart = null;
+const expandedHistIds = new Set();
+const histMsgCache = {};
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function toggleHistConv(reqId, type) {
+  const entry = document.querySelector(`.hist-entry[data-id="${reqId}"]`);
+  const panel = document.getElementById(`hist-conv-${reqId}`);
+  const wasOpen = expandedHistIds.has(reqId);
+  if (wasOpen) {
+    expandedHistIds.delete(reqId);
+    entry.classList.remove('expanded','hot','cold');
+    panel.style.display = 'none';
+    return;
+  }
+  expandedHistIds.add(reqId);
+  entry.classList.add('expanded', type === 'hot' ? 'hot' : 'cold');
+  panel.style.display = 'block';
+  if (!histMsgCache[reqId]) {
+    panel.innerHTML = '<div class="hist-conv-title">Conversation</div><div style="font-size:12px;color:var(--muted)">Loading…</div>';
+    const { data, error } = await supabase.from('hvac_messages')
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
+      .eq('request_id', reqId)
+      .order('created_at', { ascending: true });
+    histMsgCache[reqId] = error ? [] : (data || []);
+  }
+  const msgs = histMsgCache[reqId];
+  panel.innerHTML = `<div class="hist-conv-title">Conversation</div>` + (
+    msgs.length
+      ? msgs.map(m => `<div class="hist-msg ${m.sender_id === user.id ? 'mine' : 'theirs'}"><div class="hist-msg-meta">${escapeHtml(m.sender_name)} · ${new Date(m.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</div>${escapeHtml(m.message)}</div>`).join('')
+      : '<div style="font-size:12px;color:var(--muted)">No messages yet</div>'
+  );
+}
 
 async function loadHistory() {
   const statusFilter = document.getElementById('filterStatus').value;
@@ -315,7 +362,7 @@ async function loadHistory() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -337,15 +384,21 @@ async function loadHistory() {
   // 테이블 렌더링
   if (!data?.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No history found</div>'; return; }
   list.innerHTML = data.map(r=>`
-    <div class="hist-row">
-      <div data-label="Date / Time" style="font-size:13px;font-weight:600;color:#1e293b">${new Date(r.created_at).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-      <div data-label="Reported By" style="font-size:14px;font-weight:700;color:#0f172a">${r.user_name||'Unknown'}</div>
-      <div data-label="Floor" style="font-size:13px;font-weight:600;color:#1e293b">${r.level||'—'}</div>
-      <div data-label="Tenancy" style="font-size:13px;font-weight:600;color:#1e293b">${r.tenancy||'—'}</div>
-      <div data-label="Type" style="font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center">${r.type==='hot'?'<span class="hist-icon hot"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="13"></circle><g><line x1="32" y1="5" x2="32" y2="16"></line><line x1="32" y1="48" x2="32" y2="59"></line><line x1="5" y1="32" x2="16" y2="32"></line><line x1="48" y1="32" x2="59" y2="32"></line><line x1="13" y1="13" x2="21" y2="21"></line><line x1="43" y1="43" x2="51" y2="51"></line><line x1="51" y1="13" x2="43" y2="21"></line><line x1="21" y1="43" x2="13" y2="51"></line></g></svg></span>Too Hot':'<span class="hist-icon cold"><svg viewBox="0 0 64 64"><g><line x1="32" y1="4" x2="32" y2="60"></line><line x1="4" y1="32" x2="60" y2="32"></line><line x1="12" y1="12" x2="52" y2="52"></line><line x1="52" y1="12" x2="12" y2="52"></line><line x1="32" y1="4" x2="27" y2="11"></line><line x1="32" y1="4" x2="37" y2="11"></line><line x1="32" y1="60" x2="27" y2="53"></line><line x1="32" y1="60" x2="37" y2="53"></line><line x1="4" y1="32" x2="11" y2="27"></line><line x1="4" y1="32" x2="11" y2="37"></line><line x1="60" y1="32" x2="53" y2="27"></line><line x1="60" y1="32" x2="53" y2="37"></line></g></svg></span>Too Cold'}</div>
-      <div data-label="Status"><span class="badge ${ST_CLS[r.status]||'badge-gray'}">${r.status||'—'}</span></div>
-      <div data-label="Comment" style="font-size:13px;font-weight:500;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.comment||''}">${r.comment||'—'}</div>
+    <div class="hist-entry" data-id="${r.id}">
+      <div class="hist-row" data-id="${r.id}" data-type="${r.type}">
+        <div data-label="Date / Time" style="font-size:13px;font-weight:600;color:#1e293b">${new Date(r.created_at).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        <div data-label="Reported By" style="font-size:14px;font-weight:700;color:#0f172a">${r.user_name||'Unknown'}</div>
+        <div data-label="Floor" style="font-size:13px;font-weight:600;color:#1e293b">${r.level||'—'}</div>
+        <div data-label="Tenancy" style="font-size:13px;font-weight:600;color:#1e293b">${r.tenancy||'—'}</div>
+        <div data-label="Type" style="font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center">${r.type==='hot'?'<span class="hist-icon hot"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="13"></circle><g><line x1="32" y1="5" x2="32" y2="16"></line><line x1="32" y1="48" x2="32" y2="59"></line><line x1="5" y1="32" x2="16" y2="32"></line><line x1="48" y1="32" x2="59" y2="32"></line><line x1="13" y1="13" x2="21" y2="21"></line><line x1="43" y1="43" x2="51" y2="51"></line><line x1="51" y1="13" x2="43" y2="21"></line><line x1="21" y1="43" x2="13" y2="51"></line></g></svg></span>Too Hot':'<span class="hist-icon cold"><svg viewBox="0 0 64 64"><g><line x1="32" y1="4" x2="32" y2="60"></line><line x1="4" y1="32" x2="60" y2="32"></line><line x1="12" y1="12" x2="52" y2="52"></line><line x1="52" y1="12" x2="12" y2="52"></line><line x1="32" y1="4" x2="27" y2="11"></line><line x1="32" y1="4" x2="37" y2="11"></line><line x1="32" y1="60" x2="27" y2="53"></line><line x1="32" y1="60" x2="37" y2="53"></line><line x1="4" y1="32" x2="11" y2="27"></line><line x1="4" y1="32" x2="11" y2="37"></line><line x1="60" y1="32" x2="53" y2="27"></line><line x1="60" y1="32" x2="53" y2="37"></line></g></svg></span>Too Cold'}</div>
+        <div data-label="Status"><span class="badge ${ST_CLS[r.status]||'badge-gray'}">${r.status||'—'}</span></div>
+        <div data-label="Comment" style="font-size:13px;font-weight:500;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.comment||''}">${r.comment||'—'}</div>
+      </div>
+      <div class="hist-conv-panel" id="hist-conv-${r.id}" style="display:none"></div>
     </div>`).join('');
+  list.querySelectorAll('.hist-row').forEach(row => {
+    row.addEventListener('click', () => toggleHistConv(row.dataset.id, row.dataset.type));
+  });
 }
 
 document.getElementById('filterStatus').addEventListener('change', loadHistory);
