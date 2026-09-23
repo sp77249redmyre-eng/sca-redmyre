@@ -39,9 +39,9 @@
 .ct td:last-child{border-right:1px solid var(--border);border-top-right-radius:12px;border-bottom-right-radius:12px}
 .ct tr.status-resolved td{opacity:0.7}
 .ct tr.cpl-row-expanded td{border-top-width:2px;border-bottom-width:0;border-radius:12px 12px 0 0}
-.ct tr.cpl-row-expanded.status-open td{background:#fef2f2;border-color:#ef4444}
-.ct tr.cpl-row-expanded.status-inprog td{background:#fffbeb;border-color:#f59e0b}
-.ct tr.cpl-row-expanded.status-resolved td{background:#f0fdf4;border-color:#22c55e}
+.ct tr.cpl-row-expanded.status-open td{background:#fecaca;border-color:#ef4444}
+.ct tr.cpl-row-expanded.status-inprog td{background:#fde68a;border-color:#f59e0b}
+.ct tr.cpl-row-expanded.status-resolved td{background:#bbf7d0;border-color:#22c55e}
 .cpl-detail-row td{padding:0 !important;border:none !important}
 .cpl-detail-box{border:2px solid;border-top:none;border-radius:0 0 12px 12px;margin-bottom:0;overflow:hidden}
 .cpl-detail-box.status-open{border-color:#ef4444}
@@ -573,7 +573,7 @@ function renderComplaints() {
     </tr>`;
   }).join('');
   const submitterHeader = showSubmitter ? (isPublicTab ? '<th>From</th>' : '<th>Submitted by</th>') : '';
-  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th>📎</th></tr></thead><tbody>${rows}</tbody></table>`;
   if (expandedComplaintId) {
     const stillThere = filtered.some(c => c.id === expandedComplaintId);
     if (stillThere) openInlineDetail(expandedComplaintId, expandedIsPublic);
@@ -591,7 +591,7 @@ async function openInlineDetail(id, isPublic) {
   if (!tr || !box) return;
   const c = (isPublic ? publicComplaints : allComplaints).find(x => x.id === id);
   const status = c ? c.status : 'open';
-  const PASTEL = { open:'#fef6f6', inprog:'#fffcf3', resolved:'#f4fdf8' };
+  const PASTEL = { open:'#fecaca', inprog:'#fde68a', resolved:'#bbf7d0' };
   tr.classList.add('cpl-row-expanded', `status-${status}`);
   const colCount = tr.children.length;
   const detailTr = document.createElement('tr');
