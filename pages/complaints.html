@@ -38,6 +38,15 @@
 .ct td:first-child{border-left:1px solid var(--border);border-top-left-radius:12px;border-bottom-left-radius:12px}
 .ct td:last-child{border-right:1px solid var(--border);border-top-right-radius:12px;border-bottom-right-radius:12px}
 .ct tr.status-resolved td{opacity:0.7}
+.ct tr.cpl-row-expanded td{border-top-width:2px;border-bottom-width:0;border-radius:12px 12px 0 0}
+.ct tr.cpl-row-expanded.status-open td{background:#fef2f2;border-color:#ef4444}
+.ct tr.cpl-row-expanded.status-inprog td{background:#fffbeb;border-color:#f59e0b}
+.ct tr.cpl-row-expanded.status-resolved td{background:#f0fdf4;border-color:#22c55e}
+.cpl-detail-row td{padding:0 !important;border:none !important}
+.cpl-detail-box{border:2px solid;border-top:none;border-radius:0 0 12px 12px;margin-bottom:0;overflow:hidden}
+.cpl-detail-box.status-open{border-color:#ef4444}
+.cpl-detail-box.status-inprog{border-color:#f59e0b}
+.cpl-detail-box.status-resolved{border-color:#22c55e}
 .ct-title{font-size:14px;font-weight:600;color:var(--text)}
 .ct-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;flex-shrink:0}
 .ct-dot.open{background:var(--red)}
@@ -217,10 +226,10 @@
       <button class="tab-btn" data-tab="public">🌐 Public Requests</button>
     </div>
     <div class="filter-bar" id="filterBar">
-      <button class="filter-btn active" data-filter="all">All</button>
-      <button class="filter-btn" data-filter="open">🔴 Open</button>
+      <button class="filter-btn active" data-filter="open">🔴 Open</button>
       <button class="filter-btn" data-filter="inprog">🟡 In Progress</button>
       <button class="filter-btn" data-filter="resolved">✅ Resolved</button>
+      <button class="filter-btn" data-filter="all">All</button>
     </div>
     <div class="complaint-list" id="complaintList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
@@ -307,7 +316,7 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-backdrop" id="detailModal">
-  <div class="modal-box" style="max-width:720px;width:95%;min-height:600px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;padding:0">
+  <div class="modal-box" id="detailModalBox" style="max-width:720px;width:95%;min-height:600px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;padding:0">
 
     <div style="padding:20px 24px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div>
@@ -354,7 +363,7 @@
     <div class="modal-footer" style="padding:14px 24px;border-top:1px solid var(--border-light)">
       <button class="btn-danger" id="deleteComplaintBtn" style="display:none;margin-right:auto">Delete</button>
       <button class="btn-secondary" id="editComplaintBtn" style="display:none" onclick="openEditComplaint()">✏️ Edit</button>
-      <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
+      <button class="btn-secondary" onclick="closeDetailPanel()">Close</button>
     </div>
   </div>
 </div>
@@ -456,7 +465,7 @@ const CAT_LABEL = { noise:'Noise / Vibration',leak:'Leak / Plumbing',cleaning:'C
 
 let allComplaints = [];
 let publicComplaints = [];
-let currentFilter = 'all';
+let currentFilter = 'open';
 let currentTab = 'mine';
 let myUnits = [];
 let selectedUnit = null;
@@ -554,9 +563,7 @@ function renderComplaints() {
     const photoIcon = c.has_photos ? '📷' : '';
     const progressBar = buildProgressBar(c.status);
     
-    const clickHandler = isPublicTab ? `openPublicDetail('${c.id}')` : `openDetail('${c.id}')`;
-    
-    return `<tr class="status-${c.status}" onclick="${clickHandler}">
+    return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}', ${isPublicTab})">
       <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${yoursIndicator}${progressBar}</td>
       <td style="font-size:13px;color:var(--text)">${catLabel}</td>
       ${submitterCol}
@@ -567,7 +574,56 @@ function renderComplaints() {
   }).join('');
   const submitterHeader = showSubmitter ? (isPublicTab ? '<th>From</th>' : '<th>Submitted by</th>') : '';
   list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  if (expandedComplaintId) {
+    const stillThere = filtered.some(c => c.id === expandedComplaintId);
+    if (stillThere) openInlineDetail(expandedComplaintId, expandedIsPublic);
+    else expandedComplaintId = null;
+  }
 }
+
+let expandedComplaintId = null;
+let expandedIsPublic = false;
+
+async function openInlineDetail(id, isPublic) {
+  if (isPublic) await window.openPublicDetail(id); else await window.openDetail(id);
+  const tr = document.querySelector(`tr[data-cid="${id}"]`);
+  const box = document.getElementById('detailModalBox');
+  if (!tr || !box) return;
+  const c = (isPublic ? publicComplaints : allComplaints).find(x => x.id === id);
+  const status = c ? c.status : 'open';
+  tr.classList.add('cpl-row-expanded', `status-${status}`);
+  const colCount = tr.children.length;
+  const detailTr = document.createElement('tr');
+  detailTr.className = 'cpl-detail-row';
+  detailTr.innerHTML = `<td colspan="${colCount}"><div class="cpl-detail-box status-${status}"><div id="cplDetailSlot"></div></div></td>`;
+  tr.after(detailTr);
+  document.getElementById('cplDetailSlot').appendChild(box);
+}
+
+function closeInlineDetail() {
+  document.querySelectorAll('.cpl-detail-row').forEach(el => el.remove());
+  document.querySelectorAll('tr.cpl-row-expanded').forEach(el => el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved'));
+  const modal = document.getElementById('detailModal');
+  const box = document.getElementById('detailModalBox');
+  if (modal && box && box.parentElement !== modal) modal.appendChild(box);
+}
+
+window.toggleDetail = async (id, isPublic) => {
+  if (expandedComplaintId === id) {
+    closeInlineDetail();
+    expandedComplaintId = null;
+    return;
+  }
+  closeInlineDetail();
+  expandedComplaintId = id;
+  expandedIsPublic = isPublic;
+  await openInlineDetail(id, isPublic);
+};
+
+window.closeDetailPanel = () => {
+  closeInlineDetail();
+  expandedComplaintId = null;
+};
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -944,8 +1000,7 @@ window.openDetail = async (id) => {
     document.getElementById('deleteComplaintBtn').style.display = 'none';
     document.getElementById('editComplaintBtn').style.display = 'none';
   }
-  
-  document.getElementById('detailModal').classList.add('open');
+
   setTimeout(() => window._initQuillReply && window._initQuillReply(''), 50);
 };
 
@@ -1044,7 +1099,8 @@ document.getElementById('deleteComplaintBtn').addEventListener('click', async ()
     const { data: files } = await supabase.storage.from('complaint-images').list(currentComplaintId);
     if (files && files.length > 0) await supabase.storage.from('complaint-images').remove(files.map(f=>`${currentComplaintId}/${f.name}`));
     await supabase.from('complaints').delete().eq('id', currentComplaintId);
-    closeModal('detailModal');
+    closeInlineDetail();
+    expandedComplaintId = null;
     await loadComplaints();
     showToast('Request deleted');
   } catch(e) { showToast('Failed to delete', true); }
@@ -1117,7 +1173,8 @@ window.openEditComplaint = () => {
   pendingPhotos = [];
   document.getElementById('unitAutoBox').style.display = 'none';
   document.getElementById('unitRadioBox').style.display = 'none';
-  closeModal('detailModal');
+  closeInlineDetail();
+  expandedComplaintId = null;
   document.getElementById('complaintModal').classList.add('open');
   setTimeout(() => window._initQuillBody && window._initQuillBody(document.getElementById('complaintBody').value), 50);
 };
@@ -1176,7 +1233,6 @@ window.openPublicDetail = async (id) => {
     }
   }
   
-  document.getElementById('detailModal').classList.add('open');
   setTimeout(() => window._initQuillReply && window._initQuillReply(''), 50);
 };
 
