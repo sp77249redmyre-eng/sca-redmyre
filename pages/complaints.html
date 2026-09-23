@@ -47,7 +47,7 @@
 .cpl-detail-box.status-open{border-color:#ef4444}
 .cpl-detail-box.status-inprog{border-color:#f59e0b}
 .cpl-detail-box.status-resolved{border-color:#22c55e}
-.ct-title{font-size:14px;font-weight:600;color:var(--text)}
+.ct-title{font-size:18px;font-weight:800;color:var(--text)}
 .ct-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;flex-shrink:0}
 .ct-dot.open{background:var(--red)}
 .ct-dot.inprog{background:var(--yellow)}
@@ -79,16 +79,16 @@
 }
 
 /* Complaint Progress Bar */
-.cpl-progress{display:flex;align-items:center;gap:0;margin-top:6px}
-.cpl-step{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;white-space:nowrap}
-.cpl-step-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.cpl-progress{display:flex;align-items:center;gap:0;margin-top:10px}
+.cpl-step{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;white-space:nowrap}
+.cpl-step-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
 .cpl-step.done .cpl-step-icon{background:#dcfce7;color:#166534}
 .cpl-step.active .cpl-step-icon{background:#dbeafe;color:#1e40af;box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
 .cpl-step.idle .cpl-step-icon{background:#f1f5f9;color:#94a3b8}
 .cpl-step.done .cpl-step-label{color:#166534}
 .cpl-step.active .cpl-step-label{color:#1e40af}
 .cpl-step.idle .cpl-step-label{color:#94a3b8}
-.cpl-line{width:20px;height:2px;border-radius:1px;margin:0 2px}
+.cpl-line{width:30px;height:3px;border-radius:2px;margin:0 3px}
 .cpl-line.done{background:#22c55e}
 .cpl-line.idle{background:#e2e8f0}
 
@@ -169,9 +169,9 @@
   #cpCameraBtn span:first-child,#cpFileBtn span:first-child{font-size:18px !important}
 
   /* Progress bar 컴팩트 */
-  .cpl-step-icon{width:18px;height:18px;font-size:9px}
-  .cpl-step{font-size:10px}
-  .cpl-line{width:14px}
+  .cpl-step-icon{width:22px;height:22px;font-size:11px}
+  .cpl-step{font-size:12px}
+  .cpl-line{width:18px}
 
   /* 모달 풀스크린 친화 */
   #complaintModal .modal-box,
@@ -327,10 +327,11 @@
 
     <div id="detailProgressWrap" style="padding:14px 24px;border-bottom:1px solid var(--border-light);flex-shrink:0"></div>
 
-    <div style="padding:16px 24px;background:rgba(255,255,255,0.5);border-bottom:1px solid var(--border-light);flex-shrink:0">
-      <div style="font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Description</div>
-      <div style="font-size:14px;color:#374151;line-height:1.7" id="detailBody">—</div>
+    <div style="margin:16px 24px;padding:16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);border-radius:10px;flex-shrink:0">
+      <div style="font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Description</div>
+      <div style="font-size:15px;font-weight:600;color:#000;line-height:1.7" id="detailBody">—</div>
     </div>
+    <style>#detailBody, #detailBody *{color:#000 !important}</style>
 
 
 
@@ -553,7 +554,7 @@ function renderComplaints() {
     } else {
       displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
     }
-    const submitterCol = showSubmitter ? `<td style="font-size:13px;color:var(--text)">${displayName}</td>` : '';
+    const submitterCol = showSubmitter ? `<td style="font-size:15px;font-weight:700;color:var(--text)">${displayName}</td>` : '';
     
     // 공개 요청 표시용 배지 (My Requests 탭에서 내 공개 요청 표시)
     const publicIndicator = (!isPublicTab && c.is_public) ? '<span class="public-badge">🌐 Public</span>' : '';
@@ -564,10 +565,10 @@ function renderComplaints() {
     
     return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}', ${isPublicTab})">
       <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${yoursIndicator}${progressBar}</td>
-      <td style="font-size:13px;color:var(--text)">${catLabel}</td>
+      <td style="font-size:15px;font-weight:700;color:var(--text)">${catLabel}</td>
       ${submitterCol}
-      <td style="font-size:13px;color:var(--text);white-space:nowrap">${date}</td>
-      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap">${date}</td>
+      <td><span class="badge ${st.cls}" style="font-size:13px;font-weight:800;padding:6px 14px">${st.label}</span></td>
       <td style="font-size:13px">${photoIcon}</td>
     </tr>`;
   }).join('');
@@ -826,7 +827,8 @@ async function loadMessageThread(complaintId) {
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
     const attachments = m.attachments && m.attachments.length > 0 ? `
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:6px">📎 Attachments</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px">
         ${m.attachments.map(path => {
           const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
           const url = urlData.publicUrl;
@@ -841,7 +843,7 @@ async function loadMessageThread(complaintId) {
           <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· SCA Management' : ''}</div>
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
-        ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7">${rendered}</div>`; })()}
+        ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:15px;font-weight:500;color:#0f172a;line-height:1.7">${rendered}</div>`; })()}
         ${attachments}
         ${editBtns}
       </div>`;
@@ -1273,7 +1275,8 @@ async function loadPublicMessageThread(complaintId, isOwn) {
     
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
     const attachments = m.attachments && m.attachments.length > 0 ? `
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:6px">📎 Attachments</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px">
         ${m.attachments.map(path => {
           const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
           const url = urlData.publicUrl;
@@ -1289,7 +1292,7 @@ async function loadPublicMessageThread(complaintId, isOwn) {
           <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${senderName} ${isAdmin ? '· SCA Management' : ''}</div>
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
-        ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:14px;color:#374151;line-height:1.7">${rendered}</div>`; })()}
+        ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:15px;font-weight:500;color:#0f172a;line-height:1.7">${rendered}</div>`; })()}
         ${attachments}
         ${editBtns}
       </div>`;
