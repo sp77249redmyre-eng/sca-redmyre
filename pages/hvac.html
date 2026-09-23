@@ -61,8 +61,8 @@
 .limits-save{padding:6px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 .my-req-row{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
 .my-req-row:last-child{border-bottom:none}
-#myList .my-req-row{flex-direction:column;align-items:stretch;padding:0}
-#myList .my-req-summary{padding:16px 20px}
+#myList .my-req-row,#activeReqSection .my-req-row{flex-direction:column;align-items:stretch;padding:0}
+#myList .my-req-summary,#activeReqSection .my-req-summary{padding:16px 20px}
 .my-req-chevron{font-size:16px;color:var(--muted);flex-shrink:0;line-height:1;padding-top:2px}
 .my-req-detail{padding:0 20px 16px 52px}
 .hvac-conv{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-light)}
@@ -153,8 +153,8 @@
   .req-actions{width:100%}
   .req-actions button{flex:1}
   .my-req-row{flex-direction:column;gap:8px;padding:12px 14px}
-  #myList .my-req-row{padding:0}
-  #myList .my-req-summary{padding:12px 14px}
+  #myList .my-req-row,#activeReqSection .my-req-row{padding:0}
+  #myList .my-req-summary,#activeReqSection .my-req-summary{padding:12px 14px}
   .my-req-detail{padding-left:14px}
   .limits-bar{flex-direction:column;align-items:stretch;gap:6px}
   .filter-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:4px}
@@ -406,6 +406,29 @@ async function loadCurrentSetpoint(level, tenancy) {
   }
 }
 
+// Re-reads whichever level/tenancy is currently shown in the Current HVAC
+// Setting box (auto-detected unit, or the manual fallback selects) and
+// refreshes it. Used after a request completes so the display updates live
+// instead of requiring the user to reselect their unit.
+function refreshCurrentSetpointDisplay() {
+  const box = document.getElementById('currentSetpointBox');
+  if (!box || box.style.display === 'none') return;
+  const doRefresh = () => {
+    if (selectedUnit) {
+      loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+    } else {
+      const level = document.getElementById('hvacLevel').value;
+      const tenancy = document.getElementById('hvacTenancy').value;
+      if (level && tenancy) loadCurrentSetpoint(level, tenancy);
+    }
+  };
+  // Small delay: the daemon writes hvac_requests.status=completed first, then
+  // upserts hvac_setpoints a moment later. Refreshing immediately can race
+  // ahead of that write and re-show the stale value, so we give it a beat.
+  doRefresh();
+  setTimeout(doRefresh, 1200);
+}
+
 function timeAgo(isoString) {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -529,18 +552,18 @@ window.showReasonModal = (el) => {
 
 let expandedRequestIds = new Set();
 
-function reqRowHtml(r) {
-  const isOpen = expandedRequestIds.has(String(r.id));
+function reqRowHtml(r, forceOpen) {
+  const isOpen = forceOpen || expandedRequestIds.has(String(r.id));
   return `
     <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
-      <div class="my-req-summary" data-id="${r.id}" style="display:flex;align-items:start;gap:12px;cursor:pointer;width:100%">
+      <div class="my-req-summary" data-id="${r.id}" style="display:flex;align-items:start;gap:12px;${forceOpen ? '' : 'cursor:pointer;'}width:100%">
         <div style="font-size:20px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
         </div>
         <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
-        <span class="my-req-chevron">${isOpen ? '˄' : '›'}</span>
+        ${forceOpen ? '' : `<span class="my-req-chevron">${isOpen ? '˄' : '›'}</span>`}
       </div>
       ${isOpen ? `
       <div class="my-req-detail">
@@ -642,7 +665,10 @@ function setupMessagesRealtime() {
   supabase.channel('hvac-messages-updates')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hvac_messages' }, (payload) => {
       const msg = payload.new;
-      if (expandedRequestIds.has(String(msg.request_id)) && messagesLoaded[msg.request_id]) {
+      // messagesLoaded is only set for requests whose conversation has been
+      // fetched at least once (active rows always, history rows once expanded),
+      // and updateConvDom() no-ops safely if that row isn't currently rendered.
+      if (messagesLoaded[msg.request_id]) {
         addMessageToCache(msg.request_id, msg);
       }
     })
@@ -683,15 +709,16 @@ function renderMyRequests() {
       <div class="section-title" style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Active Request${active.length > 1 ? 's' : ''}</div>
     </div>
     <div class="card" id="activeReqList">
-      ${active.length ? active.map(reqRowHtml).join('') : '<div class="empty-state">No active requests</div>'}
+      ${active.length ? active.map(r => reqRowHtml(r, true)).join('') : '<div class="empty-state">No active requests</div>'}
     </div>
   `;
 
-  list.innerHTML = history.length ? history.map(reqRowHtml).join('') : '<div class="empty-state">No requests submitted yet</div>';
+  list.innerHTML = history.length ? history.map(r => reqRowHtml(r, false)).join('') : '<div class="empty-state">No requests submitted yet</div>';
 
   attachReqRowListeners(activeSection);
   attachReqRowListeners(list);
 
+  active.forEach(r => ensureMessagesLoaded(r.id));
   expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
 }
 
@@ -745,6 +772,7 @@ if (role === 'admin') {
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadMyRequests();
       loadObserverData();
+      refreshCurrentSetpointDisplay();
     })
     .subscribe();
 
@@ -779,6 +807,7 @@ if (role === 'admin') {
       table: 'hvac_requests'
     }, () => {
       loadMyRequests();
+      refreshCurrentSetpointDisplay();
     })
     .subscribe();
 }
