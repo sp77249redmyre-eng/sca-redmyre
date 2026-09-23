@@ -26,13 +26,17 @@
 .form-input:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 3px rgba(239,68,68,0.1)}
 .form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
 .form-select:focus{border-color:var(--red);outline:none}
+.area-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.area-btn{padding:12px 8px;border-radius:9px;border:2px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;text-align:center;transition:all 0.15s;color:#1e293b}
+.area-btn:hover{border-color:var(--red);color:var(--red-text)}
+.area-btn.active{border-color:var(--red);background:var(--red-bg);color:var(--red-text)}
 .form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none;line-height:1.6}
 .form-textarea:focus{border-color:var(--red);background:#fff}
 .violation-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 .vio-btn{padding:10px 8px;border-radius:9px;border:2px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:800;text-align:center;transition:all 0.15s;color:#1e293b}
 .vio-btn:hover{border-color:var(--red);color:var(--red-text)}
 .vio-btn.active{border-color:var(--red);background:var(--red-bg);color:var(--red-text)}
-.vio-icon{font-size:20px;margin-bottom:4px;display:block}
+.vio-icon{font-size:18px;margin-bottom:6px;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-right:auto}
 .btn-report{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
 .notice-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .parking-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
@@ -227,23 +231,19 @@
     </div>
 
     <div class="report-form">
-      <div class="form-field" style="margin-bottom:16px">
-        <label class="form-label"><i class="ti ti-search"></i> Search Vehicle</label>
-        <input class="form-input" id="plateSearchInput" placeholder="Enter plate to check owner & history..." maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); onPlateSearch();">
-        <div id="plateSearchResult" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px"></div>
-      </div>
-      <div style="border-top:1px solid var(--border);margin-bottom:16px"></div>
-      <div class="anon-notice">
-        <span class="anon-icon"><i class="ti ti-lock"></i></span>
-        <div class="anon-text"><strong>Your report is anonymous.</strong> The reported driver will not see who submitted it.</div>
-      </div>
       <div class="form-field">
         <label class="form-label">Number Plate</label>
         <input class="form-input" id="plateInput" placeholder="ABC 123" maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()">
       </div>
       <div class="form-field">
         <label class="form-label">Location</label>
-        <select class="form-select" id="locationArea">
+        <div class="area-grid" id="areaGrid">
+          <button type="button" class="area-btn" data-area="entry">Entry</button>
+          <button type="button" class="area-btn" data-area="ground">Ground Floor</button>
+          <button type="button" class="area-btn" data-area="b1">B1</button>
+          <button type="button" class="area-btn" data-area="b2">B2</button>
+        </div>
+        <select class="form-select" id="locationArea" style="display:none">
           <option value="">Select area…</option>
           <option value="entry">Entry</option>
           <option value="ground">Ground Floor</option>
@@ -251,19 +251,15 @@
           <option value="b2">B2</option>
         </select>
       </div>
-      <div class="form-field" id="bayField" style="display:none">
-        <label class="form-label">Bay</label>
-        <select class="form-select" id="baySelect"></select>
-      </div>
-      <div class="form-field">
+      <div class="form-field" id="vioTypeField" style="display:none">
         <label class="form-label">Violation Type</label>
         <div class="violation-grid">
-          <button class="vio-btn" data-vio="occupied"><span class="vio-icon"><i class="ti ti-ban"></i></span>Someone else's bay</button>
-          <button class="vio-btn" data-vio="disabled"><span class="vio-icon"><i class="ti ti-wheelchair"></i></span>Disabled bay</button>
-          <button class="vio-btn" data-vio="loading"><span class="vio-icon"><i class="ti ti-truck"></i></span>Loading bay</button>
-          <button class="vio-btn" data-vio="blocking"><span class="vio-icon"><i class="ti ti-alert-octagon"></i></span>Blocking access</button>
-          <button class="vio-btn" data-vio="contractor"><span class="vio-icon"><i class="ti ti-hammer"></i></span>Contractor bay</button>
-          <button class="vio-btn" data-vio="other"><span class="vio-icon"><i class="ti ti-dots"></i></span>Other</button>
+          <button class="vio-btn" data-vio="occupied"><span class="vio-icon" style="background:#FEF2F2;color:#DC2626"><i class="ti ti-ban"></i></span>Someone else's bay</button>
+          <button class="vio-btn" data-vio="disabled"><span class="vio-icon" style="background:#EFF6FF;color:#2563EB"><i class="ti ti-wheelchair"></i></span>Disabled bay</button>
+          <button class="vio-btn" data-vio="loading"><span class="vio-icon" style="background:#FFF7ED;color:#C2410C"><i class="ti ti-truck"></i></span>Loading bay</button>
+          <button class="vio-btn" data-vio="blocking"><span class="vio-icon" style="background:#FEFCE8;color:#A16207"><i class="ti ti-alert-octagon"></i></span>Blocking access</button>
+          <button class="vio-btn" data-vio="contractor"><span class="vio-icon" style="background:#F5F3FF;color:#6D28D9"><i class="ti ti-hammer"></i></span>Contractor bay</button>
+          <button class="vio-btn" data-vio="other"><span class="vio-icon" style="background:#F1F5F9;color:#475569"><i class="ti ti-dots"></i></span>Other</button>
         </div>
       </div>
       <div class="form-field">
@@ -291,6 +287,15 @@
     </div>
 
     <div>
+      <div class="form-field" style="margin-bottom:12px">
+        <label class="form-label"><i class="ti ti-search"></i> Search Vehicle</label>
+        <input class="form-input" id="plateSearchInput" placeholder="Enter plate to check owner & history..." maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); onPlateSearch();">
+        <div id="plateSearchResult" style="display:none;margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px"></div>
+      </div>
+      <div class="anon-notice" style="margin-bottom:16px">
+        <span class="anon-icon"><i class="ti ti-lock"></i></span>
+        <div class="anon-text"><strong>Your report is anonymous.</strong> The reported driver will not see who submitted it.</div>
+      </div>
       <div class="notice-header">
         <div class="section-title">Active Incidents</div>
         <span id="activeCount" style="font-size:13px;font-weight:600;color:var(--red-text)"></span>
@@ -338,16 +343,39 @@ const BAYS = {
   b2: ['B2 1A','B2 1B','B2 1C','B2 1D','B2 1E','B2 1F','B2 1G','B2 1H','B2 2A','B2 2B','B2 2C','B2 2D','B2 2E','B2 2F','B2 2G','B2 2H','B2 3A','B2 3B','B2 3C','B2 3D','B2 3E','B2 3F','B2 3G','B2 3H','B2 4A','B2 4B','B2 4C','B2 4D','B2 4E','B2 4F','B2 4G','B2 4H','B2 5A','B2 5B','B2 5C','B2 5D','B2 5E','B2 5F','B2 5G','B2 5H','B2 6A','B2 6B','B2 6C','B2 6D','B2 6E','B2 6F','B2 6G','B2 6H'],
 };
 const VIO_LABELS = { occupied:"Someone else's bay",disabled:"Disabled bay violation",loading:"Loading bay violation",blocking:"Blocking access",contractor:"Contractor bay violation",other:"Other violation" };
+const VIO_BY_AREA = {
+  entry:  ['loading','blocking','other'],
+  ground: ['disabled','contractor','occupied','blocking','other'],
+  b1:     ['occupied','blocking','other'],
+  b2:     ['occupied','blocking','other'],
+};
 
 let selectedVio = null;
 
-document.getElementById('locationArea').addEventListener('change', () => {
-  const area = document.getElementById('locationArea').value;
-  const bayField = document.getElementById('bayField');
-  const baySelect = document.getElementById('baySelect');
-  if (!area) { bayField.style.display='none'; return; }
-  bayField.style.display = 'block';
-  baySelect.innerHTML = BAYS[area].map(b=>`<option value="${b}">${b}</option>`).join('');
+function applyVioFilter(area) {
+  const field = document.getElementById('vioTypeField');
+  const allowed = VIO_BY_AREA[area] || null;
+  if (!area) { field.style.display = 'none'; return; }
+  field.style.display = 'block';
+  document.querySelectorAll('.vio-btn').forEach(b => {
+    const show = !allowed || allowed.includes(b.dataset.vio);
+    b.style.display = show ? '' : 'none';
+  });
+  if (selectedVio && allowed && !allowed.includes(selectedVio)) {
+    selectedVio = null;
+    document.querySelectorAll('.vio-btn').forEach(b => b.classList.remove('active'));
+  }
+}
+
+document.querySelectorAll('.area-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const already = btn.classList.contains('active');
+    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
+    const sel = document.getElementById('locationArea');
+    if (already) { sel.value = ''; } else { btn.classList.add('active'); sel.value = btn.dataset.area; }
+    sel.dispatchEvent(new Event('change'));
+    applyVioFilter(sel.value);
+  });
 });
 
 document.querySelectorAll('.vio-btn').forEach(btn => {
@@ -489,7 +517,7 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
   let plateInput = document.getElementById('plateInput').value.trim();
   const plate = plateInput.replace(/\s/g,'').toUpperCase();
   const area     = document.getElementById('locationArea').value;
-  const bay      = document.getElementById('baySelect').value||'';
+  const bay      = '';
   const comment  = document.getElementById('pkComment').value.trim();
 
   if (!plate)      { showToast('Please enter a number plate', true); return; }
@@ -539,7 +567,8 @@ document.getElementById('submitReportBtn').addEventListener('click', async () =>
     
     document.getElementById('plateInput').value='';
     document.getElementById('locationArea').value='';
-    document.getElementById('bayField').style.display='none';
+    document.querySelectorAll('.area-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('vioTypeField').style.display='none';
     document.getElementById('pkComment').value='';
     document.getElementById('photoInputCamera').value = '';
     document.getElementById('photoInputFile').value = '';
