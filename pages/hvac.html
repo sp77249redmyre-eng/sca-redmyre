@@ -44,6 +44,12 @@
 .form-field{margin-bottom:14px}
 .form-label{font-size:13px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px;display:block}
 .form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.option-grid{display:grid;gap:8px;margin-bottom:4px}
+.option-grid-floor{grid-template-columns:repeat(3,1fr)}
+.option-grid-tenancy{grid-template-columns:repeat(4,1fr)}
+.option-box{padding:12px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;color:#334155;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s;text-align:center}
+.option-box-floor.selected{border-color:#ef4444;background:#ffd5d5;color:#b91c1c;box-shadow:0 0 0 2px #ef4444}
+.option-box-tenancy.selected{border-color:#2563eb;background:#cfe2ff;color:#1d4ed8;box-shadow:0 0 0 2px #2563eb}
 .form-select:focus{border-color:var(--blue-600);outline:none}
 .form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none}
 .form-textarea:focus{border-color:var(--blue-600)}
@@ -55,10 +61,10 @@
 .req-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .req-comment{font-size:11px;color:var(--text-2);margin-top:3px;font-style:italic}
 .req-actions{display:flex;gap:6px;flex-shrink:0}
-.limits-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--bg);border-radius:10px;margin-bottom:16px;flex-wrap:wrap}
-.limits-bar label{font-size:12px;color:var(--muted);font-weight:500}
-.limits-input{width:64px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;text-align:center}
-.limits-save{padding:6px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.limits-bar{display:flex;align-items:center;gap:12px;padding:18px 20px;background:var(--bg);border-radius:12px;margin-bottom:16px;flex-wrap:wrap}
+.limits-bar label{font-size:16px;color:#1e293b;font-weight:700}
+.limits-input{width:84px;height:48px;padding:0 10px;border:2px solid var(--border);border-radius:8px;font-size:20px;font-weight:700;font-family:'DM Sans',sans-serif;text-align:center;color:#0f172a}
+.limits-save{padding:12px 22px;border-radius:8px;background:var(--blue-600);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
 .my-req-row{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
 .my-req-row:last-child{border-bottom:none}
 #myList .my-req-row,#activeReqSection .my-req-row{flex-direction:column;align-items:stretch;padding:0}
@@ -427,7 +433,8 @@
 
       <div class="form-field" id="floorField">
         <label class="form-label">Floor</label>
-        <select class="form-select" id="hvacLevel">
+        <div class="option-grid option-grid-floor" id="floorBoxes"></div>
+        <select class="form-select" id="hvacLevel" style="display:none">
           <option value="">Select floor…</option>
           <option>Level 1</option><option>Level 2</option><option>Level 3</option>
           <option>Level 4</option><option>Level 5</option><option>Level 6</option>
@@ -435,7 +442,8 @@
       </div>
       <div class="form-field" id="suiteField">
         <label class="form-label">Tenancy</label>
-        <select class="form-select" id="hvacTenancy">
+        <div class="option-grid option-grid-tenancy" id="tenancyBoxes"></div>
+        <select class="form-select" id="hvacTenancy" style="display:none">
           <option value="">Select tenancy…</option>
           <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
           <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
@@ -471,7 +479,7 @@
           <label>°C &nbsp;&nbsp; Max</label><input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
           <label>°C</label>
           <button class="limits-save" id="saveLimitsBtn">Save</button>
-          <span style="font-size:11px;color:var(--muted);margin-left:4px">Applied to all adjustments</span>
+          <span style="font-size:13px;color:#475569;margin-left:4px;font-weight:500">Applied to all adjustments</span>
         </div>
         <div class="section-hdr" style="margin-top:4px">
           <div class="section-title">Pending Requests</div>
@@ -707,6 +715,42 @@ document.getElementById('hvacTenancy').addEventListener('change', () => {
   loadCurrentSetpoint(level, tenancy);
 });
 
+// Clickable box UI for the manual Floor/Tenancy fallback (replaces the
+// scrolling dropdowns). Keeps #hvacLevel/#hvacTenancy as the source of
+// truth so all existing submit/cooldown/setpoint logic is untouched.
+function renderFloorBoxes() {
+  const sel = document.getElementById('hvacLevel');
+  const wrap = document.getElementById('floorBoxes');
+  wrap.innerHTML = [1,2,3,4,5,6].map(n => {
+    const val = `Level ${n}`;
+    return `<button type="button" class="option-box option-box-floor${sel.value === val ? ' selected' : ''}" data-level="${val}">${val}</button>`;
+  }).join('');
+  wrap.querySelectorAll('[data-level]').forEach(b => {
+    b.addEventListener('click', () => {
+      sel.value = b.dataset.level;
+      sel.dispatchEvent(new Event('change'));
+      renderFloorBoxes();
+    });
+  });
+}
+function renderTenancyBoxes() {
+  const sel = document.getElementById('hvacTenancy');
+  const wrap = document.getElementById('tenancyBoxes');
+  wrap.innerHTML = ['A','B','C','D','E','F','G','H'].map(l => {
+    const val = `Tenancy ${l}`;
+    return `<button type="button" class="option-box option-box-tenancy${sel.value === val ? ' selected' : ''}" data-tenancy="${val}">${l}</button>`;
+  }).join('');
+  wrap.querySelectorAll('[data-tenancy]').forEach(b => {
+    b.addEventListener('click', () => {
+      sel.value = b.dataset.tenancy;
+      sel.dispatchEvent(new Event('change'));
+      renderTenancyBoxes();
+    });
+  });
+}
+renderFloorBoxes();
+renderTenancyBoxes();
+
 document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
 
@@ -756,6 +800,8 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
     if (!selectedUnit) {
       document.getElementById('hvacLevel').value='';
       document.getElementById('hvacTenancy').value='';
+      renderFloorBoxes();
+      renderTenancyBoxes();
     }
     if (role!=='admin') await loadMyRequests();
   } catch(e) { showToast(e.message||'Failed to submit', true); }
