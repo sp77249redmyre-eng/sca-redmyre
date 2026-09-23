@@ -301,8 +301,9 @@ function renderAnns() {
   list.innerHTML = filtered.map(a => {
     const isScheduled = a.scheduled_at && !a.push_sent;
     const scheduledLabel = isScheduled ? `<span class="scheduled-badge">🕐 ${formatSydneyTime(a.scheduled_at)}</span>` : '';
+    const isOpen = expandedAnnId === a.id;
     return `
-    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}${isScheduled?' scheduled':''}" onclick="openAnnDetail('${a.id}')">
+    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}${isScheduled?' scheduled':''}" onclick="toggleAnnDetail('${a.id}')" style="cursor:pointer">
       <div class="ann-top">
         <div>
           <div class="ann-title">${a.pinned?'📌 ':''}${a.title}${scheduledLabel}</div>
@@ -310,15 +311,12 @@ function renderAnns() {
         </div>
         <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
       </div>
+      ${isOpen ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light)" onclick="event.stopPropagation();">${annDetailInnerHtml(a)}</div>` : ''}
     </div>`;
   }).join('');
 }
 
-window.openAnnDetail = (id) => {
-  const a = allAnns.find(x => x.id === id);
-  if (!a) return;
-  logActivity('ANNOUNCEMENT_VIEWED', a.id);
-
+function annDetailInnerHtml(a) {
   const attachmentsHtml = a.attachments && a.attachments.length ? `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
       ${a.attachments.map(att => att.type === 'application/pdf'
@@ -335,8 +333,8 @@ window.openAnnDetail = (id) => {
       </div>
       <div class="ann-actions" style="display:flex;gap:6px">
         <button class="btn-secondary" onclick="resendAnnouncement('${a.id}');event.stopPropagation();">📨 Resend</button>
-        <button class="btn-secondary" onclick="closeModal('annDetailModal');openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')})">✏️ Edit</button>
-        <button class="btn-danger" onclick="confirmDeleteAnn('${a.id}')">Delete</button>
+        <button class="btn-secondary" onclick="openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')});event.stopPropagation();">✏️ Edit</button>
+        <button class="btn-danger" onclick="confirmDeleteAnn('${a.id}');event.stopPropagation();">Delete</button>
       </div>
     </div>
     <div style="margin-top:12px;padding:12px;background:#f8fafc;border:0.5px solid var(--border-light);border-radius:8px" onclick="event.stopPropagation();">
@@ -354,19 +352,24 @@ window.openAnnDetail = (id) => {
     ? a.content
     : (a.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-  document.getElementById('annDetailBody').innerHTML = `
-    <div class="ann-top" style="margin-bottom:14px">
-      <div>
-        <div class="ann-title" style="font-size:17px;font-weight:600">${a.pinned?'📌 ':''}${a.title}</div>
-        <div class="ann-meta">${new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'})}</div>
-      </div>
-      <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
-    </div>
+  return `
     <div class="ann-body">${renderedContent}</div>
     ${attachmentsHtml}
     ${adminFooterHtml}
   `;
-  document.getElementById('annDetailModal').classList.add('open');
+}
+
+let expandedAnnId = null;
+window.toggleAnnDetail = (id) => {
+  const a = allAnns.find(x => x.id === id);
+  if (!a) return;
+  if (expandedAnnId === id) {
+    expandedAnnId = null;
+  } else {
+    expandedAnnId = id;
+    logActivity('ANNOUNCEMENT_VIEWED', a.id);
+  }
+  renderAnns();
 };
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
