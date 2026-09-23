@@ -80,6 +80,31 @@
 .hvac-conv-textarea:focus{outline:none;border-color:var(--blue-600)}
 .hvac-conv-send{padding:8px 14px;border-radius:8px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0}
 .hvac-conv-send:hover{background:var(--blue-800)}
+
+/* STEP 7: Tenant progress steps */
+.hvac-steps-wrap{margin-top:10px}
+.hvac-steps{display:flex;align-items:flex-start}
+.hvac-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;width:64px}
+.hvac-step-circle{width:26px;height:26px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:background 0.2s}
+.hvac-step.is-future .hvac-step-circle{background:var(--border);color:var(--muted)}
+.hvac-step-pulse{animation:hvac-step-pulse-kf 1.6s ease-out infinite}
+@keyframes hvac-step-pulse-kf{0%{box-shadow:0 0 0 0 rgba(37,99,235,0.35)}70%{box-shadow:0 0 0 8px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}
+.hvac-step-label{font-size:10px;color:var(--muted);text-align:center;line-height:1.3}
+.hvac-step-line{flex:1 1 auto;height:2px;background:var(--border);margin-top:13px;min-width:8px}
+.hvac-step-line.is-done{background:#16a34a}
+.hvac-step-banner{margin-top:12px;padding:10px 12px;border-radius:8px;font-size:12px;font-weight:600}
+.hvac-step-banner.is-blue{background:var(--blue-50);color:var(--blue-800)}
+.hvac-step-banner.is-green{background:#dcfce7;color:#166534}
+.hvac-step-banner.is-amber{background:#fef3c7;color:#92400e}
+.hvac-step-banner-title{margin-bottom:4px}
+.hvac-temp-line{font-size:13px;font-weight:700}
+.hvac-temp-current{color:var(--text-2)}
+.hvac-temp-arrow{margin:0 6px;color:var(--muted);font-weight:400}
+.hvac-temp-target{color:#92400e}
+.hvac-confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.hvac-confetti-piece{position:absolute;top:0;width:6px;height:10px;border-radius:2px;opacity:0;animation:hvac-confetti-fall 0.9s ease-out forwards}
+@keyframes hvac-confetti-fall{0%{opacity:1;transform:translate(0,0) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),140px) rotate(360deg)}}
+
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 .filter-tabs{display:flex;gap:8px;margin-bottom:12px}
 .filter-tab{padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--muted)}
@@ -116,6 +141,7 @@
 .setpoint-label{font-size:11px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
 .setpoint-value{font-size:32px;font-weight:700;color:var(--text);line-height:1.2}
 .setpoint-updated{font-size:11px;color:var(--muted);margin-top:4px}
+.setpoint-range{font-size:11px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed var(--border-light)}
 
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 
@@ -271,6 +297,7 @@
         <div class="setpoint-label">Current HVAC Setting</div>
         <div class="setpoint-value" id="currentSetpointValue">—</div>
         <div class="setpoint-updated" id="currentSetpointUpdated">—</div>
+        <div class="setpoint-range" id="currentSetpointRange"></div>
       </div>
 
       <div class="form-field">
@@ -376,12 +403,21 @@ async function loadCurrentSetpoint(level, tenancy) {
   const box = document.getElementById('currentSetpointBox');
   const valueEl = document.getElementById('currentSetpointValue');
   const updatedEl = document.getElementById('currentSetpointUpdated');
+  const rangeEl = document.getElementById('currentSetpointRange');
   if (!level || !tenancy) { box.style.display = 'none'; return; }
 
   const myToken = ++setpointReqToken; // avoid race conditions when switching units quickly
   box.style.display = 'block';
   valueEl.textContent = '—';
   updatedEl.textContent = 'Loading…';
+  if (rangeEl) rangeEl.textContent = '';
+
+  ensureTempLimits().then(limits => {
+    if (myToken !== setpointReqToken) return; // a newer request superseded this one
+    if (rangeEl && limits && limits.min != null && limits.max != null) {
+      rangeEl.textContent = `Allowed range: ${limits.min}°C – ${limits.max}°C`;
+    }
+  });
 
   try {
     const { data, error } = await supabase.from('hvac_setpoints')
@@ -562,14 +598,13 @@ function reqRowHtml(r, forceOpen) {
           <div style="font-size:13px;font-weight:600">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric'})}</div>
         </div>
-        <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${r.status}</span>
+        <span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${statusLabel(r.status)}</span>
         ${forceOpen ? '' : `<span class="my-req-chevron">${isOpen ? '˄' : '›'}</span>`}
       </div>
       ${isOpen ? `
       <div class="my-req-detail">
         ${r.comment ? `<div style="font-size:11px;color:var(--text-2);font-style:italic;margin-top:2px">"${r.comment}"</div>` : ''}
-        ${['pending', 'approved', 'processing'].includes(r.status) ? getProgressBar(r.status, r.type) : ''}
-        ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
+        ${['pending', 'approved', 'processing', 'completed'].includes(r.status) ? renderStepsHtml(r) : ''}
         ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
         <div class="hvac-conv">
           <div class="hvac-conv-title">Conversation</div>
@@ -582,6 +617,150 @@ function reqRowHtml(r, forceOpen) {
       </div>` : ''}
     </div>
   `;
+}
+
+// ---- STEP 7: Tenant progress steps (Submitted → Approved → Adjusting → Completed) ----
+// Presentation-only: reuses the exact same hvac_requests/hvac_setpoints data
+// already in use elsewhere. Does not touch getProgressBar(), which the
+// Admin/Observer panels still use unchanged.
+function statusLabel(status) {
+  if (status === 'processing') return 'Adjusting';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+const HVAC_STEPS = [
+  { key: 'pending', label: 'Submitted', color: '#2563eb' },
+  { key: 'approved', label: 'Approved', color: '#16a34a' },
+  { key: 'processing', label: 'Adjusting', color: '#f59e0b' },
+  { key: 'completed', label: 'Completed', color: '#16a34a' }
+];
+
+let tempLimits = null;
+let adjustingSetpointCache = {};
+let adjustingLoading = {};
+
+async function ensureTempLimits() {
+  if (tempLimits) return tempLimits;
+  try {
+    const { data } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
+    let min = null, max = null;
+    (data || []).forEach(s => {
+      if (s.key === 'temp_min') min = parseFloat(s.value);
+      if (s.key === 'temp_max') max = parseFloat(s.value);
+    });
+    tempLimits = { min, max };
+  } catch (e) {
+    tempLimits = { min: null, max: null };
+  }
+  return tempLimits;
+}
+
+async function ensureAdjustingSetpoint(r) {
+  const key = `${r.level}|${r.tenancy}`;
+  if (adjustingSetpointCache[key] || adjustingLoading[key]) return;
+  adjustingLoading[key] = true;
+  try {
+    const limits = await ensureTempLimits();
+    const { data } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint')
+      .eq('level', r.level).eq('tenancy', r.tenancy).maybeSingle();
+    if (data && data.current_setpoint != null) {
+      const current = parseFloat(data.current_setpoint);
+      let target = r.type === 'hot' ? current - 0.5 : current + 0.5;
+      if (limits.min != null) target = Math.max(target, limits.min);
+      if (limits.max != null) target = Math.min(target, limits.max);
+      adjustingSetpointCache[key] = { current, target };
+    }
+  } catch (e) {}
+  adjustingLoading[key] = false;
+  updateAdjustingDom(r.id, key);
+}
+
+function updateAdjustingDom(reqId, key) {
+  const el = document.getElementById('adj-' + reqId);
+  if (!el) return;
+  const v = adjustingSetpointCache[key];
+  el.innerHTML = v
+    ? `<span class="hvac-temp-current">${v.current}°C</span><span class="hvac-temp-arrow">→</span><span class="hvac-temp-target">${v.target}°C</span>`
+    : '';
+}
+
+function renderStepsHtml(r) {
+  const order = ['pending', 'approved', 'processing', 'completed'];
+  const currentIndex = order.indexOf(r.status);
+  if (currentIndex === -1) return '';
+
+  const stepsHtml = HVAC_STEPS.map((step, idx) => {
+    const done = idx < currentIndex;
+    const active = idx === currentIndex;
+    const circleStyle = active
+      ? `background:${step.color};box-shadow:0 0 0 4px ${step.color}33`
+      : done ? 'background:#16a34a' : '';
+    const icon = done ? '✓' : (idx + 1);
+    const line = idx < HVAC_STEPS.length - 1
+      ? `<div class="hvac-step-line${idx < currentIndex ? ' is-done' : ''}"></div>`
+      : '';
+    return `
+      <div class="hvac-step${done ? ' is-done' : active ? ' is-active' : ' is-future'}">
+        <div class="hvac-step-circle${active ? ' hvac-step-pulse' : ''}" style="${circleStyle}">${icon}</div>
+        <div class="hvac-step-label"${active ? ` style="color:${step.color};font-weight:700"` : ''}>${step.label}</div>
+      </div>
+      ${line}
+    `;
+  }).join('');
+
+  let banner = '';
+  if (r.status === 'processing') {
+    const key = `${r.level}|${r.tenancy}`;
+    const cached = adjustingSetpointCache[key];
+    banner = `
+      <div class="hvac-step-banner is-amber">
+        <div class="hvac-step-banner-title">Adjusting HVAC…</div>
+        <div class="hvac-temp-line" id="adj-${r.id}">${cached ? `<span class="hvac-temp-current">${cached.current}°C</span><span class="hvac-temp-arrow">→</span><span class="hvac-temp-target">${cached.target}°C</span>` : ''}</div>
+      </div>`;
+  } else if (r.status === 'approved') {
+    banner = `<div class="hvac-step-banner is-green">Approved — HVAC adjustment will begin shortly.</div>`;
+  } else if (r.status === 'pending') {
+    banner = `<div class="hvac-step-banner is-blue">Your request has been submitted. We will review it shortly.</div>`;
+  } else if (r.status === 'completed' && r.temp_before != null) {
+    banner = `<div class="hvac-step-banner is-green">✓ Completed — ${r.temp_before}°C → ${r.temp_after}°C</div>`;
+  }
+
+  return `<div class="hvac-steps-wrap"><div class="hvac-steps">${stepsHtml}</div>${banner}</div>`;
+}
+
+// One-time confetti burst the moment a request transitions to 'completed'
+// during this session (never on initial page load / history browsing).
+let prevStatusByReqId = {};
+function checkForCompletionCelebration(list) {
+  list.forEach(r => {
+    const prev = prevStatusByReqId[r.id];
+    if (prev && prev !== 'completed' && r.status === 'completed') {
+      setTimeout(() => burstConfettiFor(r.id), 50);
+    }
+    prevStatusByReqId[r.id] = r.status;
+  });
+}
+
+function burstConfettiFor(reqId) {
+  const summaryEl = document.querySelector(`.my-req-summary[data-id="${reqId}"]`);
+  const row = summaryEl ? summaryEl.closest('.my-req-row') : null;
+  if (!row) return;
+  const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+  const layer = document.createElement('div');
+  layer.className = 'hvac-confetti-layer';
+  for (let i = 0; i < 18; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'hvac-confetti-piece';
+    piece.style.left = (40 + Math.random() * 20) + '%';
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = (Math.random() * 0.15) + 's';
+    piece.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+    layer.appendChild(piece);
+  }
+  row.style.position = 'relative';
+  row.appendChild(layer);
+  setTimeout(() => layer.remove(), 1000);
 }
 
 // ---- Conversation (hvac_messages) ----
@@ -701,6 +880,8 @@ function renderMyRequests() {
   const activeSection = document.getElementById('activeReqSection');
   const list = document.getElementById('myList');
 
+  checkForCompletionCelebration(allMyRequests);
+
   const active = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
   const history = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
 
@@ -720,6 +901,7 @@ function renderMyRequests() {
 
   active.forEach(r => ensureMessagesLoaded(r.id));
   expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
+  active.filter(r => r.status === 'processing').forEach(ensureAdjustingSetpoint);
 }
 
 async function loadMyRequests() {
