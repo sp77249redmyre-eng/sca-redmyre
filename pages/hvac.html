@@ -313,16 +313,14 @@
 .request-filter{border:1px solid var(--border);background:#f8fafc;color:#475569;border-radius:8px;padding:8px 14px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
 .request-filter.active{background:#1769ff;color:#fff;border-color:#1769ff}
 .request-history-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.request-history-head{display:grid;grid-template-columns:1.05fr .75fr 1.05fr 1.25fr .75fr;gap:8px;padding:16px;background:#f1f5f9;border-bottom:2px solid var(--border);font-size:15px;font-weight:800;color:#0f172a}
+.request-history-head{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;padding:16px;background:#f1f5f9;border-bottom:2px solid var(--border);font-size:15px;font-weight:800;color:#0f172a}
 .request-history-table-wrap #myList{border:none;border-radius:0}
-.request-history-table-wrap .my-req-row{display:grid;grid-template-columns:1.05fr .75fr 1.05fr 1.25fr .75fr;gap:8px;align-items:center;padding:16px;border-bottom:1px solid var(--border-light)}
+.request-history-table-wrap .my-req-row{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;align-items:center;padding:16px;border-bottom:1px solid var(--border-light)}
 .request-history-table-wrap .my-req-row:last-child{border-bottom:none}
 .request-history-table-wrap #myList .my-req-row{display:grid;grid-template-columns:1fr;gap:0;padding:0}
-.request-history-table-wrap #myList .my-req-summary{display:grid;grid-template-columns:1.05fr .75fr 1.05fr 1.25fr .75fr;gap:8px;align-items:center;padding:16px;width:100%;box-sizing:border-box}
+.request-history-table-wrap #myList .my-req-summary{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;align-items:center;padding:16px;width:100%;box-sizing:border-box}
 .request-history-table-wrap .my-req-detail{grid-column:1/-1;padding:0 16px 16px}
 .hvac-summary-date{font-size:15px;color:#1e293b;line-height:1.4;font-weight:600}
-.hvac-summary-unit{font-size:15px;font-weight:700;color:#1e3a8a}
-.hvac-summary-unit small{display:block;font-size:12px;font-weight:500;color:#475569;margin-top:1px}
 .hvac-summary-request{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#1e293b}
 .hvac-summary-temp{font-size:15px;color:#1e293b;font-weight:700}
 .hvac-summary-status{justify-self:start}
@@ -330,14 +328,13 @@
 .request-history-table-wrap .my-req-chevron{justify-self:end}
 .request-history-table-wrap .hvac-detail-grid{margin-top:0}
 @media(max-width:1100px){
-  .request-history-head,.request-history-table-wrap #myList .my-req-summary{grid-template-columns:1fr .7fr 1fr 1fr .7fr}
+  .request-history-head,.request-history-table-wrap #myList .my-req-summary{grid-template-columns:1.1fr 1fr 1fr .7fr}
 }
 @media(max-width:900px){
   .requests-header{align-items:flex-start;flex-direction:column}
   .request-history-head{display:none}
   .request-history-table-wrap #myList .my-req-summary{grid-template-columns:1fr auto;grid-template-areas:'main status' 'temp status';row-gap:3px}
   .request-history-table-wrap #myList .my-req-summary .hvac-summary-date{grid-area:main}
-  .request-history-table-wrap #myList .my-req-summary .hvac-summary-unit{display:none}
   .request-history-table-wrap #myList .my-req-summary .hvac-summary-request{display:none}
   .request-history-table-wrap #myList .my-req-summary .hvac-summary-temp{grid-area:temp}
   .request-history-table-wrap #myList .my-req-summary .hvac-summary-status{grid-area:status}
@@ -497,7 +494,7 @@
         </div>
         <div id="activeReqSection"></div>
         <div id="historyTableWrap" class="request-history-table-wrap">
-          <div class="request-history-head"><span>Date &amp; Time</span><span>Unit</span><span>Request</span><span>Temperature Change</span><span>Status</span></div>
+          <div class="request-history-head"><span>Date &amp; Time</span><span>Request</span><span>Temperature Change</span><span>Status</span></div>
           <div class="card" id="myList"><div class="empty-state">No requests submitted yet</div></div>
         </div>
       </div>
@@ -819,7 +816,6 @@ function reqRowHtml(r, forceOpen) {
     <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
       <div class="my-req-summary" data-id="${r.id}" style="${forceOpen ? '' : 'cursor:pointer;'}">
         <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
-        <div class="hvac-summary-unit">${(r.level || '').replace('Level ','')}${(r.tenancy || '').replace('Tenancy ','')}<small>${r.level || ''}</small></div>
         <div class="hvac-summary-request">${icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
         <div class="hvac-summary-temp">${tempText}</div>
         <div class="hvac-summary-status"><span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${statusLabel(r.status)}</span></div>
@@ -862,7 +858,6 @@ function reqDetailsCardHtml(r) {
 
   const rows = [
     ['🌡️', 'Request Type', r.type === 'hot' ? 'Too Hot' : 'Too Cold'],
-    ['🏢', 'Location', `${r.level}, ${r.tenancy}`],
     tempRangeText ? ['🎯', 'Requested Temperature', tempRangeText] : null,
     ['👤', 'Submitted By', r.user_name || '—'],
     ['📅', 'Submitted On', submittedOn],
@@ -1593,19 +1588,24 @@ async function loadAdminData() {
     const l = document.getElementById('adminFilterLevel').value;
     const filtered = window._adminCompleted.filter(r => (!t || r.tenancy === t) && (!l || r.level === l));
     if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
-    cList.innerHTML = filtered.map(r => `
-      <div class="my-req-row">
-        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
+    cList.innerHTML = filtered.map(r => {
+      const icon = r.type === 'hot'
+        ? '<span class="summary-icon summary-hot" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="13"></circle><g><line x1="32" y1="5" x2="32" y2="16"></line><line x1="32" y1="48" x2="32" y2="59"></line><line x1="5" y1="32" x2="16" y2="32"></line><line x1="48" y1="32" x2="59" y2="32"></line><line x1="13" y1="13" x2="21" y2="21"></line><line x1="43" y1="43" x2="51" y2="51"></line><line x1="51" y1="13" x2="43" y2="21"></line><line x1="21" y1="43" x2="13" y2="51"></line></g></svg></span>'
+        : '<span class="summary-icon summary-cold" aria-hidden="true"><svg viewBox="0 0 64 64"><g><line x1="32" y1="4" x2="32" y2="60"></line><line x1="4" y1="32" x2="60" y2="32"></line><line x1="12" y1="12" x2="52" y2="52"></line><line x1="52" y1="12" x2="12" y2="52"></line><line x1="32" y1="4" x2="27" y2="11"></line><line x1="32" y1="4" x2="37" y2="11"></line><line x1="32" y1="60" x2="27" y2="53"></line><line x1="32" y1="60" x2="37" y2="53"></line><line x1="4" y1="32" x2="11" y2="27"></line><line x1="4" y1="32" x2="11" y2="37"></line><line x1="60" y1="32" x2="53" y2="27"></line><line x1="60" y1="32" x2="53" y2="37"></line></g></svg></span>';
+      return `
+      <div class="my-req-row" style="align-items:center;padding:18px 20px">
+        <div style="width:30px;height:30px;flex-shrink:0">${icon}</div>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
-          ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
-          ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
+          <div style="font-size:16px;font-weight:700;color:#0f172a">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
+          <div style="font-size:13px;color:#475569;margin-top:2px">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
+          ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:13px;color:#475569;margin-top:4px;font-weight:600">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
+          ${r.admin_comment ? `<div style="font-size:13px;color:var(--red-text);margin-top:3px">⚠️ ${r.admin_comment}</div>` : ''}
         </div>
-        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
-        <button onclick="deleteHvacRequest('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Delete">🗑️</button>
+        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}" style="font-size:13px;font-weight:800;padding:7px 16px;border-radius:8px">${r.status}</span>
+        <button onclick="deleteHvacRequest('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:17px;padding:4px 6px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Delete">🗑️</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
   renderAdminCompleted();
   document.getElementById('adminFilterTenancy').onchange = renderAdminCompleted;
