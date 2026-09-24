@@ -619,18 +619,15 @@ async function loadFloorSetpoint(level, targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
   if (!level) { el.textContent = ''; return; }
-  // The daemon writes hvac_floor_setpoints.level as a plain number (1-6), but the unit's
-  // level here is the display string "Level 2" — normalize before querying, otherwise
-  // "Level 2" never matches the numeric 2 in the DB and this silently stays blank.
-  const numericLevel = typeof level === 'string'
-    ? parseInt(level.replace(/[^0-9]/g, ''), 10)
-    : level;
-  if (!numericLevel || Number.isNaN(numericLevel)) { el.textContent = ''; return; }
+  // Verified directly against the DB (2026-09-24): the daemon writes
+  // hvac_floor_setpoints.level as the string "Level N" (e.g. "Level 2"), matching this
+  // unit's level exactly as-is. Do NOT convert to a number here — an earlier version of
+  // this function did that and it silently broke the match (DB has "Level 2", not 2).
   const myToken = ++floorSetpointReqToken;
   try {
     const { data, error } = await supabase.from('hvac_floor_setpoints')
       .select('current_setpoint, updated_at')
-      .eq('level', numericLevel)
+      .eq('level', level)
       .maybeSingle();
     if (myToken !== floorSetpointReqToken) return;
     if (error || !data) { el.textContent = ''; return; }
