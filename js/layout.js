@@ -128,7 +128,12 @@ async function applyRoleMenuControl(role, supabase) {
 function setActiveMenu() {
   const currentPage = getCurrentPage();
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-    item.classList.toggle('active', item.dataset.page === currentPage);
+    const isActive = item.dataset.page === currentPage;
+    item.classList.toggle('active', isActive);
+    if (isActive) {
+      const group = item.closest('details.nav-group');
+      if (group) group.setAttribute('open', '');
+    }
   });
 }
 
