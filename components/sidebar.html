@@ -255,42 +255,6 @@
   animation: tvGlow 0.5s ease forwards;
 }
 
-/* ── Sidebar navigation groups ── */
-.nav-group {
-  display: block;
-}
-
-/* Professional section labels: clear hierarchy without competing with menu items. */
-.nav-section.nav-group-title {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 19px 13px 8px;
-  padding: 0;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  line-height: 16px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.nav-section.nav-group-title::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.nav-group:first-child .nav-section.nav-group-title {
-  margin-top: 4px;
-}
-
-/* Hide a section heading when all of its menu items are hidden by role permissions. */
-.nav-group:not(:has(.nav-item:not([style*="display: none"]))) {
-  display: none;
-}
 </style>
 <button aria-label="Menu" class="hamburger-btn" id="hamburgerBtn">
 <span></span><span></span><span></span>
@@ -550,5 +514,29 @@
 </svg>
 </div>
 <span class="nav-label">System Management</span>
-</a></div></nav>
+</a></div><script>
+(() => {
+  const updateNavGroups = () => {
+    document.querySelectorAll('.nav-group[data-nav-group]').forEach(group => {
+      const title = group.querySelector(':scope > .nav-group-title');
+      if (!title) return;
+      const items = Array.from(group.querySelectorAll(':scope > .nav-item'));
+      const hasVisibleItem = items.some(item => getComputedStyle(item).display !== 'none');
+      title.classList.toggle('is-empty', !hasVisibleItem);
+    });
+  };
+
+  updateNavGroups();
+
+  const nav = document.querySelector('.sb-nav');
+  if (nav) {
+    new MutationObserver(updateNavGroups).observe(nav, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+  }
+})();
+</script>
+</nav>
 </aside>
