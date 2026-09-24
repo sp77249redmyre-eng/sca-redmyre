@@ -269,140 +269,43 @@
   animation: tvGlow 0.5s ease forwards;
 }
 
-
 /* ── Accordion navigation ── */
-.nav-group {
+.sb-nav .nav-group {
   margin: 0;
-  padding: 0;
+  border-bottom: 1px solid rgba(255,255,255,.16);
 }
-.nav-group + .nav-group {
-  margin-top: 4px;
-}
-.nav-group-header {
-  width: 100%;
-  min-height: 48px;
+.sb-nav .nav-group:last-child { border-bottom: 0; }
+.sb-nav .nav-group-summary {
+  list-style: none;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  border: 0;
-  border-top: 1px solid rgba(255,255,255,.14);
-  background: transparent;
-  color: rgba(255,255,255,.96);
+  min-height: 48px;
+  padding: 0 18px;
   cursor: pointer;
-  text-align: left;
-  font: inherit;
+  user-select: none;
+  color: rgba(255,255,255,.94);
 }
-.nav-group-header:hover {
-  background: rgba(255,255,255,.055);
-}
-.nav-group-icon {
+.sb-nav .nav-group-summary::-webkit-details-marker { display:none; }
+.sb-nav .nav-group-summary::marker { display:none; }
+.sb-nav .nav-group-summary:hover { background: rgba(255,255,255,.055); }
+.sb-nav .nav-group-icon {
   width: 20px;
   height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 20px;
-  opacity: .95;
+  margin-right: 13px;
+  display: grid;
+  place-items: center;
+  opacity: .92;
 }
-.nav-group-icon svg {
-  width: 19px;
-  height: 19px;
-  display: block;
-}
-.nav-group-label {
-  flex: 1;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.25px;
-  line-height: 1;
-}
-.nav-group-toggle {
-  width: 14px;
-  height: 14px;
-  position: relative;
-  flex: 0 0 14px;
-}
-.nav-group-toggle::before,
-.nav-group-toggle::after {
-  content: '';
-  position: absolute;
-  left: 1px;
-  top: 6px;
-  width: 12px;
-  height: 1.5px;
-  border-radius: 2px;
-  background: currentColor;
-  transition: transform .18s ease;
-}
-.nav-group-toggle::after {
-  transform: rotate(90deg);
-}
-.nav-group.open .nav-group-toggle::after {
-  transform: rotate(0deg);
-}
-.nav-group-items {
-  display: none;
-  flex-direction: column;
-  padding: 2px 0 5px;
-}
-.nav-group.open .nav-group-items,
-.nav-group:has(.nav-item.active) .nav-group-items {
-  display: flex;
-}
-.nav-group:has(.nav-item.active) .nav-group-header {
-  color: #fff;
-}
-.nav-group:has(.nav-item.active) .nav-group-toggle::after {
-  transform: rotate(0deg);
-}
-.nav-group-items .nav-item {
-  margin-left: 7px;
-  margin-right: 7px;
-}
-/* Admin section is controlled entirely by the existing nav-admin-only permission mechanism. */
-.nav-group.nav-admin-only {
-  display: none;
-}
-.role-admin .nav-group.nav-admin-only {
-  display: block;
-}
-@media (max-width: 768px) {
-  .nav-group-header { min-height: 46px; }
-  .nav-group-label { font-size: 10px; }
-}
+.sb-nav .nav-group-icon svg { w  <nav class="sb-nav">
 
-</style>
-
-<button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
-  <span></span><span></span><span></span>
-</button>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<aside class="sidebar" id="appSidebar">
-  <div class="sb-header">
-    <a href="https://www.scafacility.com" target="_blank" rel="noopener" class="sb-logo" style="text-decoration:none">
-      <div class="sb-logo-icon">
-        <img src="/sca-logo.png?v=5" alt="SCA">
-      </div>
-      <div>
-        <div class="sb-company">SCA Facility</div>
-        <div class="sb-company-sub">Management</div>
-      </div>
-    </a>
-    <div class="sb-building">Redmyre House</div>
-    <div class="sb-building-sub">Strata Plan 77249 · Strathfield NSW</div>
-  </div>
-
-  <nav class="sb-nav">
-    <section class="nav-group" data-nav-group="building" id="navGroupBuilding">
-      <button type="button" class="nav-group-header" aria-expanded="false" onclick="(function(btn){const group=btn.closest('.nav-group'); const wasOpen=group.classList.contains('open'); document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open')); document.querySelectorAll('.nav-group-header').forEach(b=>b.setAttribute('aria-expanded','false')); if(!wasOpen){group.classList.add('open');btn.setAttribute('aria-expanded','true');}})(this)">
-        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 8h2a2 2 0 0 1 2 2v11"/><path d="M8 7h2M12 7h2M8 11h2M12 11h2M8 15h2M12 15h2M8 21v-3h4v3"/></svg></span>
-        <span class="nav-group-label">BUILDING</span>
-        <span class="nav-group-toggle" aria-hidden="true"></span>
-      </button>
+    <details class="nav-group" data-nav-group="building">
+      <summary class="nav-group-summary" onclick="this.parentElement.parentElement.querySelectorAll('details.nav-group[open]').forEach(function(g){ if(g!==this.parentElement){g.removeAttribute('open');} }, this)">
+        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></svg></span>
+        <span class="nav-group-title">Building</span>
+        <span class="nav-group-chevron" aria-hidden="true"></span>
+      </summary>
       <div class="nav-group-items">
-    <a href="/pages/announcements.html" class="nav-item" data-page="announcements">
+<a href="/pages/announcements.html" class="nav-item" data-page="announcements">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-speaker-body">
@@ -416,7 +319,7 @@
       <span class="nav-label">Announcements</span>
       <span class="nav-badge" id="badgeAnnouncements" style="display:none"></span>
     </a>
-    <a href="/pages/complaints.html" class="nav-item" data-page="complaints">
+<a href="/pages/complaints.html" class="nav-item" data-page="complaints">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -426,7 +329,7 @@
       <span class="nav-label">Resident Requests</span>
       <span class="nav-badge" id="badgeComplaints" style="display:none"></span>
     </a>
-    <a href="/pages/hvac.html" class="nav-item" data-page="hvac">
+<a href="/pages/hvac.html" class="nav-item" data-page="hvac">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="2" y="4" width="20" height="8" rx="2"/>
@@ -439,7 +342,7 @@
       <span class="nav-label">A/C Request</span>
       <span class="nav-badge" id="badgeHvac" style="display:none"></span>
     </a>
-    <a href="/pages/emergency.html" class="nav-item" data-page="emergency">
+<a href="/pages/emergency.html" class="nav-item" data-page="emergency">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-phone-body">
@@ -450,7 +353,7 @@
       </div>
       <span class="nav-label">Emergency Contacts</span>
     </a>
-    <a href="/pages/parking.html" class="nav-item" data-page="parking">
+<a href="/pages/parking.html" class="nav-item" data-page="parking">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-car-body">
@@ -465,16 +368,16 @@
       <span class="nav-label">Parking Management</span>
     </a>
       </div>
-    </section>
+    </details>
 
-    <section class="nav-group" data-nav-group="operations" id="navGroupOperations">
-      <button type="button" class="nav-group-header" aria-expanded="false" onclick="(function(btn){const group=btn.closest('.nav-group'); const wasOpen=group.classList.contains('open'); document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open')); document.querySelectorAll('.nav-group-header').forEach(b=>b.setAttribute('aria-expanded','false')); if(!wasOpen){group.classList.add('open');btn.setAttribute('aria-expanded','true');}})(this)">
-        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-2.8-2.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.8-2.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.8 2.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg></span>
-        <span class="nav-group-label">OPERATIONS</span>
-        <span class="nav-group-toggle" aria-hidden="true"></span>
-      </button>
+    <details class="nav-group" data-nav-group="operations">
+      <summary class="nav-group-summary" onclick="this.parentElement.parentElement.querySelectorAll('details.nav-group[open]').forEach(function(g){ if(g!==this.parentElement){g.removeAttribute('open');} }, this)">
+        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21H10v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-2.8-2.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3V10h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2.8-2.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 2.8 2.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4h-.1a1.7 1.7 0 0 0-1.6 1z"/></svg></span>
+        <span class="nav-group-title">Operations</span>
+        <span class="nav-group-chevron" aria-hidden="true"></span>
+      </summary>
       <div class="nav-group-items">
-    <a href="/pages/quotes.html" class="nav-item nav-privileged" data-page="quotes" id="navQuotes">
+<a href="/pages/quotes.html" class="nav-item nav-privileged" data-page="quotes" id="navQuotes">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="4" y="2" width="16" height="20" rx="2"/>
@@ -487,7 +390,7 @@
       <span class="nav-label">Quote Approvals</span>
       <span class="nav-badge" id="badgeQuotes" style="display:none"></span>
     </a>
-    <a href="/pages/works.html" class="nav-item" data-page="works">
+<a href="/pages/works.html" class="nav-item" data-page="works">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-tool-body">
@@ -497,7 +400,7 @@
       </div>
       <span class="nav-label">Active Works</span>
     </a>
-    <a href="/pages/reports.html" class="nav-item nav-privileged" data-page="reports" id="navReports">
+<a href="/pages/reports.html" class="nav-item nav-privileged" data-page="reports" id="navReports">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
@@ -508,7 +411,7 @@
       </div>
       <span class="nav-label">Completed Works</span>
     </a>
-    <a href="/pages/cost-dashboard.html" class="nav-item nav-privileged" data-page="cost-dashboard" id="navCostDashboard">
+<a href="/pages/cost-dashboard.html" class="nav-item nav-privileged" data-page="cost-dashboard" id="navCostDashboard">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="4" y1="20" x2="20" y2="20"/>
@@ -519,7 +422,7 @@
       </div>
       <span class="nav-label">Cost Report</span>
     </a>
-    <a href="/pages/history.html" class="nav-item nav-privileged" data-page="history" id="navHistory">
+<a href="/pages/history.html" class="nav-item nav-privileged" data-page="history" id="navHistory">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
@@ -531,16 +434,16 @@
       <span class="nav-label">A/C History</span>
     </a>
       </div>
-    </section>
+    </details>
 
-    <section class="nav-group" data-nav-group="guides" id="navGroupGuides">
-      <button type="button" class="nav-group-header" aria-expanded="false" onclick="(function(btn){const group=btn.closest('.nav-group'); const wasOpen=group.classList.contains('open'); document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open')); document.querySelectorAll('.nav-group-header').forEach(b=>b.setAttribute('aria-expanded','false')); if(!wasOpen){group.classList.add('open');btn.setAttribute('aria-expanded','true');}})(this)">
-        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-        <span class="nav-group-label">GUIDES</span>
-        <span class="nav-group-toggle" aria-hidden="true"></span>
-      </button>
+    <details class="nav-group" data-nav-group="guides">
+      <summary class="nav-group-summary" onclick="this.parentElement.parentElement.querySelectorAll('details.nav-group[open]').forEach(function(g){ if(g!==this.parentElement){g.removeAttribute('open');} }, this)">
+        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5v-12z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg></span>
+        <span class="nav-group-title">Guides</span>
+        <span class="nav-group-chevron" aria-hidden="true"></span>
+      </summary>
       <div class="nav-group-items">
-    <a href="/pages/guide-resident.html" class="nav-item nav-guide-resident" data-page="guide-resident" id="navGuideResident">
+<a href="/pages/guide-resident.html" class="nav-item nav-guide-resident" data-page="guide-resident" id="navGuideResident">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -553,7 +456,7 @@
       </div>
       <span class="nav-label">User Guide</span>
     </a>
-    <a href="/pages/guide-committee.html" class="nav-item nav-privileged nav-guide-committee" data-page="guide-committee" id="navGuideCommittee">
+<a href="/pages/guide-committee.html" class="nav-item nav-privileged nav-guide-committee" data-page="guide-committee" id="navGuideCommittee">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -568,16 +471,27 @@
       <span class="nav-label">Committee Guide</span>
     </a>
       </div>
-    </section>
+    </details>
 
-    <section class="nav-group nav-admin-only" data-nav-group="admin" id="navGroupAdmin">
-      <button type="button" class="nav-group-header" aria-expanded="false" onclick="(function(btn){const group=btn.closest('.nav-group'); const wasOpen=group.classList.contains('open'); document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open')); document.querySelectorAll('.nav-group-header').forEach(b=>b.setAttribute('aria-expanded','false')); if(!wasOpen){group.classList.add('open');btn.setAttribute('aria-expanded','true');}})(this)">
-        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5M8 17h3"/></svg></span>
-        <span class="nav-group-label">ADMIN</span>
-        <span class="nav-group-toggle" aria-hidden="true"></span>
-      </button>
+    <details class="nav-group nav-admin-only" data-nav-group="admin">
+      <summary class="nav-group-summary" onclick="this.parentElement.parentElement.querySelectorAll('details.nav-group[open]').forEach(function(g){ if(g!==this.parentElement){g.removeAttribute('open');} }, this)">
+        <span class="nav-group-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.7-3.1 7.8-8 9-4.9-1.2-8-4.3-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <span class="nav-group-title">Admin</span>
+        <span class="nav-group-chevron" aria-hidden="true"></span>
+      </summary>
       <div class="nav-group-items">
-    <a href="/pages/documents.html" class="nav-item" data-page="documents" id="navDocuments">
+<a href="/pages/service-reports.html" class="nav-item" data-page="service-reports">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="5" y="3" width="14" height="18" rx="2"/>
+          <line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <polyline class="svg-clip-check" points="9,17 11,19 15,15" fill="none"/>
+        </svg>
+      </div>
+      <span class="nav-label">Service Reports</span>
+    </a>
+<a href="/pages/documents.html" class="nav-item" data-page="documents" id="navDocuments">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-file-top">
@@ -589,18 +503,7 @@
       </div>
       <span class="nav-label">SCM &amp; Documents</span>
     </a>
-    <a href="/pages/service-reports.html" class="nav-item" data-page="service-reports">
-      <div class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="5" y="3" width="14" height="18" rx="2"/>
-          <line x1="9" y1="9" x2="15" y2="9"/>
-          <line x1="9" y1="13" x2="15" y2="13"/>
-          <polyline class="svg-clip-check" points="9,17 11,19 15,15" fill="none"/>
-        </svg>
-      </div>
-      <span class="nav-label">Service Reports</span>
-    </a>
-    <a href="/pages/users.html" class="nav-item nav-admin-only" data-page="users" id="navUsers">
+<a href="/pages/users.html" class="nav-item nav-admin-only" data-page="users" id="navUsers">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="9" cy="7" r="3"/>
@@ -613,7 +516,7 @@
       </div>
       <span class="nav-label">User Management</span>
     </a>
-    <a href="/pages/occupants.html" class="nav-item" data-page="occupants" id="navOccupants">
+<a href="/pages/occupants.html" class="nav-item" data-page="occupants" id="navOccupants">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-building-body">
@@ -627,7 +530,7 @@
       </div>
       <span class="nav-label">Occupant Details</span>
     </a>
-    <a href="/pages/signboard.html" class="nav-item nav-admin-only" data-page="signboard" id="navSignboard">
+<a href="/pages/signboard.html" class="nav-item nav-admin-only" data-page="signboard" id="navSignboard">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -638,7 +541,7 @@
       </div>
       <span class="nav-label">Signboard Management</span>
     </a>
-    <a href="/pages/system.html" class="nav-item nav-admin-only" data-page="system" id="navSystem">
+<a href="/pages/system.html" class="nav-item nav-admin-only" data-page="system" id="navSystem">
       <div class="nav-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g class="svg-gear-body">
@@ -650,7 +553,37 @@
       <span class="nav-label">System Management</span>
     </a>
       </div>
-    </section>
+    </details>
+
+  </nav> data-page="guide-resident" id="navGuideResident">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          <g class="svg-book-page">
+            <line x1="9" y1="7" x2="15" y2="7"/>
+            <line x1="9" y1="11" x2="15" y2="11"/>
+          </g>
+        </svg>
+      </div>
+      <span class="nav-label">User Guide</span>
+    </a>
+
+    <!-- 19. Committee Guide — 페이지 넘김 -->
+    <a href="/pages/guide-committee.html" class="nav-item nav-privileged nav-guide-committee" data-page="guide-committee" id="navGuideCommittee">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          <g class="svg-book-page">
+            <line x1="9" y1="7" x2="15" y2="7"/>
+            <line x1="9" y1="11" x2="15" y2="11"/>
+            <line x1="9" y1="15" x2="13" y2="15"/>
+          </g>
+        </svg>
+      </div>
+      <span class="nav-label">Committee Guide</span>
+    </a>
 
 </nav>
 
