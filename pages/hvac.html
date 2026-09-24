@@ -15,446 +15,349 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-/* ===== HVAC TENANT UI — visual refresh only ===== */
-.content{padding:22px;display:grid;grid-template-columns:minmax(430px,0.78fr) minmax(520px,1.22fr);gap:16px;align-items:start;background:#f4f7fb}
-.content>div:first-child{grid-column:1/-1}
-.submit-form{background:#fff;border:1px solid #dfe7f1;border-radius:14px;padding:16px;box-shadow:0 4px 16px rgba(31,55,90,.07)}
-.form-title{font-size:16px;font-weight:700;margin-bottom:4px}.form-sub{font-size:13px;color:#718096;margin-bottom:16px}
-.type-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.type-btn{position:relative;min-height:138px;padding:18px 12px;border-radius:12px;border:1.5px solid #d8e2ee;background:#fff;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease;text-align:center;font-family:'DM Sans',sans-serif;box-shadow:0 3px 10px rgba(31,55,90,.08)}
-.type-btn:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(31,55,90,.12)}
-.type-btn:active{transform:translateY(1px)}
-.type-btn#btnHot{border-color:#ffb0ad;background:linear-gradient(180deg,#fffafa,#fff1f0);box-shadow:0 4px 12px rgba(239,48,48,.08)}
-.type-btn#btnCold{border-color:#9cc8ff;background:linear-gradient(180deg,#fbfdff,#eef6ff);box-shadow:0 4px 12px rgba(37,99,235,.08)}
-.type-btn.hot{border-color:#ef3030!important;background:linear-gradient(180deg,#fff1f1,#ffe0df)!important;box-shadow:0 7px 18px rgba(239,48,48,.20),inset 0 1px 0 rgba(255,255,255,.75)!important}
-.type-btn.cold{border-color:#1674e8!important;background:linear-gradient(180deg,#eef7ff,#dcecff)!important;box-shadow:0 7px 18px rgba(22,116,232,.20),inset 0 1px 0 rgba(255,255,255,.75)!important}
-.type-icon{height:58px;margin-bottom:5px;display:flex;justify-content:center;align-items:center}.type-icon svg{display:block}
-.type-label{font-size:15px;font-weight:700;line-height:1.2}.type-sub{font-size:11px;color:#667085;margin-top:5px}.type-btn#btnHot .type-label,.type-btn#btnHot .type-sub{color:#df2424}.type-btn#btnCold .type-label,.type-btn#btnCold .type-sub{color:#1168d8}
-.form-field{margin-bottom:12px}.form-label{font-size:11px;font-weight:700;color:#65748a;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
-.form-select{width:100%;height:42px;padding:0 12px;border:1px solid #d5dfeb;border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;color:#17233a;background:#fff}.form-select:focus{border-color:#2877e8;outline:none;box-shadow:0 0 0 3px rgba(40,119,232,.10)}
-.form-textarea{width:100%;min-height:74px;padding:10px 12px;border:1px solid #d5dfeb;border-radius:9px;font-size:13px;font-family:'DM Sans',sans-serif;color:#17233a;background:#fff;resize:vertical;outline:none}.form-textarea:focus{border-color:#2877e8;box-shadow:0 0 0 3px rgba(40,119,232,.10)}
-.btn-submit{display:flex;align-items:center;gap:6px;height:48px;padding:0 18px;border-radius:9px;background:linear-gradient(180deg,#2d78ea,#145bd4);color:#fff;font-size:14px;font-weight:700;border:0;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center;box-shadow:0 5px 12px rgba(20,91,212,.22);transition:transform .15s,box-shadow .15s}.btn-submit:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(20,91,212,.26)}
-.unit-location-wrap{margin-bottom:12px}.unit-tabs{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 3px;scrollbar-width:none}.unit-tabs::-webkit-scrollbar{display:none}.unit-tab{min-width:94px;height:46px;padding:6px 12px;border:1px solid #d8e1eb;border-radius:8px;background:#f3f6fa;color:#17233a;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s;box-shadow:0 1px 3px rgba(31,55,90,.04)}.unit-tab:hover{border-color:#9dbbe0;background:#eef5ff}.unit-tab.selected{background:linear-gradient(180deg,#2878ef,#1260dc);border-color:#1260dc;color:#fff;box-shadow:0 5px 12px rgba(18,96,220,.22)}.unit-tab-unit{font-size:13px;font-weight:700;line-height:1.15}.unit-tab-suite{font-size:10px;margin-top:2px;opacity:.9}.location-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(180deg,#f8fbff,#f2f7fd);border:1px solid #cfe0f4;border-radius:10px;min-height:72px}.location-icon{width:30px;height:30px;display:grid;place-items:center;color:#1769e8;flex-shrink:0}.location-icon svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.7}.location-main{min-width:0;flex:1}.location-unit{font-size:14px;font-weight:700;color:#17233a}.location-detail{font-size:12px;color:#3c4b63;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.location-side{border-left:1px solid #cbd9e8;padding-left:14px;min-width:84px;text-align:center}.location-level-label{font-size:9px;text-transform:uppercase;color:#596a80;font-weight:700}.location-level{font-size:22px;font-weight:800;line-height:1.05;color:#1f3f7c}.floor-pill{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:5px 9px;border-radius:999px;background:#1769e8;color:#fff;font-size:9px;box-shadow:0 3px 8px rgba(23,105,232,.22)}
-.current-card{margin:12px 0;background:linear-gradient(180deg,#fbfdff,#f5f8fc);border:1px solid #d9e3ef;border-radius:10px;padding:14px 16px;text-align:center;box-shadow:0 2px 8px rgba(31,55,90,.04)}.current-caption{font-size:10px;font-weight:700;color:#1769e8;letter-spacing:.09em;text-transform:uppercase}.current-temp{font-size:28px;font-weight:800;color:#475569;line-height:1.1;margin-top:5px}.current-updated{font-size:10px;color:#7a8799;margin-top:2px}.temp-track{position:relative;height:30px;margin:8px 2px 0}.temp-track-base{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:4px;background:linear-gradient(90deg,#2478ef 0%,#8db7ef 48%,#efb0b7 74%,#ff9b9b 100%)}.temp-knob{position:absolute;left:60%;top:5px;width:18px;height:18px;border-radius:50%;background:#5f7089;border:3px solid #eef2f7;box-shadow:0 2px 5px rgba(0,0,0,.2)}.temp-range{display:flex;justify-content:space-between;font-size:10px;font-weight:600}.temp-min{color:#1260dc}.temp-mid{color:#334155}.temp-max{color:#e11d48}
-.unit-auto-box{display:none}.unit-auto-label,.unit-radio-list{display:none}.unit-radio-item{display:none}
-.warning-note{color:#b42318;font-size:11px;font-weight:600;margin:10px 0 8px;line-height:1.45;padding:8px 10px;background:#fff7f5;border:1px solid #ffd1ca;border-radius:8px}
-#rightPanel{min-width:0}.user-panel-card{background:#fff;border:1px solid #dfe7f1;border-radius:14px;box-shadow:0 4px 16px rgba(31,55,90,.07);overflow:hidden}.user-panel-head{display:flex;align-items:center;gap:9px;padding:14px 16px 10px}.user-panel-icon{width:28px;height:28px;color:#1769e8}.user-panel-icon svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7}.user-panel-title{font-size:17px;font-weight:700;color:#17233a}.user-panel-sub{font-size:11px;color:#718096;margin-top:2px}.filter-tabs{display:none}
-.req-table-head{display:grid;grid-template-columns:1.05fr .95fr 1.15fr .72fr;padding:9px 14px;background:#f6f8fb;border-top:1px solid #e1e8f0;border-bottom:1px solid #dfe7f1;font-size:10px;font-weight:700;color:#17233a}.req-table-row{display:grid;grid-template-columns:1.05fr .95fr 1.15fr .72fr;align-items:center;padding:10px 14px;border-bottom:1px solid #edf1f5;font-size:11px;color:#26354d;cursor:pointer;transition:background .15s}.req-table-row:hover{background:#f8fbff}.req-table-row.expanded{background:#f1fff6;border:1px solid #22b55b;border-radius:0}.req-date{font-weight:600}.req-request{display:flex;align-items:center;gap:6px;font-weight:600}.req-request-icon{width:20px;height:20px;display:grid;place-items:center}.req-request-icon svg{width:20px;height:20px}.req-change{font-weight:600}.status-badge{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:5px 9px;border-radius:8px;font-size:10px;font-weight:700;background:#e9f9f0;color:#16834a;width:max-content}.status-badge.blue{background:#eaf2ff;color:#1769e8}.status-badge.yellow{background:#fff7db;color:#9a6700}.status-badge.red{background:#fff0f0;color:#c62828}
-.req-expanded{grid-column:1/-1;margin-top:10px;padding:0 0 12px}.progress-bar{display:flex;align-items:flex-start;gap:0;margin:0 0 10px;padding:8px 8px;background:#f7fafc;border-radius:10px}.progress-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative;z-index:1}.progress-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#2878ea;color:#fff;font-size:12px;font-weight:800;box-shadow:0 2px 5px rgba(40,120,234,.18)}.progress-label{font-size:9px;color:#5f6f83;font-weight:600;text-align:center;line-height:1.15}.progress-line{height:2px;background:#cfd9e5;flex:1;margin:13px -2px 0}.progress-line.active{background:#2878ea}.step-pending .progress-icon{background:#dfe6ee;color:#8190a4;box-shadow:none}.step-completed .progress-icon{background:#2878ea}.req-success{margin:0 10px 10px;padding:10px 12px;border-radius:9px;background:#d9f8e4;color:#137744;font-size:11px;font-weight:600}.req-success small{display:block;font-weight:500;margin-top:2px}.req-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 10px}.req-detail-box{background:#f7f9fb;border-radius:9px;padding:12px}.req-detail-title{font-size:11px;font-weight:700;margin-bottom:9px;color:#17233a}.detail-item{display:grid;grid-template-columns:20px 1fr;gap:7px;margin:7px 0}.detail-icon{font-size:14px}.detail-label{font-size:8px;color:#6c7a8d;font-weight:700;text-transform:uppercase}.detail-value{font-size:10px;color:#17233a;font-weight:600;margin-top:1px}.conversation{background:#f7f9fb;border-radius:9px;padding:12px}.conversation-empty{font-size:10px;color:#8794a5;margin:8px 0 18px}.conversation-input{display:flex;gap:7px}.conversation-input input{flex:1;height:34px;border:1px solid #d7e0ea;border-radius:8px;padding:0 10px;font:10px 'DM Sans',sans-serif}.conversation-input button{height:34px;padding:0 12px;border:0;border-radius:8px;background:#1d70e8;color:#fff;font:600 10px 'DM Sans',sans-serif}
-.empty-state{padding:40px;text-align:center;color:#7a8799;font-size:13px}.my-req-row{padding:0;border-bottom:0}.req-alert{font-size:11px;font-weight:600;color:var(--red-text);margin-top:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
-.section-hdr{display:flex;align-items:center;justify-content:space-between}.card{background:#fff;border:1px solid #dfe7f1;border-radius:12px;box-shadow:0 3px 12px rgba(31,55,90,.05);overflow:hidden}
-.limits-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#f8fafc;border-radius:10px;margin-bottom:16px;flex-wrap:wrap}.limits-input{width:64px;height:34px;padding:0 8px;border:1px solid #d6e0eb;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;text-align:center}.limits-save{padding:6px 12px;border-radius:7px;background:#1769e8;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
-.req-row{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #edf1f5}.req-info{flex:1}.req-title{font-size:13px;font-weight:600}.req-meta{font-size:11px;color:#718096;margin-top:2px}.req-comment{font-size:11px;color:#526174;margin-top:3px;font-style:italic}.req-actions{display:flex;gap:6px;flex-shrink:0}
-.cooldown-overlay,.reason-overlay{display:none;position:fixed;inset:0;background:rgba(13,30,55,.45);z-index:9999;align-items:center;justify-content:center}.cooldown-overlay.show,.reason-overlay.show{display:flex}.cooldown-box,.reason-box{background:#fff;border-radius:16px;padding:28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}.cooldown-icon,.reason-icon{font-size:40px;margin-bottom:12px}.cooldown-title,.reason-title{font-size:18px;font-weight:700;color:#dc2626;margin-bottom:8px}.cooldown-msg,.reason-msg{font-size:13px;color:#374151;line-height:1.6;margin-bottom:18px}.cooldown-time{font-size:26px;font-weight:800;color:#dc2626;margin-bottom:18px}.cooldown-close,.reason-close{padding:10px 28px;border-radius:9px;background:#1e3a8a;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
-@media(max-width:1100px){.content{grid-template-columns:1fr}.req-table-head,.req-table-row{grid-template-columns:1fr .9fr 1fr .7fr}}
-@media(max-width:768px){.content{padding:14px;gap:12px}.submit-form{padding:12px}.type-btn{min-height:120px;padding:14px 9px}.type-icon{height:50px}.type-label{font-size:14px}.type-sub{font-size:10px}.req-table-head{display:none}.req-table-row{display:block;padding:12px}.req-table-row>.req-date,.req-table-row>.req-request,.req-table-row>.req-change,.req-table-row>.req-status-wrap{margin-bottom:6px}.req-detail-grid{grid-template-columns:1fr}.location-card{min-height:66px}.location-side{min-width:72px}.current-temp{font-size:25px}.form-select,.form-textarea{font-size:16px}.form-select{height:46px}}
+.content{padding:24px;display:grid;grid-template-columns:0.78fr 1.22fr;gap:20px;align-items:start}
+.submit-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+.form-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.type-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.type-btn{padding:20px 16px;border-radius:12px;border:2px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.15s;text-align:center;font-family:'DM Sans',sans-serif}
+.type-btn:hover{border-color:var(--border);background:var(--surface)}
+.type-btn#btnHot{border-color:#ef4444;background:#fee2e2}
+.type-btn#btnCold{border-color:#3b82f6;background:#dbeafe}
+.type-btn.hot{border-color:#dc2626;background:#fca5a5;box-shadow:0 0 0 3px #fca5a5}
+.type-btn.cold{border-color:#1d4ed8;background:#93c5fd;box-shadow:0 0 0 3px #93c5fd}
+.type-icon{font-size:44px;margin-bottom:8px;display:flex;justify-content:center;align-items:center}
+@keyframes hvac-sweat1{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(22px)}}
+@keyframes hvac-sweat2{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(18px)}}
+@keyframes hvac-hotbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes hvac-shiver{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+@keyframes hvac-blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}
+.hvac-hot-face{animation:hvac-hotbob 1s ease-in-out infinite}
+.hvac-cold-face{animation:hvac-shiver 0.5s ease-in-out infinite}
+.hvac-sweat1{animation:hvac-sweat1 1.4s ease-in infinite}
+.hvac-sweat2{animation:hvac-sweat2 1.4s ease-in infinite 0.5s}
+.hvac-sweat3{animation:hvac-sweat1 1.4s ease-in infinite 0.9s}
+.hvac-hot-eye{transform-origin:center;animation:hvac-blink 3s ease-in-out infinite}
+.hvac-cold-eye{transform-origin:center;animation:hvac-blink 2.5s ease-in-out infinite}
+.type-label{font-size:18px;font-weight:700}
+.type-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.form-field{margin-bottom:14px}
+.form-label{font-size:13px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px;display:block}
+.form-select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg)}
+.option-grid{display:grid;gap:8px;margin-bottom:4px}
+.option-grid-floor{grid-template-columns:repeat(3,1fr)}
+.option-grid-tenancy{grid-template-columns:repeat(4,1fr)}
+#floorField .form-label,#suiteField .form-label{font-size:18px;font-weight:800;color:#0f172a}
+.option-box{padding:12px 4px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;color:#0f172a;font-size:14px;font-weight:800;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s;text-align:center}
+.option-box-floor.selected{border-color:#ef4444;background:#ffd5d5;color:#b91c1c;box-shadow:0 0 0 2px #ef4444}
+.option-box-tenancy.selected{border-color:#2563eb;background:#cfe2ff;color:#1d4ed8;box-shadow:0 0 0 2px #2563eb}
+.form-select:focus{border-color:var(--blue-600);outline:none}
+.form-textarea{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none}
+.form-textarea:focus{border-color:var(--blue-600)}
+.btn-submit{display:inline-flex;align-items:center;gap:8px;padding:16px 18px;border-radius:10px;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;font-size:17px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
+.req-row{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border-light)}
+.req-row:last-child{border-bottom:none}
+.req-info{flex:1}
+.req-title{font-size:13px;font-weight:600}
+.req-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.req-comment{font-size:11px;color:var(--text-2);margin-top:3px;font-style:italic}
+.req-actions{display:flex;gap:6px;flex-shrink:0}
+.limits-bar{display:flex;align-items:center;gap:12px;padding:18px 20px;background:var(--bg);border-radius:12px;margin-bottom:16px;flex-wrap:wrap}
+.limits-bar label{font-size:16px;color:#1e293b;font-weight:700}
+.limits-input{width:84px;height:48px;padding:0 10px;border:2px solid var(--border);border-radius:8px;font-size:20px;font-weight:700;font-family:'DM Sans',sans-serif;text-align:center;color:#0f172a}
+.limits-save{padding:12px 22px;border-radius:8px;background:var(--blue-600);color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.my-req-row{display:flex;align-items:start;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
+.my-req-row:last-child{border-bottom:none}
+#myList .my-req-row,#activeReqSection .my-req-row{flex-direction:column;align-items:stretch;padding:0}
+#myList .my-req-summary,#activeReqSection .my-req-summary{padding:16px 20px}
+.my-req-chevron{font-size:16px;color:var(--muted);flex-shrink:0;line-height:1;padding-top:2px}
+.my-req-detail{padding:0 24px 24px 24px}
+.hvac-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;align-items:start}
+@media(max-width:900px){.hvac-detail-grid{grid-template-columns:1fr}}
+.hvac-details-card{background:var(--bg);border:1px solid var(--border-light);border-radius:12px;padding:18px 20px}
+.hvac-details-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px}
+.hvac-detail-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
+.hvac-detail-row:last-child{margin-bottom:0}
+.hvac-detail-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center;margin-top:1px}
+.hvac-detail-label{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;font-weight:600}
+.hvac-detail-value{font-size:14px;font-weight:600;color:var(--text);word-break:break-word}
+.hvac-conv{margin-top:0;padding-top:0;border-top:none;background:var(--bg);border:1px solid var(--border-light);border-radius:12px;padding:18px 20px}
+.hvac-conv-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hvac-conv-count{font-size:11px;font-weight:600;color:var(--blue-600);background:var(--blue-50);padding:3px 10px;border-radius:999px}
+.hvac-conv-title{font-size:15px;font-weight:700;color:var(--text);text-transform:none;letter-spacing:normal;margin-bottom:0}
+.hvac-conv-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:260px;overflow-y:auto}
+.hvac-conv-empty{font-size:13px;color:#64748b;padding:6px 0}
+.hvac-conv-msg{padding:10px 12px;border-radius:8px;max-width:88%}
+.hvac-conv-msg.is-tenant{background:var(--blue-50);align-self:flex-start}
+.hvac-conv-msg.is-staff{background:var(--bg);align-self:flex-end;text-align:right}
+.hvac-conv-msg-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#64748b;margin-bottom:3px}
+.hvac-conv-msg.is-staff .hvac-conv-msg-head{justify-content:flex-end}
+.hvac-conv-msg-action{border:none;background:transparent;cursor:pointer;font-size:11px;padding:1px 3px;opacity:0.55;line-height:1}
+.hvac-conv-msg-action:hover{opacity:1}
+.hvac-conv-edit-textarea{width:100%;resize:none;border:1px solid var(--blue-400);border-radius:8px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;box-sizing:border-box}
+.hvac-conv-edit-actions{display:flex;gap:8px;margin-top:6px}
+.hvac-conv-edit-save{padding:5px 12px;border-radius:7px;background:var(--blue-600);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.hvac-conv-edit-cancel{padding:5px 12px;border-radius:7px;background:#e2e8f0;color:#334155;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.hvac-conv-msg-text{font-size:14px;color:#1e293b;white-space:pre-wrap;word-break:break-word}
+.hvac-conv-input{display:flex;gap:10px;align-items:flex-end}
+.hvac-conv-attach{flex-shrink:0;font-size:17px;color:#64748b;padding:9px 2px;cursor:not-allowed;opacity:0.6}
+.hvac-conv-textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif}
+.hvac-conv-textarea:focus{outline:none;border-color:var(--blue-600)}
+.hvac-conv-send{padding:10px 18px;border-radius:8px;background:var(--blue-600);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.hvac-conv-send:hover{background:var(--blue-800)}
+
+/* STEP 7: Tenant progress steps */
+.hvac-steps-wrap{margin-top:10px}
+.hvac-steps{display:flex;align-items:flex-start;padding:6px 4px 0}
+.hvac-step{display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto;width:88px}
+.hvac-step-circle{width:38px;height:38px;border-radius:50%;background:var(--border);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;transition:background 0.2s}
+.hvac-step.is-future .hvac-step-circle{background:var(--border);color:#64748b}
+.hvac-step-pulse{animation:hvac-step-pulse-kf 1.6s ease-out infinite}
+@keyframes hvac-step-pulse-kf{0%{box-shadow:0 0 0 0 rgba(37,99,235,0.35)}70%{box-shadow:0 0 0 8px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}
+.hvac-step-label{font-size:13px;color:#475569;font-weight:600;text-align:center;line-height:1.3}
+.hvac-step-time{font-size:12px;color:#64748b;text-align:center;margin-top:-4px}
+.hvac-step-hint{font-size:12px;color:#92400e;font-weight:600;text-align:center;margin-top:-4px}
+.hvac-step-line{flex:1 1 auto;height:3px;background:var(--border);margin-top:19px;min-width:8px}
+.hvac-step-line.is-done{background:#2563eb}
+.hvac-step-banner{margin-top:16px;padding:20px 22px;border-radius:12px;font-size:16px;font-weight:600;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.hvac-step-banner.is-blue{background:var(--blue-50);color:var(--blue-800)}
+.hvac-step-banner.is-green{background:#dcfce7;color:#166534}
+.hvac-step-banner.is-amber{background:#fef3c7;color:#92400e}
+.hvac-step-banner-icon{flex-shrink:0;font-size:24px;line-height:1.3}
+.hvac-spin{display:inline-block;animation:hvac-spin-kf 1.4s linear infinite}
+@keyframes hvac-spin-kf{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.hvac-step-banner-body{flex:1 1 160px}
+.hvac-step-banner-title{margin-bottom:4px;font-size:17px}
+.hvac-step-banner-sub{font-size:14px;font-weight:400;opacity:0.9}
+.hvac-temp-line{font-size:18px;font-weight:700;flex-shrink:0;margin-left:auto;align-self:center}
+.hvac-temp-current{color:#334155}
+.hvac-temp-arrow{margin:0 8px;color:#64748b;font-weight:400}
+.hvac-temp-target{color:#92400e}
+.hvac-confetti-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.hvac-confetti-piece{position:absolute;top:0;width:6px;height:10px;border-radius:2px;opacity:0;animation:hvac-confetti-fall 0.9s ease-out forwards}
+@keyframes hvac-confetti-fall{0%{opacity:1;transform:translate(0,0) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),140px) rotate(360deg)}}
+
+.empty-state{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.filter-tabs{display:flex;gap:8px;margin-bottom:12px}
+.filter-tab{padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--muted)}
+.filter-tab.active{background:var(--blue-600);color:#fff;border-color:var(--blue-600)}
+.filter-tab:hover:not(.active){border-color:var(--blue-400);color:var(--text)}
+.progress-bar{display:flex;align-items:center;gap:0;margin-top:10px;padding:12px 16px;background:var(--bg);border-radius:10px}
+.progress-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+.progress-icon{font-size:20px;margin-bottom:2px}
+.progress-label{font-size:10px;color:var(--muted);font-weight:500;text-align:center}
+.progress-line{height:2px;background:var(--border);flex:1;margin:0 -4px;position:relative;top:-14px}
+.progress-line.active{background:var(--blue-600)}
+.step-completed .progress-icon{filter:none}
+.step-active .progress-icon{animation:pulse 1.5s ease-in-out infinite}
+.step-pending .progress-icon{opacity:0.3}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Unit Selection Styles */
+.unit-auto-box{padding:14px 16px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;margin-bottom:18px}
+.unit-auto-label{font-size:11px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px}
+.unit-auto-info{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.unit-auto-detail{font-size:12px;color:var(--muted)}
+.unit-radio-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.unit-radio-item{display:flex;align-items:center;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s}
+.unit-radio-item:hover{border-color:var(--blue-400);background:var(--blue-50)}
+.unit-radio-item input[type="radio"]{margin-right:12px;width:18px;height:18px;cursor:pointer}
+.unit-radio-item input[type="radio"]:checked{accent-color:var(--blue-600)}
+.unit-radio-item.selected{border-color:var(--blue-600);background:var(--blue-50)}
+.unit-radio-info{flex:1}
+.unit-radio-unit{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.unit-radio-detail{font-size:12px;color:var(--muted)}
+
+/* Current HVAC Setting (STEP 4) */
+.setpoint-box{padding:18px 16px;background:linear-gradient(135deg,var(--blue-50),var(--surface));border:1.5px solid var(--blue-200);border-radius:12px;margin-bottom:18px;text-align:center}
+.setpoint-label{font-size:11px;font-weight:600;color:var(--blue-600);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.setpoint-value{font-size:32px;font-weight:700;color:var(--text);line-height:1.2}
+.setpoint-updated{font-size:11px;color:var(--muted);margin-top:4px}
+.setpoint-range{font-size:11px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed var(--border-light)}
+
+@media(max-width:900px){.content{grid-template-columns:1fr}}
+
+/* Cooldown Modal */
+.cooldown-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+.cooldown-overlay.show{display:flex}
+.cooldown-box{background:#fff;border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.cooldown-icon{font-size:48px;margin-bottom:16px}
+.cooldown-title{font-size:18px;font-weight:700;color:#dc2626;margin-bottom:8px}
+.cooldown-msg{font-size:14px;color:#374151;line-height:1.6;margin-bottom:20px}
+.cooldown-time{font-size:28px;font-weight:800;color:#dc2626;margin-bottom:20px}
+.cooldown-close{padding:10px 28px;border-radius:10px;background:#dc2626;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Rejection / Admin Notice - clickable alert */
+.req-alert{font-size:13px;font-weight:600;color:var(--red-text);margin-top:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.req-alert:hover{opacity:0.8}
+
+/* Reason Modal */
+.reason-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+.reason-overlay.show{display:flex}
+.reason-box{background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;text-align:left;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.reason-icon{font-size:36px;margin-bottom:12px;text-align:center}
+.reason-title{font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center}
+.reason-msg{font-size:14px;color:#374151;line-height:1.6;margin-bottom:20px;white-space:pre-wrap;word-break:break-word}
+.reason-close{display:block;margin:0 auto;padding:10px 28px;border-radius:10px;background:#1e3a8a;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+@media(max-width:768px){
+  .req-alert{white-space:normal}
+}
+@media(max-width:768px){
+  .content{padding:16px;gap:14px}
+  .submit-form{padding:16px}
+  .type-btn{padding:14px 12px}
+  .type-icon{font-size:36px}
+  .req-row{flex-direction:column;align-items:flex-start;gap:8px;padding:12px 14px}
+  .req-actions{width:100%}
+  .req-actions button{flex:1}
+  .my-req-row{flex-direction:column;gap:8px;padding:12px 14px}
+  #myList .my-req-row,#activeReqSection .my-req-row{padding:0}
+  #myList .my-req-summary,#activeReqSection .my-req-summary{padding:12px 14px}
+  .my-req-detail{padding-left:14px}
+  .limits-bar{flex-direction:column;align-items:stretch;gap:6px}
+  .filter-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:4px}
+  .filter-tabs::-webkit-scrollbar{display:none}
+  .filter-tab{white-space:nowrap;flex-shrink:0}
+
+  /* iOS Safari 줌인 방지 */
+  .form-select,.form-textarea{font-size:16px}
+  .form-select{height:48px}
+  .limits-input{font-size:16px;height:38px;width:72px}
+
+  /* 폼 타이틀 컴팩트 */
+  .form-title{font-size:15px}
+  .form-sub{font-size:12px;margin-bottom:14px}
+
+  /* Type 버튼 (Too Hot / Too Cold) 라벨 정리 */
+  .type-label{font-size:17px}
+  .type-sub{font-size:12px;margin-top:2px}
+
+  /* Submit 버튼 살짝 키움 */
+  .btn-submit{height:48px;font-size:14px;padding:12px 18px}
+
+  /* 진행바 컴팩트 */
+  .progress-bar{padding:10px 8px;gap:0}
+  .progress-icon{font-size:16px}
+  .progress-label{font-size:9px}
+  .progress-line{margin:0 -2px;top:-12px}
+
+  /* 쿨다운 모달 모바일 */
+  .cooldown-box{padding:24px 20px;max-width:340px}
+  .cooldown-icon{font-size:42px;margin-bottom:12px}
+  .cooldown-title{font-size:16px}
+  .cooldown-msg{font-size:13px}
+  .cooldown-time{font-size:24px;margin-bottom:16px}
+
+  /* Unit auto/radio 박스 */
+  .unit-auto-box{padding:12px}
+  .unit-radio-item{padding:10px 12px}
+
+  /* 섹션 헤더 */
+  .section-hdr{flex-wrap:wrap;gap:8px}
+}
+
+/* =========================================================
+   FINAL TENANT HVAC DESIGN — based on the supplied target
+   screenshot. Presentation only; existing data/DB behaviour stays intact.
+   ========================================================= */
+.submit-form{padding:18px 20px 20px;border-radius:14px}
+.type-btns{gap:10px;margin-bottom:16px}
+.type-btn{min-height:112px;padding:14px 12px;border-radius:10px}
+.type-btn#btnHot{border-color:#ff4b4b;background:#fee3e3}
+.type-btn#btnCold{border-color:#4388ff;background:#dbeafe}
+.type-btn.hot{border-color:#ef4444;background:#ffd5d5;box-shadow:0 0 0 2px #ef4444}
+.type-btn.cold{border-color:#2563eb;background:#cfe2ff;box-shadow:0 0 0 2px #2563eb}
+.type-icon{height:60px;margin-bottom:6px}
+.type-icon svg{width:60px;height:60px}
+.target-hot-icon svg{display:block;width:60px;height:60px;overflow:visible}
+.target-cold-icon svg{display:block;width:60px;height:60px;overflow:visible}
+.type-label{font-size:20px;font-weight:800;color:#1e293b}
+.type-sub{font-size:14px;color:#334155;font-weight:500;margin-top:5px}
+#btnHot .type-label,#btnHot .type-sub{color:#b91c1c}
+#btnCold .type-label,#btnCold .type-sub{color:#1d4ed8}
+.location-section{margin-bottom:16px}
+.location-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.location-section-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
+.location-manage{font-size:13px;color:var(--blue-600);font-weight:600}
+.location-tabs{display:flex;gap:10px;overflow-x:auto;padding:1px 1px 8px;scrollbar-width:none}
+.location-tabs::-webkit-scrollbar{display:none}
+.location-tab{flex:0 0 132px;padding:10px 8px;border:1px solid var(--border);border-radius:9px;background:var(--bg);text-align:center;cursor:pointer;transition:.15s}
+.location-tab.selected{background:#1769ff;color:#fff;border-color:#1769ff;box-shadow:0 5px 12px rgba(37,99,235,.18)}
+.location-tab-unit{font-size:15px;font-weight:700}
+.location-tab-suite{font-size:13px;color:#475569;margin-top:2px}
+.location-tab.selected .location-tab-suite{color:#dbeafe}
+.location-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(90deg,#edf5ff,#f8fbff);border:1px solid #d5e5fb;border-radius:10px;margin-top:1px}
+.location-card-main{display:flex;align-items:center;gap:12px;min-width:0}
+.location-building-icon{width:30px;height:34px;border:2px solid #1769ff;color:#1769ff;border-radius:3px;font-size:28px;line-height:28px;text-align:center;font-weight:700;flex-shrink:0}
+.location-unit-name{font-size:17px;font-weight:700;color:var(--text)}
+.location-unit-detail{font-size:16px;font-weight:500;color:#334155;margin-top:4px;line-height:1.35}
+.location-level{padding-left:16px;border-left:1px solid #cbdcf2;text-align:center;min-width:70px}
+.location-level span{display:block;font-size:12px;color:#334155;font-weight:600}
+.location-level strong{font-size:26px;color:#1e3a8a;line-height:1.1}
+.location-floor-setpoint{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 14px;background:#2563eb;border:none;border-radius:999px;font-size:20px;color:#fff;font-weight:800;white-space:nowrap;box-shadow:0 1px 3px rgba(37,99,235,0.35)}
+.setpoint-box{padding:18px 18px 16px;background:linear-gradient(135deg,#eef6ff,#fff);border:1px solid #dce9f8;border-radius:10px;margin-bottom:16px}
+.setpoint-label{font-size:13px;font-weight:700;margin-bottom:4px}
+.setpoint-value{font-size:36px}
+.setpoint-updated{font-size:13px;color:#475569;margin-top:3px}
+.setpoint-visual{margin-top:14px}
+.setpoint-track{height:5px;background:#d7dfeb;border-radius:99px;position:relative}
+.setpoint-fill{position:absolute;left:0;top:0;height:5px;background:#1d6cf2;border-radius:99px;width:50%}
+.setpoint-dot{position:absolute;top:50%;width:19px;height:19px;border-radius:50%;background:#3b82f6;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transform:translate(-50%,-50%);left:50%;transition:left 0.3s,background 0.3s}
+.setpoint-fill{transition:width 0.3s,background 0.3s}
+.setpoint-baseline{position:absolute;top:-4px;width:2px;height:13px;background:#94a3b8;transform:translateX(-50%);display:none}
+.setpoint-scale{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#334155;margin-top:8px}
+.setpoint-min-label{color:#1d4ed8;font-size:15px;font-weight:800}
+.setpoint-max-label{color:#dc2626;font-size:15px;font-weight:800}
+.setpoint-range{display:none}
+.requests-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+.requests-heading{display:flex;align-items:center;gap:10px}
+.requests-heading-icon{width:30px;height:30px;border:2px solid #1769ff;color:#1769ff;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.requests-heading .section-title{font-size:20px;font-weight:800;color:#0f172a}
+.request-history-table-wrap .my-req-row.my-req-open{background:#f0fdf4;box-shadow:inset 0 0 0 2px #22c55e}
+.requests-subtitle{font-size:13px;color:#475569;margin-top:2px}
+.request-filters{display:flex;gap:7px}
+.request-filter{border:1px solid var(--border);background:#f8fafc;color:#475569;border-radius:8px;padding:8px 14px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}
+.request-filter.active{background:#1769ff;color:#fff;border-color:#1769ff}
+.request-history-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.request-history-head{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;padding:16px;background:#f1f5f9;border-bottom:2px solid var(--border);font-size:15px;font-weight:800;color:#0f172a}
+.request-history-table-wrap #myList,.request-history-table-wrap #completedList{border:none;border-radius:0}
+.request-history-table-wrap .my-req-row{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;align-items:center;padding:16px;border-bottom:1px solid var(--border-light)}
+.request-history-table-wrap .my-req-row:last-child{border-bottom:none}
+.request-history-table-wrap #myList .my-req-row,.request-history-table-wrap #completedList .my-req-row{display:grid;grid-template-columns:1fr;gap:0;padding:0}
+.request-history-table-wrap #myList .my-req-summary{display:grid;grid-template-columns:1.2fr 1.2fr 1.3fr .8fr;gap:8px;align-items:center;padding:16px;width:100%;box-sizing:border-box}
+.request-history-table-wrap #completedList .my-req-summary{display:grid;grid-template-columns:1fr .8fr 1fr 1.2fr .7fr;gap:8px;align-items:center;padding:16px;width:100%;box-sizing:border-box}
+.request-history-table-wrap .my-req-detail{grid-column:1/-1;padding:0 16px 16px}
+.hvac-summary-date{font-size:15px;color:#1e293b;line-height:1.4;font-weight:600}
+.hvac-summary-unit{font-size:15px;font-weight:700;color:#1e3a8a}
+.hvac-summary-unit small{display:block;font-size:12px;font-weight:500;color:#475569;margin-top:1px}
+.hvac-summary-request{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#1e293b}
+.hvac-summary-temp{font-size:15px;color:#1e293b;font-weight:700}
+.hvac-summary-status{justify-self:start}
+.hvac-summary-status .badge{font-size:14px;font-weight:800;padding:9px 18px;border-radius:8px;display:inline-block}
+.request-history-table-wrap .my-req-chevron{justify-self:end}
+.request-history-table-wrap .hvac-detail-grid{margin-top:0}
+@media(max-width:1100px){
+  .request-history-head,.request-history-table-wrap #myList .my-req-summary{grid-template-columns:1.1fr 1fr 1fr .7fr}
+}
+@media(max-width:900px){
+  .requests-header{align-items:flex-start;flex-direction:column}
+  .request-history-head{display:none}
+  .request-history-table-wrap #myList .my-req-summary{grid-template-columns:1fr auto;grid-template-areas:'main status' 'temp status';row-gap:3px}
+  .request-history-table-wrap #myList .my-req-summary .hvac-summary-date{grid-area:main}
+  .request-history-table-wrap #myList .my-req-summary .hvac-summary-request{display:none}
+  .request-history-table-wrap #myList .my-req-summary .hvac-summary-temp{grid-area:temp}
+  .request-history-table-wrap #myList .my-req-summary .hvac-summary-status{grid-area:status}
+}
+
+
+.summary-icon{width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.summary-icon svg{width:25px;height:25px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.summary-hot svg{display:block;width:25px;height:25px;overflow:visible}
+.summary-cold svg{display:block;width:25px;height:25px;overflow:visible}
+.active-request-label{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px 2px}
+.active-request-card{border-radius:11px;overflow:hidden;margin-bottom:12px}
+
 </style>
-
-<style id="exact-reference-ui">
-/* ===== EXACT REFERENCE UI — visual layer only ===== */
-:root{
-  --hvac-blue:#1769e8;
-  --hvac-blue-dark:#0759d7;
-  --hvac-red:#ef3030;
-  --hvac-text:#17233a;
-  --hvac-muted:#64748b;
-  --hvac-border:#d7e3f0;
-}
-
-/* Page background / two-column proportions */
-.content{
-  background:#f3f8fb !important;
-  padding:22px !important;
-  gap:18px !important;
-  grid-template-columns:minmax(590px,0.78fr) minmax(700px,1.22fr) !important;
-  align-items:start !important;
-}
-
-/* Header */
-.page-header{
-  margin-bottom:10px !important;
-}
-.page-header-title{
-  font-size:22px !important;
-  font-weight:800 !important;
-  color:#14213a !important;
-}
-.page-header-sub{
-  font-size:13px !important;
-  color:#64748b !important;
-}
-
-/* Yellow notice */
-.content>div:first-child > div:nth-child(2){
-  min-height:40px !important;
-  padding:9px 18px !important;
-  border-radius:10px !important;
-  box-shadow:0 1px 3px rgba(31,55,90,.03) !important;
-}
-.content>div:first-child > div:nth-child(2) span:last-child{
-  font-size:12px !important;
-}
-
-/* Left form card */
-.submit-form{
-  background:#fff !important;
-  border:1px solid #dce6f0 !important;
-  border-radius:14px !important;
-  padding:14px 16px 16px !important;
-  box-shadow:0 5px 18px rgba(31,55,90,.09) !important;
-}
-
-/* Hot / Cold cards */
-.type-btns{
-  gap:10px !important;
-  margin-bottom:14px !important;
-}
-.type-btn{
-  min-height:138px !important;
-  padding:13px 10px 12px !important;
-  border-radius:13px !important;
-  border-width:1.5px !important;
-  box-shadow:0 5px 14px rgba(31,55,90,.10) !important;
-}
-.type-btn:hover{
-  transform:translateY(-1px) !important;
-  box-shadow:0 8px 20px rgba(31,55,90,.14) !important;
-}
-.type-btn#btnHot{
-  border-color:#ffaaa8 !important;
-  background:linear-gradient(180deg,#fffdfd 0%,#fff0f0 100%) !important;
-}
-.type-btn#btnCold{
-  border-color:#9bc9ff !important;
-  background:linear-gradient(180deg,#ffffff 0%,#edf6ff 100%) !important;
-}
-.type-btn.hot{
-  border-color:#ef3030 !important;
-  background:linear-gradient(180deg,#fff2f2 0%,#ffe0df 100%) !important;
-  box-shadow:0 7px 18px rgba(239,48,48,.22),inset 0 1px 0 rgba(255,255,255,.9) !important;
-}
-.type-btn.cold{
-  border-color:#1674e8 !important;
-  background:linear-gradient(180deg,#f0f7ff 0%,#dcecff 100%) !important;
-  box-shadow:0 7px 18px rgba(22,116,232,.22),inset 0 1px 0 rgba(255,255,255,.9) !important;
-}
-.type-icon{
-  height:67px !important;
-  margin-bottom:2px !important;
-}
-.type-icon svg{
-  width:64px !important;
-  height:64px !important;
-}
-.type-label{
-  font-size:20px !important;
-  font-weight:800 !important;
-  line-height:1.15 !important;
-}
-.type-sub{
-  font-size:12px !important;
-  margin-top:5px !important;
-  font-weight:500 !important;
-}
-
-/* Location / unit area */
-.unit-location-wrap{
-  margin-bottom:14px !important;
-}
-.unit-tabs{
-  gap:8px !important;
-  margin-bottom:8px !important;
-}
-.unit-tab{
-  min-width:118px !important;
-  height:52px !important;
-  padding:7px 13px !important;
-  border-radius:9px !important;
-  background:#f1f5f9 !important;
-  border-color:#d9e3ee !important;
-}
-.unit-tab.selected{
-  background:linear-gradient(180deg,#287cf2,#1260dc) !important;
-  border-color:#1260dc !important;
-  box-shadow:0 5px 12px rgba(18,96,220,.25) !important;
-}
-.unit-tab-unit{
-  font-size:13px !important;
-}
-.unit-tab-suite{
-  font-size:10px !important;
-}
-
-/* Location card */
-.location-card{
-  min-height:112px !important;
-  padding:15px 16px !important;
-  gap:14px !important;
-  border-radius:11px !important;
-  background:linear-gradient(180deg,#f9fcff 0%,#f2f7fd 100%) !important;
-  border:1px solid #cfe0f4 !important;
-  box-shadow:0 2px 7px rgba(31,55,90,.04) !important;
-}
-.location-icon{
-  width:34px !important;
-  height:34px !important;
-}
-.location-icon svg{
-  width:30px !important;
-  height:30px !important;
-  stroke-width:1.8 !important;
-}
-.location-unit{
-  font-size:15px !important;
-  font-weight:800 !important;
-}
-.location-detail{
-  font-size:12px !important;
-  margin-top:4px !important;
-  color:#40516a !important;
-}
-.location-side{
-  min-width:112px !important;
-  padding-left:18px !important;
-}
-.location-level-label{
-  font-size:10px !important;
-}
-.location-level{
-  font-size:29px !important;
-  font-weight:800 !important;
-}
-.floor-pill{
-  margin-top:7px !important;
-  padding:7px 11px !important;
-  min-width:82px !important;
-  justify-content:center !important;
-  background:#1769e8 !important;
-  font-size:10px !important;
-  font-weight:600 !important;
-  box-shadow:0 4px 9px rgba(23,105,232,.24) !important;
-}
-
-/* Current BMS setting */
-.current-card{
-  margin:0 0 14px !important;
-  min-height:112px !important;
-  padding:13px 18px 12px !important;
-  border-radius:11px !important;
-  background:linear-gradient(180deg,#fbfdff,#f5f8fc) !important;
-  border:1px solid #d4e0ed !important;
-  box-shadow:0 2px 8px rgba(31,55,90,.05) !important;
-}
-.current-caption{
-  font-size:11px !important;
-  letter-spacing:.1em !important;
-}
-.current-temp{
-  font-size:31px !important;
-  color:#334155 !important;
-  margin-top:4px !important;
-}
-.current-updated{
-  font-size:11px !important;
-}
-.temp-track{
-  height:29px !important;
-  margin-top:7px !important;
-}
-.temp-track-base{
-  top:12px !important;
-  height:4px !important;
-}
-.temp-knob{
-  width:18px !important;
-  height:18px !important;
-  top:5px !important;
-}
-.temp-range{
-  font-size:11px !important;
-}
-
-/* Hide legacy manual selectors when automatic unit cards are in use */
-#manualLocationFields{
-  margin-top:0 !important;
-}
-
-/* Comment */
-#manualLocationFields + .form-field{
-  margin-bottom:12px !important;
-}
-.form-label{
-  font-size:11px !important;
-  margin-bottom:6px !important;
-}
-.form-textarea{
-  min-height:52px !important;
-  height:52px !important;
-  padding:10px 12px !important;
-  border-radius:9px !important;
-  font-size:12px !important;
-  background:#fff !important;
-}
-
-/* Match reference: warning is intentionally not displayed in the final card */
-.warning-note{
-  display:none !important;
-}
-
-/* Submit button */
-.btn-submit{
-  height:56px !important;
-  border-radius:9px !important;
-  font-size:15px !important;
-  background:linear-gradient(180deg,#2d7df2 0%,#1260dc 100%) !important;
-  box-shadow:0 6px 14px rgba(20,91,212,.25) !important;
-}
-
-/* Right panel */
-.user-panel-card{
-  border:1px solid #dce6f0 !important;
-  border-radius:14px !important;
-  box-shadow:0 5px 18px rgba(31,55,90,.08) !important;
-}
-.user-panel-head{
-  padding:12px 16px 9px !important;
-  gap:10px !important;
-}
-.user-panel-icon{
-  width:30px !important;
-  height:30px !important;
-}
-.user-panel-icon svg{
-  width:30px !important;
-  height:30px !important;
-  stroke-width:1.8 !important;
-}
-.user-panel-title{
-  font-size:20px !important;
-  font-weight:800 !important;
-}
-.user-panel-sub{
-  font-size:12px !important;
-}
-
-/* Request table */
-.req-table-head{
-  padding:11px 16px !important;
-  font-size:11px !important;
-  background:#f7f9fc !important;
-}
-.req-table-row{
-  grid-template-columns:1.05fr .95fr 1.15fr .72fr !important;
-  padding:12px 16px !important;
-  min-height:52px !important;
-  font-size:12px !important;
-}
-.req-date{
-  font-size:12px !important;
-}
-.req-request{
-  font-size:13px !important;
-  gap:7px !important;
-}
-.req-request-icon,
-.req-request-icon svg{
-  width:22px !important;
-  height:22px !important;
-}
-.req-change{
-  font-size:13px !important;
-}
-.status-badge{
-  padding:6px 10px !important;
-  border-radius:9px !important;
-  font-size:11px !important;
-}
-
-/* Expanded request */
-.req-table-row.expanded{
-  padding-bottom:13px !important;
-  border-color:#32bb68 !important;
-  background:#f1fff6 !important;
-}
-.req-expanded{
-  margin-top:10px !important;
-  padding-bottom:0 !important;
-}
-.progress-bar{
-  padding:10px 8px !important;
-  margin-bottom:11px !important;
-}
-.progress-icon{
-  width:32px !important;
-  height:32px !important;
-  font-size:13px !important;
-}
-.progress-label{
-  font-size:10px !important;
-}
-.progress-line{
-  margin-top:15px !important;
-  height:2px !important;
-}
-.req-success{
-  margin:0 10px 11px !important;
-  padding:11px 13px !important;
-  border-radius:10px !important;
-  font-size:12px !important;
-}
-.req-detail-grid{
-  gap:12px !important;
-  padding:0 10px !important;
-}
-.req-detail-box,
-.conversation{
-  padding:13px !important;
-  border-radius:9px !important;
-}
-.req-detail-title{
-  font-size:12px !important;
-}
-.detail-item{
-  grid-template-columns:22px 1fr !important;
-  gap:8px !important;
-  margin:8px 0 !important;
-}
-.detail-icon{
-  font-size:16px !important;
-}
-.detail-label{
-  font-size:9px !important;
-}
-.detail-value{
-  font-size:11px !important;
-}
-.conversation-empty{
-  font-size:11px !important;
-  margin:10px 0 20px !important;
-}
-.conversation-input input{
-  height:44px !important;
-  font-size:11px !important;
-}
-.conversation-input button{
-  height:44px !important;
-  font-size:11px !important;
-  padding:0 15px !important;
-}
-
-/* Keep desktop two-column layout until genuinely narrow */
-@media (max-width:1200px){
-  .content{
-    grid-template-columns:minmax(500px,0.78fr) minmax(620px,1.22fr) !important;
-  }
-}
-@media (max-width:1000px){
-  .content{
-    grid-template-columns:1fr !important;
-  }
-}
-</style>
-
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -485,114 +388,147 @@
     <div class="submit-form">
       <div class="type-btns">
         <button class="type-btn" id="btnHot" data-type="hot">
-          <div class="type-icon">
-            <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
-              <path d="M32 5c2 10-5 13-8 20-3 7 1 13 8 15-2-7 2-11 7-16 5 7 9 12 8 19-1 10-8 16-17 16S13 52 13 42c0-9 6-16 12-22 3-3 5-8 7-15Z" fill="#ef3030"/>
-              <path class="flame-accent" d="M31 27c-2 4-5 7-4 11 1 4 4 7 8 7-2-5 0-8 3-11-1-3-3-6-5-9l-2 2Z" fill="#ffc4a8"/>
-            </svg>
-          </div>
-          <div class="type-label">Too Hot</div>
-          <div class="type-sub">Temperature will be lowered by 0.5°C</div>
+          <div class="type-icon target-hot-icon" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,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" x="0" y="0" width="60" height="60" preserveAspectRatio="none"></image></svg></div>
+          <div class="type-label">Too Hot</div><div class="type-sub">Temperature will be lowered by 0.5°C</div>
         </button>
         <button class="type-btn" id="btnCold" data-type="cold">
-          <div class="type-icon">
-            <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
-              <g fill="none" stroke="#1474e8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M32 7v50M7 32h50M14 14l36 36M50 14 14 50"/>
-                <path d="M32 7l-4 7M32 7l4 7M32 57l-4-7M32 57l4-7M7 32l7-4M7 32l7 4M57 32l-7-4M57 32l-7 4M14 14l9 2M14 14l2 9M50 14l-9 2M50 14l-2 9M14 50l9-2M14 50l2-9M50 50l-9-2M50 50l-2-9"/>
-              </g>
-            </svg>
-          </div>
-          <div class="type-label">Too Cold</div>
-          <div class="type-sub">Temperature will be raised by 0.5°C</div>
+          <div class="type-icon target-cold-icon" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,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" x="0" y="0" width="60" height="60" preserveAspectRatio="none"></image></svg></div>
+          <div class="type-label">Too Cold</div><div class="type-sub">Temperature will be raised by 0.5°C</div>
         </button>
       </div>
 
-      <div id="unitAutoBox" style="display:none">
-        <div class="unit-location-wrap">
-          <div class="unit-tabs" id="unitTabs"></div>
-          <div class="location-card" id="locationCard"></div>
+      <!-- Target design: Your Locations -->
+      <div class="location-section" id="locationSection">
+        <div class="location-section-head">
+          <div class="location-section-title">Your Locations</div>
+          <div class="location-manage">⚙ <span>Manage Units</span></div>
         </div>
-      </div>
-      <div id="unitRadioBox" style="display:none">
-        <div class="unit-location-wrap">
-          <div class="unit-tabs" id="unitTabsMulti"></div>
-          <div class="location-card" id="locationCardMulti"></div>
+        <div id="unitAutoBox" style="display:none">
+          <div class="location-tabs" id="unitAutoTabs"></div>
+          <div class="location-card">
+            <div class="location-card-main">
+              <div class="location-building-icon" aria-hidden="true">▦</div>
+              <div>
+                <div class="location-unit-name" id="unitAutoUnit">—</div>
+                <div class="location-unit-detail" id="unitAutoDetail">—</div>
+              </div>
+            </div>
+            <div class="location-level"><span>LEVEL</span><strong id="unitAutoLevel">—</strong><span class="location-floor-setpoint" id="unitAutoFloorSetpoint"></span></div>
+          </div>
+        </div>
+        <div id="unitRadioBox" style="display:none">
+          <div class="location-tabs" id="unitRadioList"></div>
+          <div class="location-card">
+            <div class="location-card-main">
+              <div class="location-building-icon" aria-hidden="true">▦</div>
+              <div>
+                <div class="location-unit-name" id="radioUnitName">—</div>
+                <div class="location-unit-detail" id="radioUnitDetail">—</div>
+              </div>
+            </div>
+            <div class="location-level"><span>LEVEL</span><strong id="radioUnitLevel">—</strong><span class="location-floor-setpoint" id="radioUnitFloorSetpoint"></span></div>
+          </div>
         </div>
       </div>
 
-      <div class="current-card" id="currentSettingCard" style="display:none">
-        <div class="current-caption">Your Current Setting</div>
-        <div class="current-temp" id="currentTempValue">—</div>
-        <div class="current-updated" id="currentTempUpdated">Current setting</div>
-        <div class="temp-track"><div class="temp-track-base"></div><div class="temp-knob" id="tempKnob"></div></div>
-        <div class="temp-range"><span class="temp-min">18°C</span><span class="temp-mid">21.5°C</span><span class="temp-max">25°C</span></div>
+      <div class="form-field" id="floorField">
+        <label class="form-label">Floor</label>
+        <div class="option-grid option-grid-floor" id="floorBoxes"></div>
+        <select class="form-select" id="hvacLevel" style="display:none">
+          <option value="">Select floor…</option>
+          <option>Level 1</option><option>Level 2</option><option>Level 3</option>
+          <option>Level 4</option><option>Level 5</option><option>Level 6</option>
+        </select>
+      </div>
+      <div class="form-field" id="suiteField">
+        <label class="form-label">Tenancy</label>
+        <div class="option-grid option-grid-tenancy" id="tenancyBoxes"></div>
+        <select class="form-select" id="hvacTenancy" style="display:none">
+          <option value="">Select tenancy…</option>
+          <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
+          <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
+          <option>Tenancy G</option><option>Tenancy H</option>
+        </select>
       </div>
 
-      <div id="manualLocationFields">
-        <div class="form-field" id="floorField">
-          <label class="form-label">Floor</label>
-          <select class="form-select" id="hvacLevel">
-            <option value="">Select floor…</option>
-            <option>Level 1</option><option>Level 2</option><option>Level 3</option>
-            <option>Level 4</option><option>Level 5</option><option>Level 6</option>
-          </select>
+      <!-- Current HVAC Setting (STEP 4) -->
+      <div id="currentSetpointBox" class="setpoint-box" style="display:none">
+        <div class="setpoint-label">Your Current Setting</div>
+        <div class="setpoint-value" id="currentSetpointValue">—</div>
+        <div class="setpoint-updated" id="currentSetpointUpdated">—</div>
+        <div class="setpoint-visual" aria-hidden="true">
+          <div class="setpoint-track"><div class="setpoint-fill" id="setpointFill"></div><div class="setpoint-baseline" id="setpointBaseline" title="20°C"></div><div class="setpoint-dot" id="setpointDot"></div></div>
+          <div class="setpoint-scale"><span id="setpointMinLabel" class="setpoint-min-label">—</span><span id="setpointMidLabel">—</span><span id="setpointMaxLabel" class="setpoint-max-label">—</span></div>
         </div>
-        <div class="form-field" id="suiteField">
-          <label class="form-label">Tenancy</label>
-          <select class="form-select" id="hvacTenancy">
-            <option value="">Select tenancy…</option>
-            <option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option>
-            <option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option>
-            <option>Tenancy G</option><option>Tenancy H</option>
-          </select>
-        </div>
+        <div class="setpoint-range" id="currentSetpointRange"></div>
       </div>
 
       <div class="form-field">
         <label class="form-label">Additional Comments (optional)</label>
         <textarea class="form-textarea" id="hvacComment" placeholder="e.g. It has been very hot since this morning…"></textarea>
       </div>
-      <div class="warning-note">⚠ Temperature is adjusted by 0.5°C per request to protect the HVAC system. Adjustments are limited to once every 30 minutes per tenancy.</div>
       <button class="btn-submit" id="submitHvacBtn">Submit Request →</button>
     </div>
 
     <div id="rightPanel">
+      <!-- Admin panel -->
       <div id="adminPanel" style="display:none">
         <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
         <div class="limits-bar">
           <label>Min</label><input type="number" class="limits-input" id="tempMin" value="20" min="15" max="30">
           <label>°C &nbsp;&nbsp; Max</label><input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
-          <label>°C</label><button class="limits-save" id="saveLimitsBtn">Save</button>
-          <span style="font-size:11px;color:var(--muted);margin-left:4px">Applied to all adjustments</span>
+          <label>°C</label>
+          <button class="limits-save" id="saveLimitsBtn">Save</button>
+          <span style="font-size:13px;color:#475569;margin-left:4px;font-weight:500">Applied to all adjustments</span>
         </div>
-        <div class="section-hdr" style="margin-top:4px"><div class="section-title">Pending Requests</div><span id="pendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span></div>
+        <div class="section-hdr" style="margin-top:4px">
+          <div class="section-title">Pending Requests</div>
+          <span id="pendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
+        </div>
         <div class="card" id="pendingList"><div class="empty-state">No pending requests 🎉</div></div>
-        <div class="section-hdr" style="margin-top:16px"><div class="section-title">In Progress</div><span id="progressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span></div>
+        <div class="section-hdr" style="margin-top:16px">
+          <div class="section-title">In Progress</div>
+          <span id="progressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span>
+        </div>
         <div class="card" id="progressList"><div class="empty-state">No requests in progress</div></div>
         <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
-        <div style="display:flex;gap:8px;margin-bottom:8px"><select class="form-select" id="adminFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select><select class="form-select" id="adminFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select></div>
-        <div class="card" id="completedList"><div class="empty-state">No completed requests yet</div></div>
-      </div>
-
-      <div id="userPanel" style="display:none">
-        <div class="user-panel-card">
-          <div class="user-panel-head">
-            <div class="user-panel-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div>
-            <div><div class="user-panel-title">My Requests</div><div class="user-panel-sub">View and track your A/C temperature requests.</div></div>
-          </div>
-          <div class="filter-tabs"><button class="filter-tab active" data-filter="all">All</button><button class="filter-tab" data-filter="ongoing">Ongoing</button><button class="filter-tab" data-filter="completed">Completed</button></div>
-          <div id="myList"><div class="empty-state">No requests submitted yet</div></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="form-select" id="adminFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select>
+          <select class="form-select" id="adminFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select>
+        </div>
+        <div class="request-history-table-wrap">
+          <div class="request-history-head" id="adminCompletedHead" style="grid-template-columns:1fr .8fr 1fr 1.2fr .7fr"><span>Date &amp; Time</span><span>Unit</span><span>Request</span><span>Temperature Change</span><span>Status</span></div>
+          <div class="card" id="completedList"><div class="empty-state">No completed requests yet</div></div>
         </div>
       </div>
-
+      <!-- Non-admin: my requests -->
+      <div id="userPanel" style="display:none">
+        <div class="requests-header">
+          <div class="requests-heading"><span class="requests-heading-icon">▤</span><div><div class="section-title">My Requests</div><div class="requests-subtitle">View and track your A/C temperature requests.</div></div></div>
+        </div>
+        <div id="activeReqSection"></div>
+        <div id="historyTableWrap" class="request-history-table-wrap">
+          <div class="request-history-head"><span>Date &amp; Time</span><span>Request</span><span>Temperature Change</span><span>Status</span></div>
+          <div class="card" id="myList"><div class="empty-state">No requests submitted yet</div></div>
+        </div>
+      </div>
+      <!-- Observer: read-only view -->
       <div id="observerPanel" style="display:none">
-        <div class="section-hdr" style="margin-top:4px"><div class="section-title">Pending Requests</div><span id="obsPendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span></div>
+        <div class="section-hdr" style="margin-top:4px">
+          <div class="section-title">Pending Requests</div>
+          <span id="obsPendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
+        </div>
         <div class="card" id="obsPendingList"><div class="empty-state">No pending requests 🎉</div></div>
-        <div class="section-hdr" style="margin-top:16px"><div class="section-title">In Progress</div><span id="obsProgressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span></div>
+        <div class="section-hdr" style="margin-top:16px">
+          <div class="section-title">In Progress</div>
+          <span id="obsProgressCount" style="font-size:12px;color:var(--blue-600);font-weight:600"></span>
+        </div>
         <div class="card" id="obsProgressList"><div class="empty-state">No requests in progress</div></div>
         <div class="section-hdr" style="margin-top:16px"><div class="section-title">Recently Completed</div></div>
-        <div style="display:flex;gap:8px;margin-bottom:8px"><select class="form-select" id="obsFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select><select class="form-select" id="obsFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="form-select" id="obsFilterTenancy" style="height:34px;font-size:12px"><option value="">All Tenancies</option><option>Tenancy A</option><option>Tenancy B</option><option>Tenancy C</option><option>Tenancy D</option><option>Tenancy E</option><option>Tenancy F</option><option>Tenancy G</option><option>Tenancy H</option></select>
+          <select class="form-select" id="obsFilterLevel" style="height:34px;font-size:12px"><option value="">All Levels</option><option>Level 1</option><option>Level 2</option><option>Level 3</option><option>Level 4</option><option>Level 5</option><option>Level 6</option></select>
+        </div>
         <div class="card" id="obsCompletedList"><div class="empty-state">No completed requests yet</div></div>
       </div>
     </div>
@@ -607,7 +543,6 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
 
 let selectedType = null;
-let currentFilter = 'all';
 let allMyRequests = [];
 let myUnits = [];
 let selectedUnit = null;
@@ -620,11 +555,233 @@ document.querySelectorAll('.type-btn').forEach(btn => {
   });
 });
 
+// --- Current HVAC Setting (STEP 4) ---
+// Reuses the exact same Suite->Tenancy conversion already used at submit time,
+// and only ever performs a read (SELECT) against hvac_setpoints. No writes,
+// no BMS access, no changes to hvac_requests or existing Submit/My Requests logic.
+function toTenancyLabel(suite) {
+  return (suite || '').replace('Suite', 'Tenancy');
+}
+
+let setpointReqToken = 0;
+async function loadCurrentSetpoint(level, tenancy) {
+  const box = document.getElementById('currentSetpointBox');
+  const valueEl = document.getElementById('currentSetpointValue');
+  const updatedEl = document.getElementById('currentSetpointUpdated');
+  const rangeEl = document.getElementById('currentSetpointRange');
+  if (!level || !tenancy) { box.style.display = 'none'; return; }
+
+  const myToken = ++setpointReqToken; // avoid race conditions when switching units quickly
+  box.style.display = 'block';
+  valueEl.textContent = '—';
+  updatedEl.textContent = 'Loading…';
+  if (rangeEl) rangeEl.textContent = '';
+
+  ensureTempLimits().then(limits => {
+    if (myToken !== setpointReqToken) return; // a newer request superseded this one
+    if (rangeEl && limits && limits.min != null && limits.max != null) {
+      rangeEl.textContent = `Allowed range: ${limits.min}°C – ${limits.max}°C`;
+      updateSetpointVisual(null, limits.min, limits.max);
+    }
+  });
+
+  try {
+    const { data, error } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint, updated_at')
+      .eq('level', level)
+      .eq('tenancy', tenancy)
+      .maybeSingle();
+
+    if (myToken !== setpointReqToken) return; // a newer request superseded this one
+
+    if (error || !data) {
+      valueEl.textContent = '—';
+      updatedEl.textContent = 'Not available yet';
+      return;
+    }
+    valueEl.textContent = `${data.current_setpoint}°C`;
+    updatedEl.textContent = `Updated ${timeAgo(data.updated_at)}`;
+    const limits = await ensureTempLimits();
+    updateSetpointVisual(parseFloat(data.current_setpoint), limits?.min, limits?.max);
+  } catch (e) {
+    if (myToken !== setpointReqToken) return;
+    valueEl.textContent = '—';
+    updatedEl.textContent = 'Not available yet';
+  }
+}
+
+// Floor Setpoint (whole-floor average, read-only from hvac_floor_setpoints).
+// Same read-only pattern as loadCurrentSetpoint above — SELECT only, no writes.
+let floorSetpointReqToken = 0;
+async function loadFloorSetpoint(level, targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  if (!level) { el.textContent = ''; return; }
+  // Verified directly against the DB (2026-09-24): the daemon writes
+  // hvac_floor_setpoints.level as the string "Level N" (e.g. "Level 2"), matching this
+  // unit's level exactly as-is. Do NOT convert to a number here — an earlier version of
+  // this function did that and it silently broke the match (DB has "Level 2", not 2).
+  const myToken = ++floorSetpointReqToken;
+  try {
+    const { data, error } = await supabase.from('hvac_floor_setpoints')
+      .select('current_setpoint, updated_at')
+      .eq('level', level)
+      .maybeSingle();
+    if (myToken !== floorSetpointReqToken) return;
+    if (error || !data) { el.textContent = ''; return; }
+    el.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4a2 2 0 1 0-4 0v11a4 4 0 1 0 4 0Z"></path></svg><span>Floor ' + data.current_setpoint + '°C</span>';
+  } catch (e) {
+    if (myToken !== floorSetpointReqToken) return;
+    el.textContent = '';
+  }
+}
+
+// Blue below the midpoint of Admin's Min/Max, red above it, gray right at the
+// midpoint — intensity scales with how far current sits from that midpoint
+// toward whichever end (min/max) it's heading to. Midpoint is recomputed
+// from the live min/max every time (so it moves automatically whenever
+// Admin changes the Temperature Limits), never a hardcoded value.
+function lerpColor(a, b, t) {
+  const pa = a.match(/\w\w/g).map(h => parseInt(h, 16));
+  const pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+  const p = pa.map((c, i) => Math.round(c + (pb[i] - c) * t));
+  return '#' + p.map(c => c.toString(16).padStart(2, '0')).join('');
+}
+function setpointColorFor(current, min, max, mid) {
+  const neutral = '64748b', cold = '2563eb', hot = 'ef4444';
+  if (current == null || Number.isNaN(current)) return '#' + neutral;
+  if (current > mid) {
+    const span = Math.max(max - mid, 0.5);
+    const t = Math.max(0, Math.min(1, (current - mid) / span));
+    return lerpColor(neutral, hot, t);
+  }
+  if (current < mid) {
+    const span = Math.max(mid - min, 0.5);
+    const t = Math.max(0, Math.min(1, (mid - current) / span));
+    return lerpColor(neutral, cold, t);
+  }
+  return '#' + neutral;
+}
+
+function updateSetpointVisual(current, min, max) {
+  const fill = document.getElementById('setpointFill');
+  const dot = document.getElementById('setpointDot');
+  const minEl = document.getElementById('setpointMinLabel');
+  const midEl = document.getElementById('setpointMidLabel');
+  const maxEl = document.getElementById('setpointMaxLabel');
+  const baseline = document.getElementById('setpointBaseline');
+  if (!fill || !dot || min == null || max == null || max <= min) return;
+  minEl.textContent = `${min}°C`;
+  maxEl.textContent = `${max}°C`;
+  const mid = Math.round(((min + max) / 2) * 10) / 10;
+  midEl.textContent = `${mid}°C`;
+
+  if (baseline) {
+    const basePct = ((mid - min) / (max - min)) * 100;
+    baseline.style.left = basePct + '%';
+    baseline.style.display = 'block';
+  }
+
+  if (current == null || Number.isNaN(current)) return;
+  const pct = Math.max(0, Math.min(100, ((current - min) / (max - min)) * 100));
+  const color = setpointColorFor(current, min, max, mid);
+  fill.style.width = pct + '%';
+  fill.style.background = color;
+  dot.style.left = pct + '%';
+  dot.style.background = color;
+  const valueEl = document.getElementById('currentSetpointValue');
+  if (valueEl) valueEl.style.color = color;
+}
+
+// Re-reads whichever level/tenancy is currently shown in the Current HVAC
+// Setting box (auto-detected unit, or the manual fallback selects) and
+// refreshes it. Used after a request completes so the display updates live
+// instead of requiring the user to reselect their unit.
+function refreshCurrentSetpointDisplay() {
+  const box = document.getElementById('currentSetpointBox');
+  if (!box || box.style.display === 'none') return;
+  const doRefresh = () => {
+    if (selectedUnit) {
+      loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+    } else {
+      const level = document.getElementById('hvacLevel').value;
+      const tenancy = document.getElementById('hvacTenancy').value;
+      if (level && tenancy) loadCurrentSetpoint(level, tenancy);
+    }
+  };
+  // Small delay: the daemon writes hvac_requests.status=completed first, then
+  // upserts hvac_setpoints a moment later. Refreshing immediately can race
+  // ahead of that write and re-show the stale value, so we give it a beat.
+  doRefresh();
+  setTimeout(doRefresh, 1200);
+}
+
+function timeAgo(isoString) {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+// Manual Level/Tenancy fallback (used only when the user has no matched unit)
+document.getElementById('hvacLevel').addEventListener('change', () => {
+  if (selectedUnit) return; // auto/radio unit takes priority
+  const level = document.getElementById('hvacLevel').value;
+  const tenancy = document.getElementById('hvacTenancy').value;
+  loadCurrentSetpoint(level, tenancy);
+});
+document.getElementById('hvacTenancy').addEventListener('change', () => {
+  if (selectedUnit) return;
+  const level = document.getElementById('hvacLevel').value;
+  const tenancy = document.getElementById('hvacTenancy').value;
+  loadCurrentSetpoint(level, tenancy);
+});
+
+// Clickable box UI for the manual Floor/Tenancy fallback (replaces the
+// scrolling dropdowns). Keeps #hvacLevel/#hvacTenancy as the source of
+// truth so all existing submit/cooldown/setpoint logic is untouched.
+function renderFloorBoxes() {
+  const sel = document.getElementById('hvacLevel');
+  const wrap = document.getElementById('floorBoxes');
+  wrap.innerHTML = [1,2,3,4,5,6].map(n => {
+    const val = `Level ${n}`;
+    return `<button type="button" class="option-box option-box-floor${sel.value === val ? ' selected' : ''}" data-level="${val}">${val}</button>`;
+  }).join('');
+  wrap.querySelectorAll('[data-level]').forEach(b => {
+    b.addEventListener('click', () => {
+      sel.value = b.dataset.level;
+      sel.dispatchEvent(new Event('change'));
+      renderFloorBoxes();
+    });
+  });
+}
+function renderTenancyBoxes() {
+  const sel = document.getElementById('hvacTenancy');
+  const wrap = document.getElementById('tenancyBoxes');
+  wrap.innerHTML = ['A','B','C','D','E','F','G','H'].map(l => {
+    const val = `Tenancy ${l}`;
+    return `<button type="button" class="option-box option-box-tenancy${sel.value === val ? ' selected' : ''}" data-tenancy="${val}">${l}</button>`;
+  }).join('');
+  wrap.querySelectorAll('[data-tenancy]').forEach(b => {
+    b.addEventListener('click', () => {
+      sel.value = b.dataset.tenancy;
+      sel.dispatchEvent(new Event('change'));
+      renderTenancyBoxes();
+    });
+  });
+}
+renderFloorBoxes();
+renderTenancyBoxes();
+
 document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
-  
+
   let level, tenancy;
-  
+
   if (selectedUnit) {
     level = selectedUnit.level;
     tenancy = selectedUnit.suite.replace('Suite', 'Tenancy');
@@ -649,7 +806,7 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
       }
     } catch(e) { showToast('Unable to verify cooldown. Please try again.', true); return; }
   }
-  
+
   try {
     await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending' });
     try { await supabase.from('audit_logs').insert({ user_email:user.email, user_role:role, action:'HVAC_REQUESTED', details:{ type:selectedType, level, tenancy } }); } catch(e) {}
@@ -669,36 +826,42 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
     if (!selectedUnit) {
       document.getElementById('hvacLevel').value='';
       document.getElementById('hvacTenancy').value='';
+      renderFloorBoxes();
+      renderTenancyBoxes();
     }
     if (role!=='admin') await loadMyRequests();
   } catch(e) { showToast(e.message||'Failed to submit', true); }
 });
 
-// Filter tabs
-document.querySelectorAll('.filter-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    currentFilter = tab.dataset.filter;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    renderMyRequests();
-  });
-});
 
 function getProgressBar(status, type) {
   const steps = [
-    { key: 'pending', label: 'Submitted' },
-    { key: 'approved', label: 'Approved' },
-    { key: 'processing', label: 'Adjusted' },
-    { key: 'completed', label: 'Completed' }
+    { key: 'pending', icon: '📝', label: 'Submitted' },
+    { key: 'approved', icon: '✅', label: 'Approved' },
+    { key: 'processing', icon: type === 'hot' ? '🌡️⬇️' : '🌡️⬆️', label: 'Adjusting' },
+    { key: 'completed', icon: '✓', label: 'Completed' }
   ];
+
   const statusOrder = ['pending', 'approved', 'processing', 'completed'];
   const currentIndex = statusOrder.indexOf(status);
+
   let html = '<div class="progress-bar">';
+
   steps.forEach((step, idx) => {
-    const stepClass = idx < currentIndex ? 'step-completed' : idx === currentIndex ? 'step-active' : 'step-pending';
-    html += `<div class="progress-step ${stepClass}"><div class="progress-icon">✓</div><div class="progress-label">${step.label}</div></div>`;
-    if (idx < steps.length - 1) html += `<div class="progress-line ${idx < currentIndex ? 'active' : ''}"></div>`;
+    const stepClass = idx < currentIndex ? 'step-completed' :
+                     idx === currentIndex ? 'step-active' : 'step-pending';
+
+    html += `<div class="progress-step ${stepClass}">
+      <div class="progress-icon">${step.icon}</div>
+      <div class="progress-label">${step.label}</div>
+    </div>`;
+
+    if (idx < steps.length - 1) {
+      const lineClass = idx < currentIndex ? 'active' : '';
+      html += `<div class="progress-line ${lineClass}"></div>`;
+    }
   });
+
   html += '</div>';
   return html;
 }
@@ -712,47 +875,549 @@ window.showReasonModal = (el) => {
   document.getElementById('reasonModal').classList.add('show');
 };
 
-function requestIcon(type) {
-  if (type === 'hot') return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 5-3 7-3 11 0 3 2 5 5 5-1-3 0-5 3-7 2 3 3 5 3 8 0 5-3 8-8 8s-8-3-8-8c0-5 3-8 6-11 1-1 2-3 2-6Z" fill="#ef3030"/><path d="M11.5 13c-1 2-1 4 1.5 5 0-2 1-3 2-4-.5-1-1-2-2-3l-1.5 2Z" fill="#ffc4a8"/></svg>`;
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#1474e8" stroke-width="1.9" stroke-linecap="round"><path d="M12 2v20M2 12h20M5 5l14 14M19 5 5 19"/><path d="m12 2-2 3m2-3 2 3m0 17-2-3m2 3 2-3M2 12l3-2m-3 2 3 2m17-2-3-2m3 2-3 2M5 5l4 1m-4-1 1 4m14-4-4 1m4-1-1 4M5 19l4-1m-4 1 1-4m14 4-4-1m4 1-1-4"/></g></svg>`;
-}
-function statusBadge(status) {
-  if (status === 'completed') return '<span class="status-badge">✓ Completed</span>';
-  if (status === 'pending') return '<span class="status-badge yellow">Pending</span>';
-  if (status === 'approved' || status === 'processing') return '<span class="status-badge blue">In Progress</span>';
-  return '<span class="status-badge red">Rejected</span>';
-}
-function renderMyRequests() {
-  const list = document.getElementById('myList');
-  let filtered = allMyRequests;
-  if (currentFilter === 'ongoing') filtered = allMyRequests.filter(r => ['pending','approved','processing'].includes(r.status));
-  else if (currentFilter === 'completed') filtered = allMyRequests.filter(r => ['completed','rejected','failed'].includes(r.status));
-  if (!filtered.length) { list.innerHTML = '<div class="empty-state">No requests in this category</div>'; return; }
+let expandedRequestIds = new Set();
 
-  list.innerHTML = `<div class="req-table-head"><div>Date & Time</div><div>Request</div><div>Temperature Change</div><div>Status</div></div>` + filtered.map((r, idx) => {
-    const temp = r.temp_before != null && r.temp_after != null ? `${r.temp_before}°C → ${r.temp_after}°C` : '—';
-    const expanded = idx === 0 && r.status === 'completed';
-    return `<div class="req-table-row ${expanded ? 'expanded' : ''}" data-req-id="${escapeAttr(r.id)}">
-      <div class="req-date">${new Date(r.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}<br><span style="font-weight:500">${new Date(r.created_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})}</span></div>
-      <div class="req-request"><span class="req-request-icon">${requestIcon(r.type)}</span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</div>
-      <div class="req-change">${temp}</div>
-      <div class="req-status-wrap">${statusBadge(r.status)}</div>
-      ${expanded ? `<div class="req-expanded">
-        ${getProgressBar('completed', r.type)}
-        <div class="req-success">✓ &nbsp;The temperature has been successfully adjusted to ${r.temp_after != null ? r.temp_after + '°C' : 'the requested setting'}.<small>${temp}</small></div>
-        <div class="req-detail-grid">
-          <div class="req-detail-box"><div class="req-detail-title">Request Details</div>
-            <div class="detail-item"><div class="detail-icon">🌡️</div><div><div class="detail-label">Request Type</div><div class="detail-value">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</div></div></div>
-            <div class="detail-item"><div class="detail-icon">▦</div><div><div class="detail-label">Location</div><div class="detail-value">${r.level}, ${r.tenancy}</div></div></div>
-            <div class="detail-item"><div class="detail-icon">🎯</div><div><div class="detail-label">Requested Temperature</div><div class="detail-value">${temp}</div></div></div>
-            <div class="detail-item"><div class="detail-icon">👤</div><div><div class="detail-label">Submitted By</div><div class="detail-value">${escapeAttr(r.user_name || name || 'User')}</div></div></div>
-            <div class="detail-item"><div class="detail-icon">▣</div><div><div class="detail-label">Submitted On</div><div class="detail-value">${new Date(r.created_at).toLocaleString('en-AU')}</div></div></div>
+function reqRowHtml(r, forceOpen) {
+  const isOpen = forceOpen || expandedRequestIds.has(String(r.id));
+  const icon = r.type === 'hot'
+    ? '<span class="summary-icon summary-hot" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,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" x="0" y="0" width="25" height="25" preserveAspectRatio="none"></image></svg></span>'
+    : '<span class="summary-icon summary-cold" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAJaUlEQVR4nOWbf7BVVRXHP/ftx+MlmmMUsJu0H2OaZURhQpThz2Gelb3xV0aTRGYO5PijFHaMNlgxnUSd0iiSAUGZtPAHkIVphII6QmRgWjP5C7PaWeYPSoT33r6vP9benPPO2+fce+Xe6x99Z86ce/bZe+21ztl77e9aZ194HaATd8Tr0S9ApZ2d6cQtA2b6yz8CM61RW9qpQ0e7OtKJu4zUWID3Asva1X9A2wxGDMzjsDb2D7TX4D2560FgoI39A9DZKsE6cfOBscAia9SjwEh/q4o8aIcYHer3AtOBJ6xR81qlV0uclk7cY6RD+EWgF5gFnJWp1o8YfSxwLvAFQPl7y6xR57RCt6YbrBN3JXBprniPP94YafIX4JBc2SvAFGvUI83WrxVz+IORspHEjYXhxgKMAsY1TaMMWmHwd4BX91HGrdaou5uhTB4ND2mduM8A05AhusIa9VCkzrHAWuCA16DTQmvUnIK+LwZOAV4Gllqjft6o8IYM1om7HJgHdCGjowqMt0Y9Fql7NLAOeFMDXcyxRi0s6HsesMBfDiK691ij7mpAfsND+gygO9OuAzg5VtEatcUaNRrYWKfs84uM9ejx51eAXf73R+uUvReFBuvEzdCJ+2yu+N+Rqh8o68AaNRUoewt7gOOsUYvK5AAaWcZGIiMMcvrrxPXoxL2vTEjUYJ24bcByYKVO3AM6cYEDP44M4yzeUUNRrFE9wPqC22dZo+4ta68TNxV4G7JOdwIj/K2d/v7ZOnG/A34JPKoTV/jwhhmsE7eG9K11AFOAH+vE3QmMRujgIGJ4lfiyEsMTkbIBa9TqOtqeQMrUshijE3cPsAL4UKZ8tk7c52KCYm94YqRsBPAJ4FTkCQdKWPWdnlCH0oM1rsvwkYLyrwIn5sqcP78/1iBm8As1Ou/IHAp58h+u0SaGCqB04mJRVB7vrFOmI+UAO2IVYgbPI/WCtRCWtUPrqBvrq0LKn8swto46u5ARtz+w2Bq1uC4lrFF3AscgxMENaxHHtDrqFK35pRGbTty3ESNiGCQNMzuAh4HTrVGzGlUidDYZuAQ4rayexz+Aq61RVxXIWgycly+3RkV10Ik7CZgLHJ/TMxgZVosK8Dww1xq1opaSZevwEcBJwJhaQjzGAQt14rZ6lpVHPtgfYPgSF/r+IXA34p2zxlYzh/NHFRklB+vETailZNE6fCmypn0TGd6NYCJwl07cglx5MK4fMXYP0Jfr90KduGeQ2DmGSuboyJQd5HVdrxO3Wicu6qGheP58F/F24a0Er1wvDgLmeaa2yBp1NUL4QYxUiOEV2Dt8F1Db2wdjq16G8nqFIX4A8Glft7dIwBDoxH0M2AT8B+HNZARn8VeE4hUN+UDwAW7w9XpIDQ2pntVIBNTt743IC8pgI0Ix311SB2CbNSoWl0e99P3A3xDPGGhcB+L2H0Eo57nWqIOtUWOB7+MpnjciEIpK5vdMhLh0eHkjvIFdwJn+d7XE2K3AOdaoqdaow5CU0M3AMwX1C7l7kYc8GqFrGvg98AtgkzVqc0H98cBlSDQFMhWakSDcCVxujbq2qIJO3CkIA+wFDgRus0adXlS/qTktnbhPAQbh3/uCfwE/sUZd1GD/U6xRD5bVaVXWci5wAfDWBpsOACuBa6xRf2i6YrT425JO3J+A99RZ/UVgeqMZjEbRqjd8KjAbIQ6N4H5giTXqxuZrJWhFXvpG4PP7KGY98C1r1H1NUGkICg32pOEoJMuxxRr1cJkgnbgZwBzki0Mf4qXrISuDpJ9dAlXcD+EBN1mjvlJLgM+SHoNEVbdbo35TVLdoWboScTohy7ALiS+3Aw8Bm8MS5YnKFcDUjNIdpKGfY+gSVc31WyENR7OUMaz/LyCGX5TRrweYBEwAxjM0Xn4JOMMa9eu6DPZr8GYkOxgMjq2pvwKeAr7kldvtz9lMxgBCKp72128nZVqDvs1WZK7v9uVdMb2QaGwtMNkbWYY11qje2I3YkOsijTHLPmdOQ0h+YEfdpEm2cO4AbrZGvcsrG3LZVcTwPmvUicDZwLPIAy6aZuOAL1PbWEea1RyGImr5W4S1dPPaGFMF+DNCB6f7ss7MvfBQunyfN3nK2Azv3Af8rOhm1KlYoyYBCXAfMhzrzXwE/Mgadbg1amWm7A3+HB5iN9CtE3d4pt8ZCD3dVkN+NmtaBf6LBDzfA3qtUcuLGhZ6UWvU15Gs4AbqyzuBzP1ea9TsyL0Dc9cVZAgPSd9Yo271kc4FwJOZW1XSadaXOQaQ6bHUGnVxrY9wZRmPuYhD+WKZgAzmW6MmW6PWFNwvioSi880adZ016lDS4elIjQtRWTiPApb73HkpYon4iTpxG5EhXS8xecoadUWNOv0F5bVGz0IkGRE8e1i6QgIAxPBXgZN14p7WiTu/SFjsDV9FfWmdbCLtybKKHkV+oHRjizVqK0JCQmwejrAKhBWhE3moY4BrdOLOjMmLGVxPYjwk0YLR2+tok3/D4bovXzGC5/w5ePeQcgqGh4fRlfk9NSYoZvA/Czp9Frg30y50vBsopHIZhG1LfaSJvP5alNXjgYLyrQx/kMEn7Ig1iBk8P3ddBW6wRh1CajCkCbWXrVHrinXdi1GkqdXggKJp2giKHugCZBdQfoRtKPrWHCMetyHJ7x8g69rHrVHBU0+IyIh9Mx4C7/E/yVAe3Yl8W1pVq701ahXpsM7iSGvUg9aoCQgLuwX4hjXq+CJZURZljdqArL95jI6UPV6mrE+qhzzzIDIVsg6v1+/rqrXRdDtpfB08dSAzWKOWAEvKdIHGtzzEsoT3FFXWiVvK0KR6dkkJDkchjnKVTlxZXnoNafQVHtaOehXPKtAQdOI2IB+fXwLuKEq06cT9FEnBNoK/A7OsUWsLZF6LJNp3ArdYo/JfN2qiVSmepdTP0GI4zRp1e7P0yaLpG9P8Z5MyYwPhL9sBcElTlcqgFbtpJ+WuAx0MMXZwWGE+j8jVc8CbW6AX0Jqth5ty1xVgC+JlQ+AfIp5+4Hrk+27FXytkw2lL0HSDfabxOsSpWWQr4SQktu4kfbsDQNUadZ416i3AHYjXXQd8rdl6BbQsEa8Td6TfGB6ulyF7onchhu9BHvhxPkBoC1r2F4CssR77kWYyQ0ZS0ea/AbTzPw/P+/NI3+/+wHPWqG1t1KGtBl+PzOswjRxwYRv7B1o4h2PQiTsKYV/9CEtr29z9v8X/ABUU3xf6QcERAAAAAElFTkSuQmCC" x="0" y="0" width="25" height="25" preserveAspectRatio="none"></image></svg></span>';
+  const date = new Date(r.created_at);
+  const dateText = date.toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
+  const timeText = date.toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
+  const tempText = r.status === 'completed' && r.temp_before != null
+    ? `${r.temp_before}°C → ${r.temp_after}°C`
+    : r.status === 'processing' && adjustingSetpointCache[`${r.level}|${r.tenancy}`]
+      ? `${adjustingSetpointCache[`${r.level}|${r.tenancy}`].current}°C → ${adjustingSetpointCache[`${r.level}|${r.tenancy}`].target}°C`
+      : '—';
+  return `
+    <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
+      <div class="my-req-summary" data-id="${r.id}" style="${forceOpen ? '' : 'cursor:pointer;'}">
+        <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
+        <div class="hvac-summary-request">${icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
+        <div class="hvac-summary-temp">${tempText}</div>
+        <div class="hvac-summary-status"><span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${statusLabel(r.status)}</span></div>
+      </div>
+      ${isOpen ? `
+      <div class="my-req-detail">
+        ${['pending', 'approved', 'processing', 'completed'].includes(r.status) ? renderStepsHtml(r) : ''}
+        ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
+        <div class="hvac-detail-grid">
+          ${reqDetailsCardHtml(r, true)}
+          <div class="hvac-conv">
+            <div class="hvac-conv-title-row">
+              <div class="hvac-conv-title">Conversation</div>
+              <span class="hvac-conv-count" id="convCount-${r.id}"></span>
+            </div>
+            <div class="hvac-conv-messages" id="conv-${r.id}">${renderConvMessagesHtml(r.id)}</div>
+            <div class="hvac-conv-input">
+              <span class="hvac-conv-attach" title="Attachments coming soon">📎</span>
+              <textarea class="hvac-conv-textarea" id="convInput-${r.id}" placeholder="Write a message..." rows="2"></textarea>
+              <button type="button" class="hvac-conv-send" data-conv-send="${r.id}">Send</button>
+            </div>
           </div>
-          <div class="conversation"><div class="req-detail-title">Conversation</div><div class="conversation-empty">No messages yet</div><div class="conversation-input"><input placeholder="Write a message..." disabled><button disabled>Send</button></div></div>
         </div>
       </div>` : ''}
-    </div>`;
+    </div>
+  `;
+}
+// Request Details card — mirrors the approved mockup. Only ever displays
+// fields that already exist on the row (user_name, comment, temp_before/
+// after, the live adjustingSetpointCache); nothing here is fabricated.
+function reqDetailsCardHtml(r, showUnit) {
+  let tempRangeText = '';
+  if (r.status === 'completed' && r.temp_before != null) {
+    tempRangeText = `${r.temp_before}°C → ${r.temp_after}°C`;
+  } else if (r.status === 'processing') {
+    const cached = adjustingSetpointCache[`${r.level}|${r.tenancy}`];
+    if (cached) tempRangeText = `${cached.current}°C → ${cached.target}°C`;
+  }
+  const submittedOn = r.created_at ? new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'}) : '—';
+
+  const rows = [
+    ['🌡️', 'Request Type', r.type === 'hot' ? 'Too Hot' : 'Too Cold'],
+    showUnit ? ['🏢', 'Location', `${r.level}, ${r.tenancy}`] : null,
+    tempRangeText ? ['🎯', 'Requested Temperature', tempRangeText] : null,
+    ['👤', 'Submitted By', r.user_name || '—'],
+    ['📅', 'Submitted On', submittedOn],
+    r.comment ? ['💬', 'Initial Comment', escapeAttr(r.comment)] : null
+  ].filter(Boolean);
+
+  return `
+    <div class="hvac-details-card">
+      <div class="hvac-details-title">Request Details</div>
+      ${rows.map(([icon, label, value]) => `
+        <div class="hvac-detail-row">
+          <span class="hvac-detail-icon">${icon}</span>
+          <div>
+            <div class="hvac-detail-label">${label}</div>
+            <div class="hvac-detail-value">${value}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ---- STEP 7: Tenant progress steps (Submitted → Approved → Adjusting → Completed) ----
+// Presentation-only: reuses the exact same hvac_requests/hvac_setpoints data
+// already in use elsewhere. Does not touch getProgressBar(), which the
+// Admin/Observer panels still use unchanged.
+function statusLabel(status) {
+  if (status === 'processing') return 'Adjusting';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+const HVAC_STEPS = [
+  { key: 'pending', label: 'Submitted', color: '#2563eb' },
+  { key: 'approved', label: 'Approved', color: '#16a34a' },
+  { key: 'processing', label: 'Adjusting', color: '#f59e0b' },
+  { key: 'completed', label: 'Completed', color: '#16a34a' }
+];
+
+let tempLimits = null;
+let adjustingSetpointCache = {};
+let adjustingLoading = {};
+
+async function ensureTempLimits() {
+  if (tempLimits) return tempLimits;
+  try {
+    const { data } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
+    let min = null, max = null;
+    (data || []).forEach(s => {
+      if (s.key === 'temp_min') min = parseFloat(s.value);
+      if (s.key === 'temp_max') max = parseFloat(s.value);
+    });
+    tempLimits = { min, max };
+  } catch (e) {
+    tempLimits = { min: null, max: null };
+  }
+  return tempLimits;
+}
+
+async function ensureAdjustingSetpoint(r) {
+  const key = `${r.level}|${r.tenancy}`;
+  if (adjustingSetpointCache[key] || adjustingLoading[key]) return;
+  adjustingLoading[key] = true;
+  try {
+    const limits = await ensureTempLimits();
+    const { data } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint')
+      .eq('level', r.level).eq('tenancy', r.tenancy).maybeSingle();
+    if (data && data.current_setpoint != null) {
+      const current = parseFloat(data.current_setpoint);
+      let target = r.type === 'hot' ? current - 0.5 : current + 0.5;
+      if (limits.min != null) target = Math.max(target, limits.min);
+      if (limits.max != null) target = Math.min(target, limits.max);
+      adjustingSetpointCache[key] = { current, target };
+    }
+  } catch (e) {}
+  adjustingLoading[key] = false;
+  updateAdjustingDom(r.id, key);
+}
+
+function updateAdjustingDom(reqId, key) {
+  const el = document.getElementById('adj-' + reqId);
+  if (!el) return;
+  const v = adjustingSetpointCache[key];
+  el.innerHTML = v
+    ? `<span class="hvac-temp-current">${v.current}°C</span><span class="hvac-temp-arrow">→</span><span class="hvac-temp-target">${v.target}°C</span>`
+    : '';
+}
+
+const HVAC_STEP_ICONS = ['📋', '✓', '🌡️', '✓'];
+
+function renderStepsHtml(r) {
+  const order = ['pending', 'approved', 'processing', 'completed'];
+  const currentIndex = order.indexOf(r.status);
+  if (currentIndex === -1) return '';
+
+  const stepsHtml = HVAC_STEPS.map((step, idx) => {
+    const done = idx < currentIndex;
+    const active = idx === currentIndex;
+    const circleStyle = active
+      ? `background:${step.color};box-shadow:0 0 0 4px ${step.color}33`
+      : done ? 'background:#2563eb' : '';
+    const icon = done ? '✓' : HVAC_STEP_ICONS[idx];
+
+    // Adjusting, once passed, reads "Adjusted" (past tense) like the approved spec.
+    const label = (idx === 2 && done) ? 'Adjusted' : step.label;
+
+    // Only show a timestamp where we have real data — never fabricate one.
+    let timeText = '';
+    if (idx === 0 && r.created_at) timeText = new Date(r.created_at).toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
+    else if (idx === 1 && r.approved_at) timeText = new Date(r.approved_at).toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
+
+    const hint = (idx === 2 && active) ? '<div class="hvac-step-hint">est. 10–20 mins</div>' : '';
+
+    const line = idx < HVAC_STEPS.length - 1
+      ? `<div class="hvac-step-line${idx < currentIndex ? ' is-done' : ''}"></div>`
+      : '';
+    return `
+      <div class="hvac-step${done ? ' is-done' : active ? ' is-active' : ' is-future'}">
+        <div class="hvac-step-circle${active ? ' hvac-step-pulse' : ''}" style="${circleStyle}">${icon}</div>
+        <div class="hvac-step-label"${active ? ` style="color:${step.color};font-weight:700"` : ''}>${label}</div>
+        ${timeText ? `<div class="hvac-step-time">${timeText}</div>` : ''}
+        ${hint}
+      </div>
+      ${line}
+    `;
   }).join('');
+
+  let banner = '';
+  if (r.status === 'processing') {
+    const key = `${r.level}|${r.tenancy}`;
+    const cached = adjustingSetpointCache[key];
+    const targetTxt = cached ? ` to ${cached.target}°C` : '';
+    banner = `
+      <div class="hvac-step-banner is-amber">
+        <div class="hvac-step-banner-icon hvac-spin">🔄</div>
+        <div class="hvac-step-banner-body">
+          <div class="hvac-step-banner-title">Adjusting HVAC${targetTxt}…</div>
+          <div class="hvac-step-banner-sub">The system is being adjusted. This may take a few minutes.</div>
+        </div>
+        <div class="hvac-temp-line" id="adj-${r.id}">${cached ? `<span class="hvac-temp-current">${cached.current}°C</span><span class="hvac-temp-arrow">→</span><span class="hvac-temp-target">${cached.target}°C</span>` : ''}</div>
+      </div>`;
+  } else if (r.status === 'approved') {
+    banner = `
+      <div class="hvac-step-banner is-green">
+        <div class="hvac-step-banner-icon">✓</div>
+        <div class="hvac-step-banner-body">
+          <div class="hvac-step-banner-title">Your request has been approved.</div>
+          <div class="hvac-step-banner-sub">We are now adjusting the HVAC system.</div>
+        </div>
+      </div>`;
+  } else if (r.status === 'pending') {
+    banner = `
+      <div class="hvac-step-banner is-blue">
+        <div class="hvac-step-banner-icon">📝</div>
+        <div class="hvac-step-banner-body">
+          <div class="hvac-step-banner-title">Your request has been submitted.</div>
+          <div class="hvac-step-banner-sub">We will review it shortly.</div>
+        </div>
+      </div>`;
+  } else if (r.status === 'completed' && r.temp_before != null) {
+    banner = `
+      <div class="hvac-step-banner is-green">
+        <div class="hvac-step-banner-icon">✓</div>
+        <div class="hvac-step-banner-body">
+          <div class="hvac-step-banner-title">The temperature has been successfully adjusted to ${r.temp_after}°C.</div>
+          <div class="hvac-step-banner-sub">${r.temp_before}°C → ${r.temp_after}°C</div>
+        </div>
+      </div>`;
+  }
+
+  return `<div class="hvac-steps-wrap"><div class="hvac-steps">${stepsHtml}</div>${banner}</div>`;
+}
+
+// One-time confetti burst the moment a request transitions to 'completed'
+// during this session (never on initial page load / history browsing).
+let prevStatusByReqId = {};
+function checkForCompletionCelebration(list) {
+  list.forEach(r => {
+    const prev = prevStatusByReqId[r.id];
+    if (prev && prev !== 'completed' && r.status === 'completed') {
+      setTimeout(() => burstConfettiFor(r.id), 50);
+    }
+    prevStatusByReqId[r.id] = r.status;
+  });
+}
+
+function burstConfettiFor(reqId) {
+  const summaryEl = document.querySelector(`.my-req-summary[data-id="${reqId}"]`);
+  const row = summaryEl ? summaryEl.closest('.my-req-row') : null;
+  if (!row) return;
+  const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+  const layer = document.createElement('div');
+  layer.className = 'hvac-confetti-layer';
+  for (let i = 0; i < 18; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'hvac-confetti-piece';
+    piece.style.left = (40 + Math.random() * 20) + '%';
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = (Math.random() * 0.15) + 's';
+    piece.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+    layer.appendChild(piece);
+  }
+  row.style.position = 'relative';
+  row.appendChild(layer);
+  setTimeout(() => layer.remove(), 1000);
+}
+
+// ---- Conversation (hvac_messages) ----
+let messagesCache = {};
+let messagesLoaded = {};
+let messagesLoading = {};
+
+let editingMessageId = null;
+
+function renderConvMessagesHtml(reqId) {
+  if (messagesLoading[reqId] && !messagesLoaded[reqId]) {
+    return '<div class="hvac-conv-empty">Loading messages…</div>';
+  }
+  const msgs = messagesCache[reqId] || [];
+  if (!msgs.length) {
+    return '<div class="hvac-conv-empty">No messages yet</div>';
+  }
+  return msgs.map(m => {
+    const isOwn = String(m.sender_id) === String(user.id);
+    const isEditing = editingMessageId != null && String(editingMessageId) === String(m.id);
+    const bodyHtml = isEditing ? `
+      <textarea class="hvac-conv-edit-textarea" id="editInput-${m.id}" rows="2">${escapeAttr(m.message)}</textarea>
+      <div class="hvac-conv-edit-actions">
+        <button type="button" class="hvac-conv-edit-save" data-edit-save="${m.id}" data-req-id="${reqId}">Save</button>
+        <button type="button" class="hvac-conv-edit-cancel" data-edit-cancel="1">Cancel</button>
+      </div>
+    ` : `<div class="hvac-conv-msg-text">${escapeAttr(m.message)}</div>`;
+    return `
+    <div class="hvac-conv-msg ${m.sender_role === 'tenant' || m.sender_role === 'owner' ? 'is-tenant' : 'is-staff'}">
+      <div class="hvac-conv-msg-head">
+        <span>${escapeAttr(m.sender_name)}</span>
+        <span>${timeAgo(m.created_at)}</span>
+        ${isOwn && !isEditing ? `
+          <button type="button" class="hvac-conv-msg-action" data-msg-edit="${m.id}" title="Edit">✏️</button>
+          <button type="button" class="hvac-conv-msg-action" data-msg-delete="${m.id}" data-req-id="${reqId}" title="Delete">🗑️</button>
+        ` : ''}
+      </div>
+      ${bodyHtml}
+    </div>
+  `;
+  }).join('');
+}
+
+function updateConvDom(reqId) {
+  const el = document.getElementById('conv-' + reqId);
+  if (el) el.innerHTML = renderConvMessagesHtml(reqId);
+  const countEl = document.getElementById('convCount-' + reqId);
+  if (countEl) {
+    const n = (messagesCache[reqId] || []).length;
+    countEl.textContent = n ? `${n} message${n > 1 ? 's' : ''}` : '';
+  }
+}
+
+async function ensureMessagesLoaded(reqId) {
+  if (messagesLoaded[reqId] || messagesLoading[reqId]) return;
+  messagesLoading[reqId] = true;
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
+      .eq('request_id', reqId)
+      .order('created_at', { ascending: true });
+    if (!error) {
+      messagesCache[reqId] = data || [];
+      messagesLoaded[reqId] = true;
+    }
+  } catch (e) {}
+  messagesLoading[reqId] = false;
+  updateConvDom(reqId);
+}
+
+function addMessageToCache(reqId, msg) {
+  const list = messagesCache[reqId] || (messagesCache[reqId] = []);
+  if (list.some(m => m.id === msg.id)) return;
+  list.push(msg);
+  updateConvDom(reqId);
+}
+
+function updateMessageInCache(reqId, msg) {
+  const list = messagesCache[reqId];
+  if (!list) return;
+  const idx = list.findIndex(m => m.id === msg.id);
+  if (idx !== -1) list[idx] = { ...list[idx], ...msg };
+  updateConvDom(reqId);
+}
+
+function removeMessageFromCache(reqId, msgId) {
+  const list = messagesCache[reqId];
+  if (!list) return;
+  messagesCache[reqId] = list.filter(m => m.id !== msgId);
+  updateConvDom(reqId);
+}
+
+// Forces a fresh fetch for one conversation and re-renders it immediately —
+// used right after edit/delete so the UI updates without needing F5, even if
+// the incremental cache patch above ever falls out of sync (e.g. realtime
+// firing before/after the direct call, or a payload shape mismatch).
+async function reloadMessages(reqId) {
+  messagesLoaded[reqId] = false;
+  await ensureMessagesLoaded(reqId);
+}
+
+// Tenant/committee members may edit or delete only their own messages
+// (sender_id = auth.uid()), enforced both here (UI only shows the buttons
+// for isOwn rows) and, more importantly, by the hvac_messages UPDATE/DELETE
+// RLS policies in Supabase — the same "own row only" pattern already used
+// for INSERT.
+function startEditMessage(reqId, msgId) {
+  editingMessageId = msgId;
+  updateConvDom(reqId);
+  const ta = document.getElementById('editInput-' + msgId);
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function cancelEditMessage(reqId) {
+  editingMessageId = null;
+  updateConvDom(reqId);
+}
+
+async function saveEditedMessage(reqId, msgId) {
+  const ta = document.getElementById('editInput-' + msgId);
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) { showToast('Message cannot be empty', true); return; }
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .update({ message: text })
+      .eq('id', msgId)
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
+      .single();
+    if (error) { showToast(error.message || 'Failed to save edit', true); return; }
+    editingMessageId = null;
+    if (data) updateMessageInCache(reqId, data);
+    await reloadMessages(reqId);
+  } catch (e) {
+    showToast('Failed to save edit', true);
+  }
+}
+
+async function deleteConvMessage(reqId, msgId) {
+  if (!confirm('Delete this message?')) return;
+  try {
+    const { error, count } = await supabase.from('hvac_messages').delete({ count: 'exact' }).eq('id', msgId);
+    if (error) { showToast(error.message || 'Failed to delete message', true); return; }
+    if (!count) { showToast('Message not deleted — you may not have permission.', true); }
+    removeMessageFromCache(reqId, msgId);
+    await reloadMessages(reqId);
+  } catch (e) {
+    showToast('Failed to delete message', true);
+  }
+}
+
+async function sendConvMessage(reqId) {
+  const ta = document.getElementById('convInput-' + reqId);
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) return;
+  ta.disabled = true;
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .insert({ request_id: reqId, sender_id: user.id, sender_role: role, sender_name: name, message: text })
+      .select('id, sender_id, sender_role, sender_name, message, created_at')
+      .single();
+    if (!error && data) {
+      ta.value = '';
+      addMessageToCache(reqId, data);
+    } else if (error) {
+      showToast(error.message || 'Failed to send message', true);
+    }
+  } catch (e) {
+    showToast('Failed to send message', true);
+  }
+  ta.disabled = false;
+  ta.focus();
+}
+
+function setupMessagesRealtime() {
+  supabase.channel('hvac-messages-updates')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const msg = payload.new;
+      // messagesLoaded is only set for requests whose conversation has been
+      // fetched at least once (active rows always, history rows once expanded),
+      // and updateConvDom() no-ops safely if that row isn't currently rendered.
+      if (messagesLoaded[msg.request_id]) {
+        addMessageToCache(msg.request_id, msg);
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const msg = payload.new;
+      if (messagesLoaded[msg.request_id]) updateMessageInCache(msg.request_id, msg);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'hvac_messages' }, (payload) => {
+      const old = payload.old;
+      if (old && messagesLoaded[old.request_id]) removeMessageFromCache(old.request_id, old.id);
+    })
+    .subscribe();
+}
+
+// Message edit/delete/save/cancel controls live inside #conv-<id>, which is
+// replaced wholesale on every updateConvDom() call — so instead of rebinding
+// per-render (which would either miss new nodes or stack duplicate listeners
+// on the stable container), this single delegated listener is registered
+// once for the whole document and just checks the click target.
+document.addEventListener('click', (e) => {
+  const editBtn = e.target.closest('[data-msg-edit]');
+  if (editBtn) {
+    const reqId = editBtn.closest('.hvac-conv-messages')?.id.replace('conv-', '');
+    if (reqId) startEditMessage(reqId, editBtn.dataset.msgEdit);
+    return;
+  }
+  const delBtn = e.target.closest('[data-msg-delete]');
+  if (delBtn) {
+    deleteConvMessage(delBtn.dataset.reqId, delBtn.dataset.msgDelete);
+    return;
+  }
+  const saveBtn = e.target.closest('[data-edit-save]');
+  if (saveBtn) {
+    saveEditedMessage(saveBtn.dataset.reqId, saveBtn.dataset.editSave);
+    return;
+  }
+  const cancelBtn = e.target.closest('[data-edit-cancel]');
+  if (cancelBtn) {
+    const reqId = cancelBtn.closest('.hvac-conv-messages')?.id.replace('conv-', '');
+    if (reqId) cancelEditMessage(reqId);
+  }
+});
+
+function attachReqRowListeners(container, renderFn) {
+  const doRender = renderFn || renderMyRequests;
+  container.querySelectorAll('.my-req-summary').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      const wasOpen = expandedRequestIds.has(id);
+      // Accordion: only one History row open at a time — opening a new one
+      // closes whichever was open before it.
+      expandedRequestIds.clear();
+      if (!wasOpen) expandedRequestIds.add(id);
+      doRender();
+    });
+  });
+  container.querySelectorAll('[data-conv-send]').forEach(btn => {
+    btn.addEventListener('click', () => sendConvMessage(btn.dataset.convSend));
+  });
+  container.querySelectorAll('.hvac-conv-textarea').forEach(ta => {
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendConvMessage(ta.id.replace('convInput-', ''));
+      }
+    });
+  });
+}
+
+function renderMyRequests() {
+  const activeSection = document.getElementById('activeReqSection');
+  const list = document.getElementById('myList');
+
+  checkForCompletionCelebration(allMyRequests);
+
+  const active = allMyRequests.filter(r => ['pending', 'approved', 'processing'].includes(r.status));
+  const visible = allMyRequests.filter(r => ['completed', 'rejected', 'failed'].includes(r.status));
+
+  activeSection.innerHTML = active.length ? `
+    <div class="active-request-label">ACTIVE REQUEST${active.length > 1 ? 'S' : ''}</div>
+    <div class="card active-request-card" id="activeReqList">
+      ${active.map(r => reqRowHtml(r, true)).join('')}
+    </div>
+  ` : '';
+
+  list.innerHTML = visible.length ? visible.map(r => reqRowHtml(r, false)).join('') : '<div class="empty-state">No requests submitted yet</div>';
+
+  attachReqRowListeners(activeSection);
+  attachReqRowListeners(list);
+
+  active.forEach(r => ensureMessagesLoaded(r.id));
+  expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
+  active.filter(r => r.status === 'processing').forEach(ensureAdjustingSetpoint);
 }
 
 async function loadMyRequests() {
@@ -786,24 +1451,26 @@ async function loadMyRequests() {
 if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
   await loadAdminData();
-  
+
   supabase.channel('admin-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadAdminData();
     })
     .subscribe();
-    
+
 } else if (role === 'committee') {
   document.getElementById('userPanel').style.display = 'block';
   document.getElementById('observerPanel').style.display = 'block';
   await loadMyUnits();
   await loadMyRequests();
   await loadObserverData();
+  setupMessagesRealtime();
 
   supabase.channel('committee-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
       loadMyRequests();
       loadObserverData();
+      refreshCurrentSetpointDisplay();
     })
     .subscribe();
 
@@ -828,7 +1495,8 @@ if (role === 'admin') {
   document.getElementById('userPanel').style.display = 'block';
   await loadMyUnits();
   await loadMyRequests();
-  
+  setupMessagesRealtime();
+
   // User realtime - filter 제거 (Supabase Free 플랜 호환)
   supabase.channel('user-hvac-updates')
     .on('postgres_changes', {
@@ -837,6 +1505,7 @@ if (role === 'admin') {
       table: 'hvac_requests'
     }, () => {
       loadMyRequests();
+      refreshCurrentSetpointDisplay();
     })
     .subscribe();
 }
@@ -847,16 +1516,16 @@ async function loadMyUnits() {
     const { data, error } = await supabase
       .from('occupants')
       .select('*');
-    
+
     if (error) throw error;
-    
+
     const userEmail = user.email.toLowerCase();
     myUnits = (data || []).filter(occ => {
       const primaryEmails = (occ.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
       const businessEmails = (occ.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase());
       return primaryEmails.includes(userEmail) || businessEmails.includes(userEmail);
     });
-    
+
     if (myUnits.length > 0 && myUnits.every(u => u.level === 'External')) {
       document.querySelector('.submit-form').style.opacity = '0.4';
       document.querySelector('.submit-form').style.pointerEvents = 'none';
@@ -873,55 +1542,85 @@ async function loadMyUnits() {
 function renderUnitSelection() {
   const autoBox = document.getElementById('unitAutoBox');
   const radioBox = document.getElementById('unitRadioBox');
-  const manual = document.getElementById('manualLocationFields');
-  const currentCard = document.getElementById('currentSettingCard');
-  autoBox.style.display = 'none'; radioBox.style.display = 'none'; manual.style.display = 'block'; currentCard.style.display = 'none';
+  const floorField = document.getElementById('floorField');
+  const suiteField = document.getElementById('suiteField');
 
-  const icon = `<div class="location-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2v2H8zm4 0h2v2h-2zm4 0h1v2h-1zM8 11h2v2H8zm4 0h2v2h-2zm4 0h1v2h-1zM8 15h2v2H8zm4 0h2v2h-2z" fill="currentColor" stroke="none"/></svg></div>`;
-  const setLocationCard = (u, targetId) => {
-    const el = document.getElementById(targetId);
-    const levelNum = String(u.level || '').replace(/\D/g,'');
-    const business = u.business_name ? ` — ${u.business_name}` : '';
-    el.innerHTML = `${icon}<div class="location-main"><div class="location-unit">Unit ${u.unit}</div><div class="location-detail">${u.level}, ${u.suite}${business}</div></div><div class="location-side"><div class="location-level-label">Level</div><div class="location-level">${levelNum || '—'}</div><div class="floor-pill">♨ Floor —</div></div>`;
+  autoBox.style.display = 'none';
+  radioBox.style.display = 'none';
+  floorField.style.display = 'none';
+  suiteField.style.display = 'none';
+
+  const setLocationCard = (u, prefix) => {
+    if (!u) return;
+    const nameEl = document.getElementById(prefix === 'auto' ? 'unitAutoUnit' : 'radioUnitName');
+    const detailEl = document.getElementById(prefix === 'auto' ? 'unitAutoDetail' : 'radioUnitDetail');
+    const levelEl = document.getElementById(prefix === 'auto' ? 'unitAutoLevel' : 'radioUnitLevel');
+    if (nameEl) nameEl.textContent = `Unit ${u.unit}`;
+    if (detailEl) detailEl.textContent = `${u.level}, ${u.suite}${u.business_name ? ' — ' + u.business_name : ''}`;
+    if (levelEl) levelEl.textContent = (u.level || '').replace('Level ', '') || '—';
+    loadFloorSetpoint(u.level, prefix === 'auto' ? 'unitAutoFloorSetpoint' : 'radioUnitFloorSetpoint');
   };
 
+  if (myUnits.length > 0 && myUnits.every(u => u.level === 'External')) {
+    document.querySelector('.submit-form').style.opacity = '0.4';
+    document.querySelector('.submit-form').style.pointerEvents = 'none';
+  }
+
   if (myUnits.length === 1) {
-    selectedUnit = myUnits[0]; autoBox.style.display = 'block'; manual.style.display = 'none'; currentCard.style.display = 'block';
-    document.getElementById('unitTabs').innerHTML = `<button class="unit-tab selected"><div class="unit-tab-unit">Unit ${selectedUnit.unit}</div><div class="unit-tab-suite">${selectedUnit.suite || ''}</div></button>`;
-    setLocationCard(selectedUnit, 'locationCard');
-    document.getElementById('currentTempValue').textContent = '—';
-    document.getElementById('currentTempUpdated').textContent = 'Current BMS setting';
-  } else if (myUnits.length > 1) {
-    radioBox.style.display = 'block'; manual.style.display = 'none'; currentCard.style.display = 'block';
     selectedUnit = myUnits[0];
-    const tabs = document.getElementById('unitTabsMulti');
-    tabs.innerHTML = myUnits.map((u,i) => `<button class="unit-tab ${i===0?'selected':''}" data-idx="${i}"><div class="unit-tab-unit">Unit ${u.unit}</div><div class="unit-tab-suite">${u.suite || ''}</div></button>`).join('');
-    const renderSelected = () => setLocationCard(selectedUnit, 'locationCardMulti');
-    renderSelected();
-    tabs.querySelectorAll('.unit-tab').forEach(btn => btn.addEventListener('click', () => { selectedUnit = myUnits[parseInt(btn.dataset.idx)]; tabs.querySelectorAll('.unit-tab').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); renderSelected(); }));
-    document.getElementById('currentTempValue').textContent = '—';
-    document.getElementById('currentTempUpdated').textContent = 'Current BMS setting';
+    const tabs = document.getElementById('unitAutoTabs');
+    tabs.innerHTML = `<div class="location-tab selected"><div class="location-tab-unit">Unit ${selectedUnit.unit}</div><div class="location-tab-suite">${selectedUnit.suite || ''}</div></div>`;
+    setLocationCard(selectedUnit, 'auto');
+    autoBox.style.display = 'block';
+    loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+  } else if (myUnits.length > 1) {
+    const list = document.getElementById('unitRadioList');
+    list.innerHTML = myUnits.map((u, idx) => `
+      <button type="button" class="location-tab${idx === 0 ? ' selected' : ''}" data-idx="${idx}">
+        <div class="location-tab-unit">Unit ${u.unit}</div>
+        <div class="location-tab-suite">${u.suite || ''}</div>
+      </button>
+    `).join('');
+
+    selectedUnit = myUnits[0];
+    setLocationCard(selectedUnit, 'radio');
+
+    list.querySelectorAll('.location-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const idx = parseInt(tab.dataset.idx, 10);
+        selectedUnit = myUnits[idx];
+        list.querySelectorAll('.location-tab').forEach(item => item.classList.remove('selected'));
+        tab.classList.add('selected');
+        setLocationCard(selectedUnit, 'radio');
+        loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+      });
+    });
+
+    radioBox.style.display = 'block';
+    loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
   } else {
     selectedUnit = null;
+    floorField.style.display = 'block';
+    suiteField.style.display = 'block';
+    document.getElementById('currentSetpointBox').style.display = 'none';
   }
 }
-
 async function loadAdminData() {
   try {
     const { data: settings } = await supabase.from('settings').select('*').in('key', ['temp_min', 'temp_max']);
-    settings?.forEach(s => { 
-      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value; 
-      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value; 
+    settings?.forEach(s => {
+      if (s.key === 'temp_min') document.getElementById('tempMin').value = s.value;
+      if (s.key === 'temp_max') document.getElementById('tempMax').value = s.value;
     });
   } catch(e) {}
-  
+
   const { data: pending } = await supabase.from('hvac_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
   const pList = document.getElementById('pendingList');
   const pCount = document.getElementById('pendingCount');
-  
-  if (!pending?.length) { 
-    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>'; 
-    pCount.textContent = ''; 
+
+  if (!pending?.length) {
+    pList.innerHTML = '<div class="empty-state">No pending requests 🎉</div>';
+    pCount.textContent = '';
   } else {
     pCount.textContent = `${pending.length} pending`;
     pList.innerHTML = pending.map(r => `
@@ -939,14 +1638,14 @@ async function loadAdminData() {
       </div>
     `).join('');
   }
-  
+
   const { data: progress } = await supabase.from('hvac_requests').select('*').in('status', ['approved', 'processing']).order('created_at', {ascending: false});
   const prList = document.getElementById('progressList');
   const prCount = document.getElementById('progressCount');
-  
-  if (!progress?.length) { 
-    prList.innerHTML = '<div class="empty-state">No requests in progress</div>'; 
-    prCount.textContent = ''; 
+
+  if (!progress?.length) {
+    prList.innerHTML = '<div class="empty-state">No requests in progress</div>';
+    prCount.textContent = '';
   } else {
     prCount.textContent = `${progress.length} in progress`;
     prList.innerHTML = progress.map(r => `
@@ -961,7 +1660,7 @@ async function loadAdminData() {
       </div>
     `).join('');
   }
-  
+
   const { data: completed } = await supabase.from('hvac_requests').select('*').in('status', ['completed', 'failed', 'rejected']).order('created_at', {ascending: false}).limit(50);
   const cList = document.getElementById('completedList');
   window._adminCompleted = completed || [];
@@ -970,19 +1669,51 @@ async function loadAdminData() {
     const l = document.getElementById('adminFilterLevel').value;
     const filtered = window._adminCompleted.filter(r => (!t || r.tenancy === t) && (!l || r.level === l));
     if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
-    cList.innerHTML = filtered.map(r => `
-      <div class="my-req-row">
-        <div style="font-size:18px">${r.type === 'hot' ? '🥵' : '🥶'}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Too Hot' : 'Too Cold'} — ${r.level}, ${r.tenancy}</div>
-          <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
-          ${r.status === 'completed' && r.temp_before != null ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">🌡️ ${r.temp_before}°C → ${r.temp_after}°C</div>` : ''}
-          ${r.admin_comment ? `<div style="font-size:11px;color:var(--red-text);margin-top:2px">⚠️ ${r.admin_comment}</div>` : ''}
+    cList.innerHTML = filtered.map(r => {
+      const isOpen = expandedRequestIds.has(String(r.id));
+      const icon = r.type === 'hot'
+        ? '<span class="summary-icon summary-hot" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,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" x="0" y="0" width="25" height="25" preserveAspectRatio="none"></image></svg></span>'
+        : '<span class="summary-icon summary-cold" aria-hidden="true"><svg viewBox="0 0 60 60" aria-hidden="true"><image href="data:image/png;base64,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" x="0" y="0" width="25" height="25" preserveAspectRatio="none"></image></svg></span>';
+      const date = new Date(r.created_at);
+      const dateText = date.toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
+      const timeText = date.toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
+      const tempText = r.status === 'completed' && r.temp_before != null ? `${r.temp_before}°C → ${r.temp_after}°C` : '—';
+      return `
+      <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
+        <div class="my-req-summary" data-id="${r.id}" style="cursor:pointer">
+          <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
+          <div class="hvac-summary-unit">${(r.level || '').replace('Level ','')}${(r.tenancy || '').replace('Tenancy ','')}<small>${r.level || ''}</small></div>
+          <div class="hvac-summary-request">${icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
+          <div class="hvac-summary-temp">${tempText}</div>
+          <div class="hvac-summary-status" style="display:flex;align-items:center;gap:10px;justify-content:space-between;justify-self:stretch">
+            <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}" style="font-size:13px;font-weight:800;padding:7px 16px;border-radius:8px">${r.status}</span>
+            <button onclick="event.stopPropagation();deleteHvacRequest('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:17px;padding:4px 6px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Delete">🗑️</button>
+          </div>
         </div>
-        <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}">${r.status}</span>
-        <button onclick="deleteHvacRequest('${r.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;opacity:0.4;transition:opacity 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Delete">🗑️</button>
+        ${isOpen ? `
+        <div class="my-req-detail">
+          ${r.admin_comment ? `<div class="req-alert" onclick="showReasonModal(this)" data-comment="${escapeAttr(r.admin_comment)}">⚠️ ${r.admin_comment}</div>` : ''}
+          <div class="hvac-detail-grid">
+            ${reqDetailsCardHtml(r, true)}
+            <div class="hvac-conv">
+              <div class="hvac-conv-title-row">
+                <div class="hvac-conv-title">Conversation</div>
+                <span class="hvac-conv-count" id="convCount-${r.id}"></span>
+              </div>
+              <div class="hvac-conv-messages" id="conv-${r.id}">${renderConvMessagesHtml(r.id)}</div>
+              <div class="hvac-conv-input">
+                <span class="hvac-conv-attach" title="Attachments coming soon">📎</span>
+                <textarea class="hvac-conv-textarea" id="convInput-${r.id}" placeholder="Write a message..." rows="2"></textarea>
+                <button type="button" class="hvac-conv-send" data-conv-send="${r.id}">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>` : ''}
       </div>
-    `).join('');
+    `;
+    }).join('');
+    attachReqRowListeners(cList, renderAdminCompleted);
+    filtered.filter(r => expandedRequestIds.has(String(r.id))).forEach(r => ensureMessagesLoaded(r.id));
   }
   renderAdminCompleted();
   document.getElementById('adminFilterTenancy').onchange = renderAdminCompleted;
