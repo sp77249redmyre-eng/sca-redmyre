@@ -296,7 +296,7 @@
 .location-level{padding-left:16px;border-left:1px solid #cbdcf2;text-align:center;min-width:70px}
 .location-level span{display:block;font-size:12px;color:#334155;font-weight:600}
 .location-level strong{font-size:26px;color:#1e3a8a;line-height:1.1}
-.location-floor-setpoint{display:block;font-size:11px;color:#2563eb;font-weight:700;margin-top:2px;white-space:nowrap}
+.location-floor-setpoint{display:block;font-size:17px;color:#2563eb;font-weight:800;margin-top:4px;white-space:nowrap}
 .setpoint-box{padding:18px 18px 16px;background:linear-gradient(135deg,#eef6ff,#fff);border:1px solid #dce9f8;border-radius:10px;margin-bottom:16px}
 .setpoint-label{font-size:13px;font-weight:700;margin-bottom:4px}
 .setpoint-value{font-size:36px}
@@ -619,11 +619,18 @@ async function loadFloorSetpoint(level, targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
   if (!level) { el.textContent = ''; return; }
+  // The daemon writes hvac_floor_setpoints.level as a plain number (1-6), but the unit's
+  // level here is the display string "Level 2" — normalize before querying, otherwise
+  // "Level 2" never matches the numeric 2 in the DB and this silently stays blank.
+  const numericLevel = typeof level === 'string'
+    ? parseInt(level.replace(/[^0-9]/g, ''), 10)
+    : level;
+  if (!numericLevel || Number.isNaN(numericLevel)) { el.textContent = ''; return; }
   const myToken = ++floorSetpointReqToken;
   try {
     const { data, error } = await supabase.from('hvac_floor_setpoints')
       .select('current_setpoint, updated_at')
-      .eq('level', level)
+      .eq('level', numericLevel)
       .maybeSingle();
     if (myToken !== floorSetpointReqToken) return;
     if (error || !data) { el.textContent = ''; return; }
