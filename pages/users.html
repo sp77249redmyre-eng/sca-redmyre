@@ -695,6 +695,17 @@ const FIXED_ORDER = [
 // Test emails (always shown as Admin pastel red)
 const TEST_EMAILS = new Set(['ikf.jacob@gmail.com', 'sca.jacob77@gmail.com']);
 
+const AUDIT_EXCLUDED_EMAILS = new Set([
+  'sp77249.redmyre@gmail.com',
+  'ikf.jacob@gmail.com'
+]);
+
+async function writeAuditLog(payload) {
+  if (AUDIT_EXCLUDED_EMAILS.has((user?.email || '').toLowerCase())) return;
+  await supabase.from('audit_logs').insert(payload);
+}
+
+
 function sortProfilesForDisplay(profiles) {
   const fixed = [];
   const rest = [...profiles];
@@ -937,7 +948,7 @@ window.changeRole = async (uid, newRole) => {
   try { 
     await supabase.from('profiles').update({role:newRole}).eq('id',uid); 
     const { data: changedUser } = await supabase.from('profiles').select('full_name, email').eq('id', uid).single();
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1035,7 +1046,7 @@ document.getElementById('setPwdBtn').addEventListener('click', async () => {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Failed to set password');
     
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1135,7 +1146,7 @@ document.getElementById('epmSaveBtn').addEventListener('click', async () => {
     if (!res.ok) throw new Error(result.error || 'Save failed');
 
     // audit log
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1224,7 +1235,7 @@ window.removeUser = async (uid, uname) => {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error||'Failed to remove user');
     
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1368,7 +1379,7 @@ document.getElementById('savePermBtn').addEventListener('click', async () => {
     const { error } = await supabase.from('sidebar_permissions').insert(permsToInsert);
     if (error) throw error;
     
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1398,6 +1409,7 @@ async function loadActivityLog(append = false) {
   const filterPeriod = document.getElementById('filterPeriod').value;
   
   let query = supabase.from('audit_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+  query = query.not('user_email', 'in', '(sp77249.redmyre@gmail.com,ikf.jacob@gmail.com)');
   
   if (filterPeriod !== 'all') {
     const cutoffDate = new Date();
@@ -1864,7 +1876,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
 
     // 409 = profile 등록 성공했지만 occupants 행 없음 (warning)
     if (res.status === 409 && result.profile_created) {
-      await supabase.from('audit_logs').insert({
+      await writeAuditLog({
         user_id: user.id,
         user_name: user.user_metadata?.full_name || user.email,
         user_email: user.email,
@@ -1879,7 +1891,7 @@ document.getElementById('sendInviteBtn').addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(result.error||'Failed');
     
-    await supabase.from('audit_logs').insert({
+    await writeAuditLog({
       user_id: user.id,
       user_name: user.user_metadata?.full_name || user.email,
       user_email: user.email,
@@ -1912,7 +1924,7 @@ async function loadStatistics() {
   const days = parseInt(document.getElementById('statsPeriod').value);
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
-  const { data: logs } = await supabase.from('audit_logs').select('*').gte('created_at', since).order('created_at', { ascending: true });
+  const { data: logs } = await supabase.from('audit_logs').select('*').not('user_email', 'in', '(sp77249.redmyre@gmail.com,ikf.jacob@gmail.com)').gte('created_at', since).order('created_at', { ascending: true });
   if (!logs || !logs.length) {
     document.getElementById('statTotalActions').textContent = '0';
     document.getElementById('statActiveUsers').textContent = '0';
