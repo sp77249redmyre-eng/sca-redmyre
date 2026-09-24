@@ -1582,6 +1582,10 @@ async function loadMyRequests() {
 if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
   document.getElementById('tempLimitsBar').style.display = 'block';
+  // Admin has no owned unit, so the tenant-only "Your Locations" auto-detect
+  // section (with its now-pointless "Manage Units" link) never has anything
+  // to show here — hide it entirely rather than leaving an empty header.
+  document.getElementById('locationSection').style.display = 'none';
   await loadAdminData();
 
   supabase.channel('admin-hvac-updates')
