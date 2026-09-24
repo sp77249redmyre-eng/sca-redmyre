@@ -496,6 +496,17 @@
       </div>
     </div>
 
+    <div id="tempLimitsBar" style="display:none;grid-column:1/-1">
+      <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
+      <div class="limits-bar">
+        <label>Min</label><input type="number" class="limits-input" id="tempMin" value="20" min="15" max="30">
+        <label>°C &nbsp;&nbsp; Max</label><input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
+        <label>°C</label>
+        <button class="limits-save" id="saveLimitsBtn">Save</button>
+        <span style="font-size:13px;color:#475569;margin-left:4px;font-weight:500">Applied to all adjustments</span>
+      </div>
+    </div>
+
     <div class="submit-form">
       <div class="type-btns">
         <button class="type-btn" id="btnHot" data-type="hot">
@@ -584,14 +595,6 @@
     <div id="rightPanel">
       <!-- Admin panel -->
       <div id="adminPanel" style="display:none">
-        <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
-        <div class="limits-bar">
-          <label>Min</label><input type="number" class="limits-input" id="tempMin" value="20" min="15" max="30">
-          <label>°C &nbsp;&nbsp; Max</label><input type="number" class="limits-input" id="tempMax" value="26" min="20" max="35">
-          <label>°C</label>
-          <button class="limits-save" id="saveLimitsBtn">Save</button>
-          <span style="font-size:13px;color:#475569;margin-left:4px;font-weight:500">Applied to all adjustments</span>
-        </div>
         <div class="section-hdr" style="margin-top:4px">
           <div class="section-title">Pending Requests</div>
           <span id="pendingCount" style="font-size:12px;color:var(--red-text);font-weight:600"></span>
@@ -1566,6 +1569,7 @@ async function loadMyRequests() {
 
 if (role === 'admin') {
   document.getElementById('adminPanel').style.display = 'block';
+  document.getElementById('tempLimitsBar').style.display = 'block';
   await loadAdminData();
 
   supabase.channel('admin-hvac-updates')
