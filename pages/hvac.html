@@ -807,7 +807,15 @@ async function loadCurrentSetpoint(level, tenancy) {
 
 // Floor Setpoint (whole-floor average, read-only from hvac_floor_setpoints).
 // Same read-only pattern as loadCurrentSetpoint above — SELECT only, no writes.
-let floorSetpointReqToken = 0;
+// Per-target request tokens. loadFloorSetpoint() is called for multiple
+// targets (adminFloorSetpoint, observerFloorSetpoint, unitAutoFloorSetpoint,
+// radioUnitFloorSetpoint) back-to-back on the same event. A single shared
+// counter here would let a later call (e.g. observerFloorSetpoint) bump the
+// token while an earlier call (e.g. adminFloorSetpoint) is still awaiting its
+// DB response, causing the earlier call's stale-check to always fail and
+// silently discard its result — this is exactly what was breaking the Admin
+// Floor Setpoint badge. Keeping one token per targetId fixes that.
+const floorSetpointReqToken = {};
 async function loadFloorSetpoint(level, targetId, showLevel) {
   const el = document.getElementById(targetId);
   if (!el) return;
@@ -816,13 +824,14 @@ async function loadFloorSetpoint(level, targetId, showLevel) {
   // hvac_floor_setpoints.level as the string "Level N" (e.g. "Level 2"), matching this
   // unit's level exactly as-is. Do NOT convert to a number here — an earlier version of
   // this function did that and it silently broke the match (DB has "Level 2", not 2).
-  const myToken = ++floorSetpointReqToken;
+  floorSetpointReqToken[targetId] = (floorSetpointReqToken[targetId] || 0) + 1;
+  const myToken = floorSetpointReqToken[targetId];
   try {
     const { data, error } = await supabase.from('hvac_floor_setpoints')
       .select('current_setpoint, updated_at')
       .eq('level', level)
       .maybeSingle();
-    if (myToken !== floorSetpointReqToken) return;
+    if (myToken !== floorSetpointReqToken[targetId]) return;
     if (error || !data) { el.textContent = ''; return; }
     // showLevel is only used by the Admin Floor Setpoint badge, where there's
     // no separate "LEVEL 3" strong element next to it (unlike the tenant
@@ -830,7 +839,7 @@ async function loadFloorSetpoint(level, targetId, showLevel) {
     const label = (showLevel ? level + ' ' : '') + 'Floor ' + data.current_setpoint + '°C';
     el.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#2563eb"></circle><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>' + label + '</span>';
   } catch (e) {
-    if (myToken !== floorSetpointReqToken) return;
+    if (myToken !== floorSetpointReqToken[targetId]) return;
     el.textContent = '';
   }
 }
