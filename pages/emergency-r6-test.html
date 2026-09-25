@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emergency Contacts – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+/* ============================================================
+   Emergency Contacts body — Option 3 visual spec (agreed with
+   챗이사 + 사장님 2026-09-25, image = source of truth). Sidebar/
+   topbar/layout.js are untouched; only this page's own <style>
+   below is scoped to this document.
+   ============================================================ */
+.content{padding:20px;background:#F1F5F9;display:flex;flex-direction:column;gap:0}
+
+/* Page header (this page only — 18px title, not the site default) */
+.page-header-title{font-size:18px;font-weight:700;color:#172554;line-height:22px}
+.page-header-sub{font-size:11px;color:#94A3B8;line-height:15px}
+.page-header{margin-bottom:14px}
+
+/* 000 banner */
+.emg000-banner{height:82px;padding:12px 16px;background:#FFF7F7;border:1px solid #FCA5A5;border-radius:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-sizing:border-box}
+.emg000-icon{width:52px;height:52px;color:#EF4444;font-size:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.emg000-text{flex:1;min-width:0}
+.emg000-label{font-size:8px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.04em}
+.emg000-msg{font-size:16px;font-weight:700;color:#DC2626;line-height:20px;margin-top:2px}
+.emg000-sub{font-size:9px;line-height:12px;color:#DC2626}
+.emg000-btn{height:34px;padding:0 16px;background:#EF4444;color:#fff;border:none;border-radius:7px;font-size:10px;font-weight:700;margin-left:auto;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap;font-family:'DM Sans',sans-serif}
+@media(max-width:600px){.emg000-banner{flex-direction:column;align-items:flex-start;height:auto}.emg000-btn{margin-left:0;width:100%;justify-content:center}}
+
+/* Section header (Building Management / Building Services) */
+.sec-header-row{display:flex;align-items:center;gap:9px}
+.sec-bar{width:3px;height:18px;border-radius:2px;background:#2563EB;display:inline-block;flex-shrink:0}
+.sec-title{font-size:16px;font-weight:700;color:#172554}
+.sec-desc{font-size:9px;color:#94A3B8;margin-top:3px}
+.sec-head-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* Building Management */
+.people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
+@media(max-width:900px){.people-grid{grid-template-columns:1fr}}
+.person-card{background:#fff;border:1px solid #DBEAFE;border-radius:9px;padding:12px;height:126px;min-height:126px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px}
+.person-card.blue{border-color:#DBEAFE}
+.person-card.purple{border-color:#DDD6FE}
+.person-card.orange{border-color:#FDE4C6}
+.person-card.green{border-color:#BBF7D0}
+
+.person-header{display:flex;align-items:center;gap:8px}
+.person-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.av-blue{background:var(--blue-50);color:var(--blue-800)}
+.av-purple{background:#EDE9FE;color:#7C3AED}
+.av-orange{background:var(--orange-bg);color:var(--orange-text)}
+.person-name{font-size:13px;font-weight:700;color:#172554}
+.person-role{font-size:9px;font-weight:600;color:#64748B;margin-top:1px}
+.status-badge{display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:700;padding:3px 7px;border-radius:999px}
+.sb-green{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC}
+.sb-orange{background:var(--orange-bg);color:var(--orange-text)}
+.status-dot{width:5px;height:5px;border-radius:50%}
+.dot-green{background:var(--green)}
+.dot-orange{background:var(--orange)}
+.person-phone-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.person-phone{font-size:10px;font-weight:600;color:#2563EB}
+.person-phone-label{font-size:8px;font-weight:600;color:#94A3B8}
+.person-email{font-size:9px;color:#2563EB;margin-bottom:0;display:block}
+.person-note{font-size:9px;font-weight:600;color:#B91C1C;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:7px;padding:6px 8px;line-height:1.4}
+.person-actions{display:flex;gap:5px;margin-top:2px}
+.call-btn{height:30px;padding:0 11px;border:none;border-radius:6px;font-size:9px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.btn-blue{background:#2563EB;color:#fff}
+.btn-email{background:#EFF6FF;border:1px solid #BFDBFE;color:#2563EB}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-purple{background:#7C3AED;color:#fff}
+
+/* Building Services — Option 3 accordion */
+.service-search{width:170px;height:28px;border:1px solid #CBD5E1;border-radius:6px;background:#fff;padding:0 9px;font-size:8px;font-family:'DM Sans',sans-serif}
+.service-search:focus{outline:none;border-color:#2563EB}
+@media(max-width:600px){.service-search{width:100%}}
+.accordion{display:flex;flex-direction:column;gap:5px;margin-top:5px}
+.acc-row{background:#F3F8FF;border:1px solid #DCEAF8;border-radius:8px;overflow:hidden;margin-bottom:5px}
+.acc-head{min-height:54px;height:54px;display:flex;align-items:center;gap:9px;padding:6px 10px;cursor:pointer;box-sizing:border-box}
+.acc-icon{width:40px;height:40px;min-width:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.acc-body{flex:1;min-width:0}
+.acc-title{font-size:13px;font-weight:700;color:#102A56;line-height:16px}
+.acc-count{font-size:9px;font-weight:600;color:#64748B}
+.acc-desc{font-size:9px;font-weight:500;color:#64748B;margin-top:1px;line-height:12px}
+.acc-chevron{width:16px;height:16px;margin-right:3px;font-size:13px;color:#64748B;flex-shrink:0;transition:transform .15s;display:flex;align-items:center;justify-content:center}
+.acc-row.open .acc-chevron{transform:rotate(180deg)}
+.acc-row.open .acc-head{height:auto}
+.acc-panel{display:none;background:#FFFFFF;border-top:1px solid #DCEAF8;padding:0}
+.acc-row.open .acc-panel{display:block}
+.acc-contractor{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:8px 12px;min-height:48px;box-sizing:border-box}
+.acc-contractor+.acc-contractor{border-top:1px dashed #E2E8F0}
+.acc-cont-body{flex:1;min-width:140px}
+.acc-cont-company{font-size:10px;font-weight:700;color:#172554}
+.acc-cont-desc{font-size:9px;color:#64748B}
+.acc-cont-phone{font-size:9px;font-weight:700;color:#2563EB;margin-top:2px}
+.acc-cont-actions{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.acc-call-btn{height:28px;padding:0 10px;background:#2563EB;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-family:'DM Sans',sans-serif}
+.acc-email-btn{height:28px;padding:0 10px;background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;border-radius:6px;font-size:9px;font-weight:700;display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-family:'DM Sans',sans-serif}
+.acc-edit-btn{height:28px;padding:0 10px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);border-radius:6px;font-size:9px;cursor:pointer;font-family:'DM Sans',sans-serif}
+#addContractorBtn{height:28px;padding:0 12px;font-size:11px;font-weight:700;border-radius:6px;background:#2563EB;color:#fff;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Contractor highlight (URL ?contractor=... 로 진입 시) */
+.acc-contractor.highlight-flash{
+  animation: contractorPulse 2.5s ease;
+}
+@keyframes contractorPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0); background: transparent; }
+  20%  { box-shadow: 0 0 0 8px rgba(34,197,94,0.25); background: #f0fdf4; }
+  60%  { box-shadow: 0 0 0 4px rgba(34,197,94,0.12); background: #f0fdf4; }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); background: transparent; }
+}
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.59a16 16 0 0 0 5.5 5.5l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </div>
+      <div class="page-header-body">
+        <div class="page-header-title-row">
+          <span class="page-header-title">Emergency Contacts</span>
+        </div>
+        <div class="page-header-sub">Building management and essential service contacts.</div>
+      </div>
+    </div>
+
+    <!-- Emergency 000 Banner -->
+    <div class="emg000-banner">
+      <div class="emg000-icon"><i class="ti ti-alert-triangle-filled"></i></div>
+      <div class="emg000-text">
+        <div class="emg000-label">Life-threatening emergency?</div>
+        <div class="emg000-msg">Call 000 immediately</div>
+        <div class="emg000-sub">Police · Fire &amp; Rescue · Ambulance</div>
+      </div>
+      <a href="tel:000" class="emg000-btn"><i class="ti ti-phone"></i> Call 000</a>
+    </div>
+
+    <!-- BUILDING MANAGEMENT -->
+    <div style="margin-top:16px">
+      <div class="sec-header-row"><span class="sec-bar"></span><span class="sec-title">Building Management</span></div>
+      <div class="people-grid">
+        <div class="person-card" id="mgrCard" style="order:2">
+          <div class="person-header">
+            <div class="person-av" id="mgrAv">JK</div>
+            <div>
+              <div class="person-name" id="mgrName">Jacob Kim</div>
+              <div class="person-role" id="mgrRole">Building Manager</div>
+            </div>
+          </div>
+          <div class="status-badge" id="mgrStatus"></div>
+          <div class="person-phone-row">
+            <div class="person-phone" id="mgrPhone">—</div>
+            <div class="person-phone-label" id="mgrPhoneLabel">—</div>
+          </div>
+          <div class="person-note" id="mgrNote" style="display:none"></div>
+          <a class="person-email" id="mgrEmailLabel" href="#"></a>
+          <div class="person-actions">
+            <a class="call-btn btn-blue" id="mgrCallBtn" href="#"><i class="ti ti-phone"></i> Call</a>
+            <a class="call-btn btn-email" id="mgrEmailBtn" href="#" style="display:none"><i class="ti ti-mail"></i> Email</a>
+          </div>
+        </div>
+        <div class="person-card purple" id="strataMgrCard" style="order:1">
+          <div class="person-header">
+            <div class="person-av av-purple" id="strataMgrAv">—</div>
+            <div style="flex:1;min-width:0">
+              <div class="person-name" id="strataMgrName">—</div>
+              <div class="person-role" id="strataMgrRole">Strata Manager</div>
+            </div>
+            <button id="strataMgrEditBtn" style="display:none;font-size:8px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0"><i class="ti ti-pencil"></i> Edit</button>
+          </div>
+          <div>
+            <div class="person-phone" id="strataMgrPhone">—</div>
+          </div>
+          <a class="person-email" id="strataMgrEmailLabel" href="#" style="color:#2563EB"></a>
+          <div class="person-actions">
+            <a class="call-btn btn-purple" id="strataMgrCallBtn" href="#"><i class="ti ti-phone"></i> Call</a>
+            <a class="call-btn btn-email" id="strataMgrEmailBtn" href="#"><i class="ti ti-mail"></i> Email</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUILDING SERVICES (Option 3: service accordion, single-open) -->
+    <div id="contractorSection">
+      <div class="sec-head-between" style="margin-top:18px">
+        <div>
+          <div class="sec-header-row"><span class="sec-bar"></span><span class="sec-title">Building Services</span></div>
+          <div class="sec-desc">Find the right contractor by what's wrong, not by company name.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="service-search" id="serviceSearch" placeholder="Search services or contractors...">
+          <button id="addContractorBtn" style="display:none">+ Add</button>
+        </div>
+      </div>
+      <div class="accordion" id="serviceAccordion">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTRACTOR MODAL -->
+<div class="modal-backdrop" id="contractorModal">
+  <div class="modal-box">
+    <div class="modal-title" id="contractorModalTitle">Add Contractor</div>
+    <input type="hidden" id="contractorEditId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div><label class="modal-label">Service Type</label><input id="cService" class="modal-input" placeholder="e.g. Lift, Plumber…"></div>
+      <div><label class="modal-label">Company Name</label><input id="cCompany" class="modal-input" placeholder="Company name…"></div>
+    </div>
+    <div class="modal-field"><label class="modal-label">Contact Name</label><input id="cContact" class="modal-input" placeholder="e.g. Danny McKinney"></div>
+    <div class="modal-field"><label class="modal-label">Phone</label><input id="cPhone" class="modal-input" placeholder="e.g. 02 9123 4567 / 0412 345 678"></div>
+    <div class="modal-field"><label class="modal-label">Email</label><input id="cEmail" class="modal-input" placeholder="email@example.com"></div>
+    <div class="modal-field"><label class="modal-label">Website (optional)</label><input id="cWebsite" class="modal-input" placeholder="www.example.com.au"></div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="contractorDeleteBtn" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn-secondary" onclick="closeModal('contractorModal')">Cancel</button>
+      <button class="btn-primary" id="saveContractorBtn">Save →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+const ctx = await initLayout();
+if (!ctx) throw new Error('Layout init failed');
+const { supabase, user, role } = ctx;
+
+// Manager card (time-aware) — unchanged logic, only the surrounding CSS changed.
+async function isNSWPublicHoliday(date) {
+  try {
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${date.getFullYear()}/AU`);
+    const holidays = await res.json();
+    const today = date.toISOString().split('T')[0];
+    return holidays.some(h=>h.date===today&&(!h.counties||h.counties.includes('AU-NSW')));
+  } catch { return false; }
+}
+
+async function renderManagerCard() {
+  const now = new Date();
+  const day = now.getDay();
+  const timeNum = now.getHours()*60+now.getMinutes();
+  const isWorkDay = [1,3,5].includes(day);
+  const isWorkHours = timeNum>=8*60 && timeNum<16*60;
+  const isHoliday = await isNSWPublicHoliday(now);
+  const available = isWorkDay && isWorkHours && !isHoliday;
+  const card=document.getElementById('mgrCard');
+  const av=document.getElementById('mgrAv');
+  const statusEl=document.getElementById('mgrStatus');
+  const phoneEl=document.getElementById('mgrPhone');
+  const phoneLabelEl=document.getElementById('mgrPhoneLabel');
+  const noteEl=document.getElementById('mgrNote');
+  const callBtn=document.getElementById('mgrCallBtn');
+  const emailBtn=document.getElementById('mgrEmailBtn');
+  const emailLabel=document.getElementById('mgrEmailLabel');
+  if (available) {
+    card.className='person-card blue'; av.className='person-av av-blue'; av.textContent='JK';
+    document.getElementById('mgrName').textContent='Jacob Kim';
+    document.getElementById('mgrRole').textContent='Building Manager';
+    statusEl.className='status-badge sb-green'; statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
+    phoneEl.textContent='0478 705 406'; phoneLabelEl.textContent='Mon / Wed / Fri · 8:00 AM – 4:00 PM';
+    noteEl.style.display='none'; callBtn.href='tel:0478705406'; callBtn.className='call-btn btn-blue'; callBtn.innerHTML='<i class="ti ti-phone"></i> Call';
+    emailBtn.href='mailto:sp77249.redmyre@gmail.com'; emailBtn.style.display='flex';
+    emailLabel.textContent='sp77249.redmyre@gmail.com'; emailLabel.href='mailto:sp77249.redmyre@gmail.com';
+  } else {
+    card.className='person-card orange'; av.className='person-av av-orange'; av.textContent='SCA';
+    document.getElementById('mgrName').textContent='SCA Emergency Line';
+    document.getElementById('mgrRole').textContent='24/7 Urgent Matters';
+    statusEl.className='status-badge sb-orange'; statusEl.innerHTML='<div class="status-dot dot-orange"></div>'+(isHoliday?' Public holiday':!isWorkDay?' Building manager unavailable':' Outside working hours');
+    phoneEl.textContent='1300 785 007'; phoneLabelEl.textContent='Available 24/7 for urgent matters';
+    noteEl.style.display='block'; noteEl.textContent='Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA.';
+    callBtn.href='tel:1300785007'; callBtn.className='call-btn btn-orange'; callBtn.innerHTML='<i class="ti ti-phone"></i> Call SCA';
+    emailBtn.href='mailto:sca.yun82@gmail.com'; emailBtn.style.display='flex';
+    emailLabel.textContent='sca.yun82@gmail.com'; emailLabel.href='mailto:sca.yun82@gmail.com';
+  }
+}
+
+// Option 3 round4: fixed 8 building-service categories (image = source of
+// truth). Each DB contractor's free-text `service` field is mapped into one
+// of these via keyword match; anything that doesn't match falls into a
+// trailing "Other Services" bucket so no DB row is ever dropped from view.
+const SERVICE_CATEGORIES = [
+  { key:'lift',       title:'Lift & Elevator',   desc:'Lift maintenance & emergency service',        icon:'ti-elevator',     bg:'#E5F1FF', color:'#1677E8', match:s=>s.includes('lift')||s.includes('elevator') },
+  { key:'ac',         title:'Air Conditioning',  desc:'Air conditioning and HVAC service',            icon:'ti-snowflake',    bg:'#E1F3FF', color:'#1688E8', match:s=>s.includes('air')||s.includes('hvac')||s.includes('conditioning') },
+  { key:'fire',        title:'Fire Services',     desc:'Fire safety systems and inspection',           icon:'ti-flame',        bg:'#FFE9E9', color:'#EF3030', match:s=>s.includes('fire') },
+  { key:'plumbing',    title:'Plumbing',          desc:'Plumbing and water services',                  icon:'ti-droplet',      bg:'#E4F1FF', color:'#1677D2', match:s=>s.includes('plumb')||s.includes('water') },
+  { key:'electrical',  title:'Electrical',        desc:'Electrical systems and repairs',               icon:'ti-bolt',         bg:'#FFF2D8', color:'#FF9800', match:s=>s.includes('electr') },
+  { key:'security',    title:'Security & Access', desc:'Access control and building security',         icon:'ti-shield-check', bg:'#E4F7EA', color:'#159447', match:s=>s.includes('access')||s.includes('security')||s.includes('lock')||s.includes('cctv') },
+  { key:'garage',      title:'Garage & Gates',    desc:'Garage doors, gates and roller shutters',      icon:'ti-door',         bg:'#F6E9E9', color:'#B44747', match:s=>s.includes('garage')||s.includes('gate')||s.includes('roller')||s.includes('shutter') },
+  { key:'cleaning',    title:'Cleaning & Waste',  desc:'Cleaning, waste and recycling services',       icon:'ti-trash',        bg:'#E5F7DF', color:'#20A83A', match:s=>s.includes('clean')||s.includes('waste')||s.includes('recycl') },
+];
+const OTHER_CATEGORY = { key:'other', title:'Other Services', desc:'Additional building services', icon:'ti-tool', bg:'#EEF2FF', color:'#4338CA' };
+
+function categoryFor(service) {
+  const s = (service||'').toLowerCase();
+  return SERVICE_CATEGORIES.find(c => c.match(s)) || OTHER_CATEGORY;
+}
+
+let contractorsData = [];
+// Option 3 accordion: single category open at a time. Holds the currently
+// open category's key, or null when all are collapsed.
+let openAccordionService = null;
+
+// 모두에게 contractor 섹션 표시 (Add/Edit는 admin만)
+if (role === 'admin') {
+  document.getElementById('addContractorBtn').style.display = 'inline-flex';
+}
+
+function groupByCategory(list) {
+  const buckets = {};
+  list.forEach(c => {
+    const cat = categoryFor(c.service);
+    if (!buckets[cat.key]) buckets[cat.key] = { cat, items: [] };
+    buckets[cat.key].items.push(c);
+  });
+  // Round 5: only the 8 fixed categories are ever shown on screen (Option 3
+  // spec). "Other Services" contractors stay fully in the DB and are still
+  // reachable via search/?contractor= deep-link — they're just not rendered
+  // as their own category row.
+  return SERVICE_CATEGORIES.map(c => buckets[c.key]).filter(Boolean);
+}
+
+function renderAccordion(searchTerm) {
+  const wrap = document.getElementById('serviceAccordion');
+  const term = (searchTerm || '').trim().toLowerCase();
+  let list = contractorsData.filter(c => (c.service || '').toLowerCase() !== 'strata manager');
+  if (term) {
+    list = list.filter(c =>
+      (c.service||'').toLowerCase().includes(term) ||
+      (c.company||'').toLowerCase().includes(term) ||
+      (c.contact_name||'').toLowerCase().includes(term)
+    );
+  }
+  const groups = groupByCategory(list);
+  if (!groups.length) { wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">No services found.</div>'; return; }
+  wrap.innerHTML = groups.map(g => {
+    const meta = g.cat;
+    const serviceKey = meta.key;
+    const isOpen = openAccordionService === serviceKey;
+    const count = g.items.length;
+    const contractorsHtml = g.items.map(c => {
+      const primaryPhone = c.phone ? c.phone.split('/').map(p=>p.trim())[0] : '';
+      const primaryEmail = c.email ? c.email.split(',').map(e=>e.trim())[0] : '';
+      return `
+        <div class="acc-contractor" data-company="${(c.company||'').toLowerCase()}">
+          <div class="acc-cont-body">
+            <div class="acc-cont-company">${c.company||''}</div>
+            ${c.contact_name?`<div class="acc-cont-desc">${c.contact_name}</div>`:''}
+            ${primaryPhone?`<div class="acc-cont-phone">${primaryPhone}</div>`:''}
+          </div>
+          <div class="acc-cont-actions">
+            ${primaryPhone?`<a class="acc-call-btn" href="tel:${primaryPhone.replace(/\s/g,'')}"><i class="ti ti-phone"></i> Call</a>`:''}
+            ${primaryEmail?`<a class="acc-email-btn" href="mailto:${primaryEmail}"><i class="ti ti-mail"></i> Email</a>`:''}
+            ${role==='admin'?`<button type="button" class="acc-edit-btn" onclick="openContractorEdit('${c.id}')">Edit</button>`:''}
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="acc-row${isOpen?' open':''}" data-service="${serviceKey}">
+        <div class="acc-head" data-toggle="${serviceKey}">
+          <div class="acc-icon" style="background:${meta.bg};color:${meta.color}"><i class="ti ${meta.icon}"></i></div>
+          <div class="acc-body">
+            <span class="acc-title">${meta.title}</span> <span class="acc-count">(${count})</span>
+            <div class="acc-desc">${meta.desc}</div>
+          </div>
+          <div class="acc-chevron"><i class="ti ti-chevron-down"></i></div>
+        </div>
+        <div class="acc-panel">${contractorsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('serviceAccordion').addEventListener('click', (e) => {
+  const head = e.target.closest('[data-toggle]');
+  if (!head) return;
+  const service = head.dataset.toggle;
+  openAccordionService = (openAccordionService === service) ? null : service; // single-open
+  renderAccordion(document.getElementById('serviceSearch').value);
+});
+
+document.getElementById('serviceSearch').addEventListener('input', (e) => {
+  renderAccordion(e.target.value);
+});
+
+async function loadContractors() {
+  const { data } = await supabase.rpc('get_contractors');
+  contractorsData = data||[];
+  renderAccordion(document.getElementById('serviceSearch').value);
+}
+
+window.openContractorEdit = (id) => {
+  const c = contractorsData.find(x=>x.id===id);
+  if (!c) return;
+  document.getElementById('contractorModalTitle').textContent='Edit Contractor';
+  document.getElementById('contractorEditId').value=c.id;
+  document.getElementById('cService').value=c.service||'';
+  document.getElementById('cCompany').value=c.company||'';
+  document.getElementById('cContact').value=c.contact_name||'';
+  document.getElementById('cPhone').value=c.phone||'';
+  document.getElementById('cEmail').value=c.email||'';
+  document.getElementById('cWebsite').value=c.website||'';
+  document.getElementById('contractorDeleteBtn').style.display='inline-block';
+  document.getElementById('contractorModal').classList.add('open');
+};
+
+document.getElementById('addContractorBtn').addEventListener('click', () => {
+  document.getElementById('contractorModalTitle').textContent='Add Contractor';
+  document.getElementById('contractorEditId').value='';
+  document.getElementById('cService').value='';
+  document.getElementById('cCompany').value='';
+  document.getElementById('cContact').value='';
+  document.getElementById('cPhone').value='';
+  document.getElementById('cEmail').value='';
+  document.getElementById('cWebsite').value='';
+  document.getElementById('contractorDeleteBtn').style.display='none';
+  document.getElementById('contractorModal').classList.add('open');
+});
+
+document.getElementById('saveContractorBtn').addEventListener('click', async () => {
+  const id      = document.getElementById('contractorEditId').value;
+  const service = document.getElementById('cService').value.trim();
+  const company = document.getElementById('cCompany').value.trim();
+  if (!service||!company) { showToast('Service and company are required', true); return; }
+  const data = { service, company, contact_name:document.getElementById('cContact').value.trim()||null, phone:document.getElementById('cPhone').value.trim()||null, email:document.getElementById('cEmail').value.trim()||null, website:document.getElementById('cWebsite').value.trim()||null };
+  try {
+    if (id) { await supabase.from('contractors').update(data).eq('id',id); }
+    else { const maxPos=contractorsData.length?Math.max(...contractorsData.map(c=>c.position||0))+1:1; await supabase.from('contractors').insert({...data,position:maxPos}); }
+    closeModal('contractorModal');
+    await loadContractors();
+    await loadStrataManager();
+    showToast('Contractor saved ✓');
+  } catch(e) { showToast(e.message||'Failed to save', true); }
+});
+
+document.getElementById('contractorDeleteBtn').addEventListener('click', async () => {
+  const id=document.getElementById('contractorEditId').value;
+  if (!confirm('Delete this contractor?')) return;
+  try { await supabase.from('contractors').delete().eq('id',id); closeModal('contractorModal'); await loadContractors(); await loadStrataManager(); showToast('Contractor deleted'); } catch(e) { showToast(e.message||'Failed to delete', true); }
+});
+
+// 초기 로드
+// Strata Manager 카드 (DB contractors 테이블에서 service='Strata Manager' 1건)
+let strataMgrData = null;
+async function loadStrataManager() {
+  const sm = (contractorsData || []).find(c => (c.service || '').toLowerCase() === 'strata manager');
+  if (!sm) return;
+  strataMgrData = sm;
+
+  const initials = (sm.contact_name || sm.company || '?').split(/\s+/).map(s=>s[0]).filter(Boolean).slice(0,2).join('').toUpperCase();
+  document.getElementById('strataMgrAv').textContent = initials || '?';
+  document.getElementById('strataMgrName').textContent = sm.contact_name || sm.company || '—';
+  document.getElementById('strataMgrRole').textContent = 'Strata Manager' + (sm.company ? ' · ' + sm.company : '');
+
+  const phone = sm.phone || '';
+  document.getElementById('strataMgrPhone').textContent = phone || '—';
+  const callBtn = document.getElementById('strataMgrCallBtn');
+  if (phone) { callBtn.href = 'tel:' + phone.replace(/\s/g,''); callBtn.style.display=''; } else { callBtn.style.display='none'; }
+
+  const email = sm.email || '';
+  const emailLabel = document.getElementById('strataMgrEmailLabel');
+  const emailBtn = document.getElementById('strataMgrEmailBtn');
+  if (email) {
+    emailLabel.textContent = email; emailLabel.href = 'mailto:' + email; emailLabel.style.display='';
+    emailBtn.href = 'mailto:' + email; emailBtn.style.display='';
+  } else {
+    emailLabel.style.display='none'; emailBtn.style.display='none';
+  }
+
+  if (role === 'admin') {
+    const editBtn = document.getElementById('strataMgrEditBtn');
+    editBtn.style.display = 'inline-flex';
+    editBtn.onclick = () => window.openContractorEdit(sm.id);
+  }
+}
+
+
+await Promise.all([
+  renderManagerCard(),
+  loadContractors()
+]);
+await loadStrataManager();
+
+// URL ?contractor=XXX 파라미터 처리 (building.html에서 진입 시)
+// Option 3에서는 카드가 아니라 접힌 accordion 안에 있으므로, 먼저 데이터에서
+// 해당 contractor를 찾아 그 서비스의 accordion을 열어준 다음 스크롤+하이라이트한다.
+(function handleContractorParam(){
+  const params = new URLSearchParams(window.location.search);
+  const target = params.get('contractor');
+  if (!target) return;
+  const targetLower = target.trim().toLowerCase();
+
+  // 1. 정확 일치
+  let matched = contractorsData.find(c => (c.company||'').toLowerCase() === targetLower);
+
+  // 2. 부분 일치 (양방향)
+  if (!matched) {
+    matched = contractorsData.find(c => {
+      const comp = (c.company||'').toLowerCase();
+      if (!comp) return false;
+      return comp.includes(targetLower) || targetLower.includes(comp);
+    });
+  }
+
+  if (matched) {
+    openAccordionService = categoryFor(matched.service).key;
+    renderAccordion('');
+
+    setTimeout(() => {
+      const el = document.querySelector(`.acc-contractor[data-company="${(matched.company||'').toLowerCase().replace(/"/g,'\\"')}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-flash');
+        setTimeout(() => el.classList.remove('highlight-flash'), 2600);
+      }
+    }, 250);
+  }
+
+  // URL에서 파라미터 제거 (새로고침 시 또 깜빡이지 않게)
+  if (window.history && window.history.replaceState) {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+})();
+</script>
+</body>
+</html>
