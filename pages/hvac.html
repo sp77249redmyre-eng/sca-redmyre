@@ -479,35 +479,69 @@
 </style>
 
 <style id="observer-readonly-layout">
-  body.observer-readonly #rightPanel { display: none !important; }
-</style>
-
-<style id="observer-only-panel">
-  body.observer-readonly .content > div[style*="grid-column:1/-1"] { display:none !important; }
-  body.observer-readonly #rightPanel { display:none !important; }
-  body.observer-readonly .submit-form { opacity:1 !important; pointer-events:none !important; user-select:none !important; padding-top:0 !important; }
-  body.observer-readonly #observerFloorSetpoint {
-    display:flex !important; align-items:center; justify-content:flex-start; gap:10px;
-    background:#eef3f9; border-radius:10px; padding:14px 18px; margin-bottom:14px;
-    color:#0f172a; font-size:14px; font-weight:700;
-  }
-  body.observer-readonly #observerFloorSetpoint .observer-floor-label { font-size:14px; font-weight:700; }
-  body.observer-readonly #observerFloorSetpoint .observer-floor-value {
-    background:#dbeafe; color:#1e293b; border-radius:18px; padding:7px 12px; font-weight:700;
-  }
-  body.observer-readonly #locationSection,
-  body.observer-readonly #tempLimitsBar,
-  body.observer-readonly #currentSetpointBox,
-  body.observer-readonly .form-field:has(#hvacComment),
-  body.observer-readonly #submitHvacBtn,
-  body.observer-readonly .location-section-head { display:none !important; }
-  body.observer-readonly .type-btns { margin-bottom:16px; }
-</style>
-
-<style id="observer-hide-request-buttons">
-  body.observer-readonly .type-btns {
-    display: none !important;
-  }
+/* Observer: clean, read-only HVAC status view. */
+body.observer-readonly .content{
+  grid-template-columns:minmax(0, 820px);
+  justify-content:center;
+  gap:0;
+  padding:48px 32px 40px;
+}
+body.observer-readonly .submit-form{
+  width:100%;
+  box-sizing:border-box;
+  padding:24px 28px 30px;
+  border-radius:16px;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  user-select:auto !important;
+}
+body.observer-readonly .content > div[style*="grid-column:1/-1"],
+body.observer-readonly #rightPanel{
+  display:none !important;
+}
+body.observer-readonly #tempLimitsBar,
+body.observer-readonly #locationSection,
+body.observer-readonly .form-field:has(#hvacComment),
+body.observer-readonly #submitHvacBtn,
+body.observer-readonly .type-btns,
+body.observer-readonly .location-section-head{
+  display:none !important;
+}
+body.observer-readonly #observerFloorSetpoint{
+  display:flex !important;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  margin:0 0 18px;
+  padding:16px 18px;
+  background:#f1f5f9;
+  border-radius:12px;
+}
+body.observer-readonly #observerFloorSetpoint .observer-floor-label{
+  font-size:14px;
+  font-weight:700;
+  color:#0f172a;
+}
+body.observer-readonly #observerFloorSetpoint .observer-floor-value{
+  font-size:14px;
+  font-weight:700;
+  color:#1e293b;
+  background:#dbeafe;
+  border-radius:18px;
+  padding:7px 12px;
+}
+body.observer-readonly #floorField,
+body.observer-readonly #suiteField{
+  display:block !important;
+}
+body.observer-readonly #currentSetpointBox{
+  display:none;
+  margin-top:18px;
+}
+body.observer-readonly .option-box{
+  cursor:pointer;
+  pointer-events:auto !important;
+}
 </style>
 </head>
 <body>
@@ -900,6 +934,7 @@ document.getElementById('hvacLevel').addEventListener('change', () => {
   // card). Safe to call regardless of role — loadFloorSetpoint() no-ops if
   // the target element isn't in the DOM or isn't visible.
   loadFloorSetpoint(level, 'adminFloorSetpoint', true);
+  loadFloorSetpoint(level, 'observerFloorSetpoint', false);
   if (selectedUnit) return; // auto/radio unit takes priority
   const tenancy = document.getElementById('hvacTenancy').value;
   loadCurrentSetpoint(level, tenancy);
@@ -1654,13 +1689,10 @@ if (role === 'admin') {
 } else if (role === 'observer') {
   document.body.classList.add('observer-readonly');
 
-  // Observer is view-only: keep the left HVAC panel visible, but disable all
-  // request controls. The entire right-side request/admin area is hidden.
-  const sf = document.querySelector('.submit-form');
-  sf.style.opacity = '0.45';
-  sf.style.pointerEvents = 'none';
-  sf.style.userSelect = 'none';
+  // Observer is view-only: selection controls remain usable for status lookup.
   await loadObserverData();
+  const observerSetpointLabel = document.querySelector('#currentSetpointBox .setpoint-label');
+  if (observerSetpointLabel) observerSetpointLabel.textContent = 'Suite Current Setting';
 
   supabase.channel('observer-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
