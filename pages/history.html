@@ -269,7 +269,7 @@ function renderFloorHeatmap(sortedFloors) {
     return `<div class="heatmap-bar">
       <div class="bar-label">${floor}:</div>
       <div class="bar-fill" style="width:${width}%;background:${color}"></div>
-      <div class="bar-count">${count}건</div>
+      <div class="bar-count">${count}</div>
     </div>`;
   }).join('');
   document.getElementById('floorHeatmap').innerHTML = floorHtml || '<div style="color:var(--muted);font-size:12px">No data</div>';
@@ -283,7 +283,7 @@ function renderTenancyHeatmap(sortedTenancies) {
     return `<div class="heatmap-bar">
       <div class="bar-label">${tenancy}:</div>
       <div class="bar-fill" style="width:${width}%;background:${color}"></div>
-      <div class="bar-count">${count}건</div>
+      <div class="bar-count">${count}</div>
     </div>`;
   }).join('');
   document.getElementById('tenancyHeatmap').innerHTML = tenancyHtml || '<div style="color:var(--muted);font-size:12px">No data</div>';
@@ -334,10 +334,10 @@ function renderMonthlyChart(monthKeys, hotValues, coldValues) {
         legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
         tooltip: {
           callbacks: {
-            label: (context) => `${context.dataset.label}: ${context.parsed.y}건`,
+            label: (context) => `${context.dataset.label}: ${context.parsed.y}`,
             footer: (items) => {
               const total = items.reduce((sum, item) => sum + (item.parsed.y || 0), 0);
-              return `Total: ${total}건`;
+              return `Total: ${total}`;
             }
           }
         }
@@ -361,7 +361,7 @@ function renderStatsFromRows(allData) {
   const sortedFloors = Object.entries(floorCounts).sort((a,b) => b[1] - a[1]);
   if (sortedFloors.length) {
     document.getElementById('mostProblematic').textContent = sortedFloors[0][0];
-    document.getElementById('mostProblematicCount').textContent = `${sortedFloors[0][1]}건`;
+    document.getElementById('mostProblematicCount').textContent = `${sortedFloors[0][1]} requests`;
   }
 
   const hotCount = allData.filter(r => r.type === 'hot').length;
@@ -381,7 +381,7 @@ function renderStatsFromRows(allData) {
     const peakHour = parseInt(sortedHours[0][0]);
     const peakCount = sortedHours[0][1];
     document.getElementById('peakTime').textContent = `${peakHour}:00-${peakHour+1}:00`;
-    document.getElementById('peakTimeCount').textContent = `${peakCount}건 (${Math.round(peakCount/allData.length*100)}%)`;
+    document.getElementById('peakTimeCount').textContent = `${peakCount} requests (${Math.round(peakCount/allData.length*100)}%)`;
   }
 
   renderFloorHeatmap(sortedFloors.length ? sortedFloors : [['—',0]]);
@@ -416,7 +416,7 @@ function renderStatsFromRpc(stats) {
   const floors = stats.floor_counts || [];
   if (floors.length) {
     document.getElementById('mostProblematic').textContent = floors[0].floor;
-    document.getElementById('mostProblematicCount').textContent = `${floors[0].count}건`;
+    document.getElementById('mostProblematicCount').textContent = `${floors[0].count} requests`;
   }
 
   renderHotVsCold(stats.hot_count || 0, stats.cold_count || 0);
@@ -426,7 +426,7 @@ function renderStatsFromRpc(stats) {
     const peak = [...hours].sort((a,b) => b.count - a.count)[0];
     const total = stats.total_count || ((stats.hot_count||0) + (stats.cold_count||0)) || 1;
     document.getElementById('peakTime').textContent = `${peak.hour}:00-${peak.hour+1}:00`;
-    document.getElementById('peakTimeCount').textContent = `${peak.count}건 (${Math.round(peak.count/total*100)}%)`;
+    document.getElementById('peakTimeCount').textContent = `${peak.count} requests (${Math.round(peak.count/total*100)}%)`;
   }
 
   renderFloorHeatmap(floors.length ? floors.map(f => [f.floor, f.count]) : [['—',0]]);
