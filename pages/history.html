@@ -115,6 +115,13 @@
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style id="history-role-view">
+  body.history-dashboard-only .filter-bar,
+  body.history-dashboard-only .card {
+    display: none !important;
+  }
+</style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -202,7 +209,11 @@
 import { initLayout } from '../js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
-const { supabase, user } = ctx;
+const { supabase, user, role } = ctx;
+if (role !== 'admin') {
+  document.body.classList.add('history-dashboard-only');
+}
+
 
 const ST_CLS = { completed:'badge-green',failed:'badge-red',rejected:'badge-red',approved:'badge-yellow',pending:'badge-yellow',processing:'badge-blue' };
 let monthlyChart = null;
@@ -381,7 +392,8 @@ async function loadHistory() {
     });
   }
 
-  // 테이블 렌더링
+  // Admin only: render the individual history table.
+  if (role !== 'admin') return;
   if (!data?.length) { list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No history found</div>'; return; }
   list.innerHTML = data.map(r=>`
     <div class="hist-entry" data-id="${r.id}">
@@ -406,12 +418,14 @@ document.getElementById('filterLevel').addEventListener('change', loadHistory);
 document.getElementById('filterType').addEventListener('change', loadHistory);
 document.getElementById('refreshBtn').addEventListener('click', loadHistory);
 
-document.getElementById('clearAllBtn').addEventListener('click', async () => {
-  if (!confirm('Clear ALL temperature history?\nThis cannot be undone.')) return;
-  await supabase.from('hvac_requests').delete().neq('id','00000000-0000-0000-0000-000000000000');
-  showToast('History cleared');
-  await loadHistory();
-});
+if (role === 'admin') {
+  document.getElementById('clearAllBtn').addEventListener('click', async () => {
+    if (!confirm('Clear ALL temperature history?\nThis cannot be undone.')) return;
+    await supabase.from('hvac_requests').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    showToast('History cleared');
+    await loadHistory();
+  });
+}
 
 await loadHistory();
 </script>
