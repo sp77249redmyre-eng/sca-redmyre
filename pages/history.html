@@ -370,7 +370,10 @@ function renderStatsFromRows(allData) {
 
   const hourCounts = {};
   allData.forEach(r => {
-    const hour = new Date(r.created_at).getHours();
+    // Match the RPC's timezone handling (EXTRACT(HOUR FROM created_at AT TIME
+    // ZONE 'Australia/Sydney')) so Admin's Peak Request Time can't drift from
+    // what non-admin roles see if the admin's browser isn't set to Sydney time.
+    const hour = Number(new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', hourCycle: 'h23' }).format(new Date(r.created_at)));
     hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   });
   const sortedHours = Object.entries(hourCounts).sort((a,b) => b[1] - a[1]);
