@@ -89,6 +89,7 @@
 .hvac-conv-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:260px;overflow-y:auto}
 .hvac-conv-empty{font-size:13px;color:#64748b;padding:6px 0}
 .hvac-conv-msg{padding:10px 12px;border-radius:8px;max-width:88%}
+.hvac-conv-msg.is-editing{max-width:100%}
 .hvac-conv-msg.is-tenant{background:var(--blue-50);align-self:flex-start}
 .hvac-conv-msg.is-staff{background:var(--bg);align-self:flex-end;text-align:left}
 .hvac-conv-msg-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#334155;margin-bottom:3px}
@@ -1390,7 +1391,7 @@ function renderConvMessagesHtml(reqId) {
       </div>
     ` : `<div class="hvac-conv-msg-text">${escapeAttr(m.message)}</div>`;
     return `
-    <div class="hvac-conv-msg ${m.sender_role === 'tenant' || m.sender_role === 'owner' ? 'is-tenant' : 'is-staff'}">
+    <div class="hvac-conv-msg ${m.sender_role === 'tenant' || m.sender_role === 'owner' ? 'is-tenant' : 'is-staff'}${isEditing ? ' is-editing' : ''}">
       <div class="hvac-conv-msg-head">
         <span>${escapeAttr(m.sender_name)}</span>
         <span>${timeAgo(m.created_at)}</span>
@@ -1618,14 +1619,9 @@ function attachReqRowListeners(container, renderFn) {
   container.querySelectorAll('[data-conv-send]').forEach(btn => {
     btn.addEventListener('click', () => sendConvMessage(btn.dataset.convSend));
   });
-  container.querySelectorAll('.hvac-conv-textarea').forEach(ta => {
-    ta.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendConvMessage(ta.id.replace('convInput-', ''));
-      }
-    });
-  });
+  // Enter now just inserts a line break like a normal textarea — sending only
+  // happens via the Send button. (Previously Enter submitted immediately,
+  // which made it impossible to write a multi-line message.)
 }
 
 function renderMyRequests() {
