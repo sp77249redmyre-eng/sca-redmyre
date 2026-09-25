@@ -48,7 +48,7 @@
 /* Building Management */
 .people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
 @media(max-width:900px){.people-grid{grid-template-columns:1fr}}
-.person-card{background:#fff;border:1px solid #DBEAFE;border-radius:9px;padding:12px;height:126px;min-height:126px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;gap:4px}
+.person-card{background:#fff;border:1px solid #DBEAFE;border-radius:9px;padding:12px;min-height:126px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;gap:4px}
 .person-card.blue{border-color:#DBEAFE}
 .person-card.purple{border-color:#DDD6FE}
 .person-card.orange{border-color:#FDE4C6}
@@ -319,6 +319,15 @@ function categoryFor(service) {
   return SERVICE_CATEGORIES.find(c => c.match(s)) || OTHER_CATEGORY;
 }
 
+// A contractor's service field can list more than one trade (e.g. "Fire
+// Safety, Electrical") — that contractor should then show up under every
+// matching category row, not just the first one.
+function categoriesFor(service) {
+  const s = (service||'').toLowerCase();
+  const matches = SERVICE_CATEGORIES.filter(c => c.match(s));
+  return matches.length ? matches : [OTHER_CATEGORY];
+}
+
 let contractorsData = [];
 // Option 3 accordion: single category open at a time. Holds the currently
 // open category's key, or null when all are collapsed.
@@ -332,9 +341,10 @@ if (role === 'admin') {
 function groupByCategory(list) {
   const buckets = {};
   list.forEach(c => {
-    const cat = categoryFor(c.service);
-    if (!buckets[cat.key]) buckets[cat.key] = { cat, items: [] };
-    buckets[cat.key].items.push(c);
+    categoriesFor(c.service).forEach(cat => {
+      if (!buckets[cat.key]) buckets[cat.key] = { cat, items: [] };
+      buckets[cat.key].items.push(c);
+    });
   });
   // Round 5: only the 8 fixed categories are ever shown on screen (Option 3
   // spec). "Other Services" contractors stay fully in the DB and are still
