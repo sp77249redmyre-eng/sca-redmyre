@@ -484,7 +484,7 @@
 /* Observer: clean, read-only HVAC status view. */
 body.observer-readonly .content{
   grid-template-columns:minmax(0, 820px);
-  justify-content:center;
+  justify-content:start;
   gap:0;
   padding:48px 32px 40px;
 }
@@ -501,13 +501,19 @@ body.observer-readonly .content > div[style*="grid-column:1/-1"],
 body.observer-readonly #rightPanel{
   display:none !important;
 }
-body.observer-readonly #tempLimitsBar,
 body.observer-readonly #locationSection,
-body.observer-readonly .form-field:has(#hvacComment),
-body.observer-readonly #submitHvacBtn,
-body.observer-readonly .type-btns,
-body.observer-readonly .location-section-head{
+body.observer-readonly #submitHvacBtn{
   display:none !important;
+}
+/* Temperature Limits stays visible for Observer (read-only status), but the
+   Min/Max inputs and Save button are locked — Observer can look, not touch. */
+body.observer-readonly #tempMin,
+body.observer-readonly #tempMax,
+body.observer-readonly #saveLimitsBtn{
+  pointer-events:none !important;
+  opacity:0.6;
+  cursor:not-allowed;
+  background:#f1f5f9;
 }
 body.observer-readonly #observerFloorSetpoint{
   display:flex !important;
@@ -537,7 +543,7 @@ body.observer-readonly #suiteField{
   display:block !important;
 }
 body.observer-readonly #currentSetpointBox{
-  display:none;
+  display:block;
   margin-top:18px;
 }
 body.observer-readonly .option-box{
@@ -945,7 +951,7 @@ document.getElementById('hvacLevel').addEventListener('change', () => {
   // card). Safe to call regardless of role — loadFloorSetpoint() no-ops if
   // the target element isn't in the DOM or isn't visible.
   loadFloorSetpoint(level, 'adminFloorSetpoint', true);
-  loadFloorSetpoint(level, 'observerFloorSetpoint', false);
+  loadFloorSetpoint(level, 'observerFloorSetpoint', true);
   if (selectedUnit) return; // auto/radio unit takes priority
   const tenancy = document.getElementById('hvacTenancy').value;
   loadCurrentSetpoint(level, tenancy);
@@ -1718,6 +1724,21 @@ if (role === 'admin') {
   await loadObserverData();
   const observerSetpointLabel = document.querySelector('#currentSetpointBox .setpoint-label');
   if (observerSetpointLabel) observerSetpointLabel.textContent = 'Suite Current Setting';
+
+  // Show Temperature Limits as a locked, read-only status display — Observer
+  // can see the current Min/Max but never change them (inputs are hard-disabled
+  // here on top of the CSS lock, and Save is disabled so it can't be clicked
+  // even if some other rule re-enables it later).
+  document.getElementById('tempLimitsBar').style.display = 'block';
+  const obsLimits = await ensureTempLimits();
+  const obsTempMin = document.getElementById('tempMin');
+  const obsTempMax = document.getElementById('tempMax');
+  const obsSaveBtn = document.getElementById('saveLimitsBtn');
+  if (obsLimits.min != null) obsTempMin.value = obsLimits.min;
+  if (obsLimits.max != null) obsTempMax.value = obsLimits.max;
+  obsTempMin.disabled = true;
+  obsTempMax.disabled = true;
+  obsSaveBtn.disabled = true;
 
   supabase.channel('observer-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
