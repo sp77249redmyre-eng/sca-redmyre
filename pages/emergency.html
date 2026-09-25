@@ -346,11 +346,14 @@ function groupByCategory(list) {
       buckets[cat.key].items.push(c);
     });
   });
-  // Round 5: only the 8 fixed categories are ever shown on screen (Option 3
-  // spec). "Other Services" contractors stay fully in the DB and are still
-  // reachable via search/?contractor= deep-link — they're just not rendered
-  // as their own category row.
-  return SERVICE_CATEGORIES.map(c => buckets[c.key]).filter(Boolean);
+  // The 8 fixed categories always show first, in this order. Any contractor
+  // that doesn't match one of them (pest control, printer/copier servicing,
+  // etc.) falls into "Other Services", which is appended at the end only
+  // when it actually has contractors in it — so nothing in the DB is ever
+  // silently hidden from the page or from search results.
+  const fixed = SERVICE_CATEGORIES.map(c => buckets[c.key]).filter(Boolean);
+  if (buckets[OTHER_CATEGORY.key]) fixed.push(buckets[OTHER_CATEGORY.key]);
+  return fixed;
 }
 
 function renderAccordion(searchTerm) {
