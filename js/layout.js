@@ -12,7 +12,7 @@ const PAGE_CONFIG = {
   'works':          { title: 'Ongoing Works',         allowedRoles: null },
   'cost-dashboard': { title: 'Cost Analysis',         allowedRoles: ['admin', 'committee', 'observer'] },
   'documents':      { title: 'Building Documents',    allowedRoles: ['admin', 'committee', 'observer', 'owner'] },
-  'history':        { title: 'Temperature History',   allowedRoles: ['admin', 'committee', 'observer'] },
+  'history':        { title: 'Temperature History',   allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
   'quotes':         { title: 'Quote Approvals',       allowedRoles: ['admin', 'committee', 'observer'] },
   'reports':        { title: 'Completed Works',       allowedRoles: ['admin', 'committee', 'observer'] },
   'occupants':      { title: 'Occupant Details',      allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
