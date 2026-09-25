@@ -289,7 +289,7 @@ function renderTenancyHeatmap(sortedTenancies) {
   document.getElementById('tenancyHeatmap').innerHTML = tenancyHtml || '<div style="color:var(--muted);font-size:12px">No data</div>';
 }
 
-function renderMonthlyChart(monthKeys, values) {
+function renderMonthlyChart(monthKeys, hotValues, coldValues) {
   const labels = monthKeys.map(k => {
     const [y, m] = k.split('-');
     return new Date(y, m-1).toLocaleDateString('en-AU', {month:'short'});
@@ -299,26 +299,46 @@ function renderMonthlyChart(monthKeys, values) {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        label: 'Requests',
-        data: values,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#3b82f6',
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
+      datasets: [
+        {
+          label: 'Hot',
+          data: hotValues,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#ef4444'
+        },
+        {
+          label: 'Cold',
+          data: coldValues,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.08)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#3b82f6'
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false },
+        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } } },
         tooltip: {
           callbacks: {
-            label: (context) => `${context.parsed.y}건`
+            label: (context) => `${context.dataset.label}: ${context.parsed.y}건`,
+            footer: (items) => {
+              const total = items.reduce((sum, item) => sum + (item.parsed.y || 0), 0);
+              return `Total: ${total}건`;
+            }
           }
         }
       },
@@ -375,13 +395,17 @@ function renderStatsFromRows(allData) {
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    monthCounts[key] = 0;
+    monthCounts[key] = { hot: 0, cold: 0 };
   }
   allData.forEach(r => {
     const key = r.created_at.slice(0, 7);
-    if (monthCounts.hasOwnProperty(key)) monthCounts[key]++;
+    if (monthCounts.hasOwnProperty(key)) {
+      if (r.type === 'hot') monthCounts[key].hot++;
+      else if (r.type === 'cold') monthCounts[key].cold++;
+    }
   });
-  renderMonthlyChart(Object.keys(monthCounts), Object.values(monthCounts));
+  const monthKeys = Object.keys(monthCounts);
+  renderMonthlyChart(monthKeys, monthKeys.map(k => monthCounts[k].hot), monthKeys.map(k => monthCounts[k].cold));
 }
 
 // Non-admin (committee/observer/owner/tenant): 건물 전체 집계 RPC 결과로 통계 계산
@@ -406,7 +430,7 @@ function renderStatsFromRpc(stats) {
   renderTenancyHeatmap((stats.tenancy_counts || []).map(t => [t.tenancy, t.count]));
 
   const monthly = stats.monthly_counts || [];
-  renderMonthlyChart(monthly.map(m => m.month), monthly.map(m => m.count));
+  renderMonthlyChart(monthly.map(m => m.month), monthly.map(m => m.hot_count || 0), monthly.map(m => m.cold_count || 0));
 }
 
 async function loadHistory() {
