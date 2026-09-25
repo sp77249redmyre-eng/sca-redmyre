@@ -48,7 +48,7 @@
 /* Building Management */
 .people-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
 @media(max-width:900px){.people-grid{grid-template-columns:1fr}}
-.person-card{background:#fff;border:1px solid #DBEAFE;border-radius:9px;padding:12px;min-height:104px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px}
+.person-card{background:#fff;border:1px solid #DBEAFE;border-radius:9px;padding:12px;height:126px;min-height:126px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px}
 .person-card.blue{border-color:#DBEAFE}
 .person-card.purple{border-color:#DDD6FE}
 .person-card.orange{border-color:#FDE4C6}
@@ -83,15 +83,15 @@
 .service-search{width:170px;height:28px;border:1px solid #CBD5E1;border-radius:6px;background:#fff;padding:0 9px;font-size:8px;font-family:'DM Sans',sans-serif}
 .service-search:focus{outline:none;border-color:#2563EB}
 @media(max-width:600px){.service-search{width:100%}}
-.accordion{display:flex;flex-direction:column;gap:4px;margin-top:5px}
-.acc-row{background:#F3F8FF;border:1px solid #DCEAF8;border-radius:8px;overflow:hidden}
-.acc-head{min-height:42px;height:42px;display:flex;align-items:center;gap:9px;padding:4px 10px;cursor:pointer;box-sizing:border-box}
-.acc-icon{width:34px;height:34px;min-width:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.accordion{display:flex;flex-direction:column;gap:5px;margin-top:5px}
+.acc-row{background:#F3F8FF;border:1px solid #DCEAF8;border-radius:8px;overflow:hidden;margin-bottom:5px}
+.acc-head{min-height:54px;height:54px;display:flex;align-items:center;gap:9px;padding:6px 10px;cursor:pointer;box-sizing:border-box}
+.acc-icon{width:40px;height:40px;min-width:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
 .acc-body{flex:1;min-width:0}
-.acc-title{font-size:12px;font-weight:700;color:#102A56;line-height:15px}
+.acc-title{font-size:13px;font-weight:700;color:#102A56;line-height:16px}
 .acc-count{font-size:9px;font-weight:600;color:#64748B}
-.acc-desc{font-size:9px;font-weight:500;color:#64748B;margin-top:1px;line-height:11px}
-.acc-chevron{font-size:13px;color:#64748B;flex-shrink:0;transition:transform .15s;display:flex}
+.acc-desc{font-size:9px;font-weight:500;color:#64748B;margin-top:1px;line-height:12px}
+.acc-chevron{width:16px;height:16px;margin-right:3px;font-size:13px;color:#64748B;flex-shrink:0;transition:transform .15s;display:flex;align-items:center;justify-content:center}
 .acc-row.open .acc-chevron{transform:rotate(180deg)}
 .acc-row.open .acc-head{height:auto}
 .acc-panel{display:none;background:#FFFFFF;border-top:1px solid #DCEAF8;padding:0}
@@ -331,9 +331,11 @@ function groupByCategory(list) {
     if (!buckets[cat.key]) buckets[cat.key] = { cat, items: [] };
     buckets[cat.key].items.push(c);
   });
-  const ordered = SERVICE_CATEGORIES.map(c => buckets[c.key]).filter(Boolean);
-  if (buckets[OTHER_CATEGORY.key]) ordered.push(buckets[OTHER_CATEGORY.key]);
-  return ordered;
+  // Round 5: only the 8 fixed categories are ever shown on screen (Option 3
+  // spec). "Other Services" contractors stay fully in the DB and are still
+  // reachable via search/?contractor= deep-link — they're just not rendered
+  // as their own category row.
+  return SERVICE_CATEGORIES.map(c => buckets[c.key]).filter(Boolean);
 }
 
 function renderAccordion(searchTerm) {
