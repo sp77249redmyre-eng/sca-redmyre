@@ -176,7 +176,7 @@
 
     <!-- 월별 트렌드 차트 -->
     <div class="chart-container">
-      <div class="chart-title">Monthly Trend (Last 12 Months)</div>
+      <div class="chart-title">Monthly Trend (Last 6 Months)</div>
       <div style="position:relative;height:160px">
         <canvas id="monthlyChart"></canvas>
       </div>
@@ -306,9 +306,9 @@ function renderMonthlyChart(monthKeys, hotValues, coldValues) {
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239, 68, 68, 0.08)',
           borderWidth: 2.5,
-          tension: 0.4,
+          tension: 0,
           fill: false,
-          pointRadius: 0,
+          pointRadius: 3,
           pointHoverRadius: 5,
           pointBackgroundColor: '#ef4444'
         },
@@ -318,9 +318,9 @@ function renderMonthlyChart(monthKeys, hotValues, coldValues) {
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59, 130, 246, 0.08)',
           borderWidth: 2.5,
-          tension: 0.4,
+          tension: 0,
           fill: false,
-          pointRadius: 0,
+          pointRadius: 3,
           pointHoverRadius: 5,
           pointBackgroundColor: '#3b82f6'
         }
@@ -404,7 +404,7 @@ function renderStatsFromRows(allData) {
       else if (r.type === 'cold') monthCounts[key].cold++;
     }
   });
-  const monthKeys = Object.keys(monthCounts);
+  const monthKeys = Object.keys(monthCounts).slice(-6);
   renderMonthlyChart(monthKeys, monthKeys.map(k => monthCounts[k].hot), monthKeys.map(k => monthCounts[k].cold));
 }
 
@@ -429,7 +429,7 @@ function renderStatsFromRpc(stats) {
   renderFloorHeatmap(floors.length ? floors.map(f => [f.floor, f.count]) : [['—',0]]);
   renderTenancyHeatmap((stats.tenancy_counts || []).map(t => [t.tenancy, t.count]));
 
-  const monthly = stats.monthly_counts || [];
+  const monthly = (stats.monthly_counts || []).slice(-6);
   renderMonthlyChart(monthly.map(m => m.month), monthly.map(m => m.hot_count || 0), monthly.map(m => m.cold_count || 0));
 }
 
