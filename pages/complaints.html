@@ -544,12 +544,12 @@ function renderComplaints() {
     const date = new Date(c.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
     const isOwn = c.user_id === user.id;
     
-    // Public 탭에서는 완전 익명 ("A Resident"), Admin은 실제 이름
+    // Public Request는 Admin만 실제 작성자를 볼 수 있고, 그 외 사용자는 익명 표시
     let displayName;
-    if (isPublicTab) {
-      displayName = isOwn ? 'You' : 'A Resident';
-    } else if (isAdmin) {
+    if (role === 'admin') {
       displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
+    } else if (c.is_public) {
+      displayName = isOwn ? 'You' : 'A Resident';
     } else {
       displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
     }
