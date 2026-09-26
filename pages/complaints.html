@@ -113,12 +113,6 @@
 .filter-btn:hover{border-color:var(--blue-400);color:var(--text)}
 .filter-btn.active{background:var(--blue-50);border-color:var(--blue-600);color:var(--blue-600)}
 
-/* View Tabs */
-.view-tabs{display:flex;gap:8px;margin-bottom:16px}
-.tab-btn{padding:10px 18px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif}
-.tab-btn:hover{border-color:var(--blue-400);color:var(--text)}
-.tab-btn.active{background:var(--blue-50);border-color:var(--blue-600);color:var(--blue-600)}
-
 /* Public Checkbox */
 .public-checkbox{display:flex;align-items:center;gap:10px;padding:12px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;cursor:pointer}
 .public-checkbox input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--blue-600)}
@@ -136,9 +130,6 @@
   .filter-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
   .filter-bar::-webkit-scrollbar{display:none}
   .filter-btn{padding:8px 14px;font-size:12px;flex-shrink:0}
-  .view-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
-  .view-tabs::-webkit-scrollbar{display:none}
-  .tab-btn{padding:9px 14px;font-size:12px;flex-shrink:0}
 
   /* 통계 숫자 살짝 축소 */
   .stat-num{font-size:22px}
@@ -219,11 +210,6 @@
     <div style="background:#DCFCE7;border:1px solid #86EFAC;border-radius:10px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px">
       <span style="font-size:16px;flex-shrink:0;line-height:1.4">✅</span>
       <span style="font-size:13px;color:#166534;font-weight:600;line-height:1.4">Building management responds within 24-48 hours during business days.</span>
-    </div>
-    <!-- View Tabs (hidden for admin/committee/observer) -->
-    <div class="view-tabs" id="viewTabs" style="display:none">
-      <button class="tab-btn active" data-tab="mine">📋 My Requests</button>
-      <button class="tab-btn" data-tab="public">🌐 Public Requests</button>
     </div>
     <div class="filter-bar" id="filterBar">
       <button class="filter-btn active" data-filter="open">🔴 Open</button>
@@ -429,30 +415,10 @@ async function logActivity(action, record_id = null) {
   } catch (e) {}
 }
 
-const canSubmit   = ['admin','committee','owner','tenant'];
-const canViewAll  = ['admin','committee','observer'];
-const privileged  = ['admin','committee','observer'];
+const canSubmit = ['admin','committee','owner','tenant'];
+const isAdmin = role === 'admin';
 
-if (canSubmit.includes(role))  document.getElementById('addComplaintBtn').style.display = 'inline-flex';
-
-// 탭 표시 (admin/committee/observer는 기존대로 전체 보기 유지)
-if (!canViewAll.includes(role)) {
-  document.getElementById('viewTabs').style.display = 'flex';
-}
-
-// 탭 클릭 이벤트
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentTab = btn.dataset.tab;
-    if (currentTab === 'public') {
-      await loadPublicComplaints();
-    } else {
-      renderComplaints();
-    }
-  });
-});
+if (canSubmit.includes(role)) document.getElementById('addComplaintBtn').style.display = 'inline-flex';
 
 const STATUS_MAP = {
   open:     { label:'Open',        cls:'badge-red' },
@@ -463,9 +429,7 @@ const CAT_EMOJI = { noise:'🔊',leak:'💧',cleaning:'🧹',parking:'🚗',elev
 const CAT_LABEL = { noise:'Noise / Vibration',leak:'Leak / Plumbing',cleaning:'Cleaning',parking:'Parking',elevator:'Elevator',access:'Access / Security',hvac:'HVAC / Temperature',common:'Common Area',other:'Other' };
 
 let allComplaints = [];
-let publicComplaints = [];
 let currentFilter = 'open';
-let currentTab = 'mine';
 let myUnits = [];
 let selectedUnit = null;
 let currentComplaintId = null;
@@ -473,35 +437,21 @@ let pendingPhotos = [];
 let pendingReplyPhotos = [];
 
 async function loadComplaints() {
-  let query = supabase.from('complaints').select('*').order('created_at',{ascending:false});
-  if (!canViewAll.includes(role)) {
-    const { data: occs } = await supabase.from('occupants')
-      .select('unit, primary_email, business_email');
-    const userEmail = user.email.toLowerCase();
-    const matched = (occs || []).filter(o => {
-      const primary = (o.primary_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
-      const business = (o.business_email || '').split(/[,;]/).map(e => e.trim().toLowerCase()).filter(Boolean);
-      return primary.includes(userEmail) || business.includes(userEmail);
-    });
-    const unitList = [...new Set(matched.map(o => o.unit).filter(Boolean))];
-    if (unitList.length) query = query.in('unit', unitList);
-    else query = query.eq('user_id', user.id);
+  // RLS determines which requests the current role may see.
+  // All non-admin roles use the same query and therefore the same UI.
+  const { data, error } = await supabase
+    .from('complaints')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Failed to load requests:', error);
+    allComplaints = [];
+  } else {
+    allComplaints = data || [];
   }
-  const { data } = await query;
-  allComplaints = data || [];
   renderComplaints();
 }
 
-async function loadPublicComplaints() {
-  const { data, error } = await supabase.rpc('get_public_complaints');
-  if (error) {
-    console.error('Failed to load public complaints:', error);
-    publicComplaints = [];
-  } else {
-    publicComplaints = data || [];
-  }
-  renderComplaints();
-}
 
 function buildProgressBar(status) {
   const s1 = status==='open'?'active':status==='inprog'||status==='resolved'?'done':'idle';
@@ -520,50 +470,37 @@ function buildProgressBar(status) {
 
 function renderComplaints() {
   const list = document.getElementById('complaintList');
-  const isAdmin = canViewAll.includes(role);
-  const isPublicTab = !isAdmin && currentTab === 'public';
-  const sourceData = isPublicTab ? publicComplaints : allComplaints;
-  const filtered = currentFilter==='all' ? sourceData : sourceData.filter(c=>c.status===currentFilter);
-  
+  const sourceData = allComplaints;
+  const filtered = currentFilter === 'all'
+    ? sourceData
+    : sourceData.filter(c => c.status === currentFilter);
+
   if (!filtered.length) {
-    const emptyTitle = isPublicTab 
-      ? 'No Public Requests yet'
-      : (currentFilter==='all' ? 'No Requests yet' : 'No '+currentFilter+' requests');
-    const emptyDesc = isPublicTab
-      ? 'Public requests from other residents will appear here.'
-      : (canSubmit.includes(role) ? 'Click "+ New Request" to submit one.' : 'Check back later.');
+    const emptyTitle = currentFilter === 'all' ? 'No Requests yet' : 'No ' + currentFilter + ' requests';
+    const emptyDesc = canSubmit.includes(role) ? 'Click "+ New Request" to submit one.' : 'Check back later.';
     list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${emptyTitle}</div><div style="font-size:13px;color:var(--muted)">${emptyDesc}</div></div>`;
     return;
   }
-  
-  const showSubmitter = isAdmin || isPublicTab;
+
   const rows = filtered.map(c => {
     const st = STATUS_MAP[c.status] || STATUS_MAP.open;
     const emoji = CAT_EMOJI[c.category] || '📝';
     const catLabel = CAT_LABEL[c.category] || c.category;
-    const date = new Date(c.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+    const date = new Date(c.created_at).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
     const isOwn = c.user_id === user.id;
-    
-    // Public Request는 Admin만 실제 작성자를 볼 수 있고, 그 외 사용자는 익명 표시
-    let displayName;
-    if (role === 'admin') {
-      displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
-    } else if (c.is_public) {
-      displayName = isOwn ? 'You' : 'A Resident';
-    } else {
-      displayName = isOwn ? 'You' : (c.submitter_name || 'Unknown');
-    }
-    const submitterCol = showSubmitter ? `<td style="font-size:15px;font-weight:700;color:var(--text)">${displayName}</td>` : '';
-    
-    // 공개 요청 표시용 배지 (My Requests 탭에서 내 공개 요청 표시)
-    const publicIndicator = (!isPublicTab && c.is_public) ? '<span class="public-badge">🌐 Public</span>' : '';
-    const yoursIndicator = (isPublicTab && isOwn) ? '<span class="yours-badge">YOURS</span>' : '';
-    
+
+    // Admin sees the real submitter. All other roles see only You / A Resident.
+    const displayName = isAdmin
+      ? (isOwn ? 'You' : (c.submitter_name || 'Unknown'))
+      : (isOwn ? 'You' : 'A Resident');
+
+    const submitterCol = `<td style="font-size:15px;font-weight:700;color:var(--text)">${displayName}</td>`;
+    const publicIndicator = c.is_public ? '<span class="public-badge">🌐 Public</span>' : '';
     const photoIcon = c.has_photos ? '📷' : '';
     const progressBar = buildProgressBar(c.status);
-    
-    return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}', ${isPublicTab})">
-      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${yoursIndicator}${progressBar}</td>
+
+    return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
+      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${progressBar}</td>
       <td style="font-size:15px;font-weight:700;color:var(--text)">${catLabel}</td>
       ${submitterCol}
       <td style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap">${date}</td>
@@ -571,24 +508,25 @@ function renderComplaints() {
       <td style="font-size:13px">${photoIcon}</td>
     </tr>`;
   }).join('');
-  const submitterHeader = showSubmitter ? (isPublicTab ? '<th>From</th>' : '<th>Submitted by</th>') : '';
-  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th>${submitterHeader}<th>Date</th><th>Status</th><th>Files</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th><th>From</th><th>Date</th><th>Status</th><th>Files</th></tr></thead><tbody>${rows}</tbody></table>`;
+
   if (expandedComplaintId) {
     const stillThere = filtered.some(c => c.id === expandedComplaintId);
-    if (stillThere) openInlineDetail(expandedComplaintId, expandedIsPublic);
+    if (stillThere) openInlineDetail(expandedComplaintId);
     else expandedComplaintId = null;
   }
 }
 
+
 let expandedComplaintId = null;
-let expandedIsPublic = false;
 
 async function openInlineDetail(id, isPublic) {
-  if (isPublic) await window.openPublicDetail(id); else await window.openDetail(id);
+  await window.openDetail(id);
   const tr = document.querySelector(`tr[data-cid="${id}"]`);
   const box = document.getElementById('detailModalBox');
   if (!tr || !box) return;
-  const c = (isPublic ? publicComplaints : allComplaints).find(x => x.id === id);
+  const c = allComplaints.find(x => x.id === id);
   const status = c ? c.status : 'open';
   const PASTEL = { open:'#fecaca', inprog:'#fde68a', resolved:'#bbf7d0' };
   tr.classList.add('cpl-row-expanded', `status-${status}`);
@@ -611,7 +549,7 @@ function closeInlineDetail() {
   document.querySelectorAll('tr.cpl-row-expanded').forEach(el => el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved'));
 }
 
-window.toggleDetail = async (id, isPublic) => {
+window.toggleDetail = async (id) => {
   if (expandedComplaintId === id) {
     closeInlineDetail();
     expandedComplaintId = null;
@@ -619,7 +557,6 @@ window.toggleDetail = async (id, isPublic) => {
   }
   closeInlineDetail();
   expandedComplaintId = id;
-  expandedIsPublic = isPublic;
   await openInlineDetail(id, isPublic);
 };
 
@@ -754,8 +691,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
       if (error) throw error;
       closeModal('complaintModal');
       await loadComplaints();
-      if (currentTab === 'public') await loadPublicComplaints();
-      showToast('Request updated ✓');
+            showToast('Request updated ✓');
     } else {
       const { data: inserted, error } = await supabase.from('complaints').insert({
         title, body, category,
@@ -806,8 +742,9 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
 });
 
 // Detail modal
-async function loadMessageThread(complaintId) {
+async function loadMessageThread(complaintId, complaint = null) {
   const thread = document.getElementById('messageThread');
+  const isPublicComplaint = complaint?.is_public === true;
   const { data: messages } = await supabase
     .from('complaint_messages')
     .select('*')
@@ -823,6 +760,9 @@ async function loadMessageThread(complaintId) {
   thread.innerHTML = threadMessages.map(m => {
     const isAdmin = m.sender_role === 'admin';
     const isMine = m.user_id === user.id;
+    const displaySenderName = isAdmin
+      ? (isMine ? 'You' : (m.sender_name || 'SCA Management'))
+      : (isPublicComplaint ? (isMine ? 'You' : 'A Resident') : (isMine ? 'You' : (m.sender_name || 'Unknown')));
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
     const attachments = m.attachments && m.attachments.length > 0 ? `
@@ -839,7 +779,7 @@ async function loadMessageThread(complaintId) {
     return `
       <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${m.sender_name || 'Unknown'} ${isAdmin ? '· SCA Management' : ''}</div>
+          <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${displaySenderName} ${isAdmin ? '· SCA Management' : ''}</div>
           <div style="font-size:12px;color:var(--text-2)">${date}</div>
         </div>
         ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:15px;font-weight:500;color:#0f172a;line-height:1.7">${rendered}</div>`; })()}
@@ -967,10 +907,11 @@ window.openDetail = async (id) => {
   document.getElementById('detailModalTitle').textContent = `${emoji} ${c.title}`;
   document.getElementById('detailStatusBadge').className = `badge ${st.cls}`;
   document.getElementById('detailStatusBadge').textContent = st.label;
-  document.getElementById('detailSubmitter').textContent = `${c.submitter_name||'Unknown'} · ${catLabel} · ${date}`;
+  const detailDisplayName = isAdmin ? (c.user_id === user.id ? 'You' : (c.submitter_name || 'Unknown')) : (c.user_id === user.id ? 'You' : 'A Resident');
+  document.getElementById('detailSubmitter').textContent = `${detailDisplayName} · ${catLabel} · ${date}`;
   document.getElementById('detailBody').innerHTML = c.body || '—';
   document.getElementById('detailProgressWrap').innerHTML = buildProgressBar(c.status);
-  await loadMessageThread(id);
+  await loadMessageThread(id, c);
 
   const replyWrap = document.getElementById('replyWrap');
   const statusSel = document.getElementById('adminStatusSelect');
@@ -1183,121 +1124,6 @@ window.openEditComplaint = () => {
   setTimeout(() => window._initQuillBody && window._initQuillBody(document.getElementById('complaintBody').value), 50);
 };
 
-window.openPublicDetail = async (id) => {
-  const c = publicComplaints.find(x => x.id === id);
-  if (!c) return;
-  currentComplaintId = id;
-  const st = STATUS_MAP[c.status] || STATUS_MAP.open;
-  const emoji = CAT_EMOJI[c.category] || '📝';
-  const catLabel = CAT_LABEL[c.category] || c.category;
-  const date = new Date(c.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const isOwn = c.user_id === user.id;
-  
-  document.getElementById('detailModalTitle').textContent = `${emoji} ${c.title}`;
-  document.getElementById('detailStatusBadge').className = `badge ${st.cls}`;
-  document.getElementById('detailStatusBadge').textContent = st.label;
-  
-  // 공개 요청: 본인이면 이름, 아니면 "A Resident"
-  const displayName = isOwn ? `${c.submitter_name} (You)` : 'A Resident';
-  document.getElementById('detailSubmitter').textContent = `${displayName} · ${catLabel} · ${date}`;
-  
-  document.getElementById('detailBody').innerHTML = c.body || '—';
-  document.getElementById('detailProgressWrap').innerHTML = buildProgressBar(c.status);
-  
-  // Photos
-  const photosWrap = document.getElementById('detailPhotosWrap');
-  const gallery = document.getElementById('detailPhotoGallery');
-  if (photosWrap && gallery) {
-    if (c.has_photos) {
-      const { data: files } = await supabase.storage.from('complaint-images').list(id);
-      if (files && files.length > 0) {
-        photosWrap.style.display = 'block';
-        gallery.innerHTML = files.map(f => {
-          const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(`${id}/${f.name}`);
-          return `<div class="photo-gallery-item"><img src="${urlData.publicUrl}" onclick="openLightbox('${urlData.publicUrl}')"></div>`;
-        }).join('');
-      } else { photosWrap.style.display = 'none'; }
-    } else { photosWrap.style.display = 'none'; }
-  }
-  
-  // 공개 요청: 대화 스레드 전체 공개 (Admin 답변 + 요청자 댓글 모두)
-  await loadPublicMessageThread(id, isOwn);
-  
-  // Reply/Edit/Delete는 본인만
-  document.getElementById('replyWrap').style.display = isOwn ? 'block' : 'none';
-  document.getElementById('editComplaintBtn').style.display = (isOwn && c.status !== 'resolved') ? 'inline-flex' : 'none';
-  document.getElementById('deleteComplaintBtn').style.display = 'none';
-  document.getElementById('adminStatusSelect').style.display = 'none';
-  
-  // 본인 공개 요청이면 Edit 시 allComplaints에도 있어야 하므로 개별 찾기용 fallback
-  if (isOwn) {
-    // openEditComplaint가 allComplaints에서 찾으니까 없으면 추가
-    if (!allComplaints.find(x => x.id === id)) {
-      allComplaints.push(c);
-    }
-  }
-  
-  setTimeout(() => window._initQuillReply && window._initQuillReply(''), 50);
-};
-
-// 공개 요청용 대화 스레드 로드 (SECURITY DEFINER 함수 사용, RLS 우회)
-async function loadPublicMessageThread(complaintId, isOwn) {
-  const thread = document.getElementById('messageThread');
-  const { data: messages, error } = await supabase.rpc('get_public_complaint_messages', { p_complaint_id: complaintId });
-  
-  if (error) {
-    console.error('Failed to load public messages:', error);
-    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">Unable to load messages</div>';
-    return;
-  }
-  
-  const threadMessages = (messages || []).slice(1);
-  if (threadMessages.length === 0) {
-    thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
-    return;
-  }
-  
-  thread.innerHTML = threadMessages.map(m => {
-    const isAdmin = m.sender_role === 'admin';
-    const isMine = m.user_id === user.id;
-    const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    
-    // 공개 요청: 요청자 이름은 "A Resident"로 익명화 (본인이 아닐 때)
-    let senderName;
-    if (isAdmin) {
-      senderName = m.sender_name || 'Management';
-    } else if (isMine) {
-      senderName = `${m.sender_name || 'You'} (You)`;
-    } else {
-      senderName = 'A Resident';
-    }
-    
-    const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
-    const attachments = m.attachments && m.attachments.length > 0 ? `
-      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:6px">📎 Attachments</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px">
-        ${m.attachments.map(path => {
-          const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
-          const url = urlData.publicUrl;
-          const isPdf = path.toLowerCase().endsWith('.pdf');
-          if (isPdf) return `<div onclick="openPdfLightbox('${url}')" style="border-radius:7px;overflow:hidden;aspect-ratio:1;background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;cursor:pointer"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;text-align:center">PDF</div></div>`;
-          return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
-        }).join('')}
-      </div>` : '';
-    
-    return `
-      <div id="msg-${m.id}" style="border-radius:10px;padding:14px 16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:600;color:${isAdmin ? 'var(--blue-600)' : 'var(--text)'};">${senderName} ${isAdmin ? '· SCA Management' : ''}</div>
-          <div style="font-size:12px;color:var(--text-2)">${date}</div>
-        </div>
-        ${(()=>{ const hasHtml=/<[a-z][\s\S]*>/i.test(m.message||''); const rendered=hasHtml?m.message:(m.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); return `<div id="msgText-${m.id}" style="font-size:15px;font-weight:500;color:#0f172a;line-height:1.7">${rendered}</div>`; })()}
-        ${attachments}
-        ${editBtns}
-      </div>`;
-  }).join('');
-}
-
 // Load user's units from occupants table
 async function loadMyUnits() {
   try {
@@ -1371,20 +1197,11 @@ if (canSubmit.includes(role)) await loadMyUnits();
 await loadComplaints();
 
 supabase.channel('complaints-realtime')
-  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => { 
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => {
     await loadComplaints();
-    if (currentTab === 'public') await loadPublicComplaints();
   })
   .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async () => {
-    if (currentComplaintId) {
-      if (currentTab === 'public') {
-        const c = publicComplaints.find(x => x.id === currentComplaintId);
-        const isOwn = c ? c.user_id === user.id : false;
-        await loadPublicMessageThread(currentComplaintId, isOwn);
-      } else {
-        await loadMessageThread(currentComplaintId);
-      }
-    }
+    if (currentComplaintId) await loadMessageThread(currentComplaintId);
   })
   .subscribe();
 </script>
