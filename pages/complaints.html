@@ -214,9 +214,9 @@
       <span style="font-size:13px;color:#166534;font-weight:600;line-height:1.4">Building management responds within 24-48 hours during business days.</span>
     </div>
     <div class="filter-bar" id="filterBar">
-      <button class="filter-btn active" data-filter="open">🔴 Open</button>
-      <button class="filter-btn" data-filter="inprog">🟡 In Progress</button>
-      <button class="filter-btn" data-filter="resolved">✅ Resolved</button>
+      <button type="button" class="filter-btn active" data-filter="open">🔴 Open</button>
+      <button type="button" class="filter-btn" data-filter="inprog">🟡 In Progress</button>
+      <button type="button" class="filter-btn" data-filter="resolved">✅ Resolved</button>
     </div>
     <div class="complaint-list" id="complaintList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
@@ -475,7 +475,10 @@ function renderComplaints() {
   const sourceData = allComplaints;
   const filtered = currentFilter === 'all'
     ? sourceData
-    : sourceData.filter(c => c.status === currentFilter);
+    : sourceData.filter(c => {
+        const s = String(c.status || '').toLowerCase().trim().replace(/[-_ ]/g, '');
+        return s === currentFilter;
+      });
 
   if (!filtered.length) {
     const emptyTitle = currentFilter === 'all' ? 'No Requests yet' : 'No ' + currentFilter + ' requests';
@@ -570,13 +573,14 @@ window.closeDetailPanel = () => {
   expandedComplaintId = null;
 };
 
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentFilter = btn.dataset.filter;
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    renderComplaints();
-  });
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  e.preventDefault();
+  currentFilter = btn.dataset.filter || 'open';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderComplaints();
 });
 
 // Photo preview
