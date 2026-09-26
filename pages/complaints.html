@@ -318,6 +318,7 @@
     <div style="margin:16px 24px;padding:16px;background:rgba(255,255,255,0.6);border:1px solid var(--border-light);border-radius:10px;flex-shrink:0">
       <div style="font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Description</div>
       <div style="font-size:15px;font-weight:600;color:#000;line-height:1.7" id="detailBody">—</div>
+      <div id="detailOriginalAttachments"></div>
     </div>
     <style>#detailBody, #detailBody *{color:#000 !important}</style>
 
@@ -696,11 +697,53 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
         updated_at: new Date().toISOString()
       }).eq('id', editId);
       if (role !== 'admin') query = query.eq('user_id', user.id);
-      const { error } = await query;
+      const { data: updatedComplaint, error } = await query.select('id').maybeSingle();
       if (error) throw error;
+      if (!updatedComplaint) throw new Error('Request could not be updated.');
+
+      // BUG FIX: newly-added photos in the Edit Request modal were being silently
+      // dropped — this branch never uploaded pendingPhotos or attached them anywhere.
+      // Upload them now and attach to the request's original message.
+      if (pendingPhotos.length > 0) {
+        try {
+          const editUploadedPaths = [];
+          for (const file of pendingPhotos) {
+            const ext = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+            const path = `${editId}/${fileName}`;
+            const { error: editUpErr } = await supabase.storage.from('complaint-images').upload(path, file, { contentType: file.type });
+            if (editUpErr) throw editUpErr;
+            editUploadedPaths.push(path);
+          }
+          const { data: firstMsg, error: firstMsgErr } = await supabase
+            .from('complaint_messages')
+            .select('id, attachments')
+            .eq('complaint_id', editId)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (firstMsgErr) throw firstMsgErr;
+          if (firstMsg) {
+            const mergedAttachments = [...(Array.isArray(firstMsg.attachments) ? firstMsg.attachments : []), ...editUploadedPaths];
+            const { error: attachUpdErr } = await supabase.from('complaint_messages')
+              .update({ attachments: mergedAttachments })
+              .eq('id', firstMsg.id);
+            if (attachUpdErr) throw attachUpdErr;
+            const { error: hasPhotoErr } = await supabase.from('complaints')
+              .update({ has_photos: true })
+              .eq('id', editId);
+            if (hasPhotoErr) console.warn('has_photos flag update failed:', hasPhotoErr);
+          }
+        } catch (photoErr) {
+          console.error('Failed to attach new photos to edited request:', photoErr);
+          showToast('Request updated, but new photos failed to upload', true);
+        }
+      }
+
       closeModal('complaintModal');
+      pendingPhotos = [];
       await loadComplaints();
-            showToast('Request updated ✓');
+      showToast('Request updated ✓');
     } else {
       const { data: inserted, error } = await supabase.from('complaints').insert({
         title, body, category,
@@ -721,10 +764,11 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
           const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
           const path = `${inserted.id}/${fileName}`;
           const { error: upErr } = await supabase.storage.from('complaint-images').upload(path, file, { contentType: file.type });
-          if (!upErr) uploadedPaths.push(path);
+          if (upErr) throw upErr;
+          uploadedPaths.push(path);
         }
       }
-      await supabase.from('complaint_messages').insert({
+      const { error: messageInsertError } = await supabase.from('complaint_messages').insert({
         complaint_id: inserted.id,
         user_id: user.id,
         sender_name: name,
@@ -732,6 +776,11 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
         message: body,
         attachments: uploadedPaths
       });
+      if (messageInsertError) {
+        if (uploadedPaths.length) await supabase.storage.from('complaint-images').remove(uploadedPaths);
+        await supabase.from('complaints').delete().eq('id', inserted.id).eq('user_id', user.id);
+        throw messageInsertError;
+      }
       closeModal('complaintModal');
       pendingPhotos = [];
       await loadComplaints();
@@ -751,14 +800,38 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
 });
 
 // Detail modal
+function renderAttachmentsHtml(attachments) {
+  if (!attachments || attachments.length === 0) return '';
+  return `
+    <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:6px">📎 Attachments</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px">
+      ${attachments.map(path => {
+        const { data: urlData } = supabase.storage.from('complaint-images').getPublicUrl(path);
+        const url = urlData.publicUrl;
+        const isPdf = path.toLowerCase().endsWith('.pdf');
+        if (isPdf) return `<div onclick="openPdfLightbox('${url}')" style="border-radius:7px;overflow:hidden;aspect-ratio:1;background:#fef2f2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;cursor:pointer"><div style="font-size:24px">📄</div><div style="font-size:9px;color:#991b1b;text-align:center">PDF</div></div>`;
+        return `<div class="photo-gallery-item"><img src="${url}" onclick="openLightbox('${url}')"></div>`;
+      }).join('')}
+    </div>`;
+}
+
 async function loadMessageThread(complaintId, complaint = null) {
   const thread = document.getElementById('messageThread');
+  if (!complaint) complaint = allComplaints.find(x => x.id === complaintId) || null;
   const isPublicComplaint = complaint?.is_public === true;
   const { data: messages } = await supabase
     .from('complaint_messages')
     .select('*')
     .eq('complaint_id', complaintId)
     .order('created_at', { ascending: true });
+
+  // BUG FIX: the first message carries the ORIGINAL request's photos/PDFs.
+  // It's intentionally excluded from the reply thread below (its text duplicates
+  // detailBody), but its attachments still need to be shown somewhere — render
+  // them right under the Description box.
+  const originalMsg = (messages || [])[0] || null;
+  const originalAttachEl = document.getElementById('detailOriginalAttachments');
+  if (originalAttachEl) originalAttachEl.innerHTML = originalMsg ? renderAttachmentsHtml(originalMsg.attachments) : '';
 
   const threadMessages = (messages || []).slice(1);
   if (threadMessages.length === 0) {
@@ -767,11 +840,16 @@ async function loadMessageThread(complaintId, complaint = null) {
   }
 
   thread.innerHTML = threadMessages.map(m => {
-    const isAdmin = m.sender_role === 'admin';
+    const isSenderAdmin = m.sender_role === 'admin';
     const isMine = m.user_id === user.id;
-    const displaySenderName = isAdmin
+    // BUG FIX: previously this checked the MESSAGE SENDER's role for the anonymity branch,
+    // so admins viewing a public complaint saw "A Resident" instead of the real name.
+    // The current VIEWER's role (outer `isAdmin`) must always win: admin always sees real names.
+    const displaySenderName = isSenderAdmin
       ? (isMine ? 'You' : (m.sender_name || 'SCA Management'))
-      : (isPublicComplaint ? (isMine ? 'You' : 'A Resident') : (isMine ? 'You' : (m.sender_name || 'Unknown')));
+      : isAdmin
+        ? (isMine ? 'You' : (m.sender_name || 'Unknown'))
+        : (isPublicComplaint ? (isMine ? 'You' : 'A Resident') : (isMine ? 'You' : (m.sender_name || 'Unknown')));
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
     const attachments = m.attachments && m.attachments.length > 0 ? `
@@ -868,31 +946,67 @@ document.getElementById('editMsgPhotoInputCamera').addEventListener('change', e 
 document.getElementById('editMsgPhotoInputFile').addEventListener('change', e => { handleEditMsgFiles(e.target.files); e.target.value=''; });
 
 document.getElementById('saveEditMsgBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('saveEditMsgBtn');
   const msgId = document.getElementById('editMsgId').value;
   const newText = document.getElementById('editMsgText').value.trim();
-  if (!newText) { closeModal('editMsgModal'); return; }
+  if (!msgId || !newText) { showToast('Please enter a message', true); return; }
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Saving…';
+  let newlyUploadedPaths = [];
   try {
-    // 기존 사진 가져오기
-    const { data: msg } = await supabase.from('complaint_messages').select('attachments').eq('id', msgId).single();
-    let attachments = (msg && msg.attachments) ? [...msg.attachments] : [];
-    // 삭제된 사진 제거
-    if (editMsgRemovedPaths.length > 0) {
-      await supabase.storage.from('complaint-images').remove(editMsgRemovedPaths);
-      attachments = attachments.filter(p => !editMsgRemovedPaths.includes(p));
-    }
-    // 새 사진 업로드
-    for (const f of editMsgNewPhotos.filter(x => x)) {
+    const { data: msg, error: fetchError } = await supabase.from('complaint_messages')
+      .select('attachments')
+      .eq('id', msgId)
+      .eq('user_id', user.id)
+      .single();
+    if (fetchError) throw fetchError;
+
+    let attachments = Array.isArray(msg?.attachments) ? [...msg.attachments] : [];
+    const removed = [...editMsgRemovedPaths];
+    attachments = attachments.filter(path => !removed.includes(path));
+
+    for (const f of editMsgNewPhotos.filter(Boolean)) {
       const ext = f.name.split('.').pop();
       const path = `${currentComplaintId}/reply_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      await supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
+      const { error: uploadError } = await supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
+      if (uploadError) throw uploadError;
+      newlyUploadedPaths.push(path);
       attachments.push(path);
     }
-    await supabase.from('complaint_messages').update({ message: newText, attachments }).eq('id', msgId).eq('user_id', user.id);
-    if (attachments.length > 0) await supabase.from('complaints').update({ has_photos: true }).eq('id', currentComplaintId);
+
+    const { error: updateError } = await supabase.from('complaint_messages')
+      .update({ message: newText, attachments })
+      .eq('id', msgId)
+      .eq('user_id', user.id);
+    if (updateError) throw updateError;
+
+    if (removed.length) {
+      const { error: removeError } = await supabase.storage.from('complaint-images').remove(removed);
+      if (removeError) console.warn('Old attachment cleanup failed:', removeError);
+    }
+
+    const { error: photoFlagError } = await supabase.from('complaints')
+      .update({ has_photos: attachments.length > 0 })
+      .eq('id', currentComplaintId);
+    if (photoFlagError) console.warn('Photo flag update failed:', photoFlagError);
+
     closeModal('editMsgModal');
+    editMsgNewPhotos = [];
+    editMsgRemovedPaths = [];
     await loadMessageThread(currentComplaintId);
     showToast('Message updated ✓');
-  } catch(e) { showToast('Failed to update message', true); }
+  } catch(e) {
+    if (newlyUploadedPaths.length) {
+      try { await supabase.storage.from('complaint-images').remove(newlyUploadedPaths); } catch(cleanupErr) {}
+    }
+    console.error('Failed to update message:', e);
+    showToast(e?.message || 'Failed to update message', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
 });
 
 window.deleteMessage = async function(msgId) {
@@ -961,113 +1075,83 @@ window.openDetail = async (id) => {
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
   const btn = document.getElementById('saveAdminResponseBtn');
   const response = document.getElementById('adminResponse').value.trim();
-  const status   = document.getElementById('adminStatusSelect').value || null;
-  if (!response && !status) { showToast('Please enter a reply or change status', true); return; }
+  const status = document.getElementById('adminStatusSelect').value || null;
+  if (!response && !status && pendingReplyPhotos.length === 0) { showToast('Please enter a reply or change status', true); return; }
   if (btn.disabled) return;
-
   btn.disabled = true;
-  const originalText = btn.textContent;
+  const originalLabel = btn.textContent;
   btn.textContent = 'Saving…';
-
+  let insertedMsg = null;
+  let uploadedPaths = [];
   try {
-    // Save status change first (Admin only). Always check the Supabase result.
     if (role === 'admin' && status) {
       const updateData = { updated_at: new Date().toISOString(), status };
       if (response) updateData.admin_response = response;
-      const { error: statusError } = await supabase
-        .from('complaints')
-        .update(updateData)
-        .eq('id', currentComplaintId);
-      if (statusError) throw statusError;
+      const { data: updatedComplaint, error: complaintError } = await supabase.from('complaints')
+        .update(updateData).eq('id', currentComplaintId).select('id').maybeSingle();
+      if (complaintError) throw complaintError;
+      if (!updatedComplaint) throw new Error('Request status could not be updated.');
     }
 
-    // Save the reply and check the insert result explicitly.
-    let insertedMsg = null;
-    if (response) {
-      const { data: _msg, error: messageError } = await supabase
-        .from('complaint_messages')
-        .insert({
-          complaint_id: currentComplaintId,
-          user_id: user.id,
-          sender_name: name,
-          sender_role: role,
-          message: response
-        })
-        .select('id')
-        .single();
+    // BUG FIX: previously only created a message row when `response` text was
+    // non-empty, so a photo-only reply (no text typed) silently never got a message
+    // row created — meaning pendingReplyPhotos below was skipped and the photos
+    // were never uploaded, with no error shown to the user.
+    if (response || pendingReplyPhotos.length > 0) {
+      const { data: msg, error: messageError } = await supabase.from('complaint_messages').insert({
+        complaint_id: currentComplaintId,
+        user_id: user.id,
+        sender_name: name,
+        sender_role: role,
+        message: response
+      }).select('id').single();
       if (messageError) throw messageError;
-      insertedMsg = _msg;
+      insertedMsg = msg;
     }
 
-    // Upload reply attachments only after the message has been created.
     if (pendingReplyPhotos.length > 0 && insertedMsg) {
-      const uploadedPaths = [];
       for (const f of pendingReplyPhotos) {
         const ext = f.name.split('.').pop();
         const path = `${currentComplaintId}/reply_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('complaint-images')
-          .upload(path, f, { upsert: false });
+        const { error: uploadError } = await supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
         if (uploadError) throw uploadError;
         uploadedPaths.push(path);
       }
-
-      const { error: attachmentError } = await supabase
-        .from('complaint_messages')
-        .update({ attachments: uploadedPaths })
-        .eq('id', insertedMsg.id);
-      if (attachmentError) throw attachmentError;
-
-      const { error: photoFlagError } = await supabase
-        .from('complaints')
-        .update({ has_photos: true })
-        .eq('id', currentComplaintId);
+      const { error: attachError } = await supabase.from('complaint_messages')
+        .update({ attachments: uploadedPaths }).eq('id', insertedMsg.id).eq('user_id', user.id);
+      if (attachError) throw attachError;
+      const { error: photoFlagError } = await supabase.from('complaints')
+        .update({ has_photos: true }).eq('id', currentComplaintId);
       if (photoFlagError) throw photoFlagError;
-
-      pendingReplyPhotos = [];
-      document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
     }
 
-    // Push notification is non-critical. Never turn a successful save into an error.
     try {
       const c = allComplaints.find(x => x.id === currentComplaintId);
       const { data: { session: pushSession } } = await supabase.auth.getSession();
       if (pushSession?.access_token) {
         if (role === 'admin' && c?.user_id) {
-          await fetch('/api/send-push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ user_id: c.user_id, title: '📬 New Reply from Management', message: response.substring(0, 80), url: '/pages/complaints.html' })
-          });
+          await fetch('/api/send-push', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`}, body:JSON.stringify({ user_id:c.user_id, title:'📬 New Reply from Management', message:response.substring(0,80), url:'/pages/complaints.html' }) });
         } else if (role !== 'admin' && c?.user_id) {
-          await fetch('/api/send-push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ target_role: 'admin', title: '📬 Resident Replied', message: `${name}: ${response.substring(0, 60)}`, url: '/pages/complaints.html' })
-          });
+          await fetch('/api/send-push', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`}, body:JSON.stringify({ target_role:'admin', title:'📬 Resident Replied', message:`${name}: ${response.substring(0,60)}`, url:'/pages/complaints.html' }) });
         }
       }
     } catch(pushErr) {}
 
-    // The database save is complete at this point. Clear the editor first.
     document.getElementById('adminResponse').value = '';
-    if (window._qReply?.q) window._qReply.q.root.innerHTML = '';
-
-    // Refresh UI separately. A refresh problem must not be reported as a save failure.
-    try {
-      await loadComplaints();
-      await loadMessageThread(currentComplaintId, allComplaints.find(x => x.id === currentComplaintId) || null);
-    } catch(refreshErr) {
-      console.error('Request saved but refresh failed:', refreshErr);
-    }
-
+    pendingReplyPhotos = [];
+    document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
+    await loadMessageThread(currentComplaintId);
+    await loadComplaints();
     showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
   } catch(e) {
-    console.error('Failed to save request reply:', e);
-    showToast(e?.message ? `Failed to save: ${e.message}` : 'Failed to save', true);
+    if (uploadedPaths.length) {
+      try { await supabase.storage.from('complaint-images').remove(uploadedPaths); } catch(cleanupErr) {}
+    }
+    console.error('Failed to save reply/status:', e);
+    showToast(e?.message || 'Failed to save', true);
   } finally {
     btn.disabled = false;
-    btn.textContent = originalText;
+    btn.textContent = originalLabel;
   }
 });
 
@@ -1104,15 +1188,28 @@ document.getElementById('replyPhotoInputFile').addEventListener('change', e => {
 
 document.getElementById('deleteComplaintBtn').addEventListener('click', async () => {
   if (!confirm('Delete this complaint?')) return;
+  const btn = document.getElementById('deleteComplaintBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
   try {
-    const { data: files } = await supabase.storage.from('complaint-images').list(currentComplaintId);
-    if (files && files.length > 0) await supabase.storage.from('complaint-images').remove(files.map(f=>`${currentComplaintId}/${f.name}`));
-    await supabase.from('complaints').delete().eq('id', currentComplaintId);
+    const { data: files, error: listError } = await supabase.storage.from('complaint-images').list(currentComplaintId);
+    if (listError) throw listError;
+    if (files && files.length > 0) {
+      const { error: removeError } = await supabase.storage.from('complaint-images').remove(files.map(f => `${currentComplaintId}/${f.name}`));
+      if (removeError) throw removeError;
+    }
+    const { error: deleteError } = await supabase.from('complaints').delete().eq('id', currentComplaintId);
+    if (deleteError) throw deleteError;
     closeInlineDetail();
     expandedComplaintId = null;
     await loadComplaints();
-    showToast('Request deleted');
-  } catch(e) { showToast('Failed to delete', true); }
+    showToast('Request deleted ✓');
+  } catch(e) {
+    console.error('Failed to delete request:', e);
+    showToast(e?.message || 'Failed to delete', true);
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 window.openLightbox  = (url) => { document.getElementById('lightboxImg').src = url; document.getElementById('photoLightbox').classList.add('open'); };
