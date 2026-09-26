@@ -473,6 +473,20 @@ function buildProgressBar(status) {
 
 function renderComplaints() {
   const list = document.getElementById('complaintList');
+  // BUG FIX: detailModalBox (with detailModalTitle/messageThread/replyWrap etc. inside it)
+  // gets physically moved out of #detailModal into the expanded row's #cplDetailSlot by
+  // openInlineDetail(). If a realtime update (e.g. after submitting a reply) re-runs
+  // renderComplaints() while a row is expanded, `list.innerHTML = ...` below destroys that
+  // whole row subtree — including the borrowed box — permanently, since it's never moved
+  // back to #detailModal first. That leaves #detailModal empty forever, so every later
+  // openDetail() call throws on document.getElementById('detailModalTitle') being null,
+  // which aborts openInlineDetail() partway through and leaves buttons/handlers dead.
+  // Rescue the box back into #detailModal before any re-render can wipe it out.
+  const modalEl = document.getElementById('detailModal');
+  const boxEl = document.getElementById('detailModalBox');
+  if (modalEl && boxEl && boxEl.parentElement !== modalEl) {
+    modalEl.appendChild(boxEl);
+  }
   const sourceData = allComplaints;
   const filtered = currentFilter === 'all'
     ? sourceData
@@ -1022,6 +1036,13 @@ window.deleteMessage = async function(msgId) {
 window.openDetail = async (id) => {
   const c = allComplaints.find(x => x.id === id);
   if (!c) return;
+  // SAFETY NET: if #detailModalBox was ever orphaned (detached from the document by an
+  // unrelated re-render), rebuild it isn't possible here, but bail out cleanly instead of
+  // throwing and aborting the caller mid-flight, which used to leave the UI unresponsive.
+  if (!document.getElementById('detailModalTitle')) {
+    console.error('openDetail: detail modal elements missing from DOM, aborting render');
+    return;
+  }
   currentComplaintId = id;
   const st = STATUS_MAP[c.status] || STATUS_MAP.open;
   const emoji = CAT_EMOJI[c.category] || '📝';
