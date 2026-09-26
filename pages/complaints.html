@@ -959,61 +959,116 @@ window.openDetail = async (id) => {
 };
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('saveAdminResponseBtn');
   const response = document.getElementById('adminResponse').value.trim();
   const status   = document.getElementById('adminStatusSelect').value || null;
   if (!response && !status) { showToast('Please enter a reply or change status', true); return; }
+  if (btn.disabled) return;
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Saving…';
+
   try {
+    // Save status change first (Admin only). Always check the Supabase result.
     if (role === 'admin' && status) {
       const updateData = { updated_at: new Date().toISOString(), status };
       if (response) updateData.admin_response = response;
-      await supabase.from('complaints').update(updateData).eq('id', currentComplaintId);
+      const { error: statusError } = await supabase
+        .from('complaints')
+        .update(updateData)
+        .eq('id', currentComplaintId);
+      if (statusError) throw statusError;
     }
+
+    // Save the reply and check the insert result explicitly.
     let insertedMsg = null;
     if (response) {
-      const { data: _msg } = await supabase.from('complaint_messages').insert({
-        complaint_id: currentComplaintId,
-        user_id: user.id,
-        sender_name: name,
-        sender_role: role,
-        message: response
-      }).select('id').single();
+      const { data: _msg, error: messageError } = await supabase
+        .from('complaint_messages')
+        .insert({
+          complaint_id: currentComplaintId,
+          user_id: user.id,
+          sender_name: name,
+          sender_role: role,
+          message: response
+        })
+        .select('id')
+        .single();
+      if (messageError) throw messageError;
       insertedMsg = _msg;
     }
+
+    // Upload reply attachments only after the message has been created.
     if (pendingReplyPhotos.length > 0 && insertedMsg) {
       const uploadedPaths = [];
       for (const f of pendingReplyPhotos) {
         const ext = f.name.split('.').pop();
         const path = `${currentComplaintId}/reply_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        await supabase.storage.from('complaint-images').upload(path, f, { upsert: false });
+        const { error: uploadError } = await supabase.storage
+          .from('complaint-images')
+          .upload(path, f, { upsert: false });
+        if (uploadError) throw uploadError;
         uploadedPaths.push(path);
       }
-      await supabase.from('complaint_messages').update({ attachments: uploadedPaths }).eq('id', insertedMsg.id);
-      await supabase.from('complaints').update({ has_photos: true }).eq('id', currentComplaintId);
+
+      const { error: attachmentError } = await supabase
+        .from('complaint_messages')
+        .update({ attachments: uploadedPaths })
+        .eq('id', insertedMsg.id);
+      if (attachmentError) throw attachmentError;
+
+      const { error: photoFlagError } = await supabase
+        .from('complaints')
+        .update({ has_photos: true })
+        .eq('id', currentComplaintId);
+      if (photoFlagError) throw photoFlagError;
+
       pendingReplyPhotos = [];
       document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
     }
+
+    // Push notification is non-critical. Never turn a successful save into an error.
     try {
       const c = allComplaints.find(x => x.id === currentComplaintId);
       const { data: { session: pushSession } } = await supabase.auth.getSession();
-      if (role === 'admin' && c?.user_id) {
-        await fetch('/api/send-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ user_id: c.user_id, title: '📬 New Reply from Management', message: response.substring(0, 80), url: '/pages/complaints.html' })
-        });
-      } else if (role !== 'admin' && c?.user_id) {
-        await fetch('/api/send-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-          body: JSON.stringify({ target_role: 'admin', title: '📬 Resident Replied', message: `${name}: ${response.substring(0, 60)}`, url: '/pages/complaints.html' })
-        });
+      if (pushSession?.access_token) {
+        if (role === 'admin' && c?.user_id) {
+          await fetch('/api/send-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ user_id: c.user_id, title: '📬 New Reply from Management', message: response.substring(0, 80), url: '/pages/complaints.html' })
+          });
+        } else if (role !== 'admin' && c?.user_id) {
+          await fetch('/api/send-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+            body: JSON.stringify({ target_role: 'admin', title: '📬 Resident Replied', message: `${name}: ${response.substring(0, 60)}`, url: '/pages/complaints.html' })
+          });
+        }
       }
     } catch(pushErr) {}
+
+    // The database save is complete at this point. Clear the editor first.
     document.getElementById('adminResponse').value = '';
-    await loadMessageThread(currentComplaintId);
-    await loadComplaints();
+    if (window._qReply?.q) window._qReply.q.root.innerHTML = '';
+
+    // Refresh UI separately. A refresh problem must not be reported as a save failure.
+    try {
+      await loadComplaints();
+      await loadMessageThread(currentComplaintId, allComplaints.find(x => x.id === currentComplaintId) || null);
+    } catch(refreshErr) {
+      console.error('Request saved but refresh failed:', refreshErr);
+    }
+
     showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
-  } catch(e) { showToast('Failed to save', true); }
+  } catch(e) {
+    console.error('Failed to save request reply:', e);
+    showToast(e?.message ? `Failed to save: ${e.message}` : 'Failed to save', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 });
 
 // Reply attach buttons
