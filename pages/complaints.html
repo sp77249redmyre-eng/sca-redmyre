@@ -120,8 +120,10 @@
 .public-checkbox-title{font-size:13px;font-weight:600;color:var(--text)}
 .public-checkbox-desc{font-size:12px;color:var(--muted);margin-top:2px}
 
-/* Public Badge */
-.public-badge{display:inline-block;font-size:10px;font-weight:600;background:var(--blue-50);color:var(--blue-600);padding:2px 6px;border-radius:4px;margin-left:6px}
+/* Visibility Badges */
+.visibility-badge{display:inline-flex;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:0.02em;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.visibility-public{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.visibility-private{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
 .yours-badge{display:inline-block;font-size:10px;font-weight:600;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;margin-left:6px}
 
 /* ───── 모바일 최적화 (PC 영향 0%) ───── */
@@ -495,12 +497,15 @@ function renderComplaints() {
       : (isOwn ? 'You' : 'A Resident');
 
     const submitterCol = `<td style="font-size:15px;font-weight:700;color:var(--text)">${displayName}</td>`;
-    const publicIndicator = c.is_public ? '<span class="public-badge">🌐 Public</span>' : '';
+    const visibilityBadge = c.is_public
+      ? '<span class="visibility-badge visibility-public">🌐 PUBLIC</span>'
+      : '<span class="visibility-badge visibility-private">🔒 PRIVATE</span>';
     const photoIcon = c.has_photos ? '📷' : '';
     const progressBar = buildProgressBar(c.status);
 
     return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
-      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${publicIndicator}${progressBar}</td>
+      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${progressBar}</td>
+      <td style="text-align:center;white-space:nowrap">${visibilityBadge}</td>
       <td style="font-size:15px;font-weight:700;color:var(--text)">${catLabel}</td>
       ${submitterCol}
       <td style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap">${date}</td>
@@ -509,7 +514,7 @@ function renderComplaints() {
     </tr>`;
   }).join('');
 
-  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th>Category</th><th>From</th><th>Date</th><th>Status</th><th>Files</th></tr></thead><tbody>${rows}</tbody></table>`;
+  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th style="text-align:center">Visibility</th><th>Category</th><th>From</th><th>Date</th><th>Status</th><th>Files</th></tr></thead><tbody>${rows}</tbody></table>`;
 
   if (expandedComplaintId) {
     const stillThere = filtered.some(c => c.id === expandedComplaintId);
