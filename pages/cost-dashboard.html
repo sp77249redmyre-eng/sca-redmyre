@@ -231,7 +231,9 @@ const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:
 const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixed(1)+'k':fmt(v); };
 
 function parseQuoteCategory(q) {
-try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
+// SECURITY: this page must never fetch the `comment` column (it stores the
+// admin/committee-only Internal Note as JSON), so category is read from the
+// top-level `category` column only — kept in sync by reports.html on every edit.
 return q.category||'General';
 }
 function safeText(v){ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -294,7 +296,8 @@ XLSX.writeFile(wb,`Redmyre_Cost_Analysis_${new Date().toISOString().split('T')[0
 });
 
 async function loadDashboard(){
-let qQuery=supabase.from('quotes').select('*').not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed').order('completion_date',{ascending:false});
+// SECURITY: explicit column list — never fetch `comment` (holds the admin/committee-only Internal Note as JSON) on this page, which Owner can access.
+let qQuery=supabase.from('quotes').select('id,project,title,vendor,category,amount,completion_date,is_emergency').not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed').order('completion_date',{ascending:false});
 if(dateFrom)qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
 if(dateTo)qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
 const {data:raw,error}=await qQuery;
