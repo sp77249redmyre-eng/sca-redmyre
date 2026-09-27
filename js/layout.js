@@ -14,7 +14,7 @@ const PAGE_CONFIG = {
 'documents': { title: 'Building Documents', allowedRoles: ['admin', 'committee', 'observer', 'owner'] },
 'history': { title: 'Temperature History', allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
 'quotes': { title: 'Quote Approvals', allowedRoles: ['admin', 'committee', 'observer'] },
-'reports': { title: 'Completed Works', allowedRoles: ['admin', 'committee', 'observer'] },
+'reports': { title: 'Completed Works', allowedRoles: ['admin', 'committee', 'observer', 'owner'] },
 'occupants': { title: 'Occupant Details', allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant'] },
 'signboard': { title: 'Signboard Manager', allowedRoles: ['admin'] },
 'users': { title: 'User Management', allowedRoles: ['admin'] },
