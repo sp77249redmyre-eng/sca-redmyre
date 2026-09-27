@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -633,7 +634,8 @@ const PAGE_ICONS = {
   'cost-dashboard': '💹',
   documents: '📁',
   occupants: '🏢',
-  'guide-resident': '📘',
+  'guide-tenant': '📘',
+  'guide-owner': '📙',
   'guide-committee': '📗'
 };
 
@@ -652,8 +654,9 @@ const PAGE_LABELS = {
   parking: 'Parking Management (주차 관리)',
   'service-reports': 'Service Reports (정기 점검 리포트)',
   history: 'Temperature History (온도 히스토리)',
-  'guide-resident': 'User Guide (입주자 설명서)',
-  'guide-committee': 'Committee Guide (커미티 설명서)'
+  'guide-tenant': 'Tenant Guide (테넌트 설명서)',
+  'guide-owner': 'Owner Guide (오너 설명서)',
+  'guide-committee': 'Committee & Observer Guide (커미티·옵저버 설명서)'
 };
 
 // Tab switching
@@ -1273,7 +1276,7 @@ async function loadSidebarPermissions() {
 }
 
 function renderSidebarPermissions(selectedRole) {
-  const pages = ['announcements', 'complaints', 'hvac', 'quotes', 'works', 'reports', 'cost-dashboard', 'documents', 'emergency', 'parking', 'building', 'occupants', 'service-reports', 'history', 'guide-resident', 'guide-committee'];
+  const pages = ['announcements', 'complaints', 'hvac', 'quotes', 'works', 'reports', 'cost-dashboard', 'documents', 'emergency', 'parking', 'building', 'occupants', 'service-reports', 'history', 'guide-tenant', 'guide-owner', 'guide-committee'];
   
   const html = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
@@ -1314,7 +1317,7 @@ function renderSidebarPermissions(selectedRole) {
 }
 
 function updatePermissionsSummary(selectedRole) {
-  const pages = ['announcements', 'complaints', 'hvac', 'quotes', 'works', 'reports', 'cost-dashboard', 'documents', 'emergency', 'parking', 'building', 'occupants', 'service-reports', 'history', 'guide-resident', 'guide-committee'];
+  const pages = ['announcements', 'complaints', 'hvac', 'quotes', 'works', 'reports', 'cost-dashboard', 'documents', 'emergency', 'parking', 'building', 'occupants', 'service-reports', 'history', 'guide-tenant', 'guide-owner', 'guide-committee'];
   
   const allowed = pages.filter(page => currentPermissions[page] !== false);
   const denied = pages.filter(page => currentPermissions[page] === false);
@@ -1836,238 +1839,4 @@ function updateInviteUI() {
     inviteModalTitleEl.textContent = 'Invite New User';
     sendInviteBtnEl.textContent = 'Send Invite →';
   } else {
-    inviteModalTitleEl.textContent = 'Add User (No Email)';
-    sendInviteBtnEl.textContent = 'Add User →';
-  }
-}
-inviteSendEmailCb.addEventListener('change', updateInviteUI);
-
-// Invite 모달 열릴 때 체크박스 기본값 리셋 (다음에 열때 다시 checked)
-document.getElementById('inviteBtn').addEventListener('click', () => {
-  inviteSendEmailCb.checked = true;
-  updateInviteUI();
-});
-
-document.getElementById('sendInviteBtn').addEventListener('click', async () => {
-  const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
-  const fullName = document.getElementById('inviteName').value.trim();
-  const inviteRole = document.getElementById('inviteRole').value;
-  const inviteUnit = document.getElementById('inviteUnit').value;
-  const sendEmail = inviteSendEmailCb.checked;
-  const btn = document.getElementById('sendInviteBtn');
-  
-  if (!email) { showToast('Please enter an email address', true); return; }
-  if (!fullName) { showToast('Please enter a full name', true); return; }
-  if (!inviteRole) { showToast('Please select a role', true); return; }
-  
-  btn.disabled = true; 
-  btn.textContent = sendEmail ? 'Sending…' : 'Adding…';
-  
-  try {
-    const { data:{session:s2} } = await supabase.auth.refreshSession();
-    if (!s2) { showToast('Session expired. Please log in again.', true); return; }
-    
-    const res = await fetch('/api/send-invite', { 
-      method:'POST', 
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`}, 
-      body:JSON.stringify({email, full_name:fullName, role:inviteRole, unit:inviteUnit || null, skipEmail: !sendEmail}) 
-    });
-    const result = await res.json();
-
-    // 409 = profile 등록 성공했지만 occupants 행 없음 (warning)
-    if (res.status === 409 && result.profile_created) {
-      await writeAuditLog({
-        user_id: user.id,
-        user_name: user.user_metadata?.full_name || user.email,
-        user_email: user.email,
-        action: sendEmail ? 'user_invited' : 'user_added_silent',
-        details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail, occupants_synced: false }
-      });
-      closeModal('inviteModal');
-      alert(`⚠️ ${result.warning}`);
-      await loadUsers();
-      return;
-    }
-
-    if (!res.ok) throw new Error(result.error||'Failed');
-    
-    await writeAuditLog({
-      user_id: user.id,
-      user_name: user.user_metadata?.full_name || user.email,
-      user_email: user.email,
-      action: sendEmail ? 'user_invited' : 'user_added_silent',
-      details: { invited_email: email, invited_name: fullName, role: inviteRole, unit: inviteUnit, skip_email: !sendEmail, occupants_sync: result.occupants_sync }
-    });
-    
-    closeModal('inviteModal');
-    let toastMsg = sendEmail ? `Invite sent to ${email} ✓` : `User ${email} added ✓`;
-    if (result.occupants_sync?.synced) {
-      toastMsg += ` · Synced to Unit ${result.occupants_sync.unit}`;
-    } else if (result.occupants_sync?.reason === 'already_exists') {
-      toastMsg += ` · Already in Unit ${result.occupants_sync.unit}`;
-    }
-    showToast(toastMsg);
-    await loadUsers();
-  } catch(e) { showToast(e.message||'Failed', true); }
-  finally { 
-    btn.disabled = false; 
-    updateInviteUI();
-  }
-});
-
-await loadUsers();
-
-// ===== STATISTICS =====
-document.getElementById('statsPeriod').addEventListener('change', () => loadStatistics());
-
-async function loadStatistics() {
-  const days = parseInt(document.getElementById('statsPeriod').value);
-  const since = new Date(Date.now() - days * 86400000).toISOString();
-
-  const { data: logs } = await supabase.from('audit_logs').select('*').not('user_email', 'in', '(sp77249.redmyre@gmail.com,ikf.jacob@gmail.com)').gte('created_at', since).order('created_at', { ascending: true });
-  if (!logs || !logs.length) {
-    document.getElementById('statTotalActions').textContent = '0';
-    document.getElementById('statActiveUsers').textContent = '0';
-    document.getElementById('statTotalVotes').textContent = '0';
-    document.getElementById('statTotalRequests').textContent = '0';
-    document.getElementById('dailyChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px">No data yet</div>';
-    document.getElementById('pageChart').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px">No data yet</div>';
-    document.getElementById('topUsersList').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No data yet</div>';
-    document.getElementById('actionBreakdown').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">No data yet</div>';
-    return;
-  }
-
-  // Summary cards
-  const uniqueUsers = new Set(logs.map(l => l.user_email)).size;
-  const votes = logs.filter(l => l.action === 'QUOTE_VOTED').length;
-  const requests = logs.filter(l => ['COMPLAINT_CREATED','PARKING_REPORTED','HVAC_REQUESTED'].includes(l.action)).length;
-  animateNumber('statTotalActions', logs.length);
-  animateNumber('statActiveUsers', uniqueUsers);
-  animateNumber('statTotalVotes', votes);
-  animateNumber('statTotalRequests', requests);
-
-  // Daily activity chart
-  const dailyMap = {};
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    dailyMap[d.toISOString().slice(0,10)] = 0;
-  }
-  logs.forEach(l => {
-    const d = l.created_at.slice(0,10);
-    if (dailyMap[d] !== undefined) dailyMap[d]++;
-  });
-  renderBarChart('dailyChart', dailyMap);
-
-  // Page popularity
-  const pageMap = {};
-  const pgNameMap = { '/pages/building.html':'Overview', '/pages/quotes.html':'Quotes', '/pages/works.html':'Works', '/pages/reports.html':'Reports', '/pages/complaints.html':'Requests', '/pages/parking.html':'Parking', '/pages/announcements.html':'Announcements', '/pages/hvac.html':'HVAC', '/pages/users.html':'Users', '/pages/occupants.html':'Occupants', '/pages/emergency.html':'Emergency', '/pages/cost-dashboard.html':'Cost Analysis', '/pages/history.html':'Temp History', '/pages/guide-resident.html':'Resident Guide', '/pages/guide-committee.html':'Committee Guide' };
-  logs.filter(l => l.action === 'PAGE_ENTER').forEach(l => {
-    const pg = l.details?.page || l.page || '';
-    const name = pgNameMap[pg] || pg.split('/').pop()?.replace('.html','') || 'Unknown';
-    pageMap[name] = (pageMap[name] || 0) + 1;
-  });
-  const sortedPages = Object.entries(pageMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
-  renderHorizBar('pageChart', sortedPages);
-
-  // Top active users
-  const userMap = {};
-  logs.forEach(l => {
-    const e = l.user_email || 'Unknown';
-    userMap[e] = (userMap[e] || 0) + 1;
-  });
-  const sortedUsers = Object.entries(userMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
-  const maxU = sortedUsers[0]?.[1] || 1;
-  const medals = ['🥇','🥈','🥉'];
-  document.getElementById('topUsersList').innerHTML = sortedUsers.map(([email, count], i) => {
-    const pct = Math.round(count / maxU * 100);
-    const prof = allProfiles.find(p => p.email === email);
-    const name = prof?.full_name || email.split('@')[0];
-    const medal = i < 3 ? medals[i] : `<span style="color:var(--muted);font-size:11px;width:18px;display:inline-block;text-align:center">${i+1}</span>`;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
-      <span style="font-size:16px;width:24px;text-align:center">${medal}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
-        <div style="height:6px;background:var(--border-light);border-radius:3px;margin-top:4px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--blue-600),var(--blue-400));border-radius:3px;transition:width 0.8s ease"></div>
-        </div>
-      </div>
-      <span style="font-size:12px;font-weight:600;color:var(--blue-600);min-width:36px;text-align:right">${count}</span>
-    </div>`;
-  }).join('');
-
-  // Action breakdown
-  const actionMap = {};
-  const actionLabels = { PAGE_ENTER:'Page Visit', LOGIN:'Login', QUOTE_VOTED:'Vote', QUOTE_COMMENTED:'Comment', COMPLAINT_CREATED:'Request', PARKING_REPORTED:'Parking Report', ANNOUNCEMENT_VIEWED:'Viewed Notice', HVAC_REQUESTED:'HVAC Request' };
-  const actionColors = { PAGE_ENTER:'#60a5fa', LOGIN:'#34d399', QUOTE_VOTED:'#fbbf24', QUOTE_COMMENTED:'#a78bfa', COMPLAINT_CREATED:'#f87171', PARKING_REPORTED:'#fb923c', ANNOUNCEMENT_VIEWED:'#2dd4bf', HVAC_REQUESTED:'#818cf8' };
-  logs.forEach(l => { actionMap[l.action] = (actionMap[l.action] || 0) + 1; });
-  const sortedActions = Object.entries(actionMap).sort((a,b) => b[1] - a[1]);
-  const totalActions = logs.length;
-  document.getElementById('actionBreakdown').innerHTML = sortedActions.map(([action, count]) => {
-    const pct = Math.round(count / totalActions * 100);
-    const label = actionLabels[action] || action;
-    const color = actionColors[action] || '#94a3b8';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
-      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:12px;font-weight:500">${label}</span>
-          <span style="font-size:11px;color:var(--muted)">${count} (${pct}%)</span>
-        </div>
-        <div style="height:6px;background:var(--border-light);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.8s ease"></div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function animateNumber(id, target) {
-  const el = document.getElementById(id);
-  let current = 0;
-  const step = Math.max(1, Math.ceil(target / 30));
-  const timer = setInterval(() => {
-    current += step;
-    if (current >= target) { current = target; clearInterval(timer); }
-    el.textContent = current.toLocaleString();
-  }, 25);
-}
-
-function renderBarChart(containerId, dataMap) {
-  const entries = Object.entries(dataMap);
-  const max = Math.max(...entries.map(e => e[1]), 1);
-  const barW = Math.max(4, Math.floor((100 / entries.length) - 1));
-  const container = document.getElementById(containerId);
-  container.innerHTML = `
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;height:170px;padding-top:10px;gap:1px">
-      ${entries.map(([date, count]) => {
-        const h = Math.max(2, (count / max) * 150);
-        const day = new Date(date).getDate();
-        const isToday = date === new Date().toISOString().slice(0,10);
-        return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
-          <div style="font-size:9px;color:var(--muted);margin-bottom:2px">${count || ''}</div>
-          <div style="width:80%;height:${h}px;background:${isToday ? 'linear-gradient(180deg,var(--blue-600),var(--blue-400))' : 'linear-gradient(180deg,#93c5fd,#dbeafe)'};border-radius:3px 3px 0 0;transition:height 0.6s ease"></div>
-          <div style="font-size:8px;color:var(--muted);margin-top:3px">${day}</div>
-        </div>`;
-      }).join('')}
-    </div>`;
-}
-
-function renderHorizBar(containerId, entries) {
-  const max = entries[0]?.[1] || 1;
-  const container = document.getElementById(containerId);
-  const colors = ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#eff6ff','#f0f4f8','#f8fafc'];
-  container.innerHTML = entries.map(([name, count], i) => {
-    const pct = Math.round(count / max * 100);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
-      <span style="font-size:11px;font-weight:500;width:80px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${name}</span>
-      <div style="flex:1;height:18px;background:var(--border-light);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${colors[i] || colors[0]};border-radius:4px;transition:width 0.8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px">
-          <span style="font-size:9px;font-weight:600;color:${i < 3 ? '#fff' : 'var(--text)'}">${count}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-</script>
-</body>
-</html>
+    inviteModalTitleEl.textContent = 
