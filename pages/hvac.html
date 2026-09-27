@@ -369,8 +369,8 @@
 .summary-icon svg{width:25px;height:25px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .summary-hot svg{display:block;width:25px;height:25px;overflow:visible}
 .summary-cold svg{display:block;width:25px;height:25px;overflow:visible}
-.summary-request-image{display:flex;align-items:center;justify-content:flex-start;width:104px;height:59px;overflow:hidden;border-radius:7px;flex-shrink:0}
-.summary-request-image img{display:block;width:104px;height:auto;aspect-ratio:991/565;object-fit:cover}
+.summary-request-image{display:flex;align-items:center;justify-content:flex-start;width:104px;height:70px;overflow:hidden;border-radius:7px;flex-shrink:0}
+.summary-request-image img{display:block;width:104px;height:auto;aspect-ratio:180/121;object-fit:contain}
 .summary-request-down{box-shadow:0 2px 5px rgba(37,99,235,.14)}
 .summary-request-up{box-shadow:0 2px 5px rgba(220,38,38,.14)}
 .observer-request-image{width:104px;height:59px}
@@ -2003,8 +2003,8 @@ async function loadAdminData() {
     cList.innerHTML = filtered.map(r => {
       const isOpen = expandedRequestIds.has(String(r.id));
       const icon = r.type === 'hot'
-        ? '<span class="summary-request-image summary-request-down"><img src="/AC_Request_Temperature_Down_source_crop.png" alt="Temperature will be lowered by 0.5°C"></span>'
-        : '<span class="summary-request-image summary-request-up"><img src="/AC_Request_Temperature_Up_source_crop.png" alt="Temperature will be raised by 0.5°C"></span>';
+        ? '<span class="summary-request-image summary-request-down"><img src="/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>'
+        : '<span class="summary-request-image summary-request-up"><img src="/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>';
       const date = new Date(r.created_at);
       const dateText = date.toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
       const timeText = date.toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
@@ -2104,7 +2104,7 @@ async function loadObserverData() {
     if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
     cList.innerHTML = filtered.map(r => `
       <div class="my-req-row">
-        <div class="summary-request-image observer-request-image"><img src="${r.type === 'hot' ? '/AC_Request_Temperature_Down_source_crop.png' : '/AC_Request_Temperature_Up_source_crop.png'}" alt="${r.type === 'hot' ? 'Temperature will be lowered by 0.5°C' : 'Temperature will be raised by 0.5°C'}"></div>
+        <div class="summary-request-image observer-request-image"><img src="${r.type === 'hot' ? '/Temperature_Down_180x121.png' : '/Temperature_Up_180x121.png'}" alt="${r.type === 'hot' ? 'Temperature will be lowered by 0.5°C' : 'Temperature will be raised by 0.5°C'}"></div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Temperature lowered by 0.5°C' : 'Temperature raised by 0.5°C'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${r.user_name || 'Unknown'} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
