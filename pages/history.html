@@ -37,6 +37,9 @@
 .hist-icon svg{width:20px;height:20px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .hist-icon.hot svg{stroke:#ef3030}.hist-icon.hot svg circle{fill:#ef3030;stroke:#ef3030}
 .hist-icon.cold svg{stroke:#1268e8}
+.history-request-type{display:flex;align-items:center;justify-content:flex-start;width:104px;height:59px;overflow:hidden;border-radius:7px}
+.history-request-type img{display:block;width:104px;height:auto;aspect-ratio:991/565;object-fit:cover}
+.history-request-type:hover img{transform:translateY(-1px)}
 .hist-entry{border-bottom:1px solid var(--border-light)}
 .hist-entry:last-child{border-bottom:none}
 .hist-entry.expanded.hot{box-shadow:inset 3px 0 0 #ef4444}
@@ -471,7 +474,7 @@ async function loadHistory() {
         <div data-label="Reported By" style="font-size:14px;font-weight:700;color:#0f172a">${r.user_name||'Unknown'}</div>
         <div data-label="Floor" style="font-size:13px;font-weight:600;color:#1e293b">${r.level||'—'}</div>
         <div data-label="Tenancy" style="font-size:13px;font-weight:600;color:#1e293b">${r.tenancy||'—'}</div>
-        <div data-label="Type" style="font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center">${r.type==='hot'?'<span class="hist-icon hot"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="13"></circle><g><line x1="32" y1="5" x2="32" y2="16"></line><line x1="32" y1="48" x2="32" y2="59"></line><line x1="5" y1="32" x2="16" y2="32"></line><line x1="48" y1="32" x2="59" y2="32"></line><line x1="13" y1="13" x2="21" y2="21"></line><line x1="43" y1="43" x2="51" y2="51"></line><line x1="51" y1="13" x2="43" y2="21"></line><line x1="21" y1="43" x2="13" y2="51"></line></g></svg></span>Too Hot':'<span class="hist-icon cold"><svg viewBox="0 0 64 64"><g><line x1="32" y1="4" x2="32" y2="60"></line><line x1="4" y1="32" x2="60" y2="32"></line><line x1="12" y1="12" x2="52" y2="52"></line><line x1="52" y1="12" x2="12" y2="52"></line><line x1="32" y1="4" x2="27" y2="11"></line><line x1="32" y1="4" x2="37" y2="11"></line><line x1="32" y1="60" x2="27" y2="53"></line><line x1="32" y1="60" x2="37" y2="53"></line><line x1="4" y1="32" x2="11" y2="27"></line><line x1="4" y1="32" x2="11" y2="37"></line><line x1="60" y1="32" x2="53" y2="27"></line><line x1="60" y1="32" x2="53" y2="37"></line></g></svg></span>Too Cold'}</div>
+        <div data-label="Type" class="history-request-type"><img src="${r.type==='hot' ? '/AC_Request_Temperature_Down_source_crop.png' : '/AC_Request_Temperature_Up_source_crop.png'}" alt="${r.type==='hot' ? 'Temperature will be lowered by 0.5°C' : 'Temperature will be raised by 0.5°C'}"></div>
         <div data-label="Status"><span class="badge ${ST_CLS[r.status]||'badge-gray'}">${r.status||'—'}</span></div>
         <div data-label="Comment" style="font-size:13px;font-weight:500;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.comment||''}">${r.comment||'—'}</div>
       </div>
