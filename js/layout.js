@@ -301,6 +301,9 @@ await new Promise(r => setTimeout(r, 0));
 
 initCommonUtils();
 
+// 이 지점부터는 sidebar가 opacity:0으로 숨겨져 있음.
+// 아래 로직 중 어디서든 에러가 나면 finally에서 무조건 다시 보이게 처리 (사이드바 실종 방지)
+try {
 const supabase = await getSupabase();
 const { data: { session } } = await supabase.auth.getSession();
 
@@ -346,6 +349,15 @@ try { await supabase.from('audit_logs').insert({ user_email: user.email, user_ro
 const ctx = { supabase, user, profile, role, name };
 window.__bmsCtx = ctx;
 return ctx;
+} catch (e) {
+console.error('[layout.js] initLayout error:', e);
+return null;
+} finally {
+const sidebar = document.getElementById('appSidebar');
+if (sidebar && sidebar.style.opacity !== '1') {
+sidebar.style.opacity = '1';
+}
+}
 }
 
 function initBadges(supabase, user, role) {
