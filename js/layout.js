@@ -130,10 +130,6 @@ function setActiveMenu() {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     const isActive = item.dataset.page === currentPage;
     item.classList.toggle('active', isActive);
-    if (isActive) {
-      const group = item.closest('details.nav-group');
-      if (group) group.setAttribute('open', '');
-    }
   });
 }
 
@@ -155,7 +151,7 @@ function updateUserUI(name, role) {
   const sbRole   = document.getElementById('sbRole');
   if (sbAvatar) sbAvatar.textContent = initials;
   if (sbName)   sbName.textContent   = name;
-  if (sbRole)   sbRole.textContent   = roleLabel;
+  if (sbRole)   sbRole.textContent    = roleLabel;
   const topAvatar  = document.getElementById('topAvatar');
   const topName    = document.getElementById('topName');
   const topRole    = document.getElementById('topRole');
