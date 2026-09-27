@@ -283,18 +283,6 @@
 .type-sub{font-size:14px;color:#334155;font-weight:500;margin-top:5px}
 #btnHot .type-label,#btnHot .type-sub{color:#b91c1c}
 #btnCold .type-label,#btnCold .type-sub{color:#1d4ed8}
-/* A/C request artwork: keep the real buttons and existing JS behaviour; replace only the visual content. */
-.type-btns{gap:10px;margin-bottom:16px}
-.type-btn{padding:0;min-height:118px;height:118px;overflow:hidden;position:relative;cursor:pointer;border-radius:10px}
-.type-btn .type-request-image{display:block;width:100%;height:118px;object-fit:fill;pointer-events:none;user-select:none}
-.type-btn#btnHot{border-color:#8ab8ff;background:#eef6ff;box-shadow:0 3px 0 #6ea8f7,0 5px 10px rgba(37,99,235,.14)}
-.type-btn#btnCold{border-color:#ff8a8a;background:#fff0f0;box-shadow:0 3px 0 #ff6b6b,0 5px 10px rgba(220,38,38,.14)}
-.type-btn#btnHot:hover{transform:translateY(-1px);box-shadow:0 4px 0 #6ea8f7,0 7px 14px rgba(37,99,235,.20)}
-.type-btn#btnCold:hover{transform:translateY(-1px);box-shadow:0 4px 0 #ff6b6b,0 7px 14px rgba(220,38,38,.20)}
-.type-btn#btnHot:active,.type-btn#btnHot.hot{transform:translateY(2px);box-shadow:0 1px 0 #4f91ed,0 2px 5px rgba(37,99,235,.24)}
-.type-btn#btnCold:active,.type-btn#btnCold.cold{transform:translateY(2px);box-shadow:0 1px 0 #ef5555,0 2px 5px rgba(220,38,38,.24)}
-.type-btn:focus-visible{outline:3px solid rgba(37,99,235,.35);outline-offset:2px}
-
 .location-section{margin-bottom:16px}
 .location-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .location-section-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
@@ -383,6 +371,93 @@
 .summary-cold svg{display:block;width:25px;height:25px;overflow:visible}
 .active-request-label{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px 2px}
 .active-request-card{border-radius:11px;overflow:hidden;margin-bottom:12px}
+
+
+/* =========================================================
+   AC REQUEST BUTTONS — FINAL VISUAL ONLY
+   Existing btnHot/btnCold IDs, data-type values and JS logic
+   remain unchanged. Images are root-level source crops.
+   ========================================================= */
+.type-btns{
+  gap:10px;
+  margin-bottom:16px;
+  align-items:stretch;
+}
+.type-btn{
+  position:relative;
+  width:100%;
+  aspect-ratio:991 / 565;
+  min-height:0;
+  height:auto;
+  padding:0;
+  border-radius:12px;
+  overflow:hidden;
+  cursor:pointer;
+  background:transparent !important;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  border:2px solid transparent;
+  box-sizing:border-box;
+  line-height:0;
+}
+.type-btn .type-icon{
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+  display:block;
+  line-height:0;
+}
+.type-btn .type-icon img{
+  display:block;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+  object-fit:fill;
+  pointer-events:none;
+  user-select:none;
+}
+.type-btn .type-label,
+.type-btn .type-sub{
+  display:none !important;
+}
+.type-btn#btnHot{
+  border-color:#3b82f6;
+  box-shadow:0 3px 0 #2563eb, 0 5px 10px rgba(37,99,235,.18);
+}
+.type-btn#btnCold{
+  border-color:#ef4444;
+  box-shadow:0 3px 0 #dc2626, 0 5px 10px rgba(220,38,38,.18);
+}
+.type-btn#btnHot:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 0 #2563eb, 0 7px 14px rgba(37,99,235,.22);
+}
+.type-btn#btnCold:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 0 #dc2626, 0 7px 14px rgba(220,38,38,.22);
+}
+.type-btn#btnHot:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #2563eb, 0 2px 5px rgba(37,99,235,.18);
+}
+.type-btn#btnCold:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #dc2626, 0 2px 5px rgba(220,38,38,.18);
+}
+/* Selected state: visual emphasis only; does not change button function. */
+.type-btn#btnHot.hot{
+  border-color:#1d4ed8;
+  background:transparent !important;
+  box-shadow:0 0 0 2px #60a5fa, 0 4px 0 #1d4ed8, 0 8px 16px rgba(37,99,235,.28);
+  transform:translateY(0);
+}
+.type-btn#btnCold.cold{
+  border-color:#b91c1c;
+  background:transparent !important;
+  box-shadow:0 0 0 2px #f87171, 0 4px 0 #b91c1c, 0 8px 16px rgba(220,38,38,.28);
+  transform:translateY(0);
+}
 
 </style>
 <style id="exact-setpoint-visual">
@@ -593,11 +668,15 @@ body.observer-readonly .option-box{
       </div>
 
       <div class="type-btns">
-        <button class="type-btn" id="btnHot" data-type="hot">
-          <img class="type-request-image" src="/AC_Request_Temperature_Down_294x118.png" alt="Temperature will be lowered by 0.5°C">
+        <button class="type-btn" id="btnHot" data-type="hot" aria-label="Temperature will be lowered by 0.5°C">
+          <div class="type-icon target-hot-icon" aria-hidden="true">
+            <img src="/AC_Request_Temperature_Down_source_crop.png" alt="">
+          </div>
         </button>
-        <button class="type-btn" id="btnCold" data-type="cold">
-          <img class="type-request-image" src="/AC_Request_Temperature_Up_294x118.png" alt="Temperature will be raised by 0.5°C">
+        <button class="type-btn" id="btnCold" data-type="cold" aria-label="Temperature will be raised by 0.5°C">
+          <div class="type-icon target-cold-icon" aria-hidden="true">
+            <img src="/AC_Request_Temperature_Up_source_crop.png" alt="">
+          </div>
         </button>
       </div>
 
