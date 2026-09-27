@@ -19,7 +19,8 @@ const PAGE_CONFIG = {
 'signboard': { title: 'Signboard Manager', allowedRoles: ['admin'] },
 'users': { title: 'User Management', allowedRoles: ['admin'] },
 'system': { title: 'System Management', allowedRoles: ['admin'] },
-'guide-resident': { title: 'User Guide', allowedRoles: null },
+'guide-tenant': { title: 'Tenant Guide', allowedRoles: ['admin', 'tenant'] },
+'guide-owner': { title: 'Owner Guide', allowedRoles: ['admin', 'owner'] },
 'guide-committee':{ title: 'Committee Guide', allowedRoles: ['admin', 'committee', 'observer'] },
 };
 
@@ -83,7 +84,7 @@ let allowedPages = [];
 
 if (role === 'admin') {
 // Admin은 모든 페이지 접근 가능
-allowedPages = ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'signboard', 'users', 'system', 'guide-resident', 'guide-committee'];
+allowedPages = ['building', 'service-reports', 'announcements', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'signboard', 'users', 'system', 'guide-tenant', 'guide-owner', 'guide-committee'];
 } else {
 // DB에서 sidebar_permissions 조회
 const { data: permissions, error } = await supabase
@@ -99,8 +100,8 @@ allowedPages = permissions.map(p => p.page);
 const defaultPermissions = {
 committee: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
 observer: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'history', 'quotes', 'reports', 'cost-dashboard', 'documents', 'occupants', 'guide-committee'],
-owner: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'documents', 'guide-resident'],
-tenant: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-resident']
+owner: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'documents', 'guide-owner'],
+tenant: ['announcements', 'service-reports', 'parking', 'complaints', 'hvac', 'emergency', 'works', 'occupants', 'guide-tenant']
 };
 allowedPages = defaultPermissions[role] || ['building'];
 }
