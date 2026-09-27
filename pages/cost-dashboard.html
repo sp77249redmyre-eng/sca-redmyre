@@ -15,186 +15,131 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
-/* ── Filter Bar ── */
+/* Cost Analysis — management dashboard */
+.cost-page{padding-bottom:36px}
 .filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
-.filter-select{padding:7px 11px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;color:#475569;transition:border-color 0.15s}
-.filter-select:focus{outline:none;border-color:#2563eb}
-.filter-input{padding:7px 12px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;outline:none;width:140px;transition:border-color 0.15s}
-.filter-input:focus{border-color:#2563eb}
-.btn-refresh{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;box-shadow:0 2px 8px rgba(37,99,235,0.2)}
-.btn-refresh:hover{box-shadow:0 4px 14px rgba(37,99,235,0.3);transform:translateY(-1px)}
+.filter-select,.filter-input{padding:8px 11px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;color:#475569;transition:border-color .15s,box-shadow .15s}
+.filter-select:focus,.filter-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.btn-refresh{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;box-shadow:0 2px 8px rgba(37,99,235,.18);text-decoration:none}
+.btn-refresh:hover{box-shadow:0 4px 14px rgba(37,99,235,.28);transform:translateY(-1px)}
 
-/* ── Stats Row ── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.stat-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:14px;padding:20px;transition:box-shadow 0.2s;position:relative;overflow:hidden}
-.stat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.07);transform:translateY(-1px)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:var(--stat-color,#e2e8f0)}
-.stat-label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
-.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px;margin-bottom:4px}
-.stat-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+/* KPI */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 18px 16px;position:relative;overflow:hidden;min-height:108px;box-shadow:0 2px 8px rgba(15,23,42,.035);transition:box-shadow .18s,transform .18s}
+.stat-card:hover{box-shadow:0 8px 24px rgba(15,23,42,.07);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--stat-color,#2563eb)}
+.stat-inner{display:flex;align-items:center;gap:13px;height:100%}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 44px;background:var(--stat-bg,#eff6ff);color:var(--stat-color,#2563eb)}
+.stat-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.stat-label{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.055em;margin-bottom:5px;white-space:nowrap}
+.stat-num{font-size:23px;line-height:1.05;font-weight:700;letter-spacing:-.7px;margin-bottom:5px}
+.stat-sub{font-size:10px;color:#94a3b8;line-height:1.3}
 
-/* ── Section Heading ── */
-.section-heading{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+/* Section */
+.section-heading{display:flex;align-items:center;gap:9px;margin-bottom:12px}
 .section-heading-bar{width:4px;height:18px;border-radius:2px;background:#2563eb;flex-shrink:0}
-.section-heading-text{font-size:15px;font-weight:600;color:#1e293b}
+.section-heading-text{font-size:15px;font-weight:700;color:#1e293b}
 
-/* ── Category Grid ── */
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
-.cat-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:12px;padding:16px;border-top:3px solid;transition:all 0.15s}
-.cat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);transform:translateY(-2px)}
-.cat-name{font-size:12px;font-weight:600;color:#475569;margin-bottom:4px}
-.cat-amount{font-size:18px;font-weight:600;margin-bottom:3px}
-.cat-count{font-size:11px;color:#94a3b8;margin-top:3px}
-.cat-bar-wrap{height:4px;background:#f1f5f9;border-radius:100px;margin-top:10px;overflow:hidden}
-.cat-bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease}
+/* Panels */
+.panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.035)}
+.panel-header{padding:13px 18px;background:#f8fafc;border-bottom:1px solid #eef2f7;font-size:14px;font-weight:700;color:#1e293b;display:flex;justify-content:space-between;align-items:center}
 
-/* ── Two-column layout ── */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
-.panel{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
-.panel-header{padding:14px 20px;background:#f8fafc;border-bottom:0.5px solid #f1f5f9;font-size:15px;font-weight:600;color:#1e293b;display:flex;justify-content:space-between;align-items:center}
-.panel-body{padding:4px 0}
+/* Category */
+.category-panel{padding:24px 26px;margin-bottom:26px}
+.category-grid{display:grid;grid-template-columns:350px 1fr;gap:42px;align-items:center}
+.pie-wrap{position:relative;width:320px;height:320px;margin:0 auto}
+#categoryPieChart{width:320px;height:320px;display:block}
+.pie-center-note{font-size:10px;color:#94a3b8}
+.category-breakdown{display:flex;flex-direction:column;gap:7px}
+.cat-row{border:1px solid #e2e8f0;border-radius:10px;background:#fff;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.cat-row.open{box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.cat-row-main{display:grid;grid-template-columns:18px 1fr 110px 110px 72px 200px;gap:12px;align-items:center;padding:10px 12px;cursor:pointer}
+.cat-dot{width:10px;height:10px;border-radius:50%;display:block}
+.cat-name{font-size:12px;font-weight:700;color:#1e293b}
+.cat-money{font-size:11px;color:#475569;text-align:right;white-space:nowrap}
+.cat-money strong{color:#1e293b;font-weight:700}
+.cat-pct{font-size:12px;font-weight:800;color:#1e293b;text-align:right}
+.cat-pct small{display:block;font-size:8px;color:#94a3b8;font-weight:500;margin-top:1px}
+.cat-progress{height:7px;background:#eef2f7;border-radius:999px;overflow:hidden}
+.cat-progress > span{display:block;height:100%;border-radius:999px}
+.cat-detail{display:none;border-top:1px solid #e2e8f0;background:#fff}
+.cat-row.open .cat-detail{display:block}
+.cat-detail-head,.cat-detail-row{display:grid;grid-template-columns:110px 1fr 1fr 110px 110px;gap:0;align-items:center}
+.cat-detail-head{padding:8px 12px;background:#f8fafc;border-bottom:1px solid #eef2f7}
+.cat-detail-head div{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+.cat-detail-row{padding:9px 12px;border-bottom:1px solid #f1f5f9}
+.cat-detail-row:last-child{border-bottom:none}
+.cat-detail-row div{font-size:10px;color:#475569}
+.cat-detail-row .project{font-weight:600;color:#1e293b}
+.cat-detail-total{display:grid;grid-template-columns:110px 1fr 1fr 110px 110px;gap:0;padding:10px 12px;background:#10275c;color:#fff}
+.cat-detail-total div{font-size:10px;font-weight:700;text-align:right}.cat-detail-total div:first-child,.cat-detail-total div:nth-child(2),.cat-detail-total div:nth-child(3){text-align:left}
+.cat-total{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:10px;background:linear-gradient(135deg,#0f2456,#1e3a8a);margin-top:7px}
+.cat-total-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.82)}
+.cat-total-value{text-align:right}.cat-total-value div:first-child{font-size:9px;color:rgba(255,255,255,.58)}.cat-total-value div:last-child{font-size:14px;font-weight:800;color:#fff}
 
+/* Monthly */
+.monthly-panel{padding:20px 22px 16px;margin-bottom:26px}
+.chart-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.gst-toggle{display:inline-flex;padding:2px;background:#f1f5f9;border-radius:999px;gap:2px}
+.gst-toggle button{border:0;background:transparent;color:#64748b;padding:6px 14px;border-radius:999px;font:600 10px 'DM Sans',sans-serif;cursor:pointer}
+.gst-toggle button.active{background:#2563eb;color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.18)}
+#monthlyBarChart{width:100%;height:300px;display:block}
+.month-detail{display:none;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;overflow:hidden;margin-top:-26px;margin-bottom:26px}
 
-.rank-meta{font-size:13px;color:#94a3b8}
-.rank-bar-wrap{height:3px;background:#f1f5f9;border-radius:100px;margin-top:5px;width:100%;overflow:hidden}
-.rank-bar-fill{height:100%;border-radius:100px;transition:width 0.5s ease}
-.rank-amount{font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap}
+/* Bottom tables */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.table-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.035)}
+.table-title{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #eef2f7}
+.table-title-left{display:flex;align-items:center;gap:9px}.table-title-bar{width:4px;height:18px;border-radius:2px;background:#7c3aed}.table-title-text{font-size:14px;font-weight:700;color:#1e293b}
+.view-all{font-size:10px;font-weight:700;color:#2563eb;text-decoration:none}.view-all:hover{text-decoration:underline}
+.work-table-head,.work-table-row{display:grid;grid-template-columns:28px 1fr 88px 92px 86px;gap:8px;align-items:center;padding:8px 12px}
+.work-table-head{background:#f8fafc;border-bottom:1px solid #eef2f7}.work-table-head div{font-size:8px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}.work-table-head div:last-child{text-align:right}
+.work-table-row{border-bottom:1px solid #f1f5f9}.work-table-row:last-child{border-bottom:none}.work-table-row:hover{background:#f8fafc}
+.work-rank{font-size:9px;font-weight:700;color:#94a3b8}.work-title{font-size:10px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.work-date{font-size:9px;color:#64748b}.work-amount{font-size:10px;font-weight:700;color:#1e293b;text-align:right;white-space:nowrap}
+.work-cat{font-size:8px;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.work-cat-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.empty-state{padding:24px;text-align:center;color:#94a3b8;font-size:11px}
 
-/* ── Monthly Table ── */
-.month-row{display:grid;grid-template-columns:90px 1fr 80px 80px;gap:8px;align-items:center;padding:11px 20px;border-bottom:0.5px solid #f8fafc;transition:background 0.12s}
-.month-row:last-child{border-bottom:none}
-.month-row:hover{background:#f8fafc}
-.month-label{font-size:13px;font-weight:500;color:#1e293b}
-.month-bar-wrap{height:6px;background:#f1f5f9;border-radius:100px;overflow:hidden}
-.month-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:100px;transition:width 0.5s ease}
-.month-amount{font-size:12px;font-weight:600;color:#1e293b;text-align:right}
-.month-count{font-size:11px;color:#94a3b8;text-align:right}
-.emg-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#dc2626;margin-left:4px;vertical-align:middle;flex-shrink:0}
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;display:none;z-index:9999;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 
-/* ── Top Projects ── */
-.projects-panel{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;overflow:hidden;margin-bottom:28px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
-.proj-row{display:grid;grid-template-columns:28px 1fr 100px 110px 80px;gap:12px;align-items:center;padding:13px 20px;border-bottom:0.5px solid #f8fafc;transition:background 0.12s}
-.proj-row:last-child{border-bottom:none}
-.proj-row:hover{background:#f8fafc}
-.proj-rank{font-size:13px;font-weight:700;color:#94a3b8}
-.proj-rank.top{color:#f59e0b}
-.proj-title{font-size:13px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.proj-vendor{font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.proj-amount{font-size:13px;font-weight:600;color:#1e293b;text-align:right}
-.proj-date{font-size:12px;color:#94a3b8;text-align:right}
-.cat-badge{display:inline-flex;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600}
-
-/* ── Emergency ratio badge ── */
-.emg-ratio{font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;background:#fee2e2;color:#991b1b;margin-left:6px}
-
-/* ── Toast */
-.toast{position:fixed;bottom:28px;right:28px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;display:none;z-index:9999;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
-
-/* ── Quarterly ── */
-.quarterly-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
-.q-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center;position:relative;overflow:hidden}
-.q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--q-color,#2563eb)}
-.q-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
-.q-amount{font-size:20px;font-weight:700;letter-spacing:-0.5px;color:#1e293b;margin-bottom:4px}
-.q-sub{font-size:11px;color:#94a3b8}
-.q-bar-wrap{height:4px;background:#f1f5f9;border-radius:100px;margin-top:10px;overflow:hidden}
-.q-bar-fill{height:100%;border-radius:100px;transition:width 0.6s ease}
-
-/* ── Category filter chips ── */
-.cat-filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
-.cat-chip{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
-.cat-chip:hover{border-color:#2563eb;color:#2563eb}
-.cat-chip.active{background:#2563eb;color:#fff;border-color:#2563eb}
-.cat-chip-label{font-size:11px;color:#94a3b8;font-weight:600;margin-right:4px}
-
-/* ── 모바일 ── */
+@media(max-width:1100px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .category-grid{grid-template-columns:300px 1fr;gap:24px}
+  .pie-wrap,#categoryPieChart{width:280px;height:280px}
+  .cat-row-main{grid-template-columns:14px 1fr 95px 95px 58px 130px;gap:8px}
+  .bottom-grid{grid-template-columns:1fr}
+}
 @media(max-width:768px){
-  .content{overflow-x:hidden}
-  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
-  .stat-card{padding:14px}
-  .stat-num{font-size:20px;word-break:break-word}
-  .stat-label{font-size:10px}
-  .section-heading-text{font-size:14px}
-  .cat-grid{grid-template-columns:1fr 1fr;gap:8px}
-  .cat-card{padding:12px}
-  .cat-amount{font-size:15px;word-break:break-word}
-  .cat-name{font-size:11px}
-  .two-col{grid-template-columns:1fr;gap:12px}
-  #section2Grid{grid-template-columns:1fr !important}
-  #pieGrid{grid-template-columns:1fr !important}
-  /* Panel padding 줄이기 */
-  .panel[style*="padding:40px"]{padding:16px !important}
-  .panel[style*="padding:32px"]{padding:16px !important}
-  
-  /* Pie chart 반응형 */
-  #pieGrid{grid-template-columns:1fr !important;gap:20px !important}
-  #pieGrid > div:first-child{width:100% !important;max-width:280px !important;height:auto !important;aspect-ratio:1}
-  #categoryPieChart{width:100% !important;height:100% !important;max-width:280px;max-height:280px}
-  
-  /* Monthly bar chart 높이 축소 */
-  #monthlyBarChart{height:260px !important}
-  
-  /* Panel header */
-  .panel-header{padding:12px 16px;font-size:14px}
-  .filter-bar{gap:6px}
-  .filter-select,.filter-input{width:100%;padding:11px;font-size:16px}
-  .btn-refresh{width:100%;justify-content:center;padding:10px}
-  
-  /* Projects row */
-  .proj-row{grid-template-columns:24px 1fr auto;gap:8px;padding:11px 14px}
-  .proj-vendor,.proj-date{display:none}
-  .proj-title{white-space:normal;word-break:break-word;font-size:12px}
-  .proj-amount{font-size:12px}
-  
-  /* Monthly row */
-  .month-row{grid-template-columns:70px 1fr 70px;gap:6px;padding:10px 14px}
-  .month-count{display:none}
-  .month-label{font-size:12px}
-  .month-amount{font-size:11px}
-  
-  /* Quarterly (4열 → 2열) */
-  .quarterly-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  .q-card{padding:12px}
-  .q-amount{font-size:16px;word-break:break-word}
-  .q-label{font-size:10px}
-  
-  /* Rank */
-  .rank-amount{font-size:12px}
-  .rank-meta{font-size:11px}
-  
-  /* Category filter chips */
-  .cat-chip{padding:5px 10px;font-size:11px}
-  .cat-chip-label{display:none}
+  .content{overflow-x:hidden}.cost-page{padding-bottom:24px}
+  .filter-bar{gap:6px}.filter-select,.filter-input{width:100%;padding:10px;font-size:15px}.btn-refresh{width:100%;justify-content:center;padding:10px}
+  .stats-row{grid-template-columns:1fr 1fr;gap:9px}.stat-card{padding:13px;min-height:92px}.stat-inner{gap:9px}.stat-icon{width:36px;height:36px;flex-basis:36px}.stat-icon svg{width:18px;height:18px}.stat-num{font-size:17px}.stat-label{font-size:8px;white-space:normal}.stat-sub{font-size:9px}
+  .category-panel{padding:14px;margin-bottom:22px}.category-grid{grid-template-columns:1fr;gap:14px}.pie-wrap,#categoryPieChart{width:260px;height:260px}.pie-wrap{margin:0 auto}
+  .cat-row-main{grid-template-columns:12px 1fr auto;gap:7px;padding:10px}.cat-money{display:none}.cat-pct{font-size:11px}.cat-pct small{font-size:7px}.cat-progress{grid-column:2 / 4;height:6px}.cat-detail-head,.cat-detail-row{grid-template-columns:72px 1fr 88px 72px;gap:0}.cat-detail-head div:nth-child(3),.cat-detail-row div:nth-child(3){display:none}.cat-detail-total{grid-template-columns:72px 1fr 72px 72px}.cat-detail-total div:nth-child(2){display:none}
+  .monthly-panel{padding:14px;margin-bottom:22px}.chart-toolbar{align-items:flex-start;gap:8px}.gst-toggle button{padding:5px 9px}.month-detail{margin-top:-22px;margin-bottom:22px}
+  #monthlyBarChart{height:260px}
+  .bottom-grid{grid-template-columns:1fr;gap:12px}.work-table-head,.work-table-row{grid-template-columns:22px 1fr 68px 74px;gap:6px}.work-table-head div:nth-child(3),.work-table-row .work-cat{display:none}.work-title{white-space:normal;font-size:9px}.work-date{font-size:8px}.work-amount{font-size:9px}
 }
-@media(max-width:380px){
-  .cat-grid{grid-template-columns:1fr}
-  .quarterly-grid{grid-template-columns:1fr 1fr;gap:6px}
-  .stat-num{font-size:18px}
-}
+@media(max-width:420px){.stats-row{grid-template-columns:1fr}.stat-card{min-height:82px}.stat-num{font-size:20px}.category-grid{gap:8px}.pie-wrap,#categoryPieChart{width:230px;height:230px}.section-heading-text{font-size:14px}}
 </style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
 <div class="main">
   <div id="topbarPlaceholder"></div>
-  <div class="content">
-
-    <!-- Page Hero -->
-    <!-- Page Header -->
+  <div class="content cost-page">
     <div class="page-header">
       <div class="page-header-icon">
         <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="20"/><rect x="5" y="12" width="3" height="8" rx="0.5"/><rect x="10.5" y="7" width="3" height="13" rx="0.5"/><rect x="16" y="10" width="3" height="10" rx="0.5"/></svg>
       </div>
       <div class="page-header-body">
-        <div class="page-header-title-row">
-          <span class="page-header-title">Cost Analysis</span>
-        </div>
-        <div class="page-header-sub">Track contractor expenses, project costs, and monthly trends.</div>
+        <div class="page-header-title-row"><span class="page-header-title">Cost Analysis</span></div>
+        <div class="page-header-sub">Track contractor expenses, project costs, and monthly trends from completed works.</div>
       </div>
     </div>
 
-    <!-- Filter Bar -->
     <div class="filter-bar">
       <select class="filter-select" id="filterPeriod">
         <option value="thismonth">This Month</option>
@@ -207,63 +152,57 @@
       <input type="date" class="filter-input" id="dateFrom" style="display:none">
       <input type="date" class="filter-input" id="dateTo" style="display:none">
       <button class="btn-refresh" id="refreshBtn">↻ Refresh</button>
-      <button class="btn-refresh" id="exportBtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);margin-left:4px">📥 Export Excel</button>
-      <a href="/pages/reports.html" class="btn-refresh" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);text-decoration:none">📋 Completed Works</a>
+      <button class="btn-refresh" id="exportBtn" style="background:linear-gradient(135deg,#16a34a,#22c55e)">⇩ Export Excel</button>
+      <a href="/pages/reports.html" class="btn-refresh" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">▣ View Completed Works</a>
     </div>
 
-    <!-- Category Filter -->
-
-    <!-- Year Comparison Cards -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#16a34a"></div>
-      <div class="section-heading-text">Year-on-Year Comparison</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
-      <div class="stat-card" style="--stat-color:#2563eb">
-        <div class="stat-label">2025 Actual</div>
-        <div class="stat-num" style="color:#2563eb">$125,002</div>
-        <div class="stat-sub">ex GST &nbsp;·&nbsp; Sep 2024 – Aug 2025</div>
-        <div class="stat-sub" style="margin-top:6px;font-size:10px;color:#94a3b8">Source: AGM Audited Financial Report</div>
+    <div class="stats-row" id="kpiRow">
+      <div class="stat-card" style="--stat-color:#2563eb;--stat-bg:#eff6ff">
+        <div class="stat-inner"><div class="stat-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v5c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 11v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/></svg></div><div><div class="stat-label">Total Spend (Inc GST)</div><div class="stat-num" id="kpiTotal" style="color:#2563eb">—</div><div class="stat-sub" id="kpiPeriod">Loading period...</div></div></div>
       </div>
-      <div class="stat-card" style="--stat-color:#16a34a">
-        <div class="stat-label">2026 YTD</div>
-        <div class="stat-num" style="color:#16a34a" id="ytd2026Num">—</div>
-        <div class="stat-sub">ex GST &nbsp;·&nbsp; Jan 2026 – present</div>
-        <div class="stat-sub" style="margin-top:6px;font-size:10px;color:#94a3b8" id="ytd2026Count">Loading...</div>
+      <div class="stat-card" style="--stat-color:#16a34a;--stat-bg:#ecfdf5">
+        <div class="stat-inner"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M8 3h8l3 3v15H5V3h3z"/><path d="M8 3v5h8V3"/><path d="M9 13h6M9 17h4"/></svg></div><div><div class="stat-label">Completed Works</div><div class="stat-num" id="kpiCount" style="color:#16a34a">—</div><div class="stat-sub">completed jobs</div></div></div>
+      </div>
+      <div class="stat-card" style="--stat-color:#f59e0b;--stat-bg:#fffbeb">
+        <div class="stat-inner"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M3 19h20"/></svg></div><div><div class="stat-label">Average Cost (Inc GST)</div><div class="stat-num" id="kpiAverage" style="color:#d97706">—</div><div class="stat-sub">per completed work</div></div></div>
+      </div>
+      <div class="stat-card" style="--stat-color:#7c3aed;--stat-bg:#f5f3ff">
+        <div class="stat-inner"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M5 4h14l-1 9H6L5 4z"/><path d="M3 4h18M7 13h10"/></svg></div><div><div class="stat-label">Largest Project (Inc GST)</div><div class="stat-num" id="kpiLargest" style="color:#7c3aed">—</div><div class="stat-sub" id="kpiLargestName">No completed works yet</div></div></div>
       </div>
     </div>
 
-    <!-- 1. Pie Chart -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#0891b2"></div>
-      <div class="section-heading-text">Spend by Category</div>
-    </div>
-    <div class="panel" style="padding:40px;margin-bottom:28px">
-      <div style="display:grid;grid-template-columns:360px 1fr;gap:60px;align-items:center" id="pieGrid">
-        <div style="position:relative;width:360px;height:360px;margin:0 auto">
-          <canvas id="categoryPieChart" width="360" height="360"></canvas>
-        </div>
-        <div id="pieLegend" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="section-heading"><div class="section-heading-bar" style="background:#2563eb"></div><div class="section-heading-text">Spend by Category</div></div>
+    <div class="panel category-panel">
+      <div class="category-grid">
+        <div class="pie-wrap"><canvas id="categoryPieChart" width="320" height="320"></canvas></div>
+        <div id="categoryBreakdown" class="category-breakdown"></div>
       </div>
     </div>
 
-    <!-- 2. Monthly Bar Chart -->
-    <div class="section-heading">
-      <div class="section-heading-bar" style="background:#7c3aed"></div>
-      <div class="section-heading-text">Monthly Spend</div>
+    <div class="section-heading"><div class="section-heading-bar" style="background:#7c3aed"></div><div class="section-heading-text">Monthly Spend — <span id="monthlyTitleYear">2026</span></div></div>
+    <div class="panel monthly-panel">
+      <div class="chart-toolbar">
+        <div style="font-size:10px;color:#94a3b8" id="monthlySubtitle">Completed works by completion month</div>
+        <div class="gst-toggle"><button id="incGstBtn" class="active" type="button">Inc GST</button><button id="exGstBtn" type="button">Ex GST</button></div>
+      </div>
+      <canvas id="monthlyBarChart"></canvas>
     </div>
-    <div class="panel" style="padding:32px;margin-bottom:0;border-radius:16px 16px 0 0">
-      <canvas id="monthlyBarChart" style="width:100%;height:380px;display:block"></canvas>
+    <div id="monthDetail" class="month-detail"></div>
+
+    <div class="bottom-grid">
+      <div class="table-panel">
+        <div class="table-title"><div class="table-title-left"><div class="table-title-bar"></div><div class="table-title-text">Largest Projects</div></div><a class="view-all" href="/pages/reports.html">View all</a></div>
+        <div class="work-table-head"><div>#</div><div>Description</div><div>Category</div><div>Completion Date</div><div>Inc GST</div></div>
+        <div id="largestProjects"></div>
+      </div>
+      <div class="table-panel">
+        <div class="table-title"><div class="table-title-left"><div class="table-title-bar"></div><div class="table-title-text">Recent Completed Works</div></div><a class="view-all" href="/pages/reports.html">View all</a></div>
+        <div class="work-table-head"><div>#</div><div>Description</div><div>Category</div><div>Completion Date</div><div>Inc GST</div></div>
+        <div id="recentWorks"></div>
+      </div>
     </div>
-    <div id="monthDetail" style="display:none;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 16px 16px;overflow:hidden;margin-bottom:28px"></div>
-    <div style="margin-bottom:28px"></div>
-
-
-
-
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -271,14 +210,11 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
+if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/announcements.html';
 
-if (!['admin','committee','observer'].includes(role)) window.location.href='/pages/announcement.html';
-
-const CAT_LABELS = { 'HVAC':'HVAC','Fire':'Fire','Electrical':'Electrical','Security':'Security','Plumbing':'Plumbing','Lift':'Lift','General':'General','Legal':'Legal' };
-const CAT_COLORS = { 'HVAC':'#d97706','Fire':'#dc2626','Electrical':'#ca8a04','Security':'#7c3aed','Plumbing':'#0891b2','Lift':'#059669','General':'#2563eb','Legal':'#db2777' };
-const CAT_BG    = { 'HVAC':'#fef3c7','Fire':'#fee2e2','Electrical':'#fefce8','Security':'#ede9fe','Plumbing':'#ecfeff','Lift':'#dcfce7','General':'#dbeafe','Legal':'#fce7f3' };
-const Q_COLORS = ['#2563eb','#16a34a','#f59e0b','#7c3aed'];
-
+const CAT_LABELS = { HVAC:'HVAC', Fire:'Fire', Electrical:'Electrical', Security:'Security', Plumbing:'Plumbing', Lift:'Lift', General:'General', Legal:'Legal' };
+const CAT_COLORS = { HVAC:'#d97706', Fire:'#dc2626', Electrical:'#ca8a04', Security:'#7c3aed', Plumbing:'#0891b2', Lift:'#059669', General:'#2563eb', Legal:'#db2777' };
+const CAT_BG = { HVAC:'#fef3c7', Fire:'#fee2e2', Electrical:'#fefce8', Security:'#ede9fe', Plumbing:'#ecfeff', Lift:'#dcfce7', General:'#dbeafe', Legal:'#fce7f3' };
 const MONTH_COLORS = ['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#16a34a','#ea580c','#6366f1','#0e7490','#9333ea'];
 const fmt = n => '$'+Number(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtShort = n => { const v=Number(n||0); return v>=1000?'$'+(v/1000).toFixed(1)+'k':fmt(v); };
@@ -287,595 +223,151 @@ function parseQuoteCategory(q) {
   try { if (q.comment) { const c=typeof q.comment==='string'?JSON.parse(q.comment):q.comment; if (c?.category) return c.category; } } catch {}
   return q.category||'General';
 }
-
-function catBadge(cat) {
-  const label=CAT_LABELS[cat]||cat||'Other';
-  const color=CAT_COLORS[cat]||'#94a3b8';
-  const bg=CAT_BG[cat]||'#f1f5f9';
-  return `<span class="cat-badge" style="background:${bg};color:${color};border:0.5px solid ${color}33">${label}</span>`;
+function safeText(v){ return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function workName(q){ return safeText(q.project||q.title||'Untitled Work'); }
+function catBadgeHtml(cat){ const c=CAT_COLORS[cat]||'#94a3b8'; return `<span class="work-cat"><span class="work-cat-dot" style="background:${c}"></span>${safeText(CAT_LABELS[cat]||cat||'Other')}</span>`; }
+function periodLabel(){
+  const p=document.getElementById('filterPeriod').value;
+  if(p==='thismonth') return new Date().toLocaleString('en-AU',{month:'short',year:'numeric'});
+  if(p==='lastmonth'){const d=new Date();d.setMonth(d.getMonth()-1);return d.toLocaleString('en-AU',{month:'short',year:'numeric'});}
+  if(p==='thisquarter') return 'Current quarter';
+  if(p==='thisyear') return `1 Jan ${new Date().getFullYear()} – Present`;
+  if(p==='alltime') return 'All completed works';
+  if(dateFrom||dateTo) return `${dateFrom?dateFrom.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'Start'} – ${dateTo?dateTo.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'Present'}`;
+  return 'Selected period';
 }
 
-let dateFrom=null, dateTo=null;
-let allData = [];
+let dateFrom=null,dateTo=null,allData=[];
+let monthlyGstMode='inc';
+let _currentPieData=[];
+window._selectedMonth=null;
 
-function updateDateRange() {
+function updateDateRange(){
   const period=document.getElementById('filterPeriod').value;
-  const fromEl=document.getElementById('dateFrom');
-  const toEl=document.getElementById('dateTo');
-  if (period==='custom') { fromEl.style.display='block'; toEl.style.display='block'; return; }
-  fromEl.style.display='none'; toEl.style.display='none';
-  const now=new Date(); const y=now.getFullYear(); const m=now.getMonth();
-  if (period==='thismonth')   { dateFrom=new Date(y,m,1); dateTo=new Date(y,m+1,0); }
-  else if (period==='lastmonth')   { dateFrom=new Date(y,m-1,1); dateTo=new Date(y,m,0); }
-  else if (period==='thisquarter') { const q=Math.floor(m/3); dateFrom=new Date(y,q*3,1); dateTo=new Date(y,q*3+3,0); }
-  else if (period==='thisyear')    { dateFrom=new Date(y,0,1); dateTo=new Date(y,11,31); }
-  else { dateFrom=null; dateTo=null; }
+  const fromEl=document.getElementById('dateFrom'),toEl=document.getElementById('dateTo');
+  if(period==='custom'){fromEl.style.display='block';toEl.style.display='block';return;}
+  fromEl.style.display='none';toEl.style.display='none';
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  if(period==='thismonth'){dateFrom=new Date(y,m,1);dateTo=new Date(y,m+1,0);}
+  else if(period==='lastmonth'){dateFrom=new Date(y,m-1,1);dateTo=new Date(y,m,0);}
+  else if(period==='thisquarter'){const q=Math.floor(m/3);dateFrom=new Date(y,q*3,1);dateTo=new Date(y,q*3+3,0);}
+  else if(period==='thisyear'){dateFrom=new Date(y,0,1);dateTo=new Date(y,11,31);}
+  else {dateFrom=null;dateTo=null;}
   loadDashboard();
 }
 
-document.getElementById('filterPeriod').addEventListener('change', updateDateRange);
-document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
-document.getElementById('dateFrom').addEventListener('change', () => {
-  dateFrom=new Date(document.getElementById('dateFrom').value); loadDashboard();
-});
-document.getElementById('dateTo').addEventListener('change', () => {
-  dateTo=new Date(document.getElementById('dateTo').value); loadDashboard();
-});
+document.getElementById('filterPeriod').addEventListener('change',updateDateRange);
+document.getElementById('refreshBtn').addEventListener('click',loadDashboard);
+document.getElementById('dateFrom').addEventListener('change',()=>{dateFrom=new Date(document.getElementById('dateFrom').value);loadDashboard();});
+document.getElementById('dateTo').addEventListener('change',()=>{dateTo=new Date(document.getElementById('dateTo').value);loadDashboard();});
+document.getElementById('incGstBtn').addEventListener('click',()=>{monthlyGstMode='inc';document.getElementById('incGstBtn').classList.add('active');document.getElementById('exGstBtn').classList.remove('active');redrawMonthly();});
+document.getElementById('exGstBtn').addEventListener('click',()=>{monthlyGstMode='ex';document.getElementById('exGstBtn').classList.add('active');document.getElementById('incGstBtn').classList.remove('active');redrawMonthly();});
 
-// ── Category Filter ──────────────────────────────────────────
-// ── Export Excel ─────────────────────────────────────────────
-document.getElementById('exportBtn').addEventListener('click', async () => {
-  const data = allData;
-  if (!data.length) { showToast('No data to export', true); return; }
-
-  const thisYear = new Date().getFullYear();
-  const lastYear = thisYear - 1;
-
-  // Sheet 1 — Works List
-  const rows = data.map(q => ({
-    'Date': q.completion_date ? new Date(q.completion_date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '—',
-    'Project': q.project || q.title || '—',
-    'Contractor': q.vendor || '—',
-    'Category': CAT_LABELS[q._cat] || q._cat || '—',
-    'Amount (ex GST)': Number(q.amount || 0),
-    'Type': q.is_emergency ? 'Emergency' : 'Regular' }));
-  const total = data.reduce((s, q) => s + Number(q.amount || 0), 0);
-  rows.push({ 'Date': '', 'Project': '', 'Contractor': '', 'Category': 'TOTAL', 'Amount (ex GST)': total, 'Type': '' });
-  const ws1 = XLSX.utils.json_to_sheet(rows);
-  ws1['!cols'] = [{wch:14},{wch:36},{wch:22},{wch:14},{wch:16},{wch:10}];
-
-  // Sheet 2 — Year Comparison (auto: last year full vs this year YTD)
-  const { data:prevRaw } = await supabase.from('quotes').select('amount')
-    .not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed')
-    .gte('completion_date',`${lastYear}-01-01`).lte('completion_date',`${lastYear}-12-31`);
-  const { data:currRaw } = await supabase.from('quotes').select('amount')
-    .not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed')
-    .gte('completion_date',`${thisYear}-01-01`).lte('completion_date',new Date().toISOString().split('T')[0]);
-
-  const prevDbTotal = (prevRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
-  const prevFinal = prevDbTotal > 0 ? prevDbTotal : 125002;
-  const prevNotes = prevDbTotal > 0 ? 'Jan '+lastYear+' – Dec '+lastYear : 'Jan '+lastYear+' – Dec '+lastYear+' (AGM Audited)';
-  const prevWorks = prevDbTotal > 0 ? (prevRaw||[]).length : 'AGM';
-  const currTotal = (currRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
-  const variance = currTotal - prevFinal;
-  const variancePct = ((variance/prevFinal)*100).toFixed(1)+'%';
-
-  const compRows = [
-    { 'Period': lastYear+' Full Year', 'Amount (ex GST)': prevFinal, 'Works': prevWorks, 'Notes': prevNotes },
-    { 'Period': `${thisYear} YTD`, 'Amount (ex GST)': currTotal, 'Works': (currRaw||[]).length, 'Notes': `Jan ${thisYear} – present` },
-    { 'Period': 'Variance', 'Amount (ex GST)': variance, 'Works': '', 'Notes': variancePct+' vs last year' },
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const data=allData;
+  if(!data.length){showToast('No completed works to export',true);return;}
+  const rows=data.map(q=>({
+    'Date':q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—',
+    'Project':q.project||q.title||'—','Contractor':q.vendor||'—','Category':CAT_LABELS[q._cat]||q._cat||'—',
+    'Amount (ex GST)':Number(q.amount||0),'Amount (inc GST)':Number(q.amount||0)*1.1,'Type':q.is_emergency?'Emergency':'Regular'
+  }));
+  const total=data.reduce((s,q)=>s+Number(q.amount||0),0);
+  rows.push({'Date':'','Project':'','Contractor':'','Category':'TOTAL','Amount (ex GST)':total,'Amount (inc GST)':total*1.1,'Type':''});
+  const ws=XLSX.utils.json_to_sheet(rows); ws['!cols']=[{wch:14},{wch:38},{wch:24},{wch:14},{wch:18},{wch:18},{wch:10}];
+  const summary=[
+    {'Metric':'Period','Value':periodLabel()},{'Metric':'Completed Works','Value':data.length},{'Metric':'Total Spend (ex GST)','Value':total},{'Metric':'Total Spend (inc GST)','Value':total*1.1},{'Metric':'Average Cost (inc GST)','Value':data.length?(total*1.1/data.length):0}
   ];
-  const ws2 = XLSX.utils.json_to_sheet(compRows);
-  ws2['!cols'] = [{wch:22},{wch:18},{wch:8},{wch:28}];
-
-  const wb = XLSX.utils.book_new();
-  const period = document.getElementById('filterPeriod').value;
-  XLSX.utils.book_append_sheet(wb, ws2, 'Year Comparison');
-  XLSX.utils.book_append_sheet(wb, ws1, 'Works List');
-  const dateStr = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Redmyre_Financial_${period}_${dateStr}.xlsx`);
+  const ws2=XLSX.utils.json_to_sheet(summary);ws2['!cols']=[{wch:28},{wch:24}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws2,'Summary');XLSX.utils.book_append_sheet(wb,ws,'Completed Works');
+  XLSX.writeFile(wb,`Redmyre_Cost_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`);
 });
 
-async function loadDashboard() {
-
-  let qQuery=supabase.from('quotes').select('*')
-    .not('completion_date','is',null)
-    .eq('work_status','completed')
-    .not('status','eq','removed')
-    .order('completion_date',{ascending:false});
-
-  if (dateFrom) qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
-  if (dateTo)   qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
-
-  const { data:raw } = await qQuery;
-  allData = (raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
-
-  // YTD — current year Jan 1 to today (auto, no hardcoded year)
-  const thisYear = new Date().getFullYear();
-  const { data:ytdRaw } = await supabase.from('quotes').select('amount')
-    .not('completion_date','is',null)
-    .eq('work_status','completed')
-    .not('status','eq','removed')
-    .gte('completion_date',`${thisYear}-01-01`)
-    .lte('completion_date',new Date().toISOString().split('T')[0]);
-
-  const ytdTotal = (ytdRaw||[]).reduce((s,q)=>s+Number(q.amount||0),0);
-  const ytdCount = (ytdRaw||[]).length;
-  document.getElementById('ytd2026Num').textContent = '$'+ytdTotal.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('ytd2026Count').textContent = ytdCount+' completed work'+(ytdCount!==1?'s':'');
-
+async function loadDashboard(){
+  let qQuery=supabase.from('quotes').select('*').not('completion_date','is',null).eq('work_status','completed').not('status','eq','removed').order('completion_date',{ascending:false});
+  if(dateFrom)qQuery=qQuery.gte('completion_date',dateFrom.toISOString().split('T')[0]);
+  if(dateTo)qQuery=qQuery.lte('completion_date',new Date(dateTo.getTime()+86400000).toISOString().split('T')[0]);
+  const {data:raw,error}=await qQuery;
+  if(error){console.error('[cost-dashboard] load error',error);showToast('Unable to load completed works',true);return;}
+  allData=(raw||[]).map(q=>({...q,_cat:parseQuoteCategory(q)}));
   renderDashboard(allData);
 }
 
-function renderDashboard(data) {
-  if (!data.length) {
-    return;
-  }
+function renderDashboard(data){
+  const total=data.reduce((s,q)=>s+Number(q.amount||0),0);
+  const count=data.length;
+  const avg=count?total*1.1/count:0;
+  const largest=data.slice().sort((a,b)=>Number(b.amount||0)-Number(a.amount||0))[0]||null;
+  document.getElementById('kpiTotal').textContent=fmt(total*1.1);
+  document.getElementById('kpiCount').textContent=count.toLocaleString('en-AU');
+  document.getElementById('kpiAverage').textContent=fmt(avg);
+  document.getElementById('kpiLargest').textContent=largest?fmt(Number(largest.amount||0)*1.1):'—';
+  document.getElementById('kpiLargestName').textContent=largest?(largest.project||largest.title||'Completed work'):'No completed works yet';
+  document.getElementById('kpiPeriod').textContent=periodLabel();
+  document.getElementById('monthlyTitleYear').textContent=new Date().getFullYear();
+  document.getElementById('monthlySubtitle').textContent=`${count} completed ${count===1?'work':'works'} in selected period`;
 
-  // Monthly totals
-  const monthlyTotals={};
-  data.forEach(q=>{
-    if (!q.completion_date) return;
-    const d=new Date(q.completion_date);
-    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    if (!monthlyTotals[key]) monthlyTotals[key]={total:0,count:0,label:d.toLocaleString('en-AU',{month:'short',year:'numeric'})};
-    monthlyTotals[key].total+=(Number(q.amount)||0);
-    monthlyTotals[key].count++;
-  });
-  const sortedMonths=Object.entries(monthlyTotals).sort((a,b)=>a[0].localeCompare(b[0]));
-
+  const monthly={};
+  data.forEach(q=>{const d=new Date(q.completion_date);if(Number.isNaN(d.getTime()))return;const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!monthly[key])monthly[key]={total:0,count:0,label:d.toLocaleString('en-AU',{month:'short',year:'numeric'})};monthly[key].total+=Number(q.amount||0);monthly[key].count++;});
+  const sortedMonths=Object.entries(monthly).sort((a,b)=>a[0].localeCompare(b[0]));
   renderMonthlyBarChart(sortedMonths);
   renderPieChart(data);
-  _currentPieData = data;
-  renderCategoryAccordion(data, document.getElementById('categoryAccordion').dataset.openCat||null);
+  renderBottomTables(data);
+  _currentPieData=data;
 }
 
-// 월별 바 차트 슬라이스 정보 저장
-window._monthSlices = [];
-
-function renderMonthlyBarChart(sortedMonths) {
-  const canvas=document.getElementById('monthlyBarChart');
-  if (!canvas||!sortedMonths.length) return;
-  const dpr=window.devicePixelRatio||1;
-  const W=canvas.offsetWidth||800;
-  const isMobile = W < 600;
-  const H = isMobile ? 260 : 380;
-  canvas.width=W*dpr; canvas.height=H*dpr;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
-  const maxVal=Math.max(...sortedMonths.map(([,d])=>d.total),1);
-  const n=sortedMonths.length;
-  const padL = isMobile ? 40 : 72;
-  const padR = isMobile ? 10 : 24;
-  const padT = isMobile ? 40 : 60;
-  const padB = isMobile ? 50 : 70;
-  const chartW=W-padL-padR;
-  const chartH=H-padT-padB;
-  const barW=Math.min(Math.floor(chartW/n)-(isMobile?2:12), isMobile?30:80);
-  const gap=(chartW-barW*n)/(n+1);
-
-  // 폰트 크기
-  const fAxis = isMobile ? '9px' : '12px';
-  const fValTop = isMobile ? 'bold 9px' : 'bold 14px';
-  const fValSub = isMobile ? '8px' : '12px';
-  const fLabel = isMobile ? 'bold 9px' : 'bold 13px';
-  const fJobs = isMobile ? '8px' : '12px';
-
-  window._monthSlices = [];
-  let selectedMonth = window._selectedMonth||null;
-
-  function draw() {
+window._monthSlices=[];
+function renderMonthlyBarChart(sortedMonths){
+  const canvas=document.getElementById('monthlyBarChart');if(!canvas)return;
+  const dpr=window.devicePixelRatio||1,W=canvas.offsetWidth||800,isMobile=W<600,H=isMobile?260:300;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  if(!sortedMonths.length){ctx.fillStyle='#94a3b8';ctx.font='12px DM Sans,sans-serif';ctx.textAlign='center';ctx.fillText('No completed works in this period',W/2,H/2);window._monthSlices=[];return;}
+  const values=sortedMonths.map(([,d])=>monthlyGstMode==='inc'?d.total*1.1:d.total);const maxVal=Math.max(...values,1),n=sortedMonths.length;
+  const padL=isMobile?40:62,padR=isMobile?8:18,padT=isMobile?34:42,padB=isMobile?46:52,chartW=W-padL-padR,chartH=H-padT-padB;
+  const barW=Math.min(Math.max(22,Math.floor(chartW/n)-12),isMobile?34:70),gap=(chartW-barW*n)/(n+1);
+  const fAxis=isMobile?'8px':'10px',fVal=isMobile?'bold 8px':'bold 11px',fLabel=isMobile?'bold 8px':'bold 10px',fJobs=isMobile?'7px':'9px';
+  window._monthSlices=[];
+  function draw(){
     ctx.clearRect(0,0,W,H);
-
-    // 그리드
-    for (let i=0;i<=4;i++) {
-      const y=padT+chartH-(chartH/4)*i;
-      ctx.strokeStyle='#f1f5f9'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
-      ctx.fillStyle='#94a3b8'; ctx.font=fAxis+' DM Sans,sans-serif'; ctx.textAlign='right';
-      ctx.fillText(fmtShort(maxVal/4*i),padL-6,y+3);
-    }
-
-    sortedMonths.forEach(([key,d],i)=>{
-      const x=padL+gap+i*(barW+gap);
-      const bH=Math.max((d.total/maxVal)*chartH,4);
-      const y=padT+chartH-bH;
-      const isSelected = selectedMonth===key;
-      const monthColor = MONTH_COLORS[i % MONTH_COLORS.length];
-
-      window._monthSlices[i]={x,y:padT,w:barW,h:chartH+padB,key,d,color:monthColor};
-
-      // 바
-      const grad=ctx.createLinearGradient(x,y,x,y+bH);
-      grad.addColorStop(0, isSelected ? '#f59e0b' : monthColor);
-      grad.addColorStop(1, isSelected ? '#d97706' : monthColor+'99');
-      ctx.fillStyle=grad;
-      ctx.beginPath(); ctx.roundRect(x,y,barW,bH,[8,8,0,0]); ctx.fill();
-
-      // 선택된 바 테두리
-      if (isSelected) {
-        ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.roundRect(x-1,y-1,barW+2,bH+1,[8,8,0,0]); ctx.stroke();
-      }
-
-      if (isMobile) {
-        // 모바일: inc GST만 표시 (공간 부족)
-        ctx.fillStyle=isSelected?'#d97706':'#1e293b';
-        ctx.font=fValTop+' DM Sans,sans-serif'; ctx.textAlign='center';
-        ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-6);
-        // 월 라벨
-        ctx.fillStyle=isSelected?'#d97706':monthColor;
-        ctx.font=fLabel+' DM Sans,sans-serif';
-        ctx.fillText(d.label,x+barW/2,padT+chartH+14);
-        // job 수
-        ctx.fillStyle='#94a3b8'; ctx.font=fJobs+' DM Sans,sans-serif';
-        ctx.fillText(d.count+'j',x+barW/2,padT+chartH+28);
-      } else {
-        // 데스크톱: 기존 그대로
-        ctx.fillStyle=isSelected?'#d97706':'#1e293b';
-        ctx.font=fValTop+' DM Sans,sans-serif'; ctx.textAlign='center';
-        ctx.fillText(fmtShort(d.total*1.1),x+barW/2,y-26);
-        ctx.fillStyle='#64748b'; ctx.font=fValSub+' DM Sans,sans-serif';
-        ctx.fillText(fmtShort(d.total),x+barW/2,y-11);
-        ctx.fillStyle=isSelected?'#d97706':monthColor;
-        ctx.font=fLabel+' DM Sans,sans-serif';
-        ctx.fillText(d.label,x+barW/2,padT+chartH+22);
-        ctx.fillStyle='#94a3b8'; ctx.font=fJobs+' DM Sans,sans-serif';
-        ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+40);
-      }
-    });
-
-    // X축
-    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.moveTo(padL,padT+chartH); ctx.lineTo(padL+chartW,padT+chartH); ctx.stroke();
+    for(let i=0;i<=4;i++){const y=padT+chartH-(chartH/4)*i;ctx.strokeStyle='#f1f5f9';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+chartW,y);ctx.stroke();ctx.fillStyle='#94a3b8';ctx.font=fAxis+' DM Sans,sans-serif';ctx.textAlign='right';ctx.fillText(fmtShort(maxVal/4*i),padL-6,y+3);}
+    sortedMonths.forEach(([key,d],i)=>{const value=values[i],x=padL+gap+i*(barW+gap),bH=Math.max(value/maxVal*chartH,4),y=padT+chartH-bH,isSelected=window._selectedMonth===key,color=MONTH_COLORS[i%MONTH_COLORS.length];window._monthSlices[i]={x,y:padT,w:barW,h:chartH+padB,key,d,color};const grad=ctx.createLinearGradient(x,y,x,y+bH);grad.addColorStop(0,isSelected?'#f59e0b':color);grad.addColorStop(1,isSelected?'#d97706':color+'aa');ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(x,y,barW,bH,[7,7,0,0]);ctx.fill();if(isSelected){ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.stroke();}ctx.fillStyle=isSelected?'#d97706':'#1e293b';ctx.font=fVal+' DM Sans,sans-serif';ctx.textAlign='center';ctx.fillText(fmtShort(value),x+barW/2,y-8);ctx.fillStyle=isSelected?'#d97706':color;ctx.font=fLabel+' DM Sans,sans-serif';ctx.fillText(d.label,x+barW/2,padT+chartH+16);ctx.fillStyle='#94a3b8';ctx.font=fJobs+' DM Sans,sans-serif';ctx.fillText(d.count+' job'+(d.count!==1?'s':''),x+barW/2,padT+chartH+30);});
+    ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(padL,padT+chartH);ctx.lineTo(padL+chartW,padT+chartH);ctx.stroke();
   }
+  draw();window._redrawMonthlyBar=draw;
+  canvas.onclick=e=>{const rect=canvas.getBoundingClientRect(),mx=(e.clientX-rect.left)*(W/rect.width),my=(e.clientY-rect.top)*(H/rect.height);const hit=window._monthSlices.find(s=>mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h);if(!hit)return;if(window._selectedMonth===hit.key){window._selectedMonth=null;document.getElementById('monthDetail').style.display='none';}else{window._selectedMonth=hit.key;renderMonthDetail(hit.key,hit.d,hit.color);}draw();};
+  canvas.onmousemove=e=>{const rect=canvas.getBoundingClientRect(),mx=(e.clientX-rect.left)*(W/rect.width),my=(e.clientY-rect.top)*(H/rect.height);canvas.style.cursor=window._monthSlices.some(s=>mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h)?'pointer':'default';};
+}
+function redrawMonthly(){if(window._redrawMonthlyBar)window._redrawMonthlyBar();}
 
-  draw();
-  window._redrawMonthlyBar = draw;
-
-  // 클릭
-  canvas.onclick=(e)=>{
-    const rect=canvas.getBoundingClientRect();
-    const mx=(e.clientX-rect.left)*(W/rect.width);
-    const my=(e.clientY-rect.top)*(H/rect.height);
-    let clicked=null;
-    window._monthSlices.forEach(s=>{
-      if (mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h) clicked=s;
-    });
-    if (!clicked) return;
-    if (window._selectedMonth===clicked.key) {
-      window._selectedMonth=null;
-      document.getElementById('monthDetail').style.display='none';
-    } else {
-      window._selectedMonth=clicked.key;
-      renderMonthDetail(clicked.key, clicked.d, clicked.color);
-    }
-    draw();
-  };
-
-  // 호버 커서
-  canvas.onmousemove=(e)=>{
-    const rect=canvas.getBoundingClientRect();
-    const mx=(e.clientX-rect.left)*(W/rect.width);
-    const my=(e.clientY-rect.top)*(H/rect.height);
-    let hit=false;
-    window._monthSlices.forEach(s=>{
-      if (mx>=s.x&&mx<=s.x+s.w&&my>=s.y&&my<=s.y+s.h) hit=true;
-    });
-    canvas.style.cursor=hit?'pointer':'default';
-  };
+function renderMonthDetail(key,d,color){
+  const detail=document.getElementById('monthDetail');const items=_currentPieData.filter(q=>{const dt=new Date(q.completion_date);return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`===key;}).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
+  const rows=items.map(q=>{const date=new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});return `<div class="cat-detail-row" style="grid-template-columns:110px 1fr 1fr 110px 110px"><div>${date}</div><div class="project">${workName(q)}</div><div>${safeText(q.vendor||'—')}</div><div style="text-align:right">${fmt(Number(q.amount||0))}</div><div style="text-align:right;color:#2563eb;font-weight:700">${fmt(Number(q.amount||0)*1.1)}</div></div>`;}).join('');
+  detail.style.display='block';detail.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,${color}dd,${color});"><div><div style="font-size:14px;font-weight:700;color:#fff">${safeText(d.label)}</div><div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:3px">${items.length} works · ex GST ${fmt(d.total)} · inc GST ${fmt(d.total*1.1)}</div></div><button onclick="window._selectedMonth=null;document.getElementById('monthDetail').style.display='none';redrawMonthly();" style="background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font:600 10px 'DM Sans',sans-serif">Close</button></div><div class="cat-detail-head" style="grid-template-columns:110px 1fr 1fr 110px 110px"><div>Date</div><div>Project</div><div>Contractor</div><div style="text-align:right">ex GST</div><div style="text-align:right">inc GST</div></div>${rows}<div class="cat-detail-total" style="grid-template-columns:110px 1fr 1fr 110px 110px"><div></div><div></div><div>Total</div><div>${fmt(d.total)}</div><div style="color:#93c5fd">${fmt(d.total*1.1)}</div></div>`;
 }
 
-function renderMonthDetail(key, d, color) {
-  color = color || '#2563eb';
-  const detail=document.getElementById('monthDetail');
-  const items=(_currentPieData||[]).filter(q=>{
-    if (!q.completion_date) return false;
-    const dt=new Date(q.completion_date);
-    const k=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
-    return k===key;
-  }).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
-
-  const rows=items.map((q,i)=>{
-    const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
-    const emg=q.is_emergency?'<span style="font-size:10px;font-weight:600;color:#92400e;background:#fffbeb;border:0.5px solid #f59e0b55;padding:2px 7px;border-radius:100px;margin-left:6px">🔧 Direct Work</span>':'';
-    const catColor=CAT_COLORS[q._cat||'General']||'#94a3b8';
-    return `<div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
-      <div style="font-size:13px;color:#64748b">${dateStr}</div>
-      <div>
-        <div style="font-size:15px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
-        <div style="font-size:13px;color:#94a3b8;margin-top:2px">${q.vendor||'—'}</div>
-      </div>
-      <div style="text-align:center"><span style="font-size:13px;font-weight:700;color:${catColor};background:${catColor}18;padding:3px 10px;border-radius:20px">${CAT_LABELS[q._cat||'General']||q._cat||'—'}</span></div>
-      <div style="text-align:right;font-size:15px;font-weight:600;color:#1e293b">${fmt(Number(q.amount||0))}</div>
-      <div style="text-align:right;font-size:15px;font-weight:700;color:#2563eb">${fmt(Number(q.amount||0)*1.1)}</div>
-    </div>`;
-  }).join('');
-
-  detail.style.display='block';
-  detail.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,${color}dd,${color});border-radius:12px 12px 0 0">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:#fff">${d.label}</div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:2px">${items.length} works &nbsp;·&nbsp; ex GST: ${fmt(d.total)} &nbsp;·&nbsp; inc GST: <span style="color:#93c5fd;font-weight:700">${fmt(d.total*1.1)}</span></div>
-      </div>
-      <button onclick="window._selectedMonth=null;document.getElementById('monthDetail').style.display='none';if(window._redrawMonthlyBar)window._redrawMonthlyBar();" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600">✕ Close</button>
-    </div>
-    <div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:10px 20px;background:#f8fafc;border-bottom:2px solid #e2e8f0">
-      <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Date</div>
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Project / Contractor</div>
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:center">Category</div>
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">ex GST</div>
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">inc GST</div>
-    </div>
-    ${rows}
-    <div style="display:grid;grid-template-columns:120px 1fr 140px 140px 140px;gap:0;padding:14px 20px;background:linear-gradient(135deg,#0f2456,#1e3a8a);border-radius:0 0 12px 12px">
-      <div></div><div></div><div></div>
-      <div style="text-align:right;font-size:14px;font-weight:700;color:#fff">${fmt(d.total)}</div>
-      <div style="text-align:right;font-size:14px;font-weight:700;color:#93c5fd">${fmt(d.total*1.1)}</div>
-    </div>`;
+function renderPieChart(data){
+  const canvas=document.getElementById('categoryPieChart');if(!canvas)return;const W=320,H=320,cx=160,cy=160,r=138,inner=76,ctx=canvas.getContext('2d');const totals={};data.forEach(q=>{const c=q._cat||'General';totals[c]=(totals[c]||0)+Number(q.amount||0);});const total=Object.values(totals).reduce((s,v)=>s+v,0);if(!total){ctx.clearRect(0,0,W,H);document.getElementById('categoryBreakdown').innerHTML='<div class="empty-state">No completed works in this period.</div>';return;}
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);let start=-Math.PI/2;const slices=sorted.map(([cat,val])=>{const angle=val/total*Math.PI*2,s={cat,val,startAngle:start,endAngle:start+angle,color:CAT_COLORS[cat]||'#94a3b8'};start+=angle;return s;});let hovered=-1;
+  function draw(){ctx.clearRect(0,0,W,H);slices.forEach((s,i)=>{const off=i===hovered?6:0,mid=(s.startAngle+s.endAngle)/2;ctx.beginPath();ctx.moveTo(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off);ctx.arc(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off,r,s.startAngle,s.endAngle);ctx.lineTo(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off);ctx.fillStyle=s.color;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();});ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();const center=hovered>=0?slices[hovered]:null;ctx.textAlign='center';ctx.fillStyle='#94a3b8';ctx.font='600 10px DM Sans,sans-serif';ctx.fillText(center?(CAT_LABELS[center.cat]||center.cat):'Total (ex GST)',cx,cy-22);ctx.fillStyle='#0f172a';ctx.font='800 18px DM Sans,sans-serif';ctx.fillText(fmt(center?center.val:total),cx,cy+3);ctx.fillStyle='#2563eb';ctx.font='700 11px DM Sans,sans-serif';ctx.fillText('Inc GST '+fmt((center?center.val:total)*1.1),cx,cy+22);}
+  draw();window._drawPie=draw;
+  canvas.onmousemove=e=>{const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left-cx,my=e.clientY-rect.top-cy,dist=Math.sqrt(mx*mx+my*my);if(dist<inner||dist>r){hovered=-1;draw();return;}let a=Math.atan2(my,mx);if(a<-Math.PI/2)a+=Math.PI*2;hovered=slices.findIndex(s=>a>=s.startAngle&&a<s.endAngle);draw();};canvas.onmouseleave=()=>{hovered=-1;draw();};
+  renderCategoryBreakdown(data,sorted,total);
 }
 
-function renderPieChart(data) {
-  let selectedSlice = -1;
-  window._pieData = data;
-  const canvas=document.getElementById('categoryPieChart');
-  if (!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const W=360,H=360,cx=W/2,cy=H/2,r=158,inner=90;
-  const totals={};
-  data.forEach(q=>{ const cat=q._cat||'General'; totals[cat]=(totals[cat]||0)+Number(q.amount||0); });
-  const total=Object.values(totals).reduce((s,v)=>s+v,0);
-  if (!total) return;
-  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-  const slices=[]; let startAngle=-Math.PI/2;
-  sorted.forEach(([cat,val])=>{
-    const angle=(val/total)*Math.PI*2;
-    slices.push({cat,val,startAngle,endAngle:startAngle+angle,color:CAT_COLORS[cat]||'#94a3b8'});
-    startAngle+=angle;
-  });
-
-  function drawCenter(l1,l2,l3) {
-    ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
-    ctx.textAlign='center';
-    ctx.fillStyle='#94a3b8'; ctx.font='600 13px DM Sans,sans-serif'; ctx.fillText(l1,cx,cy-26);
-    ctx.fillStyle='#0f172a'; ctx.font='800 20px DM Sans,sans-serif'; ctx.fillText(l2,cx,cy+2);
-    ctx.fillStyle='#2563eb'; ctx.font='700 15px DM Sans,sans-serif'; ctx.fillText(l3,cx,cy+24);
-  }
-
-  function draw(hovered=-1) {
-    ctx.clearRect(0,0,W,H);
-    slices.forEach((s,i)=>{
-      const off=i===hovered?8:0;
-      const mid=(s.startAngle+s.endAngle)/2;
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off);
-      ctx.arc(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off,r,s.startAngle,s.endAngle);
-      ctx.lineTo(cx+Math.cos(mid)*off,cy+Math.sin(mid)*off);
-      ctx.fillStyle=s.color; ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
-    });
-    if (hovered>=0) {
-      const s=slices[hovered];
-      drawCenter(CAT_LABELS[s.cat]||s.cat,fmt(s.val),'inc: '+fmt(s.val*1.1));
-    } else {
-      drawCenter('Total (ex GST)',fmt(total),'inc GST: '+fmt(total*1.1));
-    }
-  }
-  draw();
-  window._drawPie = draw;
-
-  canvas.onmousemove=(e)=>{
-    const rect=canvas.getBoundingClientRect();
-    const mx=e.clientX-rect.left-cx, my=e.clientY-rect.top-cy;
-    const dist=Math.sqrt(mx*mx+my*my);
-    if (dist<inner||dist>r){draw(selectedSlice);return;}
-    let angle=Math.atan2(my,mx);
-    if (angle<-Math.PI/2) angle+=Math.PI*2;
-    const idx=slices.findIndex(s=>angle>=s.startAngle&&angle<s.endAngle);
-    idx>=0?draw(idx):draw(selectedSlice);
-  };
-  canvas.onmouseleave=()=>draw(selectedSlice);
-  canvas.onclick=(e)=>{
-    const rect=canvas.getBoundingClientRect();
-    const mx=e.clientX-rect.left-cx, my=e.clientY-rect.top-cy;
-    const dist=Math.sqrt(mx*mx+my*my);
-    if (dist<inner||dist>r) return;
-    let angle=Math.atan2(my,mx);
-    if (angle<-Math.PI/2) angle+=Math.PI*2;
-    const idx=slices.findIndex(s=>angle>=s.startAngle&&angle<s.endAngle);
-    if (idx>=0) {
-      const cat=slices[idx].cat;
-      selectedSlice = selectedSlice===idx?-1:idx;
-      draw(selectedSlice);
-      toggleCategoryAccordion(selectedSlice>=0?cat:null);
-    }
-  };
-
-  document.getElementById('pieLegend').innerHTML=sorted.map(([cat,val],i)=>{
-    const pct=Math.round(val/total*100);
-    const color=CAT_COLORS[cat]||'#94a3b8';
-    const items=data.filter(q=>(q._cat||'General')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
-    const detailRows=items.map((q,j)=>{
-      const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
-      const emg=q.is_emergency?`<span style="font-size:10px;font-weight:600;color:#92400e;background:#fffbeb;border:0.5px solid #f59e0b55;padding:2px 7px;border-radius:100px;margin-left:6px">🔧 Direct Work</span>`:'';
-      return `<div style="display:grid;grid-template-columns:120px 2fr 1fr 130px;gap:0;padding:14px 20px;background:${j%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
-        <div style="font-size:14px;font-weight:500;color:#64748b">${dateStr}</div>
-        <div style="font-size:15px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
-        <div style="font-size:14px;color:#475569">${q.vendor||'—'}</div>
-        <div style="text-align:right">
-          <div style="font-size:14px;font-weight:700;color:#1e293b">${fmt(Number(q.amount||0))}</div>
-          <div style="font-size:13px;font-weight:600;color:#2563eb;margin-top:2px">${fmt(Number(q.amount||0)*1.1)} inc GST</div>
-        </div>
-      </div>`;
-    }).join('');
-    const totalRow=`<div style="display:grid;grid-template-columns:120px 2fr 1fr 130px;gap:0;padding:14px 20px;background:${color}15;border-top:2px solid ${color}">
-      <div></div><div></div>
-      <div style="font-size:14px;font-weight:700;color:#1e293b">Total</div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:700;color:#1e293b">${fmt(val)}</div>
-        <div style="font-size:13px;font-weight:700;color:#2563eb;margin-top:2px">${fmt(val*1.1)} inc GST</div>
-      </div>
-    </div>`;
-    const header=`<div style="display:grid;grid-template-columns:120px 2fr 1fr 130px;gap:0;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;border-top:1px solid #e2e8f0">
-      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Date</div>
-      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Project</div>
-      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Contractor</div>
-      <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">Amount</div>
-    </div>`;
-    return `<div style="border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0;transition:all 0.2s" id="leg-item-${i}">
-      <div data-cat="${cat}" data-idx="${i}" style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:#f8fafc;cursor:pointer;transition:all 0.15s"
-        onmouseover="this.style.background='${color}18';this.parentElement.style.borderColor='${color}';if(window._drawPie)window._drawPie(${i});"
-        onmouseout="if(!this.parentElement.classList.contains('open')){this.style.background='#f8fafc';this.parentElement.style.borderColor='#e2e8f0';}if(window._drawPie)window._drawPie(window._selectedSlice!=null?window._selectedSlice:-1);"
-        onclick="handleLegendClick('${cat}',${i})">
-        <div style="width:14px;height:14px;border-radius:50%;background:${color};flex-shrink:0"></div>
-        <div style="flex:1">
-          <div style="font-size:16px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
-          <div style="font-size:14px;color:#94a3b8;margin-top:4px">ex GST: ${fmt(val)} &nbsp;|&nbsp; inc GST: <span style="color:#2563eb;font-weight:600">${fmt(val*1.1)}</span></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-          <div style="text-align:right">
-            <div style="font-size:20px;font-weight:800;color:#1e293b">${pct}%</div>
-            <div style="font-size:14px;color:#94a3b8">of total</div>
-          </div>
-          <div class="leg-arrow" style="font-size:18px;color:#94a3b8;transition:transform 0.2s">›</div>
-        </div>
-      </div>
-      <div class="leg-detail" style="display:none">
-        ${header}${detailRows}${totalRow}
-      </div>
-    </div>`;
-  }).join('')+`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#0f2456,#1e3a8a);margin-top:8px">
-      <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.8)">Total</div>
-      <div style="text-align:right">
-        <div style="font-size:12px;color:rgba(255,255,255,0.6)">ex GST: ${fmt(total)}</div>
-        <div style="font-size:16px;font-weight:800;color:#fff">inc GST: ${fmt(total*1.1)}</div>
-      </div>
-    </div>`;
+function renderCategoryBreakdown(data,sorted,total){
+  const root=document.getElementById('categoryBreakdown');root.innerHTML=sorted.map(([cat,val])=>{const color=CAT_COLORS[cat]||'#94a3b8',items=data.filter(q=>(q._cat||'General')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date)),pct=Math.round(val/total*100);const detail=items.map(q=>`<div class="cat-detail-row"><div>${new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><div class="project">${workName(q)}</div><div>${safeText(q.vendor||'—')}</div><div style="text-align:right">${fmt(Number(q.amount||0))}</div><div style="text-align:right;color:#2563eb;font-weight:700">${fmt(Number(q.amount||0)*1.1)}</div></div>`).join('');return `<div class="cat-row" id="cat-row-${CSS.escape(cat)}"><div class="cat-row-main" onclick="toggleCatRow(this.parentElement)"><span class="cat-dot" style="background:${color}"></span><div class="cat-name">${safeText(CAT_LABELS[cat]||cat)}</div><div class="cat-money">ex GST <strong>${fmt(val)}</strong></div><div class="cat-money">inc GST <strong>${fmt(val*1.1)}</strong></div><div class="cat-pct">${pct}%<small>of total</small></div><div class="cat-progress"><span style="width:${pct}%;background:${color}"></span></div></div><div class="cat-detail"><div class="cat-detail-head"><div>Date</div><div>Project</div><div>Contractor</div><div style="text-align:right">ex GST</div><div style="text-align:right">inc GST</div></div>${detail}<div class="cat-detail-total"><div></div><div></div><div>Total</div><div>${fmt(val)}</div><div style="color:#93c5fd">${fmt(val*1.1)}</div></div></div></div>`;}).join('')+`<div class="cat-total"><div class="cat-total-label">Total</div><div class="cat-total-value"><div>ex GST: ${fmt(total)}</div><div>inc GST: ${fmt(total*1.1)}</div></div></div>`;
 }
+window.toggleCatRow=function(row){document.querySelectorAll('.cat-row.open').forEach(el=>{if(el!==row)el.classList.remove('open');});row.classList.toggle('open');};
+
+function renderBottomTables(data){
+  const largest=data.slice().sort((a,b)=>Number(b.amount||0)-Number(a.amount||0)).slice(0,5);const recent=data.slice().sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date)).slice(0,5);
+  const renderRows=(items,kind)=>items.length?items.map((q,i)=>`<div class="work-table-row"><div class="work-rank">${i+1}</div><div class="work-title" title="${workName(q)}">${workName(q)}</div><div>${catBadgeHtml(q._cat||'General')}</div><div class="work-date">${q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—'}</div><div class="work-amount">${fmt(Number(q.amount||0)*1.1)}</div></div>`).join(''):`<div class="empty-state">No completed works in this period.</div>`;
+  document.getElementById('largestProjects').innerHTML=renderRows(largest,'largest');document.getElementById('recentWorks').innerHTML=renderRows(recent,'recent');
+}
+
+window.showToast=(msg,isError=false)=>{const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.style.background=isError?'#991b1b':'#0f172a';t.style.display='block';setTimeout(()=>t.style.display='none',3000);};
 
 updateDateRange();
-
-let _currentPieData = [];
-
-window.handleLegendClick = function(cat, idx) {
-  const item = document.getElementById('leg-item-'+idx);
-  if (!item) return;
-  const detail = item.querySelector('.leg-detail');
-  const arrow = item.querySelector('.leg-arrow');
-  const header = item.querySelector('[data-cat]');
-  const color = CAT_COLORS[cat]||'#94a3b8';
-  const isOpen = item.classList.contains('open');
-
-  // 모든 항목 닫기
-  document.querySelectorAll('#pieLegend [id^="leg-item-"]').forEach(el => {
-    el.classList.remove('open');
-    el.style.borderColor='#e2e8f0';
-    const d=el.querySelector('.leg-detail'); if(d) d.style.display='none';
-    const a=el.querySelector('.leg-arrow'); if(a) a.style.transform='rotate(0deg)';
-    const h=el.querySelector('[data-cat]'); if(h) h.style.background='#f8fafc';
-  });
-
-  if (!isOpen) {
-    item.classList.add('open');
-    item.style.borderColor=color;
-    detail.style.display='block';
-    arrow.style.transform='rotate(90deg)';
-    header.style.background=color+'18';
-    window._selectedSlice = idx;
-  } else {
-    window._selectedSlice = -1;
-  }
-  if (window._drawPie) window._drawPie(window._selectedSlice!=null?window._selectedSlice:-1);
-};
-
-function toggleCategoryAccordion(cat) {
-  const accordion = document.getElementById('categoryAccordion');
-  // 같은 카테고리 클릭시 닫기
-  if (accordion.dataset.openCat === cat) {
-    accordion.dataset.openCat = '';
-    renderCategoryAccordion(_currentPieData, null);
-    // 범례 선택 해제
-    document.querySelectorAll('#pieLegend [data-cat]').forEach(el => {
-      el.classList.remove('selected');
-      el.style.background='#f8fafc'; el.style.borderColor='#f1f5f9';
-    });
-    return;
-  }
-  accordion.dataset.openCat = cat;
-  renderCategoryAccordion(_currentPieData, cat);
-  // 범례 하이라이트
-  document.querySelectorAll('#pieLegend [data-cat]').forEach(el => {
-    if (el.dataset.cat === cat) {
-      el.classList.add('selected');
-      el.style.background=(CAT_COLORS[cat]||'#94a3b8')+'18';
-      el.style.borderColor=CAT_COLORS[cat]||'#94a3b8';
-    } else {
-      el.classList.remove('selected');
-      el.style.background='#f8fafc'; el.style.borderColor='#f1f5f9';
-    }
-  });
-  // 스크롤
-  setTimeout(()=>accordion.scrollIntoView({behavior:'smooth',block:'start'}), 100);
-}
-
-function renderCategoryAccordion(data, selectedCat) {
-  const accordion = document.getElementById('categoryAccordion');
-  const catTotals = {};
-  data.forEach(q => { const c=q._cat||'General'; catTotals[c]=(catTotals[c]||0)+Number(q.amount||0); });
-  const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
-
-  accordion.innerHTML = sorted.map(([cat, total]) => {
-    const items = data.filter(q=>(q._cat||'General')===cat).sort((a,b)=>new Date(b.completion_date)-new Date(a.completion_date));
-    const isOpen = cat === selectedCat;
-    const color = CAT_COLORS[cat]||'#94a3b8';
-
-    return `<div style="border-radius:12px;overflow:hidden;border:1.5px solid ${isOpen?color:'#e2e8f0'};transition:all 0.2s">
-      <div onclick="toggleCategoryAccordion('${cat}')" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:${isOpen?color+'12':'#f8fafc'};cursor:pointer;transition:all 0.2s">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:12px;height:12px;border-radius:50%;background:${color};flex-shrink:0"></div>
-          <div style="font-size:15px;font-weight:700;color:#1e293b">${CAT_LABELS[cat]||cat}</div>
-          <div style="font-size:12px;color:#94a3b8">${items.length} work${items.length!==1?'s':''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:16px">
-          <div style="text-align:right">
-            <div style="font-size:14px;font-weight:700;color:#1e293b">${fmt(total)}</div>
-            <div style="font-size:11px;color:#94a3b8">ex GST &nbsp;|&nbsp; <span style="color:${color};font-weight:600">${fmt(total*1.1)} inc GST</span></div>
-          </div>
-          <div style="font-size:18px;color:#94a3b8;transition:transform 0.2s;transform:rotate(${isOpen?90:0}deg)">›</div>
-        </div>
-      </div>
-      ${isOpen?`
-      <div style="background:#fff;border-top:1px solid #e2e8f0">
-        <div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;gap:0;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
-          <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Date</div>
-          <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Project</div>
-          <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em">Contractor</div>
-          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">ex GST</div>
-          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;text-align:right">inc GST</div>
-        </div>
-        ${items.map((q,i)=>{
-          const dateStr=q.completion_date?new Date(q.completion_date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'—';
-          const emg=q.is_emergency?'<span style="font-size:10px;font-weight:600;color:#92400e;background:#fffbeb;border:0.5px solid #f59e0b55;padding:2px 7px;border-radius:100px;margin-left:6px">🔧 Direct Work</span>':'';
-          return `<div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;gap:0;padding:12px 20px;background:${i%2===0?'#fff':'#f8fafc'};border-bottom:1px solid #f1f5f9;align-items:center">
-            <div style="font-size:13px;color:#64748b">${dateStr}</div>
-            <div style="font-size:13px;font-weight:600;color:#1e293b">${q.project||q.title||'—'}${emg}</div>
-            <div style="font-size:12px;color:#475569">${q.vendor||'—'}</div>
-            <div style="font-size:13px;font-weight:600;color:#1e293b;text-align:right">${fmt(Number(q.amount||0))}</div>
-            <div style="font-size:13px;font-weight:700;color:#2563eb;text-align:right">${fmt(Number(q.amount||0)*1.1)}</div>
-          </div>`;
-        }).join('')}
-        <div style="display:grid;grid-template-columns:120px 1fr 1fr 1fr 1fr;gap:0;padding:12px 20px;background:linear-gradient(135deg,#0f2456,#1e3a8a)">
-          <div></div><div></div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.7)">Total</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;text-align:right">${fmt(total)}</div>
-          <div style="font-size:13px;font-weight:700;color:#93c5fd;text-align:right">${fmt(total*1.1)}</div>
-        </div>
-      </div>`:''}
-    </div>`;
-  }).join('');
-}
 </script>
 </body>
 </html>
