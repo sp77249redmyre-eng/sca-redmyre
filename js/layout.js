@@ -122,7 +122,6 @@ item.style.display = 'none'; // 숨기기
 const sidebar = document.getElementById('appSidebar');
 if (sidebar) {
 sidebar.style.opacity = '1';
-sidebar.style.transition = 'opacity 0.2s ease-in';
 }
 }
 
