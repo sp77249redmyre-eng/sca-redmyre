@@ -17,7 +17,7 @@
 <style>
 body{overflow:hidden;}
 .content {
-  padding: 18px 20px 14px;
+  padding: 10px 14px 8px;
   height: calc(100vh - 56px);
   box-sizing: border-box;
   overflow: hidden;
@@ -25,14 +25,14 @@ body{overflow:hidden;}
 .ann-list {
   display:flex;
   flex-direction:column;
-  gap:12px;
-  overflow:hidden;
+  gap:8px;
+  overflow:visible;
 }
 .ann-item {
   background:var(--surface);
   border:2px solid var(--border);
   border-radius:14px;
-  padding:20px;
+  padding:14px;
   transition:box-shadow 0.15s,background 0.15s,border-color 0.15s;
 }
 .ann-item:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07) }
@@ -43,10 +43,14 @@ body{overflow:hidden;}
 .ann-item.archived .ann-title { color:#94a3b8 }
 .ann-item.archived .ann-body { color:#94a3b8 }
 .ann-item.archived .ann-meta { color:#94a3b8 }
-.ann-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px }
+.ann-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:7px }
 .ann-title { font-size:19px;font-weight:800;color:#0f172a }
-.ann-meta { font-size:14px;font-weight:600;color:#475569;margin-top:4px }
-.ann-body { font-size:14px;color:#374151;line-height:1.7 }
+.ann-meta { font-size:13px;font-weight:600;color:#475569;margin-top:3px }
+.ann-body { font-size:13px;color:#374151;line-height:1.45 }
+.ann-body p { margin-top:7px !important; margin-bottom:7px !important; }
+.ann-body h1,.ann-body h2,.ann-body h3,.ann-body h4 { margin-top:8px !important; margin-bottom:6px !important; }
+.ann-body table { border-collapse:collapse !important; }
+.ann-body th,.ann-body td { padding:6px 8px !important; line-height:1.25 !important; }
 .ann-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light) }
 .ann-actions { display:flex;gap:6px }
 .pin-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s }
@@ -73,6 +77,7 @@ body{overflow:hidden;}
     overflow:visible;
   }
   .ann-list{overflow:visible}
+  .ann-item{zoom:1 !important}
 
   .ann-item{padding:14px}
   .ann-title{font-size:17px}
@@ -122,7 +127,7 @@ body{overflow:hidden;}
       <button class="push-banner-dismiss" id="dismissPushBtn">✕</button>
     </div>
 
-    <div class="filter-bar" style="margin-top:24px;margin-bottom:16px">
+    <div class="filter-bar" style="margin-top:8px;margin-bottom:8px">
       <button class="filter-btn active" data-filter="all">Active</button>
       <button class="filter-btn" data-filter="archived">📦 Archived</button>
     </div>
@@ -334,9 +339,17 @@ function renderAnns() {
     const isScheduled = a.scheduled_at && !a.push_sent;
     const scheduledLabel = isScheduled ? `<span class="scheduled-badge">🕐 ${formatSydneyTime(a.scheduled_at)}</span>` : '';
     const isOpen = expandedAnnId === a.id;
+    const plainContentStart = (a.content || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 500)
+      .toLowerCase();
+    const ownTitleInContent = !!a.title && plainContentStart.includes(a.title.trim().toLowerCase());
     return `
     <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}${isScheduled?' scheduled':''}${isOpen?' expanded':''}" onclick="toggleAnnDetail('${a.id}')" style="cursor:pointer">
-      <div class="ann-top">
+      <div class="ann-top" ${isOpen && ownTitleInContent ? 'style="display:none"' : ''}>
         <div>
           <div class="ann-title">${a.pinned?'📌 ':''}${a.title}${scheduledLabel}</div>
           <div class="ann-meta">${isScheduled?'⏳ Scheduled — '+formatSydneyTime(a.scheduled_at):new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'})}</div>
@@ -347,6 +360,8 @@ function renderAnns() {
     </div>`;
   }).join('');
 }
+  fitExpandedAnnouncement();
+
 
 function annDetailInnerHtml(a) {
   const attachmentsHtml = a.attachments && a.attachments.length ? `
@@ -392,6 +407,30 @@ function annDetailInnerHtml(a) {
 }
 
 let expandedAnnId = null;
+
+function fitExpandedAnnouncement() {
+  if (window.innerWidth <= 768) return;
+
+  const card = document.querySelector('.ann-item.expanded');
+  if (!card) return;
+
+  card.style.zoom = '1';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const top = card.getBoundingClientRect().top;
+      const available = Math.max(420, window.innerHeight - top - 10);
+      const naturalHeight = card.scrollHeight;
+
+      if (naturalHeight > available) {
+        const scale = Math.max(0.82, Math.min(1, available / naturalHeight));
+        card.style.zoom = scale.toFixed(3);
+      }
+    });
+  });
+}
+
+window.addEventListener('resize', fitExpandedAnnouncement);
 window.toggleAnnDetail = (id) => {
   const a = allAnns.find(x => x.id === id);
   if (!a) return;
