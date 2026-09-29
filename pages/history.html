@@ -120,7 +120,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style id="history-role-view">
-  /* Non-admin dashboard view: balanced to fit the visible screen */
+  /* Owner / Committee / Observer: use the full available dashboard area.
+     Admin keeps the normal detail-list layout. */
   body.history-dashboard-only .filter-bar,
   body.history-dashboard-only .card {
     display: none !important;
@@ -128,10 +129,19 @@
 
   body.history-dashboard-only .content {
     min-height: calc(100vh - 72px);
+    height: calc(100vh - 72px);
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  body.history-dashboard-only .page-header {
+    flex: 0 0 auto;
   }
 
   body.history-dashboard-only .analysis-row {
+    flex: 0 0 auto;
     margin-bottom: 14px;
   }
 
@@ -155,6 +165,7 @@
   }
 
   body.history-dashboard-only .heatmap-container {
+    flex: 0 0 auto;
     min-height: 190px;
     margin-bottom: 14px;
   }
@@ -191,10 +202,13 @@
     font-weight: 700;
   }
 
-  /* Monthly chart: keep the canvas physically inside the card */
+  /* Monthly Trend fills all remaining vertical space.
+     The graph stays inside the card and becomes larger, not lower on the page. */
   body.history-dashboard-only .chart-container {
     position: relative;
-    height: 300px;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
     box-sizing: border-box;
     margin-bottom: 0;
     padding: 15px 20px 16px;
@@ -234,6 +248,9 @@
   @media(max-width: 768px) {
     body.history-dashboard-only .content {
       min-height: auto;
+      height: auto;
+      display: block;
+      overflow: visible;
     }
 
     body.history-dashboard-only .analysis-row {
@@ -255,6 +272,7 @@
 
     body.history-dashboard-only .chart-container {
       height: 300px;
+      min-height: 300px;
       padding: 14px;
       overflow: hidden;
     }
@@ -267,7 +285,7 @@
       height: auto !important;
     }
   }
-</style>
+</style></style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
