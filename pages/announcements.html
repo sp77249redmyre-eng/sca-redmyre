@@ -15,89 +15,69 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-body{overflow:hidden;}
-.content {
-  padding: 10px 14px 8px;
-  height: calc(100vh - 56px);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-.ann-list {
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  overflow:visible;
-}
-.ann-item {
-  background:var(--surface);
-  border:2px solid var(--border);
-  border-radius:14px;
-  padding:14px;
-  transition:box-shadow 0.15s,background 0.15s,border-color 0.15s;
-}
-.ann-item:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07) }
-.ann-item.expanded { border-color:#2563eb;background:#eff6ff }
-.ann-item.pinned { border-color:#bfdbfe;background:linear-gradient(135deg,#f0f9ff,#eff6ff) }
-.ann-item.pinned.expanded { border-color:#2563eb }
-.ann-item.archived { background:#f1f5f9; border-color:#cbd5e1 }
-.ann-item.archived .ann-title { color:#94a3b8 }
-.ann-item.archived .ann-body { color:#94a3b8 }
-.ann-item.archived .ann-meta { color:#94a3b8 }
-.ann-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:7px }
-.ann-title { font-size:19px;font-weight:800;color:#0f172a }
-.ann-meta { font-size:13px;font-weight:600;color:#475569;margin-top:3px }
-.ann-body { font-size:13px;color:#374151;line-height:1.45 }
-.ann-body p { margin-top:7px !important; margin-bottom:7px !important; }
-.ann-body h1,.ann-body h2,.ann-body h3,.ann-body h4 { margin-top:8px !important; margin-bottom:6px !important; }
-.ann-body table { border-collapse:collapse !important; }
-.ann-body th,.ann-body td { padding:6px 8px !important; line-height:1.25 !important; }
-.ann-footer { display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light) }
-.ann-actions { display:flex;gap:6px }
-.pin-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s }
-.pin-toggle.on { border-color:var(--blue-400);background:var(--blue-50) }
-.archive-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;margin-top:8px }
-.archive-toggle.on { border-color:#94a3b8;background:#f1f5f9 }
-.ann-item.scheduled { background:#f8fafc;border-color:#cbd5e1;opacity:0.85 }
-.ann-item.scheduled .ann-title { color:#64748b }
-.scheduled-badge { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:20px;font-size:11px;font-weight:600;color:#64748b;margin-left:6px }
-.schedule-toggle { display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;margin-top:8px }
-.schedule-toggle.on { border-color:#7c3aed;background:#f5f3ff }
-.schedule-fields { display:none;margin-top:10px;padding:12px 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px }
-.schedule-fields.show { display:block }
-.push-banner { background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;padding:14px 18px;display:none;align-items:center;gap:12px;margin-bottom:16px }
-.push-banner.show { display:flex }
-.push-banner-btn { padding:7px 14px;border-radius:8px;background:var(--blue-600);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap }
-.push-banner-dismiss { font-size:18px;color:var(--muted);cursor:pointer;padding:0 4px;background:none;border:none;line-height:1 }
+.content{padding:18px 20px 14px;box-sizing:border-box;}
+.ann-list{display:block;}
+.filter-bar{display:flex;align-items:center;gap:8px;}
+.ann-active-shell{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:14px;background:var(--surface);border:1.5px solid #bfdbfe;border-radius:14px;padding:10px;box-sizing:border-box;}
+.ann-main-card{min-width:0;background:#fff;border:1px solid #dbeafe;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.04);}
+.ann-hero{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.ann-hero-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.ann-hero-icon{font-size:27px;line-height:1;flex-shrink:0;}
+.ann-hero-title{font-size:20px;font-weight:800;line-height:1.2;word-break:break-word;}
+.ann-hero-meta{font-size:12px;font-weight:600;margin-top:4px;opacity:.95;}
+.ann-hero-badge{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.18);font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+.ann-body-wrap{padding:16px 18px 14px;min-width:0;}
+.ann-body{font-size:13px;color:#374151;line-height:1.45;word-break:break-word;overflow-wrap:anywhere;}
+.ann-body p{margin:7px 0 !important;}
+.ann-body h1,.ann-body h2,.ann-body h3,.ann-body h4{margin:8px 0 6px !important;}
+.ann-body table{border-collapse:collapse !important;width:100% !important;max-width:100% !important;}
+.ann-body th,.ann-body td{padding:6px 8px !important;line-height:1.25 !important;}
+.ann-body img{max-width:100%;height:auto;}
+.ann-side{display:flex;flex-direction:column;gap:12px;min-width:0;}
+.ann-side-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:13px;}
+.ann-side-title{font-size:12px;font-weight:800;color:#0f172a;margin-bottom:9px;display:flex;align-items:center;gap:7px;}
+.ann-attachment-list{display:flex;flex-direction:column;gap:8px;}
+.ann-attachment{display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:1px solid #dbeafe;border-radius:9px;text-decoration:none;color:#0f172a;cursor:pointer;}
+.ann-attachment:hover{border-color:#2563eb;background:#eff6ff;}
+.ann-pdf-icon{width:34px;height:40px;border-radius:6px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ann-attachment-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ann-attachment-size{font-size:10px;color:#64748b;margin-top:2px;}
+.ann-download{margin-left:auto;color:#2563eb;font-size:16px;flex-shrink:0;}
+.ann-info-row{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:11px;}
+.ann-info-row:last-child{border-bottom:0;padding-bottom:0;}
+.ann-info-label{color:#64748b;min-width:82px;font-weight:600;}
+.ann-info-value{color:#0f172a;font-weight:700;word-break:break-word;}
+.ann-admin-title{font-size:11px;font-weight:800;color:#475569;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.ann-admin-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.ann-admin-actions button{min-height:34px;font-size:11px !important;}
+.ann-admin-actions .wide{grid-column:1/-1;}
+.ann-test-box{margin-top:9px;padding:9px;background:#fff;border:1px solid #e2e8f0;border-radius:9px;}
+.ann-test-box input{width:100%;box-sizing:border-box;margin-bottom:7px;}
+.ann-test-box button{width:100%;}
+.ann-archived-list{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid #dbe3ef;border-radius:12px;padding:8px;}
+.ann-archived-row{display:grid;grid-template-columns:34px minmax(0,1fr) 150px 24px;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;cursor:pointer;transition:.15s;}
+.ann-archived-row:hover{background:#eff6ff;border-color:#bfdbfe;}
+.ann-archived-icon{font-size:16px;text-align:center;}
+.ann-archived-title{font-size:13px;font-weight:700;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ann-archived-date{font-size:11px;color:#64748b;text-align:right;white-space:nowrap;}
+.ann-archived-arrow{font-size:18px;color:#94a3b8;text-align:center;}
+.ann-archived-empty{padding:45px 20px;text-align:center;color:var(--muted);background:#fff;border:1px solid #e2e8f0;border-radius:12px;}
+.ann-modal-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;}
+.ann-modal-side{display:flex;flex-direction:column;gap:10px;}
+@media(max-width:1100px){.ann-active-shell{grid-template-columns:minmax(0,1fr) 300px}.ann-hero-title{font-size:18px}}
 @media(max-width:768px){
-  body{overflow:auto}
-  .content{
-    padding:14px;
-    height:auto;
-    min-height:0;
-    overflow:visible;
-  }
-  .ann-list{overflow:visible}
-  .ann-item{zoom:1 !important}
-
-  .ann-item{padding:14px}
-  .ann-title{font-size:17px}
-  .ann-body{font-size:13px}
-  .ann-footer{flex-direction:column;gap:10px;align-items:flex-start}
-  .ann-actions{width:100%;flex-wrap:wrap}
-  .ann-actions button{flex:1;min-width:0;font-size:11px;padding:6px 8px}
-  .push-banner{flex-direction:column;gap:10px;text-align:center}
-
-  /* ───── 모바일 모달 풀스크린 친화 ───── */
-  .modal-content { padding: 18px; max-height: 92vh; overflow-y: auto; }
-  .modal-header h2 { font-size: 17px; }
-  .modal-footer { flex-direction: column-reverse; gap: 8px; }
-  .modal-footer button { width: 100%; height: 46px; font-size: 14px; }
-
-  /* 첨부 카메라/파일 버튼 한 줄 유지 + 더 큰 탭 영역 */
-  #annCameraBtn, #annFileBtn { padding: 14px 8px !important; font-size: 11px !important; }
-
-  /* 필터 버튼 살짝 크게 — 손가락 친화 */
-  .filter-btn { padding: 8px 14px; font-size: 12px; }
+  .content{padding:14px;}
+  .ann-active-shell{grid-template-columns:1fr;padding:7px;}
+  .ann-side{display:block;}
+  .ann-side-card{margin-top:10px;}
+  .ann-hero{align-items:flex-start;padding:13px;}
+  .ann-hero-title{font-size:17px;}
+  .ann-body-wrap{padding:13px;}
+  .ann-archived-row{grid-template-columns:28px minmax(0,1fr) 22px;}
+  .ann-archived-date{display:none;}
+  .ann-admin-actions{grid-template-columns:1fr;}
+  .ann-admin-actions .wide{grid-column:auto;}
+  .ann-modal-layout{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -127,9 +107,9 @@ body{overflow:hidden;}
       <button class="push-banner-dismiss" id="dismissPushBtn">✕</button>
     </div>
 
-    <div class="filter-bar" style="margin-top:8px;margin-bottom:8px">
-      <button class="filter-btn active" data-filter="all">Active</button>
-      <button class="filter-btn" data-filter="archived">📦 Archived</button>
+    <div class="filter-bar" style="margin-top:14px;margin-bottom:10px">
+      <button class="filter-btn active" data-filter="all" id="activeFilterBtn">Active</button>
+      <button class="filter-btn" data-filter="archived" id="archivedFilterBtn">📦 Archived</button>
     </div>
     <div class="ann-list" id="annList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
@@ -297,11 +277,6 @@ async function loadAnnouncements() {
   const { data } = await supabase.from('announcements').select('*').order('pinned',{ascending:false}).order('created_at',{ascending:false});
   allAnns = data || [];
 
-  // Open the latest Active announcement automatically.
-  // This keeps the normal one-announcement workflow readable without an extra click.
-  const firstActive = allAnns.find(a => !a.archived);
-  expandedAnnId = firstActive ? firstActive.id : null;
-
   if (role === 'admin') {
     const { data: profiles } = await supabase.from('profiles').select('email, full_name, role').neq('role', 'admin');
     allProfilesList = profiles || [];
@@ -318,119 +293,181 @@ async function loadAnnouncements() {
   renderAnns();
 }
 
-function renderAnns() {
-  const list = document.getElementById('annList');
-  let filtered;
-  if (currentFilter === 'all') {
-    filtered = allAnns.filter(a => !a.archived);
-  } else if (currentFilter === 'archived') {
-    filtered = allAnns.filter(a => a.archived);
-  } else {
-    filtered = allAnns.filter(a => !a.archived && a.category === currentFilter);
-  }
-  if (!filtered.length) {
-    const emptyMsg = currentFilter === 'archived'
-      ? '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No archived announcements</div><div style="font-size:13px;color:var(--muted)">Archive old announcements to keep this list tidy.</div></div>'
-      : `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No announcements yet</div><div style="font-size:13px;color:var(--muted)">${role==='admin'?'Click "+ New Announcement" to create one.':'Check back later for updates.'}</div></div>`;
-    list.innerHTML = emptyMsg;
-    return;
-  }
-  list.innerHTML = filtered.map(a => {
-    const isScheduled = a.scheduled_at && !a.push_sent;
-    const scheduledLabel = isScheduled ? `<span class="scheduled-badge">🕐 ${formatSydneyTime(a.scheduled_at)}</span>` : '';
-    const isOpen = expandedAnnId === a.id;
-    const plainContentStart = (a.content || '')
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 500)
-      .toLowerCase();
-    const ownTitleInContent = !!a.title && plainContentStart.includes(a.title.trim().toLowerCase());
-    return `
-    <div class="ann-item ${a.pinned?'pinned':''}${a.archived?' archived':''}${isScheduled?' scheduled':''}${isOpen?' expanded':''}" onclick="toggleAnnDetail('${a.id}')" style="cursor:pointer">
-      <div class="ann-top" ${isOpen && ownTitleInContent ? 'style="display:none"' : ''}>
-        <div>
-          <div class="ann-title">${a.pinned?'📌 ':''}${a.title}${scheduledLabel}</div>
-          <div class="ann-meta">${isScheduled?'⏳ Scheduled — '+formatSydneyTime(a.scheduled_at):new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'})}</div>
-        </div>
-        <span class="badge ${CAT_BADGE[a.category]||'badge-gray'}">${CAT_EMOJI[a.category]||'📌'} ${a.category||'general'}</span>
-      </div>
-      ${isOpen ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light)" onclick="event.stopPropagation();">${annDetailInnerHtml(a)}</div>` : ''}
-    </div>`;
-  }).join('');
+function normalizeText(value) {
+  return String(value || '').replace(/\s+/g,' ').trim().toLowerCase();
 }
-  fitExpandedAnnouncement();
 
+function renderAnnouncementContent(a) {
+  const hasHTML = /<[a-z][\s\S]*>/i.test(a.content || '');
+  if (!hasHTML) return (a.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-function annDetailInnerHtml(a) {
-  const attachmentsHtml = a.attachments && a.attachments.length ? `
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
-      ${a.attachments.map(att => att.type === 'application/pdf'
-        ? `<a href="${att.url}" onclick="openAttachModal('${att.url}','pdf','${att.name}');return false;" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);text-decoration:none;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-600)'" onmouseout="this.style.borderColor='var(--border)'">📄 ${att.name}</a>`
-        : `<a href="${att.url}" onclick="openAttachModal('${att.url}','image','${att.name}');return false;"><img src="${att.url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);transition:opacity 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></a>`
-      ).join('')}
-    </div>` : '';
+  // Prevent the title from being shown twice when the saved HTML also contains the title.
+  try {
+    const holder = document.createElement('div');
+    holder.innerHTML = a.content || '';
+    const first = holder.firstElementChild;
+    if (first) {
+      const firstText = normalizeText(first.textContent);
+      const titleText = normalizeText(a.title);
+      if (titleText && firstText.startsWith(titleText) && firstText.length <= titleText.length + 180) {
+        first.remove();
+      }
+    }
+    return holder.innerHTML;
+  } catch(e) {
+    return a.content || '';
+  }
+}
 
-  const adminFooterHtml = role==='admin' ? `
-    <div class="ann-footer" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;color:var(--muted)">${a.pinned?'📌 Pinned':''}</span>
-        <button onclick="openViewedModal('${a.id}');event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;border:0.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#475569'">👀 ${viewedMap[a.id]?viewedMap[a.id].size:0}/${allProfilesList.length} read</button>
+function attachmentSizeLabel(att) {
+  if (att.size) {
+    const kb = att.size / 1024;
+    return kb < 1024 ? `${Math.max(1,Math.round(kb))} KB` : `${(kb/1024).toFixed(1)} MB`;
+  }
+  return att.type === 'application/pdf' ? 'PDF document' : 'Attachment';
+}
+
+function attachmentsHtml(a) {
+  if (!Array.isArray(a.attachments) || !a.attachments.length) {
+    return `<div class="ann-side-card"><div class="ann-side-title">📎 Attachments</div><div style="font-size:11px;color:#64748b">No attachments for this announcement.</div></div>`;
+  }
+  return `<div class="ann-side-card">
+    <div class="ann-side-title">📎 Attachments (${a.attachments.length})</div>
+    <div class="ann-attachment-list">
+      ${a.attachments.map(att => {
+        const isPdf = att.type === 'application/pdf' || /\.pdf($|\?)/i.test(att.name || '');
+        const safeUrl = String(att.url || '').replace(/'/g,'&#39;');
+        const safeName = String(att.name || 'Attachment').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<a class="ann-attachment" href="${safeUrl}" onclick="openAttachModal('${safeUrl}','${isPdf?'pdf':'image'}','${safeName}');return false;">
+          <span class="ann-pdf-icon">${isPdf?'📄':'🖼️'}</span>
+          <span style="min-width:0;flex:1"><span class="ann-attachment-name">${safeName}</span><span class="ann-attachment-size">${attachmentSizeLabel(att)}</span></span>
+          <span class="ann-download">↓</span>
+        </a>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function adminActionsHtml(a) {
+  if (role !== 'admin') return '';
+  const read = viewedMap[a.id] ? viewedMap[a.id].size : 0;
+  const total = allProfilesList.length;
+  return `<div class="ann-side-card">
+    <div class="ann-admin-title">⚙️ Announcement Actions (Admin Only)</div>
+    <div class="ann-admin-actions">
+      <button class="btn-secondary wide" onclick="openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')});event.stopPropagation();">✏️ Edit Announcement</button>
+      <button class="btn-secondary" onclick="resendAnnouncement('${a.id}');event.stopPropagation();">📨 Resend to All</button>
+      <button class="btn-secondary" onclick="openViewedModal('${a.id}');event.stopPropagation();">👀 Read Status (${read}/${total})</button>
+      <button class="btn-danger wide" onclick="confirmDeleteAnn('${a.id}');event.stopPropagation();">🗑 Delete Announcement</button>
+    </div>
+    <div class="ann-test-box">
+      <div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:7px">🧪 TEST SEND — NO SAVE / NO PUSH</div>
+      <input type="text" id="testEmail_${a.id}" placeholder="Email address (optional)" onclick="event.stopPropagation();">
+      <button class="btn-secondary" onclick="testAnnouncement('${a.id}');event.stopPropagation();">Send Test</button>
+    </div>
+  </div>`;
+}
+
+function announcementInfoHtml(a) {
+  const created = a.created_at ? new Date(a.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'}) : '—';
+  const category = `${CAT_EMOJI[a.category] || '📌'} ${a.category || 'general'}`;
+  const status = a.archived ? 'Archived' : (a.scheduled_at && !a.push_sent ? 'Scheduled' : 'Active');
+  return `<div class="ann-side-card">
+    <div class="ann-side-title">ℹ️ Announcement Details</div>
+    <div class="ann-info-row"><span class="ann-info-label">Category</span><span class="ann-info-value">${category}</span></div>
+    <div class="ann-info-row"><span class="ann-info-label">Status</span><span class="ann-info-value">${status}</span></div>
+    <div class="ann-info-row"><span class="ann-info-label">Posted</span><span class="ann-info-value">${created}</span></div>
+    <div class="ann-info-row"><span class="ann-info-label">Sent To</span><span class="ann-info-value">All occupants</span></div>
+  </div>`;
+}
+
+function activeAnnouncementHtml(a) {
+  const isScheduled = a.scheduled_at && !a.push_sent;
+  const dateText = isScheduled ? `⏳ Scheduled — ${formatSydneyTime(a.scheduled_at)}` : new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'});
+  const badge = `${CAT_EMOJI[a.category] || '📌'} ${a.category || 'general'}`;
+  return `<div class="ann-active-shell">
+    <div class="ann-main-card">
+      <div class="ann-hero">
+        <div class="ann-hero-left">
+          <div class="ann-hero-icon">${CAT_EMOJI[a.category] || '📌'}</div>
+          <div style="min-width:0">
+            <div class="ann-hero-title">${a.title}</div>
+            <div class="ann-hero-meta">${dateText}</div>
+          </div>
+        </div>
+        <div class="ann-hero-badge">${badge}</div>
       </div>
-      <div class="ann-actions" style="display:flex;gap:6px">
-        <button class="btn-secondary" onclick="resendAnnouncement('${a.id}');event.stopPropagation();">📨 Resend</button>
-        <button class="btn-secondary" onclick="openEditAnn(${JSON.stringify(a).replace(/"/g,'&quot;')});event.stopPropagation();">✏️ Edit</button>
-        <button class="btn-danger" onclick="confirmDeleteAnn('${a.id}');event.stopPropagation();">Delete</button>
+      <div class="ann-body-wrap">
+        <div class="ann-body">${renderAnnouncementContent(a)}</div>
       </div>
     </div>
-    <div style="margin-top:12px;padding:12px;background:#f8fafc;border:0.5px solid var(--border-light);border-radius:8px" onclick="event.stopPropagation();">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px">🧪 Test send — no save, no push</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="testEmail_${a.id}" placeholder="sp77249.redmyre@gmail.com (default)" style="flex:1;border:0.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--text)" onclick="event.stopPropagation();">
-        <button class="btn-secondary" style="white-space:nowrap" onclick="testAnnouncement('${a.id}');event.stopPropagation();">Send test</button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">Leave blank to send to yourself.</div>
-    </div>` : '';
-
-  // HTML 태그 포함 여부 자동 감지: 있으면 그대로 렌더, 없으면 \n을 <br>로 변환
-  const hasHTML = /<[a-z][\s\S]*>/i.test(a.content || '');
-  const renderedContent = hasHTML
-    ? a.content
-    : (a.content || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-
-  return `
-    <div class="ann-body">${renderedContent}</div>
-    ${attachmentsHtml}
-    ${adminFooterHtml}
-  `;
+    <div class="ann-side">
+      ${attachmentsHtml(a)}
+      ${announcementInfoHtml(a)}
+      ${adminActionsHtml(a)}
+    </div>
+  </div>`;
 }
+
+function archivedListHtml(items) {
+  if (!items.length) return `<div class="ann-archived-empty"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-weight:700;color:#475569;margin-bottom:4px">No archived announcements</div><div style="font-size:11px">Archived announcements will appear here as a simple list.</div></div>`;
+  return `<div class="ann-archived-list">${items.map(a => {
+    const date = new Date(a.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'Australia/Sydney'});
+    return `<div class="ann-archived-row" onclick="openArchivedDetail('${a.id}')">
+      <div class="ann-archived-icon">${CAT_EMOJI[a.category] || '📌'}</div>
+      <div class="ann-archived-title">${a.title}</div>
+      <div class="ann-archived-date">${date}</div>
+      <div class="ann-archived-arrow">›</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function updateFilterLabels() {
+  const activeCount = allAnns.filter(a => !a.archived).length;
+  const archivedCount = allAnns.filter(a => a.archived).length;
+  document.getElementById('activeFilterBtn').textContent = `Active (${activeCount})`;
+  document.getElementById('archivedFilterBtn').textContent = `📦 Archived (${archivedCount})`;
+}
+
+function renderAnns() {
+  const list = document.getElementById('annList');
+  updateFilterLabels();
+
+  if (currentFilter === 'archived') {
+    const archived = allAnns.filter(a => a.archived);
+    list.innerHTML = archivedListHtml(archived);
+    return;
+  }
+
+  const active = allAnns.filter(a => !a.archived);
+  if (!active.length) {
+    list.innerHTML = `<div class="ann-archived-empty"><div style="font-size:28px;margin-bottom:8px">📢</div><div style="font-weight:700;color:#475569;margin-bottom:4px">No active announcements</div><div style="font-size:11px">${role==='admin'?'Click "+ New Announcement" to create one.':'Check back later for updates.'}</div></div>`;
+    return;
+  }
+
+  list.innerHTML = active.map(activeAnnouncementHtml).join('<div style="height:10px"></div>');
+}
+
+window.openArchivedDetail = function(id) {
+  const a = allAnns.find(x => x.id === id);
+  if (!a) return;
+  const body = document.getElementById('annDetailBody');
+  body.innerHTML = `<div class="ann-modal-layout">
+    <div class="ann-main-card">
+      <div class="ann-hero">
+        <div class="ann-hero-left">
+          <div class="ann-hero-icon">${CAT_EMOJI[a.category] || '📌'}</div>
+          <div style="min-width:0"><div class="ann-hero-title">${a.title}</div><div class="ann-hero-meta">Archived · ${new Date(a.created_at).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Australia/Sydney'})}</div></div>
+        </div>
+      </div>
+      <div class="ann-body-wrap"><div class="ann-body">${renderAnnouncementContent(a)}</div></div>
+    </div>
+    <div class="ann-modal-side">${attachmentsHtml(a)}${announcementInfoHtml(a)}${adminActionsHtml(a)}</div>
+  </div>`;
+  document.getElementById('annDetailModal').classList.add('open');
+};
 
 let expandedAnnId = null;
-
-function fitExpandedAnnouncement() {
-  if (window.innerWidth <= 768) return;
-
-  const card = document.querySelector('.ann-item.expanded');
-  if (!card) return;
-
-  card.style.zoom = '1';
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const top = card.getBoundingClientRect().top;
-      const available = Math.max(420, window.innerHeight - top - 10);
-      const naturalHeight = card.scrollHeight;
-
-      if (naturalHeight > available) {
-        const scale = Math.max(0.82, Math.min(1, available / naturalHeight));
-        card.style.zoom = scale.toFixed(3);
-      }
-    });
-  });
-}
-
-window.addEventListener('resize', fitExpandedAnnouncement);
 window.toggleAnnDetail = (id) => {
   const a = allAnns.find(x => x.id === id);
   if (!a) return;
@@ -448,12 +485,6 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     currentFilter = btn.dataset.filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
-    const firstInView = currentFilter === 'archived'
-      ? allAnns.find(a => a.archived)
-      : allAnns.find(a => !a.archived);
-
-    expandedAnnId = firstInView ? firstInView.id : null;
     renderAnns();
   });
 });
@@ -733,7 +764,7 @@ document.getElementById('annTestBtn').addEventListener('click', async () => {
       const { error: upErr } = await supabase.storage.from('announcements').upload(fileName, file, { upsert: true });
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('announcements').getPublicUrl(fileName);
-        attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type });
+        attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type, size: file.size });
       }
     }
 
@@ -787,7 +818,7 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
       const { error: upErr } = await supabase.storage.from('announcements').upload(fileName, file, { upsert: true });
       if (upErr) { showToast('File upload failed', true); btn.disabled=false; btn.textContent='Save →'; return; }
       const { data: urlData } = supabase.storage.from('announcements').getPublicUrl(fileName);
-      attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type });
+      attachments.push({ name: file.name, url: urlData.publicUrl, type: file.type, size: file.size });
     }
     data.attachments = attachments;
 
