@@ -204,8 +204,66 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 @keyframes acGuidePulse{0%{box-shadow:0 0 0 0 rgba(245,158,11,.35)}70%{box-shadow:0 0 0 8px rgba(245,158,11,0)}100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}}
 @media(max-width:1050px){.ac-flow-grid{grid-template-columns:1fr}.ac-flow-right{position:static}.ac-setting-stack{grid-template-columns:1fr 1.35fr}}
 @media(max-width:720px){.ac-guide-buttons{grid-template-columns:1fr}.ac-setting-stack{grid-template-columns:1fr}.ac-history-row{grid-template-columns:1fr auto}.ac-history-request,.ac-history-change{display:none}.ac-detail-grid{grid-template-columns:1fr}.ac-progress-step{width:62px;flex-basis:62px}.ac-progress-line{min-width:5px}}
-</style>
 
+
+/* AC GUIDE DESKTOP LAYOUT — equal 50/50 rows for steps 1–2 and 3–4,
+   followed by a full-width request history/details section. */
+.ac-flow-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.ac-guide-step{margin-bottom:0;height:100%}
+.ac-request-history-section{grid-column:1 / -1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.ac-request-history-section .ac-side-intro{grid-column:1 / -1;padding:3px 3px 2px}
+.ac-request-history-section .ac-history-card,.ac-request-history-section .ac-detail-card{width:100%}
+.ac-request-history-section .ac-flow-tip{grid-column:1 / -1;margin-top:0}
+/* Larger, easier-to-read typography */
+.ac-guide-step-title{font-size:21px;line-height:1.24}
+.ac-guide-step-sub{font-size:14px;line-height:1.5}
+.ac-guide-step-num{width:34px;height:34px;font-size:15px}
+.ac-guide-button-hint{font-size:13px}
+.ac-rule-note{font-size:13px}
+.ac-location-title{font-size:14px}
+.ac-location-tab{font-size:12px}
+.ac-location-copy strong{font-size:15px}
+.ac-location-copy span{font-size:13px}
+.ac-setting-label{font-size:11px}
+.ac-setting-value{font-size:28px}
+.ac-setting-desc{font-size:12px}
+.ac-gauge-scale{font-size:11px}
+.ac-explain-note{font-size:12px}
+.ac-demo-submit{font-size:15px;height:52px}
+.ac-demo-note{font-size:11px}
+.ac-progress-kicker{font-size:10px}
+.ac-progress-title{font-size:14px}
+.ac-progress-live{font-size:10px}
+.ac-progress-label{font-size:11px}
+.ac-processing-title{font-size:14px}
+.ac-processing-sub{font-size:11px}
+.ac-processing-temp{font-size:13px}
+.ac-side-kicker{font-size:10px}
+.ac-side-intro h4{font-size:21px}
+.ac-side-intro p{font-size:13px}
+.ac-history-title{font-size:16px}
+.ac-history-sub{font-size:11px}
+.ac-history-date,.ac-history-request,.ac-history-change{font-size:12px}
+.ac-history-date small{font-size:9px}
+.ac-history-status{font-size:9px}
+.ac-detail-title{font-size:17px}
+.ac-detail-sub{font-size:11px}
+.ac-detail-item span{font-size:9px}
+.ac-detail-item strong{font-size:12px}
+.ac-conversation-title{font-size:10px}
+.ac-message-management{font-size:12px}
+.ac-flow-tip{font-size:11px}
+@media(max-width:1050px){
+  .ac-flow-grid{grid-template-columns:1fr 1fr}
+  .ac-request-history-section{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .ac-flow-grid{grid-template-columns:1fr}
+  .ac-request-history-section{grid-template-columns:1fr}
+  .ac-request-history-section .ac-side-intro,.ac-request-history-section .ac-flow-tip{grid-column:auto}
+}
+
+</style>
 </head>
 <body>
 <div id="google_translate_element" style="position:fixed;top:-1000px;left:-1000px"></div>
@@ -321,225 +379,194 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 </div>
 </div>
 </div>
-
 <div class="guide-panel hidden" id="ac">
-  <div class="hero">
-    <div class="hero-copy">
-      <span class="hero-tag">Building</span>
-      <h2>A/C Temperature Request</h2>
-      <p>See the complete request flow — from choosing an adjustment to checking the completed result.</p>
-    </div>
-    <img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png"/>
-  </div>
-
-  <div class="section-card ac-guide-flow-card">
-    <div class="section-top">
-      <div>
-        <span class="tag">How it works</span>
-        <h3>Request an A/C adjustment and follow the result</h3>
-        <p>The guide below shows the key parts of the live BMS screen. The data shown here is demonstration data only.</p>
-      </div>
-      <span class="role-pill">TENANT</span>
-    </div>
-
-    <div class="section-body">
-      <div class="ac-flow-grid">
-        <div class="ac-flow-left">
-
-          <div class="ac-guide-step">
-            <div class="ac-guide-step-head">
-              <span class="ac-guide-step-num">1</span>
-              <div>
-                <div class="ac-guide-step-title">Choose the temperature direction</div>
-                <div class="ac-guide-step-sub">Choose the option that matches how your space feels.</div>
-              </div>
-            </div>
-            <div class="ac-guide-buttons">
-              <div class="ac-guide-button-card lower">
-                <img src="/AC_Request_Temperature_Down_294x118.png" alt="Temperature will be lowered by 0.5°C">
-                <div class="ac-guide-button-hint">Feeling too warm? Click this button.</div>
-              </div>
-              <div class="ac-guide-button-card raise">
-                <img src="/AC_Request_Temperature_Up_294x118.png" alt="Temperature will be raised by 0.5°C">
-                <div class="ac-guide-button-hint">Feeling too cold? Click this button.</div>
-              </div>
-            </div>
-            <div class="ac-rule-note"><strong>Each request changes the temperature by 0.5°C.</strong></div>
-          </div>
-
-          <div class="ac-guide-step">
-            <div class="ac-guide-step-head">
-              <span class="ac-guide-step-num">2</span>
-              <div>
-                <div class="ac-guide-step-title">Check your location</div>
-                <div class="ac-guide-step-sub">Your location is normally shown automatically. If more than one linked location is available, choose the one you want to adjust.</div>
-              </div>
-            </div>
-            <div class="ac-location-mini">
-              <div class="ac-location-title">Your Locations</div>
-              <div class="ac-location-tabs">
-                <span class="ac-location-tab active">Your Location</span>
-                <span class="ac-location-tab optional">Other linked location</span>
-              </div>
-              <div class="ac-location-card">
-                <div class="ac-location-icon">▦</div>
-                <div class="ac-location-copy">
-                  <strong>Your Suite</strong>
-                  <span>Level · Suite / Tenancy</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="ac-guide-step">
-            <div class="ac-guide-step-head">
-              <span class="ac-guide-step-num">3</span>
-              <div>
-                <div class="ac-guide-step-title">Check the temperature settings</div>
-                <div class="ac-guide-step-sub">The BMS shows two different temperature settings. They are not the same value.</div>
-              </div>
-            </div>
-            <div class="ac-setting-stack">
-              <div class="ac-setting-card floor">
-                <div class="ac-setting-label">FLOOR SETTING</div>
-                <div class="ac-setting-value">21.0°C</div>
-                <div class="ac-setting-desc">Current setting for the whole floor.</div>
-              </div>
-              <div class="ac-setting-card suite">
-                <div class="ac-setting-label">YOUR SUITE CURRENT SETTING</div>
-                <div class="ac-setting-value" id="acGuideGaugeValue">20.5°C</div>
-                <div class="ac-setting-desc">Current setting applied to your suite.</div>
-                <div class="ac-gauge" aria-hidden="true">
-                  <div class="ac-gauge-track">
-                    <div class="ac-gauge-fill" id="acGuideGaugeFill"></div>
-                    <div class="ac-gauge-dot" id="acGuideGaugeDot"></div>
-                  </div>
-                  <div class="ac-gauge-scale"><span>18°C</span><span>21.5°C</span><span>25°C</span></div>
-                </div>
-              </div>
-            </div>
-            <div class="ac-explain-note"><strong>Floor Setting</strong> = whole-floor setting. &nbsp;&nbsp; <strong>Your Suite Current Setting</strong> = setting currently applied to your suite.</div>
-          </div>
-
-          <div class="ac-guide-step">
-            <div class="ac-guide-step-head">
-              <span class="ac-guide-step-num">4</span>
-              <div>
-                <div class="ac-guide-step-title">Submit your request</div>
-                <div class="ac-guide-step-sub">Click Submit Request. The example below shows what the request looks like while the system processes it.</div>
-              </div>
-            </div>
-
-            <div class="ac-submit-demo-wrap">
-              <button class="ac-demo-submit" id="acGuideSubmitDemo">Submit Request →</button>
-              <div class="ac-demo-note">Guide demonstration only — no real HVAC request is sent.</div>
-            </div>
-
-            <div class="ac-progress-demo" id="acProgressDemo" aria-live="polite">
-              <div class="ac-progress-header">
-                <div>
-                  <div class="ac-progress-kicker">WHAT HAPPENS NEXT</div>
-                  <div class="ac-progress-title">Your A/C request is processed through these steps.</div>
-                </div>
-                <span class="ac-progress-live" id="acProgressState">READY</span>
-              </div>
-
-              <div class="ac-progress-steps">
-                <div class="ac-progress-step future" id="acStepSubmitted">
-                  <span class="ac-progress-dot">✓</span>
-                  <span class="ac-progress-label">Submitted</span>
-                </div>
-                <div class="ac-progress-line" id="acLine1"></div>
-                <div class="ac-progress-step future" id="acStepApproved">
-                  <span class="ac-progress-dot">✓</span>
-                  <span class="ac-progress-label">Approved</span>
-                </div>
-                <div class="ac-progress-line" id="acLine2"></div>
-                <div class="ac-progress-step future" id="acStepAdjusting">
-                  <span class="ac-progress-dot">↻</span>
-                  <span class="ac-progress-label">Adjusting</span>
-                </div>
-                <div class="ac-progress-line" id="acLine3"></div>
-                <div class="ac-progress-step future" id="acStepCompleted">
-                  <span class="ac-progress-dot">✓</span>
-                  <span class="ac-progress-label">Completed</span>
-                </div>
-              </div>
-
-              <div class="ac-processing-banner" id="acProcessingBanner">
-                <div class="ac-processing-icon" id="acProcessingIcon">↻</div>
-                <div class="ac-processing-copy">
-                  <div class="ac-processing-title" id="acProcessingTitle">Adjusting HVAC…</div>
-                  <div class="ac-processing-sub" id="acProcessingSub">The system is being adjusted. This may take a few minutes.</div>
-                </div>
-                <div class="ac-processing-temp" id="acProcessingTemp">20.5°C → 21.0°C</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="ac-flow-right">
-          <div class="ac-side-intro">
-            <div class="ac-side-kicker">AFTER YOU SUBMIT</div>
-            <h4>Your request history</h4>
-            <p>Your requests appear on the right. Click a request to open its details and the Building Management conversation.</p>
-          </div>
-
-          <div class="ac-history-card">
-            <div class="ac-history-head">
-              <div class="ac-history-icon">▤</div>
-              <div>
-                <div class="ac-history-title">My Requests</div>
-                <div class="ac-history-sub">View and track your A/C temperature requests.</div>
-              </div>
-            </div>
-            <div class="ac-history-list" id="acHistoryList">
-              <button class="ac-history-row active" data-request="request1" type="button">
-                <span class="ac-history-date">Today<br><small>Demo example</small></span>
-                <span class="ac-history-request">🌡️ Temperature adjustment</span>
-                <span class="ac-history-change">20.5°C → 21.0°C</span>
-                <span class="ac-history-status completed">Completed</span>
-              </button>
-              <button class="ac-history-row" data-request="request2" type="button">
-                <span class="ac-history-date">Previous<br><small>Demo example</small></span>
-                <span class="ac-history-request">🌡️ Temperature adjustment</span>
-                <span class="ac-history-change">21.0°C → 20.5°C</span>
-                <span class="ac-history-status completed">Completed</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="ac-detail-card" id="acRequestDetails">
-            <div class="ac-detail-head">
-              <div>
-                <div class="ac-detail-title">Request Details</div>
-                <div class="ac-detail-sub">Selected request</div>
-              </div>
-              <span class="ac-history-status completed" id="acDetailStatus">Completed</span>
-            </div>
-            <div class="ac-detail-grid">
-              <div class="ac-detail-item"><span>REQUEST</span><strong id="acDetailRequest">Temperature adjustment</strong></div>
-              <div class="ac-detail-item"><span>TEMPERATURE</span><strong id="acDetailTemp">20.5°C → 21.0°C</strong></div>
-              <div class="ac-detail-item"><span>LOCATION</span><strong>Your selected location</strong></div>
-              <div class="ac-detail-item"><span>RESULT</span><strong id="acDetailResult">Temperature successfully adjusted.</strong></div>
-            </div>
-
-            <div class="ac-conversation-block">
-              <div class="ac-conversation-title">Conversation</div>
-              <div class="ac-message-management" id="acManagementMessage">Building Management: Your temperature request has been processed.</div>
-            </div>
-          </div>
-
-          <div class="ac-flow-tip">
-            <strong>Remember:</strong> One request per 30 minutes. Each adjustment changes the temperature by 0.5°C.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="hero">
+<div class="hero-copy">
+<span class="hero-tag">Building</span>
+<h2>A/C Temperature Request</h2>
+<p>See the complete request flow — from choosing an adjustment to checking the completed result.</p>
 </div>
-
+<img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png"/>
+</div>
+<div class="section-card ac-guide-flow-card">
+<div class="section-top">
+<div>
+<span class="tag">How it works</span>
+<h3>Request an A/C adjustment and follow the result</h3>
+<p>The guide below shows the key parts of the live BMS screen. The data shown here is demonstration data only.</p>
+</div>
+<span class="role-pill">TENANT</span>
+</div>
+<div class="section-body">
+<div class="ac-flow-grid"><div class="ac-guide-step">
+<div class="ac-guide-step-head">
+<span class="ac-guide-step-num">1</span>
+<div>
+<div class="ac-guide-step-title">Choose the temperature direction</div>
+<div class="ac-guide-step-sub">Choose the option that matches how your space feels.</div>
+</div>
+</div>
+<div class="ac-guide-buttons">
+<div class="ac-guide-button-card lower">
+<img alt="Temperature will be lowered by 0.5°C" src="/AC_Request_Temperature_Down_294x118.png"/>
+<div class="ac-guide-button-hint">Feeling too warm? Click this button.</div>
+</div>
+<div class="ac-guide-button-card raise">
+<img alt="Temperature will be raised by 0.5°C" src="/AC_Request_Temperature_Up_294x118.png"/>
+<div class="ac-guide-button-hint">Feeling too cold? Click this button.</div>
+</div>
+</div>
+<div class="ac-rule-note"><strong>Each request changes the temperature by 0.5°C.</strong></div>
+</div><div class="ac-guide-step">
+<div class="ac-guide-step-head">
+<span class="ac-guide-step-num">2</span>
+<div>
+<div class="ac-guide-step-title">Check your location</div>
+<div class="ac-guide-step-sub">Your location is normally shown automatically. If more than one linked location is available, choose the one you want to adjust.</div>
+</div>
+</div>
+<div class="ac-location-mini">
+<div class="ac-location-title">Your Locations</div>
+<div class="ac-location-tabs">
+<span class="ac-location-tab active">Your Location</span>
+<span class="ac-location-tab optional">Other linked location</span>
+</div>
+<div class="ac-location-card">
+<div class="ac-location-icon">▦</div>
+<div class="ac-location-copy">
+<strong>Your Suite</strong>
+<span>Level · Suite / Tenancy</span>
+</div>
+</div>
+</div>
+</div><div class="ac-guide-step">
+<div class="ac-guide-step-head">
+<span class="ac-guide-step-num">3</span>
+<div>
+<div class="ac-guide-step-title">Check the temperature settings</div>
+<div class="ac-guide-step-sub">The BMS shows two different temperature settings. They are not the same value.</div>
+</div>
+</div>
+<div class="ac-setting-stack">
+<div class="ac-setting-card floor">
+<div class="ac-setting-label">FLOOR SETTING</div>
+<div class="ac-setting-value">21.0°C</div>
+<div class="ac-setting-desc">Current setting for the whole floor.</div>
+</div>
+<div class="ac-setting-card suite">
+<div class="ac-setting-label">YOUR SUITE CURRENT SETTING</div>
+<div class="ac-setting-value" id="acGuideGaugeValue">20.5°C</div>
+<div class="ac-setting-desc">Current setting applied to your suite.</div>
+<div aria-hidden="true" class="ac-gauge">
+<div class="ac-gauge-track">
+<div class="ac-gauge-fill" id="acGuideGaugeFill"></div>
+<div class="ac-gauge-dot" id="acGuideGaugeDot"></div>
+</div>
+<div class="ac-gauge-scale"><span>18°C</span><span>21.5°C</span><span>25°C</span></div>
+</div>
+</div>
+</div>
+<div class="ac-explain-note"><strong>Floor Setting</strong> = whole-floor setting.    <strong>Your Suite Current Setting</strong> = setting currently applied to your suite.</div>
+</div><div class="ac-guide-step">
+<div class="ac-guide-step-head">
+<span class="ac-guide-step-num">4</span>
+<div>
+<div class="ac-guide-step-title">Submit your request</div>
+<div class="ac-guide-step-sub">Click Submit Request. The example below shows what the request looks like while the system processes it.</div>
+</div>
+</div>
+<div class="ac-submit-demo-wrap">
+<button class="ac-demo-submit" id="acGuideSubmitDemo">Submit Request →</button>
+<div class="ac-demo-note">Guide demonstration only — no real HVAC request is sent.</div>
+</div>
+<div aria-live="polite" class="ac-progress-demo" id="acProgressDemo">
+<div class="ac-progress-header">
+<div>
+<div class="ac-progress-kicker">WHAT HAPPENS NEXT</div>
+<div class="ac-progress-title">Your A/C request is processed through these steps.</div>
+</div>
+<span class="ac-progress-live" id="acProgressState">READY</span>
+</div>
+<div class="ac-progress-steps">
+<div class="ac-progress-step future" id="acStepSubmitted">
+<span class="ac-progress-dot">✓</span>
+<span class="ac-progress-label">Submitted</span>
+</div>
+<div class="ac-progress-line" id="acLine1"></div>
+<div class="ac-progress-step future" id="acStepApproved">
+<span class="ac-progress-dot">✓</span>
+<span class="ac-progress-label">Approved</span>
+</div>
+<div class="ac-progress-line" id="acLine2"></div>
+<div class="ac-progress-step future" id="acStepAdjusting">
+<span class="ac-progress-dot">↻</span>
+<span class="ac-progress-label">Adjusting</span>
+</div>
+<div class="ac-progress-line" id="acLine3"></div>
+<div class="ac-progress-step future" id="acStepCompleted">
+<span class="ac-progress-dot">✓</span>
+<span class="ac-progress-label">Completed</span>
+</div>
+</div>
+<div class="ac-processing-banner" id="acProcessingBanner">
+<div class="ac-processing-icon" id="acProcessingIcon">↻</div>
+<div class="ac-processing-copy">
+<div class="ac-processing-title" id="acProcessingTitle">Adjusting HVAC…</div>
+<div class="ac-processing-sub" id="acProcessingSub">The system is being adjusted. This may take a few minutes.</div>
+</div>
+<div class="ac-processing-temp" id="acProcessingTemp">20.5°C → 21.0°C</div>
+</div>
+</div>
+</div><div class="ac-request-history-section"><div class="ac-side-intro">
+<div class="ac-side-kicker">AFTER YOU SUBMIT</div>
+<h4>Your request history</h4>
+<p>Your requests appear on the right. Click a request to open its details and the Building Management conversation.</p>
+</div><div class="ac-history-card">
+<div class="ac-history-head">
+<div class="ac-history-icon">▤</div>
+<div>
+<div class="ac-history-title">My Requests</div>
+<div class="ac-history-sub">View and track your A/C temperature requests.</div>
+</div>
+</div>
+<div class="ac-history-list" id="acHistoryList">
+<button class="ac-history-row active" data-request="request1" type="button">
+<span class="ac-history-date">Today<br/><small>Demo example</small></span>
+<span class="ac-history-request">🌡️ Temperature adjustment</span>
+<span class="ac-history-change">20.5°C → 21.0°C</span>
+<span class="ac-history-status completed">Completed</span>
+</button>
+<button class="ac-history-row" data-request="request2" type="button">
+<span class="ac-history-date">Previous<br/><small>Demo example</small></span>
+<span class="ac-history-request">🌡️ Temperature adjustment</span>
+<span class="ac-history-change">21.0°C → 20.5°C</span>
+<span class="ac-history-status completed">Completed</span>
+</button>
+</div>
+</div><div class="ac-detail-card" id="acRequestDetails">
+<div class="ac-detail-head">
+<div>
+<div class="ac-detail-title">Request Details</div>
+<div class="ac-detail-sub">Selected request</div>
+</div>
+<span class="ac-history-status completed" id="acDetailStatus">Completed</span>
+</div>
+<div class="ac-detail-grid">
+<div class="ac-detail-item"><span>REQUEST</span><strong id="acDetailRequest">Temperature adjustment</strong></div>
+<div class="ac-detail-item"><span>TEMPERATURE</span><strong id="acDetailTemp">20.5°C → 21.0°C</strong></div>
+<div class="ac-detail-item"><span>LOCATION</span><strong>Your selected location</strong></div>
+<div class="ac-detail-item"><span>RESULT</span><strong id="acDetailResult">Temperature successfully adjusted.</strong></div>
+</div>
+<div class="ac-conversation-block">
+<div class="ac-conversation-title">Conversation</div>
+<div class="ac-message-management" id="acManagementMessage">Building Management: Your temperature request has been processed.</div>
+</div>
+</div><div class="ac-flow-tip">
+<strong>Remember:</strong> One request per 30 minutes. Each adjustment changes the temperature by 0.5°C.
+          </div></div></div>
+</div>
+</div>
+</div>
 <div class="guide-panel hidden" id="parking">
 <div class="hero">
 <div class="hero-copy">
@@ -547,8 +574,8 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 <h2>Parking Management</h2>
 <p>Report parking violations and check vehicle information.</p>
 </div>
-<img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png"/>
-</div>
+<img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png">
+</img></div>
 <div class="section-card">
 <div class="section-top">
 <div>
@@ -566,7 +593,7 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 </div>
 <div class="key-step">
 <div class="key-step-head"><span class="key-step-num">2</span><div><div class="key-step-title">Add evidence and submit</div><div class="key-step-sub">A photo can make the report much easier to act on.</div></div></div>
-<div class="key-step-body key-split"><div class="key-copy"><h4>Use the evidence area</h4><ul><li>Take a photo with the camera or browse for a file.</li><li>Then select <strong>Report Now</strong>.</li></ul></div><div class="key-ui"><div class="photo-row"><div class="photo-box">Photo 1<br/><span style="font-size:9px;color:#94a3b8">Evidence image</span></div><div class="photo-box">Photo / PDF<br/><span style="font-size:9px;color:#94a3b8">Optional</span></div></div><div class="report-btn">⚠️ Report Now</div></div></div>
+<div class="key-step-body key-split"><div class="key-copy"><h4>Use the evidence area</h4><ul><li>Take a photo with the camera or browse for a file.</li><li>Then select <strong>Report Now</strong>.</li></ul></div><div class="key-ui"><div class="photo-row"><div class="photo-box">Photo 1<br><span style="font-size:9px;color:#94a3b8">Evidence image</span></br></div><div class="photo-box">Photo / PDF<br><span style="font-size:9px;color:#94a3b8">Optional</span></br></div></div><div class="report-btn">⚠️ Report Now</div></div></div>
 </div>
 <div class="key-step">
 <div class="key-step-head"><span class="key-step-num">3</span><div><div class="key-step-title">Check Active Incidents or search a vehicle</div><div class="key-step-sub">The page keeps active incidents visible and also provides vehicle search.</div></div></div>
@@ -589,8 +616,8 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 <h2>Emergency Contacts</h2>
 <p>Know who to call for emergencies and building service issues.</p>
 </div>
-<img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png"/>
-</div>
+<img alt="Redmyre House" class="hero-logo" src="/redmyre-house-sidebar.png">
+</img></div>
 <div class="section-card">
 <div class="section-top">
 <div>
@@ -723,7 +750,6 @@ document.getElementById('topbarPlaceholder')?.setAttribute('translate','no');
 document.getElementById('sidebarPlaceholder')?.classList.add('notranslate');
 document.getElementById('topbarPlaceholder')?.classList.add('notranslate');
 </script>
-
 <script>
 (function(){
   const submit = document.getElementById('acGuideSubmitDemo');
@@ -913,6 +939,5 @@ document.getElementById('topbarPlaceholder')?.classList.add('notranslate');
   setStage(0);
 })();
 </script>
-
 </body>
 </html>
