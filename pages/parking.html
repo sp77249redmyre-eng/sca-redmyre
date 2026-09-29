@@ -426,7 +426,7 @@
     </div>
 
     <div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 6px rgba(15,23,42,0.05)">
+      <div id="adminVehicleSearchPanel" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 6px rgba(15,23,42,0.05)">
         <div class="form-field" style="margin-bottom:0">
           <label class="form-label"><i class="ti ti-search"></i> Search Vehicle</label>
           <input class="form-input" id="plateSearchInput" placeholder="Enter plate to check owner & history..." maxlength="10" oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); onPlateSearch();">
@@ -1200,11 +1200,15 @@ document.getElementById('imageModal').addEventListener('click', function(e) {
 
 let plateSearchTerm = '';
 window.onPlateSearch = function() {
+  if (role !== 'admin') return;
   plateSearchTerm = document.getElementById('plateSearchInput').value.trim();
   loadReports();
 };
 
 async function loadReports() {
+  const adminVehicleSearchPanel = document.getElementById('adminVehicleSearchPanel');
+  if (adminVehicleSearchPanel) adminVehicleSearchPanel.style.display = role === 'admin' ? '' : 'none';
+
   let reportQuery = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
   if (role !== 'admin') reportQuery = reportQuery.eq('status','active');
   const { data: reportsData } = await reportQuery;
