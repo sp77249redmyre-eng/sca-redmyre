@@ -371,10 +371,17 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 .hot-dot,.cold-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
 .hot-dot{background:#dc2626;margin-left:8px}
 .cold-dot{background:#2563eb}
-.ac-trend-chart{height:230px;border-left:2px solid #cbd5e1;border-bottom:2px solid #cbd5e1;padding:0 15px 0 15px;display:grid;grid-template-columns:repeat(6,1fr);gap:16px;align-items:end}
-.ac-month{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:9px}
-.ac-month b{display:block;width:100%;max-width:90px;background:linear-gradient(180deg,#93c5fd,#60a5fa);border-radius:7px 7px 0 0}
-.ac-month span{font-size:14px;font-weight:800;color:#52637a}
+.ac-trend-chart{height:285px;border:1px solid #d5e2ef;border-radius:12px;background:#fff;position:relative;overflow:hidden;padding:16px 14px 8px}
+.ac-trend-svg{display:block;width:100%;height:100%}
+.ac-trend-grid{stroke:#dbe4ef;stroke-width:1}
+.ac-trend-axis{stroke:#b9c7d8;stroke-width:1.5}
+.ac-trend-hot{fill:none;stroke:#ef4444;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.ac-trend-cold{fill:none;stroke:#3b82f6;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.ac-trend-point-hot{fill:#ef4444}
+.ac-trend-point-cold{fill:#3b82f6}
+.ac-trend-month{font-size:15px;font-weight:800;fill:#52637a}
+.ac-trend-note{font-size:14px;line-height:1.55;color:#64748b;margin-top:10px}
+.ac-month{font-size:15px;font-weight:800;color:#52637a}
 .ac-trend-help{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:17px}
 .ac-trend-help>div{border:1px solid #dbe4ef;border-radius:11px;background:#fff;padding:14px}
 .ac-trend-help strong{display:block;font-size:15px;color:#0f2456}
@@ -980,14 +987,35 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 </div>
 </div>
 <div class="ac-trend-chart">
-<div class="ac-month"><b style="height:36%"></b><span>Apr</span></div>
-<div class="ac-month"><b style="height:52%"></b><span>May</span></div>
-<div class="ac-month"><b style="height:44%"></b><span>Jun</span></div>
-<div class="ac-month"><b style="height:68%"></b><span>Jul</span></div>
-<div class="ac-month"><b style="height:55%"></b><span>Aug</span></div>
-<div class="ac-month"><b style="height:76%"></b><span>Sep</span></div>
+<svg class="ac-trend-svg" viewBox="0 0 1000 280" preserveAspectRatio="none" aria-label="Monthly Hot and Cold request trend example">
+<line class="ac-trend-grid" x1="55" y1="30" x2="970" y2="30"></line>
+<line class="ac-trend-grid" x1="55" y1="85" x2="970" y2="85"></line>
+<line class="ac-trend-grid" x1="55" y1="140" x2="970" y2="140"></line>
+<line class="ac-trend-grid" x1="55" y1="195" x2="970" y2="195"></line>
+<line class="ac-trend-axis" x1="55" y1="225" x2="970" y2="225"></line>
+<polyline class="ac-trend-hot" points="75,190 250,185 425,225 600,195 775,135 950,55"></polyline>
+<polyline class="ac-trend-cold" points="75,175 250,225 425,155 600,155 775,190 950,95"></polyline>
+<circle class="ac-trend-point-hot" cx="75" cy="190" r="5"></circle>
+<circle class="ac-trend-point-hot" cx="250" cy="185" r="5"></circle>
+<circle class="ac-trend-point-hot" cx="425" cy="225" r="5"></circle>
+<circle class="ac-trend-point-hot" cx="600" cy="195" r="5"></circle>
+<circle class="ac-trend-point-hot" cx="775" cy="135" r="5"></circle>
+<circle class="ac-trend-point-hot" cx="950" cy="55" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="75" cy="175" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="250" cy="225" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="425" cy="155" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="600" cy="155" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="775" cy="190" r="5"></circle>
+<circle class="ac-trend-point-cold" cx="950" cy="95" r="5"></circle>
+<text class="ac-trend-month" x="75" y="258" text-anchor="middle">Apr</text>
+<text class="ac-trend-month" x="250" y="258" text-anchor="middle">May</text>
+<text class="ac-trend-month" x="425" y="258" text-anchor="middle">Jun</text>
+<text class="ac-trend-month" x="600" y="258" text-anchor="middle">Jul</text>
+<text class="ac-trend-month" x="775" y="258" text-anchor="middle">Aug</text>
+<text class="ac-trend-month" x="950" y="258" text-anchor="middle">Sep</text>
+</svg>
 </div>
-<div class="ac-visual-label">Illustration only. The live BMS chart provides the actual monthly values.</div>
+<div class="ac-trend-note"><strong>How to read it:</strong> The red line shows Hot requests and the blue line shows Cold requests. Follow each line across the months to see how request activity changes over time. The live BMS chart displays the current values.</div>
 </div>
 <div class="ac-trend-help">
 <div><strong>What to look for</strong><span>Compare one month with another.</span></div>
