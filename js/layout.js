@@ -199,6 +199,8 @@ async function applyRoleMenuControl(role, supabase) {
           'hvac',
           'emergency',
           'works',
+          'reports',
+          'cost-dashboard',
           'occupants',
           'guide-owner'
         ],
@@ -224,7 +226,7 @@ async function applyRoleMenuControl(role, supabase) {
     const page = item.dataset.page;
 
     if (allowedPages.includes(page)) {
-      item.style.display = '';
+      item.style.display = 'flex';
     } else {
       item.style.display = 'none';
     }
