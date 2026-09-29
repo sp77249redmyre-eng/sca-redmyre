@@ -42,18 +42,29 @@
 .btn-report{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;justify-content:center}
 .notice-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .parking-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
-.parking-card[style*="border-left"]{border-top-left-radius:4px;border-bottom-left-radius:4px}
 .parking-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
 .parking-card.resolved{background:var(--bg)}
-.pk-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.12s;gap:12px;flex-wrap:wrap}
-.pk-header:hover{background:var(--bg)}
+.pk-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.12s;gap:12px;min-height:74px}
+.pk-header:hover{background:#f8fafc}
 .pk-header.resolved{background:var(--bg)}
 .pk-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
-.pk-plate{font-size:20px;font-weight:700;color:var(--text);letter-spacing:0.1em;font-family:monospace;flex-shrink:0}
+.pk-thumb{width:74px;height:56px;border-radius:8px;object-fit:cover;background:#e2e8f0;flex:0 0 74px;border:1px solid var(--border)}
+.pk-thumb-placeholder{width:74px;height:56px;border-radius:8px;background:#eef2f7;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:#64748b;font-size:24px;flex:0 0 74px}
+.pk-summary{min-width:0;display:flex;flex-direction:column;gap:3px}
+.pk-summary-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pk-plate{font-size:17px;font-weight:800;color:var(--text);letter-spacing:0.08em;font-family:monospace;flex-shrink:0}
 .pk-plate.resolved{color:#57534e}
-.pk-info .resolved-text{color:#57534e}
-.pk-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;color:var(--text)}
-.pk-time{font-size:15px;font-weight:600;color:var(--text-2);text-align:right;flex-shrink:0}
+.pk-summary-vio{font-size:12px;font-weight:700;color:#334155}
+.pk-summary-location{font-size:11px;color:#64748b;display:flex;align-items:center;gap:4px}
+.pk-summary-date{font-size:10px;color:#94a3b8}
+.pk-status-wrap{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.pk-status{font-size:11px;padding:4px 9px;border-radius:999px;font-weight:700;white-space:nowrap}
+.pk-status-open{background:#fee2e2;color:#b91c1c}
+.pk-status-resolved{background:#dcfce7;color:#166534}
+.pk-chevron{font-size:14px;color:#94a3b8;transition:transform 0.2s;flex-shrink:0}
+.pk-chevron.open{transform:rotate(180deg)}
+.pk-info{display:none}
+.pk-time{display:none}
 .pk-time.resolved{color:#57534e}
 .pk-body{display:none;padding:18px;background:var(--bg);border-top:0.5px solid var(--border-light)}
 .pk-body.open{display:block}
@@ -69,7 +80,16 @@
 .pk-chevron.open{transform:rotate(180deg)}
 @media(max-width:900px){.content{grid-template-columns:1fr}}
 @media(max-width:768px){
-  .pk-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .pk-header{padding:10px 12px;min-height:72px}
+  .pk-thumb,.pk-thumb-placeholder{width:62px;height:48px;flex-basis:62px}
+  .pk-plate{font-size:16px}
+  .pk-status-wrap{gap:6px}
+  .pk-status{font-size:10px;padding:4px 7px}
+  .pk-header-left{gap:9px}
+  .pk-summary-vio{font-size:11px}
+  .pk-summary-location{font-size:10px}
+  .pk-summary-date{font-size:9px}
+  .pk-header{flex-direction:row;align-items:center;gap:8px}
   .pk-header-left{flex-direction:column;align-items:flex-start;gap:6px;width:100%}
   .pk-plate{font-size:20px}
   .pk-info{gap:6px}
@@ -1068,7 +1088,9 @@ window.onPlateSearch = function() {
 };
 
 async function loadReports() {
-  const { data: reportsData } = await supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
+  let reportQuery = supabase.from('parking_reports').select('*').order('created_at',{ascending:false});
+  if (role !== 'admin') reportQuery = reportQuery.eq('status','active');
+  const { data: reportsData } = await reportQuery;
   let reports = reportsData || [];
   if (plateSearchTerm) {
     reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
@@ -1127,10 +1149,11 @@ async function loadReports() {
   }
 
   const cardHtml = (r) => {
-    const isResolved = r.status==='resolved';
-    
+    const isResolved = r.status === 'resolved';
+
     let timeAgo = '—';
     let absTime = '—';
+    let dateOnly = '—';
     try {
       if (r.created_at) {
         const created = new Date(r.created_at);
@@ -1138,57 +1161,92 @@ async function loadReports() {
         const mins = Math.floor(diff/60000);
         const hrs = Math.floor(mins/60);
         const days = Math.floor(hrs/24);
-        timeAgo = mins<1 ? 'Just now' : mins<60 ? `${mins}m ago` : hrs<24 ? `${hrs}h ago` : `${days}d ago`;
+        timeAgo = mins < 1 ? 'Just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : `${days}d ago`;
         absTime = created.toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+        dateOnly = created.toLocaleString('en-AU', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
       }
     } catch(e) {}
 
     const normPlate = (r.plate || '').replace(/\s/g,'').toUpperCase();
     const vehicle = vehicleMap[normPlate];
-
     const isInternal = !!vehicle;
-    const isExternal = !vehicle;
     const suite = vehicle?.unit || '';
     const occurrenceN = occurrenceMap[r.id] || 1;
     const isRepeat = occurrenceN >= 2;
 
-    const tagInternal = isInternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#e0f2fe;color:#0369a1;font-weight:600"><i class="ti ti-building"></i> Suite ${suite}</span>` : '';
-    const tagExternal = isExternal ? `<span style="font-size:13px;padding:3px 9px;border-radius:6px;background:#fef3c7;color:#92400e;font-weight:600"><i class="ti ti-alert-triangle"></i> External</span>` : '';
-    const repeatLabel = isRepeat ? `<span style="font-size:14px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(occurrenceN)}</span>` : '';
-
     const allImages = r.image_urls && r.image_urls.length ? r.image_urls : (r.image_url ? [r.image_url] : []);
-    const imageFiles = allImages.filter(url => !url.toLowerCase().endsWith('.pdf'));
-    const pdfFiles = allImages.filter(url => url.toLowerCase().endsWith('.pdf'));
-    const imagesHtml = imageFiles.length ? `<div class="pk-images">${imageFiles.map(url => `<img src="${url}" class="pk-image" onclick="showImage('${url}')">`).join('')}</div>` : '';
-    const pdfsHtml = pdfFiles.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => { const fname = decodeURIComponent(url.split('/').pop()); return `<div onclick="showImage('${url}')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue-400)'" onmouseout="this.style.borderColor='var(--border)'"><span style="font-size:20px"><i class="ti ti-file-text"></i></span><span style="font-size:12px;font-weight:600;color:var(--blue-600)">${fname.length>25?fname.slice(0,22)+'...':fname}</span></div>`; }).join('')}</div>` : '';
+    const imageFiles = allImages.filter(url => url && !url.toLowerCase().endsWith('.pdf'));
+    const pdfFiles = allImages.filter(url => url && url.toLowerCase().endsWith('.pdf'));
+    const thumbUrl = imageFiles[0] || '';
+
+    const thumbHtml = thumbUrl
+      ? `<img src="${thumbUrl}" class="pk-thumb" alt="Vehicle photo" onclick="event.stopPropagation();showImage('${thumbUrl}')">`
+      : `<div class="pk-thumb-placeholder"><i class="ti ti-car"></i></div>`;
+
+    const locationLabel = r.location || '—';
+    const violationLabel = VIO_LABELS[r.violation] || r.violation || 'Parking violation';
+    const ownershipLabel = isInternal
+      ? `<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-weight:700"><i class="ti ti-building"></i> Suite ${suite}</span>`
+      : `<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:700"><i class="ti ti-alert-triangle"></i> External</span>`;
+
+    const repeatLabel = isRepeat
+      ? `<span style="font-size:10px;font-weight:800;color:${isResolved?'#7f1d1d':'#e8000d'};letter-spacing:0.02em">${ordinalOffence(occurrenceN)}</span>`
+      : '';
+
+    const imagesHtml = imageFiles.length
+      ? `<div class="pk-images">${imageFiles.map(url => `<img src="${url}" class="pk-image" onclick="event.stopPropagation();showImage('${url}')">`).join('')}</div>`
+      : '';
+
+    const pdfsHtml = pdfFiles.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${pdfFiles.map(url => {
+          const fname = decodeURIComponent(url.split('/').pop());
+          return `<div onclick="showImage('${url}')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer"><span style="font-size:20px"><i class="ti ti-file-text"></i></span><span style="font-size:12px;font-weight:600;color:var(--blue-600)">${fname.length>25?fname.slice(0,22)+'...':fname}</span></div>`;
+        }).join('')}</div>`
+      : '';
 
     return `
       <div class="parking-card ${isResolved?'resolved':''}" id="pk-${r.id}" style="${isRepeat?(isResolved?'border-left:4px solid #7f1d1d':'border-left:4px solid #e8000d'):''}">
         <div class="pk-header ${isResolved?'resolved':''}" onclick="togglePk('${r.id}')">
           <div class="pk-header-left">
-            <span class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</span>
-            ${repeatLabel}
-            <div class="pk-info">
-              <span style="${isResolved?'color:#57534e':''}"><i class="ti ti-map-pin"></i> ${r.location || '—'}</span>
-              <span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:3px 9px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span>
-              ${tagInternal}${tagExternal}
+            ${thumbHtml}
+            <div class="pk-summary">
+              <div class="pk-summary-top">
+                <span class="pk-plate ${isResolved?'resolved':''}">${r.plate || '—'}</span>
+                ${repeatLabel}
+              </div>
+              <div class="pk-summary-vio">${violationLabel}</div>
+              <div class="pk-summary-location"><i class="ti ti-map-pin"></i> ${locationLabel} ${ownershipLabel}</div>
+              <div class="pk-summary-date">${dateOnly}</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="pk-time ${isResolved?'resolved':''}">${timeAgo} · ${absTime}</div>
-            <span class="pk-chevron" id="chev-${r.id}">▼</span>
+
+          <div class="pk-status-wrap">
+            <span class="pk-status ${isResolved?'pk-status-resolved':'pk-status-open'}">${isResolved?'✓ Resolved':'Open'}</span>
+            <span class="pk-chevron" id="chev-${r.id}">›</span>
           </div>
         </div>
+
         <div class="pk-body" id="body-${r.id}">
-          <div class="pk-location"><i class="ti ti-map-pin"></i> ${r.location || '—'}</div>
-          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:15px;padding:6px 16px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':VIO_LABELS[r.violation]||r.violation||'—'}</span></div>
+          <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px">
+            ${thumbUrl ? `<img src="${thumbUrl}" style="width:110px;height:82px;object-fit:cover;border-radius:9px;border:1px solid var(--border);cursor:pointer" onclick="showImage('${thumbUrl}')">` : ''}
+            <div style="min-width:0">
+              <div style="font-size:18px;font-weight:800;letter-spacing:.06em;font-family:monospace;margin-bottom:5px">${r.plate || '—'}</div>
+              <div style="font-size:13px;font-weight:700;color:#334155;margin-bottom:4px">${violationLabel}</div>
+              <div style="font-size:12px;color:#64748b"><i class="ti ti-map-pin"></i> ${locationLabel}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:4px">${dateOnly}</div>
+            </div>
+          </div>
+
+          <div class="pk-location"><i class="ti ti-map-pin"></i> ${locationLabel}</div>
+          <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 12px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':violationLabel}</span></div>
           <div class="pk-reporter">${role==='admin' ? `Reported by ${r.reporter_name||'Unknown'} · ` : ''}${absTime}</div>
           ${imagesHtml}
           ${pdfsHtml}
           ${r.comment?`<div class="pk-comment" style="background:#fef2f2;border-color:#fecaca;color:#991b1b"><strong>Reporter note:</strong> "${r.comment}"</div>`:''}
           ${r.admin_reply?`<div class="pk-comment" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8"><strong>Admin reply:</strong> ${r.admin_reply}</div>`:''}
+
           <div class="pk-actions">
-            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${(r.image_urls&&r.image_urls.filter(u=>!u.endsWith('.pdf'))[0])||r.image_url||''}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Warning Notice</button>`:''}
+            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Warning Notice</button>`:''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-pencil"></i> Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
@@ -1199,24 +1257,28 @@ async function loadReports() {
   };
 
   const activeReports = reports.filter(r => r.status !== 'resolved');
-  const resolvedReports = reports.filter(r => r.status === 'resolved');
+  const resolvedReports = role === 'admin' ? reports.filter(r => r.status === 'resolved') : [];
 
   let html = '';
   if (activeReports.length) {
     html += activeReports.map(cardHtml).join('');
   }
-  if (activeReports.length && resolvedReports.length) {
+
+  if (role === 'admin' && activeReports.length && resolvedReports.length) {
     html += `<div style="display:flex;align-items:center;gap:10px;margin:22px 0 14px">
-      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;white-space:nowrap">Resolved</span>
+      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;white-space:nowrap">Resolved History</span>
       <div style="flex:1;height:1px;background:var(--border)"></div>
     </div>`;
   }
-  if (resolvedReports.length) {
+
+  if (role === 'admin' && resolvedReports.length) {
     html += resolvedReports.map(cardHtml).join('');
   }
-  if (!activeReports.length && !resolvedReports.length) {
-    html = `<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No reports found</div>`;
+
+  if (!activeReports.length && !(role === 'admin' && resolvedReports.length)) {
+    html = `<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No active incidents</div>`;
   }
+
   list.innerHTML = html;
 }
 
