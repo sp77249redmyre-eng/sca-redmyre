@@ -15,9 +15,26 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.content { padding: 24px; }
-.ann-list { display:flex;flex-direction:column;gap:12px }
-.ann-item { background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:20px;transition:box-shadow 0.15s,background 0.15s,border-color 0.15s }
+body{overflow:hidden;}
+.content {
+  padding: 18px 20px 14px;
+  height: calc(100vh - 56px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.ann-list {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:hidden;
+}
+.ann-item {
+  background:var(--surface);
+  border:2px solid var(--border);
+  border-radius:14px;
+  padding:20px;
+  transition:box-shadow 0.15s,background 0.15s,border-color 0.15s;
+}
 .ann-item:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07) }
 .ann-item.expanded { border-color:#2563eb;background:#eff6ff }
 .ann-item.pinned { border-color:#bfdbfe;background:linear-gradient(135deg,#f0f9ff,#eff6ff) }
@@ -48,7 +65,15 @@
 .push-banner-btn { padding:7px 14px;border-radius:8px;background:var(--blue-600);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap }
 .push-banner-dismiss { font-size:18px;color:var(--muted);cursor:pointer;padding:0 4px;background:none;border:none;line-height:1 }
 @media(max-width:768px){
-  .content{padding:14px}
+  body{overflow:auto}
+  .content{
+    padding:14px;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+  .ann-list{overflow:visible}
+
   .ann-item{padding:14px}
   .ann-title{font-size:17px}
   .ann-body{font-size:13px}
@@ -267,6 +292,11 @@ async function loadAnnouncements() {
   const { data } = await supabase.from('announcements').select('*').order('pinned',{ascending:false}).order('created_at',{ascending:false});
   allAnns = data || [];
 
+  // Open the latest Active announcement automatically.
+  // This keeps the normal one-announcement workflow readable without an extra click.
+  const firstActive = allAnns.find(a => !a.archived);
+  expandedAnnId = firstActive ? firstActive.id : null;
+
   if (role === 'admin') {
     const { data: profiles } = await supabase.from('profiles').select('email, full_name, role').neq('role', 'admin');
     allProfilesList = profiles || [];
@@ -379,6 +409,12 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     currentFilter = btn.dataset.filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+
+    const firstInView = currentFilter === 'archived'
+      ? allAnns.find(a => a.archived)
+      : allAnns.find(a => !a.archived);
+
+    expandedAnnId = firstInView ? firstInView.id : null;
     renderAnns();
   });
 });
