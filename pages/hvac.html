@@ -316,10 +316,11 @@
 .setpoint-min-label{color:#1d4ed8;font-size:15px;font-weight:800}
 .setpoint-max-label{color:#dc2626;font-size:15px;font-weight:800}
 .setpoint-range{display:none}
-.setpoint-limit-warning{display:none;align-items:flex-start;gap:10px;margin-top:8px;padding:9px 11px;border:1px solid #fca5a5;background:#fef2f2;border-radius:8px;color:#dc2626;font-size:13px;font-weight:800;line-height:1.35;text-align:left}
+.setpoint-limit-warning{display:none;align-items:flex-start;gap:12px;margin-top:8px;padding:10px 13px;border:1px solid #f87171;background:#fff1f2;border-radius:8px;color:#dc2626;font-size:16px;font-weight:800;line-height:1.28;text-align:left;box-sizing:border-box}
 .setpoint-limit-warning.show{display:flex}
-.setpoint-limit-warning-icon{flex-shrink:0;font-size:17px;line-height:1.2}
-.setpoint-limit-range{display:flex;align-items:center;gap:7px;margin-top:7px;padding:6px 9px;background:#eff6ff;border:1px solid #dbeafe;border-radius:7px;color:#334155;font-size:12px;font-weight:700;text-align:left}
+.setpoint-limit-warning-icon{flex:0 0 auto;font-size:22px;line-height:1.2}
+.setpoint-limit-warning #setpointLimitWarningText{display:block;max-width:430px}
+.setpoint-limit-range{display:flex;align-items:center;gap:7px;margin-top:7px;padding:6px 9px;background:#eff6ff;border:1px solid #dbeafe;border-radius:7px;color:#334155;font-size:13px;font-weight:700;text-align:left}
 .type-btn.limit-disabled{opacity:.48;filter:grayscale(.35);cursor:not-allowed!important;transform:none!important;box-shadow:none!important}
 .type-btn.limit-disabled:hover,.type-btn.limit-disabled:active{transform:none!important;box-shadow:none!important}
 .requests-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
@@ -631,6 +632,13 @@ body.observer-readonly .option-box{
   cursor:pointer;
   pointer-events:auto !important;
 }
+<style id="preserve-request-list-typography">
+/* Preserve the existing request-list typography. No layout/data changes. */
+.hvac-summary-date{font-size:15px !important;color:#1e293b;line-height:1.4;font-weight:600}
+.hvac-summary-request{font-size:15px !important;font-weight:700;color:#1e293b}
+.hvac-summary-temp{font-size:15px !important;color:#1e293b;font-weight:700}
+.hvac-summary-status .badge{font-size:14px !important;font-weight:800}
+</style>
 </style>
 </head>
 <body>
@@ -1143,8 +1151,6 @@ renderFloorBoxes();
 renderTenancyBoxes();
 
 document.getElementById('submitHvacBtn').addEventListener('click', async () => {
-  if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
-
   let level, tenancy;
 
   if (selectedUnit) {
@@ -1168,6 +1174,23 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
       .maybeSingle();
     if (currentErr) { showToast('Unable to verify the current temperature. Please try again.', true); return; }
     const current = currentRow?.current_setpoint != null ? parseFloat(currentRow.current_setpoint) : null;
+
+    // If the user presses Submit without selecting a request type while the
+    // suite is already at a boundary, give the correct directional instruction
+    // instead of the generic "Please select Too Hot or Too Cold" message.
+    if (!selectedType && current != null && limits?.min != null && current <= limits.min) {
+      showToast(`Minimum temperature reached: ${limits.min}°C. Please click the temperature increase button only.`, true);
+      await loadCurrentSetpoint(level, tenancy);
+      return;
+    }
+    if (!selectedType && current != null && limits?.max != null && current >= limits.max) {
+      showToast(`Maximum temperature reached: ${limits.max}°C. Please click the temperature decrease button only.`, true);
+      await loadCurrentSetpoint(level, tenancy);
+      return;
+    }
+
+    if (!selectedType) { showToast('Please select Too Hot or Too Cold', true); return; }
+
     if (current != null && limits?.min != null && selectedType === 'hot' && current <= limits.min) {
       showToast(`Minimum temperature reached: ${limits.min}°C. No further reduction is available.`, true);
       await loadCurrentSetpoint(level, tenancy);
