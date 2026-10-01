@@ -191,8 +191,8 @@
 .cooldown-close{padding:10px 28px;border-radius:10px;background:#dc2626;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 
 /* Rejection / Admin Notice - clickable alert */
-.req-alert{font-size:16px;font-weight:800;color:#dc2626;margin-top:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-decoration:underline;text-decoration-style:solid;text-decoration-thickness:2px;text-underline-offset:3px}
-.req-alert:hover{color:#b91c1c}
+.req-alert{font-size:13px;font-weight:600;color:var(--red-text);margin-top:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.req-alert:hover{opacity:0.8}
 
 /* Reason Modal */
 .reason-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
@@ -316,6 +316,12 @@
 .setpoint-min-label{color:#1d4ed8;font-size:15px;font-weight:800}
 .setpoint-max-label{color:#dc2626;font-size:15px;font-weight:800}
 .setpoint-range{display:none}
+.setpoint-limit-warning{display:none;align-items:flex-start;gap:10px;margin-top:8px;padding:9px 11px;border:1px solid #fca5a5;background:#fef2f2;border-radius:8px;color:#dc2626;font-size:13px;font-weight:800;line-height:1.35;text-align:left}
+.setpoint-limit-warning.show{display:flex}
+.setpoint-limit-warning-icon{flex-shrink:0;font-size:17px;line-height:1.2}
+.setpoint-limit-range{display:flex;align-items:center;gap:7px;margin-top:7px;padding:6px 9px;background:#eff6ff;border:1px solid #dbeafe;border-radius:7px;color:#334155;font-size:12px;font-weight:700;text-align:left}
+.type-btn.limit-disabled{opacity:.48;filter:grayscale(.35);cursor:not-allowed!important;transform:none!important;box-shadow:none!important}
+.type-btn.limit-disabled:hover,.type-btn.limit-disabled:active{transform:none!important;box-shadow:none!important}
 .requests-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
 .requests-heading{display:flex;align-items:center;gap:10px}
 .requests-heading-icon{width:30px;height:30px;border:2px solid #1769ff;color:#1769ff;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
@@ -748,6 +754,13 @@ body.observer-readonly .option-box{
           <div class="setpoint-track"><div class="setpoint-fill" id="setpointFill"></div><div class="setpoint-baseline" id="setpointBaseline" title="20°C"></div><div class="setpoint-dot" id="setpointDot"></div></div>
           <div class="setpoint-scale"><span id="setpointMinLabel" class="setpoint-min-label">—</span><span id="setpointMidLabel">—</span><span id="setpointMaxLabel" class="setpoint-max-label">—</span></div>
         </div>
+        <div class="setpoint-limit-warning" id="setpointLimitWarning" role="alert">
+          <span class="setpoint-limit-warning-icon">⚠️</span>
+          <span id="setpointLimitWarningText"></span>
+        </div>
+        <div class="setpoint-limit-range" id="setpointLimitRange">
+          <span>ℹ️</span><span id="setpointLimitRangeText">Available range: —</span>
+        </div>
         <div class="setpoint-range" id="currentSetpointRange"></div>
       </div>
 
@@ -827,11 +840,36 @@ let allMyRequests = [];
 let myUnits = [];
 let selectedUnit = null;
 
+function updateRequestButtons(current, min, max) {
+  const hotBtn = document.getElementById('btnHot');
+  const coldBtn = document.getElementById('btnCold');
+  if (!hotBtn || !coldBtn) return;
+
+  const atMin = current != null && min != null && Number(current) <= Number(min);
+  const atMax = current != null && max != null && Number(current) >= Number(max);
+
+  hotBtn.disabled = atMin;
+  coldBtn.disabled = atMax;
+  hotBtn.classList.toggle('limit-disabled', atMin);
+  coldBtn.classList.toggle('limit-disabled', atMax);
+  hotBtn.setAttribute('aria-disabled', atMin ? 'true' : 'false');
+  coldBtn.setAttribute('aria-disabled', atMax ? 'true' : 'false');
+  hotBtn.title = atMin ? `Minimum temperature reached (${min}°C)` : 'Temperature will be lowered by 0.5°C';
+  coldBtn.title = atMax ? `Maximum temperature reached (${max}°C)` : 'Temperature will be raised by 0.5°C';
+
+  if ((atMin && selectedType === 'hot') || (atMax && selectedType === 'cold')) {
+    selectedType = null;
+    hotBtn.className = 'type-btn' + (hotBtn.disabled ? ' limit-disabled' : '');
+    coldBtn.className = 'type-btn' + (coldBtn.disabled ? ' limit-disabled' : '');
+  }
+}
+
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.disabled) return;
     selectedType = btn.dataset.type;
-    document.getElementById('btnHot').className  = 'type-btn' + (selectedType==='hot'?' hot':'');
-    document.getElementById('btnCold').className = 'type-btn' + (selectedType==='cold'?' cold':'');
+    document.getElementById('btnHot').className  = 'type-btn' + (selectedType==='hot'?' hot':'') + (document.getElementById('btnHot').disabled?' limit-disabled':'');
+    document.getElementById('btnCold').className = 'type-btn' + (selectedType==='cold'?' cold':'') + (document.getElementById('btnCold').disabled?' limit-disabled':'');
   });
 });
 
@@ -849,18 +887,30 @@ async function loadCurrentSetpoint(level, tenancy) {
   const valueEl = document.getElementById('currentSetpointValue');
   const updatedEl = document.getElementById('currentSetpointUpdated');
   const rangeEl = document.getElementById('currentSetpointRange');
-  if (!level || !tenancy) { box.style.display = 'none'; return; }
+  const warningEl = document.getElementById('setpointLimitWarning');
+  const warningTextEl = document.getElementById('setpointLimitWarningText');
+  const rangeTextEl = document.getElementById('setpointLimitRangeText');
+  if (!level || !tenancy) {
+    box.style.display = 'none';
+    updateRequestButtons(null, null, null);
+    if (warningEl) warningEl.classList.remove('show');
+    return;
+  }
 
   const myToken = ++setpointReqToken; // avoid race conditions when switching units quickly
   box.style.display = 'block';
   valueEl.textContent = '—';
   updatedEl.textContent = 'Loading…';
   if (rangeEl) rangeEl.textContent = '';
+  if (rangeTextEl) rangeTextEl.textContent = 'Available range: —';
+  if (warningEl) warningEl.classList.remove('show');
+  updateRequestButtons(null, null, null);
 
   ensureTempLimits().then(limits => {
     if (myToken !== setpointReqToken) return; // a newer request superseded this one
-    if (rangeEl && limits && limits.min != null && limits.max != null) {
-      rangeEl.textContent = `Allowed range: ${limits.min}°C – ${limits.max}°C`;
+    if (limits && limits.min != null && limits.max != null) {
+      if (rangeEl) rangeEl.textContent = `Allowed range: ${limits.min}°C – ${limits.max}°C`;
+      if (rangeTextEl) rangeTextEl.textContent = `Available range: ${limits.min}°C – ${limits.max}°C`;
       updateSetpointVisual(null, limits.min, limits.max);
     }
   });
@@ -879,10 +929,26 @@ async function loadCurrentSetpoint(level, tenancy) {
       updatedEl.textContent = 'Not available yet';
       return;
     }
-    valueEl.textContent = `${data.current_setpoint}°C`;
+    const current = parseFloat(data.current_setpoint);
+    valueEl.textContent = `${current}°C`;
     updatedEl.textContent = `Updated ${timeAgo(data.updated_at)}`;
     const limits = await ensureTempLimits();
-    updateSetpointVisual(parseFloat(data.current_setpoint), limits?.min, limits?.max);
+    updateSetpointVisual(current, limits?.min, limits?.max);
+    updateRequestButtons(current, limits?.min, limits?.max);
+    if (rangeTextEl && limits?.min != null && limits?.max != null) {
+      rangeTextEl.textContent = `Available range: ${limits.min}°C – ${limits.max}°C`;
+    }
+    if (warningEl && warningTextEl && limits?.min != null && limits?.max != null) {
+      if (current <= limits.min) {
+        warningTextEl.textContent = `Minimum temperature reached: ${limits.min}°C. No further reduction is available.`;
+        warningEl.classList.add('show');
+      } else if (current >= limits.max) {
+        warningTextEl.textContent = `Maximum temperature reached: ${limits.max}°C. No further increase is available.`;
+        warningEl.classList.add('show');
+      } else {
+        warningEl.classList.remove('show');
+      }
+    }
   } catch (e) {
     if (myToken !== setpointReqToken) return;
     valueEl.textContent = '—';
@@ -1088,6 +1154,33 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
     level = document.getElementById('hvacLevel').value;
     tenancy = document.getElementById('hvacTenancy').value;
     if (!level||!tenancy) { showToast('Please select floor and tenancy', true); return; }
+  }
+
+  // Hard client-side boundary check: do not create an hvac_request when the
+  // selected unit is already at Admin's configured minimum/maximum. This keeps
+  // boundary clicks out of the request/daemon pipeline entirely.
+  try {
+    const limits = await ensureTempLimits();
+    const { data: currentRow, error: currentErr } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint')
+      .eq('level', level)
+      .eq('tenancy', tenancy)
+      .maybeSingle();
+    if (currentErr) { showToast('Unable to verify the current temperature. Please try again.', true); return; }
+    const current = currentRow?.current_setpoint != null ? parseFloat(currentRow.current_setpoint) : null;
+    if (current != null && limits?.min != null && selectedType === 'hot' && current <= limits.min) {
+      showToast(`Minimum temperature reached: ${limits.min}°C. No further reduction is available.`, true);
+      await loadCurrentSetpoint(level, tenancy);
+      return;
+    }
+    if (current != null && limits?.max != null && selectedType === 'cold' && current >= limits.max) {
+      showToast(`Maximum temperature reached: ${limits.max}°C. No further increase is available.`, true);
+      await loadCurrentSetpoint(level, tenancy);
+      return;
+    }
+  } catch(e) {
+    showToast('Unable to verify the current temperature. Please try again.', true);
+    return;
   }
 
   // 30-min cooldown check per tenancy (admin bypass)
