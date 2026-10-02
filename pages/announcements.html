@@ -760,9 +760,9 @@ function adminActionsHtml(a) {
       <button class="btn-secondary" style="min-height:40px !important;font-size:14px !important;font-weight:700 !important;padding:8px 11px !important" onclick="openViewedModal('${a.id}');event.stopPropagation();">👀 ${viewedMap[a.id] ? viewedMap[a.id].size : 0}/${allProfilesList.length} Read</button>
     </div>
     <div class="ann-admin-actions">
-      <button class="btn-secondary ann-resend-btn" onclick="resendAnnouncement('${a.id}');event.stopPropagation();">⚠️ Resend to All</button>
+      <button class="btn-secondary ann-resend-btn" onclick="sendAnnouncementToAll('${a.id}');event.stopPropagation();">📢 Send to All</button>
       <button class="btn-secondary" onclick="openEditAnn(${json});event.stopPropagation();">✏️ Edit</button>
-      <div class="ann-resend-warning">⚠️ Resend sends the announcement again to all residents and resets the read status.</div>
+      <div class="ann-resend-warning">⚠️ Save only stores the announcement. Use “Send to All” when you are ready to email and notify all occupants.</div>
       <button class="btn-danger wide" style="min-height:48px !important;font-size:15px !important;font-weight:800 !important" onclick="confirmDeleteAnn('${a.id}');event.stopPropagation();">Delete Announcement</button>
     </div>
     <div class="ann-test-box" onclick="event.stopPropagation();">
@@ -1210,48 +1210,11 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
     data.attachments = attachments;
 
     if (id) {
-      await supabase.from('announcements').update(data).eq('id', id);
-      // 예약 → 즉시 발송으로 변경된 경우: 지금 발송
-      if (editWasScheduled && !isScheduled) {
-        const { data:{ session: pushSession } } = await supabase.auth.getSession();
-        try {
-          const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString(), attachments: attachments })
-          });
-          const emailJson = await emailRes.json();
-          console.log('email-announcement response:', emailRes.status, emailJson);
-        } catch(emailErr){ console.error('email-announcement failed:', emailErr); }
-        try {
-          await fetch('/api/send-push', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
-          });
-        } catch(pushErr){ console.error('send-push failed:', pushErr); }
-      }
+      const { error } = await supabase.from('announcements').update(data).eq('id', id);
+      if (error) throw error;
     } else {
-      await supabase.from('announcements').insert(data);
-      if (!isScheduled) {
-        const { data:{ session: pushSession } } = await supabase.auth.getSession();
-        try {
-          const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ title: data.title, content: data.content, created_at: new Date().toISOString(), attachments: attachments })
-          });
-          const emailJson = await emailRes.json();
-          console.log('email-announcement response:', emailRes.status, emailJson);
-        } catch(emailErr){ console.error('email-announcement failed:', emailErr); }
-        try {
-          await fetch('/api/send-push', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
-            body: JSON.stringify({ title:`📢 Redmyre House — ${data.title}`, message:data.content.length>100?data.content.substring(0,100)+'…':data.content, url:'/pages/announcements.html' })
-          });
-        } catch(pushErr){}
-      }
+      const { error } = await supabase.from('announcements').insert(data);
+      if (error) throw error;
     }
 
     annFiles = [];
@@ -1259,10 +1222,57 @@ document.getElementById('saveAnnBtn').addEventListener('click', async () => {
     annUpdateButtons();
     closeModal('annModal');
     await loadAnnouncements();
-    showToast(id ? 'Announcement updated ✓' : (isScheduled ? `Scheduled for ${formatSydneyTime(scheduledAt)} ✓` : 'Announcement posted ✓'));
+    showToast(id ? 'Announcement updated — not sent ✓' : (isScheduled ? `Scheduled for ${formatSydneyTime(scheduledAt)} ✓` : 'Announcement saved — not sent ✓'));
   } catch(e) { showToast(e.message||'Failed to save', true); }
   finally { btn.disabled=false; btn.textContent='Save →'; }
 });
+
+window.sendAnnouncementToAll = async (id) => {
+  const a = allAnns.find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`Send this announcement to all occupants?\n\nThis will send the email and push notification.\n\n"${a.title}"`)) return;
+
+  try {
+    const { data:{ session: pushSession } } = await supabase.auth.getSession();
+    if (!pushSession) { showToast('Session expired. Please sign in again.', true); return; }
+
+    let emailOk = false;
+    try {
+      const emailRes = await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-announcement', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ title:a.title, content:a.content, created_at:a.created_at, attachments:a.attachments ?? [] })
+      });
+      const emailJson = await emailRes.json();
+      console.log('email-announcement response:', emailRes.status, emailJson);
+      emailOk = emailRes.ok;
+      if (!emailOk) throw new Error('Email send failed');
+    } catch(emailErr) {
+      console.error('email-announcement failed:', emailErr);
+      showToast('Email send failed — announcement was not marked as sent.', true);
+      return;
+    }
+
+    try {
+      const pushRes = await fetch('/api/send-push', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ title:`📢 Redmyre House — ${a.title}`, message:a.content.length>100?a.content.substring(0,100)+'…':a.content, url:'/pages/announcements.html' })
+      });
+      if (!pushRes.ok) console.warn('send-push failed:', pushRes.status);
+    } catch(pushErr) { console.error('send-push failed:', pushErr); }
+
+    if (emailOk) {
+      await supabase.from('announcements').update({ push_sent:true }).eq('id', id);
+    }
+
+    await loadAnnouncements();
+    showToast('Announcement sent to all occupants ✓');
+  } catch(e) {
+    console.error('sendAnnouncementToAll failed:', e);
+    showToast('Failed to send announcement', true);
+  }
+};
 
 window.confirmDeleteAnn = async (id) => {
   if (!confirm('Delete this announcement?')) return;
