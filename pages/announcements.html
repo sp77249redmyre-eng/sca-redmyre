@@ -599,6 +599,35 @@ viewedMap[l.record_id].add(l.user_email);
 }
 
 renderAnns();
+
+// Record the announcements currently visible to the occupant.
+// Admin users are excluded because their activity must not affect read counts.
+if (role !== 'admin' && allAnns.length) {
+// Only record announcements that are actually published to occupants.
+// A scheduled announcement must not count as read until it has been sent.
+const visibleAnnouncements = allAnns.filter(a => {
+const isPublished = !a.scheduled_at || a.push_sent === true;
+return !a.archived && isPublished;
+});
+if (visibleAnnouncements.length) {
+// Only insert a row for announcements this user hasn't already been
+// logged as viewing, so audit_logs doesn't grow a new row every
+// single page load (resendAnnouncement() still resets this by
+// deleting the user's prior rows for that announcement).
+const { data: myLogs } = await supabase
+.from('audit_logs')
+.select('record_id')
+.eq('action', 'ANNOUNCEMENT_VIEWED')
+.eq('user_email', user.email)
+.in('record_id', visibleAnnouncements.map(a => a.id));
+const alreadyViewed = new Set((myLogs || []).map(l => l.record_id));
+for (const a of visibleAnnouncements) {
+if (!alreadyViewed.has(a.id)) {
+await logActivity('ANNOUNCEMENT_VIEWED', a.id);
+}
+}
+}
+}
 }
 
 function normalizeText(value) {
