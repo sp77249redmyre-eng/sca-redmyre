@@ -1093,117 +1093,107 @@ function ordinalOffence(n) {
 }
 
 window.generateWarningPDF = function(plate, violation, location, createdAt, photoUrl, repeatCount) {
-  const when = createdAt ? new Date(createdAt) : new Date();
-  const dateStr = when.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
-  const timeStr = when.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
-  const vioLabel = VIO_LABELS[violation] || violation || 'Parking violation';
   const repeatN = Math.max(1, parseInt(repeatCount) || 1);
+  if (repeatN < 2) return;
 
-  const warning = repeatN <= 1 ? {
-    title: 'WARNING',
-    subtitle: 'Unauthorised Parking',
-    message: 'Your vehicle has been recorded by CCTV.',
-    footer: 'DO NOT PARK HERE AGAIN.',
-    level: '1ST OFFENCE',
-    colour: '#e8000d'
-  } : repeatN === 2 ? {
+  const vioLabel = VIO_LABELS[violation] || violation || 'Parking violation';
+  const safe = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const escAttr = v => safe(v);
+
+  const warning = repeatN === 2 ? {
     title: 'SECOND WARNING',
     subtitle: 'REPEAT UNAUTHORISED PARKING',
-    message: 'This vehicle has been previously warned. Further unauthorised parking may be escalated to the Owners Corporation / Strata Manager.',
-    footer: 'DO NOT PARK HERE AGAIN.',
+    message: 'This vehicle has previously received a parking warning.\nFurther unauthorised parking may be escalated to the\nOwners Corporation / Strata Manager.',
     level: '2ND OFFENCE — SAME VEHICLE',
-    colour: '#e8000d'
+    footer: 'DO NOT PARK HERE AGAIN.',
+    showNcat: false,
+    showContinued: false
   } : repeatN === 3 ? {
     title: 'FINAL WARNING',
     subtitle: '3RD OFFENCE — REPEAT UNAUTHORISED PARKING',
-    message: 'This vehicle has received multiple parking warnings. Further unauthorised parking may be referred to the Owners Corporation / Strata Manager for formal action.',
-    footer: 'FURTHER BREACHES MAY BE ESCALATED TO NCAT.',
-    level: '3RD OFFENCE — ESCALATION',
-    colour: '#e8000d'
+    message: 'This vehicle has received multiple parking warnings.\nFurther unauthorised parking may be escalated to the\nOwners Corporation / Strata Manager for formal action.',
+    level: '3RD OFFENCE — FINAL WARNING',
+    footer: 'DO NOT PARK HERE AGAIN.',
+    showNcat: false,
+    showContinued: true
   } : {
     title: 'FORMAL ESCALATION',
     subtitle: repeatN + 'TH OFFENCE — REPEAT UNAUTHORISED PARKING',
-    message: 'This vehicle has received multiple warnings. Further action will be referred to the Owners Corporation / Strata Manager. Where applicable, continued by-law breaches may result in an NCAT application.',
-    footer: 'NCAT MAY IMPOSE A PENALTY OF UP TO $1,100\nFOR A BY-LAW BREACH.',
+    message: 'This vehicle has received multiple parking warnings.\nThe matter may be referred to the Owners Corporation\n/ Strata Manager for formal enforcement.',
     level: repeatN + 'TH OFFENCE — OC / STRATA ESCALATION',
-    colour: '#b91c1c'
+    footer: 'NCAT MAY IMPOSE A PENALTY OF UP TO $1,100\nFOR A BY-LAW BREACH.',
+    showNcat: true,
+    showContinued: false
   };
 
-  const safeMessage = warning.message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const messageLines = safeMessage.length > 105 ? [safeMessage.slice(0, Math.ceil(safeMessage.length/2)), safeMessage.slice(Math.ceil(safeMessage.length/2))] : [safeMessage];
-  const messageSvg = messageLines.map((line,i) => `<text x="397" y="${238 + i*30}" text-anchor="middle" font-size="${repeatN >= 2 ? 22 : 28}" font-weight="700" fill="#111">${line}</text>`).join('');
-  const offenceSvg = `<text x="397" y="314" text-anchor="middle" font-size="26" font-weight="900" fill="${warning.colour}">${warning.level}</text>`;
+  const displayLocation = location || '—';
+  const displayPlate = plate || '—';
+  const displayPhoto = photoUrl || '';
+  const continuedText = 'Continued breaches may be escalated to NCAT.';
 
   let existing = document.getElementById('warningModal');
   if (existing) existing.remove();
 
   const modal = document.createElement('div');
   modal.id = 'warningModal';
-  modal.dataset.plate = plate;
+  modal.dataset.plate = displayPlate;
   modal.dataset.vio = vioLabel;
-  modal.dataset.loc = location || '—';
-  modal.dataset.date = dateStr;
-  modal.dataset.time = timeStr;
-  modal.dataset.rawDate = createdAt || new Date().toISOString();
-  modal.dataset.photoUrl = photoUrl || '';
+  modal.dataset.loc = displayLocation;
+  modal.dataset.photoUrl = displayPhoto;
   modal.dataset.repeat = repeatN;
   modal.dataset.warningTitle = warning.title;
   modal.dataset.warningSubtitle = warning.subtitle;
   modal.dataset.warningMessage = warning.message;
-  modal.dataset.warningFooter = warning.footer;
   modal.dataset.warningLevel = warning.level;
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.dataset.warningFooter = warning.footer;
+  modal.dataset.warningContinued = warning.showContinued ? continuedText : '';
+  modal.dataset.warningNcat = warning.showNcat ? '1' : '0';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  const messageHtml = warning.message.split('\n').map(line => `<div>${safe(line)}</div>`).join('');
+  const continuedHtml = warning.showContinued
+    ? `<div style="margin-top:2px;color:#d60000;font-size:18px;font-weight:900;line-height:1.2;">${continuedText}</div>`
+    : '';
+  const bottomHtml = warning.showNcat
+    ? `<div style="background:#e00000;color:#fff;padding:12px 10px;text-align:center;font-size:17px;font-weight:900;line-height:1.25;">NCAT MAY IMPOSE A PENALTY OF UP TO $1,100<br>FOR A BY-LAW BREACH.</div>`
+    : `<div style="padding:12px 10px 7px;text-align:center;"><div style="font-size:21px;font-weight:900;color:#d60000;letter-spacing:.4px;">DO NOT PARK HERE AGAIN.</div><div style="margin-top:7px;font-size:12px;color:#7b7b7b;letter-spacing:.4px;">SCA FACILITY MANAGEMENT&nbsp;&nbsp;•&nbsp;&nbsp; REDMYRE HOUSE</div></div>`;
+
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:14px;width:95%;max-width:800px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4);position:relative">
-      <div style="background:#fff;padding:10px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0">
-        <span style="font-size:14px;font-weight:700;color:#1e3a8a">${warning.title} — Warning Notice Preview</span>
-        <div style="display:flex;gap:8px">
-          <button onclick="printWarning()" style="padding:6px 14px;border-radius:8px;border:1px solid #2563eb;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Print</button>
-          <button onclick="document.getElementById('warningModal').remove()" style="padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Close</button>
+    <div style="width:min(760px,96vw);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.45);font-family:Arial,Helvetica,sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #e5e7eb;background:#fff;position:sticky;top:0;z-index:2;">
+        <span style="font-size:14px;font-weight:800;color:#1e3a8a;">${warning.title} — Warning Notice Preview</span>
+        <div style="display:flex;gap:8px;">
+          <button onclick="printWarning()" style="padding:7px 14px;border-radius:8px;border:1px solid #2563eb;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;"><i class="ti ti-printer"></i> Print</button>
+          <button onclick="document.getElementById('warningModal').remove()" style="padding:7px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
         </div>
       </div>
-      <div style="font-family:Arial,Helvetica,sans-serif">
-        <svg viewBox="0 0 794 390" xmlns="http://www.w3.org/2000/svg" width="100%" height="auto">
-          <defs><pattern id="hzm" patternUnits="userSpaceOnUse" width="20" height="20" patternTransform="rotate(45)"><rect width="10" height="20" fill="#111"/><rect x="10" width="10" height="20" fill="#ffe600"/></pattern></defs>
-          <rect width="794" height="390" fill="url(#hzm)"/>
-          <rect x="14" y="14" width="766" height="362" fill="#ffe600"/>
-          <text x="397" y="112" text-anchor="middle" font-size="${repeatN >= 2 ? 104 : 140}" font-weight="900" fill="#e8000d" textLength="730" lengthAdjust="spacingAndGlyphs">${warning.title}</text>
-          <text x="397" y="162" text-anchor="middle" font-size="${repeatN >= 2 ? 29 : 40}" font-weight="900" fill="#111">${warning.subtitle}</text>
-          <line x1="24" y1="180" x2="770" y2="180" stroke="#111" stroke-width="2"/>
-          ${messageSvg}
-          <line x1="24" y1="${repeatN >= 2 ? 288 : 280}" x2="770" y2="${repeatN >= 2 ? 288 : 280}" stroke="#111" stroke-width="2"/>
-          <text x="46" y="328" font-size="26" font-weight="900" fill="#555">REGO</text>
-          <text x="158" y="328" font-size="34" font-weight="900" fill="#111" font-family="monospace">${plate}</text>
-          <text x="430" y="328" font-size="26" font-weight="900" fill="#555">LOC</text>
-          <text x="510" y="328" font-size="26" font-weight="700" fill="#111">${location||'—'}</text>
-          ${offenceSvg}
-        </svg>
-        <div style="border-top:3px solid #111;">
-          <div style="display:grid;grid-template-columns:0.7fr 1.3fr;align-items:stretch;border-bottom:3px solid #111;">
-            <div style="padding:12px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;justify-content:center;border-right:3px solid #111;">
-              <div style="font-size:24px;">&#x1F697;</div>
-              <div style="font-size:17px;font-weight:800;color:#0f2456;line-height:1.2;">Strathfield Plaza</div>
-              <div style="font-size:12px;color:#64748b;font-weight:600;line-height:1.3;">11 The Boulevarde<br><span style="color:#dc2626;font-weight:800;">Next door</span></div>
-              <div style="padding:4px 10px;background:#fbbf24;color:#0f172a;font-size:13px;font-weight:800;border-radius:100px;white-space:nowrap;">3 HOURS FREE</div>
-            </div>
-            <div style="padding:6px 14px 10px;display:flex;flex-direction:column;justify-content:center;">
-              <div style="font-size:11px;font-weight:900;letter-spacing:2px;color:#475569;margin-bottom:3px;text-align:center;">HOW TO GET THERE</div>
-              <svg viewBox="0 -15 480 175" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;">
-                <rect x="30" y="10" width="150" height="55" rx="6" fill="#0f2456"/><text x="105" y="32" text-anchor="middle" fill="#fbbf24" font-family="Arial,sans-serif" font-size="15" font-weight="800" letter-spacing="1">YOU ARE HERE</text><text x="105" y="50" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="12" font-weight="800">Redmyre</text>
-                <rect x="180" y="10" width="205" height="55" rx="6" fill="#fbbf24"/><text x="282" y="32" text-anchor="middle" fill="#0f2456" font-family="Arial,sans-serif" font-size="15" font-weight="800">STRATHFIELD PLAZA</text><text x="282" y="50" text-anchor="middle" fill="#0f2456" font-family="Arial,sans-serif" font-size="12" font-weight="800">ROOF TOP CARPARK</text>
-                <path d="M 282 -13 C 275 -13 270 -8 270 -1 C 270 7 282 17 282 17 C 282 17 294 7 294 -1 C 294 -8 289 -13 282 -13 Z" fill="#dc2626"/><circle cx="282" cy="-2" r="3.5" fill="#fff"/>
-                <path d="M 0 95 L 390 95 Q 410 95 420 115 L 430 160" stroke="#e2e8f0" stroke-width="30" fill="none" stroke-linecap="round"/><path d="M 395 95 Q 405 70 410 10" stroke="#e2e8f0" stroke-width="24" fill="none" stroke-linecap="round"/>
-                <line x1="10" y1="95" x2="140" y2="95" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="10,8"/><line x1="200" y1="95" x2="380" y2="95" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="10,8"/><path d="M 420 130 L 425 155" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="10,8" fill="none"/><line x1="402" y1="78" x2="406" y2="50" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,5"/><line x1="407" y1="40" x2="409" y2="18" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,5"/>
-                <path d="M 282 82 L 282 70" stroke="#2563eb" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M 282 70 L 275 77 M 282 70 L 289 77" stroke="#2563eb" stroke-width="5" fill="none" stroke-linecap="round"/>
-                <text x="282" y="128" text-anchor="middle" fill="#2563eb" font-family="Arial,sans-serif" font-size="15" font-weight="800">ENTRY TO CARPARK</text><text x="140" y="120" text-anchor="middle" fill="#64748b" font-family="Arial,sans-serif" font-size="12" font-weight="900" letter-spacing="1">REDMYRE ROAD</text><text x="440" y="50" text-anchor="start" fill="#64748b" font-family="Arial,sans-serif" font-size="8" font-weight="700">The</text><text x="440" y="60" text-anchor="start" fill="#64748b" font-family="Arial,sans-serif" font-size="7.5" font-weight="700">Boulevarde</text>
-              </svg>
-            </div>
-          </div>
-          <div style="background:#0f172a;display:block;">${photoUrl ? '<img src="'+photoUrl+'" style="width:100%;height:auto;display:block">' : '<div style="width:100%;height:200px;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:13px;">No photo available</div>'}</div>
+
+      <div style="margin:16px;border:3px solid #111;border-radius:15px;overflow:hidden;background:#fff;">
+        <div style="background:#e00000;color:#fff;text-align:center;padding:15px 8px;font-size:28px;font-weight:900;line-height:1.1;">${warning.title}</div>
+        <div style="padding:13px 12px 9px;text-align:center;font-size:${repeatN >= 3 ? 21 : 22}px;font-weight:900;color:#222;line-height:1.15;">${warning.subtitle}</div>
+        <div style="padding:0 28px;">
+          ${displayPhoto ? `<img src="${escAttr(displayPhoto)}" style="width:100%;height:auto;max-height:370px;object-fit:cover;display:block;border:2px solid #111;border-radius:7px;">` : `<div style="height:270px;background:#e5e7eb;border:2px solid #111;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;">No photo available</div>`}
         </div>
-        <div style="background:#e8000d;padding:10px 10px;text-align:center;font-size:${repeatN >= 4 ? 16 : (repeatN >= 3 ? 16 : 20)}px;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.25;white-space:pre-line;border-top:3px solid #111;border-radius:0 0 14px 14px">${warning.footer}</div>
+        <div style="padding:18px 28px 8px;text-align:center;">
+          <div style="color:#d60000;font-size:18px;font-weight:900;line-height:1.2;">YOUR VEHICLE HAS BEEN RECORDED BY CCTV.</div>
+          <div style="margin-top:12px;color:#333;font-size:16px;font-weight:500;line-height:1.5;">${messageHtml}</div>
+          ${continuedHtml}
+        </div>
+        <div style="margin:0 28px;border:2px solid #333;border-radius:9px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;">
+          <div style="padding:11px 14px 13px;text-align:left;border-right:1px solid #ddd;">
+            <div style="font-size:11px;color:#777;letter-spacing:.7px;">REGISTRATION</div>
+            <div style="margin-top:7px;font-size:23px;font-weight:900;color:#111;font-family:Arial,Helvetica,sans-serif;">${safe(displayPlate)}</div>
+          </div>
+          <div style="padding:11px 14px 13px;text-align:left;">
+            <div style="font-size:11px;color:#777;letter-spacing:.7px;">LOCATION</div>
+            <div style="margin-top:7px;font-size:23px;font-weight:900;color:#111;">${safe(displayLocation)}</div>
+          </div>
+        </div>
+        <div style="margin:20px 28px 0;background:#ffe000;border:2px solid #111;text-align:center;padding:14px 8px;font-size:${repeatN >= 4 ? 15 : 17}px;font-weight:900;color:#111;line-height:1.15;">${safe(warning.level)}</div>
+        ${bottomHtml}
       </div>
     </div>`;
+
   document.body.appendChild(modal);
   modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
 };
@@ -1211,55 +1201,68 @@ window.generateWarningPDF = function(plate, violation, location, createdAt, phot
 window.printWarning = function() {
   const modal = document.getElementById('warningModal');
   if (!modal) return;
-  const plate = modal.dataset.plate || '';
-  const time = modal.dataset.time || '';
-  const when2 = modal.dataset.rawDate ? new Date(modal.dataset.rawDate) : new Date();
-  const shortDate = when2.toLocaleDateString('en-AU', {day:'numeric',month:'short',year:'numeric'});
-  const photoUrl = modal.dataset.photoUrl || '';
+
+  const plate = modal.dataset.plate || '—';
   const loc = modal.dataset.loc || '—';
-  const repeatN = Math.max(1, parseInt(modal.dataset.repeat) || 1);
-  const title = modal.dataset.warningTitle || 'WARNING';
-  const subtitle = modal.dataset.warningSubtitle || 'Unauthorised Parking';
-  const message = modal.dataset.warningMessage || 'Your vehicle has been recorded by CCTV.';
-  const footer = modal.dataset.warningFooter || 'DO NOT PARK HERE AGAIN.';
-  const level = modal.dataset.warningLevel || (repeatN + 'TH OFFENCE');
-  const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const msg = esc(message);
-  const msgLines = msg.length > 105 ? [msg.slice(0, Math.ceil(msg.length/2)), msg.slice(Math.ceil(msg.length/2))] : [msg];
-  const messageSvg = msgLines.map((line,i) => '<text x="397" y="'+(238+i*30)+'" text-anchor="middle" font-size="'+(repeatN>=2?22:28)+'" font-weight="700" fill="#111">'+line+'</text>').join('');
-  const titleSize = repeatN >= 2 ? 104 : 140;
-  const subtitleSize = repeatN >= 2 ? 29 : 40;
-  const offenceColour = repeatN >= 4 ? '#b91c1c' : '#e8000d';
+  const photoUrl = modal.dataset.photoUrl || '';
+  const repeatN = Math.max(2, parseInt(modal.dataset.repeat) || 2);
+  const title = modal.dataset.warningTitle || (repeatN === 2 ? 'SECOND WARNING' : repeatN === 3 ? 'FINAL WARNING' : 'FORMAL ESCALATION');
+  const subtitle = modal.dataset.warningSubtitle || '';
+  const message = modal.dataset.warningMessage || '';
+  const level = modal.dataset.warningLevel || '';
+  const continued = modal.dataset.warningContinued || '';
+  const showNcat = modal.dataset.warningNcat === '1';
+  const safe = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+  const messageHtml = message.split('\n').map(line => `<div>${safe(line)}</div>`).join('');
   const photoHtml = photoUrl
-    ? '<img src="'+photoUrl+'" style="width:100%;height:115mm;object-fit:cover;display:block">'
-    : '<div style="width:100%;height:115mm;background:#475569;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:14px;">No photo available</div>';
+    ? `<img src="${safe(photoUrl)}" style="width:100%;height:100%;object-fit:cover;display:block;">`
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e5e7eb;color:#6b7280;font-size:14px;">No photo available</div>`;
+
+  const messageBlock = `${messageHtml}${continued ? `<div style="margin-top:1.5mm;color:#d60000;font-size:4.8mm;font-weight:900;line-height:1.2;">${safe(continued)}</div>` : ''}`;
+  const footerBlock = showNcat
+    ? `<div style="height:20mm;background:#e00000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:4.6mm;font-weight:900;line-height:1.25;padding:2mm 4mm;">NCAT MAY IMPOSE A PENALTY OF UP TO $1,100<br>FOR A BY-LAW BREACH.</div>`
+    : `<div style="height:23mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2mm 4mm;"><div style="font-size:6.2mm;font-weight:900;color:#d60000;letter-spacing:.2mm;">DO NOT PARK HERE AGAIN.</div><div style="margin-top:2.5mm;font-size:3.1mm;color:#777;letter-spacing:.1mm;">SCA FACILITY MANAGEMENT&nbsp;&nbsp;•&nbsp;&nbsp; REDMYRE HOUSE</div></div>`;
 
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write('<!DOCTYPE html><html><head><title>Parking Warning Notice</title>'
-    +'<style>@page{size:A4 portrait;margin:0}*{box-sizing:border-box;margin:0;padding:0}html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff}.print-page{width:210mm;height:297mm;overflow:hidden}svg{display:block}</style></head><body>'
-    +'<div class="print-page">'
-    +'<div style="width:210mm;height:103mm;overflow:hidden">'
-    +'<svg viewBox="0 0 794 390" xmlns="http://www.w3.org/2000/svg" font-family="Arial,Helvetica,sans-serif" width="100%" height="103mm" style="display:block">'
-    +'<defs><pattern id="hz" patternUnits="userSpaceOnUse" width="20" height="20" patternTransform="rotate(45)"><rect width="10" height="20" fill="#111"/><rect x="10" width="10" height="20" fill="#ffe600"/></pattern></defs>'
-    +'<rect width="794" height="390" fill="url(#hz)"/><rect x="14" y="14" width="766" height="362" fill="#ffe600"/>'
-    +'<text x="397" y="112" text-anchor="middle" font-size="'+titleSize+'" font-weight="900" fill="#e8000d" textLength="730" lengthAdjust="spacingAndGlyphs">'+esc(title)+'</text>'
-    +'<text x="397" y="162" text-anchor="middle" font-size="'+subtitleSize+'" font-weight="900" fill="#111">'+esc(subtitle)+'</text>'
-    +'<line x1="24" y1="180" x2="770" y2="180" stroke="#111" stroke-width="2"/>'+messageSvg
-    +'<line x1="24" y1="288" x2="770" y2="288" stroke="#111" stroke-width="2"/>'
-    +'<text x="46" y="328" font-size="26" font-weight="900" fill="#555">REGO</text><text x="158" y="328" font-size="34" font-weight="900" fill="#111" font-family="monospace">'+esc(plate)+'</text>'
-    +'<text x="430" y="328" font-size="26" font-weight="900" fill="#555">LOC</text><text x="510" y="328" font-size="26" font-weight="700" fill="#111">'+esc(loc)+'</text>'
-    +'<text x="397" y="365" text-anchor="middle" font-size="24" font-weight="900" fill="'+offenceColour+'">'+esc(level)+'</text>'
-    +'</svg></div>'
-    +'<div style="width:210mm;height:170mm;border-top:3px solid #111;">'
-    +'<div style="display:grid;grid-template-columns:0.7fr 1.3fr;align-items:stretch;border-bottom:3px solid #111;height:55mm;">'
-    +'<div style="padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;justify-content:center;border-right:3px solid #111;"><div style="font-size:30px;">&#x1F697;</div><div style="font-size:22px;font-weight:800;color:#0f2456;line-height:1.2;">Strathfield Plaza</div><div style="font-size:15px;color:#64748b;font-weight:600;line-height:1.3;">11 The Boulevarde<br><span style="color:#dc2626;font-weight:800;">Next door</span></div><div style="padding:5px 14px;background:#fbbf24;color:#0f172a;font-size:16px;font-weight:800;border-radius:100px;white-space:nowrap;">3 HOURS FREE</div></div>'
-    +'<div style="padding:8px 16px 14px;display:flex;flex-direction:column;justify-content:center;"><div style="font-size:14px;font-weight:900;letter-spacing:2px;color:#475569;margin-bottom:4px;text-align:center;">HOW TO GET THERE</div>'
-    +'<div style="font-size:16px;text-align:center;color:#334155;font-weight:700;line-height:1.5;">Redmyre House → Strathfield Plaza<br>11 The Boulevarde — Roof Top Carpark</div></div></div>'
-    +'<div style="width:210mm;height:115mm;background:#0f172a;display:flex;align-items:center;justify-content:center;">'+photoHtml+'</div></div>'
-    +'<div style="width:210mm;height:24mm;background:#e8000d;display:flex;align-items:center;justify-content:center;border-top:3px solid #111;padding:0 8mm;text-align:center;">'
-    +'<span style="font-size:'+((repeatN>=4)?17:((repeatN>=3)?18:28))+'px;font-weight:900;color:#fff;letter-spacing:1px;line-height:1.25;white-space:pre-line">'+esc(footer)+'</span></div>'
-    +'</div></body></html>');
+
+  w.document.write(`<!DOCTYPE html><html><head><title>Parking Warning Notice</title>
+  <style>
+    @page{size:A4 portrait;margin:0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:210mm;height:297mm;margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{padding:4mm 4.5mm}
+    .notice{width:201mm;height:289mm;border:0.8mm solid #111;border-radius:4mm;overflow:hidden;background:#fff}
+    .header{height:20mm;background:#e00000;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.2mm;font-weight:900;line-height:1.05}
+    .subtitle{height:18mm;display:flex;align-items:center;justify-content:center;text-align:center;padding:2mm 5mm;font-size:${repeatN >= 3 ? '6.0mm' : '6.8mm'};font-weight:900;color:#222;line-height:1.1}
+    .photo-wrap{height:96mm;margin:0 8mm;border:0.6mm solid #111;border-radius:2mm;overflow:hidden;background:#e5e7eb}
+    .info{padding:7mm 8mm 3mm;text-align:center}
+    .cctv{font-size:4.9mm;font-weight:900;color:#d60000;line-height:1.2}
+    .message{margin-top:4mm;font-size:4.2mm;font-weight:500;color:#333;line-height:1.48}
+    .details{height:25mm;margin:1mm 8mm 0;border:0.55mm solid #333;border-radius:2.5mm;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+    .detail{padding:3mm 6mm;display:flex;flex-direction:column;justify-content:center}
+    .detail+ .detail{border-left:0.3mm solid #ddd}
+    .label{font-size:3.2mm;color:#777;letter-spacing:.25mm}
+    .value{margin-top:2mm;font-size:6.2mm;font-weight:900;color:#111;line-height:1}
+    .level{height:17mm;margin:5mm 8mm 0;background:#ffe000;border:0.55mm solid #111;display:flex;align-items:center;justify-content:center;text-align:center;padding:2mm 4mm;font-size:${repeatN >= 4 ? '4.5mm' : '5.2mm'};font-weight:900;line-height:1.1}
+  </style></head><body>
+  <div class="notice">
+    <div class="header">${safe(title)}</div>
+    <div class="subtitle">${safe(subtitle)}</div>
+    <div class="photo-wrap">${photoHtml}</div>
+    <div class="info">
+      <div class="cctv">YOUR VEHICLE HAS BEEN RECORDED BY CCTV.</div>
+      <div class="message">${messageBlock}</div>
+    </div>
+    <div class="details">
+      <div class="detail"><div class="label">REGISTRATION</div><div class="value">${safe(plate)}</div></div>
+      <div class="detail"><div class="label">LOCATION</div><div class="value">${safe(loc)}</div></div>
+    </div>
+    <div class="level">${safe(level)}</div>
+    ${footerBlock}
+  </div>
+  </body></html>`);
   w.document.close();
   if (!/Android|iPhone|iPad/i.test(navigator.userAgent)) w.focus();
   w.onload = function() { w.focus(); w.print(); };
@@ -1472,7 +1475,7 @@ async function loadReports() {
           </div>
 
           <div class="pk-actions">
-            ${!isResolved?`<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Warning Notice</button>`:''}
+            ${!isResolved && occurrenceN >= 2 ? `<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Warning Notice</button>` : ''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-pencil"></i> Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
