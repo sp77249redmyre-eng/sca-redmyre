@@ -1095,36 +1095,60 @@ window.openDetail = async (id) => {
 
 document.getElementById('saveAdminResponseBtn').addEventListener('click', async () => {
   const btn = document.getElementById('saveAdminResponseBtn');
-  const response = document.getElementById('adminResponse').value.trim();
+
+  // Quill writes HTML into the hidden textarea. An untouched editor is not
+  // actually an empty string — it can contain `<p><br></p>`. Detect real text
+  // separately so a status-only save never creates a blank reply message.
+  const rawResponse = document.getElementById('adminResponse').value || '';
+  const response = rawResponse.trim();
+  const responseProbe = document.createElement('div');
+  responseProbe.innerHTML = response;
+  const responseText = (responseProbe.textContent || responseProbe.innerText || '')
+    .replace(/\u00a0/g, ' ')
+    .trim();
+  const hasResponse = responseText.length > 0;
+
   const status = document.getElementById('adminStatusSelect').value || null;
-  if (!response && !status && pendingReplyPhotos.length === 0) { showToast('Please enter a reply or change status', true); return; }
+  const currentComplaint = allComplaints.find(x => x.id === currentComplaintId);
+  const currentStatus = currentComplaint?.status || null;
+  const statusChanged = role === 'admin' && !!status && status !== currentStatus;
+
+  // Allow: reply, attachment-only reply, or an actual status change.
+  // Do not save anything when the editor is visually blank and the status
+  // has not changed.
+  if (!hasResponse && pendingReplyPhotos.length === 0 && !statusChanged) {
+    showToast('Please enter a reply, add an attachment, or change status', true);
+    return;
+  }
+
   if (btn.disabled) return;
   btn.disabled = true;
   const originalLabel = btn.textContent;
   btn.textContent = 'Saving…';
   let insertedMsg = null;
   let uploadedPaths = [];
+
   try {
-    if (role === 'admin' && status) {
-      const updateData = { updated_at: new Date().toISOString(), status };
-      if (response) updateData.admin_response = response;
+    if (role === 'admin' && (statusChanged || hasResponse)) {
+      const updateData = { updated_at: new Date().toISOString() };
+      if (statusChanged) updateData.status = status;
+      if (hasResponse) updateData.admin_response = response;
+
       const { data: updatedComplaint, error: complaintError } = await supabase.from('complaints')
         .update(updateData).eq('id', currentComplaintId).select('id').maybeSingle();
       if (complaintError) throw complaintError;
-      if (!updatedComplaint) throw new Error('Request status could not be updated.');
+      if (!updatedComplaint) throw new Error('Request could not be updated.');
     }
 
-    // BUG FIX: previously only created a message row when `response` text was
-    // non-empty, so a photo-only reply (no text typed) silently never got a message
-    // row created — meaning pendingReplyPhotos below was skipped and the photos
-    // were never uploaded, with no error shown to the user.
-    if (response || pendingReplyPhotos.length > 0) {
+    // Create a message only when there is real reply text or an attachment.
+    // A status-only save must NOT create a complaint_messages row.
+    if (hasResponse || pendingReplyPhotos.length > 0) {
       const { data: msg, error: messageError } = await supabase.from('complaint_messages').insert({
         complaint_id: currentComplaintId,
         user_id: user.id,
         sender_name: name,
         sender_role: role,
-        message: response
+        message: hasResponse ? response : ''
       }).select('id').single();
       if (messageError) throw messageError;
       insertedMsg = msg;
@@ -1146,24 +1170,58 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
       if (photoFlagError) throw photoFlagError;
     }
 
-    try {
-      const c = allComplaints.find(x => x.id === currentComplaintId);
-      const { data: { session: pushSession } } = await supabase.auth.getSession();
-      if (pushSession?.access_token) {
-        if (role === 'admin' && c?.user_id) {
-          await fetch('/api/send-push', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`}, body:JSON.stringify({ user_id:c.user_id, title:'📬 New Reply from Management', message:response.substring(0,80), url:'/pages/complaints.html' }) });
-        } else if (role !== 'admin' && c?.user_id) {
-          await fetch('/api/send-push', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`}, body:JSON.stringify({ target_role:'admin', title:'📬 Resident Replied', message:`${name}: ${response.substring(0,60)}`, url:'/pages/complaints.html' }) });
+    // Push notification only when an actual reply/attachment was added.
+    // A status-only change should not generate a blank "New Reply" notification.
+    if (hasResponse || pendingReplyPhotos.length > 0) {
+      try {
+        const c = allComplaints.find(x => x.id === currentComplaintId);
+        const { data: { session: pushSession } } = await supabase.auth.getSession();
+        if (pushSession?.access_token) {
+          if (role === 'admin' && c?.user_id) {
+            const pushMessage = hasResponse
+              ? responseText.substring(0,80)
+              : 'Management added an attachment to your request.';
+            await fetch('/api/send-push', {
+              method:'POST',
+              headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`},
+              body:JSON.stringify({
+                user_id:c.user_id,
+                title:'📬 New Reply from Management',
+                message:pushMessage,
+                url:'/pages/complaints.html'
+              })
+            });
+          } else if (role !== 'admin' && c?.user_id) {
+            const pushMessage = hasResponse
+              ? `${name}: ${responseText.substring(0,60)}`
+              : `${name}: Added an attachment`;
+            await fetch('/api/send-push', {
+              method:'POST',
+              headers:{'Content-Type':'application/json','Authorization':`Bearer ${pushSession.access_token}`},
+              body:JSON.stringify({
+                target_role:'admin',
+                title:'📬 Resident Replied',
+                message:pushMessage,
+                url:'/pages/complaints.html'
+              })
+            });
+          }
         }
-      }
-    } catch(pushErr) {}
+      } catch(pushErr) {}
+    }
 
+    const hadReply = hasResponse || pendingReplyPhotos.length > 0;
     document.getElementById('adminResponse').value = '';
     pendingReplyPhotos = [];
     document.getElementById('replyPhotoPreviewGrid').innerHTML = '';
     await loadMessageThread(currentComplaintId);
     await loadComplaints();
-    showToast(response ? 'Reply sent ✓' : 'Status updated ✓');
+
+    if (hadReply) {
+      showToast('Reply sent ✓');
+    } else {
+      showToast('Status updated ✓');
+    }
   } catch(e) {
     if (uploadedPaths.length) {
       try { await supabase.storage.from('complaint-images').remove(uploadedPaths); } catch(cleanupErr) {}
