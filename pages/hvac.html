@@ -471,92 +471,103 @@
   transform:translateY(0);
 }
 
-/* Selected button feedback — premium breathing aura. No rotation. */
+/* Selected button feedback — premium blurred border aura.
+   The source image stays fully visible; the glow lives around the border only. */
 .type-btn.hot,
 .type-btn.cold{
   overflow:visible;
   isolation:isolate;
-  animation:none;
 }
 
-/* Keep the artwork above the aura. The aura itself must sit INSIDE
-   the button's stacking context so it remains visible outside the image. */
-.type-btn .type-icon{
+/* Keep the source image visible, with a very subtle breathing highlight. */
+.type-btn.hot .type-icon img,
+.type-btn.cold .type-icon img{
   position:relative;
   z-index:1;
-  overflow:hidden;
-  border-radius:10px;
+  animation:hvac-image-breathe 2.8s ease-in-out infinite;
 }
 
-/* Soft light grows outward from the button — no travelling/rotating effect. */
+/* Broad, blurred colour aura outside the button edge. No rotation. */
 .type-btn.hot::before,
 .type-btn.cold::before{
   content:"";
   position:absolute;
-  inset:-18px;
-  border-radius:28px;
+  inset:-10px;
+  border-radius:18px;
   pointer-events:none;
-  z-index:0;
-  opacity:0;
-  filter:blur(15px);
-  transform:scale(.82);
-  animation:hvac-premium-aura 4.8s ease-in-out infinite;
+  z-index:-1;
+  opacity:.15;
+  filter:blur(9px);
+  transform:scale(.98);
+  animation:hvac-border-aura 3.6s ease-in-out infinite;
 }
 
-/* A restrained edge glow gives the selection a crisp, expensive-looking finish. */
+/* A tighter luminous edge sits directly on the border. */
 .type-btn.hot::after,
 .type-btn.cold::after{
   content:"";
   position:absolute;
-  inset:-2px;
-  border-radius:14px;
+  inset:-3px;
+  border-radius:15px;
   pointer-events:none;
   z-index:2;
-  opacity:0;
-  animation:hvac-premium-edge 4.6s ease-in-out infinite;
+  background:transparent;
+  animation:hvac-edge-glow 3.6s ease-in-out infinite;
 }
 
 .type-btn.hot::before{
-  background:radial-gradient(
-    ellipse at center,
-    rgba(37,99,235,.58) 0%,
-    rgba(59,130,246,.38) 34%,
-    rgba(96,165,250,.20) 58%,
-    rgba(147,197,253,0) 76%
-  );
+  border:7px solid rgba(37,99,235,.72);
+  box-shadow:
+    0 0 14px rgba(37,99,235,.65),
+    0 0 30px rgba(59,130,246,.48),
+    0 0 52px rgba(96,165,250,.28);
 }
+
 .type-btn.cold::before{
-  background:radial-gradient(
-    ellipse at center,
-    rgba(220,38,38,.58) 0%,
-    rgba(239,68,68,.38) 34%,
-    rgba(248,113,113,.20) 58%,
-    rgba(252,165,165,0) 76%
-  );
+  border:7px solid rgba(220,38,38,.72);
+  box-shadow:
+    0 0 14px rgba(220,38,38,.65),
+    0 0 30px rgba(239,68,68,.48),
+    0 0 52px rgba(248,113,113,.28);
 }
 
 .type-btn.hot::after{
   box-shadow:
-    0 0 5px rgba(37,99,235,.48),
-    0 0 12px rgba(59,130,246,.30),
-    0 0 22px rgba(96,165,250,.16);
+    0 0 5px rgba(37,99,235,.85),
+    0 0 12px rgba(59,130,246,.55),
+    0 0 20px rgba(96,165,250,.38);
 }
+
 .type-btn.cold::after{
   box-shadow:
-    0 0 5px rgba(220,38,38,.48),
-    0 0 12px rgba(239,68,68,.30),
-    0 0 22px rgba(248,113,113,.16);
+    0 0 5px rgba(220,38,38,.85),
+    0 0 12px rgba(239,68,68,.55),
+    0 0 20px rgba(248,113,113,.38);
 }
 
-@keyframes hvac-premium-aura{
-  0%,100%{opacity:.18;transform:scale(.82)}
-  50%{opacity:.90;transform:scale(1.08)}
-}
-@keyframes hvac-premium-edge{
-  0%,100%{opacity:.22}
-  50%{opacity:.88}
+@keyframes hvac-border-aura{
+  0%,100%{opacity:.16;transform:scale(.98)}
+  50%{opacity:.72;transform:scale(1.04)}
 }
 
+@keyframes hvac-edge-glow{
+  0%,100%{opacity:.32}
+  50%{opacity:.95}
+}
+
+@keyframes hvac-image-breathe{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}
+  50%{filter:brightness(1.055) drop-shadow(0 0 5px rgba(59,130,246,.28))}
+}
+
+.type-btn.cold .type-icon img{
+  animation-name:hvac-image-breathe-red;
+}
+
+@keyframes hvac-image-breathe-red{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent)}
+  50%{filter:brightness(1.055) drop-shadow(0 0 5px rgba(239,68,68,.28))}
+}
 
 </style>
 <style id="exact-setpoint-visual">
