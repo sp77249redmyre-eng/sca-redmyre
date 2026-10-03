@@ -413,6 +413,52 @@
   margin-left:auto !important;
 }
 
+
+
+/* Warning Notice severity increases with repeat offences */
+.warning-notice-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border-radius:9px;
+  font-family:'DM Sans',sans-serif;
+  font-weight:800;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.warning-notice-btn-2{
+  padding:8px 15px;
+  border:2px solid #f59e0b;
+  background:#fff7ed;
+  color:#c2410c;
+  font-size:12px;
+  box-shadow:0 1px 0 #fed7aa;
+}
+.warning-notice-btn-3{
+  padding:9px 17px;
+  border:3px solid #ef4444;
+  background:#fef2f2;
+  color:#b91c1c;
+  font-size:13px;
+  box-shadow:0 2px 0 #fecaca,0 2px 7px rgba(220,38,38,.16);
+}
+.warning-notice-btn-4{
+  padding:10px 19px;
+  border:4px solid #b91c1c;
+  background:#fee2e2;
+  color:#991b1b;
+  font-size:14px;
+  box-shadow:0 3px 0 #fca5a5,0 3px 10px rgba(185,28,28,.22);
+}
+.warning-notice-btn:hover{
+  transform:translateY(-1px);
+  filter:saturate(1.08);
+}
+.warning-notice-btn-2:hover{box-shadow:0 2px 0 #fdba74,0 3px 8px rgba(245,158,11,.18)}
+.warning-notice-btn-3:hover{box-shadow:0 3px 0 #fca5a5,0 4px 10px rgba(220,38,38,.22)}
+.warning-notice-btn-4:hover{box-shadow:0 4px 0 #f87171,0 5px 12px rgba(185,28,28,.28)}
+
 @media(max-width:768px){
   #reportsList .pk-header{
     min-height:116px !important;
@@ -1481,7 +1527,7 @@ async function loadReports() {
           </div>
 
           <div class="pk-actions">
-            ${!isResolved && occurrenceN >= 2 ? `<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" style="padding:7px 14px;border:1px solid var(--blue-600);border-radius:8px;background:var(--blue-50);color:var(--blue-700);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-printer"></i> Warning Notice</button>` : ''}
+            ${!isResolved && occurrenceN >= 2 ? `<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" class="warning-notice-btn warning-notice-btn-${Math.min(occurrenceN,4)}"><i class="ti ti-printer"></i> Warning Notice</button>` : ''}
             ${role==='admin'?`<button onclick="openEditReport('${r.id}')" style="padding:7px 14px;border:1px solid var(--amber-600,#854f0b);border-radius:8px;background:var(--amber-50,#faeeda);color:var(--amber-800,#633806);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif"><i class="ti ti-pencil"></i> Edit</button>`:''}
             ${!isResolved&&role==='admin'?`<button class="btn-success" onclick="resolveReport('${r.id}')">✓ Mark Resolved</button>`:''}
             ${role==='admin'?`<button class="btn-danger" onclick="deleteReport('${r.id}')">Delete</button>`:''}
