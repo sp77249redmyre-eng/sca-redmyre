@@ -68,10 +68,10 @@
 .dot-green{background:var(--green)}
 .dot-orange{background:var(--orange)}
 .person-phone-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
-.person-phone{font-size:15px;font-weight:600;color:#2563EB}
+.person-phone{font-size:17px;font-weight:700;color:#2563EB}
 .person-phone-label{font-size:12px;font-weight:600;color:#94A3B8}
-.person-email{font-size:14px;color:#2563EB;margin-bottom:0;display:block}
-.person-note{font-size:13px;font-weight:600;color:#B91C1C;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:7px;padding:8px 10px;line-height:1.4}
+.person-email{font-size:15px;font-weight:600;color:#2563EB;margin-bottom:0;display:block}
+.person-note{font-size:15px;font-weight:700;color:#B91C1C;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:7px;padding:9px 11px;line-height:1.45}
 .person-actions{display:flex;gap:6px;margin-top:2px}
 .call-btn{height:36px;padding:0 14px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .btn-blue{background:#2563EB;color:#fff}
@@ -190,6 +190,7 @@
             <button id="strataMgrEditBtn" style="display:none;font-size:10px;padding:3px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0"><i class="ti ti-pencil"></i> Edit</button>
           </div>
           <div>
+            <div class="person-phone" id="strataMgrOfficePhone">☎ 02 9129 2522 <span style="font-size:12px;font-weight:600;color:#64748B">(Office)</span></div>
             <div class="person-phone" id="strataMgrPhone">—</div>
           </div>
           <a class="person-email" id="strataMgrEmailLabel" href="#" style="color:#2563EB"></a>
@@ -292,10 +293,10 @@ async function renderManagerCard() {
     document.getElementById('mgrRole').textContent='24/7 Urgent Matters';
     statusEl.className='status-badge sb-orange'; statusEl.innerHTML='<div class="status-dot dot-orange"></div>'+(isHoliday?' Public holiday':!isWorkDay?' Building manager unavailable':' Outside working hours');
     phoneEl.textContent='1300 785 007'; phoneLabelEl.textContent='Available 24/7 for urgent matters';
-    noteEl.style.display='block'; noteEl.textContent='Jacob Kim is available Mon/Wed/Fri 8AM–4PM. For urgent matters outside these hours, call SCA.';
+    noteEl.style.display='block'; noteEl.innerHTML='<strong>Building Manager is available Mon/Wed/Fri 8AM–4PM.</strong><br><strong>For urgent matters outside these hours, call SCA.</strong>';
     callBtn.href='tel:1300785007'; callBtn.className='call-btn btn-orange'; callBtn.innerHTML='<i class="ti ti-phone"></i> Call SCA';
-    emailBtn.href='mailto:sca.yun82@gmail.com'; emailBtn.style.display='flex';
-    emailLabel.textContent='sca.yun82@gmail.com'; emailLabel.href='mailto:sca.yun82@gmail.com';
+    emailBtn.href='mailto:info@scafacility.com'; emailBtn.style.display='flex';
+    emailLabel.textContent='info@scafacility.com'; emailLabel.href='mailto:info@scafacility.com';
   }
 }
 
@@ -491,7 +492,7 @@ async function loadStrataManager() {
   document.getElementById('strataMgrRole').textContent = 'Strata Manager' + (sm.company ? ' · ' + sm.company : '');
 
   const phone = sm.phone || '';
-  document.getElementById('strataMgrPhone').textContent = phone || '—';
+  document.getElementById('strataMgrPhone').textContent = phone ? '📱 ' + phone + ' (Mobile)' : '—';
   const callBtn = document.getElementById('strataMgrCallBtn');
   if (phone) { callBtn.href = 'tel:' + phone.replace(/\s/g,''); callBtn.style.display=''; } else { callBtn.style.display='none'; }
 
