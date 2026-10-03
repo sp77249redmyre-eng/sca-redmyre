@@ -471,44 +471,50 @@
   transform:translateY(0);
 }
 
-/* Selected button feedback — keeps blinking until another button is selected. */
+/* Selected button feedback — subtle continuous glow, not a harsh flash. */
+.type-btn.hot,
+.type-btn.cold{
+  animation:hvac-selected-glow 1.8s ease-in-out infinite;
+}
+@keyframes hvac-selected-glow{
+  0%,100%{
+    filter:brightness(1);
+  }
+  45%{
+    filter:brightness(1);
+  }
+  58%{
+    filter:brightness(1.08);
+  }
+  70%{
+    filter:brightness(1);
+  }
+}
 .type-btn.hot::before,
 .type-btn.cold::before{
   content:"";
   position:absolute;
   inset:0;
   border-radius:10px;
-  background:rgba(255,255,255,.82);
-  opacity:0;
   pointer-events:none;
   z-index:2;
-  animation:hvac-selected-blink 1.2s ease-in-out infinite;
-}
-@keyframes hvac-selected-blink{
-  0%,100%{opacity:0}
-  12%{opacity:1}
-  24%{opacity:0}
-  38%{opacity:1}
-  50%{opacity:0}
-}
-
-/* Immediate click feedback — preserves the existing button design and selection state. */
-.type-btn.click-flash::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:10px;
-  background:rgba(255,255,255,.88);
   opacity:0;
-  pointer-events:none;
-  animation:hvac-click-flash .65s ease-out;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,0), 0 0 0 0 rgba(255,255,255,0);
+  animation:hvac-selected-ring 1.8s ease-in-out infinite;
 }
-@keyframes hvac-click-flash{
-  0%,100%{opacity:0}
-  12%{opacity:1}
-  25%{opacity:0}
-  40%{opacity:1}
-  55%{opacity:0}
+@keyframes hvac-selected-ring{
+  0%,100%{
+    opacity:0;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0), 0 0 0 0 rgba(255,255,255,0);
+  }
+  58%{
+    opacity:.9;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.78), 0 0 0 5px rgba(255,255,255,.18);
+  }
+  72%{
+    opacity:0;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0), 0 0 0 9px rgba(255,255,255,0);
+  }
 }
 
 </style>
@@ -915,9 +921,6 @@ function updateRequestButtons(current, min, max) {
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
-    btn.classList.remove('click-flash');
-    void btn.offsetWidth;
-    btn.classList.add('click-flash');
     selectedType = btn.dataset.type;
     document.getElementById('btnHot').className  = 'type-btn' + (selectedType==='hot'?' hot':'') + (document.getElementById('btnHot').disabled?' limit-disabled':'');
     document.getElementById('btnCold').className = 'type-btn' + (selectedType==='cold'?' cold':'') + (document.getElementById('btnCold').disabled?' limit-disabled':'');
