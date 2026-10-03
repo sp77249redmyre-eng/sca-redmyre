@@ -44,8 +44,14 @@
 .parking-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:box-shadow 0.15s}
 .parking-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.06)}
 .parking-card.resolved{background:var(--bg)}
-.parking-card.repeat-offence{border:2px solid #e8000d !important}
+.parking-card.repeat-offence{border:2px solid #f87171 !important}
+.parking-card.repeat-offence-2{border-width:3px !important;border-color:#ef4444 !important}
+.parking-card.repeat-offence-3{border-width:4px !important;border-color:#dc2626 !important}
+.parking-card.repeat-offence-4{border-width:6px !important;border-color:#b91c1c !important}
 .parking-card.repeat-offence.resolved{border-color:#991b1b !important}
+.parking-card.repeat-offence-2.resolved{border-color:#b91c1c !important}
+.parking-card.repeat-offence-3.resolved{border-color:#991b1b !important}
+.parking-card.repeat-offence-4.resolved{border-color:#7f1d1d !important}
 .visitor-status-label{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:7px;background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;font-size:11px;font-weight:800;letter-spacing:.2px}
 .visitor-enforcement{margin-top:12px;padding:12px 14px;border:1px solid #fecaca;border-left:4px solid #e8000d;border-radius:10px;background:#fff7f7}
 .visitor-enforcement-title{display:flex;align-items:center;gap:7px;color:#b91c1c;font-size:13px;font-weight:800}
@@ -1406,7 +1412,7 @@ async function loadReports() {
         : `<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:700"><i class="ti ti-alert-triangle"></i> External</span>`;
 
     const repeatLabel = isRepeat
-      ? `<span class="repeat-offence-label ${isResolved?'resolved':''}">${ordinalOffence(occurrenceN)} OFFENCE${isVisitorRepeat?' — SAME VEHICLE':''}</span>`
+      ? `<span class="repeat-offence-label ${isResolved?'resolved':''}">${ordinalOffence(occurrenceN)}${isVisitorRepeat?' — SAME VEHICLE':''}</span>`
       : '';
 
     const visitorEnforcementHtml = isUnknownVisitor
@@ -1429,7 +1435,7 @@ async function loadReports() {
       : '';
 
     return `
-      <div class="parking-card ${isResolved?'resolved':''} ${isRepeat?'repeat-offence':''}" id="pk-${r.id}">
+      <div class="parking-card ${isResolved?'resolved':''} ${isRepeat?'repeat-offence repeat-offence-'+Math.min(occurrenceN,4):''}" id="pk-${r.id}">
         <div class="pk-header ${isResolved?'resolved':''}" onclick="togglePk('${r.id}')">
           <div class="pk-header-left">
             ${thumbHtml}
