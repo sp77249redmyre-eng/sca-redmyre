@@ -797,6 +797,46 @@ body.observer-readonly .option-box{
 </style>
 </style>
 
+<style id="hvac-unread-reply-highlight">
+/* NEW REPLY / NEW MESSAGE — visual notification only.
+   Read state is tracked per signed-in user in this browser; HVAC request logic is unchanged. */
+.my-req-summary.has-unread-message{
+  position:relative;
+  background:linear-gradient(90deg,#fff1f2 0%,#fff8f8 52%,#fff1f2 100%) !important;
+  box-shadow:inset 5px 0 0 #ef4444, 0 0 0 1px rgba(239,68,68,.08);
+  animation:hvac-unread-row-pulse 2.2s ease-in-out infinite;
+}
+.hvac-unread-indicator{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-left:10px;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#ef4444;
+  color:#fff;
+  font-size:13px;
+  line-height:1;
+  font-weight:900;
+  white-space:nowrap;
+  letter-spacing:.01em;
+  box-shadow:0 3px 8px rgba(239,68,68,.18);
+  animation:hvac-unread-indicator-blink 1.35s ease-in-out infinite;
+}
+.hvac-unread-indicator .icon{font-size:14px;line-height:1}
+@keyframes hvac-unread-row-pulse{
+  0%,100%{background-color:#fff7f7}
+  50%{background-color:#fff0f1}
+}
+@keyframes hvac-unread-indicator-blink{
+  0%,100%{opacity:.78;transform:scale(.98)}
+  50%{opacity:1;transform:scale(1.03)}
+}
+@media(max-width:900px){
+  .hvac-unread-indicator{font-size:12px;padding:5px 8px;margin-left:7px}
+}
+</style>
+
 <style id="dynamic-ui-spacing-final">
 .dynamic-temp-title{font-size:24px;font-weight:900;margin-bottom:8px}
 .dynamic-temp-subtitle{font-size:15px;font-weight:700;margin-top:0;margin-bottom:16px}
@@ -2056,6 +2096,94 @@ window.showReasonModal = (el) => {
 
 let expandedRequestIds = new Set();
 
+// Unread conversation state. Stored per signed-in user without changing the DB schema.
+let unreadMessageCounts = {};
+let unreadMessageLabels = {};
+const HVAC_READ_STATE_PREFIX = 'hvac-request-read-v1:';
+
+function getHvacReadStateKey(reqId) {
+  return `${HVAC_READ_STATE_PREFIX}${user?.id || 'anonymous'}:${reqId}`;
+}
+
+function getHvacLastReadAt(reqId) {
+  try { return localStorage.getItem(getHvacReadStateKey(reqId)) || null; }
+  catch (e) { return null; }
+}
+
+function setHvacLastReadAt(reqId, isoTime) {
+  try { localStorage.setItem(getHvacReadStateKey(reqId), isoTime); }
+  catch (e) {}
+}
+
+function unreadIndicatorHtml(reqId) {
+  const count = Number(unreadMessageCounts[reqId] || 0);
+  if (!count) return '';
+  const label = unreadMessageLabels[reqId] || (role === 'admin' ? 'NEW MESSAGE' : 'NEW REPLY');
+  return `<span class="hvac-unread-indicator" aria-label="${label}"><span class="icon">💬</span>${count} ${label}</span>`;
+}
+
+function applyUnreadVisual(reqId) {
+  const nodes = document.querySelectorAll(`.my-req-summary[data-id="${reqId}"]`);
+  nodes.forEach(el => {
+    const hasUnread = Number(unreadMessageCounts[reqId] || 0) > 0;
+    el.classList.toggle('has-unread-message', hasUnread);
+    const existing = el.querySelector('.hvac-unread-indicator');
+    if (existing) existing.remove();
+    if (hasUnread) {
+      const host = el.querySelector('.hvac-summary-request');
+      if (host) host.insertAdjacentHTML('beforeend', unreadIndicatorHtml(reqId));
+    }
+  });
+}
+
+function markRequestRead(reqId) {
+  const list = messagesCache[reqId] || [];
+  const newest = list.reduce((latest, m) => {
+    const ts = m?.created_at ? new Date(m.created_at).getTime() : 0;
+    return ts > latest ? ts : latest;
+  }, 0);
+  const readAt = newest ? new Date(newest).toISOString() : new Date().toISOString();
+  setHvacLastReadAt(reqId, readAt);
+  unreadMessageCounts[reqId] = 0;
+  unreadMessageLabels[reqId] = '';
+  applyUnreadVisual(reqId);
+}
+
+async function refreshUnreadIndicators(requests) {
+  const ids = [...new Set((requests || []).map(r => String(r.id)).filter(Boolean))];
+  if (!ids.length || !user?.id) return;
+  try {
+    const { data, error } = await supabase.from('hvac_messages')
+      .select('request_id, sender_id, sender_role, created_at')
+      .in('request_id', ids)
+      .order('created_at', { ascending: true });
+    if (error) return;
+
+    const grouped = {};
+    (data || []).forEach(m => {
+      const id = String(m.request_id);
+      (grouped[id] ||= []).push(m);
+    });
+
+    ids.forEach(id => {
+      const lastRead = getHvacLastReadAt(id);
+      const cutoff = lastRead ? new Date(lastRead).getTime() : 0;
+      const unread = (grouped[id] || []).filter(m => {
+        if (String(m.sender_id) === String(user.id)) return false;
+        const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
+        return ts > cutoff;
+      });
+      unreadMessageCounts[id] = unread.length;
+      unreadMessageLabels[id] = unread.length ? (role === 'admin' ? 'NEW MESSAGE' : 'NEW REPLY') : '';
+      applyUnreadVisual(id);
+    });
+  } catch (e) {}
+}
+
+async function refreshUnreadForRequest(reqId) {
+  await refreshUnreadIndicators([{ id: reqId }]);
+}
+
 function reqRowHtml(r, forceOpen) {
   const isOpen = forceOpen || expandedRequestIds.has(String(r.id));
   const icon = r.type === 'hot'
@@ -2071,9 +2199,9 @@ function reqRowHtml(r, forceOpen) {
       : '—';
   return `
     <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
-      <div class="my-req-summary" data-id="${r.id}" style="${forceOpen ? '' : 'cursor:pointer;'}">
+      <div class="my-req-summary${Number(unreadMessageCounts[r.id] || 0) > 0 ? ' has-unread-message' : ''}" data-id="${r.id}" style="${forceOpen ? '' : 'cursor:pointer;'}">
         <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
-        <div class="hvac-summary-request">${r.status === 'completed' ? (r.type === 'hot' ? '<span class="summary-request-image summary-request-down"><img src="/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>' : '<span class="summary-request-image summary-request-up"><img src="/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>') : icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
+        <div class="hvac-summary-request">${r.status === 'completed' ? (r.type === 'hot' ? '<span class="summary-request-image summary-request-down"><img src="/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>' : '<span class="summary-request-image summary-request-up"><img src="/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>') : icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span>${unreadIndicatorHtml(r.id)}</div>
         <div class="hvac-summary-temp">${tempText}</div>
         <div class="hvac-summary-status"><span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${statusLabel(r.status)}</span></div>
       </div>
@@ -2526,10 +2654,12 @@ function setupMessagesRealtime() {
       if (messagesLoaded[msg.request_id]) {
         addMessageToCache(msg.request_id, msg);
       }
+      if (String(msg.sender_id) !== String(user?.id)) refreshUnreadForRequest(msg.request_id);
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'hvac_messages' }, (payload) => {
       const msg = payload.new;
       if (messagesLoaded[msg.request_id]) updateMessageInCache(msg.request_id, msg);
+      if (String(msg.sender_id) !== String(user?.id)) refreshUnreadForRequest(msg.request_id);
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'hvac_messages' }, (payload) => {
       const old = payload.old;
@@ -2582,6 +2712,7 @@ function attachReqRowListeners(container, renderFn) {
     el.addEventListener('click', () => {
       const id = el.dataset.id;
       const wasOpen = expandedRequestIds.has(id);
+      if (!wasOpen) markRequestRead(id);
       // Accordion: only one History row open at a time — opening a new one
       // closes whichever was open before it.
       expandedRequestIds.clear();
@@ -2621,6 +2752,7 @@ function renderMyRequests() {
   active.forEach(r => ensureMessagesLoaded(r.id));
   expandedRequestIds.forEach(id => ensureMessagesLoaded(id));
   active.filter(r => r.status === 'processing').forEach(ensureAdjustingSetpoint);
+  refreshUnreadIndicators([...active, ...visible]);
 }
 
 async function loadMyRequests() {
@@ -2664,6 +2796,7 @@ if (role === 'admin') {
   // to show here — hide it entirely rather than leaving an empty header.
   document.getElementById('locationSection').style.display = 'none';
   await loadAdminData();
+  setupMessagesRealtime();
 
   supabase.channel('admin-hvac-updates')
     .on('postgres_changes', {event: '*', schema: 'public', table: 'hvac_requests'}, () => {
@@ -2904,10 +3037,10 @@ async function loadAdminData() {
       const tempText = r.status === 'completed' && r.temp_before != null ? `${r.temp_before}°C → ${r.temp_after}°C` : '—';
       return `
       <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
-        <div class="my-req-summary" data-id="${r.id}" style="cursor:pointer">
+        <div class="my-req-summary${Number(unreadMessageCounts[r.id] || 0) > 0 ? ' has-unread-message' : ''}" data-id="${r.id}" style="cursor:pointer">
           <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
           <div class="hvac-summary-unit">${(r.level || '').replace('Level ','')}${(r.tenancy || '').replace('Tenancy ','')}<small>${r.level || ''}</small></div>
-          <div class="hvac-summary-request">${icon}</div>
+          <div class="hvac-summary-request">${icon}${unreadIndicatorHtml(r.id)}</div>
           <div class="hvac-summary-temp">${tempText}</div>
           <div class="hvac-summary-status" style="display:flex;align-items:center;gap:10px;justify-content:space-between;justify-self:stretch">
             <span class="badge ${r.status === 'completed' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-gray'}" style="font-size:13px;font-weight:800;padding:7px 16px;border-radius:8px">${r.status}</span>
@@ -2938,6 +3071,7 @@ async function loadAdminData() {
     }).join('');
     attachReqRowListeners(cList, renderAdminCompleted);
     filtered.filter(r => expandedRequestIds.has(String(r.id))).forEach(r => ensureMessagesLoaded(r.id));
+    refreshUnreadIndicators(filtered);
   }
   renderAdminCompleted();
   document.getElementById('adminFilterTenancy').onchange = renderAdminCompleted;
