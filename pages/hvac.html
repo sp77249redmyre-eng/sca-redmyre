@@ -906,6 +906,36 @@ body.observer-readonly .option-box{
   font-weight:900 !important;
 }
 </style>
+
+<style id="dynamic-temperature-direction-colors">
+/* Temperature direction colours:
+   current = slate grey, cooling = progressively deeper blue,
+   heating = progressively deeper red. Box and button use the same colour. */
+.dynamic-temp-card{
+  --direction-color:#64748B;
+  --direction-bg:#F8FAFC;
+  --direction-border:#CBD5E1;
+  --direction-shadow:rgba(100,116,139,.16);
+  background:var(--direction-bg) !important;
+  border-color:var(--direction-border) !important;
+  box-shadow:0 8px 24px var(--direction-shadow) !important;
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.dynamic-request{
+  background:var(--direction-color) !important;
+  border-color:var(--direction-color) !important;
+  box-shadow:0 7px 18px var(--direction-shadow) !important;
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.dynamic-request:disabled{
+  background:#64748B !important;
+  border-color:#64748B !important;
+  box-shadow:0 7px 18px rgba(100,116,139,.16) !important;
+  cursor:not-allowed !important;
+  opacity:.72;
+}
+</style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -1205,137 +1235,67 @@ function renderDynamicTicks() {
 }
 
 function renderDynamicTemperature() {
-  if (dynamicCurrentSetpoint == null) return;
+  if (!dynamicSlider || !dynamicCurrentSetpoint) return;
+
   const target = Number(dynamicSlider.value);
-  const delta = Number((target-dynamicCurrentSetpoint).toFixed(1));
-  const ratio = Math.min(1, Math.abs(delta)/2);
-  const pct = ((target-dynamicMinTemp)/(dynamicMaxTemp-dynamicMinTemp || 1))*100;
-  const bubble = document.getElementById('dynamicBubble');
-  bubble.style.left = pct+'%';
-  bubble.style.display = delta === 0 ? 'none' : 'block';
-  bubble.textContent = dynamicFmt(target)+'°C';
+  const delta = Number((target - dynamicCurrentSetpoint).toFixed(1));
+  const ratio = Math.min(1, Math.abs(delta) / 2);
+  const pct = ((target - dynamicMinTemp) / (dynamicMaxTemp - dynamicMinTemp || 1)) * 100;
+
+  dynamicBubble.style.left = pct + '%';
+  dynamicBubble.style.display = delta === 0 ? 'none' : 'block';
+  dynamicBubble.textContent = dynamicFmt(target) + '°C';
 
   const cold = document.getElementById('dynamicColdArt');
   const hot = document.getElementById('dynamicHotArt');
-  cold.style.opacity = delta < 0 ? .86+.14*ratio : .22;
-  hot.style.opacity = delta > 0 ? .86+.14*ratio : .22;
-  cold.style.transform = delta < 0 ? 'scale('+(1+.05*ratio)+')' : 'scale(1)';
-  hot.style.transform = delta > 0 ? 'scale('+(1+.05*ratio)+')' : 'scale(1)';
-  cold.style.filter = delta < 0 ? 'brightness('+(1+.12*ratio)+') saturate('+(1+.25*ratio)+')' : 'grayscale(.15)';
-  hot.style.filter = delta > 0 ? 'brightness('+(1+.10*ratio)+') saturate('+(1+.25*ratio)+')' : 'grayscale(.15)';
+  cold.style.opacity = delta < 0 ? .86 + .14 * ratio : .22;
+  hot.style.opacity = delta > 0 ? .86 + .14 * ratio : .22;
+  cold.style.transform = delta < 0 ? 'scale(' + (1 + .05 * ratio) + ')' : 'scale(1)';
+  hot.style.transform = delta > 0 ? 'scale(' + (1 + .05 * ratio) + ')' : 'scale(1)';
+  cold.style.filter = delta < 0 ? 'brightness(' + (1 + .12 * ratio) + ') saturate(' + (1 + .25 * ratio) + ')' : 'grayscale(.15)';
+  hot.style.filter = delta > 0 ? 'brightness(' + (1 + .10 * ratio) + ') saturate(' + (1 + .25 * ratio) + ')' : 'grayscale(.15)';
+
+  /* Direction colour:
+     0°C change = Slate Gray
+     -2°C = deep blue
+     +2°C = deep red
+     Intermediate 0.5°C steps transition progressively. */
+  const card = document.getElementById('dynamicTempCard');
+  if (card) {
+    const neutral = [100, 116, 139]; // #64748B
+    const blue = [29, 78, 216];      // deep blue
+    const red = [220, 38, 38];       // deep red
+
+    const targetRgb = delta < 0 ? blue : red;
+    const t = ratio;
+    const mix = (a, b) => Math.round(a + (b - a) * t);
+    const rgb = targetRgb.map((v, i) => mix(neutral[i], v));
+    const color = 'rgb(' + rgb.join(',') + ')';
+
+    const bgRgb = rgb.map(v => Math.round(255 - (255 - v) * 0.91));
+    const bg = 'rgb(' + bgRgb.join(',') + ')';
+    const border = 'rgb(' + rgb.map(v => Math.round(v * 0.72 + 255 * 0.28)).join(',') + ')';
+    const shadow = 'rgba(' + rgb.join(',') + ',.18)';
+
+    card.style.setProperty('--direction-color', color);
+    card.style.setProperty('--direction-bg', bg);
+    card.style.setProperty('--direction-border', border);
+    card.style.setProperty('--direction-shadow', shadow);
+  }
 
   dynamicRequestBtn.disabled = delta === 0;
 
   if (delta === 0) {
     dynamicRequestBtn.textContent = 'Request Temperature →';
-    dynamicRequestBtn.style.background = '#2563eb';
-    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(37,99,235,.22)';
     selectedTargetTemp = null;
     dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
   } else {
     selectedTargetTemp = target;
     const isCooling = delta < 0;
-    dynamicRequestBtn.textContent = 'Request '+dynamicFmt(target)+'°C →';
-    dynamicRequestBtn.style.background = isCooling ? '#086cff' : '#e52a20';
-    dynamicRequestBtn.style.boxShadow = isCooling ? '0 7px 18px rgba(8,108,255,.22)' : '0 7px 18px rgba(229,42,32,.22)';
+    dynamicRequestBtn.textContent = 'Request ' + dynamicFmt(target) + '°C →';
     dynamicStatus.textContent = (isCooling ? 'Cooling target: ' : 'Heating target: ') + dynamicFmt(target) + '°C';
   }
 }
-
-dynamicSlider.addEventListener('input', () => {
-  dynamicInteracted = true;
-  dynamicHand.classList.add('is-hidden');
-  renderDynamicTemperature();
-});
-document.getElementById('dynamicMinus').addEventListener('click', () => {
-  if (dynamicSlider.disabled) return;
-  dynamicInteracted = true; dynamicHand.classList.add('is-hidden');
-  dynamicSlider.value = Math.max(Number(dynamicSlider.min), Number(dynamicSlider.value)-.5);
-  renderDynamicTemperature();
-});
-document.getElementById('dynamicPlus').addEventListener('click', () => {
-  if (dynamicSlider.disabled) return;
-  dynamicInteracted = true; dynamicHand.classList.add('is-hidden');
-  dynamicSlider.value = Math.min(Number(dynamicSlider.max), Number(dynamicSlider.value)+.5);
-  renderDynamicTemperature();
-});
-
-async function syncDynamicTemperatureUI(level, tenancy) {
-  dynamicLevel = level || null;
-  dynamicTenancy = tenancy || null;
-  if (!level || !tenancy) {
-    dynamicRequestBtn.disabled = true;
-    dynamicSlider.disabled = true;
-    dynamicStatus.textContent = 'Select your floor and unit first.';
-    return;
-  }
-  try {
-    const { data, error } = await supabase.from('hvac_setpoints')
-      .select('current_setpoint')
-      .eq('level', level).eq('tenancy', tenancy).maybeSingle();
-    if (error || data?.current_setpoint == null) throw new Error('No current setpoint');
-    updateDynamicRange(parseFloat(data.current_setpoint));
-    dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
-    dynamicRequestBtn.disabled = true;
-  } catch(e) {
-    dynamicCurrentSetpoint = null;
-    dynamicRequestBtn.disabled = true;
-    dynamicSlider.disabled = true;
-    document.getElementById('dynamicCurrent').textContent = '—';
-    dynamicStatus.textContent = 'Current setpoint is not available.';
-  }
-}
-
-dynamicRequestBtn.addEventListener('click', async () => {
-  if (selectedTargetTemp == null || !dynamicLevel || !dynamicTenancy) return;
-  const target = Number(selectedTargetTemp);
-  const level = dynamicLevel, tenancy = dynamicTenancy;
-  // Re-read live setpoint immediately before submitting so ±2°C is never based on stale UI data.
-  const { data, error } = await supabase.from('hvac_setpoints')
-    .select('current_setpoint').eq('level', level).eq('tenancy', tenancy).maybeSingle();
-  if (error || data?.current_setpoint == null) {
-    dynamicStatus.textContent = 'Unable to verify the current setpoint. Please try again.';
-    return;
-  }
-  const current = Number(data.current_setpoint);
-  const min = Math.max(18, Number((current-2).toFixed(1)));
-  const max = Math.min(25, Number((current+2).toFixed(1)));
-  if (target < min || target > max || target < 18 || target > 25 || Math.round(target*2)!==target*2) {
-    dynamicStatus.textContent = 'Target is outside the allowed range. Please select again.';
-    updateDynamicRange(current);
-    return;
-  }
-  selectedTargetTemp = target;
-  selectedType = target < current ? 'hot' : 'cold';
-  // Feed the target into the existing request pipeline. temp_after is already an existing
-  // hvac_requests column used by the daemon for the completed temperature result.
-  document.getElementById('submitHvacBtn').click();
-});
-
-function updateRequestButtons(current, min, max) {
-  const hotBtn = document.getElementById('btnHot');
-  const coldBtn = document.getElementById('btnCold');
-  if (!hotBtn || !coldBtn) return;
-
-  const atMin = current != null && min != null && Number(current) <= Number(min);
-  const atMax = current != null && max != null && Number(current) >= Number(max);
-
-  hotBtn.disabled = atMin;
-  coldBtn.disabled = atMax;
-  hotBtn.classList.toggle('limit-disabled', atMin);
-  coldBtn.classList.toggle('limit-disabled', atMax);
-  hotBtn.setAttribute('aria-disabled', atMin ? 'true' : 'false');
-  coldBtn.setAttribute('aria-disabled', atMax ? 'true' : 'false');
-  hotBtn.title = atMin ? `Minimum temperature reached (${min}°C)` : 'Temperature will be lowered by 0.5°C';
-  coldBtn.title = atMax ? `Maximum temperature reached (${max}°C)` : 'Temperature will be raised by 0.5°C';
-
-  if ((atMin && selectedType === 'hot') || (atMax && selectedType === 'cold')) {
-    selectedType = null;
-    hotBtn.className = 'type-btn' + (hotBtn.disabled ? ' limit-disabled' : '');
-    coldBtn.className = 'type-btn' + (coldBtn.disabled ? ' limit-disabled' : '');
-  }
-}
-
 document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
