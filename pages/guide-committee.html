@@ -620,6 +620,20 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 }
 </style>
 
+
+<style id="ac-slider-attention">
+#ac .ac-ui-help{font-size:18px!important;margin-top:20px!important;margin-bottom:9px!important}
+#ac .ac-ui-help span{font-size:30px!important;display:inline-block;animation:ac-hand-blink 1s ease-in-out infinite}
+@keyframes ac-hand-blink{0%,100%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:.25;transform:translateY(4px) scale(1.12)}}
+#ac .ac-demo-slider{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:4;margin:0}
+#ac .ac-slider-wrap{height:70px!important;padding-top:48px!important}
+#ac .ac-status{font-size:26px!important;line-height:1.25!important;font-weight:900!important;margin-top:14px!important}
+#ac .ac-status-pointer{display:none;margin-left:12px;font-size:32px;vertical-align:middle;animation:ac-pointer-blink 1s ease-in-out infinite}
+#ac .ac-status.is-focused .ac-status-pointer{display:inline-block}
+@keyframes ac-pointer-blink{0%,100%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:.25;transform:translateY(-6px) scale(1.12)}}
+#ac .ac-status.is-focused{font-size:26px!important}
+</style>
+
 </head>
 <body>
 <div id="google_translate_element" style="position:fixed;top:-1000px;left:-1000px"></div>
@@ -757,11 +771,11 @@ body{font-family:'DM Sans',Arial,system-ui,sans-serif;background:var(--bg);color
 <div class="ac-ui-subtitle">Drag the slider to adjust the temperature</div>
 <div class="ac-ui-visual"><div class="ac-ui-art cold">❄️</div><div class="ac-ui-current"><div>Current Setpoint</div><strong>20.0°C</strong></div><div class="ac-ui-art hot">☀️</div></div>
 <div class="ac-ui-help">Drag the slider <span>👇</span></div>
-<div class="ac-slider-wrap"><div class="ac-bubble">21.0°C</div><div class="ac-slider"><div class="ac-slider-fill"></div><div class="ac-slider-dot"></div></div></div>
+<div class="ac-slider-wrap"><div class="ac-bubble">21.0°C</div><div class="ac-slider"><div class="ac-slider-fill"></div><div class="ac-slider-dot"></div><input class="ac-demo-slider" type="range" min="18" max="22" step="0.5" value="21" aria-label="Demo target temperature"></div></div>
 <div class="ac-endpoints"><span>18.0°C</span><span>22.0°C</span></div>
 <div class="ac-controls"><button type="button">−</button><div><strong>0.5°C per step</strong><small>Range: 18.0 – 22.0°C (±2.0°C)</small></div><button type="button">+</button></div>
 <button class="ac-request-btn heat" type="button">Request 21.0°C →</button>
-<div class="ac-status heat-text">Heating target: 21.0°C</div>
+<div class="ac-status heat-text" id="acDemoStatus">Heating target: 21.0°C <span class="ac-status-pointer" aria-hidden="true">☝️</span></div>
 </div>
 
 <div class="ac-direction-grid">
@@ -1534,6 +1548,37 @@ document.getElementById('sidebarPlaceholder')?.setAttribute('translate','no');
 document.getElementById('topbarPlaceholder')?.setAttribute('translate','no');
 document.getElementById('sidebarPlaceholder')?.classList.add('notranslate');
 document.getElementById('topbarPlaceholder')?.classList.add('notranslate');
+</script>
+<script id="ac-demo-slider-interaction">
+(function(){
+  const slider=document.querySelector('#ac .ac-demo-slider');
+  const dot=document.querySelector('#ac .ac-slider-dot');
+  const bubble=document.querySelector('#ac .ac-bubble');
+  const status=document.querySelector('#ac #acDemoStatus');
+  if(!slider||!dot||!bubble||!status) return;
+  function update(){
+    const min=18,max=22,v=Number(slider.value);
+    const pct=((v-min)/(max-min))*100;
+    dot.style.left=pct+'%';
+    bubble.style.left=pct+'%';
+    bubble.textContent=v.toFixed(1)+'°C';
+    if(v>20){
+      dot.style.background='#e52a20'; bubble.style.background='#e52a20';
+      status.classList.add('heat-text');
+    }else if(v<20){
+      dot.style.background='#176cf2'; bubble.style.background='#176cf2';
+      status.classList.remove('heat-text');
+    }else{
+      dot.style.background='#64748b'; bubble.style.background='#64748b';
+      status.classList.remove('heat-text');
+    }
+    status.childNodes[0].nodeValue=(v>20?'Heating target: ':v<20?'Cooling target: ':'Target: ')+v.toFixed(1)+'°C ';
+    status.classList.toggle('is-focused', v!==21);
+  }
+  slider.addEventListener('input',update);
+  slider.addEventListener('change',update);
+  update();
+})();
 </script>
 <script>
 (function(){
