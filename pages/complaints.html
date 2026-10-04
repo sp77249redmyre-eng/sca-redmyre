@@ -660,9 +660,10 @@ async function refreshUnreadForComplaint(id) {
   if (complaint) await refreshUnreadIndicators([complaint]);
 }
 
-async function loadComplaints() {
+async function loadComplaints(options = {}) {
   // RLS determines which requests the current role may see.
   // Existing public/private visibility is intentionally unchanged.
+  const refreshUnread = options.refreshUnread !== false;
   const { data, error } = await supabase
     .from('complaints')
     .select('*')
@@ -674,7 +675,9 @@ async function loadComplaints() {
     allComplaints = data || [];
   }
   renderComplaints();
-  await refreshUnreadIndicators(allComplaints);
+  // A complaints-row update (status/title/body/etc.) is not a message event.
+  // Only INSERT or the message realtime channel should recalculate NEW/REPLY.
+  if (refreshUnread) await refreshUnreadIndicators(allComplaints);
 }
 
 function buildProgressBar(status) {
@@ -757,12 +760,6 @@ function renderComplaints() {
 
 async function openInlineDetail(id) {
   await window.openDetail(id);
-
-  // Mark the conversation as read when the request is opened.
-  // This guarantees NEW/REPLY disappears immediately after the resident/admin
-  // opens the conversation, while the existing thread renderer also keeps the
-  // read state synchronized after loading the messages.
-  markComplaintRead(id);
 
   const card = document.querySelector(`.resident-request-card[data-cid="${id}"]`);
   const box = document.getElementById('detailModalBox');
@@ -1652,8 +1649,10 @@ if (canSubmit.includes(role)) await loadMyUnits();
 await loadComplaints();
 
 supabase.channel('complaints-realtime')
-  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => {
-    await loadComplaints();
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async (payload) => {
+    // A new complaint may create NEW for Admin. A status/title/body/admin_response
+    // update must NOT create NEW or REPLY because no message was added.
+    await loadComplaints({ refreshUnread: payload?.eventType === 'INSERT' });
   })
   .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async (payload) => {
     const complaintId = payload?.new?.complaint_id || payload?.old?.complaint_id || null;
