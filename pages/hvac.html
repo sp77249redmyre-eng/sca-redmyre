@@ -907,34 +907,6 @@ body.observer-readonly .option-box{
 }
 </style>
 
-<style id="dynamic-temperature-direction-colors">
-/* Temperature direction colours:
-   current = slate grey, cooling = progressively deeper blue,
-   heating = progressively deeper red. Box and button use the same colour. */
-.dynamic-temp-card{
-  --direction-color:#64748B;
-  --direction-bg:#F8FAFC;
-  --direction-border:#CBD5E1;
-  --direction-shadow:rgba(100,116,139,.16);
-  background:var(--direction-bg) !important;
-  border-color:var(--direction-border) !important;
-  box-shadow:0 8px 24px var(--direction-shadow) !important;
-  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
-}
-.dynamic-request{
-  background:var(--direction-color) !important;
-  border-color:var(--direction-color) !important;
-  box-shadow:0 7px 18px var(--direction-shadow) !important;
-  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
-}
-.dynamic-request:disabled{
-  background:#64748B !important;
-  border-color:#64748B !important;
-  box-shadow:0 7px 18px rgba(100,116,139,.16) !important;
-  cursor:not-allowed !important;
-  opacity:.72;
-}
-</style>
 
 </head>
 <body>
@@ -1235,7 +1207,7 @@ function renderDynamicTicks() {
 }
 
 function renderDynamicTemperature() {
-  if (!dynamicSlider || !dynamicCurrentSetpoint) return;
+  if (!dynamicSlider || dynamicCurrentSetpoint == null) return;
 
   const target = Number(dynamicSlider.value);
   const delta = Number((target - dynamicCurrentSetpoint).toFixed(1));
@@ -1256,50 +1228,55 @@ function renderDynamicTemperature() {
   hot.style.filter = delta > 0 ? 'brightness(' + (1 + .10 * ratio) + ') saturate(' + (1 + .25 * ratio) + ')' : 'grayscale(.15)';
 
   /* Direction colour:
-     0°C change = Slate Gray
+     current = neutral Slate Gray
      -2°C = deep blue
      +2°C = deep red
-     Intermediate 0.5°C steps transition progressively. */
+     The card remains light; only a subtle tint is applied.
+     The button uses the same direction colour. */
   const card = document.getElementById('dynamicTempCard');
+  const neutral = [100,116,139]; // #64748B
+  const blue = [29,78,216];      // #1D4ED8
+  const red = [220,38,38];       // #DC2626
+  const targetRgb = delta < 0 ? blue : red;
+  const rgb = targetRgb.map((v,i) => Math.round(neutral[i] + (v-neutral[i]) * ratio));
+  const color = 'rgb(' + rgb.join(',') + ')';
+
   if (card) {
-    const neutral = [100, 116, 139]; // #64748B
-    const blue = [29, 78, 216];      // deep blue
-    const red = [220, 38, 38];       // deep red
-
-    const targetRgb = delta < 0 ? blue : red;
-    const t = ratio;
-    const mix = (a, b) => Math.round(a + (b - a) * t);
-    const rgb = targetRgb.map((v, i) => mix(neutral[i], v));
-    const color = 'rgb(' + rgb.join(',') + ')';
-
-    // Keep the card light. The direction colour is used for the border/button,
-    // while the card background is only a very light tint of that colour.
-    const tintStrength = 0.055 + (0.075 * ratio);
-    const bgRgb = rgb.map(v => Math.round(255 + (v - 255) * tintStrength));
-    const bg = 'rgb(' + bgRgb.join(',') + ')';
-    const border = 'rgb(' + rgb.map(v => Math.round(v * 0.72 + 255 * 0.28)).join(',') + ')';
-    const shadow = 'rgba(' + rgb.join(',') + ',.18)';
-
-    card.style.setProperty('--direction-color', color);
-    card.style.setProperty('--direction-bg', bg);
-    card.style.setProperty('--direction-border', border);
-    card.style.setProperty('--direction-shadow', shadow);
+    // Keep the card visually light. At neutral it is white; tint strengthens with direction.
+    const tint = 0.025 + (0.065 * ratio);
+    const bgRgb = rgb.map(v => Math.round(255 + (v - 255) * tint));
+    const borderRgb = rgb.map(v => Math.round(v * 0.55 + 255 * 0.45));
+    card.style.background = 'rgb(' + bgRgb.join(',') + ')';
+    card.style.borderColor = 'rgb(' + borderRgb.join(',') + ')';
+    card.style.boxShadow = '0 8px 24px rgba(' + rgb.join(',') + ',.10)';
   }
 
   dynamicRequestBtn.disabled = delta === 0;
 
   if (delta === 0) {
+    // Neutral/current: button cannot be clicked.
     dynamicRequestBtn.textContent = 'Request Temperature →';
+    dynamicRequestBtn.style.background = '#64748B';
+    dynamicRequestBtn.style.borderColor = '#64748B';
+    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(100,116,139,.16)';
+    dynamicRequestBtn.style.opacity = '.72';
+    dynamicRequestBtn.style.cursor = 'not-allowed';
     selectedTargetTemp = null;
     dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
   } else {
     selectedTargetTemp = target;
-    const isCooling = delta < 0;
     dynamicRequestBtn.textContent = 'Request ' + dynamicFmt(target) + '°C →';
+    dynamicRequestBtn.style.background = color;
+    dynamicRequestBtn.style.borderColor = color;
+    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(' + rgb.join(',') + ',.22)';
+    dynamicRequestBtn.style.opacity = '1';
+    dynamicRequestBtn.style.cursor = 'pointer';
+    const isCooling = delta < 0;
     dynamicStatus.textContent = (isCooling ? 'Cooling target: ' : 'Heating target: ') + dynamicFmt(target) + '°C';
   }
 }
-document.querySelectorAll('.type-btn').forEach(btn => {
+
+document.querySelectorAll('.type-btn').forEach(btn => {document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
     selectedType = btn.dataset.type;
@@ -1316,14 +1293,11 @@ function toTenancyLabel(suite) {
   return (suite || '').replace('Suite', 'Tenancy');
 }
 
-// Dynamic Temperature Adjustment — read the selected unit's current setpoint
-// directly from the same hvac_setpoints table used by the existing setpoint logic.
-// This function was missing from the current HTML, so the dynamic panel stayed at "—".
+// Read the selected unit's current setpoint directly from hvac_setpoints.
 let dynamicSetpointReqToken = 0;
 async function syncDynamicTemperatureUI(level, tenancy) {
   dynamicLevel = level || null;
   dynamicTenancy = tenancy || null;
-
   const token = ++dynamicSetpointReqToken;
 
   if (!level || !tenancy) {
@@ -1337,7 +1311,6 @@ async function syncDynamicTemperatureUI(level, tenancy) {
 
   dynamicSlider.disabled = true;
   dynamicRequestBtn.disabled = true;
-  dynamicStatus.textContent = 'Loading current setpoint…';
 
   try {
     const { data, error } = await supabase
@@ -1348,26 +1321,16 @@ async function syncDynamicTemperatureUI(level, tenancy) {
       .maybeSingle();
 
     if (token !== dynamicSetpointReqToken) return;
-
-    if (error) {
-      console.error('Dynamic current setpoint read failed:', error);
-      throw error;
-    }
-
-    if (data?.current_setpoint == null) {
-      throw new Error(`No hvac_setpoints row/value for ${level} / ${tenancy}`);
-    }
+    if (error) throw error;
+    if (data?.current_setpoint == null) throw new Error('No current setpoint');
 
     const current = Number(data.current_setpoint);
-    if (!Number.isFinite(current)) {
-      throw new Error(`Invalid current_setpoint for ${level} / ${tenancy}`);
-    }
+    if (!Number.isFinite(current)) throw new Error('Invalid current setpoint');
 
     updateDynamicRange(current);
     dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
   } catch (e) {
     if (token !== dynamicSetpointReqToken) return;
-
     dynamicCurrentSetpoint = null;
     dynamicSlider.disabled = true;
     dynamicRequestBtn.disabled = true;
@@ -1558,9 +1521,7 @@ function refreshCurrentSetpointDisplay() {
   const doRefresh = () => {
     if (selectedUnit) {
       loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
-    syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
-        syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
-    syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+      syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
     } else {
       const level = document.getElementById('hvacLevel').value;
       const tenancy = document.getElementById('hvacTenancy').value;
