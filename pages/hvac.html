@@ -1272,7 +1272,10 @@ function renderDynamicTemperature() {
     const rgb = targetRgb.map((v, i) => mix(neutral[i], v));
     const color = 'rgb(' + rgb.join(',') + ')';
 
-    const bgRgb = rgb.map(v => Math.round(255 - (255 - v) * 0.91));
+    // Keep the card light. The direction colour is used for the border/button,
+    // while the card background is only a very light tint of that colour.
+    const tintStrength = 0.055 + (0.075 * ratio);
+    const bgRgb = rgb.map(v => Math.round(255 + (v - 255) * tintStrength));
     const bg = 'rgb(' + bgRgb.join(',') + ')';
     const border = 'rgb(' + rgb.map(v => Math.round(v * 0.72 + 255 * 0.28)).join(',') + ')';
     const shadow = 'rgba(' + rgb.join(',') + ',.18)';
