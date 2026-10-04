@@ -740,6 +740,13 @@ function renderComplaints() {
 
 async function openInlineDetail(id) {
   await window.openDetail(id);
+
+  // Mark the conversation as read when the request is opened.
+  // This guarantees NEW/REPLY disappears immediately after the resident/admin
+  // opens the conversation, while the existing thread renderer also keeps the
+  // read state synchronized after loading the messages.
+  markComplaintRead(id);
+
   const card = document.querySelector(`.resident-request-card[data-cid="${id}"]`);
   const box = document.getElementById('detailModalBox');
   if (!card || !box) return;
