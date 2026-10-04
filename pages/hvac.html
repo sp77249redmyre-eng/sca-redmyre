@@ -1313,6 +1313,67 @@ function toTenancyLabel(suite) {
   return (suite || '').replace('Suite', 'Tenancy');
 }
 
+// Dynamic Temperature Adjustment — read the selected unit's current setpoint
+// directly from the same hvac_setpoints table used by the existing setpoint logic.
+// This function was missing from the current HTML, so the dynamic panel stayed at "—".
+let dynamicSetpointReqToken = 0;
+async function syncDynamicTemperatureUI(level, tenancy) {
+  dynamicLevel = level || null;
+  dynamicTenancy = tenancy || null;
+
+  const token = ++dynamicSetpointReqToken;
+
+  if (!level || !tenancy) {
+    dynamicCurrentSetpoint = null;
+    dynamicSlider.disabled = true;
+    dynamicRequestBtn.disabled = true;
+    document.getElementById('dynamicCurrent').textContent = '—';
+    dynamicStatus.textContent = 'Select your floor and unit first.';
+    return;
+  }
+
+  dynamicSlider.disabled = true;
+  dynamicRequestBtn.disabled = true;
+  dynamicStatus.textContent = 'Loading current setpoint…';
+
+  try {
+    const { data, error } = await supabase
+      .from('hvac_setpoints')
+      .select('current_setpoint')
+      .eq('level', level)
+      .eq('tenancy', tenancy)
+      .maybeSingle();
+
+    if (token !== dynamicSetpointReqToken) return;
+
+    if (error) {
+      console.error('Dynamic current setpoint read failed:', error);
+      throw error;
+    }
+
+    if (data?.current_setpoint == null) {
+      throw new Error(`No hvac_setpoints row/value for ${level} / ${tenancy}`);
+    }
+
+    const current = Number(data.current_setpoint);
+    if (!Number.isFinite(current)) {
+      throw new Error(`Invalid current_setpoint for ${level} / ${tenancy}`);
+    }
+
+    updateDynamicRange(current);
+    dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
+  } catch (e) {
+    if (token !== dynamicSetpointReqToken) return;
+
+    dynamicCurrentSetpoint = null;
+    dynamicSlider.disabled = true;
+    dynamicRequestBtn.disabled = true;
+    document.getElementById('dynamicCurrent').textContent = '—';
+    dynamicStatus.textContent = 'Current setpoint is not available.';
+    console.error('Current setpoint unavailable:', e);
+  }
+}
+
 let setpointReqToken = 0;
 async function loadCurrentSetpoint(level, tenancy) {
   const box = document.getElementById('currentSetpointBox');
