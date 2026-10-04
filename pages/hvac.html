@@ -577,7 +577,7 @@
 /* =========================================================
    DYNAMIC TEMPERATURE ADJUSTMENT — ORIGINAL HVAC PAGE
    ========================================================= */
-.dynamic-temp-card{margin-top:18px;padding:20px 20px 22px;border:1px solid #dbe7f5;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(30,80,140,.07)}
+.dynamic-temp-card{margin-top:18px;padding:20px 20px 22px;border:1px solid #64748b;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(30,80,140,.07);transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
 .dynamic-temp-title{font-size:24px;font-weight:900;color:#15274b;text-align:center}
 .dynamic-temp-subtitle{text-align:center;color:#52647f;font-size:15px;font-weight:700;margin-top:6px}
 .dynamic-help{text-align:center;margin:0 0 10px;color:#334b70;font-size:15px;font-weight:800}
@@ -906,8 +906,6 @@ body.observer-readonly .option-box{
   font-weight:900 !important;
 }
 </style>
-
-
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -1207,76 +1205,153 @@ function renderDynamicTicks() {
 }
 
 function renderDynamicTemperature() {
-  if (!dynamicSlider || dynamicCurrentSetpoint == null) return;
-
+  if (dynamicCurrentSetpoint == null) return;
   const target = Number(dynamicSlider.value);
-  const delta = Number((target - dynamicCurrentSetpoint).toFixed(1));
-  const ratio = Math.min(1, Math.abs(delta) / 2);
-  const pct = ((target - dynamicMinTemp) / (dynamicMaxTemp - dynamicMinTemp || 1)) * 100;
-
-  dynamicBubble.style.left = pct + '%';
-  dynamicBubble.style.display = delta === 0 ? 'none' : 'block';
-  dynamicBubble.textContent = dynamicFmt(target) + '°C';
+  const delta = Number((target-dynamicCurrentSetpoint).toFixed(1));
+  const ratio = Math.min(1, Math.abs(delta)/2);
+  const pct = ((target-dynamicMinTemp)/(dynamicMaxTemp-dynamicMinTemp || 1))*100;
+  const bubble = document.getElementById('dynamicBubble');
+  const card = document.getElementById('dynamicTempCard');
+  bubble.style.left = pct+'%';
+  bubble.style.display = delta === 0 ? 'none' : 'block';
+  bubble.textContent = dynamicFmt(target)+'°C';
 
   const cold = document.getElementById('dynamicColdArt');
   const hot = document.getElementById('dynamicHotArt');
-  cold.style.opacity = delta < 0 ? .86 + .14 * ratio : .22;
-  hot.style.opacity = delta > 0 ? .86 + .14 * ratio : .22;
-  cold.style.transform = delta < 0 ? 'scale(' + (1 + .05 * ratio) + ')' : 'scale(1)';
-  hot.style.transform = delta > 0 ? 'scale(' + (1 + .05 * ratio) + ')' : 'scale(1)';
-  cold.style.filter = delta < 0 ? 'brightness(' + (1 + .12 * ratio) + ') saturate(' + (1 + .25 * ratio) + ')' : 'grayscale(.15)';
-  hot.style.filter = delta > 0 ? 'brightness(' + (1 + .10 * ratio) + ') saturate(' + (1 + .25 * ratio) + ')' : 'grayscale(.15)';
+  cold.style.opacity = delta < 0 ? .86+.14*ratio : .22;
+  hot.style.opacity = delta > 0 ? .86+.14*ratio : .22;
+  cold.style.transform = delta < 0 ? 'scale('+(1+.05*ratio)+')' : 'scale(1)';
+  hot.style.transform = delta > 0 ? 'scale('+(1+.05*ratio)+')' : 'scale(1)';
+  cold.style.filter = delta < 0 ? 'brightness('+(1+.12*ratio)+') saturate('+(1+.25*ratio)+')' : 'grayscale(.15)';
+  hot.style.filter = delta > 0 ? 'brightness('+(1+.10*ratio)+') saturate('+(1+.25*ratio)+')' : 'grayscale(.15)';
 
-  /* Direction colour:
-     current = neutral Slate Gray
-     -2°C = deep blue
-     +2°C = deep red
-     The card remains light; only a subtle tint is applied.
-     The button uses the same direction colour. */
-  const card = document.getElementById('dynamicTempCard');
-  const neutral = [100,116,139]; // #64748B
-  const blue = [29,78,216];      // #1D4ED8
-  const red = [220,38,38];       // #DC2626
-  const targetRgb = delta < 0 ? blue : red;
-  const rgb = targetRgb.map((v,i) => Math.round(neutral[i] + (v-neutral[i]) * ratio));
-  const color = 'rgb(' + rgb.join(',') + ')';
-
-  if (card) {
-    // Keep the card visually light. At neutral it is white; tint strengthens with direction.
-    const tint = 0.025 + (0.065 * ratio);
-    const bgRgb = rgb.map(v => Math.round(255 + (v - 255) * tint));
-    const borderRgb = rgb.map(v => Math.round(v * 0.55 + 255 * 0.45));
-    card.style.background = 'rgb(' + bgRgb.join(',') + ')';
-    card.style.borderColor = 'rgb(' + borderRgb.join(',') + ')';
-    card.style.boxShadow = '0 8px 24px rgba(' + rgb.join(',') + ',.10)';
-  }
+  const neutral = [255,255,255];
+  const blue = [219,239,255];
+  const red = [255,226,224];
+  const accentBlue = [8,108,255];
+  const accentRed = [229,42,32];
+  const slate = [100,116,139];
+  const blend = (a,b,t) => a.map((v,i) => Math.round(v+(b[i]-v)*t));
+  const rgb = c => 'rgb('+c.join(',')+')';
+  const activeBg = delta < 0 ? blend(neutral,blue,ratio) : delta > 0 ? blend(neutral,red,ratio) : neutral;
+  const activeAccent = delta < 0 ? blend(slate,accentBlue,ratio) : delta > 0 ? blend(slate,accentRed,ratio) : slate;
+  card.style.background = rgb(activeBg);
+  card.style.borderColor = rgb(activeAccent);
 
   dynamicRequestBtn.disabled = delta === 0;
 
   if (delta === 0) {
-    // Neutral/current: button cannot be clicked.
     dynamicRequestBtn.textContent = 'Request Temperature →';
     dynamicRequestBtn.style.background = '#64748B';
-    dynamicRequestBtn.style.borderColor = '#64748B';
-    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(100,116,139,.16)';
-    dynamicRequestBtn.style.opacity = '.72';
-    dynamicRequestBtn.style.cursor = 'not-allowed';
+    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(100,116,139,.22)';
     selectedTargetTemp = null;
     dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
   } else {
     selectedTargetTemp = target;
-    dynamicRequestBtn.textContent = 'Request ' + dynamicFmt(target) + '°C →';
-    dynamicRequestBtn.style.background = color;
-    dynamicRequestBtn.style.borderColor = color;
-    dynamicRequestBtn.style.boxShadow = '0 7px 18px rgba(' + rgb.join(',') + ',.22)';
-    dynamicRequestBtn.style.opacity = '1';
-    dynamicRequestBtn.style.cursor = 'pointer';
     const isCooling = delta < 0;
+    const buttonColor = isCooling ? rgb(blend(slate,accentBlue,ratio)) : rgb(blend(slate,accentRed,ratio));
+    dynamicRequestBtn.textContent = 'Request '+dynamicFmt(target)+'°C →';
+    dynamicRequestBtn.style.background = buttonColor;
+    dynamicRequestBtn.style.boxShadow = isCooling ? '0 7px 18px rgba(8,108,255,.22)' : '0 7px 18px rgba(229,42,32,.22)';
     dynamicStatus.textContent = (isCooling ? 'Cooling target: ' : 'Heating target: ') + dynamicFmt(target) + '°C';
   }
 }
 
-document.querySelectorAll('.type-btn').forEach(btn => {document.querySelectorAll('.type-btn').forEach(btn => {
+dynamicSlider.addEventListener('input', () => {
+  dynamicInteracted = true;
+  dynamicHand.classList.add('is-hidden');
+  renderDynamicTemperature();
+});
+document.getElementById('dynamicMinus').addEventListener('click', () => {
+  if (dynamicSlider.disabled) return;
+  dynamicInteracted = true; dynamicHand.classList.add('is-hidden');
+  dynamicSlider.value = Math.max(Number(dynamicSlider.min), Number(dynamicSlider.value)-.5);
+  renderDynamicTemperature();
+});
+document.getElementById('dynamicPlus').addEventListener('click', () => {
+  if (dynamicSlider.disabled) return;
+  dynamicInteracted = true; dynamicHand.classList.add('is-hidden');
+  dynamicSlider.value = Math.min(Number(dynamicSlider.max), Number(dynamicSlider.value)+.5);
+  renderDynamicTemperature();
+});
+
+async function syncDynamicTemperatureUI(level, tenancy) {
+  dynamicLevel = level || null;
+  dynamicTenancy = tenancy || null;
+  if (!level || !tenancy) {
+    dynamicRequestBtn.disabled = true;
+    dynamicSlider.disabled = true;
+    dynamicStatus.textContent = 'Select your floor and unit first.';
+    return;
+  }
+  try {
+    const { data, error } = await supabase.from('hvac_setpoints')
+      .select('current_setpoint')
+      .eq('level', level).eq('tenancy', tenancy).maybeSingle();
+    if (error || data?.current_setpoint == null) throw new Error('No current setpoint');
+    updateDynamicRange(parseFloat(data.current_setpoint));
+    dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
+    dynamicRequestBtn.disabled = true;
+  } catch(e) {
+    dynamicCurrentSetpoint = null;
+    dynamicRequestBtn.disabled = true;
+    dynamicSlider.disabled = true;
+    document.getElementById('dynamicCurrent').textContent = '—';
+    dynamicStatus.textContent = 'Current setpoint is not available.';
+  }
+}
+
+dynamicRequestBtn.addEventListener('click', async () => {
+  if (selectedTargetTemp == null || !dynamicLevel || !dynamicTenancy) return;
+  const target = Number(selectedTargetTemp);
+  const level = dynamicLevel, tenancy = dynamicTenancy;
+  // Re-read live setpoint immediately before submitting so ±2°C is never based on stale UI data.
+  const { data, error } = await supabase.from('hvac_setpoints')
+    .select('current_setpoint').eq('level', level).eq('tenancy', tenancy).maybeSingle();
+  if (error || data?.current_setpoint == null) {
+    dynamicStatus.textContent = 'Unable to verify the current setpoint. Please try again.';
+    return;
+  }
+  const current = Number(data.current_setpoint);
+  const min = Math.max(18, Number((current-2).toFixed(1)));
+  const max = Math.min(25, Number((current+2).toFixed(1)));
+  if (target < min || target > max || target < 18 || target > 25 || Math.round(target*2)!==target*2) {
+    dynamicStatus.textContent = 'Target is outside the allowed range. Please select again.';
+    updateDynamicRange(current);
+    return;
+  }
+  selectedTargetTemp = target;
+  selectedType = target < current ? 'hot' : 'cold';
+  // Feed the target into the existing request pipeline. temp_after is already an existing
+  // hvac_requests column used by the daemon for the completed temperature result.
+  document.getElementById('submitHvacBtn').click();
+});
+
+function updateRequestButtons(current, min, max) {
+  const hotBtn = document.getElementById('btnHot');
+  const coldBtn = document.getElementById('btnCold');
+  if (!hotBtn || !coldBtn) return;
+
+  const atMin = current != null && min != null && Number(current) <= Number(min);
+  const atMax = current != null && max != null && Number(current) >= Number(max);
+
+  hotBtn.disabled = atMin;
+  coldBtn.disabled = atMax;
+  hotBtn.classList.toggle('limit-disabled', atMin);
+  coldBtn.classList.toggle('limit-disabled', atMax);
+  hotBtn.setAttribute('aria-disabled', atMin ? 'true' : 'false');
+  coldBtn.setAttribute('aria-disabled', atMax ? 'true' : 'false');
+  hotBtn.title = atMin ? `Minimum temperature reached (${min}°C)` : 'Temperature will be lowered by 0.5°C';
+  coldBtn.title = atMax ? `Maximum temperature reached (${max}°C)` : 'Temperature will be raised by 0.5°C';
+
+  if ((atMin && selectedType === 'hot') || (atMax && selectedType === 'cold')) {
+    selectedType = null;
+    hotBtn.className = 'type-btn' + (hotBtn.disabled ? ' limit-disabled' : '');
+    coldBtn.className = 'type-btn' + (coldBtn.disabled ? ' limit-disabled' : '');
+  }
+}
+
+document.querySelectorAll('.type-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
     selectedType = btn.dataset.type;
@@ -1291,53 +1366,6 @@ document.querySelectorAll('.type-btn').forEach(btn => {document.querySelectorAll
 // no BMS access, no changes to hvac_requests or existing Submit/My Requests logic.
 function toTenancyLabel(suite) {
   return (suite || '').replace('Suite', 'Tenancy');
-}
-
-// Read the selected unit's current setpoint directly from hvac_setpoints.
-let dynamicSetpointReqToken = 0;
-async function syncDynamicTemperatureUI(level, tenancy) {
-  dynamicLevel = level || null;
-  dynamicTenancy = tenancy || null;
-  const token = ++dynamicSetpointReqToken;
-
-  if (!level || !tenancy) {
-    dynamicCurrentSetpoint = null;
-    dynamicSlider.disabled = true;
-    dynamicRequestBtn.disabled = true;
-    document.getElementById('dynamicCurrent').textContent = '—';
-    dynamicStatus.textContent = 'Select your floor and unit first.';
-    return;
-  }
-
-  dynamicSlider.disabled = true;
-  dynamicRequestBtn.disabled = true;
-
-  try {
-    const { data, error } = await supabase
-      .from('hvac_setpoints')
-      .select('current_setpoint')
-      .eq('level', level)
-      .eq('tenancy', tenancy)
-      .maybeSingle();
-
-    if (token !== dynamicSetpointReqToken) return;
-    if (error) throw error;
-    if (data?.current_setpoint == null) throw new Error('No current setpoint');
-
-    const current = Number(data.current_setpoint);
-    if (!Number.isFinite(current)) throw new Error('Invalid current setpoint');
-
-    updateDynamicRange(current);
-    dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
-  } catch (e) {
-    if (token !== dynamicSetpointReqToken) return;
-    dynamicCurrentSetpoint = null;
-    dynamicSlider.disabled = true;
-    dynamicRequestBtn.disabled = true;
-    document.getElementById('dynamicCurrent').textContent = '—';
-    dynamicStatus.textContent = 'Current setpoint is not available.';
-    console.error('Current setpoint unavailable:', e);
-  }
 }
 
 let setpointReqToken = 0;
@@ -1521,7 +1549,9 @@ function refreshCurrentSetpointDisplay() {
   const doRefresh = () => {
     if (selectedUnit) {
       loadCurrentSetpoint(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
-      syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+    syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+        syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
+    syncDynamicTemperatureUI(selectedUnit.level, toTenancyLabel(selectedUnit.suite));
     } else {
       const level = document.getElementById('hvacLevel').value;
       const tenancy = document.getElementById('hvacTenancy').value;
