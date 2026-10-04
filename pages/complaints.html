@@ -30,6 +30,52 @@
 .stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
 .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
 .complaint-list{width:100%}
+
+/* Gmail-style Resident Request List */
+.resident-request-list{width:100%;display:flex;flex-direction:column;gap:10px}
+.resident-request-card{position:relative;width:100%;border:1.5px solid #dbe2ea;border-radius:12px;padding:15px 18px;background:#fff;cursor:pointer;transition:box-shadow .15s,transform .15s,border-color .15s,background .15s;box-sizing:border-box}
+.resident-request-card:hover{box-shadow:0 5px 18px rgba(15,23,42,.08);transform:translateY(-1px)}
+.resident-request-card.status-open{background:#fff1f2;border-color:#ef4444}
+.resident-request-card.status-inprog{background:#fffbeb;border-color:#f59e0b}
+.resident-request-card.status-resolved{background:#f8fafc;border-color:#e2e8f0;color:#475569}
+.resident-request-card.has-unread-message{box-shadow:0 0 0 3px rgba(37,99,235,.18),0 6px 18px rgba(15,23,42,.08)}
+.resident-request-card.status-open.has-unread-message{box-shadow:0 0 0 3px rgba(185,28,28,.16),0 6px 18px rgba(127,29,29,.10)}
+.resident-request-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.resident-request-title-wrap{min-width:0;flex:1}
+.resident-request-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;font-size:18px;line-height:1.35;color:#0f172a}
+.resident-request-card.status-open .resident-request-title{font-weight:900;color:#7f1d1d}
+.resident-request-card.status-inprog .resident-request-title{font-weight:800;color:#78350f}
+.resident-request-card.status-resolved .resident-request-title{font-weight:600;color:#475569}
+.resident-request-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.resident-request-dot.open{background:#dc2626}
+.resident-request-dot.inprog{background:#d97706}
+.resident-request-dot.resolved{background:#94a3b8}
+.resident-request-status{flex:0 0 auto}
+.resident-request-status .badge{font-size:12px;font-weight:800;padding:6px 11px}
+.rr-new-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:#1d4ed8;color:#fff;font-size:11px;font-weight:900;line-height:1;letter-spacing:.02em;white-space:nowrap;animation:rrNewPulse 1.8s ease-in-out infinite}
+.resident-request-card.status-open .rr-new-badge{background:#b91c1c}
+@keyframes rrNewPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,.24)}50%{box-shadow:0 0 0 5px rgba(29,78,216,0)}}
+.resident-request-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b}
+.resident-request-meta-sep{color:#cbd5e1}
+.resident-request-snippet{margin-top:8px;font-size:13px;line-height:1.5;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.resident-request-card.status-resolved .resident-request-snippet{color:#64748b}
+.resident-request-detail-row{width:100%;margin-top:-2px}
+.resident-request-detail-box{width:100%;border:2px solid;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;box-sizing:border-box}
+.resident-request-detail-box.status-open{border-color:#ef4444;background:#fecaca}
+.resident-request-detail-box.status-inprog{border-color:#f59e0b;background:#fde68a}
+.resident-request-detail-box.status-resolved{border-color:#94a3b8;background:#e2e8f0}
+.resident-request-card.cpl-row-expanded{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-width:0}
+.resident-request-card.cpl-row-expanded.status-open{border-color:#ef4444}
+.resident-request-card.cpl-row-expanded.status-inprog{border-color:#f59e0b}
+.resident-request-card.cpl-row-expanded.status-resolved{border-color:#94a3b8}
+@media(max-width:768px){
+  .resident-request-card{padding:13px 14px}
+  .resident-request-top{gap:10px}
+  .resident-request-title{font-size:16px}
+  .resident-request-status .badge{font-size:11px;padding:5px 9px}
+  .resident-request-meta{font-size:11px}
+  .resident-request-snippet{font-size:12px}
+}
 .ct{width:100%;border-collapse:separate;border-spacing:0 10px;font-size:13px}
 .ct th{text-align:left;font-size:14px;font-weight:700;color:var(--text);padding:4px 14px;white-space:nowrap;letter-spacing:0.02em}
 .ct tbody tr{background:var(--surface);transition:box-shadow 0.15s,transform 0.15s;cursor:pointer}
@@ -128,7 +174,7 @@
 
 /* ───── 모바일 최적화 (PC 영향 0%) ───── */
 @media(max-width:768px){
-  /* 필터바 / 탭바 가로 스크롤로 정리 */
+  /* Request list */
   .filter-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
   .filter-bar::-webkit-scrollbar{display:none}
   .filter-btn{padding:8px 14px;font-size:12px;flex-shrink:0}
@@ -212,11 +258,6 @@
     <div style="background:#DCFCE7;border:1px solid #86EFAC;border-radius:10px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px">
       <span style="font-size:16px;flex-shrink:0;line-height:1.4">✅</span>
       <span style="font-size:13px;color:#166534;font-weight:600;line-height:1.4">Building management responds within 24-48 hours during business days.</span>
-    </div>
-    <div class="filter-bar" id="filterBar">
-      <button type="button" class="filter-btn active" data-filter="open">🔴 Open</button>
-      <button type="button" class="filter-btn" data-filter="inprog">🟡 In Progress</button>
-      <button type="button" class="filter-btn" data-filter="resolved">✅ Resolved</button>
     </div>
     <div class="complaint-list" id="complaintList">
       <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading…</div>
@@ -432,16 +473,145 @@ const CAT_EMOJI = { noise:'🔊',leak:'💧',cleaning:'🧹',parking:'🚗',elev
 const CAT_LABEL = { noise:'Noise / Vibration',leak:'Leak / Plumbing',cleaning:'Cleaning',parking:'Parking',elevator:'Elevator',access:'Access / Security',hvac:'HVAC / Temperature',common:'Common Area',other:'Other' };
 
 let allComplaints = [];
-let currentFilter = 'open';
 let myUnits = [];
 let selectedUnit = null;
 let currentComplaintId = null;
 let pendingPhotos = [];
 let pendingReplyPhotos = [];
+let expandedComplaintId = null;
+
+// Unread conversation state. Stored per signed-in user without changing the DB schema,
+// matching the existing HVAC request-page approach.
+let unreadMessageCounts = {};
+let unreadMessageLabels = {};
+const COMPLAINT_READ_STATE_PREFIX = 'resident-request-read-v1:';
+const COMPLAINT_FEATURE_INIT_PREFIX = 'resident-request-feature-init-v1:';
+let complaintMessagesCache = {};
+
+function getComplaintReadStateKey(reqId) {
+  return `${COMPLAINT_READ_STATE_PREFIX}${user?.id || 'anonymous'}:${reqId}`;
+}
+
+function getComplaintFeatureInitKey() {
+  return `${COMPLAINT_FEATURE_INIT_PREFIX}${user?.id || 'anonymous'}`;
+}
+
+function getComplaintFeatureInitAt() {
+  try {
+    const key = getComplaintFeatureInitKey();
+    let value = localStorage.getItem(key);
+    if (!value) {
+      value = new Date().toISOString();
+      localStorage.setItem(key, value);
+    }
+    return value;
+  } catch (e) {
+    return new Date().toISOString();
+  }
+}
+
+function getComplaintLastReadAt(reqId, createdAt = null) {
+  try {
+    const stored = localStorage.getItem(getComplaintReadStateKey(reqId));
+    if (stored) return stored;
+
+    const featureInit = new Date(getComplaintFeatureInitAt()).getTime();
+    const created = createdAt ? new Date(createdAt).getTime() : 0;
+    const baselineMs = created > featureInit ? created : featureInit;
+    const baseline = new Date(baselineMs || Date.now()).toISOString();
+    localStorage.setItem(getComplaintReadStateKey(reqId), baseline);
+    return baseline;
+  } catch (e) {
+    return createdAt || new Date().toISOString();
+  }
+}
+
+function setComplaintLastReadAt(reqId, isoTime) {
+  try { localStorage.setItem(getComplaintReadStateKey(reqId), isoTime); }
+  catch (e) {}
+}
+
+function unreadIndicatorHtml(reqId) {
+  const count = Number(unreadMessageCounts[reqId] || 0);
+  if (!count) return '';
+  const label = unreadMessageLabels[reqId] || (role === 'admin' ? 'NEW MESSAGE' : 'NEW REPLY');
+  return `<span class="rr-new-badge" aria-label="${label}"><span aria-hidden="true">💬</span>${count} ${label}</span>`;
+}
+
+function applyUnreadVisual(reqId) {
+  const card = document.querySelector(`.resident-request-card[data-cid="${reqId}"]`);
+  if (!card) return;
+
+  const hasUnread = Number(unreadMessageCounts[reqId] || 0) > 0;
+  card.classList.toggle('has-unread-message', hasUnread);
+
+  const title = card.querySelector('.resident-request-title');
+  if (!title) return;
+  title.querySelectorAll('.rr-new-badge').forEach(el => el.remove());
+  if (hasUnread) title.insertAdjacentHTML('beforeend', unreadIndicatorHtml(reqId));
+}
+
+function markComplaintRead(reqId) {
+  const messages = complaintMessagesCache[reqId] || [];
+  const newest = messages.reduce((latest, m) => {
+    const ts = m?.created_at ? new Date(m.created_at).getTime() : 0;
+    return ts > latest ? ts : latest;
+  }, 0);
+  const complaint = allComplaints.find(c => String(c.id) === String(reqId));
+  const fallback = complaint?.created_at ? new Date(complaint.created_at).getTime() : Date.now();
+  const readAt = new Date(newest || fallback).toISOString();
+  setComplaintLastReadAt(reqId, readAt);
+  unreadMessageCounts[reqId] = 0;
+  unreadMessageLabels[reqId] = '';
+  applyUnreadVisual(reqId);
+}
+
+async function refreshUnreadIndicators(requests) {
+  const items = (requests || []).filter(r => r?.id);
+  const ids = [...new Set(items.map(r => String(r.id)))];
+  if (!ids.length || !user?.id) return;
+
+  try {
+    const { data, error } = await supabase.from('complaint_messages')
+      .select('complaint_id, user_id, sender_role, created_at')
+      .in('complaint_id', ids)
+      .order('created_at', { ascending: true });
+    if (error) return;
+
+    const grouped = {};
+    (data || []).forEach(m => {
+      const id = String(m.complaint_id);
+      (grouped[id] ||= []).push(m);
+    });
+
+    items.forEach(c => {
+      const id = String(c.id);
+      const messages = grouped[id] || [];
+      // The first message is the original request body. It is represented by the
+      // red "Open" card itself, so only later conversation messages create NEW.
+      const replies = messages.slice(1);
+      const lastRead = getComplaintLastReadAt(id, c.created_at);
+      const cutoff = new Date(lastRead).getTime() || 0;
+      const unread = replies.filter(m => {
+        if (String(m.user_id) === String(user.id)) return false;
+        const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
+        return ts > cutoff;
+      });
+      unreadMessageCounts[id] = unread.length;
+      unreadMessageLabels[id] = unread.length ? (role === 'admin' ? 'NEW MESSAGE' : 'NEW REPLY') : '';
+      applyUnreadVisual(id);
+    });
+  } catch (e) {}
+}
+
+async function refreshUnreadForComplaint(id) {
+  const complaint = allComplaints.find(c => String(c.id) === String(id));
+  if (complaint) await refreshUnreadIndicators([complaint]);
+}
 
 async function loadComplaints() {
   // RLS determines which requests the current role may see.
-  // All non-admin roles use the same query and therefore the same UI.
+  // Existing public/private visibility is intentionally unchanged.
   const { data, error } = await supabase
     .from('complaints')
     .select('*')
@@ -453,8 +623,8 @@ async function loadComplaints() {
     allComplaints = data || [];
   }
   renderComplaints();
+  await refreshUnreadIndicators(allComplaints);
 }
-
 
 function buildProgressBar(status) {
   const s1 = status==='open'?'active':status==='inprog'||status==='resolved'?'done':'idle';
@@ -471,42 +641,38 @@ function buildProgressBar(status) {
   </div>`;
 }
 
+function getRequestPreview(body) {
+  const el = document.createElement('div');
+  el.innerHTML = body || '';
+  return String(el.textContent || el.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
 function renderComplaints() {
   const list = document.getElementById('complaintList');
-  // BUG FIX: detailModalBox (with detailModalTitle/messageThread/replyWrap etc. inside it)
-  // gets physically moved out of #detailModal into the expanded row's #cplDetailSlot by
-  // openInlineDetail(). If a realtime update (e.g. after submitting a reply) re-runs
-  // renderComplaints() while a row is expanded, `list.innerHTML = ...` below destroys that
-  // whole row subtree — including the borrowed box — permanently, since it's never moved
-  // back to #detailModal first. That leaves #detailModal empty forever, so every later
-  // openDetail() call throws on document.getElementById('detailModalTitle') being null,
-  // which aborts openInlineDetail() partway through and leaves buttons/handlers dead.
-  // Rescue the box back into #detailModal before any re-render can wipe it out.
+  // Rescue the detail box before re-rendering because openInlineDetail physically
+  // moves it from #detailModal into the expanded request card.
   const modalEl = document.getElementById('detailModal');
   const boxEl = document.getElementById('detailModalBox');
   if (modalEl && boxEl && boxEl.parentElement !== modalEl) {
     modalEl.appendChild(boxEl);
   }
-  const sourceData = allComplaints;
-  const filtered = currentFilter === 'all'
-    ? sourceData
-    : sourceData.filter(c => {
-        const s = String(c.status || '').toLowerCase().trim().replace(/[-_ ]/g, '');
-        return s === currentFilter;
-      });
 
-  if (!filtered.length) {
-    const emptyTitle = currentFilter === 'all' ? 'No Requests yet' : 'No ' + currentFilter + ' requests';
+  const sourceData = allComplaints;
+
+  if (!sourceData.length) {
     const emptyDesc = canSubmit.includes(role) ? 'Click "+ New Request" to submit one.' : 'Check back later.';
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">${emptyTitle}</div><div style="font-size:13px;color:var(--muted)">${emptyDesc}</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-title">No Requests yet</div><div style="font-size:13px;color:var(--muted)">${emptyDesc}</div></div>`;
     return;
   }
 
-  const rows = filtered.map(c => {
+  const cards = sourceData.map(c => {
     const st = STATUS_MAP[c.status] || STATUS_MAP.open;
+    const normalizedStatus = ['open','inprog','resolved'].includes(c.status) ? c.status : 'open';
     const emoji = CAT_EMOJI[c.category] || '📝';
-    const catLabel = CAT_LABEL[c.category] || c.category;
-    const date = new Date(c.created_at).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
+    const catLabel = CAT_LABEL[c.category] || c.category || 'Other';
+    const dateObj = new Date(c.created_at);
+    const date = dateObj.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
+    const time = dateObj.toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
     const isOwn = c.user_id === user.id;
 
     // Admin sees the real submitter. All other roles see only You / A Resident.
@@ -514,66 +680,70 @@ function renderComplaints() {
       ? (isOwn ? 'You' : (c.submitter_name || 'Unknown'))
       : (isOwn ? 'You' : 'A Resident');
 
-    const submitterCol = `<td style="font-size:15px;font-weight:700;color:var(--text)">${displayName}</td>`;
     const visibilityBadge = c.is_public
       ? '<span class="visibility-badge visibility-public">🌐 PUBLIC</span>'
       : '<span class="visibility-badge visibility-private">🔒 PRIVATE</span>';
-    const photoIcon = c.has_photos ? '📷' : '';
-    const progressBar = buildProgressBar(c.status);
+    const fileLabel = c.has_photos ? '📎 Files' : '';
+    const preview = getRequestPreview(c.body);
+    const unreadBadge = unreadIndicatorHtml(c.id);
 
-    return `<tr class="status-${c.status}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
-      <td><span class="ct-dot ${c.status}"></span><span class="ct-title">${emoji} ${c.title}</span>${progressBar}</td>
-      <td style="text-align:center;white-space:nowrap">${visibilityBadge}</td>
-      <td style="font-size:15px;font-weight:700;color:var(--text)">${catLabel}</td>
-      ${submitterCol}
-      <td style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap">${date}</td>
-      <td><span class="badge ${st.cls}" style="font-size:13px;font-weight:800;padding:6px 14px">${st.label}</span></td>
-      <td style="font-size:13px">${photoIcon}</td>
-    </tr>`;
+    return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
+      <div class="resident-request-top">
+        <div class="resident-request-title-wrap">
+          <div class="resident-request-title"><span class="resident-request-dot ${normalizedStatus}" aria-hidden="true"></span><span>${emoji} ${c.title || 'Untitled Request'}</span>${unreadBadge}</div>
+          <div class="resident-request-meta">
+            <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span><span class="resident-request-meta-sep">•</span>${visibilityBadge}${fileLabel ? `<span class="resident-request-meta-sep">•</span><span>${fileLabel}</span>` : ''}
+          </div>
+          ${preview ? `<div class="resident-request-snippet">${preview}</div>` : ''}
+        </div>
+        <div class="resident-request-status"><span class="badge ${st.cls}">${st.label}</span></div>
+      </div>
+    </div>`;
   }).join('');
 
-  list.innerHTML = `<table class="ct"><thead><tr><th>Subject</th><th style="text-align:center">Visibility</th><th>Category</th><th>From</th><th>Date</th><th>Status</th><th>Files</th></tr></thead><tbody>${rows}</tbody></table>`;
+  list.innerHTML = `<div class="resident-request-list">${cards}</div>`;
 
   if (expandedComplaintId) {
-    const stillThere = filtered.some(c => c.id === expandedComplaintId);
+    const stillThere = sourceData.some(c => String(c.id) === String(expandedComplaintId));
     if (stillThere) openInlineDetail(expandedComplaintId);
     else expandedComplaintId = null;
   }
 }
 
-
-let expandedComplaintId = null;
-
-async function openInlineDetail(id, isPublic) {
+async function openInlineDetail(id) {
   await window.openDetail(id);
-  const tr = document.querySelector(`tr[data-cid="${id}"]`);
+  const card = document.querySelector(`.resident-request-card[data-cid="${id}"]`);
   const box = document.getElementById('detailModalBox');
-  if (!tr || !box) return;
-  const c = allComplaints.find(x => x.id === id);
+  if (!card || !box) return;
+
+  const c = allComplaints.find(x => String(x.id) === String(id));
   const status = c ? c.status : 'open';
-  const PASTEL = { open:'#fecaca', inprog:'#fde68a', resolved:'#bbf7d0' };
-  tr.classList.add('cpl-row-expanded', `status-${status}`);
-  const colCount = tr.children.length;
-  const detailTr = document.createElement('tr');
-  detailTr.className = 'cpl-detail-row';
-  detailTr.innerHTML = `<td colspan="${colCount}"><div class="cpl-detail-box status-${status}"><div id="cplDetailSlot"></div></div></td>`;
-  tr.after(detailTr);
+  const PASTEL = { open:'#fecaca', inprog:'#fde68a', resolved:'#e2e8f0' };
+
+  card.classList.add('cpl-row-expanded', `status-${status}`);
+  const detailRow = document.createElement('div');
+  detailRow.className = 'resident-request-detail-row';
+  detailRow.innerHTML = `<div class="resident-request-detail-box status-${status}"><div id="cplDetailSlot"></div></div>`;
+  card.after(detailRow);
+
   box.style.background = PASTEL[status] || PASTEL.open;
   document.getElementById('cplDetailSlot').appendChild(box);
 }
 
 function closeInlineDetail() {
   const modal = document.getElementById('detailModal');
-  document.querySelectorAll('.cpl-detail-row').forEach(el => {
+  document.querySelectorAll('.resident-request-detail-row').forEach(el => {
     const box = el.querySelector('#detailModalBox');
     if (box && modal) modal.appendChild(box);
     el.remove();
   });
-  document.querySelectorAll('tr.cpl-row-expanded').forEach(el => el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved'));
+  document.querySelectorAll('.resident-request-card.cpl-row-expanded').forEach(el => {
+    el.classList.remove('cpl-row-expanded','status-open','status-inprog','status-resolved');
+  });
 }
 
 window.toggleDetail = async (id) => {
-  if (expandedComplaintId === id) {
+  if (String(expandedComplaintId) === String(id)) {
     closeInlineDetail();
     expandedComplaintId = null;
     return;
@@ -587,16 +757,6 @@ window.closeDetailPanel = () => {
   closeInlineDetail();
   expandedComplaintId = null;
 };
-
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
-  e.preventDefault();
-  currentFilter = btn.dataset.filter || 'open';
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderComplaints();
-});
 
 // Photo preview
 document.getElementById('cpCameraBtn').addEventListener('click', () => document.getElementById('complaintPhotoInputCamera').click());
@@ -838,6 +998,7 @@ async function loadMessageThread(complaintId, complaint = null) {
     .select('*')
     .eq('complaint_id', complaintId)
     .order('created_at', { ascending: true });
+  complaintMessagesCache[complaintId] = messages || [];
 
   // BUG FIX: the first message carries the ORIGINAL request's photos/PDFs.
   // It's intentionally excluded from the reply thread below (its text duplicates
@@ -850,6 +1011,7 @@ async function loadMessageThread(complaintId, complaint = null) {
   const threadMessages = (messages || []).slice(1);
   if (threadMessages.length === 0) {
     thread.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px">No messages yet</div>';
+    markComplaintRead(complaintId);
     return;
   }
 
@@ -888,6 +1050,7 @@ async function loadMessageThread(complaintId, complaint = null) {
         ${editBtns}
       </div>`;
   }).join('');
+  markComplaintRead(complaintId);
 }
 
 let editMsgNewPhotos = [];
@@ -1440,8 +1603,14 @@ supabase.channel('complaints-realtime')
   .on('postgres_changes', {event: '*', schema: 'public', table: 'complaints'}, async () => {
     await loadComplaints();
   })
-  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async () => {
-    if (currentComplaintId) await loadMessageThread(currentComplaintId);
+  .on('postgres_changes', {event: '*', schema: 'public', table: 'complaint_messages'}, async (payload) => {
+    const complaintId = payload?.new?.complaint_id || payload?.old?.complaint_id || null;
+    if (complaintId && String(currentComplaintId) === String(complaintId)) {
+      await loadMessageThread(complaintId);
+    }
+    if (complaintId) {
+      await refreshUnreadForComplaint(complaintId);
+    }
   })
   .subscribe();
 </script>
