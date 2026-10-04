@@ -705,12 +705,15 @@ function renderComplaints() {
       : (isOwn ? 'You' : 'A Resident');
 
     const unreadBadge = unreadIndicatorHtml(c.id);
+    const visibilityBadge = c.is_public
+      ? '<span class="visibility-badge visibility-public">🌐 PUBLIC</span>'
+      : '<span class="visibility-badge visibility-private">🔒 PRIVATE</span>';
 
     return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
       <div class="resident-request-title-wrap">
         <div class="resident-request-title"><span class="resident-request-dot ${normalizedStatus}" aria-hidden="true"></span><span>${emoji} ${c.title || 'Untitled Request'}</span>${unreadBadge}</div>
         <div class="resident-request-meta">
-          <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span>
+          <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span><span class="resident-request-meta-sep">•</span>${visibilityBadge}
         </div>
       </div>
     </div>`;
