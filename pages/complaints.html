@@ -45,10 +45,6 @@
 .resident-request-card.status-open .resident-request-title{font-weight:900;color:#7f1d1d}
 .resident-request-card.status-inprog .resident-request-title{font-weight:800;color:#78350f}
 .resident-request-card.status-resolved .resident-request-title{font-weight:600;color:#475569}
-.resident-request-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-.resident-request-dot.open{background:#dc2626}
-.resident-request-dot.inprog{background:#d97706}
-.resident-request-dot.resolved{background:#94a3b8}
 .rr-new-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:5px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;line-height:1;min-width:34px;letter-spacing:.04em;white-space:nowrap;animation:rrNewPulse 1.8s ease-in-out infinite;flex:0 0 auto}
 @keyframes rrNewPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.22)}50%{box-shadow:0 0 0 4px rgba(220,38,38,0)}}
 .resident-request-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b}
@@ -59,19 +55,17 @@
 .resident-request-card.status-open,
 .resident-request-card.status-open *{font-weight:800!important;color:#000!important}
 .resident-request-card.status-open .resident-request-title{font-weight:900!important;color:#000!important}
-.resident-request-card.status-open .resident-request-dot{color:inherit!important}
 .resident-request-card.status-inprog,
 .resident-request-card.status-inprog *{font-weight:800!important;color:#000!important}
 .resident-request-card.status-inprog .resident-request-title{font-weight:900!important;color:#000!important}
-.resident-request-card.status-inprog .resident-request-dot{color:inherit!important}
 .resident-request-card.status-resolved,
 .resident-request-card.status-resolved *{font-weight:500!important;color:#475569!important}
 .resident-request-card.status-resolved .resident-request-title{font-weight:600!important;color:#475569!important}
 .resident-request-card.status-resolved .resident-request-status .badge{font-weight:700!important}
 .resident-request-card.has-unread-message .resident-request-title,
+.resident-request-card.has-unread-message .resident-request-title,
 .resident-request-card.has-unread-message .resident-request-title > span:not(.rr-new-badge),
-.resident-request-card.has-unread-message .resident-request-title > span:not(.rr-new-badge) *,
-.resident-request-card.has-unread-message .resident-request-title{color:#000000!important;font-weight:900!important}
+.resident-request-card.has-unread-message .resident-request-title > span:not(.rr-new-badge) *{color:#000000!important;font-weight:900!important}
 .resident-request-card.has-unread-message .resident-request-meta,
 .resident-request-card.has-unread-message .resident-request-meta span{font-weight:900!important;color:#000000!important}
 .resident-request-card.has-unread-message .resident-request-status .badge{font-weight:900!important}
@@ -579,9 +573,8 @@ function applyUnreadVisual(reqId) {
   if (!title) return;
   title.querySelectorAll('.rr-new-badge').forEach(el => el.remove());
   if (hasUnread) {
-    const dot = title.querySelector('.resident-request-dot');
-    if (dot) dot.insertAdjacentHTML('afterend', unreadIndicatorHtml(reqId));
-    else title.insertAdjacentHTML('afterbegin', unreadIndicatorHtml(reqId));
+    // NEW / REPLY must be a visible text badge immediately before the title.
+    title.insertAdjacentHTML('afterbegin', unreadIndicatorHtml(reqId));
   }
 }
 
@@ -621,13 +614,17 @@ async function refreshUnreadIndicators(requests) {
     items.forEach(c => {
       const id = String(c.id);
       const messages = grouped[id] || [];
-      // The first message is the original request body. It is represented by the
-      // red "Open" card itself, so only later conversation messages create NEW.
       const replies = messages.slice(1);
       const lastRead = getComplaintLastReadAt(id, c.created_at);
       const cutoff = new Date(lastRead).getTime() || 0;
-      const unread = (role === 'admin' ? messages : replies).filter(m => {
-        if (String(m.user_id) === String(user.id)) return false;
+
+      // Admin: any unread message from a non-admin sender is NEW, including the
+      // original request message. Resident/owner/tenant: only unread admin replies
+      // are REPLY. Do not rely on user_id, so the badge works across accounts.
+      const incoming = role === 'admin'
+        ? messages.filter(m => String(m.sender_role || '').toLowerCase() !== 'admin')
+        : replies.filter(m => String(m.sender_role || '').toLowerCase() === 'admin');
+      const unread = incoming.filter(m => {
         const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
         return ts > cutoff;
       });
@@ -721,7 +718,7 @@ function renderComplaints() {
 
     return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
       <div class="resident-request-title-wrap">
-        <div class="resident-request-title"><span class="resident-request-dot ${normalizedStatus}" aria-hidden="true"></span>${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>
+        <div class="resident-request-title">${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>
         <div class="resident-request-meta">
           <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span><span class="resident-request-meta-sep">•</span>${visibilityBadge}
         </div>
