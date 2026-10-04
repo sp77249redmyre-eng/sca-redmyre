@@ -49,9 +49,8 @@
 .resident-request-dot.open{background:#dc2626}
 .resident-request-dot.inprog{background:#d97706}
 .resident-request-dot.resolved{background:#94a3b8}
-.rr-new-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:#1d4ed8;color:#fff;font-size:11px;font-weight:900;line-height:1;letter-spacing:.02em;white-space:nowrap;animation:rrNewPulse 1.8s ease-in-out infinite}
-.resident-request-card.status-open .rr-new-badge{background:#b91c1c}
-@keyframes rrNewPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,.24)}50%{box-shadow:0 0 0 5px rgba(29,78,216,0)}}
+.rr-new-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:5px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;line-height:1;min-width:34px;letter-spacing:.04em;white-space:nowrap;animation:rrNewPulse 1.8s ease-in-out infinite;flex:0 0 auto}
+@keyframes rrNewPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.22)}50%{box-shadow:0 0 0 4px rgba(220,38,38,0)}}
 .resident-request-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b}
 .resident-request-meta-sep{color:#cbd5e1}
 
@@ -541,7 +540,12 @@ function getComplaintLastReadAt(reqId, createdAt = null) {
 
     const featureInit = new Date(getComplaintFeatureInitAt()).getTime();
     const created = createdAt ? new Date(createdAt).getTime() : 0;
-    const baselineMs = created > featureInit ? created : featureInit;
+    // For Admin, a request created after this feature was introduced is a real
+    // NEW request and the original resident message must remain unread until Admin opens it.
+    // Other roles keep the original request as their own baseline, so they do not get NEW on themselves.
+    const baselineMs = (role === 'admin' && created > featureInit)
+      ? Math.max(0, created - 1)
+      : (created > featureInit ? created : featureInit);
     const baseline = new Date(baselineMs || Date.now()).toISOString();
     localStorage.setItem(getComplaintReadStateKey(reqId), baseline);
     return baseline;
@@ -558,8 +562,10 @@ function setComplaintLastReadAt(reqId, isoTime) {
 function unreadIndicatorHtml(reqId) {
   const count = Number(unreadMessageCounts[reqId] || 0);
   if (!count) return '';
-  const label = unreadMessageLabels[reqId] || (role === 'admin' ? 'NEW MESSAGE' : 'NEW REPLY');
-  return `<span class="rr-new-badge" aria-label="${label}"><span aria-hidden="true">💬</span>${count} ${label}</span>`;
+  // Admin sees a resident's new message as NEW. Residents see an
+  // administrator's new message as REPLY. Keep the badge text explicit.
+  const badgeText = role === 'admin' ? 'NEW' : 'REPLY';
+  return `<span class="rr-new-badge" aria-label="${badgeText}">${badgeText}</span>`;
 }
 
 function applyUnreadVisual(reqId) {
@@ -572,7 +578,11 @@ function applyUnreadVisual(reqId) {
   const title = card.querySelector('.resident-request-title');
   if (!title) return;
   title.querySelectorAll('.rr-new-badge').forEach(el => el.remove());
-  if (hasUnread) title.insertAdjacentHTML('beforeend', unreadIndicatorHtml(reqId));
+  if (hasUnread) {
+    const dot = title.querySelector('.resident-request-dot');
+    if (dot) dot.insertAdjacentHTML('afterend', unreadIndicatorHtml(reqId));
+    else title.insertAdjacentHTML('afterbegin', unreadIndicatorHtml(reqId));
+  }
 }
 
 function markComplaintRead(reqId) {
@@ -616,7 +626,7 @@ async function refreshUnreadIndicators(requests) {
       const replies = messages.slice(1);
       const lastRead = getComplaintLastReadAt(id, c.created_at);
       const cutoff = new Date(lastRead).getTime() || 0;
-      const unread = replies.filter(m => {
+      const unread = (role === 'admin' ? messages : replies).filter(m => {
         if (String(m.user_id) === String(user.id)) return false;
         const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
         return ts > cutoff;
@@ -711,7 +721,7 @@ function renderComplaints() {
 
     return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
       <div class="resident-request-title-wrap">
-        <div class="resident-request-title"><span class="resident-request-dot ${normalizedStatus}" aria-hidden="true"></span><span>${emoji} ${c.title || 'Untitled Request'}</span>${unreadBadge}</div>
+        <div class="resident-request-title"><span class="resident-request-dot ${normalizedStatus}" aria-hidden="true"></span>${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>
         <div class="resident-request-meta">
           <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span><span class="resident-request-meta-sep">•</span>${visibilityBadge}
         </div>
