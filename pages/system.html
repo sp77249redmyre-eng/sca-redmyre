@@ -532,7 +532,7 @@
       <div class="sc-panel-body">
         <div class="sc-notice">
           <span>&#9888;</span>
-          <span>Status monitor only &mdash; Unlock / Lock is not connected yet. No commands can be sent from this screen.</span>
+          <span>Door control is in test: Unlock / Lock works on D2 only. D1 and D5 are status-only for now.</span>
         </div>
 
         <div class="sc-meta">
@@ -546,14 +546,14 @@
           <div><div class="sc-door-id">D1</div><div class="sc-door-name">Front Door</div><div class="sc-door-note" id="door-note-D1">Live status not connected</div></div>
           <div><span class="sc-badge" id="door-badge-D1"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
-            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
-            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+            <button class="sc-btn sc-btn-green" data-door="D1" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
+            <button class="sc-btn sc-btn-red" data-door="D1" data-door-act="lock" disabled aria-disabled="true">Lock</button>
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D1 auto-lock seconds">
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D1" aria-label="D1 auto-lock seconds">
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+            <button class="sc-btn" data-door-save="D1">Save</button>
           </div>
         </div>
 
@@ -562,14 +562,14 @@
           <div><div class="sc-door-id">D2</div><div class="sc-door-name">Garage Roller Door 1</div><div class="sc-door-note" id="door-note-D2">Live status not connected</div></div>
           <div><span class="sc-badge" id="door-badge-D2"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
-            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
-            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+            <button class="sc-btn sc-btn-green" data-door="D2" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
+            <button class="sc-btn sc-btn-red" data-door="D2" data-door-act="lock" disabled aria-disabled="true">Lock</button>
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D2 auto-lock seconds">
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D2" aria-label="D2 auto-lock seconds">
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+            <button class="sc-btn" data-door-save="D2">Save</button>
           </div>
         </div>
 
@@ -578,14 +578,14 @@
           <div><div class="sc-door-id">D5</div><div class="sc-door-name">Garage Roller Door 2</div><div class="sc-door-note" id="door-note-D5">Live status not connected</div></div>
           <div><span class="sc-badge" id="door-badge-D5"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
-            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
-            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+            <button class="sc-btn sc-btn-green" data-door="D5" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
+            <button class="sc-btn sc-btn-red" data-door="D5" data-door-act="lock" disabled aria-disabled="true">Lock</button>
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D5 auto-lock seconds">
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D5" aria-label="D5 auto-lock seconds">
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+            <button class="sc-btn" data-door-save="D5">Save</button>
           </div>
         </div>
 
@@ -1440,16 +1440,38 @@ function checkPortalTile() {
 // Door status (Stage 3A: read-only monitor). Shows Unknown unless the Door Daemon is alive AND reading Integriti.
 const DOOR_IDS = ['D1', 'D2', 'D5'];
 const DOOR_FRESH_SEC = 180;
+const DOOR_STATE = {}, DOOR_BASE = {}, DOOR_EXTRA = {}, DOOR_ACTIVE = {}, doorBusy = {};
+const DOOR_UI_ENABLED = ['D2'];   // keep in sync with ENABLED_DOORS in door_daemon.py
+function renderDoorNote(id) {
+  const n = document.getElementById('door-note-' + id);
+  if (n) n.textContent = (DOOR_BASE[id] || '') + (DOOR_EXTRA[id] ? (DOOR_BASE[id] ? ' \u00b7 ' : '') + DOOR_EXTRA[id] : '');
+}
 function setDoorBadge(id, cls, label, note) {
   const b = document.getElementById('door-badge-' + id);
-  const n = document.getElementById('door-note-' + id);
   if (b) {
     b.className = 'sc-badge ' + cls;
     b.textContent = '';
     const dot = document.createElement('span'); dot.className = 'sc-dot';
     b.appendChild(dot); b.appendChild(document.createTextNode(label));
   }
-  if (n) n.textContent = note;
+  DOOR_STATE[id] = cls; DOOR_BASE[id] = note;
+  renderDoorNote(id);
+  updateDoorButtons();
+}
+function updateDoorButtons() {
+  DOOR_IDS.forEach(id => {
+    const box = document.getElementById('door-' + id); if (!box) return;
+    const bu = box.querySelector('[data-door-act="unlock"]'), bl = box.querySelector('[data-door-act="lock"]');
+    const st = DOOR_STATE[id], act = DOOR_ACTIVE[id];
+    const en = DOOR_UI_ENABLED.indexOf(id) >= 0 && !doorBusy[id];
+    const autoWait = !!act && act.source === 'autolock' && act.status === 'pending';
+    const offU = !(en && !act && st === 'locked');
+    const offL = !(en && (!act || autoWait) && st === 'unlocked');
+    bu.disabled = offU; bu.setAttribute('aria-disabled', String(offU));
+    bl.disabled = offL; bl.setAttribute('aria-disabled', String(offL));
+    const tip = DOOR_UI_ENABLED.indexOf(id) >= 0 ? '' : 'Not enabled yet';
+    bu.title = tip; bl.title = tip;
+  });
 }
 const unknownWhy = {
   integriti_not_running: 'Integriti is not running',
@@ -1522,11 +1544,104 @@ async function checkDoors() {
       else if (r.status === 'Unlocked') setDoorBadge(id, 'unlocked', 'Unlocked', since);
       else setDoorBadge(id, 'unknown', 'Unknown', since || 'Status unknown');
     });
+    refreshDoorExtras();
   } catch (e) {
     allUnknown('Could not read door status');
     intTile('warn', 'Unknown', 'Could not read');
   }
 }
+
+
+// Door control (Stage 3B): the portal only REQUESTS a command (RPC). The Door Daemon executes it.
+const DOOR_ERR = {
+  user_active: 'PC was in use', integriti_not_running: 'Integriti not running', window_minimized: 'Integriti minimised',
+  screen_locked: 'PC screen locked', door_not_enabled: 'Door not enabled', menu_item_not_found: 'Menu not found',
+  aborted_user_input: 'Mouse moved', integriti_not_foreground: 'Integriti not on top', integriti_not_on_top: 'Integriti not on top',
+  daemon_restart: 'Daemon restarted', door_row_not_found: 'Door row not found', name_mismatch: 'Door name mismatch',
+  status_unknown_before: 'Door status unknown', claim_lost: 'Command lost'
+};
+function doorErrText(e) { if (!e) return ''; if (e.indexOf('status_not_confirmed') === 0) return 'door did not confirm'; return DOOR_ERR[e] || e; }
+async function refreshDoorExtras() {
+  try {
+    const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const cols = 'id, door_id, action, source, status, error, scheduled_at, finished_at';
+    const [a, r, s] = await Promise.all([
+      supabase.from('door_commands').select(cols).in('status', ['pending', 'claimed', 'executing']),
+      supabase.from('door_commands').select(cols).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
+      supabase.from('door_settings').select('door_id, autolock_seconds')
+    ]);
+    if (a.error || r.error) return;
+    DOOR_IDS.forEach(id => {
+      const act = (a.data || []).find(x => x.door_id === id);
+      DOOR_ACTIVE[id] = act || null;
+      let extra = '';
+      if (act) {
+        if (act.source === 'autolock' && act.status === 'pending') {
+          const sec = Math.round((new Date(act.scheduled_at).getTime() - Date.now()) / 1000);
+          extra = sec > 0 ? 'Auto-lock in ' + sec + ' s' : 'Auto-lock due now';
+        } else extra = 'Command ' + act.status;
+      } else {
+        const rows = (r.data || []).filter(x => x.door_id === id);
+        const noAuto = rows.find(x => x.action === 'unlock' && x.status === 'success' && x.error === 'autolock_not_scheduled');
+        const bad = rows.find(x => ['failed', 'unknown', 'expired'].indexOf(x.status) >= 0);
+        if (noAuto) extra = 'Auto-Lock protection failed — please lock manually';
+        else if (bad) extra = 'Last ' + bad.action + ' ' + bad.status + (bad.error ? ': ' + doorErrText(bad.error) : '');
+      }
+      if (!doorBusy[id]) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
+    });
+    if (!s.error) (s.data || []).forEach(x => {
+      const inp = document.querySelector('[data-door-input="' + x.door_id + '"]');
+      if (inp && !inp.dataset.dirty && document.activeElement !== inp) inp.value = x.autolock_seconds;
+    });
+    updateDoorButtons();
+  } catch (e) { /* keep last notes */ }
+}
+async function pollDoorCommand(id, cmdId) {
+  const text = { pending: 'Waiting for Door Daemon…', claimed: 'Starting…', executing: 'Executing…' };
+  for (let i = 0; i < 45; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const { data, error } = await supabase.from('door_commands').select('status, result_status, error').eq('id', cmdId).maybeSingle();
+    if (error || !data) continue;
+    if (text[data.status]) { DOOR_EXTRA[id] = text[data.status]; renderDoorNote(id); continue; }
+    DOOR_EXTRA[id] = data.status === 'success' ? 'Done' : 'Command ' + data.status + (data.error ? ': ' + doorErrText(data.error) : '');
+    renderDoorNote(id);
+    return;
+  }
+  DOOR_EXTRA[id] = 'No response from Door Daemon'; renderDoorNote(id);
+}
+async function sendDoorCommand(id, action) {
+  const name = (document.querySelector('#door-' + id + ' .sc-door-name') || {}).textContent || id;
+  if (action === 'unlock' && !confirm('Unlock ' + id + ' – ' + name + '?')) return;
+  doorBusy[id] = true; DOOR_EXTRA[id] = 'Sending…'; renderDoorNote(id); updateDoorButtons();
+  try {
+    const { data, error } = await supabase.rpc('request_door_command', { p_door_id: id, p_action: action });
+    if (error) throw error;
+    DOOR_EXTRA[id] = 'Waiting for Door Daemon…'; renderDoorNote(id);
+    await pollDoorCommand(id, data);
+  } catch (e) {
+    DOOR_EXTRA[id] = String((e && e.message) || '').indexOf('door_busy') >= 0 ? 'Door is busy' : 'Could not send command';
+    renderDoorNote(id);
+  } finally {
+    doorBusy[id] = false; updateDoorButtons();
+    await checkDoors();
+  }
+}
+async function saveDoorAutolock(id) {
+  const inp = document.querySelector('[data-door-input="' + id + '"]');
+  const v = parseInt(inp && inp.value, 10);
+  if (!Number.isInteger(v) || v < 30 || v > 300) { DOOR_EXTRA[id] = 'Auto-lock must be 30–300 sec'; renderDoorNote(id); return; }
+  const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
+  if (error) { DOOR_EXTRA[id] = 'Auto-lock not saved'; }
+  else { delete inp.dataset.dirty; DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s'; }
+  renderDoorNote(id);
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('[data-door-act],[data-door-save]');
+  if (!b || b.disabled) return;
+  if (b.dataset.doorAct) sendDoorCommand(b.dataset.door, b.dataset.doorAct);
+  else saveDoorAutolock(b.dataset.doorSave);
+});
+document.addEventListener('input', ev => { if (ev.target.dataset && ev.target.dataset.doorInput) ev.target.dataset.dirty = '1'; });
 
 async function loadSnapshot() {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
