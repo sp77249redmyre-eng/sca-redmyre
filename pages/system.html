@@ -12,432 +12,456 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.sys-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.sys-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-}
-.card.full { grid-column: 1 / -1; }
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-light);
-}
-.card-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-}
-.card-icon.blue { background: #eff6ff; }
-.card-icon.green { background: #f0fdf4; }
-.card-icon.amber { background: #fffbeb; }
-.card-icon.red { background: #fef2f2; }
-.card-icon.purple { background: #faf5ff; }
-.card-icon.slate { background: #f8fafc; }
-.card-title { font-size: 13px; font-weight: 700; color: var(--text); }
-.card-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
-.card-body { padding: 16px 20px; }
-
-/* Health */
-.health-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-.health-item {
-  background: var(--bg);
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-.health-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.health-val { font-size: 18px; font-weight: 700; color: var(--text); }
-.health-val.ok { color: #16a34a; }
-.health-val.warn { color: #d97706; }
-.health-val.err { color: #dc2626; }
-.health-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.pulse {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #16a34a;
-  margin-right: 6px;
-  position: relative;
-}
-.pulse.offline { background: #dc2626; }
-.pulse::after {
-  content: '';
-  position: absolute;
-  top: -3px; left: -3px;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: rgba(22,163,74,0.2);
-  animation: pulse 2s infinite;
-}
-.pulse.offline::after { background: rgba(220,38,38,0.2); }
-@keyframes pulse {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(1.8); opacity: 0; }
+/* ════════════════════════════════════════════════════════════
+   SYSTEM CONSOLE — dark admin theme
+   Every rule below is scoped to .system-console (or to the
+   content area of THIS page only). Sidebar / topbar / layout.js
+   / style.css are not modified.
+   ════════════════════════════════════════════════════════════ */
+.content:has(> .system-console) {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,245,255,.07), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0,245,255,.035) 0, rgba(0,245,255,.035) 1px, transparent 1px, transparent 3px),
+    #030507;
+  min-height: calc(100vh - 60px);
 }
 
-/* Stats grid */
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.stat-item {
-  background: var(--bg);
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-.stat-num { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
-.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.system-console {
+  --sc-bg: #030507;
+  --sc-panel: #080D10;
+  --sc-panel-2: #0D1418;
+  --sc-line: #18343A;
+  --sc-line-2: #1f4a52;
+  --sc-text: #D7F7F5;
+  --sc-text-2: #A9C4C3;
+  --sc-muted: #7F9E9E;
+  --sc-blue: #00F5FF;
+  --sc-blue-soft: rgba(0,245,255,.10);
+  --sc-green: #39FF14;
+  --sc-green-soft: rgba(57,255,20,.10);
+  --sc-amber: #FFB000;
+  --sc-amber-soft: rgba(255,176,0,.10);
+  --sc-red: #FF3131;
+  --sc-red-soft: rgba(255,49,49,.10);
+  --sc-magenta: #FF2BD6;
+  --sc-magenta-soft: rgba(255,43,214,.10);
+  --sc-font-head: 'Orbitron', 'Segoe UI', sans-serif;
+  --sc-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sc-font-mono: 'JetBrains Mono', Consolas, 'SFMono-Regular', monospace;
 
-/* DB Table rows */
-.db-table { width: 100%; border-collapse: collapse; }
-.db-table th {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  padding: 0 0 8px 0;
-  text-align: left;
-  border-bottom: 1px solid var(--border-light);
-}
-.db-table td {
-  padding: 9px 0;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border-light);
-  vertical-align: middle;
-}
-.db-table tbody tr:last-child td { border-bottom: none; }
-.db-table .tbl-name { color: var(--text); font-weight: 500; }
-.db-table .tbl-count { font-weight: 700; color: var(--blue-600); text-align: right; }
-.db-bar-wrap { height: 5px; background: var(--border-light); border-radius: 99px; overflow: hidden; margin-top: 4px; }
-.db-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #1e3a8a, #2563eb); transition: width 0.6s ease; }
+  /* remap the site's tokens so JS-generated markup that uses var(--text) etc. is readable on dark */
+  --bg: var(--sc-panel-2);
+  --surface: var(--sc-panel);
+  --border: var(--sc-line-2);
+  --border-light: var(--sc-line);
+  --text: var(--sc-text);
+  --text-2: var(--sc-text-2);
+  --muted: var(--sc-muted);
+  --blue-50: var(--sc-blue-soft);
+  --blue-400: #00F5FF;
+  --blue-600: #00F5FF;
+  --blue-700: #00F5FF;
+  --blue-800: #2563eb;
+  --blue-900: #1d4ed8;
 
-/* Bucket rows */
-.bucket-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-light);
-  gap: 12px;
+  color: var(--sc-text);
+  font-family: var(--sc-font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 0 40px;
 }
-.bucket-row:last-child { border-bottom: none; }
-.bucket-name { font-size: 13px; font-weight: 600; color: var(--text); }
-.bucket-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
-.bucket-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 99px;
-  background: var(--blue-50);
-  color: var(--blue-700);
-  white-space: nowrap;
+.system-console *, .system-console *::before, .system-console *::after { box-sizing: border-box; }
+
+/* ── Header ── */
+.system-console .sc-header {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 6px 2px 18px; border-bottom: 1px solid var(--sc-line); margin-bottom: 18px;
 }
-
-/* Push */
-.push-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--border-light);
-  font-size: 13px;
-}
-.push-row:last-child { border-bottom: none; }
-.push-role { font-weight: 600; color: var(--text); }
-.push-count { font-weight: 700; color: var(--blue-600); }
-
-/* Junk Cleanup */
-.cleanup-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.files-found { font-size: 13px; color: var(--muted); }
-.files-found span { font-weight: 700; color: var(--text); }
-.status-box {
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--muted);
-  font-style: italic;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-.status-box.ready { color: var(--text-2); font-style: normal; }
-.status-box.loading { color: var(--blue-700); font-style: normal; }
-.status-box.success { color: #16a34a; font-style: normal; }
-.status-box.error { color: #dc2626; font-style: normal; }
-.divider { height: 1px; background: var(--border-light); margin: 14px 0; }
-.preview-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-.preview-item { background: var(--bg); border: 1px solid var(--border-light); border-radius: 10px; padding: 12px 14px; }
-.preview-item-row { display: flex; gap: 6px; font-size: 12px; line-height: 1.6; }
-.preview-item-label { color: var(--muted); min-width: 60px; font-weight: 500; }
-.preview-item-val { color: var(--text); font-weight: 500; }
-.preview-files { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light); }
-.preview-files-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
-.preview-file { font-size: 11px; color: var(--text-2); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
-.preview-file::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.preview-empty { font-size: 13px; color: var(--muted); padding: 16px 0; text-align: center; }
-.badge-declined { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: #fef2f2; color: #dc2626; }
-.badge-expired { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: #fffbeb; color: #92400e; }
-.badge-removed { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--border-light); color: var(--text-2); }
-
-/* Orphan */
-.orphan-file {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  font-size: 12px;
-  gap: 10px;
-}
-.orphan-path { color: var(--text-2); font-family: monospace; word-break: break-all; flex: 1; }
-
-/* Cache */
-.cache-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-.cache-label { color: var(--muted); font-size: 12px; }
-.cache-val { font-weight: 700; color: var(--text); font-size: 13px; }
-
-.section-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
-.cleanup-footer { font-size: 11px; color: var(--muted); margin-top: 10px; }
-
-.qr-range-btn { transition: all 0.15s; }
-.qr-range-btn.active {
-  background: var(--blue-800) !important;
-  color: #fff !important;
-  border-color: var(--blue-800) !important;
+.system-console .sc-title { font-size: 26px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.system-console .sc-sub { margin-top: 4px; font-size: 14px; color: var(--sc-muted); letter-spacing: .12em; text-transform: uppercase; }
+.system-console .sc-tag {
+  font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--sc-blue); border: 1px solid rgba(0,245,255,.45); background: var(--sc-blue-soft);
+  padding: 5px 10px; border-radius: 6px;
 }
 
-@media(max-width:768px) {
-  .sys-grid, .sys-grid-3 { grid-template-columns: 1fr; }
-  .card.full { grid-column: auto; }
-  .health-grid { grid-template-columns: 1fr 1fr; }
-  .stat-grid { grid-template-columns: 1fr 1fr; }
-  #qrLiftEntry { }
-  .card-body > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+/* ── Status strip ── */
+.system-console .sc-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+.system-console .sc-tile {
+  background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 10px; padding: 12px 14px; min-width: 0;
 }
+.system-console .sc-tile-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-tile-val { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 16px; font-weight: 600; color: var(--sc-text-2); }
+.system-console .sc-tile-sub { margin-top: 3px; font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-dot { width: 8px; height: 8px; border-radius: 50%; background: #4b5563; flex-shrink: 0; }
+.system-console .sc-dot.ok { background: var(--sc-green); box-shadow: 0 0 0 3px var(--sc-green-soft); }
+.system-console .sc-dot.warn { background: var(--sc-amber); box-shadow: 0 0 0 3px var(--sc-amber-soft); }
+.system-console .sc-dot.err { background: var(--sc-red); box-shadow: 0 0 0 3px var(--sc-red-soft); }
 
-/* ═══════════════ 새 컴팩트 레이아웃 ═══════════════ */
-.section-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 8px 2px;
+/* ── Section label ── */
+.system-console .sc-section {
+  display: flex; align-items: center; gap: 10px; margin: 26px 2px 10px;
+  font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--sc-muted);
 }
+.system-console .sc-section::after { content: ''; flex: 1; height: 1px; background: var(--sc-line); }
+.system-console .sc-section:first-of-type { margin-top: 0; }
 
-/* Daily — 4 cards same height */
-.daily-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  align-items: stretch;
+/* ── Panel ── */
+.system-console .sc-panel { background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 12px; overflow: hidden; }
+.system-console .sc-panel-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 13px 18px; border-bottom: 1px solid var(--sc-line); background: var(--sc-panel-2);
 }
-.daily-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  min-height: 200px;
-  transition: box-shadow 0.15s;
-}
-.daily-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.daily-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.daily-icon { font-size: 22px; line-height: 1; }
-.daily-card-title { font-size: 13px; font-weight: 700; color: var(--text); }
-.daily-card-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.daily-desc { font-size: 11px; color: var(--muted); }
-.daily-meta { font-size: 11px; color: var(--muted); padding: 6px 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; }
-.daily-progress { padding: 8px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 11px; color: #1e40af; font-weight: 600; }
-.daily-progress-detail { font-size: 10px; color: #3b82f6; font-weight: 400; margin-top: 2px; }
-.daily-result { padding: 8px 10px; border-radius: 6px; font-size: 11px; }
-.daily-btn {
-  margin-top: auto;
-  padding: 9px 12px;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: all 0.15s;
-}
-.daily-btn-blue { background: linear-gradient(135deg, var(--blue-800), var(--blue-600)); color: #fff; }
-.daily-btn-blue:hover { background: linear-gradient(135deg, var(--blue-900), var(--blue-700)); }
-.daily-btn-green { background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; }
-.daily-btn-green:hover { background: linear-gradient(135deg, #15803d, #16a34a); }
-.daily-copy-row { display: flex; gap: 5px; }
-.daily-copy-btn {
-  flex: 1; padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--bg);
-  font-size: 10px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-}
-.daily-copy-btn:hover { background: var(--surface); border-color: var(--blue-400); }
+.system-console .sc-panel-title { font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-text); }
+.system-console .sc-panel-desc { font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-panel-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.system-console .sc-panel-body { padding: 16px 18px; }
+.system-console .sc-panel.hero { border-color: var(--sc-line-2); box-shadow: 0 0 0 1px rgba(0,245,255,.10), 0 10px 30px rgba(0,0,0,.35); }
+.system-console .sc-panel.hero .sc-panel-head { border-bottom-color: var(--sc-line-2); }
 
-/* QR mini rows */
-.qr-mini-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 11px;
-}
-.qr-mini-row:last-child { border-bottom: none; }
-.qr-mini-row.qr-mini-sub { padding-left: 22px; background: #f8fafc; }
-.qr-mini-label { color: var(--muted); }
-.qr-mini-num { font-size: 14px; font-weight: 700; color: var(--blue-800); font-family: monospace; }
-.qr-mini-num-sm { font-size: 12px; font-weight: 600; color: var(--text); font-family: monospace; }
-.qr-range-btn-mini {
-  padding: 3px 7px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  border-radius: 4px;
-  font-size: 10px;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-}
-.qr-range-btn-mini.active { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+.system-console .sc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.system-console .sc-grid-ops { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; }
+.system-console .sc-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
-/* Alerts */
-.alert-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid #16a34a;
-  border-radius: 10px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: all 0.15s;
+/* ── Buttons ── */
+.system-console .sc-btn,
+.system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--sc-line-2);
+  background: var(--sc-panel-2); color: var(--sc-text); font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s; text-decoration: none; white-space: nowrap;
 }
-.alert-card.has-errors { border-left-color: #dc2626; }
-.alert-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.alert-row { display: flex; align-items: center; gap: 12px; }
-.alert-icon { font-size: 22px; }
-.alert-text { flex: 1; }
-.alert-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.alert-stat { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.alert-arrow { color: #94a3b8; font-size: 13px; transition: transform 0.2s; }
-.alert-card.expanded .alert-arrow { transform: rotate(90deg); }
-.alert-detail {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border);
+.system-console .sc-btn:hover:not(:disabled),
+.system-console .btn-secondary:hover:not(:disabled) { background: #0f2228; border-color: #2a6b73; }
+.system-console .sc-btn-blue, .system-console .btn-primary {
+  background: var(--sc-blue-soft); border-color: rgba(0,245,255,.55); color: #00F5FF;
 }
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { background: rgba(0,245,255,.24); border-color: var(--sc-blue); color: #8afaff; }
+.system-console .sc-btn-green { background: var(--sc-green-soft); border-color: rgba(57,255,20,.5); color: #39FF14; }
+.system-console .sc-btn-green:hover:not(:disabled) { background: rgba(57,255,20,.24); border-color: var(--sc-green); }
+.system-console .sc-btn-amber { background: var(--sc-amber-soft); border-color: rgba(255,176,0,.55); color: #FFB000; }
+.system-console .sc-btn-amber:hover:not(:disabled) { background: rgba(255,176,0,.24); border-color: var(--sc-amber); }
+.system-console .sc-btn-red, .system-console .btn-danger { background: var(--sc-red-soft); border-color: rgba(255,49,49,.5); color: #ff6b6b; }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { background: rgba(255,49,49,.24); border-color: var(--sc-red); }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled {
+  opacity: .42; cursor: not-allowed;
+}
+.system-console .sc-btn-block { width: 100%; }
 
-/* Operations — 2 cards */
-.ops-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 12px;
+/* ── Integriti Access Control (hero) ── */
+.system-console .sc-notice {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 14px;
+  background: var(--sc-amber-soft); border: 1px solid rgba(255,176,0,.35); border-radius: 8px;
+  color: #FFB000; font-size: 14px;
 }
-.ops-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-.ops-card-header { display: flex; align-items: center; gap: 8px; }
+.system-console .sc-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.system-console .sc-meta-item { background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; padding: 10px 12px; }
+.system-console .sc-meta-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-meta-val { margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--sc-text); font-family: var(--sc-font-mono); }
+.system-console .sc-meta-val.dim { color: var(--sc-text-2); font-family: inherit; }
 
-/* Maintenance — 3 cards */
-.maint-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.system-console .sc-door {
+  display: grid; grid-template-columns: 1.3fr .9fr 1.1fr 1.5fr; gap: 14px; align-items: center;
+  padding: 14px 16px; margin-bottom: 8px;
+  background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-left: 3px solid #18343A; border-radius: 10px;
 }
-.maint-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid #f59e0b;
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  min-height: 220px;
+.system-console .sc-door:last-child { margin-bottom: 0; }
+.system-console .sc-door-id { font-family: var(--sc-font-mono); font-size: 13px; font-weight: 700; color: var(--sc-blue); letter-spacing: .08em; }
+.system-console .sc-door-name { font-size: 16px; font-weight: 600; color: var(--sc-text); margin-top: 2px; }
+.system-console .sc-door-note { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .sc-badge {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 99px;
+  font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(107,114,128,.16); border: 1px solid rgba(107,114,128,.4); color: #9ca3af;
 }
-.maint-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.maint-card-body { flex: 1; }
-.maint-btn {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+.system-console .sc-door-actions { display: flex; gap: 8px; }
+.system-console .sc-door-actions .sc-btn { flex: 1; }
+.system-console .sc-auto { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.system-console .sc-auto-label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-input {
+  width: 74px; padding: 7px 8px; border-radius: 7px; border: 1px solid var(--sc-line-2);
+  background: #04080a; color: var(--sc-text); font-family: var(--sc-font-mono); font-size: 14px; text-align: center;
 }
-.maint-btn-row { display: flex; gap: 6px; }
-.maint-btn-row .maint-btn { flex: 1; }
+.system-console .sc-input:disabled { opacity: .5; cursor: not-allowed; }
+.system-console .sc-unit { font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-hint { margin-top: 12px; font-size: 13px; color: var(--sc-muted); }
 
-/* Mobile */
-@media (max-width: 1024px) {
-  .daily-grid { grid-template-columns: repeat(2, 1fr); }
-  .ops-grid { grid-template-columns: 1fr; }
-  .maint-grid { grid-template-columns: 1fr; }
+/* ── Health / snapshot ── */
+.system-console .sc-health { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.system-console .sc-snapshot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.system-console .sc-stat { background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 10px; padding: 14px 16px; }
+.system-console .sc-stat-num { font-size: 28px; font-weight: 700; color: var(--sc-text-2); font-family: var(--sc-font-mono); }
+.system-console .sc-stat-label { margin-top: 4px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-empty { padding: 26px 12px; text-align: center; font-size: 14px; color: var(--sc-muted); }
+
+/* ── Alert (Recent errors) ── */
+.system-console .alert-card {
+  background: var(--sc-panel); border: 1px solid var(--sc-line); border-left: 3px solid var(--sc-green);
+  border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: border-color .15s;
+}
+.system-console .alert-card.has-errors { border-left-color: var(--sc-red); }
+.system-console .alert-card:hover { border-color: var(--sc-line-2); }
+.system-console .alert-row { display: flex; align-items: center; gap: 12px; }
+.system-console .alert-icon { font-size: 22px; }
+.system-console .alert-text { flex: 1; min-width: 0; }
+.system-console .alert-title { font-size: 14px; font-weight: 600; color: var(--sc-text); }
+.system-console .alert-stat { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .alert-arrow { color: var(--sc-muted); font-size: 14px; transition: transform .2s; }
+.system-console .alert-card.expanded .alert-arrow { transform: rotate(90deg); }
+.system-console .alert-detail { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--sc-line-2); }
+
+/* ── AC / CCTV ── */
+.system-console .sc-copy-row { display: flex; gap: 8px; margin: 10px 0 12px; }
+.system-console .sc-copy-btn {
+  flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--sc-line-2); background: var(--sc-panel-2);
+  color: var(--sc-text); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.system-console .sc-copy-btn:hover { background: #0f2228; border-color: #2a6b73; }
+.system-console .sc-host { font-family: var(--sc-font-mono); font-size: 14px; color: var(--sc-text-2); }
+
+/* ── Database / Storage (rendered by existing JS) ── */
+.system-console .db-table { width: 100%; border-collapse: collapse; }
+.system-console .db-table th {
+  font-size: 12px; font-weight: 700; color: var(--sc-muted); text-transform: uppercase; letter-spacing: .1em;
+  padding: 0 0 8px; text-align: left; border-bottom: 1px solid var(--sc-line);
+}
+.system-console .db-table td { padding: 9px 0; font-size: 14px; border-bottom: 1px solid var(--sc-line); vertical-align: middle; color: var(--sc-text-2); }
+.system-console .db-table tbody tr:last-child td { border-bottom: none; }
+.system-console .db-table .tbl-name { color: var(--sc-text); font-weight: 500; }
+.system-console .db-table .tbl-count { font-weight: 700; color: #00F5FF; text-align: right; font-family: var(--sc-font-mono); }
+.system-console .db-bar-wrap { height: 5px; background: var(--sc-line); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.system-console .db-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #007f86, #00F5FF); transition: width .6s ease; }
+
+/* ── Daily ops ── */
+.system-console .sc-meta-line { font-size: 13px; color: var(--sc-muted); padding: 7px 10px; background: var(--sc-amber-soft); border: 1px solid rgba(255,176,0,.3); border-radius: 6px; margin-bottom: 10px; }
+.system-console .daily-progress { padding: 8px 10px; background: var(--sc-blue-soft); border: 1px solid rgba(0,245,255,.35); border-radius: 6px; font-size: 13px; color: #00F5FF; font-weight: 600; margin-bottom: 10px; }
+.system-console .daily-progress-detail { font-size: 12px; color: #00F5FF; font-weight: 400; margin-top: 2px; }
+.system-console .daily-result { padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 10px; }
+.system-console .qr-range-mini { display: flex; gap: 4px; }
+.system-console .qr-range-btn-mini {
+  padding: 4px 9px; border: 1px solid var(--sc-line-2); background: var(--sc-panel-2); border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--sc-text-2);
+}
+.system-console .qr-range-btn-mini.active { background: var(--sc-blue-soft); color: #00F5FF; border-color: var(--sc-blue); }
+.system-console .qr-mini-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--sc-line); font-size: 14px; }
+.system-console .qr-mini-row:last-child { border-bottom: none; }
+.system-console .qr-mini-row.qr-mini-sub { padding-left: 20px; }
+.system-console .qr-mini-label { color: var(--sc-muted); }
+.system-console .qr-mini-num { font-size: 20px; font-weight: 700; color: #00F5FF; font-family: var(--sc-font-mono); }
+.system-console .qr-mini-num-sm { font-size: 14px; font-weight: 600; color: var(--sc-text); font-family: var(--sc-font-mono); }
+
+/* ── Maintenance ── */
+.system-console .maint-card { background: var(--sc-panel); border: 1px solid var(--sc-line); border-left: 3px solid var(--sc-amber); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; min-height: 220px; }
+.system-console .maint-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.system-console .maint-card-body { flex: 1; }
+.system-console .maint-title { font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-text); }
+.system-console .maint-btn { margin-top: 10px; width: 100%; }
+.system-console .maint-btn-row { display: flex; gap: 8px; }
+.system-console .maint-btn-row .maint-btn { flex: 1; }
+.system-console .files-found { font-size: 14px; color: var(--sc-muted); }
+.system-console .files-found span { font-weight: 700; color: var(--sc-text); }
+.system-console .status-box {
+  padding: 8px 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px;
+  font-size: 13px; color: var(--sc-muted); min-height: 34px; display: flex; align-items: center;
+}
+.system-console .status-box.ready { color: var(--sc-text-2); }
+.system-console .status-box.loading, .system-console .status-box.scanning { color: #00F5FF; }
+.system-console .status-box.success, .system-console .status-box.ok { color: #39FF14; }
+.system-console .status-box.warning { color: #FFB000; }
+.system-console .status-box.error { color: #ff6b6b; }
+.system-console .preview-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.system-console .preview-item { background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; padding: 10px 12px; color: var(--sc-text-2); font-size: 13px; }
+.system-console .preview-item-row { display: flex; gap: 6px; font-size: 13px; line-height: 1.6; }
+.system-console .preview-item-label { color: var(--sc-muted); min-width: 60px; font-weight: 500; }
+.system-console .preview-item-val { color: var(--sc-text); font-weight: 500; }
+.system-console .preview-files { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sc-line); }
+.system-console .preview-files-label { font-size: 12px; font-weight: 700; color: var(--sc-muted); margin-bottom: 4px; letter-spacing: .08em; text-transform: uppercase; }
+.system-console .preview-file { font-size: 13px; color: var(--sc-text-2); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.system-console .preview-file::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--sc-muted); flex-shrink: 0; }
+.system-console .preview-empty { font-size: 14px; color: var(--sc-muted); padding: 14px 0; text-align: center; }
+.system-console .badge-declined { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-red-soft); color: #ff6b6b; }
+.system-console .badge-expired { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-amber-soft); color: #FFB000; }
+.system-console .badge-removed { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-line); color: var(--sc-text-2); }
+.system-console .orphan-file { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; font-size: 13px; gap: 10px; }
+.system-console .orphan-path { color: var(--sc-text-2); font-family: var(--sc-font-mono); word-break: break-all; flex: 1; }
+.system-console .cleanup-footer { font-size: 12px; color: var(--sc-muted); margin-top: 8px; }
+
+
+/* ── Quick launch (above the fold) ── */
+.system-console .sc-quick { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 12px; margin-bottom: 18px; }
+.system-console .sc-q { background: var(--sc-panel); border: 1px solid var(--sc-line-2); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.system-console .sc-q-top { display: flex; align-items: center; gap: 12px; }
+.system-console .sc-q-ico { font-size: 28px; line-height: 1; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); flex-shrink: 0; }
+.system-console .sc-q-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: .02em; }
+.system-console .sc-q-sub { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .sc-q-actions { display: flex; gap: 8px; margin-top: auto; }
+.system-console .sc-q-actions .sc-btn { flex: 1; }
+.system-console .sc-btn-lg { padding: 11px 14px; font-size: 14px; }
+.system-console .sc-q-cctv { border-color: rgba(0,245,255,.45); }
+.system-console .sc-q-hvac { border-color: rgba(57,255,20,.35); }
+@media (max-width: 1100px) { .system-console .sc-quick { grid-template-columns: 1fr 1fr; } .system-console .sc-q-hvac { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .system-console .sc-quick { grid-template-columns: 1fr; } }
+
+
+/* ── Terminal skin: fonts, glow (key elements only), cursor ── */
+.system-console .sc-title, .system-console .sc-panel-title, .system-console .sc-q-title, .system-console .sc-section,
+.system-console .maint-title, .system-console .sc-tag, .system-console .sc-door-id {
+  font-family: var(--sc-font-head);
+}
+.system-console .sc-title { color: #00F5FF; text-shadow: 0 0 10px rgba(0,245,255,.55); font-size: 28px; letter-spacing: .16em; }
+.system-console .sc-sub, .system-console .sc-tile-label, .system-console .sc-meta-label, .system-console .sc-stat-label,
+.system-console .sc-auto-label, .system-console .sc-q-sub, .system-console .sc-hint, .system-console .sc-meta-val,
+.system-console .sc-badge, .system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary,
+.system-console .sc-copy-btn, .system-console .qr-range-btn-mini, .system-console .sc-input, .system-console .sc-unit,
+.system-console .sc-stat-num, .system-console .sc-tile-val, .system-console .db-table .tbl-count, .system-console .qr-mini-num, .system-console .qr-mini-num-sm {
+  font-family: var(--sc-font-mono);
+}
+.system-console .sc-tag { color: var(--sc-magenta); border-color: rgba(255,43,214,.5); background: var(--sc-magenta-soft); text-shadow: 0 0 8px rgba(255,43,214,.5); }
+.system-console .sc-panel-title, .system-console .sc-q-title { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.4); }
+.system-console .sc-section { color: #00F5FF; opacity: .85; }
+.system-console .sc-section::before { content: '>'; color: #39FF14; font-family: var(--sc-font-mono); }
+.system-console .sc-panel-head { border-bottom: 1px solid rgba(0,245,255,.35); }
+.system-console .sc-panel.hero { box-shadow: none; border-color: var(--sc-line-2); }
+.system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary {
+  text-transform: uppercase; letter-spacing: .08em; font-size: 13px; border-radius: 6px;
+}
+.system-console .sc-btn-blue:not(:disabled), .system-console .btn-primary:not(:disabled) { box-shadow: 0 0 10px rgba(0,245,255,.22); }
+.system-console .sc-btn-green:not(:disabled) { box-shadow: 0 0 10px rgba(57,255,20,.18); }
+.system-console .sc-btn-amber:not(:disabled) { box-shadow: 0 0 10px rgba(255,176,0,.18); }
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { box-shadow: 0 0 16px rgba(0,245,255,.4); }
+.system-console .sc-panel, .system-console .sc-tile, .system-console .sc-stat, .system-console .sc-q, .system-console .maint-card, .system-console .sc-door { border-radius: 8px; }
+.system-console .sc-q-ico { font-family: var(--sc-font-mono); font-size: 28px; color: #00F5FF; text-shadow: 0 0 10px rgba(0,245,255,.6); }
+.system-console .sc-q-cctv .sc-q-ico { color: #39FF14; text-shadow: 0 0 10px rgba(57,255,20,.6); }
+.system-console .sc-q-hvac .sc-q-ico { color: #FF2BD6; text-shadow: 0 0 10px rgba(255,43,214,.6); }
+.system-console .sc-q-int { border-color: rgba(0,245,255,.45); }
+.system-console .sc-q-cctv { border-color: rgba(57,255,20,.4); }
+.system-console .sc-q-hvac { border-color: rgba(255,43,214,.4); }
+.system-console .sc-stat-num, .system-console .qr-mini-num, .system-console .db-table .tbl-count { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.4); }
+.system-console .sc-dot.ok { box-shadow: 0 0 8px #39FF14; }
+.system-console .sc-badge .sc-dot { background: var(--sc-amber); }
+.system-console .sc-badge { background: var(--sc-amber-soft); border-color: rgba(255,176,0,.4); color: #FFB000; }
+.system-console .sc-door-id { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.45); }
+.system-console .sc-notice { color: #FFB000; }
+.system-console .sc-meta-val { color: #D7F7F5; }
+.system-console .sc-meta-val:not(.dim) { color: #00F5FF; }
+.system-console .alert-card { border-left-color: #39FF14; }
+.system-console .alert-card.has-errors { border-left-color: #FF3131; }
+
+
+/* ── Large-type pass (readable for 50+ eyes) ── */
+.system-console { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.system-console .sc-title { font-size: 28px; }
+.system-console .sc-sub { font-size: 14px; }
+.system-console .sc-section { font-size: 17px; letter-spacing: .14em; margin: 30px 2px 12px; }
+.system-console .sc-panel-title { font-size: 17px; }
+.system-console .sc-panel-desc { font-size: 14px; }
+.system-console .sc-panel-head { padding: 15px 20px; }
+.system-console .sc-panel-body { padding: 18px 20px; }
+.system-console .sc-q { padding: 18px 20px; gap: 16px; }
+.system-console .sc-q-title { font-size: 20px; }
+.system-console .sc-q-sub { font-size: 14px; }
+.system-console .sc-q-ico { width: 52px; height: 52px; font-size: 28px; }
+.system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary { font-size: 14px; padding: 10px 16px; }
+.system-console .sc-btn-lg { font-size: 15px; padding: 14px 16px; }
+.system-console .sc-door { padding: 18px 20px; gap: 18px; }
+.system-console .sc-door-name { font-size: 19px; }
+.system-console .sc-door-id { font-size: 14px; }
+.system-console .sc-door-note { font-size: 14px; }
+.system-console .sc-door-actions .sc-btn { font-size: 15px; padding: 14px 16px; }
+.system-console .sc-badge { font-size: 14px; padding: 7px 14px; }
+.system-console .sc-input { width: 92px; font-size: 16px; padding: 10px 8px; }
+.system-console .sc-meta-val { font-size: 17px; }
+.system-console .sc-meta-label, .system-console .sc-tile-label, .system-console .sc-stat-label, .system-console .sc-auto-label { font-size: 13px; }
+.system-console .sc-tile-val { font-size: 18px; }
+.system-console .sc-tile-sub { font-size: 14px; }
+.system-console .sc-stat-num { font-size: 28px; }
+.system-console .sc-notice { font-size: 14.5px; }
+.system-console .sc-hint { font-size: 14px; }
+.system-console .alert-title { font-size: 16px; }
+.system-console .alert-stat { font-size: 14px; }
+.system-console .qr-mini-num { font-size: 22px; }
+.system-console .qr-mini-num-sm { font-size: 16px; }
+.system-console .qr-mini-row { font-size: 15px; padding: 11px 4px; }
+.system-console .db-table td { font-size: 15px; padding: 11px 0; }
+.system-console .db-table th { font-size: 13px; }
+.system-console .status-box { font-size: 14px; min-height: 40px; }
+.system-console .maint-title { font-size: 16px; }
+.system-console .files-found { font-size: 14px; }
+.system-console .maint-card { padding: 18px 20px; }
+.system-console .sc-strip { margin-top: 20px; }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled { opacity: .55; }
+
+/* ── Vivid buttons (brighter fill + full-colour border, readable even when disabled) ── */
+.system-console .sc-btn, .system-console .btn-secondary { background: #10262c; border: 1px solid #3a8f99; color: #D7F7F5; font-weight: 700; }
+.system-console .sc-btn:hover:not(:disabled), .system-console .btn-secondary:hover:not(:disabled) { background: #15343c; border-color: #00F5FF; color: #fff; }
+.system-console .sc-btn-blue, .system-console .btn-primary { background: rgba(0,245,255,.16); border-color: #00F5FF; color: #00F5FF; font-weight: 700; }
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { background: rgba(0,245,255,.28); color: #fff; }
+.system-console .sc-btn-green { background: rgba(57,255,20,.2); border-color: #39FF14; color: #39FF14; font-weight: 700; }
+.system-console .sc-btn-green:hover:not(:disabled) { background: rgba(57,255,20,.28); color: #fff; }
+.system-console .sc-btn-amber { background: rgba(255,176,0,.22); border-color: #FFB000; color: #FFB000; font-weight: 700; }
+.system-console .sc-btn-amber:hover:not(:disabled) { background: rgba(255,176,0,.3); color: #fff; }
+.system-console .sc-btn-red, .system-console .btn-danger { background: rgba(255,49,49,.15); border-color: #FF3131; color: #ff6b6b; font-weight: 700; }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { background: rgba(255,49,49,.28); color: #fff; }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled {
+  opacity: 1 !important; cursor: not-allowed; box-shadow: none !important; text-shadow: none;
+  background: #0C171A; border-color: rgba(138,166,166,.38); color: rgba(169,196,195,.62);
+}
+.system-console .sc-btn-amber:disabled { border-color: rgba(255,176,0,.40); color: rgba(255,176,0,.60); }
+.system-console .sc-btn-green:disabled { border-color: rgba(57,255,20,.40); color: rgba(57,255,20,.60); }
+.system-console .sc-btn-blue:disabled, .system-console .btn-primary:disabled { border-color: rgba(0,245,255,.40); color: rgba(0,245,255,.60); }
+.system-console .sc-btn-red:disabled, .system-console .btn-danger:disabled { border-color: rgba(255,49,49,.40); color: rgba(255,107,107,.62); }
+.system-console .sc-copy-btn { background: #10262c; border: 1px solid #3a8f99; color: #D7F7F5; font-weight: 700; }
+.system-console .sc-copy-btn:hover { background: #15343c; border-color: #00F5FF; }
+.system-console .qr-range-btn-mini { background: #10262c; border-color: #3a8f99; color: #D7F7F5; }
+.system-console .qr-range-btn-mini.active { background: rgba(0,245,255,.2); border-color: #00F5FF; color: #00F5FF; }
+
+/* ── Neon boost (green / red / cyan glow, brighter text) ── */
+.system-console .sc-btn-green:not(:disabled) { background: rgba(57,255,20,.24); border-color: #39FF14; color: #7dff5c; text-shadow: 0 0 8px rgba(57,255,20,.7); box-shadow: 0 0 14px rgba(57,255,20,.45), inset 0 0 10px rgba(57,255,20,.12); }
+.system-console .sc-btn-red:not(:disabled), .system-console .btn-danger:not(:disabled) { background: rgba(255,49,49,.24); border-color: #FF3B3B; color: #ff7a7a; text-shadow: 0 0 8px rgba(255,59,59,.7); box-shadow: 0 0 14px rgba(255,59,59,.45), inset 0 0 10px rgba(255,59,59,.12); }
+.system-console .sc-btn-blue:not(:disabled), .system-console .btn-primary:not(:disabled) { background: rgba(0,245,255,.2); color: #5ffaff; text-shadow: 0 0 8px rgba(0,245,255,.65); box-shadow: 0 0 14px rgba(0,245,255,.4), inset 0 0 10px rgba(0,245,255,.1); }
+.system-console .sc-btn-green:hover:not(:disabled) { box-shadow: 0 0 20px rgba(57,255,20,.7), inset 0 0 12px rgba(57,255,20,.2); }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { box-shadow: 0 0 20px rgba(255,59,59,.7), inset 0 0 12px rgba(255,59,59,.2); }
+.system-console .sc-btn-green:disabled { background: rgba(57,255,20,.09); border-color: rgba(57,255,20,.65); color: rgba(120,255,92,.92); }
+.system-console .sc-btn-red:disabled, .system-console .btn-danger:disabled { background: rgba(255,59,59,.09); border-color: rgba(255,59,59,.65); color: rgba(255,122,122,.92); }
+.system-console .sc-btn-amber:disabled { background: rgba(255,176,0,.08); border-color: rgba(255,176,0,.6); color: rgba(255,200,80,.9); }
+.system-console .sc-btn-blue:disabled, .system-console .btn-primary:disabled { background: rgba(0,245,255,.08); border-color: rgba(0,245,255,.6); color: rgba(95,250,255,.9); }
+
+/* ── Live status (Step 2A) ── */
+.system-console .sc-tile-val.ok { color: #39FF14; text-shadow: 0 0 8px rgba(57,255,20,.45); }
+.system-console .sc-tile-val.warn { color: #FFB000; }
+.system-console .sc-tile-val.err { color: #ff6b6b; }
+.system-console .sc-stat-num.na { color: var(--sc-muted); text-shadow: none; }
+.system-console .sc-act-row { display: grid; grid-template-columns: 150px minmax(0,1.1fr) minmax(0,1.6fr); gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--sc-line); font-size: 14.5px; align-items: baseline; }
+.system-console .sc-act-row:last-child { border-bottom: none; }
+.system-console .sc-act-time { font-family: var(--sc-font-mono); color: #00F5FF; font-size: 14px; }
+.system-console .sc-act-user { color: var(--sc-text-2); overflow-wrap: anywhere; }
+.system-console .sc-act-action { font-family: var(--sc-font-mono); color: var(--sc-text); overflow-wrap: anywhere; }
+@media (max-width: 700px) { .system-console .sc-act-row { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 1100px) { .system-console .sc-door { grid-template-columns: 1fr 1fr; } }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .system-console .sc-door { grid-template-columns: 1fr 1fr; }
+  .system-console .sc-auto { justify-content: flex-start; }
+  .system-console .sc-strip { grid-template-columns: repeat(3, 1fr); }
+  .system-console .sc-snapshot { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .system-console .sc-grid-2, .system-console .sc-grid-ops, .system-console .sc-grid-3 { grid-template-columns: 1fr; }
+  .system-console .sc-health { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {
-  .daily-grid { grid-template-columns: 1fr; }
+  .system-console .sc-title { font-size: 20px; }
+  .system-console .sc-strip { grid-template-columns: 1fr 1fr; }
+  .system-console .sc-meta { grid-template-columns: 1fr; }
+  .system-console .sc-door { grid-template-columns: 1fr; }
+  .system-console .sc-health { grid-template-columns: 1fr; }
 }
-@media (max-width: 380px) {
-  .section-label { font-size: 11px; }
-  .daily-card { padding: 12px; }
-}
-
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -446,101 +470,134 @@
 <div class="main">
   <div id="topbarPlaceholder"></div>
   <div class="content">
+  <div class="system-console">
 
-    <div style="margin-bottom:20px">
-      <div class="section-title">System Management</div>
+    <!-- 1. HEADER -->
+    <div class="sc-header">
+      <div>
+        <div class="sc-title">System Management</div>
+        <div class="sc-sub">Monitor · Manage · Secure · Maintain</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="sc-btn sc-btn-blue" id="refreshStatusBtn" type="button">&#8635; Refresh status</button><div class="sc-tag">Admin Console</div></div>
     </div>
 
-    <!-- ⚡ DAILY (4 cards same height) -->
-    <div class="section-label">⚡ Daily</div>
-    <div class="daily-grid">
-
-      <!-- 💾 Data Backup -->
-      <div class="daily-card daily-backup">
-        <div class="daily-card-header">
-          <span class="daily-icon">💾</span>
-          <div class="daily-card-title">Data Backup</div>
-        </div>
-        <div class="daily-card-body">
-          <div id="backupLastInfo" class="daily-meta" style="display:none">
-            ⏰ Last: <span id="backupLastDate">—</span>
-          </div>
-          <div id="backupProgress" class="daily-progress" style="display:none">
-            <div id="backupProgressText">Preparing…</div>
-            <div id="backupProgressDetail" class="daily-progress-detail">Connecting</div>
-          </div>
-          <div id="backupResult" class="daily-result" style="display:none"></div>
-        </div>
-        <button id="downloadBackupBtn" onclick="downloadBackup()" class="daily-btn daily-btn-green">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download ZIP
-        </button>
-      </div>
-
-      <!-- 📹 CCTV -->
-      <div class="daily-card">
-        <div class="daily-card-header">
-          <span class="daily-icon">📹</span>
-          <div class="daily-card-title">CCTV (IVMS)</div>
-        </div>
-        <div class="daily-card-body">
-          <div class="daily-desc">Google Remote Desktop</div>
-        </div>
-        <button onclick="window.open('https://remotedesktop.google.com/access/','_blank')" class="daily-btn daily-btn-blue">Open CCTV →</button>
-      </div>
-
-      <!-- ❄️ AC Control -->
-      <div class="daily-card">
-        <div class="daily-card-header">
-          <span class="daily-icon">❄️</span>
-          <div class="daily-card-title">AC Control</div>
-        </div>
-        <div class="daily-card-body">
-          <div class="daily-desc">redmyre.dyndns.biz</div>
-          <div class="daily-copy-row">
-            <button onclick="copyAcCredential(this,'id')" class="daily-copy-btn">📋 ID</button>
-            <button onclick="copyAcCredential(this,'pw')" class="daily-copy-btn">📋 PW</button>
-          </div>
-        </div>
-        <button onclick="window.open('http://redmyre.dyndns.biz/login','_blank')" class="daily-btn daily-btn-blue">Open AC →</button>
-      </div>
-
-      <!-- 📱 QR Scans -->
-      <div class="daily-card">
-        <div class="daily-card-header">
-          <span class="daily-icon">📱</span>
-          <div class="daily-card-title">QR Scans</div>
-          <div class="qr-range-mini" style="margin-left:auto;display:flex;gap:3px">
-            <button class="qr-range-btn-mini active" data-days="0">Today</button>
-            <button class="qr-range-btn-mini" data-days="7">7d</button>
-            <button class="qr-range-btn-mini" data-days="30">30d</button>
-            <button class="qr-range-btn-mini" data-days="90">90d</button>
-          </div>
-        </div>
-        <div class="daily-card-body" style="padding:0">
-          <div class="qr-mini-row">
-            <span class="qr-mini-label">🛗 Lift entry</span>
-            <span class="qr-mini-num" id="qrLiftEntry">—</span>
-          </div>
-          <div class="qr-mini-row qr-mini-sub">
-            <span class="qr-mini-label">→ Resident</span>
-            <span class="qr-mini-num-sm" id="qrLiftResident">—</span>
-          </div>
-          <div class="qr-mini-row qr-mini-sub">
-            <span class="qr-mini-label">→ Visitor</span>
-            <span class="qr-mini-num-sm" id="qrLiftVisitor">—</span>
-          </div>
-          <div class="qr-mini-row qr-mini-sub">
-            <span class="qr-mini-label">→ No selection</span>
-            <span class="qr-mini-num-sm" id="qrLiftDropoff">—</span>
-          </div>
+    <!-- QUICK LAUNCH (most used: Integriti / CCTV / HVAC) -->
+    <div class="sc-quick">
+      <div class="sc-q sc-q-int">
+        <div class="sc-q-top"><span class="sc-q-ico">◈</span><div><div class="sc-q-title">Integriti</div><div class="sc-q-sub">Door access control</div></div></div>
+        <div class="sc-q-actions">
+          <button class="sc-btn sc-btn-lg" disabled aria-disabled="true" title="Available in a later step">Open Integriti</button>
+          <a class="sc-btn sc-btn-lg" href="#door-D1" onclick="document.getElementById('door-D1').scrollIntoView({behavior:'smooth',block:'center'});return false;">Doors &darr;</a>
         </div>
       </div>
-
+      <div class="sc-q sc-q-cctv">
+        <div class="sc-q-top"><span class="sc-q-ico">◉</span><div><div class="sc-q-title">CCTV</div><div class="sc-q-sub">iVMS &middot; Google Remote Desktop</div></div></div>
+        <div class="sc-q-actions">
+          <button onclick="window.open('https://remotedesktop.google.com/access/','_blank')" class="sc-btn sc-btn-blue sc-btn-lg">Open CCTV &rarr;</button>
+        </div>
+      </div>
+      <div class="sc-q sc-q-hvac">
+        <div class="sc-q-top"><span class="sc-q-ico">❄</span><div><div class="sc-q-title">iControl HVAC</div><div class="sc-q-sub sc-host">redmyre.dyndns.biz</div></div></div>
+        <div class="sc-q-actions">
+          <button onclick="copyAcCredential(this,'id')" class="sc-btn sc-btn-lg">📋 ID</button>
+          <button onclick="copyAcCredential(this,'pw')" class="sc-btn sc-btn-lg">📋 PW</button>
+          <button onclick="window.open('http://redmyre.dyndns.biz/login','_blank')" class="sc-btn sc-btn-blue sc-btn-lg">Open AC &rarr;</button>
+        </div>
+      </div>
     </div>
 
-    <!-- 🚨 ALERTS -->
-    <div class="section-label" style="margin-top:18px">🚨 Alerts</div>
+    <!-- 3. INTEGRITI ACCESS CONTROL -->
+    <div class="sc-section">Integriti Access Control</div>
+    <div class="sc-panel hero">
+      <div class="sc-panel-head">
+        <div>
+          <div class="sc-panel-title">Integriti Access Control</div>
+          <div class="sc-panel-desc">Door control &middot; D1 / D2 / D5 &middot; Unlock &amp; Lock only</div>
+        </div>
+      </div>
+      <div class="sc-panel-body">
+        <div class="sc-notice">
+          <span>&#9888;</span>
+          <span>Preview &mdash; door control is not connected yet. No commands can be sent from this screen.</span>
+        </div>
+
+        <div class="sc-meta">
+          <div class="sc-meta-item"><div class="sc-meta-label">Controller</div><div class="sc-meta-val">SC040425</div></div>
+          <div class="sc-meta-item"><div class="sc-meta-label">Integration</div><div class="sc-meta-val dim">Not connected</div></div>
+          <div class="sc-meta-item"><div class="sc-meta-label">Last Check</div><div class="sc-meta-val dim">—</div></div>
+        </div>
+
+        <!-- D1 -->
+        <div class="sc-door" id="door-D1">
+          <div><div class="sc-door-id">D1</div><div class="sc-door-name">Front Door</div><div class="sc-door-note">Live status not connected</div></div>
+          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div class="sc-door-actions">
+            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
+            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+          </div>
+          <div class="sc-auto">
+            <span class="sc-auto-label">Auto-lock</span>
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D1 auto-lock seconds">
+            <span class="sc-unit">sec</span>
+            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+          </div>
+        </div>
+
+        <!-- D2 -->
+        <div class="sc-door" id="door-D2">
+          <div><div class="sc-door-id">D2</div><div class="sc-door-name">Garage Roller Door 1</div><div class="sc-door-note">Live status not connected</div></div>
+          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div class="sc-door-actions">
+            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
+            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+          </div>
+          <div class="sc-auto">
+            <span class="sc-auto-label">Auto-lock</span>
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D2 auto-lock seconds">
+            <span class="sc-unit">sec</span>
+            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+          </div>
+        </div>
+
+        <!-- D5 -->
+        <div class="sc-door" id="door-D5">
+          <div><div class="sc-door-id">D5</div><div class="sc-door-name">Garage Roller Door 2</div><div class="sc-door-note">Live status not connected</div></div>
+          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div class="sc-door-actions">
+            <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
+            <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
+          </div>
+          <div class="sc-auto">
+            <span class="sc-auto-label">Auto-lock</span>
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" disabled aria-label="D5 auto-lock seconds">
+            <span class="sc-unit">sec</span>
+            <button class="sc-btn" disabled aria-disabled="true">Save</button>
+          </div>
+        </div>
+
+        <div class="sc-hint">Auto-lock: 30 sec &ndash; 5 min per door (default 3 min). Admins only. Every change is logged.</div>
+      </div>
+    </div>
+
+    <!-- 2. STATUS STRIP (Step 2 will connect live data) -->
+    <div class="sc-strip">
+      <div class="sc-tile" id="st-bms"><div class="sc-tile-label">BMS Portal</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Not connected</div></div>
+      <div class="sc-tile" id="st-db"><div class="sc-tile-label">Database</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Not connected</div></div>
+      <div class="sc-tile" id="st-daemon"><div class="sc-tile-label">HVAC Daemon</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Not connected</div></div>
+      <div class="sc-tile" id="st-int"><div class="sc-tile-label">Integriti</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Not connected</div></div>
+      <div class="sc-tile" id="st-storage"><div class="sc-tile-label">Storage</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Not connected</div></div>
+    </div>
+
+    <!-- 4. SYSTEM HEALTH -->
+    <div class="sc-section">System Health</div>
+    <div class="sc-health">
+      <div class="sc-tile" id="hl-db"><div class="sc-tile-label">Database</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+      <div class="sc-tile" id="hl-daemon"><div class="sc-tile-label">Daemon</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+      <div class="sc-tile" id="hl-storage"><div class="sc-tile-label">Storage</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+      <div class="sc-tile" id="hl-edge"><div class="sc-tile-label">Edge Function</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+      <div class="sc-tile" id="hl-int"><div class="sc-tile-label">Integriti</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+      <div class="sc-tile" id="hl-cctv"><div class="sc-tile-label">CCTV</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
+    </div>
     <div class="alert-card" id="recentErrorsCard" onclick="toggleErrorDetails()">
       <div class="alert-row">
         <span class="alert-icon" id="errorIcon">✅</span>
@@ -551,53 +608,89 @@
         <span class="alert-arrow" id="errorArrow">▸</span>
       </div>
       <div class="alert-detail" id="errorDetail" style="display:none">
-        <div id="errorList" style="font-size:12px;color:#475569"></div>
+        <div id="errorList" style="font-size:14px;color:#8AA6A6"></div>
       </div>
     </div>
 
-    <!-- 📊 OPERATIONS (Database + Storage) -->
-    <div class="section-label" style="margin-top:18px">📊 Operations</div>
-    <div class="ops-grid">
-
-      <!-- Database Summary -->
-      <div class="ops-card">
-        <div class="ops-card-header">
-          <span class="daily-icon">📊</span>
-          <div class="daily-card-title">Database Summary</div>
-          <button class="btn-secondary" id="dbRefreshBtn" style="margin-left:auto;font-size:11px;padding:4px 10px">↻</button>
-        </div>
-        <div id="dbSummaryContent" style="margin-top:10px">
-          <div style="color:var(--muted);font-size:12px">Loading...</div>
-        </div>
-      </div>
-
-      <!-- Storage Buckets -->
-      <div class="ops-card">
-        <div class="ops-card-header">
-          <span class="daily-icon">📁</span>
-          <div class="daily-card-title">Storage Buckets</div>
-        </div>
-        <div id="storageBucketsContent" style="margin-top:10px">
-          <div style="color:var(--muted);font-size:12px">Loading...</div>
-        </div>
-      </div>
-
+    <!-- 5. OPERATIONAL SNAPSHOT -->
+    <div class="sc-section">Operational Snapshot</div>
+    <div class="sc-snapshot">
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-hvac">—</div><div class="sc-stat-label">HVAC Requests · 24h</div></div>
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-audit">—</div><div class="sc-stat-label">Audit Events · 24h</div></div>
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-err">—</div><div class="sc-stat-label">Errors · 7d</div></div>
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-hb">—</div><div class="sc-stat-label">Daemon Heartbeat</div></div>
     </div>
 
-    <!-- 🧹 MAINTENANCE -->
-    <div class="section-label" style="margin-top:18px">🧹 Maintenance</div>
-    <div class="maint-grid">
+    <!-- 6. RECENT ACTIVITIES -->
+    <div class="sc-section">Recent Activities</div>
+    <div class="sc-panel">
+      <div class="sc-panel-head"><div class="sc-panel-title">Latest 10 Events</div><div class="sc-panel-actions"><span class="sc-panel-desc" id="activityStamp">—</span></div></div>
+      <div class="sc-panel-body" id="activityList" style="padding:6px 20px"><div class="sc-empty">Loading…</div></div>
+    </div>
 
-      <!-- Orphan Files -->
+    <!-- 9. DATABASE / STORAGE -->
+    <div class="sc-section">Database / Storage</div>
+    <div class="sc-grid-ops">
+      <div class="sc-panel">
+        <div class="sc-panel-head">
+          <div class="sc-panel-title">Database Summary</div>
+          <div class="sc-panel-actions"><button class="sc-btn" id="dbRefreshBtn" style="padding:4px 10px;font-size:13px">↻</button></div>
+        </div>
+        <div class="sc-panel-body" id="dbSummaryContent"><div style="color:var(--muted);font-size:14px">Loading...</div></div>
+      </div>
+      <div class="sc-panel">
+        <div class="sc-panel-head"><div class="sc-panel-title">Storage Buckets</div></div>
+        <div class="sc-panel-body" id="storageBucketsContent"><div style="color:var(--muted);font-size:14px">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- 10. DAILY OPERATIONS -->
+    <div class="sc-section">Daily Operations</div>
+    <div class="sc-grid-2">
+      <div class="sc-panel">
+        <div class="sc-panel-head"><div class="sc-panel-title">💾 Data Backup</div></div>
+        <div class="sc-panel-body">
+          <div id="backupLastInfo" class="sc-meta-line" style="display:none">⏰ Last: <span id="backupLastDate">—</span></div>
+          <div id="backupProgress" class="daily-progress" style="display:none">
+            <div id="backupProgressText">Preparing…</div>
+            <div id="backupProgressDetail" class="daily-progress-detail">Connecting</div>
+          </div>
+          <div id="backupResult" class="daily-result" style="display:none"></div>
+          <button id="downloadBackupBtn" onclick="downloadBackup()" class="sc-btn sc-btn-green sc-btn-block">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download ZIP
+          </button>
+        </div>
+      </div>
+      <div class="sc-panel">
+        <div class="sc-panel-head">
+          <div class="sc-panel-title">📱 QR Scans</div>
+          <div class="sc-panel-actions qr-range-mini">
+            <button class="qr-range-btn-mini active" data-days="0">Today</button>
+            <button class="qr-range-btn-mini" data-days="7">7d</button>
+            <button class="qr-range-btn-mini" data-days="30">30d</button>
+            <button class="qr-range-btn-mini" data-days="90">90d</button>
+          </div>
+        </div>
+        <div class="sc-panel-body" style="padding-top:6px;padding-bottom:6px">
+          <div class="qr-mini-row"><span class="qr-mini-label">🛗 Lift entry</span><span class="qr-mini-num" id="qrLiftEntry">—</span></div>
+          <div class="qr-mini-row qr-mini-sub"><span class="qr-mini-label">→ Resident</span><span class="qr-mini-num-sm" id="qrLiftResident">—</span></div>
+          <div class="qr-mini-row qr-mini-sub"><span class="qr-mini-label">→ Visitor</span><span class="qr-mini-num-sm" id="qrLiftVisitor">—</span></div>
+          <div class="qr-mini-row qr-mini-sub"><span class="qr-mini-label">→ No selection</span><span class="qr-mini-num-sm" id="qrLiftDropoff">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. MAINTENANCE & CLEANUP -->
+    <div class="sc-section">Maintenance &amp; Cleanup</div>
+    <div class="sc-grid-3">
+
       <div class="maint-card">
-        <div class="maint-card-header">
-          <span class="daily-icon">🗑️</span>
-          <div class="daily-card-title">Orphan Files</div>
-        </div>
+        <div class="maint-card-header"><span>🗑️</span><div class="maint-title">Orphan Files</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="font-size:11px;margin-bottom:8px">Found: <span id="orphanCount">—</span></div>
-          <div class="status-box ready" id="orphanStatus" style="font-size:11px;padding:6px 8px">Ready to scan</div>
-          <div id="orphanList" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;font-size:11px"></div>
+          <div class="files-found" style="margin-bottom:8px">Found: <span id="orphanCount">—</span></div>
+          <div class="status-box ready" id="orphanStatus">Ready to scan</div>
+          <div id="orphanList" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;font-size:13px"></div>
           <div style="margin-top:8px" id="orphanDeleteWrap">
             <button class="btn-danger maint-btn" id="orphanDeleteBtn" style="display:none;width:100%">Delete Orphan Files</button>
           </div>
@@ -605,48 +698,40 @@
         <button class="btn-primary maint-btn" id="orphanScanBtn">Scan Orphans</button>
       </div>
 
-      <!-- Junk Files -->
       <div class="maint-card">
-        <div class="maint-card-header">
-          <span class="daily-icon">🧹</span>
-          <div class="daily-card-title">Junk Files</div>
-        </div>
+        <div class="maint-card-header"><span>🧹</span><div class="maint-title">Junk Files</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="font-size:11px;margin-bottom:8px">Files found: <span id="fileCount">—</span></div>
-          <div class="status-box ready" id="statusBox" style="font-size:11px;padding:6px 8px">Ready</div>
+          <div class="files-found" style="margin-bottom:8px">Files found: <span id="fileCount">—</span></div>
+          <div class="status-box ready" id="statusBox">Ready</div>
           <div id="previewSection" style="display:none;margin-top:8px">
-            <div class="preview-list" id="previewList" style="font-size:11px;max-height:120px;overflow-y:auto"></div>
+            <div class="preview-list" id="previewList" style="max-height:120px;overflow-y:auto"></div>
           </div>
-          <div class="cleanup-footer" id="lastCleanup" style="font-size:10px;margin-top:8px;color:var(--muted)">Last cleanup: —</div>
+          <div class="cleanup-footer" id="lastCleanup">Last cleanup: —</div>
         </div>
         <div class="maint-btn-row">
           <button class="btn-primary maint-btn" id="scanBtn">Scan</button>
-          <button class="btn-danger maint-btn" id="deleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete</button>
+          <button class="btn-danger maint-btn" id="deleteBtn" disabled aria-disabled="true">Delete</button>
         </div>
       </div>
 
-      <!-- Discussion Comments Cleanup -->
       <div class="maint-card">
-        <div class="maint-card-header">
-          <span class="daily-icon">💬</span>
-          <div class="daily-card-title">Comments Cleanup</div>
-        </div>
+        <div class="maint-card-header"><span>💬</span><div class="maint-title">Comments Cleanup</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="font-size:11px;margin-bottom:8px">Projects: <span id="pcCount">—</span></div>
-          <div class="status-box ready" id="pcStatusBox" style="font-size:11px;padding:6px 8px">Ready</div>
+          <div class="files-found" style="margin-bottom:8px">Projects: <span id="pcCount">—</span></div>
+          <div class="status-box ready" id="pcStatusBox">Ready</div>
           <div id="pcPreviewSection" style="display:none;margin-top:8px">
-            <div class="preview-list" id="pcPreviewList" style="font-size:11px;max-height:120px;overflow-y:auto"></div>
+            <div class="preview-list" id="pcPreviewList" style="max-height:120px;overflow-y:auto"></div>
           </div>
         </div>
         <div class="maint-btn-row">
           <button class="btn-primary maint-btn" id="pcScanBtn">Scan</button>
-          <button class="btn-danger maint-btn" id="pcDeleteBtn" disabled style="opacity:0.45;cursor:not-allowed">Delete</button>
+          <button class="btn-danger maint-btn" id="pcDeleteBtn" disabled aria-disabled="true">Delete</button>
         </div>
       </div>
 
     </div>
 
-
+  </div>
   </div>
 </div>
 
@@ -729,7 +814,7 @@ const DB_TABLES = [
 
 async function loadDbSummary() {
   const el = document.getElementById('dbSummaryContent');
-  el.innerHTML = '<div style="color:var(--muted);font-size:13px">Loading...</div>';
+  el.innerHTML = '<div style="color:var(--muted);font-size:14px">Loading...</div>';
 
   const counts = [];
   for (const t of DB_TABLES) {
@@ -792,7 +877,7 @@ async function listAllFiles(bucket, prefix) {
 async function loadStorageBuckets() {
   const el = document.getElementById('storageBucketsContent');
   if (!el) return;
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px">Loading...</div>';
+  el.innerHTML = '<div style="color:var(--muted);font-size:14px">Loading...</div>';
 
   let grandFiles = 0, grandBytes = 0;
   const bucketData = [];
@@ -809,17 +894,18 @@ async function loadStorageBuckets() {
     }
   }
 
+  window.__storageSummary = { files: grandFiles, bytes: grandBytes, failed: bucketData.filter(b => b.files === '—').length, at: new Date() };
   el.innerHTML = `
     ${bucketData.map(b => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);font-size:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px">
         <div>
           <div style="font-weight:600;color:var(--text)">📦 ${b.name}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">${typeof b.files === 'number' ? b.files.toLocaleString() + ' files' : '—'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${typeof b.files === 'number' ? b.files.toLocaleString() + ' files' : '—'}</div>
         </div>
         <span style="font-weight:700;color:var(--text);font-family:monospace">${formatSize(b.bytes)}</span>
       </div>
     `).join('')}
-    <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:6px;border-top:1px solid var(--border);font-size:12px">
+    <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:6px;border-top:1px solid var(--border);font-size:14px">
       <span style="color:var(--muted);font-weight:600">Total · ${grandFiles.toLocaleString()} files</span>
       <span style="color:var(--text);font-weight:700;font-family:monospace">${formatSize(grandBytes)}</span>
     </div>
@@ -955,7 +1041,7 @@ function renderPreview(quotes) {
     return `<div class="preview-item">
       <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
       <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:11px">${shortId}</span></div>
+      <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:13px">${shortId}</span></div>
       <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
       ${filesHtml}
     </div>`;
@@ -1235,10 +1321,10 @@ async function loadRecentErrors() {
         const detailStr = e.details ? (typeof e.details === 'object' ? JSON.stringify(e.details).slice(0, 200) : String(e.details).slice(0, 200)) : '';
         return `
           <div style="padding:10px 0;border-bottom:1px dashed var(--border)">
-            <div style="font-family:monospace;font-size:10px;color:#991b1b;font-weight:600">${date}</div>
-            <div style="font-size:12px;color:#b91c1c;font-weight:600;margin:3px 0">${e.action || 'unknown'}</div>
-            <div style="font-size:11px;color:#475569">${e.user_email || ''}</div>
-            ${detailStr ? `<div style="font-size:11px;color:#64748b;margin-top:3px">${detailStr}</div>` : ''}
+            <div style="font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600">${date}</div>
+            <div style="font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0">${e.action || 'unknown'}</div>
+            <div style="font-size:13px;color:#8AA6A6">${e.user_email || ''}</div>
+            ${detailStr ? `<div style="font-size:13px;color:#8AA6A6;margin-top:3px">${detailStr}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -1259,12 +1345,153 @@ window.toggleErrorDetails = function() {
   detail.style.display = card.classList.contains('expanded') ? 'block' : 'none';
 };
 
+
+// ─── LIVE STATUS (Step 2A: read-only, no values are invented) ─────────────
+const sydTime = (d) => d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Australia/Sydney' });
+function setTile(id, state, text, sub) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const val = el.querySelector('.sc-tile-val');
+  const subEl = el.querySelector('.sc-tile-sub');
+  if (val) {
+    val.className = 'sc-tile-val ' + state;
+    val.textContent = '';
+    const dot = document.createElement('span');
+    dot.className = 'sc-dot ' + (state === 'ok' || state === 'warn' || state === 'err' ? state : '');
+    val.appendChild(dot);
+    val.appendChild(document.createTextNode(text));
+  }
+  if (subEl) subEl.textContent = sub;
+}
+function setStat(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const ok = typeof value === 'number';
+  el.textContent = ok ? value.toLocaleString() : '—';
+  el.classList.toggle('na', !ok);
+}
+async function countRows(table, build) {
+  try {
+    const q = supabase.from(table).select('*', { count: 'exact', head: true });
+    const { count, error } = await build(q);
+    return error ? null : (count ?? 0);
+  } catch (e) { return null; }
+}
+
+async function checkDatabase() {
+  const t0 = performance.now();
+  let ok = false;
+  try {
+    const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+    ok = !error;
+  } catch (e) { ok = false; }
+  const ms = Math.round(performance.now() - t0);
+  const stamp = 'Last check ' + sydTime(new Date());
+  if (!ok) { setTile('st-db', 'err', 'Error', stamp); setTile('hl-db', 'err', 'Error', stamp); return; }
+  const state = ms > 2000 ? 'warn' : 'ok';
+  setTile('st-db', state, 'Healthy', ms + ' ms · ' + stamp);
+  setTile('hl-db', state, 'Healthy · ' + ms + ' ms', stamp);
+}
+
+async function checkEdgeFunction() {
+  const stamp = 'Last check ' + sydTime(new Date());
+  try {
+    // An unsupported field is rejected with HTTP 400 before the function touches the vault or the audit log.
+    const { data, error } = await supabase.functions.invoke('get-ac-credential', { body: { field: '__health__' } });
+    const status = error && error.context && error.context.status;
+    if (status === 400) setTile('hl-edge', 'ok', 'Responding', stamp);
+    else if (!error) setTile('hl-edge', 'warn', 'Unexpected reply', stamp);
+    else setTile('hl-edge', 'err', status ? 'Error ' + status : 'No response', stamp);
+  } catch (e) {
+    setTile('hl-edge', 'err', 'No response', stamp);
+  }
+}
+
+function checkStorageTile() {
+  const sum = window.__storageSummary;
+  if (!sum) { setTile('st-storage', '', '—', 'Not checked'); setTile('hl-storage', '', '—', 'Last check: —'); return; }
+  const stamp = 'Last check ' + sydTime(sum.at);
+  const detail = formatSize(sum.bytes) + ' used · ' + sum.files.toLocaleString() + ' files';
+  const state = sum.failed > 0 ? 'warn' : 'ok';
+  const text = sum.failed > 0 ? 'Partial' : 'Healthy';
+  setTile('st-storage', state, text, detail);
+  setTile('hl-storage', state, text, detail + ' · ' + stamp);
+}
+
+function checkPortalTile() {
+  const stamp = 'Last check ' + sydTime(new Date());
+  setTile('st-bms', 'ok', 'Session OK', 'Admin session · ' + stamp);
+}
+
+async function loadSnapshot() {
+  const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const week = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const [hvac, audit, errs] = await Promise.all([
+    countRows('hvac_requests', q => q.gte('created_at', day)),
+    countRows('audit_logs', q => q.gte('created_at', day)),
+    countRows('audit_logs', q => q.gte('created_at', week).or('action.ilike.%error%,action.ilike.%fail%')),
+  ]);
+  setStat('sn-hvac', hvac);
+  setStat('sn-audit', audit);
+  setStat('sn-err', errs);
+  setStat('sn-hb', null);
+}
+
+async function loadActivities() {
+  const box = document.getElementById('activityList');
+  const stamp = document.getElementById('activityStamp');
+  if (!box) return;
+  try {
+    const { data, error } = await supabase.from('audit_logs')
+      .select('created_at, action, user_email')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    box.textContent = '';
+    if (!data || !data.length) {
+      const empty = document.createElement('div'); empty.className = 'sc-empty'; empty.textContent = 'No recent events.'; box.appendChild(empty);
+    } else {
+      data.forEach(r => {
+        const row = document.createElement('div'); row.className = 'sc-act-row';
+        const t = document.createElement('div'); t.className = 'sc-act-time';
+        t.textContent = new Date(r.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+        const u = document.createElement('div'); u.className = 'sc-act-user'; u.textContent = r.user_email || '—';
+        const a = document.createElement('div'); a.className = 'sc-act-action'; a.textContent = r.action || '—';
+        row.appendChild(t); row.appendChild(u); row.appendChild(a); box.appendChild(row);
+      });
+    }
+    if (stamp) stamp.textContent = 'Last check ' + sydTime(new Date());
+  } catch (e) {
+    box.textContent = '';
+    const err = document.createElement('div'); err.className = 'sc-empty'; err.textContent = 'Could not load events.'; box.appendChild(err);
+    if (stamp) stamp.textContent = '—';
+  }
+}
+
+async function refreshStatus() {
+  const btn = document.getElementById('refreshStatusBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    checkPortalTile();
+    await Promise.all([checkDatabase(), checkEdgeFunction(), loadSnapshot(), loadActivities()]);
+    checkStorageTile();
+  } catch (e) { console.warn('[status]', e); }
+  if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; Refresh status'; }
+}
+document.getElementById('refreshStatusBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('refreshStatusBtn');
+  if (btn) btn.disabled = true;
+  await loadStorageBuckets();
+  await refreshStatus();
+});
+
 await Promise.all([
   loadDbSummary(),
   loadStorageBuckets(),
   loadQRAnalytics(0),
   loadRecentErrors(),
 ]);
+refreshStatus(); // not awaited: a slow check must never block the rest of the page
 
 // ─── DATA BACKUP ─────────────────────────────────────────────────
 // 마지막 백업 정보 표시 (localStorage에 저장)
@@ -1424,10 +1651,10 @@ window.downloadBackup = async function() {
     // 성공 메시지
     progress.style.display = 'none';
     result.style.display = 'block';
-    result.style.background = '#f0fdf4';
-    result.style.border = '1px solid #bbf7d0';
-    result.style.color = '#166534';
-    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:11px;color:#475569">💡 Please move the file to Google Drive or a safe location.</span>`;
+    result.style.background = 'rgba(57,255,20,.10)';
+    result.style.border = '1px solid rgba(57,255,20,.35)';
+    result.style.color = '#39FF14';
+    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:13px;color:#8AA6A6">💡 Please move the file to Google Drive or a safe location.</span>`;
 
     // audit log
     try {
@@ -1446,9 +1673,9 @@ window.downloadBackup = async function() {
     console.error('[backup] error:', e);
     progress.style.display = 'none';
     result.style.display = 'block';
-    result.style.background = '#fef2f2';
-    result.style.border = '1px solid #fecaca';
-    result.style.color = '#991b1b';
+    result.style.background = 'rgba(255,49,49,.10)';
+    result.style.border = '1px solid rgba(255,49,49,.35)';
+    result.style.color = '#ff6b6b';
     result.textContent = `❌ Backup failed: ${e.message || 'Unknown error'}`;
   } finally {
     btn.disabled = false;
