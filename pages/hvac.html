@@ -2023,7 +2023,7 @@ function renderTenancyBoxes() {
 renderFloorBoxes();
 renderTenancyBoxes();
 
-document.getElementById('submitHvacBtn').addEventListener('click', async () => {
+async function submitHvacRequestHandler() {
   let level, tenancy;
 
   if (selectedUnit) {
@@ -2096,7 +2096,8 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   }
 
   try {
-    await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending', temp_after: selectedTargetTemp != null ? Number(selectedTargetTemp) : null });
+    const insRes = await supabase.from('hvac_requests').insert({ user_id:user.id, user_name:name, type:selectedType, level, tenancy, comment:document.getElementById('hvacComment').value.trim(), status:'pending', temp_after: selectedTargetTemp != null ? Number(selectedTargetTemp) : null });
+    if (insRes && insRes.error) throw new Error(insRes.error.message || 'Failed to submit request');
     try { await supabase.from('audit_logs').insert({ user_email:user.email, user_role:role, action:'HVAC_REQUESTED', details:{ type:selectedType, level, tenancy } }); } catch(e) {}
     try {
       const { data: { session: pushSession } } = await supabase.auth.getSession();
@@ -2121,7 +2122,25 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
       renderTenancyBoxes();
     }
     if (role!=='admin') await loadMyRequests();
-  } catch(e) { showToast(e.message||'Failed to submit', true); }
+  } catch(e) {
+    if (e && /HVAC_COOLDOWN/.test(e.message || '')) {
+      // Database-level 30-minute rule refused the insert (e.g. two requests at the same moment).
+      document.getElementById('cooldownTime').textContent = 'up to 30 minutes remaining';
+      document.getElementById('cooldownModal').classList.add('show');
+      if (role!=='admin') { try { await loadMyRequests(); } catch(_) {} }
+    } else {
+      showToast(e.message||'Failed to submit', true);
+    }
+  }
+}
+
+// One submission at a time: ignores rapid double-clicks until the previous one fully finishes
+// (cooldown check + insert), so two requests can't both pass the 30-minute check.
+document.getElementById('submitHvacBtn').addEventListener('click', async () => {
+  if (window.__hvacSubmitting) return;
+  window.__hvacSubmitting = true;
+  try { await submitHvacRequestHandler(); }
+  finally { window.__hvacSubmitting = false; }
 });
 
 
