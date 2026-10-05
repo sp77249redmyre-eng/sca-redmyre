@@ -346,6 +346,13 @@
 .system-console .sc-badge .sc-dot { background: var(--sc-amber); }
 .system-console .sc-badge { background: var(--sc-amber-soft); border-color: rgba(255,176,0,.4); color: #FFB000; }
 .system-console .sc-door-id { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.45); }
+/* door status badge states (green = Locked, red = Unlocked, grey = Unknown, amber = Checking) */
+.system-console .sc-badge.locked { background: rgba(57,255,20,.14); border-color: rgba(57,255,20,.6); color: #7dff5c; text-shadow: 0 0 8px rgba(57,255,20,.5); }
+.system-console .sc-badge.locked .sc-dot { background: #39FF14; box-shadow: 0 0 8px #39FF14; }
+.system-console .sc-badge.unlocked { background: rgba(255,59,59,.16); border-color: rgba(255,59,59,.7); color: #ff7a7a; text-shadow: 0 0 8px rgba(255,59,59,.5); }
+.system-console .sc-badge.unlocked .sc-dot { background: #FF3B3B; box-shadow: 0 0 8px #FF3B3B; }
+.system-console .sc-badge.unknown { background: rgba(159,192,191,.12); border-color: rgba(159,192,191,.5); color: #B8D2D1; text-shadow: none; }
+.system-console .sc-badge.unknown .sc-dot { background: #9FC0BF; box-shadow: none; }
 .system-console .sc-notice { color: #FFB000; }
 .system-console .sc-meta-val { color: #D7F7F5; }
 .system-console .sc-meta-val:not(.dim) { color: #00F5FF; }
@@ -525,19 +532,19 @@
       <div class="sc-panel-body">
         <div class="sc-notice">
           <span>&#9888;</span>
-          <span>Preview &mdash; door control is not connected yet. No commands can be sent from this screen.</span>
+          <span>Status monitor only &mdash; Unlock / Lock is not connected yet. No commands can be sent from this screen.</span>
         </div>
 
         <div class="sc-meta">
           <div class="sc-meta-item"><div class="sc-meta-label">Controller</div><div class="sc-meta-val">SC040425</div></div>
-          <div class="sc-meta-item"><div class="sc-meta-label">Integration</div><div class="sc-meta-val dim">Not connected</div></div>
-          <div class="sc-meta-item"><div class="sc-meta-label">Last Check</div><div class="sc-meta-val dim">—</div></div>
+          <div class="sc-meta-item"><div class="sc-meta-label">Integration</div><div class="sc-meta-val dim" id="door-integration">Not connected</div></div>
+          <div class="sc-meta-item"><div class="sc-meta-label">Last Check</div><div class="sc-meta-val dim" id="door-lastcheck">—</div></div>
         </div>
 
         <!-- D1 -->
         <div class="sc-door" id="door-D1">
-          <div><div class="sc-door-id">D1</div><div class="sc-door-name">Front Door</div><div class="sc-door-note">Live status not connected</div></div>
-          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div><div class="sc-door-id">D1</div><div class="sc-door-name">Front Door</div><div class="sc-door-note" id="door-note-D1">Live status not connected</div></div>
+          <div><span class="sc-badge" id="door-badge-D1"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
             <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
             <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
@@ -552,8 +559,8 @@
 
         <!-- D2 -->
         <div class="sc-door" id="door-D2">
-          <div><div class="sc-door-id">D2</div><div class="sc-door-name">Garage Roller Door 1</div><div class="sc-door-note">Live status not connected</div></div>
-          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div><div class="sc-door-id">D2</div><div class="sc-door-name">Garage Roller Door 1</div><div class="sc-door-note" id="door-note-D2">Live status not connected</div></div>
+          <div><span class="sc-badge" id="door-badge-D2"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
             <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
             <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
@@ -568,8 +575,8 @@
 
         <!-- D5 -->
         <div class="sc-door" id="door-D5">
-          <div><div class="sc-door-id">D5</div><div class="sc-door-name">Garage Roller Door 2</div><div class="sc-door-note">Live status not connected</div></div>
-          <div><span class="sc-badge"><span class="sc-dot"></span>Checking…</span></div>
+          <div><div class="sc-door-id">D5</div><div class="sc-door-name">Garage Roller Door 2</div><div class="sc-door-note" id="door-note-D5">Live status not connected</div></div>
+          <div><span class="sc-badge" id="door-badge-D5"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
             <button class="sc-btn sc-btn-green" disabled aria-disabled="true" title="Available in a later step">Unlock</button>
             <button class="sc-btn sc-btn-red" disabled aria-disabled="true" title="Available in a later step">Lock</button>
@@ -1430,6 +1437,97 @@ function checkPortalTile() {
   setTile('st-bms', 'ok', 'Session OK', 'Admin session · ' + stamp);
 }
 
+// Door status (Stage 3A: read-only monitor). Shows Unknown unless the Door Daemon is alive AND reading Integriti.
+const DOOR_IDS = ['D1', 'D2', 'D5'];
+const DOOR_FRESH_SEC = 180;
+function setDoorBadge(id, cls, label, note) {
+  const b = document.getElementById('door-badge-' + id);
+  const n = document.getElementById('door-note-' + id);
+  if (b) {
+    b.className = 'sc-badge ' + cls;
+    b.textContent = '';
+    const dot = document.createElement('span'); dot.className = 'sc-dot';
+    b.appendChild(dot); b.appendChild(document.createTextNode(label));
+  }
+  if (n) n.textContent = note;
+}
+const unknownWhy = {
+  integriti_not_running: 'Integriti is not running',
+  window_minimized: 'Integriti window is minimised',
+  doors_grid_not_found: 'Doors tab is not open',
+  doors_grid_empty: 'Doors list is empty',
+  door_row_not_found: 'Door row not found',
+  name_mismatch: 'Door name does not match',
+  unexpected_status: 'Unexpected status text',
+  status_read_failed: 'Could not read Integriti'
+};
+async function checkDoors() {
+  const stamp = 'Last check ' + sydTime(new Date());
+  const intTile = (state, text, sub) => { setTile('st-int', state, text, sub); setTile('hl-int', state, text, sub + ' · ' + stamp); };
+  const lc = document.getElementById('door-lastcheck');
+  const ig = document.getElementById('door-integration');
+  const allUnknown = (why) => DOOR_IDS.forEach(id => setDoorBadge(id, 'unknown', 'Unknown', why));
+  try {
+    const [hbRes, stRes] = await Promise.all([
+      supabase.from('daemon_heartbeat').select('last_seen, last_loop, info').eq('name', 'door').maybeSingle(),
+      supabase.from('door_status').select('door_id, name, status, updated_at')
+    ]);
+    if (hbRes.error || stRes.error) throw (hbRes.error || stRes.error);
+    const hb = hbRes.data;
+    if (!hb || !hb.last_seen) {
+      allUnknown('Door Daemon has not reported yet');
+      intTile('', '—', 'Door Daemon not reporting');
+      if (ig) ig.textContent = 'Not connected';
+      if (lc) lc.textContent = '—';
+      return;
+    }
+    const now = Date.now();
+    const hbAge = Math.round((now - new Date(hb.last_seen).getTime()) / 1000);
+    const readAge = hb.last_loop ? Math.round((now - new Date(hb.last_loop).getTime()) / 1000) : null;
+    if (hbAge > DOOR_FRESH_SEC) {
+      allUnknown('Door Daemon stopped · last seen ' + agoText(hbAge));
+      intTile('err', 'Daemon stopped', 'Last seen ' + agoText(hbAge));
+      if (ig) ig.textContent = 'Daemon stopped';
+      if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
+      return;
+    }
+    const readOk = readAge !== null && readAge <= DOOR_FRESH_SEC;
+    const info = (hb.info || '');
+    if (info.indexOf('status_write_failed') === 0) {
+      allUnknown('Status could not be saved');
+      intTile('warn', 'Save failed', 'Status could not be saved');
+      if (ig) ig.textContent = 'Save failed';
+      if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
+      return;
+    }
+    if (!readOk) {
+      const code = info.replace(/^unknown:\s*/, '').split(',')[0].trim();
+      const why = unknownWhy[code] || 'Cannot read Integriti';
+      allUnknown(why);
+      intTile('warn', 'Not readable', why);
+      if (ig) ig.textContent = 'Not readable';
+      if (lc) lc.textContent = readAge === null ? 'never' : agoText(readAge);
+      return;
+    }
+    if (ig) ig.textContent = 'Status monitor · reading';
+    if (lc) lc.textContent = agoText(readAge);
+    intTile('ok', 'Reading', 'Doors read ' + agoText(readAge));
+    const rows = {};
+    (stRes.data || []).forEach(r => { rows[r.door_id] = r; });
+    DOOR_IDS.forEach(id => {
+      const r = rows[id];
+      const since = r && r.updated_at ? 'Since ' + sydTime(new Date(r.updated_at)) : '';
+      if (!r) setDoorBadge(id, 'unknown', 'Unknown', 'No status yet');
+      else if (r.status === 'Locked') setDoorBadge(id, 'locked', 'Locked', since);
+      else if (r.status === 'Unlocked') setDoorBadge(id, 'unlocked', 'Unlocked', since);
+      else setDoorBadge(id, 'unknown', 'Unknown', since || 'Status unknown');
+    });
+  } catch (e) {
+    allUnknown('Could not read door status');
+    intTile('warn', 'Unknown', 'Could not read');
+  }
+}
+
 async function loadSnapshot() {
   const day = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const week = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
@@ -1516,7 +1614,7 @@ async function refreshStatus() {
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     checkPortalTile();
-    await Promise.all([checkDatabase(), checkEdgeFunction(), checkDaemon(), loadSnapshot(), loadActivities()]);
+    await Promise.all([checkDatabase(), checkEdgeFunction(), checkDaemon(), checkDoors(), loadSnapshot(), loadActivities()]);
     checkStorageTile();
   } catch (e) { console.warn('[status]', e); }
   if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; Refresh status'; }
