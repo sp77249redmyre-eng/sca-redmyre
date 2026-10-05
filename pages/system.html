@@ -36,8 +36,8 @@
   --sc-line: #18343A;
   --sc-line-2: #1f4a52;
   --sc-text: #D7F7F5;
-  --sc-text-2: #A9C4C3;
-  --sc-muted: #7F9E9E;
+  --sc-text-2: #B8D2D1;
+  --sc-muted: #9FC0BF;
   --sc-blue: #00F5FF;
   --sc-blue-soft: rgba(0,245,255,.10);
   --sc-green: #39FF14;
@@ -455,7 +455,14 @@
   .system-console .sc-grid-2, .system-console .sc-grid-ops, .system-console .sc-grid-3 { grid-template-columns: 1fr; }
   .system-console .sc-health { grid-template-columns: 1fr 1fr; }
 }
+.system-console { max-width: 100%; overflow-x: hidden; }
+.system-console img, .system-console table { max-width: 100%; }
+.system-console .sc-tile-val, .system-console .sc-tile-sub, .system-console .sc-stat-label { overflow-wrap: anywhere; }
 @media (max-width: 600px) {
+  .system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary,
+  .system-console .sc-copy-btn, .system-console .sc-input { min-height: 44px; min-width: 44px; }
+  .system-console .sc-door-actions, .system-console .sc-q-actions, .system-console .sc-copy-row { gap: 10px; flex-wrap: wrap; }
+  .system-console .sc-snapshot { grid-template-columns: 1fr 1fr; }
   .system-console .sc-title { font-size: 20px; }
   .system-console .sc-strip { grid-template-columns: 1fr 1fr; }
   .system-console .sc-meta { grid-template-columns: 1fr; }
@@ -608,7 +615,7 @@
         <span class="alert-arrow" id="errorArrow">▸</span>
       </div>
       <div class="alert-detail" id="errorDetail" style="display:none">
-        <div id="errorList" style="font-size:14px;color:#8AA6A6"></div>
+        <div id="errorList" style="font-size:14px;color:#9FC0BF"></div>
       </div>
     </div>
 
@@ -1323,8 +1330,8 @@ async function loadRecentErrors() {
           <div style="padding:10px 0;border-bottom:1px dashed var(--border)">
             <div style="font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600">${date}</div>
             <div style="font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0">${e.action || 'unknown'}</div>
-            <div style="font-size:13px;color:#8AA6A6">${e.user_email || ''}</div>
-            ${detailStr ? `<div style="font-size:13px;color:#8AA6A6;margin-top:3px">${detailStr}</div>` : ''}
+            <div style="font-size:13px;color:#9FC0BF">${e.user_email || ''}</div>
+            ${detailStr ? `<div style="font-size:13px;color:#9FC0BF;margin-top:3px">${detailStr}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -1434,7 +1441,43 @@ async function loadSnapshot() {
   setStat('sn-hvac', hvac);
   setStat('sn-audit', audit);
   setStat('sn-err', errs);
-  setStat('sn-hb', null);
+}
+
+// HVAC Daemon heartbeat (written by the daemon every ~60 s; admin read-only via RLS)
+function agoText(sec) {
+  if (sec < 0) sec = 0;
+  if (sec < 60) return sec + ' s ago';
+  if (sec < 3600) return Math.floor(sec / 60) + ' min ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + ' h ' + Math.floor((sec % 3600) / 60) + ' min ago';
+  return Math.floor(sec / 86400) + ' d ago';
+}
+async function checkDaemon() {
+  const stamp = 'Last check ' + sydTime(new Date());
+  const hb = document.getElementById('sn-hb');
+  const setHb = (t, na) => { if (hb) { hb.textContent = t; hb.classList.toggle('na', !!na); } };
+  try {
+    const { data, error } = await supabase.from('daemon_heartbeat').select('last_seen, last_loop').eq('name', 'hvac').maybeSingle();
+    if (error) throw error;
+    if (!data || !data.last_seen) {
+      setTile('st-daemon', '', 'No heartbeat', 'Not received yet');
+      setTile('hl-daemon', '', 'No heartbeat', stamp);
+      setHb('—', true);
+      return;
+    }
+    const sec = Math.round((Date.now() - new Date(data.last_seen).getTime()) / 1000);
+    let state, text;
+    if (sec <= 180) { state = 'ok'; text = 'Running'; }
+    else if (sec <= 600) { state = 'warn'; text = 'Delayed'; }
+    else { state = 'err'; text = 'Stopped'; }
+    const sub = 'Heartbeat ' + agoText(sec);
+    setTile('st-daemon', state, text, sub);
+    setTile('hl-daemon', state, text, sub + ' · ' + stamp);
+    setHb(agoText(sec), false);
+  } catch (e) {
+    setTile('st-daemon', 'warn', 'Unknown', 'Could not read');
+    setTile('hl-daemon', 'warn', 'Unknown', stamp);
+    setHb('—', true);
+  }
 }
 
 async function loadActivities() {
@@ -1473,7 +1516,7 @@ async function refreshStatus() {
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     checkPortalTile();
-    await Promise.all([checkDatabase(), checkEdgeFunction(), loadSnapshot(), loadActivities()]);
+    await Promise.all([checkDatabase(), checkEdgeFunction(), checkDaemon(), loadSnapshot(), loadActivities()]);
     checkStorageTile();
   } catch (e) { console.warn('[status]', e); }
   if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; Refresh status'; }
@@ -1654,7 +1697,7 @@ window.downloadBackup = async function() {
     result.style.background = 'rgba(57,255,20,.10)';
     result.style.border = '1px solid rgba(57,255,20,.35)';
     result.style.color = '#39FF14';
-    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:13px;color:#8AA6A6">💡 Please move the file to Google Drive or a safe location.</span>`;
+    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:13px;color:#9FC0BF">💡 Please move the file to Google Drive or a safe location.</span>`;
 
     // audit log
     try {
