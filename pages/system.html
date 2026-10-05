@@ -537,13 +537,13 @@
       <div class="sc-panel-head">
         <div>
           <div class="sc-panel-title">Integriti Access Control</div>
-          <div class="sc-panel-desc">Door control &middot; D1 / D2 / D5 &middot; Unlock &amp; Lock only</div>
+          <div class="sc-panel-desc">Door control &middot; D1 / D2 / D3 / D5 &middot; Unlock &amp; Lock only</div>
         </div>
       </div>
       <div class="sc-panel-body">
         <div class="sc-notice">
           <span>&#9888;</span>
-          <span>Door control is in test: Unlock / Lock is enabled for D1, D2 and D5.</span>
+          <span>Door control is in test: Unlock / Lock is enabled for D1, D2 and D5. D3 is status-only for now.</span>
         </div>
 
         <div class="sc-meta">
@@ -581,6 +581,22 @@
             <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D2" aria-label="D2 auto-lock seconds">
             <span class="sc-unit">sec</span>
             <button class="sc-btn" data-door-save="D2">Save</button>
+          </div>
+        </div>
+
+        <!-- D3 -->
+        <div class="sc-door" id="door-D3">
+          <div><div class="sc-door-id">D3</div><div class="sc-door-name">Car Park Door</div><div class="sc-door-note" id="door-note-D3">Live status not connected</div></div>
+          <div><span class="sc-badge" id="door-badge-D3"><span class="sc-dot"></span>Checking…</span></div>
+          <div class="sc-door-actions">
+            <button class="sc-btn sc-btn-green" data-door="D3" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
+            <button class="sc-btn sc-btn-red" data-door="D3" data-door-act="lock" disabled aria-disabled="true">Lock</button>
+          </div>
+          <div class="sc-auto">
+            <span class="sc-auto-label">Auto-lock</span>
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds">
+            <span class="sc-unit">sec</span>
+            <button class="sc-btn" data-door-save="D3">Save</button>
           </div>
         </div>
 
@@ -1449,10 +1465,10 @@ function checkPortalTile() {
 }
 
 // Door status (Stage 3A: read-only monitor). Shows Unknown unless the Door Daemon is alive AND reading Integriti.
-const DOOR_IDS = ['D1', 'D2', 'D5'];
+const DOOR_IDS = ['D1', 'D2', 'D3', 'D5'];
 const DOOR_FRESH_SEC = 180;
 const DOOR_STATE = {}, DOOR_BASE = {}, DOOR_EXTRA = {}, DOOR_ACTIVE = {}, doorBusy = {};
-const DOOR_UI_ENABLED = ['D1', 'D2', 'D5'];   // keep in sync with ENABLED_DOORS in door_daemon.py
+const DOOR_UI_ENABLED = ['D1', 'D2', 'D5'];   // D3: status only until its test passes   // keep in sync with ENABLED_DOORS in door_daemon.py
 function renderDoorNote(id) {
   const n = document.getElementById('door-note-' + id);
   if (n) n.textContent = (DOOR_BASE[id] || '') + (DOOR_EXTRA[id] ? (DOOR_BASE[id] ? ' \u00b7 ' : '') + DOOR_EXTRA[id] : '');
