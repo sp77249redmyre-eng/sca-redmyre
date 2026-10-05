@@ -476,6 +476,17 @@
   .system-console .sc-door { grid-template-columns: 1fr; }
   .system-console .sc-health { grid-template-columns: 1fr; }
 }
+
+/* Open-door alarm: the whole card pulses neon red while a door is Unlocked (slow ~0.7 Hz pulse, no rapid strobe) */
+@keyframes scDoorAlarm {
+  0%, 100% { background: rgba(255,23,68,.14); border-color: rgba(255,23,68,.8); box-shadow: 0 0 0 0 rgba(255,23,68,0), inset 0 0 16px rgba(255,23,68,.18); }
+  50%      { background: rgba(255,23,68,.30); border-color: #FF1744; box-shadow: 0 0 24px 4px rgba(255,23,68,.8), inset 0 0 30px rgba(255,23,68,.38); }
+}
+.system-console .sc-door.is-open { border-left-color: #FF1744; animation: scDoorAlarm 1.4s ease-in-out infinite; }
+.system-console .sc-door.is-open .sc-door-note { color: #FFD6DD; }
+@media (prefers-reduced-motion: reduce) {
+  .system-console .sc-door.is-open { animation: none; background: rgba(255,23,68,.32); border-color: #FF1744; box-shadow: 0 0 20px 2px rgba(255,23,68,.7); }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -559,7 +570,7 @@
 
         <!-- D2 -->
         <div class="sc-door" id="door-D2">
-          <div><div class="sc-door-id">D2</div><div class="sc-door-name">Garage Roller Door 1</div><div class="sc-door-note" id="door-note-D2">Live status not connected</div></div>
+          <div><div class="sc-door-id">D2</div><div class="sc-door-name">Front Roller Door</div><div class="sc-door-note" id="door-note-D2">Live status not connected</div></div>
           <div><span class="sc-badge" id="door-badge-D2"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
             <button class="sc-btn sc-btn-green" data-door="D2" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
@@ -575,7 +586,7 @@
 
         <!-- D5 -->
         <div class="sc-door" id="door-D5">
-          <div><div class="sc-door-id">D5</div><div class="sc-door-name">Garage Roller Door 2</div><div class="sc-door-note" id="door-note-D5">Live status not connected</div></div>
+          <div><div class="sc-door-id">D5</div><div class="sc-door-name">Back Roller Door</div><div class="sc-door-note" id="door-note-D5">Live status not connected</div></div>
           <div><span class="sc-badge" id="door-badge-D5"><span class="sc-dot"></span>Checking…</span></div>
           <div class="sc-door-actions">
             <button class="sc-btn sc-btn-green" data-door="D5" data-door-act="unlock" disabled aria-disabled="true">Unlock</button>
@@ -1455,6 +1466,7 @@ function setDoorBadge(id, cls, label, note) {
     b.appendChild(dot); b.appendChild(document.createTextNode(label));
   }
   DOOR_STATE[id] = cls; DOOR_BASE[id] = note;
+  const card = document.getElementById('door-' + id); if (card) card.classList.toggle('is-open', cls === 'unlocked');
   renderDoorNote(id);
   updateDoorButtons();
 }
