@@ -788,13 +788,13 @@ body.observer-readonly .option-box{
   cursor:pointer;
   pointer-events:auto !important;
 }
+</style>
 <style id="preserve-request-list-typography">
 /* Preserve the existing request-list typography. No layout/data changes. */
 .hvac-summary-date{font-size:15px !important;color:#1e293b;line-height:1.4;font-weight:600}
 .hvac-summary-request{font-size:15px !important;font-weight:700;color:#1e293b}
 .hvac-summary-temp{font-size:15px !important;color:#1e293b;font-weight:700}
 .hvac-summary-status .badge{font-size:14px !important;font-weight:800}
-</style>
 </style>
 
 <style id="hvac-unread-reply-highlight">
@@ -1139,6 +1139,7 @@ body.observer-readonly .option-box{
 }
 
 
+</style>
 <style id="location-card-final-compact">
 /* FINAL COMPACT LOCATION CARD — compact, readable, horizontal level summary. */
 .location-card{
@@ -1545,8 +1546,11 @@ function updateDynamicRange(current) {
   const c = Number(current);
   if (!Number.isFinite(c)) return;
   dynamicCurrentSetpoint = c;
-  dynamicMinTemp = Math.max(18, Number((c - 2).toFixed(1)));
-  dynamicMaxTemp = Math.min(25, Number((c + 2).toFixed(1)));
+  const dynLim = tempLimits || {};
+  const dynLo = Math.max(18, dynLim.min != null && !isNaN(dynLim.min) ? dynLim.min : 18);
+  const dynHi = Math.min(25, dynLim.max != null && !isNaN(dynLim.max) ? dynLim.max : 25);
+  dynamicMinTemp = Math.max(dynLo, Number((c - 2).toFixed(1)));
+  dynamicMaxTemp = Math.min(dynHi, Number((c + 2).toFixed(1)));
   if (dynamicMinTemp > dynamicMaxTemp) {
     dynamicSlider.disabled = true;
     return;
@@ -1554,7 +1558,7 @@ function updateDynamicRange(current) {
   dynamicSlider.min = dynamicMinTemp;
   dynamicSlider.max = dynamicMaxTemp;
   dynamicSlider.step = .5;
-  dynamicSlider.value = c;
+  dynamicSlider.value = Math.min(dynamicMaxTemp, Math.max(dynamicMinTemp, c));
   selectedTargetTemp = null;
   dynamicInteracted = false;
   dynamicHand.classList.remove('is-hidden');
@@ -1668,6 +1672,7 @@ async function syncDynamicTemperatureUI(level, tenancy) {
       .select('current_setpoint')
       .eq('level', level).eq('tenancy', tenancy).maybeSingle();
     if (error || data?.current_setpoint == null) throw new Error('No current setpoint');
+    await ensureTempLimits();
     updateDynamicRange(parseFloat(data.current_setpoint));
     dynamicStatus.textContent = 'Move the slider to choose a target temperature.';
     dynamicRequestBtn.disabled = true;
@@ -1692,8 +1697,11 @@ dynamicRequestBtn.addEventListener('click', async () => {
     return;
   }
   const current = Number(data.current_setpoint);
-  const min = Math.max(18, Number((current-2).toFixed(1)));
-  const max = Math.min(25, Number((current+2).toFixed(1)));
+  const subLim = await ensureTempLimits();
+  const subLo = Math.max(18, subLim && subLim.min != null && !isNaN(subLim.min) ? subLim.min : 18);
+  const subHi = Math.min(25, subLim && subLim.max != null && !isNaN(subLim.max) ? subLim.max : 25);
+  const min = Math.max(subLo, Number((current-2).toFixed(1)));
+  const max = Math.min(subHi, Number((current+2).toFixed(1)));
   if (target < min || target > max || target < 18 || target > 25 || Math.round(target*2)!==target*2) {
     dynamicStatus.textContent = 'Target is outside the allowed range. Please select again.';
     updateDynamicRange(current);
@@ -2075,7 +2083,7 @@ document.getElementById('submitHvacBtn').addEventListener('click', async () => {
   if (role !== 'admin') {
     try {
       const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: recent, error: coolErr } = await supabase.from('hvac_requests').select('created_at').eq('level', level).eq('tenancy', tenancy).gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
+      const { data: recent, error: coolErr } = await supabase.from('hvac_requests').select('created_at').eq('level', level).eq('tenancy', tenancy).not('status', 'in', '(failed,rejected)').gte('created_at', thirtyMinAgo).order('created_at', { ascending: false }).limit(1);
       if (coolErr) { showToast('Unable to verify cooldown. Please try again.', true); return; }
       if (recent && recent.length > 0) {
         const lastTime = new Date(recent[0].created_at);
