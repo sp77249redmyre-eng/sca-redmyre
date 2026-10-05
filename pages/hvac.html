@@ -1225,6 +1225,10 @@ body.observer-readonly .option-box{
 </style>
 
 
+<style id="dynamic-tick-declutter">
+.dynamic-tick.tick-minor .dynamic-tick-temp,
+.dynamic-tick.tick-minor .dynamic-tick-delta{visibility:hidden !important}
+</style>
 <style id="mobile-only-optimization-latest">
 /* MOBILE ONLY — layout/readability optimization. No desktop rules, HTML structure, JS, DB, or functionality changed. */
 @media (max-width: 600px){
@@ -1582,7 +1586,11 @@ function renderDynamicTicks() {
     const value = Number(v.toFixed(1));
     const delta = Number((value - current).toFixed(1));
     const deltaText = delta === 0 ? 'Current' : (delta > 0 ? '+' : '') + delta.toFixed(1) + '°C';
-    items.push('<div class="dynamic-tick'+(delta === 0 ? ' is-current' : '')+'"><span class="dynamic-tick-temp">'+dynamicFmt(value)+'°C</span><span class="dynamic-tick-delta">'+deltaText+'</span></div>');
+    // Declutter: only label ticks that are a whole degree away from the current setpoint
+    // (-2, -1, current, +1, +2). Half-degree ticks keep their grid slot but stay blank, so the
+    // text stays large and never overlaps. Slider, +/- buttons and the bubble still use 0.5 steps.
+    const isMinor = Math.round(delta * 2) % 2 !== 0;
+    items.push('<div class="dynamic-tick'+(delta === 0 ? ' is-current' : '')+(isMinor ? ' tick-minor' : '')+'"><span class="dynamic-tick-temp">'+dynamicFmt(value)+'°C</span><span class="dynamic-tick-delta">'+deltaText+'</span></div>');
   }
   ticks.innerHTML = items.join('');
 }
