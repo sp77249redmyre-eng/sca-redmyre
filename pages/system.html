@@ -1466,7 +1466,7 @@ function updateDoorButtons() {
     const en = DOOR_UI_ENABLED.indexOf(id) >= 0 && !doorBusy[id];
     const autoWait = !!act && act.source === 'autolock' && act.status === 'pending';
     const offU = !(en && !act && st === 'locked');
-    const offL = !(en && (!act || autoWait) && st === 'unlocked');
+    const offL = !(en && (!act || autoWait) && (st === 'unlocked' || st === 'unknown'));   // Lock is the safe direction: allowed when status is unknown
     bu.disabled = offU; bu.setAttribute('aria-disabled', String(offU));
     bl.disabled = offL; bl.setAttribute('aria-disabled', String(offL));
     const tip = DOOR_UI_ENABLED.indexOf(id) >= 0 ? '' : 'Not enabled yet';
@@ -1635,6 +1635,7 @@ async function saveDoorAutolock(id) {
   else { delete inp.dataset.dirty; DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s'; }
   renderDoorNote(id);
 }
+setInterval(() => { if (document.visibilityState === 'visible' && !Object.values(doorBusy).some(Boolean)) checkDoors(); }, 10000);
 document.addEventListener('click', ev => {
   const b = ev.target.closest && ev.target.closest('[data-door-act],[data-door-save]');
   if (!b || b.disabled) return;
