@@ -498,8 +498,8 @@
         <div class="daily-card-body">
           <div class="daily-desc">redmyre.dyndns.biz</div>
           <div class="daily-copy-row">
-            <button onclick="navigator.clipboard.writeText('bm');this.textContent='✓ Copied';setTimeout(()=>this.textContent='📋 ID',1500)" class="daily-copy-btn">📋 ID</button>
-            <button onclick="navigator.clipboard.writeText('rz*UTHs4m!');this.textContent='✓ Copied';setTimeout(()=>this.textContent='📋 PW',1500)" class="daily-copy-btn">📋 PW</button>
+            <button onclick="copyAcCredential(this,'id')" class="daily-copy-btn">📋 ID</button>
+            <button onclick="copyAcCredential(this,'pw')" class="daily-copy-btn">📋 PW</button>
           </div>
         </div>
         <button onclick="window.open('http://redmyre.dyndns.biz/login','_blank')" class="daily-btn daily-btn-blue">Open AC →</button>
@@ -659,6 +659,42 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
 
 if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
+
+// ─── AC CONTROL: copy ID/PW (value is fetched on click from a server function, admin only) ───
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) { return false; }
+  }
+}
+window.copyAcCredential = async function (btn, field) {
+  if (btn.dataset.busy) return;
+  btn.dataset.busy = '1';
+  const label = field === 'id' ? '📋 ID' : '📋 PW';
+  let ok = false;
+  try {
+    const { data, error } = await supabase.functions.invoke('get-ac-credential', { body: { field } });
+    if (!error && data && typeof data.value === 'string' && data.value) {
+      ok = await copyTextToClipboard(data.value);
+    }
+  } catch (e) { ok = false; }
+  btn.textContent = ok ? '✓ Copied' : '✗ Failed';
+  if (!ok && typeof showToast === 'function') showToast('Could not copy. Please try again.', true);
+  setTimeout(() => { btn.textContent = label; delete btn.dataset.busy; }, 1500);
+};
 
 // ─── HELPERS ─────────────────────────────────────────────────
 function formatSize(bytes) {
