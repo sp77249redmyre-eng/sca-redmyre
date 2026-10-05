@@ -1223,6 +1223,68 @@ body.observer-readonly .option-box{
 }
 </style>
 
+
+<style id="mobile-only-optimization-latest">
+/* MOBILE ONLY — layout/readability optimization. No desktop rules, HTML structure, JS, DB, or functionality changed. */
+@media (max-width: 600px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  .main{width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+  .content{width:100%;max-width:100%;min-width:0;box-sizing:border-box;grid-template-columns:minmax(0,1fr)!important;padding:12px!important;column-gap:0!important;row-gap:12px!important;}
+  .content>*{min-width:0;max-width:100%;box-sizing:border-box;}
+  .page-header{width:100%;box-sizing:border-box;}
+  .page-header-title{font-size:22px;line-height:1.2;}
+
+  .submit-form,#rightPanel,#userPanel,#adminPanel,#observerPanel{width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+  .submit-form{padding:14px!important;}
+
+  .location-section{width:100%;min-width:0;}
+  .location-section-head{gap:8px;min-width:0;}
+  .location-section-title{min-width:0;font-size:18px;}
+  .location-manage{white-space:nowrap;flex-shrink:0;font-size:12px;}
+  .location-card{width:100%;max-width:100%;box-sizing:border-box;}
+  .location-card-main{min-width:0;max-width:100%;}
+  .location-unit-name,.location-unit-detail{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+
+  .dynamic-temp-card{width:100%;max-width:100%;box-sizing:border-box;margin-top:14px;padding:14px 12px 16px!important;border-radius:14px;}
+  .dynamic-temp-title{font-size:21px;}
+  .dynamic-temp-subtitle{font-size:13px;line-height:1.35;}
+  .dynamic-help{font-size:16px!important;line-height:1.3!important;}
+  .dynamic-unit-info{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  .dynamic-info{min-width:0;padding:8px 4px;}
+  .dynamic-info-value{font-size:15px;}
+
+  .dynamic-visual{grid-template-columns:minmax(0,1fr);gap:8px!important;}
+  .dynamic-current{order:-1;width:100%;max-width:170px;margin:0 auto;box-sizing:border-box;padding:12px 8px;}
+  .dynamic-art,.dynamic-art img{height:88px!important;max-width:100%;}
+  .dynamic-slider-area{width:100%;box-sizing:border-box;margin:0;padding-top:24px;}
+  .dynamic-slider{width:100%;}
+  .dynamic-ticks{width:100%;box-sizing:border-box;overflow-x:auto;grid-auto-columns:minmax(44px,1fr);scrollbar-width:none;padding-bottom:3px;}
+  .dynamic-ticks::-webkit-scrollbar{display:none;}
+  .dynamic-tick{font-size:12px;min-width:0;}
+  .dynamic-tick-temp{font-size:12px;}
+  .dynamic-tick.is-current .dynamic-tick-temp{font-size:14px;}
+  .dynamic-tick-delta{font-size:10px;}
+  .dynamic-controls{grid-template-columns:52px minmax(0,1fr) 52px;gap:7px;padding:7px;}
+  .dynamic-step{height:40px;}
+
+  .requests-header{width:100%;min-width:0;margin-top:2px;}
+  .requests-heading{min-width:0;}
+  .requests-heading>div{min-width:0;}
+  .requests-heading .section-title{font-size:18px;}
+  .requests-subtitle{font-size:12px;line-height:1.35;}
+  .request-history-table-wrap{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;}
+  .request-history-table-wrap #myList,.request-history-table-wrap #completedList{width:100%;max-width:100%;min-width:0;}
+  .request-history-table-wrap #myList .my-req-summary{width:100%;max-width:100%;box-sizing:border-box;padding:12px!important;min-width:0;}
+  .request-history-table-wrap #myList .my-req-summary>*{min-width:0;max-width:100%;}
+  .my-req-row,.my-req-detail{max-width:100%;min-width:0;box-sizing:border-box;}
+  .my-req-detail{padding-left:12px;padding-right:12px;}
+  .hvac-detail-grid{grid-template-columns:minmax(0,1fr)!important;gap:10px;}
+  .hvac-details-card,.hvac-conv{min-width:0;max-width:100%;box-sizing:border-box;padding:14px!important;}
+  .hvac-conv-input{min-width:0;}
+  .hvac-conv-textarea{min-width:0;width:100%;box-sizing:border-box;}
+  .hvac-conv-send{padding:10px 13px;}
+}
+</style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -1744,10 +1806,12 @@ async function loadCurrentSetpoint(level, tenancy) {
     }
     if (warningEl && warningTextEl && limits?.min != null && limits?.max != null) {
       if (current <= limits.min) {
-        warningTextEl.textContent = `Minimum temperature reached: ${limits.min}°C.\nNo further reduction is available.`;
+        warningTextEl.textContent = `Minimum temperature reached: ${limits.min}°C.
+No further reduction is available.`;
         warningEl.classList.add('show');
       } else if (current >= limits.max) {
-        warningTextEl.textContent = `Maximum temperature reached: ${limits.max}°C.\nNo further increase is available.`;
+        warningTextEl.textContent = `Maximum temperature reached: ${limits.max}°C.
+No further increase is available.`;
         warningEl.classList.add('show');
       } else {
         warningEl.classList.remove('show');
@@ -3159,7 +3223,9 @@ document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
 });
 
 window.approveReq = async (id, type, level, tenancy) => {
-  if (!confirm(`Approve?\n${type === 'hot' ? '🥵 Too Hot → -0.5°C' : '🥶 Too Cold → +0.5°C'}\n${level}, ${tenancy}`)) return;
+  if (!confirm(`Approve?
+${type === 'hot' ? '🥵 Too Hot → -0.5°C' : '🥶 Too Cold → +0.5°C'}
+${level}, ${tenancy}`)) return;
   await supabase.from('hvac_requests').update({status: 'approved', approved_at: new Date().toISOString()}).eq('id', id);
   try {
     const { data: req } = await supabase.from('hvac_requests').select('user_id').eq('id', id).single();
