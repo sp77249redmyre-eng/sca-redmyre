@@ -477,15 +477,31 @@
   .system-console .sc-health { grid-template-columns: 1fr; }
 }
 
-/* Open-door alarm: the whole card pulses neon red while a door is Unlocked (slow ~0.7 Hz pulse, no rapid strobe) */
-@keyframes scDoorAlarm {
-  0%, 100% { background: rgba(255,23,68,.14); border-color: rgba(255,23,68,.8); box-shadow: 0 0 0 0 rgba(255,23,68,0), inset 0 0 16px rgba(255,23,68,.18); }
-  50%      { background: rgba(255,23,68,.30); border-color: #FF1744; box-shadow: 0 0 24px 4px rgba(255,23,68,.8), inset 0 0 30px rgba(255,23,68,.38); }
+/* Open-door alarm: keep the card styling fixed and animate only a lightweight overlay opacity. */
+@keyframes scDoorGlow {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
 }
-.system-console .sc-door.is-open { border-left-color: #FF1744; animation: scDoorAlarm 1.4s ease-in-out infinite; }
+.system-console .sc-door.is-open {
+  position: relative;
+  background: rgba(255,23,68,.20);
+  border-color: #FF1744;
+}
+.system-console .sc-door.is-open::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(255,23,68,.14);
+  box-shadow: 0 0 24px 4px rgba(255,23,68,.8), inset 0 0 30px rgba(255,23,68,.38);
+  opacity: 0;
+  will-change: opacity;
+  animation: scDoorGlow 1.4s ease-in-out infinite;
+}
 .system-console .sc-door.is-open .sc-door-note { color: #FFD6DD; }
 @media (prefers-reduced-motion: reduce) {
-  .system-console .sc-door.is-open { animation: none; background: rgba(255,23,68,.32); border-color: #FF1744; box-shadow: 0 0 20px 2px rgba(255,23,68,.7); }
+  .system-console .sc-door.is-open::after { animation: none; opacity: .7; }
 }
 
 /* Open-hours Lock warning dialog (replaces the small browser confirm) */
@@ -2022,6 +2038,7 @@ function checkPortalTile() {
 const DOOR_IDS = ['D1', 'D2', 'D3', 'D5'];
 const DOOR_FRESH_SEC = 180;
 const DOOR_STATE = {}, DOOR_BASE = {}, DOOR_EXTRA = {}, DOOR_ACTIVE = {}, doorBusy = {};
+const SAVE_NOTE_UNTIL = {};
 const DOOR_UI_ENABLED = ['D1', 'D2', 'D3', 'D5'];   // keep in sync with ENABLED_DOORS in door_daemon.py   // keep in sync with ENABLED_DOORS in door_daemon.py
 function renderDoorNote(id) {
   const n = document.getElementById('door-note-' + id);
@@ -2199,7 +2216,7 @@ async function refreshDoorExtras() {
         else if (bad) extra = 'Last ' + bad.action + ' ' + bad.status + (bad.error ? ': ' + doorErrText(bad.error) : '');
         else if (DOOR_STATE[id] === 'unlocked' && isOpenHoursSydney(id) === true) extra = 'Open hours: no Auto-lock';
       }
-      if (!doorBusy[id]) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
+      if (!doorBusy[id] && !((SAVE_NOTE_UNTIL[id] || 0) > Date.now())) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
     });
     if (!s.error) (s.data || []).forEach(x => {
       const inp = document.querySelector('[data-door-input="' + x.door_id + '"]');
@@ -2279,8 +2296,14 @@ async function saveDoorAutolock(id) {
   const v = parseInt(inp && inp.value, 10);
   if (!Number.isInteger(v) || v < 30 || v > 300) { DOOR_EXTRA[id] = 'Auto-lock must be 30–300 sec'; renderDoorNote(id); return; }
   const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
-  if (error) { DOOR_EXTRA[id] = 'Auto-lock not saved'; }
-  else { delete inp.dataset.dirty; DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s'; }
+  if (error) {
+    DOOR_EXTRA[id] = 'Auto-lock NOT saved – please try again';
+    SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
+  } else {
+    delete inp.dataset.dirty;
+    DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s (applies now, also to a waiting Auto-lock)';
+    SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
+  }
   renderDoorNote(id);
 }
 setInterval(() => { if (document.visibilityState === 'visible' && !Object.values(doorBusy).some(Boolean)) checkDoors(); }, 10000);
@@ -2657,7 +2680,7 @@ window.downloadBackup = async function() {
     });
   }
   update();
-  setInterval(update, 1000);
+  setInterval(update, 15000);
 })();
 </script>
 </body>
