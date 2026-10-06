@@ -1580,6 +1580,31 @@ async function checkDoors() {
 }
 
 
+// Integriti open hours (copy of OPEN_HOURS in door_daemon.py - KEEP BOTH IN SYNC). Sydney local time, 0=Mon..6=Sun.
+// Used ONLY to show warnings; it never decides whether a door is locked or unlocked. D5 is always locked.
+const _MF = ['06:58:00', '19:00:00'];
+const DOOR_OPEN_HOURS = {
+  D1: { 0: _MF, 1: _MF, 2: _MF, 3: _MF, 4: _MF, 5: ['06:58:00', '19:00:00'], 6: ['08:00:00', '17:00:00'] },
+  D2: { 0: ['06:58:45', '19:00:00'], 1: ['06:58:45', '19:00:00'], 2: ['06:58:45', '19:00:00'], 3: ['06:58:45', '19:00:00'], 4: ['06:58:45', '19:00:00'], 5: ['06:58:45', '15:00:00'] },
+  D3: { 0: ['06:58:45', '19:00:00'], 1: ['06:58:45', '19:00:00'], 2: ['06:58:45', '19:00:00'], 3: ['06:58:45', '19:00:00'], 4: ['06:58:45', '19:00:00'], 5: ['06:58:45', '15:00:00'] },
+  D5: {}
+};
+function _hmsSec(t) { const p = t.split(':').map(Number); return p[0] * 3600 + p[1] * 60 + p[2]; }
+// true / false, or null when the Sydney clock cannot be read (then the caller shows the warning anyway)
+function isOpenHoursSydney(id, when) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+      .formatToParts(when || new Date());
+    const g = t => (parts.find(p => p.type === t) || {}).value;
+    const wd = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[g('weekday')];
+    if (wd === undefined) return null;
+    const sec = Number(g('hour')) * 3600 + Number(g('minute')) * 60 + Number(g('second'));
+    if (!Number.isFinite(sec)) return null;
+    const win = (DOOR_OPEN_HOURS[id] || {})[wd];
+    if (!win) return false;
+    return _hmsSec(win[0]) <= sec && sec < _hmsSec(win[1]);
+  } catch (e) { return null; }
+}
 // Door control (Stage 3B): the portal only REQUESTS a command (RPC). The Door Daemon executes it.
 const DOOR_ERR = {
   user_active: 'PC was in use', integriti_not_running: 'Integriti not running', window_minimized: 'Integriti minimised',
@@ -1614,6 +1639,7 @@ async function refreshDoorExtras() {
         const bad = rows.find(x => ['failed', 'unknown', 'expired'].indexOf(x.status) >= 0);
         if (noAuto) extra = 'Auto-Lock protection failed — please lock manually';
         else if (bad) extra = 'Last ' + bad.action + ' ' + bad.status + (bad.error ? ': ' + doorErrText(bad.error) : '');
+        else if (DOOR_STATE[id] === 'unlocked' && isOpenHoursSydney(id) === true) extra = 'Open hours: no Auto-lock';
       }
       if (!doorBusy[id]) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
     });
@@ -1640,6 +1666,7 @@ async function pollDoorCommand(id, cmdId) {
 async function sendDoorCommand(id, action) {
   const name = (document.querySelector('#door-' + id + ' .sc-door-name') || {}).textContent || id;
   if (action === 'unlock' && !confirm('Unlock ' + id + ' – ' + name + '?')) return;
+  if (action === 'lock' && isOpenHoursSydney(id) !== false && !confirm('Operating hours: ' + name + ' (' + id + ') is meant to be unlocked right now.\n\nLock it anyway?')) return;
   doorBusy[id] = true; DOOR_EXTRA[id] = 'Sending…'; renderDoorNote(id); updateDoorButtons();
   try {
     const { data, error } = await supabase.rpc('request_door_command', { p_door_id: id, p_action: action });
