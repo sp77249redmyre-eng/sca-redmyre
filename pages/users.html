@@ -15,452 +15,71 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-.stat-num{font-size:26px;font-weight:600;letter-spacing:-1px}
-.stat-label{font-size:12px;color:var(--muted);margin-top:3px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-light)}
-.card-title{font-size:14px;font-weight:600}
-
-/* Tabs */
-.tabs{display:flex;gap:4px;border-bottom:2px solid var(--border-light);margin-bottom:20px;overflow-x:auto;max-width:100%;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
-.tab:hover{color:var(--text);background:var(--bg)}
-.tab.active{color:var(--blue-600);border-bottom-color:var(--blue-600)}
-.tab-content{display:none}
-.tab-content.active{display:block}
-
-/* Users List - 아코디언 */
-.table-head{display:none}
-.user-row{padding:10px 18px;cursor:pointer;border-bottom:1px solid var(--border-light);background:var(--surface);transition:all 0.2s}
-.user-row:nth-child(even){background:#f8fafc}
-.user-row:hover{background:var(--bg)}
-.user-row.open{background:#f0fdf4!important;border-color:#16a34a;box-shadow:0 4px 14px rgba(22,163,74,0.08)}
-.user-row.highlight-flash{animation:userHighlightPulse 2s ease;border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,0.15)}
-@keyframes userHighlightPulse{
-0%{background:#dcfce7;box-shadow:0 0 0 6px rgba(22,163,74,0.3)}
-100%{background:#f0fdf4;box-shadow:0 0 0 3px rgba(22,163,74,0.15)}
-}
-.user-row-header{display:flex;align-items:center;gap:10px}
-.user-row-arrow{color:var(--muted);font-size:13px;margin-left:4px;transition:transform 0.2s;flex-shrink:0}
-.user-row.open .user-row-arrow{transform:rotate(90deg);color:#16a34a}
-.user-row-details{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #dcfce7}
-.user-row.open .user-row-details{display:block}
-.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.av-admin{background:var(--purple-bg);color:var(--purple-text)}
-.av-committee{background:var(--blue-50);color:var(--blue-700)}
-.av-observer{background:var(--green-bg);color:var(--green-text)}
-.av-owner{background:var(--border-light);color:var(--text-2)}
-.av-tenant{background:var(--border-light);color:var(--text-2)}
-.user-name{font-size:13px;font-weight:600;color:#0f172a}
-.user-email{font-size:12px;color:#1e293b;margin-top:3px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.user-info{flex:1;min-width:0}
-.user-row-label{font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
-.role-select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif}
-.role-hint{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-left:3px solid var(--blue-600);padding:10px 12px;border-radius:0 8px 8px 0;margin-top:8px;line-height:1.6;display:none}
-
-/* User Row Details — clean, no gray boxes */
-.urd-quick-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.urd-quick-label{font-size:13px;color:#0f172a;font-weight:600;min-width:36px}
-.urd-quick-row .role-select{font-size:13px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f172a;font-weight:500;width:auto;min-width:180px;max-width:240px;cursor:pointer}
-.urd-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.urd-btn{font-size:13px;padding:10px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all 0.15s;border:1px solid transparent}
-.urd-btn-default{background:#1e3a8a;color:#fff;border-color:#1e3a8a}
-.urd-btn-default:hover{background:#1e40af;border-color:#1e40af}
-.urd-btn-info{background:#fff;color:#1e40af;border:1.5px solid #1e40af}
-.urd-btn-info:hover{background:#eff6ff}
-.urd-btn-danger{background:#b91c1c;color:#fff;border-color:#b91c1c}
-.urd-btn-danger:hover{background:#991b1b;border-color:#991b1b}
-
-/* Edit Profile Modal */
-.epm-warning{margin-top:8px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e;line-height:1.5}
-.epm-field{margin-bottom:14px}
-.epm-label{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:5px;display:block}
-.epm-input{width:100%;font-size:13px;padding:9px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;box-sizing:border-box}
-.epm-input:focus{outline:none;border-color:var(--blue-600);box-shadow:0 0 0 3px var(--blue-50)}
-.epm-msg{margin-top:10px;padding:8px 12px;border-radius:8px;font-size:12px;display:none}
-.epm-msg.error{display:block;background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
-.epm-msg.success{display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
-.epm-msg.loading{display:block;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
-
-/* Permissions - Sidebar */
-.perm-header{margin-bottom:20px;display:flex;align-items:center;gap:12px}
-.perm-header select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
-.perm-warning{background:var(--amber-50);border:1px solid var(--amber-200);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:var(--amber-900);line-height:1.6}
-.perm-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
-.perm-section-title{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text)}
-.perm-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)}
-.perm-item:last-child{border-bottom:none}
-.perm-checkbox{width:20px;height:20px;cursor:pointer}
-.perm-checkbox:disabled{opacity:0.5;cursor:not-allowed}
-.perm-label{font-size:13px;color:var(--text-2);flex:1}
-.perm-page-icon{font-size:16px;width:24px}
-.perm-save-btn{margin-top:16px}
-
-/* Activity Log */
-.log-filters{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-.log-filters select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
-.log-count{font-size:13px;color:var(--muted);margin-bottom:12px}
-.log-table{width:100%;border-collapse:collapse}
-.log-table thead{background:var(--bg);border-bottom:2px solid var(--border)}
-.log-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
-.log-table tbody tr{border-bottom:1px solid var(--border-light);transition:background 0.12s}
-.log-table tbody tr:hover{background:var(--bg)}
-.log-table tbody tr:last-child{border-bottom:none}
-.log-table td{padding:12px 16px;font-size:13px}
-.log-table .log-time{color:var(--muted);font-size:12px;white-space:nowrap;min-width:110px}
-.log-time-ago{font-size:12px;font-weight:500;color:var(--text-2)}
-.log-time-abs{font-size:11px;color:var(--muted);margin-top:2px}
-.log-table .log-user-cell{display:flex;align-items:center;gap:8px}
-.log-table .log-user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.av-log-committee{background:var(--blue-50);color:var(--blue-700)}
-.av-log-observer{background:var(--green-bg);color:var(--green-text)}
-.av-log-owner{background:var(--border-light);color:var(--text-2)}
-.av-log-tenant{background:var(--border-light);color:var(--text-2)}
-.av-log-default{background:var(--blue-50);color:var(--blue-700)}
-.log-user-name{font-size:13px;font-weight:500;color:var(--text)}
-.log-user-email{font-size:11px;color:var(--muted);margin-top:1px}
-.log-role-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;margin-top:3px}
-.role-badge-committee{background:var(--blue-50);color:var(--blue-700)}
-.role-badge-observer{background:var(--green-bg);color:var(--green-text)}
-.role-badge-owner{background:var(--border-light);color:var(--text-2)}
-.role-badge-tenant{background:var(--border-light);color:var(--text-2)}
-.log-action-cell{display:flex;align-items:flex-start;gap:10px}
-.log-action-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.dot-high{background:#ef4444}
-.dot-medium{background:#3b82f6}
-.dot-low{background:var(--muted)}
-.log-action-label{font-size:13px;font-weight:500;color:var(--text);line-height:1.4}
-.log-action-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:monospace}
-.log-date-group{padding:10px 16px 6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;background:var(--bg);border-bottom:1px solid var(--border-light)}
-.log-empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px}
-.log-load-more{width:100%;padding:12px;margin-top:16px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s}
-.log-load-more:hover{background:var(--bg)}
-.log-load-more:disabled{opacity:0.5;cursor:not-allowed}
-
-/* Mobile Optimization */
+:root{--ux-bg:#03131d;--ux-surface:#071f2c;--ux-surface2:#092838;--ux-line:#11465b;--ux-line2:#0b3547;--ux-cyan:#19e8f1;--ux-cyan2:#0bcbd6;--ux-text:#f2fbff;--ux-muted:#8ba9b8;--ux-green:#21e56b;--ux-blue:#268cff;--ux-purple:#9a5cff;--ux-yellow:#f2c21a;--ux-red:#ff4650}
+*{box-sizing:border-box}.content{background:var(--ux-bg)!important;color:var(--ux-text)!important;padding:24px!important;max-width:none!important;width:100%!important}.main,.content{min-width:0}.page-header{background:transparent!important;border:0!important;margin-bottom:12px!important;padding:0!important}.page-header-icon{background:linear-gradient(145deg,#0b4357,#062330)!important;border:1px solid #0c7185!important;box-shadow:0 0 24px rgba(25,232,241,.08)}.page-header-icon svg{stroke:var(--ux-cyan)!important}.page-header-title{color:var(--ux-text)!important;font-size:28px!important;font-weight:700!important;letter-spacing:-.4px}.page-header-sub{color:var(--ux-muted)!important}.page-header-title-row{display:flex;align-items:center;justify-content:space-between;gap:14px}.btn-primary{background:linear-gradient(135deg,var(--ux-cyan),#16d9e2)!important;color:#02151c!important;border:0!important;box-shadow:0 8px 22px rgba(25,232,241,.12)}
+.tabs{display:grid!important;grid-template-columns:repeat(4,minmax(150px,1fr));gap:2px!important;border-bottom:1px solid var(--ux-cyan)!important;margin:8px 0 16px!important;overflow:visible!important}.tab{height:52px!important;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 18px!important;background:linear-gradient(180deg,#082536,#061b28)!important;border:1px solid var(--ux-line)!important;border-bottom:0!important;border-radius:9px 9px 0 0!important;color:#c6dbe5!important;font-size:14px!important;font-weight:600!important;margin:0!important}.tab:hover{color:#fff!important;background:#0b3041!important}.tab.active{background:linear-gradient(135deg,var(--ux-cyan),#18dbe5)!important;color:#02151c!important;border-color:var(--ux-cyan)!important;box-shadow:0 0 22px rgba(25,232,241,.16)}
+.tab-content{display:none}.tab-content.active{display:block}
+.ux-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}.ux-stat{min-height:76px;background:linear-gradient(135deg,#082635,#061b28);border:1px solid var(--ux-line);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:13px;box-shadow:inset 0 1px rgba(255,255,255,.025)}.ux-stat-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:#0a4052;border:1px solid #0d6678}.ux-stat-num{font-size:25px;font-weight:700;color:#fff;line-height:1}.ux-stat-label{font-size:12px;color:var(--ux-muted);margin-top:5px}
+.ux-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.ux-search{height:40px;flex:1;min-width:240px;background:#061d2a;border:1px solid var(--ux-line);border-radius:8px;color:#fff;padding:0 13px;font:13px 'DM Sans',sans-serif;outline:none}.ux-search:focus{border-color:var(--ux-cyan);box-shadow:0 0 0 3px rgba(25,232,241,.08)}.ux-select,.ux-toolbar select{height:40px;background:#061d2a;border:1px solid var(--ux-line);border-radius:8px;color:#dcecf3;padding:0 12px;font:13px 'DM Sans',sans-serif}.ux-btn{height:40px;padding:0 15px;border:1px solid var(--ux-line);background:#072334;color:#d9edf5;border-radius:8px;font:600 12px 'DM Sans',sans-serif;cursor:pointer}.ux-btn.active,.ux-btn:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.users-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px;align-items:start}.floor-list{display:flex;flex-direction:column;gap:6px}.floor-group{border:1px solid var(--ux-line);border-radius:9px;overflow:hidden;background:linear-gradient(180deg,#061d2a,#051923)}.floor-head{height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;cursor:pointer;border-left:3px solid transparent}.floor-head:hover{background:#082a3b}.floor-group.open .floor-head{border-left-color:var(--ux-cyan);background:linear-gradient(90deg,#073042,#061e2c)}.floor-arrow{font-size:16px;color:#9bb5c1;transition:.2s}.floor-group.open .floor-arrow{transform:rotate(90deg);color:var(--ux-cyan)}.floor-name{font-size:14px;font-weight:700;color:#fff;min-width:92px}.floor-count{font-size:12px;color:var(--ux-muted)}.floor-pills{margin-left:auto;display:flex;gap:6px}.floor-pill{font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--ux-line);background:#062333}.floor-pill.owner{color:#60a7ff}.floor-pill.tenant{color:#2ee89a}.floor-pill.vacant{color:#f3c718}.floor-pill.other{color:#9db5c2}.floor-body{display:none;border-top:1px solid var(--ux-line)}.floor-group.open .floor-body{display:block}.user-table-head,.user-item{display:grid;grid-template-columns:64px minmax(180px,1.7fr) 110px 105px 125px 120px;align-items:center;gap:8px}.user-table-head{padding:8px 12px;background:#041722;color:#7293a2;font-size:12px;text-transform:uppercase;letter-spacing:.06em}.user-item{padding:10px 12px;border-top:1px solid #0a3040;min-height:58px;cursor:pointer}.user-item:hover{background:#092b3b}.user-item.selected{background:#0a3142;box-shadow:inset 3px 0 var(--ux-cyan)}.unit-cell{font-size:12px;font-weight:700;color:#d8edf4}.person{display:flex;align-items:center;gap:9px;min-width:0}.avatar{width:31px!important;height:31px!important;border-radius:50%;display:grid!important;place-items:center;flex:0 0 auto!important;font-size:12px!important;font-weight:700!important;background:#1c80bb!important;color:#fff!important;border:1px solid #4cccf0}.person-name{font-size:12px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.person-email{font-size:12px;color:#7f9eac;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.role-badge{display:inline-flex;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700;border:1px solid}.role-admin{color:#d3a9ff;border-color:#7842c9;background:#281545}.role-committee{color:#67a9ff;border-color:#1559a5;background:#0a2443}.role-observer{color:#51e8a0;border-color:#08784b;background:#062c20}.role-owner,.role-tenant{color:#c2d4dc;border-color:#315365;background:#0b2735}.status{display:flex;align-items:center;gap:6px;font-size:12px;color:#dcecf2}.dot{width:8px;height:8px;border-radius:50%;background:var(--ux-green);box-shadow:0 0 8px rgba(33,229,107,.35)}.dot.off{background:var(--ux-red);box-shadow:none}.last-login{font-size:12px;color:#a8c0cb}.row-actions{display:flex;gap:6px}.row-action{height:30px;padding:0 9px;border-radius:6px;border:1px solid #176078;background:#082a3a;color:#bde9f1;font:600 12px 'DM Sans';cursor:pointer}.row-action:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.user-detail{position:sticky;top:14px;background:linear-gradient(180deg,#072332,#051a26);border:1px solid var(--ux-line);border-radius:11px;overflow:hidden}.detail-top{padding:15px;border-bottom:1px solid var(--ux-line)}.detail-meta{display:flex;align-items:center;justify-content:space-between;color:#91acb9;font-size:12px}.detail-profile{display:flex;align-items:center;gap:12px;margin-top:12px}.detail-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#1588bf;color:#fff;font-weight:800;border:1px solid #5bd8ef}.detail-name{font-size:18px;font-weight:700;color:#fff}.detail-email{font-size:12px;color:#8faab6;margin-top:3px}.detail-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.detail-btn{height:34px;border-radius:6px;background:#072c3d;border:1px solid #176078;color:#c8edf3;font:600 12px 'DM Sans';cursor:pointer}.detail-btn:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}.detail-btn.danger{border-color:#a52c35;color:#ff6970}.detail-section{padding:14px;border-bottom:1px solid var(--ux-line)}.detail-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:12px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-field label{display:block;font-size:12px;text-transform:uppercase;color:#698b9a;letter-spacing:.05em;margin-bottom:4px}.detail-field div{font-size:12px;color:#e5f2f6}.quick-actions{display:grid;grid-template-columns:1fr;gap:7px}.note-box{width:100%;height:70px;resize:none;background:#061b27;border:1px solid #164b60;border-radius:7px;color:#dcecf2;padding:9px;font:11px 'DM Sans'}.note-save{margin-top:7px;width:100%;height:32px;background:transparent;border:1px solid var(--ux-cyan);color:var(--ux-cyan);border-radius:6px;font-weight:700;cursor:pointer}
+/* activity */
+.log-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 16px}.log-card{background:linear-gradient(135deg,#082635,#061b28);border:1px solid var(--ux-line);border-radius:9px;padding:15px}.log-card-num{font-size:24px;font-weight:700}.log-card-label{font-size:12px;color:var(--ux-muted);margin-top:4px}.log-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.log-filters select,.log-filters input{height:38px;background:#061d2a!important;border:1px solid var(--ux-line)!important;color:#dcecf3!important;border-radius:7px!important;padding:0 11px!important}.log-table{width:100%;border-collapse:collapse;background:#061c29;border:1px solid var(--ux-line);border-radius:9px;overflow:hidden}.log-table thead{background:#041722!important}.log-table th{color:#7896a4!important;border-bottom:1px solid var(--ux-line)!important}.log-table td{border-bottom:1px solid #0a3040!important;color:#dbeaf0}.log-table tbody tr:hover{background:#082b3b!important}.log-date-group{background:#082536!important;color:var(--ux-cyan)!important}.log-time-ago,.log-time-abs,.log-user-email,.log-action-sub{color:#7e9ba8!important}.log-user-name,.log-action-label{color:#eaf6f9!important}.log-load-more{background:#072334!important;color:#d7edf3!important;border-color:var(--ux-line)!important}.activity-login-pill{display:inline-flex;padding:4px 9px;border-radius:5px;border:1px solid #11788a;color:var(--ux-cyan);background:#062b38;font-size:12px;font-weight:800}
+/* permissions */
+.perm-layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:14px}.role-panel,.perm-main{background:linear-gradient(180deg,#072332,#051a26);border:1px solid var(--ux-line);border-radius:10px}.role-panel{padding:12px}.role-panel-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#7898a6;padding:5px 8px 10px}.role-choice{padding:12px;border:1px solid transparent;border-radius:8px;margin-bottom:7px;cursor:pointer}.role-choice:hover{background:#082a3b}.role-choice.active{background:#0a3142;border-color:#087f91;box-shadow:inset 3px 0 var(--ux-cyan)}.role-choice-name{font-size:13px;font-weight:700;color:#fff}.role-choice-sub{font-size:12px;color:#7898a6;margin-top:3px}.role-choice-lock{float:right;color:#f0c72b}.perm-main{padding:16px}.perm-main-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.perm-main-title{font-size:18px;font-weight:700}.perm-main-sub{font-size:12px;color:#7898a6;margin-top:3px}.perm-summary{display:flex;align-items:center;gap:12px;color:#b9d0d9;font-size:12px}.perm-ring{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:5px solid var(--ux-cyan);color:#fff;font-weight:800}.perm-list{border:1px solid var(--ux-line);border-radius:8px;overflow:hidden}.perm-item{min-height:48px!important;padding:8px 12px!important;background:#061d2a!important;border-bottom:1px solid #0a3040!important}.perm-item:last-child{border-bottom:0!important}.perm-label{color:#dcecf2!important}.perm-page-icon{font-size:14px}.perm-checkbox{appearance:none;width:38px;height:20px;border-radius:12px;background:#27424f;border:1px solid #416170;position:relative;cursor:pointer;flex:0 0 auto}.perm-checkbox:after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;left:2px;top:2px;background:#9eb2bb;transition:.18s}.perm-checkbox:checked{background:var(--ux-cyan);border-color:var(--ux-cyan)}.perm-checkbox:checked:after{left:20px;background:#06202a}.perm-save-btn{float:right;margin-top:14px}.perm-warning{background:#33280b!important;border-color:#8b6b13!important;color:#f6d65b!important}
+/* stats */
+.stats-top{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.stats-card{background:linear-gradient(135deg,#082635,#061b28);border:1px solid var(--ux-line);border-radius:9px;padding:15px}.stats-num{font-size:25px;font-weight:700}.stats-label{font-size:12px;color:#7898a6;margin-top:4px}.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.chart-card,.stats-bottom-card{background:linear-gradient(180deg,#072332,#051a26);border:1px solid var(--ux-line);border-radius:10px;padding:15px}.chart-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:10px}.chart-box{height:220px}.stats-bottom{display:grid;grid-template-columns:1fr 1fr;gap:14px}.stats-card #dailyChart,.stats-card #pageChart{color:#fff}
+/* modals */
+.modal-backdrop{background:rgba(1,10,16,.82)!important}.modal-box{background:#082332!important;border:1px solid #176078!important;color:#eaf6f9!important;box-shadow:0 20px 70px rgba(0,0,0,.55)}.modal-input,.modal-select,.epm-input{background:#061b27!important;border-color:#175066!important;color:#e8f5f8!important}.modal-label,.epm-label{color:#83a2af!important}.modal-title{color:#fff!important}.modal-footer{border-top-color:#16495c!important}
+/* hide old UI controls but keep IDs/functionality */
+#permRoleSelect{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}#adminWarning{margin-bottom:12px}
+@media(max-width:1100px){.users-layout{grid-template-columns:1fr}.user-detail{position:relative;top:0}.ux-cards{grid-template-columns:repeat(3,1fr)}.perm-layout{grid-template-columns:190px 1fr}.user-table-head,.user-item{grid-template-columns:52px minmax(160px,1.6fr) 100px 90px 105px 100px}}
 @media(max-width:768px){
-.stats-row{grid-template-columns:repeat(2,1fr)!important;gap:10px}
-.stat-card{padding:12px}
-.stat-num{font-size:20px}
-.stat-label{font-size:11px}
-
-.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tab{white-space:nowrap;padding:10px 16px;font-size:12px}
-
-.table-head{display:none!important}
-.user-row{padding:10px 12px!important}
-.user-row-header{gap:8px}
-.user-row-details > div:first-child{flex-direction:column;align-items:stretch!important}
-.user-row-details > div:first-child > div{width:100%}
-
-.perm-header{flex-direction:column;align-items:stretch}
-.perm-two-col{grid-template-columns:1fr!important}
-.perm-header select{width:100%}
-.perm-section{padding:14px}
-.perm-item{flex-wrap:wrap}
-
-.log-filters{flex-direction:column}
-.log-filters select{width:100%}
-
-#statsCards{grid-template-columns:repeat(2,1fr)!important}
-#tab-statistics .card{overflow:hidden}
-#tab-statistics [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}
-
+/* Mobile: preserve desktop data, switch dense rows to readable stacked cards */
+.content{padding:14px!important}
+.tabs{grid-template-columns:repeat(4,minmax(130px,1fr));overflow-x:auto}
+.ux-cards,.log-hero,.stats-top{grid-template-columns:repeat(2,1fr)}
+.users-layout,.perm-layout,.charts-grid,.stats-bottom{grid-template-columns:1fr}
+.user-table-head{display:none}
+.user-item{grid-template-columns:1fr;gap:9px;padding:12px;align-items:stretch}
+.user-item>*{min-width:0}
+.unit-cell{font-size:12px}
+.person{width:100%}
+.person-name,.person-email{white-space:normal;overflow-wrap:anywhere}
+.row-actions{display:flex;gap:7px;width:100%}
+.row-action{min-height:44px;height:44px;flex:1}
+.floor-pills{display:none}
+.user-detail{position:relative}
+.detail-btn{min-height:44px;height:44px}
 .log-table thead{display:none}
 .log-table,.log-table tbody,.log-table tr{display:block;width:100%}
-.log-table tr{margin-bottom:12px;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
-.log-table td{display:block;padding:6px 0;border:none}
-.log-table td::before{content:attr(data-label);display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px}
-.log-table .log-time::before{content:"Time: "}
-.log-table .log-user-cell::before{content:"User: "}
-.log-table .log-action-text::before{content:"Action: "}
-.log-delete-btn{width:100%;margin-top:8px}
-
-/* iOS Safari 줌인 방지 */
-.epm-input{font-size:16px;padding:11px 12px}
-.role-select{font-size:16px;height:42px}
-.urd-quick-row .role-select{font-size:14px;min-width:auto;width:100%;max-width:none}
-.log-filters select{font-size:16px;height:44px}
-.perm-header select{font-size:16px;height:42px}
-
-/* Quick row (Role 변경 영역) 모바일 정리 */
-.urd-quick-row{flex-direction:column;align-items:stretch;gap:6px}
-.urd-quick-label{min-width:auto}
-
-/* 액션 버튼 3열 → 모바일에선 1열 (글자 안 잘림) */
-.urd-actions{grid-template-columns:1fr;gap:6px}
-.urd-btn{padding:11px 8px;font-size:13px}
-
-/* Edit Profile Modal 패딩 */
-.epm-warning{font-size:11px;padding:8px 10px}
-
-/* Stat 5개 → 모바일 2열에서 5번째 정리 */
-.stat-card:nth-child(5){grid-column:1 / -1}
-
-/* ⚡ 모바일 화면 확대 문제 진짜 원인 차단 ⚡ */
-/* Users 탭 검색창 inline width:200px 강제 덮어쓰기 */
-#userSearch{width:100% !important;box-sizing:border-box !important;min-width:0 !important}
-#userSearch + button + div{left:0 !important;right:0 !important}
-/* Users 탭 헤더 행 정리 */
-#tab-users .card-header > div:last-child{width:100%;flex-direction:column;align-items:stretch !important;gap:6px !important}
-#tab-users .card-header > div:last-child > div:first-child{width:100%}
-#userRoleFilter{width:100%;font-size:16px;height:42px}
-/* All Users card — mobile width override */
-#tab-users > .card{max-width:350px !important}
-/* user-row 내부 가로 폭 절대 안 넘기게 */
-.user-row,.user-info,.user-email,.user-name{max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis}
-/* 페이지 전체 가로 스크롤 차단 */
-.content{overflow-x:hidden}
+.log-table tr{padding:10px}
+.log-table td{display:block;border:0!important;padding:5px}
+.log-table td:not(.log-date-group)::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--ux-cyan);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.log-table td.log-date-group::before{content:none}
+.log-filters{flex-direction:column}
+.log-filters select,.log-filters input{width:100%;font-size:16px!important;min-height:44px}
+.ux-search{font-size:16px!important}
+.epm-input,.modal-input,.modal-select{font-size:16px!important}
+.log-controls{flex-wrap:wrap}
 }
 
-/* ⚡ Galaxy S10 (360px) 전용 추가 컴팩트 ⚡ */
-@media(max-width:380px){
-.content{padding:12px !important}
-.stat-card{padding:10px !important}
-.stat-num{font-size:18px !important}
-.stat-label{font-size:10px !important}
-.tab{padding:9px 12px !important;font-size:11px !important}
-.user-row{padding:10px 10px !important}
-.user-row-header{gap:6px !important}
-.avatar{width:28px !important;height:28px !important;font-size:10px !important}
-.user-name{font-size:12px !important}
-.user-email{font-size:11px !important}
-/* 액션 버튼 컴팩트 */
-.urd-btn{padding:9px 6px !important;font-size:12px !important}
-.urd-quick-label{font-size:12px !important}
-/* 이메일 아주 길어도 강제 줄바꿈 */
-.user-email,.user-name{word-break:break-all !important}
-}
 </style>
 </head>
 <body>
-<div id="sidebarPlaceholder"></div>
-<div class="main">
-<div id="topbarPlaceholder"></div>
-<div class="content">
-
-<!-- Page Header -->
-<div class="page-header">
-<div class="page-header-icon">
-<svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1.5a3 3 0 0 0-2-2.83"/></svg>
-</div>
-<div class="page-header-body">
-<div class="page-header-title-row">
-<span class="page-header-title">User Management</span>
-<button class="btn-primary" id="inviteBtn" style="padding:6px 14px;font-size:12px;border-radius:7px">+ Invite User</button>
-</div>
-<div class="page-header-sub">Manage user accounts, permissions, and activity logs.</div>
-</div>
-</div>
-
-<!-- Tabs -->
-<div class="tabs">
-<div class="tab active" data-tab="users">👥 Users</div>
-<div class="tab" data-tab="permissions">🔐 Permissions</div>
-<div class="tab" data-tab="activity">📝 Log</div>
-<div class="tab" data-tab="statistics">📊 Statistics</div>
-</div>
-
-<!-- Tab Content: Users -->
+<div id="sidebarPlaceholder"></div><div class="main"><div id="topbarPlaceholder"></div><div class="content">
+<div class="page-header"><div class="page-header-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1.5a3 3 0 0 0-2-2.83"/></svg></div><div class="page-header-body"><div class="page-header-title-row"><span class="page-header-title">Users Management</span><button class="btn-primary" id="inviteBtn" style="padding:9px 16px;font-size:12px;border-radius:7px">＋ Invite User</button></div><div class="page-header-sub">52 Users · Management &amp; Permissions</div></div></div>
+<div class="tabs"><div class="tab active" data-tab="users">👥 <span>Users</span></div><div class="tab" data-tab="activity">◔ <span>Activity Log</span></div><div class="tab" data-tab="permissions">🔒 <span>Permissions</span></div><div class="tab" data-tab="statistics">▥ <span>Statistics</span></div></div>
 <div id="tab-users" class="tab-content active">
-<div class="stats-row">
-<div class="stat-card"><div class="stat-num" id="statTotal" style="color:var(--blue-600)">—</div><div class="stat-label">Total Users</div></div>
-<div class="stat-card"><div class="stat-num" id="statAdmin" style="color:var(--purple)">—</div><div class="stat-label">Admin</div></div>
-<div class="stat-card"><div class="stat-num" id="statCommittee" style="color:var(--blue-600)">—</div><div class="stat-label">Committee</div></div>
-<div class="stat-card"><div class="stat-num" id="statObserver" style="color:var(--green)">—</div><div class="stat-label">Observer (Strata)</div></div>
-<div class="stat-card"><div class="stat-num" id="statOther" style="color:var(--muted)">—</div><div class="stat-label">Owner / Tenant (Staff)</div></div>
-</div>
-<div class="card" style="max-width:800px">
-<div class="card-header" style="justify-content:flex-start;gap:12px;flex-wrap:wrap">
-<div class="card-title">All Users</div>
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-<div style="position:relative">
-<input type="text" id="userSearch" placeholder="Search name or email…" autocomplete="off" style="padding:6px 32px 6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;width:200px">
-<button id="userSearchClear" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0;line-height:1">✕</button>
-<div id="userSearchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;max-height:200px;overflow-y:auto;margin-top:4px"></div>
-</div>
-<select id="userRoleFilter" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
-<option value="">All Roles</option>
-<option value="admin">Admin</option>
-<option value="committee">Committee</option>
-<option value="observer">Observer (Strata)</option>
-<option value="owner">Owner</option>
-<option value="tenant">Tenant (Staff)</option>
-</select>
-<span style="font-size:12px;color:var(--muted)" id="userCountLabel">Loading…</span>
-</div>
-</div>
-<div id="userList"><div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading users…</div></div>
-</div>
-</div>
-
-<!-- Tab Content: Sidebar Permissions -->
-<div id="tab-permissions" class="tab-content">
-<div class="perm-header">
-<label style="font-size:13px;font-weight:500;color:var(--text)">Select Role:</label>
-<select id="permRoleSelect">
-<option value="committee">Committee</option>
-<option value="observer">Observer (Strata)</option>
-<option value="owner">Owner</option>
-<option value="tenant">Tenant (Staff)</option>
-<option value="admin">Admin (View Only)</option>
-</select>
-</div>
-
-<div id="adminWarning" style="display:none" class="perm-warning">
-⚠️ <strong>Admin role cannot be modified.</strong><br>
-Admin has full access to all pages for security and system management purposes.
-</div>
-
-<div id="permissionsDisplay"></div>
-
-<button class="btn-primary perm-save-btn" id="savePermBtn" style="display:none">💾 Save Changes</button>
-</div>
-
-<!-- Tab Content: Activity Log -->
-<div id="tab-activity" class="tab-content">
-<div style="margin-bottom:10px">
-<input type="text" id="logSearch" placeholder="Search by user, email or action…" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;box-sizing:border-box">
-</div>
-<div class="log-filters">
-<select id="filterAction">
-<option value="">All Actions</option>
-<optgroup label="User Activity">
-<option value="LOGIN">Login</option>
-<option value="PAGE_ENTER">Page Visit</option>
-<option value="QUOTE_VOTED">Voted on Quote</option>
-<option value="QUOTE_COMMENTED">Commented on Quote</option>
-<option value="COMPLAINT_CREATED">Request Submitted</option>
-<option value="PARKING_REPORTED">Reported Parking</option>
-<option value="ANNOUNCEMENT_VIEWED">Viewed Announcement</option>
-<option value="HVAC_REQUESTED">HVAC Requested</option>
-</optgroup>
-</select>
-<select id="filterRole">
-<option value="">All Roles</option>
-<option value="committee">Committee</option>
-<option value="observer">Observer (Strata)</option>
-<option value="owner">Owner</option>
-<option value="tenant">Tenant (Staff)</option>
-</select>
-<select id="filterUser" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
-<option value="">All Users</option>
-</select>
-<select id="filterUnit" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
-<option value="">All Units</option>
-</select>
-<select id="filterPeriod">
-<option value="7">Last 7 days</option>
-<option value="30">Last 30 days</option>
-<option value="90">Last 90 days</option>
-<option value="365">Last year</option>
-<option value="all">All time</option>
-</select>
-</div>
-
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-<div class="log-count" id="logCount">Loading...</div>
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-<button id="inactiveBtn" onclick="toggleInactivePanel()" style="padding:7px 14px;font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.15s">👻 Inactive Users</button>
-<div style="display:flex;align-items:center;gap:6px">
-<input type="date" id="logDeleteDate" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;height:32px;box-sizing:border-box">
-<button onclick="clearLogsByDate()" style="padding:7px 12px;font-size:12px;font-weight:500;border:1px solid #f87171;border-radius:8px;background:#fff1f2;color:#b91c1c;cursor:pointer;transition:all 0.15s;white-space:nowrap">🗓️ Delete Day</button>
-</div>
-<button class="btn-danger" onclick="clearAllLogs()" style="padding:7px 14px;font-size:13px">🗑️ Clear All Logs</button>
-</div>
-</div>
-
-<!-- Inactive Users Panel -->
-<div id="inactivePanel" style="display:none;margin-bottom:16px">
-<div class="card">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border-light)">
-<div style="font-size:13px;font-weight:600">Inactive Users</div>
-<div style="display:flex;align-items:center;gap:10px">
-<select id="inactiveDays" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
-<option value="7">No activity in 7 days</option>
-<option value="14">No activity in 14 days</option>
-<option value="30" selected>No activity in 30 days</option>
-<option value="60">No activity in 60 days</option>
-</select>
-<button onclick="loadInactiveUsers()" style="padding:5px 12px;font-size:12px;font-weight:500;border:1px solid var(--blue-600);border-radius:7px;background:var(--blue-50);color:var(--blue-700);cursor:pointer">Refresh</button>
-</div>
-</div>
-<div id="inactiveList" style="padding:16px"><div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Loading…</div></div>
-</div>
-</div>
-
-<div class="card">
-<div id="activityList"><div class="log-empty">Loading activity…</div></div>
-</div>
-
-<button class="log-load-more" id="loadMoreBtn" style="display:none">Load More...</button>
-</div>
-
-<!-- Tab Content: Statistics -->
-<div id="tab-statistics" class="tab-content">
-<!-- Period Selector -->
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-<div style="font-size:15px;font-weight:600;color:var(--text)">📊 Activity Dashboard</div>
-<select id="statsPeriod" style="padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif">
-<option value="7">Last 7 days</option>
-<option value="14">Last 14 days</option>
-<option value="30" selected>Last 30 days</option>
-<option value="90">Last 90 days</option>
-</select>
-</div>
-
-<!-- Summary Cards -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px" id="statsCards">
-<div class="card" style="padding:20px;text-align:center">
-<div style="font-size:28px;font-weight:700;color:var(--blue-600)" id="statTotalActions">-</div>
-<div style="font-size:11px;color:var(--muted);margin-top:4px">Total Actions</div>
-</div>
-<div class="card" style="padding:20px;text-align:center">
-<div style="font-size:28px;font-weight:700;color:#16a34a" id="statActiveUsers">-</div>
-<div style="font-size:11px;color:var(--muted);margin-top:4px">Active Users</div>
-</div>
-<div class="card" style="padding:20px;text-align:center">
-<div style="font-size:28px;font-weight:700;color:#ca8a04" id="statTotalVotes">-</div>
-<div style="font-size:11px;color:var(--muted);margin-top:4px">Votes Cast</div>
-</div>
-<div class="card" style="padding:20px;text-align:center">
-<div style="font-size:28px;font-weight:700;color:#dc2626" id="statTotalRequests">-</div>
-<div style="font-size:11px;color:var(--muted);margin-top:4px">Requests / Reports</div>
-</div>
-</div>
-
-<!-- Charts Row -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-<!-- Daily Activity Chart -->
-<div class="card" style="padding:20px">
-<div style="font-size:13px;font-weight:600;margin-bottom:16px">Daily Activity</div>
-<div id="dailyChart" style="height:200px;position:relative"></div>
-</div>
-<!-- Page Popularity Chart -->
-<div class="card" style="padding:20px">
-<div style="font-size:13px;font-weight:600;margin-bottom:16px">Most Visited Pages</div>
-<div id="pageChart" style="height:200px;position:relative"></div>
-</div>
-</div>
-
-<!-- Bottom Row -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-<!-- Top Active Users -->
-<div class="card">
-<div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:13px;font-weight:600">🏆 Most Active Users</div>
-<div id="topUsersList" style="padding:12px 20px"></div>
-</div>
-<!-- Action Breakdown -->
-<div class="card">
-<div style="padding:14px 20px;border-bottom:1px solid var(--border-light);font-size:13px;font-weight:600">⚡ Action Breakdown</div>
-<div id="actionBreakdown" style="padding:12px 20px"></div>
-</div>
-</div>
-</div>
-
+<div class="ux-cards"><div class="ux-stat"><div class="ux-stat-icon">👥</div><div><div class="ux-stat-num" id="statTotal">—</div><div class="ux-stat-label">Total Users</div></div></div><div class="ux-stat"><div class="ux-stat-icon" style="background:#281545;color:#d3a9ff">♟</div><div><div class="ux-stat-num" id="statAdmin">—</div><div class="ux-stat-label">Admin</div></div></div><div class="ux-stat"><div class="ux-stat-icon" style="background:#0a2443;color:#67a9ff">♟</div><div><div class="ux-stat-num" id="statCommittee">—</div><div class="ux-stat-label">Committee</div></div></div><div class="ux-stat"><div class="ux-stat-icon" style="background:#062c20;color:#51e8a0">◉</div><div><div class="ux-stat-num" id="statObserver">—</div><div class="ux-stat-label">Observer</div></div></div><div class="ux-stat"><div class="ux-stat-icon" style="background:#33280b;color:#f2c21a">⌂</div><div><div class="ux-stat-num" id="statOther">—</div><div class="ux-stat-label">Owner / Tenant</div></div></div></div>
+<div class="ux-toolbar"><div style="position:relative;flex:1;min-width:240px"><input class="ux-search" id="userSearch" placeholder="Search users, unit or email…" autocomplete="off"><button id="userSearchClear" style="display:none;position:absolute;right:10px;top:10px;background:none;border:0;color:#7898a6;cursor:pointer">✕</button><div id="userSearchDropdown" style="display:none;position:absolute;top:42px;left:0;right:0;z-index:50;background:#082332;border:1px solid #176078;border-radius:8px"></div></div><select class="ux-select" id="userRoleFilter"><option value="">All Roles</option><option value="admin">Admin</option><option value="committee">Committee</option><option value="observer">Observer</option><option value="owner">Owner</option><option value="tenant">Tenant</option></select><button class="ux-btn" onclick="document.querySelectorAll('.floor-group').forEach(x=>x.classList.add('open'))">Expand All</button><button class="ux-btn" onclick="document.querySelectorAll('.floor-group').forEach(x=>x.classList.remove('open'))">Collapse All</button><button class="ux-btn active">By Floor</button><span id="userCountLabel" style="font-size:12px;color:#7898a6;margin-left:auto">Loading…</span></div>
+<div class="users-layout"><div id="userList" class="floor-list"><div style="padding:40px;text-align:center;color:#7898a6">Loading users…</div></div><aside id="userDetail" class="user-detail"><div style="padding:50px 20px;text-align:center;color:#7898a6">Select a user to view details</div></aside></div></div>
+<div id="tab-activity" class="tab-content"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:2px"><div><div style="font-size:22px;font-weight:700">Activity Log</div><div style="font-size:12px;color:#7898a6;margin-top:3px">Login history — who logged in and when</div></div><div style="font-size:12px;color:#7898a6">LOGIN history</div></div>
+<div class="log-filters"><input id="logSearch" placeholder="Search user or email…"><select id="filterRole"><option value="">All Roles</option><option value="committee">Committee</option><option value="observer">Observer</option><option value="owner">Owner</option><option value="tenant">Tenant</option></select><select id="filterUser"><option value="">All Users</option></select><select id="filterUnit"><option value="">All Units</option></select><select id="filterPeriod"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option><option value="all">All time</option></select><select id="filterAction" style="display:none"><option value="LOGIN" selected>Login</option></select></div>
+<div class="log-hero"><div class="log-card"><div class="log-card-num" id="activityTotal">—</div><div class="log-card-label">Total Logins · Period</div></div><div class="log-card"><div class="log-card-num" id="activityActive">—</div><div class="log-card-label">Active Users</div></div><div class="log-card"><div class="log-card-num" id="activityNew">—</div><div class="log-card-label">New Users</div></div><div class="log-card"><div class="log-card-num" id="activityInactive">—</div><div class="log-card-label">Inactive Users</div></div></div>
+<div class="log-controls" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:7px"><div class="log-count" id="logCount">Loading…</div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><button id="inactiveBtn" class="ux-btn" onclick="toggleInactivePanel()">Inactive Users</button><input type="date" id="logDeleteDate" aria-label="Log date to delete" style="height:40px;padding:0 10px;background:#061d2a;border:1px solid var(--ux-line);border-radius:8px;color:#dcecf3;font:12px 'DM Sans',sans-serif"><button class="ux-btn" onclick="clearLogsByDate()">Delete Day</button><button class="btn-danger" onclick="clearAllLogs()" style="padding:0 14px;height:40px">Clear All Logs</button></div></div><div id="inactivePanel" style="display:none"><div id="inactiveList"></div><select id="inactiveDays" aria-label="Inactive user period" style="height:40px;padding:0 10px;background:#061d2a;border:1px solid var(--ux-line);border-radius:8px;color:#dcecf3;font:12px 'DM Sans',sans-serif"><option value="7">7 days</option><option value="14">14 days</option><option value="30" selected>30 days</option><option value="60">60 days</option></select></div><div class="card" style="background:transparent;border:0"><div id="activityList"><div class="log-empty">Loading activity…</div></div></div><button class="log-load-more" id="loadMoreBtn" style="display:none">Load More…</button></div>
+<div id="tab-permissions" class="tab-content"><select id="permRoleSelect"><option value="committee">Committee</option><option value="observer">Observer</option><option value="owner">Owner</option><option value="tenant">Tenant</option><option value="admin">Admin</option></select><div id="adminWarning" style="display:none" class="perm-warning">⚠️ <strong>Admin role cannot be modified.</strong><br>Admin has full access to all pages for security and system management purposes.</div><div id="permissionsDisplay"></div><button class="btn-primary perm-save-btn" id="savePermBtn" style="display:none">Save Changes</button></div>
+<div id="tab-statistics" class="tab-content"><div style="display:flex;align-items:end;justify-content:space-between;margin-bottom:10px"><div><div style="font-size:22px;font-weight:700">Statistics</div><div style="font-size:12px;color:#7898a6;margin-top:3px">Usage, activity and most visited pages</div></div><select id="statsPeriod" class="ux-select"><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></div><div class="stats-top"><div class="stats-card"><div class="stats-num" id="statTotalActions">—</div><div class="stats-label">Total Actions</div></div><div class="stats-card"><div class="stats-num" id="statActiveUsers">—</div><div class="stats-label">Active Users</div></div><div class="stats-card"><div class="stats-num" id="statTotalVotes">—</div><div class="stats-label">Votes Cast</div></div><div class="stats-card"><div class="stats-num" id="statTotalRequests">—</div><div class="stats-label">Requests / Reports</div></div></div><div class="charts-grid"><div class="chart-card"><div class="chart-title">Daily Activity</div><div id="dailyChart" class="chart-box"></div></div><div class="chart-card"><div class="chart-title">Most Visited Pages</div><div id="pageChart" class="chart-box"></div></div></div><div class="stats-bottom"><div class="stats-bottom-card"><div class="chart-title">🏆 Most Active Users</div><div id="topUsersList"></div></div><div class="stats-bottom-card"><div class="chart-title">⚡ Action Breakdown</div><div id="actionBreakdown"></div></div></div></div>
 <!-- INVITE MODAL -->
 <div class="modal-backdrop" id="inviteModal">
 <div class="modal-box">
@@ -538,7 +157,7 @@ Admin has full access to all pages for security and system management purposes.
 <input type="checkbox" id="inviteSendEmail" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--blue-600)">
 <div>
 <div style="font-size:13px;font-weight:600;color:var(--text)">📧 Send invitation email</div>
-<div style="font-size:11px;color:var(--muted);margin-top:2px">Uncheck to add user silently (they can set password later on first login)</div>
+<div style="font-size:12px;color:var(--muted);margin-top:2px">Uncheck to add user silently (they can set password later on first login)</div>
 </div>
 </label>
 </div>
@@ -560,7 +179,7 @@ Admin has full access to all pages for security and system management purposes.
 <div class="modal-field">
 <label class="modal-label">New Password</label>
 <input class="modal-input" type="text" id="newPassword" placeholder="Enter new password (min 4 characters)">
-<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 You can set any password (e.g. "1111") - the user will be notified to change it.</div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px">💡 You can set any password (e.g. "1111") - the user will be notified to change it.</div>
 </div>
 <div class="modal-footer">
 <button class="btn-secondary" onclick="closeModal('setPasswordModal')">Cancel</button>
@@ -598,8 +217,7 @@ Admin has full access to all pages for security and system management purposes.
 </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
+<div class="toast" id="toast"></div></div></div>
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
@@ -732,131 +350,109 @@ return unitA.localeCompare(unitB);
 return [...fixed, ...rest];
 }
 
+const ACTIVE_WINDOW_DAYS = 30;
+function getUserStatus(p){
+const ts=p.last_sign_in_at ? new Date(p.last_sign_in_at).getTime() : NaN;
+if(!Number.isFinite(ts)) return {label:'Never',active:false,never:true};
+const age=Date.now()-ts;
+if(age>=0 && age<=ACTIVE_WINDOW_DAYS*86400000) return {label:'Active',active:true,never:false};
+return {label:'Inactive',active:false,never:false};
+}
+const roleLabel=r=>r==='observer'?'Observer':r?r.charAt(0).toUpperCase()+r.slice(1):'—';
+const roleClass=r=>`role-${r||'tenant'}`;
+const ini=p=>(p.full_name||p.email||'U').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const safeAttr=s=>String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
 function filterAndRenderUsers() {
-const q = document.getElementById('userSearch').value.trim().toLowerCase();
-const roleFilter = document.getElementById('userRoleFilter').value;
-const list = document.getElementById('userList');
+const q=(document.getElementById('userSearch').value||'').trim().toLowerCase();
+const roleFilter=document.getElementById('userRoleFilter').value;
+const countLabel=document.getElementById('userCountLabel');
 
-let filtered = sortProfilesForDisplay(allProfiles);
-if (roleFilter) filtered = filtered.filter(p => p.role === roleFilter);
-if (q) filtered = filtered.filter(p =>
-(p.full_name||'').toLowerCase().includes(q) ||
-(p.email||'').toLowerCase().includes(q)
-);
+let filtered=sortProfilesForDisplay(allProfiles.filter(p=>
+(!roleFilter||p.role===roleFilter) &&
+(!q||[p.full_name,p.email,p.unit].some(v=>(v||'').toLowerCase().includes(q)))
+));
 
-const total = allProfiles.length;
-const filteredCount = filtered.length;
-const countLabel = document.getElementById('userCountLabel');
-if (total !== filteredCount) {
-countLabel.textContent = `${filteredCount} / ${total} users`;
-} else {
-countLabel.textContent = `${total} users`;
+countLabel.textContent=`${filtered.length} / ${allProfiles.length} users`;
+
+const renderUserRow=p=>{
+const id=esc(p.id),name=esc(p.full_name||p.email?.split('@')[0]||'—'),email=esc(p.email||'—'),unit=esc(p.unit||'—');
+const status=getUserStatus(p);
+const statusColor=status.active?'#43e67f':'#ffb52e';
+const lastLogin=p.last_sign_in_at?new Date(p.last_sign_in_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
+return `<div class="user-item" data-user-id="${id}" onclick="selectUser('${safeAttr(p.id)}')"><div class="unit-cell">${unit}</div><div class="person"><div class="avatar">${esc(ini(p))}</div><div style="min-width:0"><div class="person-name">${name}</div><div class="person-email">${email}</div></div></div><div><span class="role-badge ${roleClass(p.role)}">${roleLabel(p.role)}</span></div><div class="status"><span class="dot" style="background:${statusColor}"></span>${status.label}</div><div class="last-login">${lastLogin}</div><div class="row-actions"><button class="row-action" onclick="event.stopPropagation();selectUser('${safeAttr(p.id)}')">View</button><button class="row-action" onclick="event.stopPropagation();openEditProfile('${safeAttr(p.id)}','${safeAttr(p.full_name||'')}','${safeAttr(p.email||'')}','${safeAttr(p.unit||'')}')">Edit</button></div></div>`;
+};
+
+if(!filtered.length){
+ document.getElementById('userList').innerHTML='<div style="padding:40px;text-align:center;color:#7898a6">No users match the filter.</div>';
+ document.getElementById('userDetail').innerHTML='<div class="detail-empty">Select a user to view details.</div>';
+ selectedUserId=null;
+ return;
 }
 
-if (!filtered.length) {
-list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">No users match the filter.</div>';
-return;
-}
-
-const ROLE_COLORS_f = { admin:'av-admin',committee:'av-committee',observer:'av-observer',owner:'av-owner',tenant:'av-tenant' };
-const ROLE_BADGES_f = { admin:'badge-purple',committee:'badge-blue',observer:'badge-green',owner:'badge-gray',tenant:'badge-gray' };
-
-// Track resident counter (reset per render)
-let residentCounter = 0;
-
-list.innerHTML = filtered.map((p, idx) => {
-const displayName = p.full_name||p.email?.split('@')[0]||'—';
-const ini = displayName.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-const isSelf = p.id===user.id;
-const avClass = ROLE_COLORS_f[p.role]||'av-owner';
-const badgeClass = ROLE_BADGES_f[p.role]||'badge-gray';
-const unitDisplay = p.unit || '—';
-const roleLabel = p.role?.charAt(0).toUpperCase()+p.role?.slice(1)||'—';
-const subtitle = p.unit ? `Unit ${p.unit}` : '';
-const safeName = (displayName||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-const safeEmail = (p.email||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-
-// Number badge: only for users AFTER fixed order (index >= 14 in original sort)
-const isInFixedOrder = idx < 14;
-let numberBadge = '';
-if (!isInFixedOrder) {
-residentCounter++;
-numberBadge = `<span style="font-size:12px;color:var(--muted);font-weight:600;width:24px;text-align:right;flex-shrink:0">${residentCounter}</span>`;
-} else {
-numberBadge = `<span style="width:24px;flex-shrink:0"></span>`;
-}
-
-// Setup complete indicator
-const setupIcon = p.setup_complete
-? `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup completed">✓</span>`
-: `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#dc2626;color:#fff;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle" title="Setup not completed">✕</span>`;
-
-// Row background color
-let rowBg = '';
-if (TEST_EMAILS.has(p.email) || p.role === 'admin') {
-rowBg = '#FEF2F2'; // pastel red (Admin + Test)
-} else if (p.role === 'committee') {
-rowBg = '#F0FDF4'; // pastel green
-} else if (p.role === 'observer') {
-rowBg = '#FAF5FF'; // pastel purple
-} else {
-// Owner/Tenant: zebra striping by resident counter
-rowBg = (residentCounter % 2 === 0) ? '#F8FAFC' : '#FFFFFF';
-}
-
-return `
-<div class="user-row" style="background:${rowBg}" onclick="toggleUserRow(event,this)">
-<div class="user-row-header">
-${numberBadge}
-<div class="avatar ${avClass}">${ini}</div>
-<div class="user-info">
-<div class="user-name">${displayName}${isSelf?' <span style="font-size:10px;color:var(--muted);font-weight:400">(You)</span>':''}${setupIcon}</div>
-${subtitle ? `<div class="user-email">${subtitle}</div>` : ''}
-</div>
-<span class="badge ${badgeClass}">${roleLabel}</span>
-<span class="user-row-arrow">▸</span>
-</div>
-<div class="user-row-details" onclick="event.stopPropagation()">
-<div style="display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #dcfce7">
-<span>📧 <span style="color:var(--text);font-weight:500">${p.email||'—'}</span></span>
-${p.unit ? `<span>📍 <span style="color:var(--text);font-weight:500">Unit ${p.unit}</span></span>` : ''}
-</div>
-${isSelf ? `
-<div style="text-align:center;padding:10px;color:var(--muted);font-size:12px">This is you — use My Profile to edit your details</div>
-` : `
-<div class="urd-quick-row">
-<span class="urd-quick-label">Role</span>
-<select class="role-select" onchange="changeRole('${p.id}',this.value)">
-<option value="admin" ${p.role==='admin'?'selected':''}>Admin</option>
-<option value="committee" ${p.role==='committee'?'selected':''}>Committee</option>
-<option value="observer" ${p.role==='observer'?'selected':''}>Observer (Strata)</option>
-<option value="owner" ${p.role==='owner'?'selected':''}>Owner</option>
-<option value="tenant" ${p.role==='tenant'?'selected':''}>Tenant (Staff)</option>
-</select>
-</div>
-<div class="urd-actions">
-<button class="urd-btn urd-btn-default" onclick="openEditProfile('${p.id}','${safeName}','${safeEmail}','${p.unit||''}')">Edit profile</button>
-<button class="urd-btn urd-btn-info" onclick="openSetPassword('${p.id}','${safeName}')">Set password</button>
-<button class="urd-btn urd-btn-danger" onclick="removeUser('${p.id}','${safeName}')">Remove</button>
-</div>
-`}
-</div>
-</div>`;
-}).join('');
-}
-
-function toggleUserRow(e, el) {
-if (e.target.closest('select, button, a, input')) return;
-const isOpen = el.classList.contains('open');
-document.querySelectorAll('.user-row.open').forEach(r => r.classList.remove('open'));
-document.querySelectorAll('.user-row.highlight-flash').forEach(r => r.classList.remove('highlight-flash'));
-if (!isOpen) {
-el.classList.add('open');
-el.classList.add('highlight-flash');
-setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+// FIXED_ORDER is authoritative. Re-run the same matching algorithm on the filtered set
+// so matched users remain first even when a search/role filter hides some fixed users.
+const fixedUsers=[];
+const remainingPool=[...filtered];
+for(const rule of FIXED_ORDER){
+const idx=remainingPool.findIndex(p=>rule.match(p));
+if(idx!==-1){
+fixedUsers.push(remainingPool[idx]);
+remainingPool.splice(idx,1);
 }
 }
-window.toggleUserRow = toggleUserRow;
+const remaining=remainingPool;
+
+const floorKey=p=>{const u=(p.unit||'').toUpperCase(); if(/^UNIT 1$/.test(u)||u==='G') return 'Ground Floor'; const m=u.match(/^(\d+)/); return m?`Level ${parseInt(m[1])}`:'External';};
+const floorOrder=['Ground Floor','Level 1','Level 2','Level 3','Level 4','Level 5','Level 6','External'];
+const groups={};
+remaining.forEach(p=>(groups[floorKey(p)]??=[]).push(p));
+
+let html='';
+if(fixedUsers.length){
+html+=`<div class="floor-group priority-group open"><div class="floor-head"><span class="floor-arrow">›</span><span class="floor-name">Priority Users</span><span class="floor-count">${fixedUsers.length} users</span><div class="floor-pills"><span class="floor-pill other">Fixed Order</span></div><span style="color:#7e9ba8">⌄</span></div><div class="floor-body"><div class="user-table-head"><span>Unit</span><span>Name / Email</span><span>Role</span><span>Status</span><span>Last Login</span><span>Actions</span></div>${fixedUsers.map(renderUserRow).join('')}</div></div>`;
+}
+for(const floor of floorOrder){
+const users=groups[floor]||[];
+if(!users.length)continue;
+const counts={owner:0,tenant:0,observer:0,committee:0,admin:0};
+users.forEach(p=>counts[p.role]=(counts[p.role]||0)+1);
+html+=`<div class="floor-group"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">${floor}</span><span class="floor-count">${users.length} user${users.length===1?'':'s'}</span><div class="floor-pills"><span class="floor-pill owner">Owner ${counts.owner||0}</span><span class="floor-pill tenant">Tenant ${counts.tenant||0}</span><span class="floor-pill other">Other ${(counts.committee||0)+(counts.observer||0)+(counts.admin||0)}</span></div><span style="color:#7e9ba8">⌄</span></div><div class="floor-body"><div class="user-table-head"><span>Unit</span><span>Name / Email</span><span>Role</span><span>Status</span><span>Last Login</span><span>Actions</span></div>${users.map(renderUserRow).join('')}</div></div>`;
+}
+
+document.getElementById('userList').innerHTML=html;
+
+// Preserve the selected user across search, role filters and reloads.
+if(selectedUserId && filtered.some(p=>p.id===selectedUserId)){
+selectUser(selectedUserId,{preserve:true});
+}else if(!selectedUserId){
+selectUser(filtered[0].id,{preserve:true});
+}else{
+selectedUserId=null;
+ document.getElementById('userDetail').innerHTML='<div class="detail-empty">Select a user to view details.</div>';
+}
+}
+
+let selectedUserId=null;
+
+window.selectUser=function(uid, options={}){
+const p=allProfiles.find(x=>x.id===uid);
+if(!p)return;
+selectedUserId=uid;
+document.querySelectorAll('.user-item.selected').forEach(x=>x.classList.remove('selected'));
+const row=document.querySelector(`.user-item[data-user-id="${CSS.escape(uid)}"]`);
+if(row)row.classList.add('selected');
+const role=p.role? p.role.charAt(0).toUpperCase()+p.role.slice(1):'—';
+const ini=(p.full_name||p.email||'U').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+const safe=(s)=>String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const status=getUserStatus(p);
+const statusColor=status.active?'#43e67f':'#ffb52e';
+const lastLogin=p.last_sign_in_at?new Date(p.last_sign_in_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
+document.getElementById('userDetail').innerHTML=`<div class="detail-top"><div class="detail-meta"><span style="border:1px solid #176078;border-radius:5px;padding:4px 7px;color:#b9e9f1">${p.unit?'Unit '+p.unit:'External'}</span><span style="color:${statusColor}">● ${status.label}</span><span>Last login ${lastLogin}</span></div><div class="detail-profile"><div class="detail-avatar">${ini}</div><div><div class="detail-name">${p.full_name||p.email||'—'}</div><div class="detail-email">${p.email||'—'}</div></div><span class="role-badge ${roleClass(p.role)}" style="margin-left:auto">${role}</span></div><div class="detail-actions"><button class="detail-btn" onclick="openEditProfile('${safe(p.id)}','${safe(p.full_name||'')}','${safe(p.email||'')}','${safe(p.unit||'')}')">✎ Edit Profile</button><button class="detail-btn" onclick="openSetPassword('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">♙ Set Password</button><button class="detail-btn danger" onclick="removeUser('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">▣ Remove User</button></div></div><div class="detail-section"><div class="detail-title">User Information</div><div class="detail-grid"><div class="detail-field"><label>Full Name</label><div>${p.full_name||'—'}</div></div><div class="detail-field"><label>Email</label><div>${p.email||'—'}</div></div><div class="detail-field"><label>Phone</label><div>${p.phone||'—'}</div></div><div class="detail-field"><label>Role</label><div>${role}</div></div><div class="detail-field"><label>Unit</label><div>${p.unit||'—'}</div></div><div class="detail-field"><label>Account Status</label><div><span class="dot" style="display:inline-block;margin-right:5px;background:${statusColor}"></span>${status.label}</div></div></div></div><div class="detail-section"><div class="detail-title">Quick Actions</div><div class="quick-actions">${p.setup_complete===false?`<button class="detail-btn" onclick="sendExistingUserInvite('${safe(p.id)}')">✉ Resend Invite Email</button>`:`<button class="detail-btn" onclick="openSetPassword('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">♙ Reset Password</button>`}<button class="detail-btn" onclick="document.querySelector('[data-tab=activity]').click()">◷ View Activity Log</button></div></div>`;
+};
+
+window.toggleUserRow = function(){};
 
 document.getElementById('userSearch').addEventListener('input', function() {
 const q = this.value.trim().toLowerCase();
@@ -890,10 +486,10 @@ const avCls = ROLE_COLORS_d[p.role] || 'av-owner';
 return `<div onclick="document.getElementById('userSearch').value='${name}';document.getElementById('userSearchDropdown').style.display='none';document.getElementById('userSearchClear').style.display='block';filterAndRenderUsers();"
 style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;transition:background 0.1s"
 onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-<div class="avatar ${avCls}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${ini}</div>
+<div class="avatar ${avCls}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${ini}</div>
 <div>
 <div style="font-weight:500;color:var(--text)">${name}</div>
-<div style="font-size:11px;color:var(--muted)">${p.email||''}</div>
+<div style="font-size:12px;color:var(--muted)">${p.email||''}</div>
 </div>
 </div>`;
 }).join('');
@@ -1253,64 +849,21 @@ await loadUsers();
 let currentPermissions = {};
 
 async function loadSidebarPermissions() {
-const selectedRole = document.getElementById('permRoleSelect').value;
-
-if (selectedRole === 'admin') {
-document.getElementById('adminWarning').style.display = 'block';
-document.getElementById('permissionsDisplay').innerHTML = '';
-document.getElementById('savePermBtn').style.display = 'none';
-return;
-}
-
-document.getElementById('adminWarning').style.display = 'none';
-document.getElementById('savePermBtn').style.display = 'block';
-
-const { data: perms } = await supabase.from('sidebar_permissions').select('*').eq('role', selectedRole);
-
-currentPermissions = {};
-if (perms) { perms.forEach(p => { currentPermissions[p.page] = p.allowed; }); }
-
+const selectedRole=document.getElementById('permRoleSelect').value;
+if(selectedRole==='admin') currentPermissions={};
+else {const {data:perms}=await supabase.from('sidebar_permissions').select('*').eq('role',selectedRole);currentPermissions={};if(perms)perms.forEach(p=>currentPermissions[p.page]=p.allowed);}
 renderSidebarPermissions(selectedRole);
 }
 
-function renderSidebarPermissions(selectedRole) {
-const pages = ['announcements', 'complaints', 'hvac', 'quotes', 'works', 'reports', 'cost-dashboard', 'documents', 'emergency', 'parking', 'building', 'occupants', 'service-reports', 'history', 'guide-tenant', 'guide-owner', 'guide-committee'];
-
-const html = `
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
-<div class="perm-section" style="margin-bottom:0">
-<div class="perm-section-title">📱 Sidebar Menu Access</div>
-<div style="font-size:12px;color:var(--muted);margin-bottom:16px">
-Select which pages <strong>${selectedRole}</strong> users can access from the sidebar menu.
-</div>
-${pages.map(page => {
-const isChecked = currentPermissions[page] !== false;
-return `
-<div class="perm-item">
-<input type="checkbox" class="perm-checkbox" id="perm-${page}" data-page="${page}" ${isChecked ? 'checked' : ''}>
-<span class="perm-page-icon">${PAGE_ICONS[page]}</span>
-<label for="perm-${page}" class="perm-label">${PAGE_LABELS[page]}</label>
-</div>
-`;
-}).join('')}
-<div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted)">
-💡 <strong>Note:</strong> Users page is Admin-only and cannot be modified.
-</div>
-</div>
-<div id="permissionsSummary" style="position:sticky;top:16px"></div>
-</div>
-`;
-
-document.getElementById('permissionsDisplay').innerHTML = html;
-
-document.querySelectorAll('.perm-checkbox').forEach(cb => {
-cb.addEventListener('change', (e) => {
-const page = e.target.dataset.page;
-currentPermissions[page] = e.target.checked;
-updatePermissionsSummary(selectedRole);
-});
-});
-
+function renderSidebarPermissions(selectedRole){
+const pages=['announcements','complaints','hvac','quotes','works','reports','cost-dashboard','documents','emergency','parking','building','occupants','service-reports','history','guide-tenant','guide-owner','guide-committee'];
+const roles=[['admin','Admin','Full system access'],['committee','Committee','8 users'],['observer','Observer','3 users'],['owner','Owner','20 users'],['tenant','Tenant','19 users']];
+const roleHTML=roles.map(([r,n,s])=>`<div class="role-choice ${r===selectedRole?'active':''}" onclick="document.getElementById('permRoleSelect').value='${r}';loadSidebarPermissions()"><span class="role-choice-lock">${r==='admin'?'🔒':''}</span><div class="role-choice-name">${n}</div><div class="role-choice-sub">${s}</div></div>`).join('');
+const disabled=selectedRole==='admin';
+const items=pages.map(page=>{const on=disabled||currentPermissions[page]!==false;return `<div class="perm-item"><span class="perm-page-icon">${PAGE_ICONS[page]}</span><label for="perm-${page}" class="perm-label">${PAGE_LABELS[page]}</label><input type="checkbox" class="perm-checkbox" id="perm-${page}" data-page="${page}" ${on?'checked':''} ${disabled?'disabled':''}></div>`}).join('');
+document.getElementById('permissionsDisplay').innerHTML=`<div class="perm-layout"><div class="role-panel"><div class="role-panel-title">Select Role</div>${roleHTML}</div><div class="perm-main"><div class="perm-main-head"><div><div class="perm-main-title">${selectedRole.charAt(0).toUpperCase()+selectedRole.slice(1)} Role Permissions</div><div class="perm-main-sub">Manage which pages this role can access</div></div><div class="perm-summary"><div class="perm-ring" id="permRing">${disabled?'ALL':pages.filter(p=>currentPermissions[p]!==false).length}</div><span>${disabled?'Full system access':'Pages Allowed'}</span></div></div>${disabled?'<div class="perm-warning" style="margin-bottom:14px">⚠️ <strong>Admin role cannot be modified.</strong><br>Admin has full access to all pages for security and system management purposes.</div>':''}<div class="perm-list">${items}</div><div style="margin-top:10px;font-size:12px;color:#7898a6">💡 Users page is Admin-only and cannot be modified.</div><div id="permissionsSummary" style="margin-top:12px"></div></div></div>`;
+document.querySelectorAll('.perm-checkbox').forEach(cb=>cb.addEventListener('change',e=>{currentPermissions[e.target.dataset.page]=e.target.checked;updatePermissionsSummary(selectedRole);}));
+document.getElementById('savePermBtn').style.display=disabled?'none':'block';
 updatePermissionsSummary(selectedRole);
 }
 
@@ -1331,7 +884,7 @@ ${allowed.length > 0 ? `
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:6px">
 ${allowed.map(page => `
-<span style="font-size:11px;padding:4px 8px;background:var(--green-bg);color:var(--green-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+<span style="font-size:12px;padding:4px 8px;background:var(--green-bg);color:var(--green-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
 ${PAGE_ICONS[page]} ${PAGE_LABELS[page].split(' (')[0]}
 </span>
 `).join('')}
@@ -1346,7 +899,7 @@ ${denied.length > 0 ? `
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:6px">
 ${denied.map(page => `
-<span style="font-size:11px;padding:4px 8px;background:var(--red-bg);color:var(--red-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+<span style="font-size:12px;padding:4px 8px;background:var(--red-bg);color:var(--red-text);border-radius:6px;display:inline-flex;align-items:center;gap:4px">
 ${PAGE_ICONS[page]} ${PAGE_LABELS[page].split(' (')[0]}
 </span>
 `).join('')}
@@ -1406,7 +959,7 @@ let hasMore = true;
 let quoteProjectMap = {};
 
 async function loadActivityLog(append = false) {
-const filterAction = document.getElementById('filterAction').value;
+const filterAction = document.getElementById('filterAction')?.value || 'LOGIN';
 const filterPeriod = document.getElementById('filterPeriod').value;
 
 let query = supabase.from('audit_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
@@ -1473,6 +1026,20 @@ currentOffset = allLogs.length;
 hasMore = count > currentOffset;
 
 countEl.textContent = `${count} ${count === 1 ? 'activity' : 'activities'} found`;
+const activeSet=new Set(allLogs.map(l=>l.user_email).filter(Boolean));
+const periodValue=document.getElementById('filterPeriod')?.value || '30';
+const periodDays=periodValue==='all' ? null : parseInt(periodValue,10);
+const periodCutoff=periodDays===null ? null : Date.now()-periodDays*86400000;
+const newSet=new Set(allProfiles.filter(p=>{
+if(!p.created_at)return false;
+const created=new Date(p.created_at).getTime();
+return periodCutoff===null ? true : created>=periodCutoff;
+}).map(p=>p.email));
+const inactiveCount=allProfiles.filter(p=>!getUserStatus(p).active).length;
+document.getElementById('activityTotal')?.replaceChildren(document.createTextNode(String(count||0)));
+document.getElementById('activityActive')?.replaceChildren(document.createTextNode(String(activeSet.size)));
+document.getElementById('activityNew')?.replaceChildren(document.createTextNode(String(newSet.size)));
+document.getElementById('activityInactive')?.replaceChildren(document.createTextNode(String(inactiveCount)));
 loadMoreBtn.style.display = hasMore ? 'block' : 'none';
 
 // Fetch project names for QUOTE_VOTED / QUOTE_COMMENTED logs
@@ -1512,12 +1079,12 @@ const list = document.getElementById('activityList');
 const logQ = (document.getElementById('logSearch')?.value || '').trim().toLowerCase();
 
 const filteredLogs = logQ
-? allLogs.filter(log =>
+? allLogs.filter(log => log.action === 'LOGIN' &&
 (log.user_name||'').toLowerCase().includes(logQ) ||
 (log.user_email||'').toLowerCase().includes(logQ) ||
 (log.action||'').toLowerCase().includes(logQ)
 )
-: allLogs;
+: allLogs.filter(log => log.action === 'LOGIN');
 
 if (!filteredLogs.length) {
 list.innerHTML = '<div class="log-empty">No user activity yet</div>';
@@ -1612,7 +1179,7 @@ ${roleCap ? `<span class="log-role-badge ${badgeCls}">${roleCap}</span>` : ''}
 <div class="log-action-cell">
 <div class="log-action-dot ${dotCls}"></div>
 <div>
-<div class="log-action-label">${label}</div>
+<div class="log-action-label"><span class="activity-login-pill">LOGIN</span></div>
 ${sub ? `<div class="log-action-sub">${sub}</div>` : ''}
 </div>
 </div>
@@ -1736,11 +1303,10 @@ const listEl = document.getElementById('inactiveList');
 listEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Loading…</div>';
 
 try {
-// Get all non-admin profiles
+// Use real login timestamps. Do not derive inactivity from audit logs.
 const { data: profiles } = await supabase
 .from('profiles')
 .select('id, email, full_name, role, last_sign_in_at')
-.neq('role', 'admin')
 .order('role').order('full_name');
 
 if (!profiles || !profiles.length) {
@@ -1785,11 +1351,11 @@ return `
 <div class="log-user-avatar ${avCls}" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${ini}</div>
 <div style="flex:1;min-width:0">
 <div style="font-size:13px;font-weight:500;color:var(--text)">${displayName}</div>
-<div style="font-size:11px;color:var(--muted)">${p.email}</div>
+<div style="font-size:12px;color:var(--muted)">${p.email}</div>
 </div>
 <div style="text-align:right;flex-shrink:0">
 ${roleCap ? `<div><span class="log-role-badge ${badgeCls}">${roleCap}</span></div>` : ''}
-<div style="font-size:11px;margin-top:3px;${neverActive ? 'color:var(--red)' : 'color:var(--muted)'}">
+<div style="font-size:12px;margin-top:3px;${neverActive ? 'color:var(--red)' : 'color:var(--muted)'}">
 ${neverActive ? '⚠️ Never active' : `Last seen: ${last}`}
 </div>
 </div>
@@ -1806,6 +1372,26 @@ ${rows}`;
 console.error('Inactive users error:', e);
 listEl.innerHTML = '<div style="text-align:center;color:var(--red);font-size:13px;padding:20px">Failed to load</div>';
 }
+};
+
+// Resend the real invitation email for an existing user.
+window.sendExistingUserInvite = async function(uid){
+const p=allProfiles.find(x=>x.id===uid);
+if(!p?.email){showToast('User email is missing',true);return;}
+if(!confirm(`Send an invitation email to ${p.email}?`)) return;
+try{
+const {data:{session:s2}}=await supabase.auth.refreshSession();
+if(!s2){showToast('Session expired. Please log in again.',true);return;}
+const res=await fetch('/api/send-invite',{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':`Bearer ${s2.access_token}`},
+body:JSON.stringify({email:p.email,full_name:p.full_name||p.email.split('@')[0],role:p.role||'tenant',unit:p.unit||null,skipEmail:false,resend:true})
+});
+const result=await res.json().catch(()=>({}));
+if(!res.ok) throw new Error(result.error||result.message||'Failed to send invitation email');
+await writeAuditLog({user_id:user.id,user_name:user.user_metadata?.full_name||user.email,user_email:user.email,action:'user_invited',details:{invited_email:p.email,invited_name:p.full_name,role:p.role,unit:p.unit,resend:true}});
+showToast(`Invitation email sent to ${p.email} ✓`);
+}catch(e){showToast(e.message||'Failed to send invitation email',true);}
 };
 
 // Invite modal
@@ -1981,7 +1567,7 @@ document.getElementById('topUsersList').innerHTML = sortedUsers.map(([email, cou
 const pct = Math.round(count / maxU * 100);
 const prof = allProfiles.find(p => p.email === email);
 const name = prof?.full_name || email.split('@')[0];
-const medal = i < 3 ? medals[i] : `<span style="color:var(--muted);font-size:11px;width:18px;display:inline-block;text-align:center">${i+1}</span>`;
+const medal = i < 3 ? medals[i] : `<span style="color:var(--muted);font-size:12px;width:18px;display:inline-block;text-align:center">${i+1}</span>`;
 return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
 <span style="font-size:16px;width:24px;text-align:center">${medal}</span>
 <div style="flex:1;min-width:0">
@@ -2010,7 +1596,7 @@ return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;borde
 <div style="flex:1;min-width:0">
 <div style="display:flex;justify-content:space-between;margin-bottom:4px">
 <span style="font-size:12px;font-weight:500">${label}</span>
-<span style="font-size:11px;color:var(--muted)">${count} (${pct}%)</span>
+<span style="font-size:12px;color:var(--muted)">${count} (${pct}%)</span>
 </div>
 <div style="height:6px;background:var(--border-light);border-radius:3px;overflow:hidden">
 <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.8s ease"></div>
@@ -2043,9 +1629,9 @@ const h = Math.max(2, (count / max) * 150);
 const day = new Date(date).getDate();
 const isToday = date === new Date().toISOString().slice(0,10);
 return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0">
-<div style="font-size:9px;color:var(--muted);margin-bottom:2px">${count || ''}</div>
+<div style="font-size:12px;color:var(--muted);margin-bottom:2px">${count || ''}</div>
 <div style="width:80%;height:${h}px;background:${isToday ? 'linear-gradient(180deg,var(--blue-600),var(--blue-400))' : 'linear-gradient(180deg,#93c5fd,#dbeafe)'};border-radius:3px 3px 0 0;transition:height 0.6s ease"></div>
-<div style="font-size:8px;color:var(--muted);margin-top:3px">${day}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:3px">${day}</div>
 </div>`;
 }).join('')}
 </div>`;
@@ -2058,10 +1644,10 @@ const colors = ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#eff6ff','#f0
 container.innerHTML = entries.map(([name, count], i) => {
 const pct = Math.round(count / max * 100);
 return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
-<span style="font-size:11px;font-weight:500;width:80px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${name}</span>
+<span style="font-size:12px;font-weight:500;width:80px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${name}</span>
 <div style="flex:1;height:18px;background:var(--border-light);border-radius:4px;overflow:hidden">
 <div style="height:100%;width:${pct}%;background:${colors[i] || colors[0]};border-radius:4px;transition:width 0.8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px">
-<span style="font-size:9px;font-weight:600;color:${i < 3 ? '#fff' : 'var(--text)'}">${count}</span>
+<span style="font-size:12px;font-weight:600;color:${i < 3 ? '#fff' : 'var(--text)'}">${count}</span>
 </div>
 </div>
 </div>`;
