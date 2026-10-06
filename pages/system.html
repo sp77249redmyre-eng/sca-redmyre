@@ -487,6 +487,21 @@
 @media (prefers-reduced-motion: reduce) {
   .system-console .sc-door.is-open { animation: none; background: rgba(255,23,68,.32); border-color: #FF1744; box-shadow: 0 0 20px 2px rgba(255,23,68,.7); }
 }
+
+/* Open-hours Lock warning dialog (replaces the small browser confirm) */
+.dw-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.78); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dw-box { width: 100%; max-width: 560px; box-sizing: border-box; background: #1a0508; border: 4px solid #FF1744; border-radius: 14px; padding: 26px 24px 22px; text-align: center; box-shadow: 0 0 40px 6px rgba(255,23,68,.65); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+.dw-icon { font-size: 52px; line-height: 1; margin-bottom: 6px; }
+.dw-title { font-size: 30px; font-weight: 900; letter-spacing: .04em; color: #FF1744; text-shadow: 0 0 14px rgba(255,23,68,.8); text-transform: uppercase; }
+.dw-door { font-size: 24px; font-weight: 800; color: #ffffff; margin: 14px 0 6px; }
+.dw-text { font-size: 20px; font-weight: 700; color: #ffd6dd; line-height: 1.4; margin: 6px 0 0; }
+.dw-text strong { color: #FF1744; font-weight: 900; }
+.dw-actions { display: flex; gap: 12px; margin-top: 24px; }
+.dw-btn { flex: 1; min-height: 56px; font-size: 20px; font-weight: 800; border-radius: 10px; cursor: pointer; border: 3px solid transparent; padding: 10px 12px; }
+.dw-cancel { background: #0d6efd; color: #fff; border-color: #6ea8fe; }
+.dw-lock { background: transparent; color: #FF1744; border-color: #FF1744; }
+.dw-btn:focus-visible { outline: 4px solid #fff; outline-offset: 2px; }
+@media (max-width: 480px) { .dw-title { font-size: 24px; } .dw-door { font-size: 20px; } .dw-text { font-size: 17px; } .dw-actions { flex-direction: column-reverse; } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -1663,10 +1678,43 @@ async function pollDoorCommand(id, cmdId) {
   }
   DOOR_EXTRA[id] = 'No response from Door Daemon'; renderDoorNote(id);
 }
+// Big red warning shown before Locking a door during its Integriti open hours. Resolves true only for "Lock anyway".
+function showOpenHoursLockWarning(id, name) {
+  return new Promise(resolve => {
+    const prevFocus = document.activeElement;
+    const ov = document.createElement('div');
+    ov.className = 'dw-overlay';
+    ov.setAttribute('role', 'alertdialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-labelledby', 'dw-title');
+    const box = document.createElement('div'); box.className = 'dw-box';
+    const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
+    box.appendChild(mk('div', 'dw-icon', '\u26A0'));
+    const title = mk('div', 'dw-title', 'Warning \u2013 Operating hours'); title.id = 'dw-title'; box.appendChild(title);
+    box.appendChild(mk('div', 'dw-door', name + ' (' + id + ')'));
+    const t1 = mk('div', 'dw-text'); t1.appendChild(document.createTextNode('This door must stay ')); t1.appendChild(mk('strong', '', 'UNLOCKED')); t1.appendChild(document.createTextNode(' right now.')); box.appendChild(t1);
+    box.appendChild(mk('div', 'dw-text', 'Locking it may stop people from getting in.'));
+    const act = mk('div', 'dw-actions');
+    const cancel = mk('button', 'dw-btn dw-cancel', 'Cancel'); cancel.type = 'button';
+    const lock = mk('button', 'dw-btn dw-lock', 'Lock anyway'); lock.type = 'button';
+    act.appendChild(lock); act.appendChild(cancel); box.appendChild(act);
+    ov.appendChild(box); document.body.appendChild(ov);
+    const done = v => { document.removeEventListener('keydown', onKey, true); ov.remove(); try { prevFocus && prevFocus.focus(); } catch (e) {} resolve(v); };
+    const onKey = ev => {
+      if (ev.key === 'Escape') { ev.preventDefault(); done(false); }
+      else if (ev.key === 'Tab') { ev.preventDefault(); (document.activeElement === cancel ? lock : cancel).focus(); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    cancel.addEventListener('click', () => done(false));
+    lock.addEventListener('click', () => done(true));
+    ov.addEventListener('click', ev => { if (ev.target === ov) done(false); });
+    cancel.focus();     // default = Cancel, so pressing Enter or Space never locks the door
+  });
+}
 async function sendDoorCommand(id, action) {
   const name = (document.querySelector('#door-' + id + ' .sc-door-name') || {}).textContent || id;
-  if (action === 'unlock' && !confirm('Unlock ' + id + ' – ' + name + '?')) return;
-  if (action === 'lock' && isOpenHoursSydney(id) !== false && !confirm('Operating hours: ' + name + ' (' + id + ') is meant to be unlocked right now.\n\nLock it anyway?')) return;
+  if (!confirm((action === 'unlock' ? 'Unlock ' : 'Lock ') + id + ' – ' + name + '?')) return;   // basic confirm for BOTH Unlock and Lock
+  if (action === 'lock' && isOpenHoursSydney(id) !== false && !(await showOpenHoursLockWarning(id, name))) return;
   doorBusy[id] = true; DOOR_EXTRA[id] = 'Sending…'; renderDoorNote(id); updateDoorButtons();
   try {
     const { data, error } = await supabase.rpc('request_door_command', { p_door_id: id, p_action: action });
