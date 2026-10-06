@@ -577,9 +577,9 @@
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D1" aria-label="D1 auto-lock seconds">
+            <input class="sc-input" type="number" value="60" min="30" max="300" step="10" data-door-input="D1" aria-label="D1 auto-lock seconds" disabled>
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" data-door-save="D1">Save</button>
+            <button class="sc-btn" data-door-save="D1" disabled>Save</button>
           </div>
         </div>
 
@@ -593,9 +593,9 @@
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D2" aria-label="D2 auto-lock seconds">
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D2" aria-label="D2 auto-lock seconds" disabled>
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" data-door-save="D2">Save</button>
+            <button class="sc-btn" data-door-save="D2" disabled>Save</button>
           </div>
         </div>
 
@@ -609,9 +609,9 @@
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds">
+            <input class="sc-input" type="number" value="30" min="30" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds" disabled>
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" data-door-save="D3">Save</button>
+            <button class="sc-btn" data-door-save="D3" disabled>Save</button>
           </div>
         </div>
 
@@ -625,9 +625,9 @@
           </div>
           <div class="sc-auto">
             <span class="sc-auto-label">Auto-lock</span>
-            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D5" aria-label="D5 auto-lock seconds">
+            <input class="sc-input" type="number" value="180" min="30" max="300" step="10" data-door-input="D5" aria-label="D5 auto-lock seconds" disabled>
             <span class="sc-unit">sec</span>
-            <button class="sc-btn" data-door-save="D5">Save</button>
+            <button class="sc-btn" data-door-save="D5" disabled>Save</button>
           </div>
         </div>
 
@@ -1613,7 +1613,10 @@ function isOpenHoursSydney(id, when) {
     const g = t => (parts.find(p => p.type === t) || {}).value;
     const wd = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[g('weekday')];
     if (wd === undefined) return null;
-    const sec = Number(g('hour')) * 3600 + Number(g('minute')) * 60 + Number(g('second'));
+    let hh = Number(g('hour'));
+    const dp = g('dayPeriod');                       // some browsers ignore hourCycle and return 12-hour clock + AM/PM
+    if (dp) hh = (hh % 12) + (/^p/i.test(dp) ? 12 : 0); else if (hh === 24) hh = 0;
+    const sec = hh * 3600 + Number(g('minute')) * 60 + Number(g('second'));
     if (!Number.isFinite(sec)) return null;
     const win = (DOOR_OPEN_HOURS[id] || {})[wd];
     if (!win) return false;
@@ -1661,6 +1664,7 @@ async function refreshDoorExtras() {
     if (!s.error) (s.data || []).forEach(x => {
       const inp = document.querySelector('[data-door-input="' + x.door_id + '"]');
       if (inp && !inp.dataset.dirty && document.activeElement !== inp) inp.value = x.autolock_seconds;
+      if (inp) { inp.disabled = false; const sv = document.querySelector('[data-door-save="' + x.door_id + '"]'); if (sv) sv.disabled = false; }   // enabled only after the REAL value is loaded
     });
     updateDoorButtons();
   } catch (e) { /* keep last notes */ }
@@ -1731,6 +1735,7 @@ async function sendDoorCommand(id, action) {
 }
 async function saveDoorAutolock(id) {
   const inp = document.querySelector('[data-door-input="' + id + '"]');
+  if (!inp || inp.disabled) return;
   const v = parseInt(inp && inp.value, 10);
   if (!Number.isInteger(v) || v < 30 || v > 300) { DOOR_EXTRA[id] = 'Auto-lock must be 30–300 sec'; renderDoorNote(id); return; }
   const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
