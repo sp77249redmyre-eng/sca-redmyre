@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { user_id, new_name, new_unit, new_email, role } = req.body;
+  const { user_id, new_name, new_unit, new_email, new_phone, role } = req.body;
 
   if (!user_id) {
     return res.status(400).json({ error: 'Missing user_id' });
@@ -32,6 +32,7 @@ module.exports = async (req, res) => {
   const cleanName = (new_name || '').trim() || null;
   const cleanUnit = (new_unit || '').trim() || null;
   const cleanEmail = (new_email || '').toLowerCase().trim() || null;
+  const cleanPhone = (new_phone || '').trim() || null;
 
   if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     return res.status(400).json({ error: 'Invalid email format' });
@@ -84,7 +85,7 @@ module.exports = async (req, res) => {
     // 1. 변경 대상 사용자의 현재 정보 조회
     const { data: targetProfile, error: targetErr } = await supabaseAdmin
       .from('profiles')
-      .select('email, full_name, unit, role')
+      .select('email, full_name, unit, role, phone')
       .eq('id', user_id)
       .maybeSingle();
 
@@ -96,12 +97,14 @@ module.exports = async (req, res) => {
     const oldEmail = targetProfile.email?.toLowerCase() || null;
     const oldName = targetProfile.full_name || null;
     const oldUnit = targetProfile.unit || null;
+    const oldPhone = targetProfile.phone || null;
     const userRole = role || targetProfile.role;
 
     // 변경 여부 체크
     const nameChanged = cleanName !== null && cleanName !== oldName;
     const unitChanged = cleanUnit !== oldUnit;
     const emailChanged = cleanEmail !== null && cleanEmail !== oldEmail;
+    const phoneChanged = cleanPhone !== oldPhone;
 
     // 2. 새 이메일 중복 검증
     if (emailChanged) {
@@ -153,6 +156,7 @@ module.exports = async (req, res) => {
     if (nameChanged) profileUpdate.full_name = cleanName;
     if (unitChanged) profileUpdate.unit = cleanUnit;
     if (emailChanged) profileUpdate.email = cleanEmail;
+    if (phoneChanged) profileUpdate.phone = cleanPhone;
 
     if (Object.keys(profileUpdate).length > 0) {
       const { error: profileUpdateErr } = await supabaseAdmin
@@ -332,6 +336,7 @@ module.exports = async (req, res) => {
         name_changed: nameChanged,
         unit_changed: unitChanged,
         email_changed: emailChanged,
+        phone_changed: phoneChanged,
         old_email: oldEmail,
         new_email: emailChanged ? cleanEmail : null,
         old_unit: oldUnit,
