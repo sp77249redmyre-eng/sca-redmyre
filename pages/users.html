@@ -407,6 +407,37 @@ html,body,.main{max-width:100%;overflow-x:hidden!important}
 .users-console .role-badge{font-size:15px!important;padding:6px 10px!important}
 .users-console .row-action{height:36px!important;padding:0 11px!important;font-size:14px!important}
 
+
+/* ===== USER DETAIL + STATISTICS TYPOGRAPHY SCALE ===== */
+/* Font sizes only. Card/panel/chart dimensions intentionally unchanged. */
+.users-console .detail-name{font-size:40px!important}
+.users-console .detail-email{font-size:26px!important}
+.users-console .detail-meta{font-size:26px!important}
+.users-console .detail-title{font-size:30px!important}
+.users-console .detail-field label{font-size:26px!important}
+.users-console .detail-field div{font-size:26px!important}
+.users-console .detail-top .role-badge,.users-console .detail-profile .role-badge{font-size:30px!important}
+
+.users-console #tab-statistics .ux-tab-title{font-size:48px!important}
+.users-console #tab-statistics .ux-tab-sub{font-size:26px!important}
+.users-console #tab-statistics #statsPeriod{font-size:26px!important}
+.users-console #tab-statistics .stats-num{font-size:56px!important}
+.users-console #tab-statistics .stats-label{font-size:24px!important}
+.users-console #tab-statistics .stats-trend{font-size:24px!important}
+.users-console #tab-statistics .chart-title{font-size:34px!important}
+.users-console #tab-statistics .chart-legend{font-size:26px!important}
+.users-console #tab-statistics .donut-legend-row{font-size:24px!important}
+.users-console #tab-statistics .donut-legend-row strong{font-size:32px!important}
+.users-console #tab-statistics .donut-legend-row em{font-size:24px!important}
+.users-console #tab-statistics .donut-svg text:first-of-type{font-size:56px!important}
+.users-console #tab-statistics .donut-svg text:last-of-type{font-size:24px!important}
+.users-console #tab-statistics .page-bar-row{font-size:24px!important}
+.users-console #tab-statistics .page-bar-row strong{font-size:24px!important}
+.users-console #tab-statistics .page-change{font-size:22px!important}
+.users-console #tab-statistics .role-bar-row{font-size:24px!important}
+.users-console #tab-statistics .role-bar-row strong{font-size:24px!important}
+.users-console #tab-statistics .role-bar-row em{font-size:24px!important}
+.users-console #tab-statistics .stats-svg text{font-size:22px!important}
 </style>
 </head>
 <body>
@@ -792,8 +823,16 @@ return [...fixed, ...rest];
 }
 
 const ACTIVE_WINDOW_DAYS = 30;
+let lastActivityMap = {};
+function getLatestUserActivity(p){
+const authTs=p.last_sign_in_at ? new Date(p.last_sign_in_at).getTime() : NaN;
+const activityRaw=lastActivityMap[(p.email||'').trim().toLowerCase()];
+const activityTs=activityRaw ? new Date(activityRaw).getTime() : NaN;
+const candidates=[authTs,activityTs].filter(Number.isFinite);
+return candidates.length ? Math.max(...candidates) : NaN;
+}
 function getUserStatus(p){
-const ts=p.last_sign_in_at ? new Date(p.last_sign_in_at).getTime() : NaN;
+const ts=getLatestUserActivity(p);
 if(!Number.isFinite(ts)) return {label:'Never',active:false,never:true};
 const age=Date.now()-ts;
 if(age>=0 && age<=ACTIVE_WINDOW_DAYS*86400000) return {label:'Active',active:true,never:false};
@@ -821,7 +860,8 @@ const renderUserRow=p=>{
 const id=esc(p.id),name=esc(p.full_name||p.email?.split('@')[0]||'—'),email=esc(p.email||'—'),unit=esc(p.unit||'—');
 const status=getUserStatus(p);
 const statusColor=status.active?'#43e67f':'#ffb52e';
-const lastLogin=p.last_sign_in_at?new Date(p.last_sign_in_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
+const latestActivity=getLatestUserActivity(p);
+const lastLogin=Number.isFinite(latestActivity)?new Date(latestActivity).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
 const roleKey=p.role||'tenant';
 return `<div class="user-item" data-user-id="${id}" onclick="selectUser('${safeAttr(p.id)}')"><div class="unit-cell">${unit}</div><div class="person"><div class="avatar av-${roleKey}" style="color:${ROLE_COLORS[roleKey].text};background:${ROLE_COLORS[roleKey].background};border-color:${ROLE_COLORS[roleKey].border}">${esc(ini(p))}</div><div style="min-width:0"><div class="person-name">${name}</div><div class="person-email">${email}</div></div></div><div><span class="role-badge ${roleClass(p.role)}" style="${roleStyle(p.role)}">${roleLabel(p.role)}</span></div><div class="status"><span class="dot" style="background:${statusColor}"></span>${status.label}</div><div class="last-login">${lastLogin}</div><div class="row-actions"><button class="row-action" onclick="event.stopPropagation();selectUser('${safeAttr(p.id)}')">View</button><button class="row-action" onclick="event.stopPropagation();openEditProfile('${safeAttr(p.id)}','${safeAttr(p.full_name||'')}','${safeAttr(p.email||'')}','${safeAttr(p.unit||'')}')">Edit</button></div></div>`;
 };
@@ -890,7 +930,8 @@ const ini=(p.full_name||p.email||'U').split(' ').map(x=>x[0]).join('').slice(0,2
 const safe=(s)=>String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 const status=getUserStatus(p);
 const statusColor=status.active?'#43e67f':'#ffb52e';
-const lastLogin=p.last_sign_in_at?new Date(p.last_sign_in_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
+const latestActivity=getLatestUserActivity(p);
+const lastLogin=Number.isFinite(latestActivity)?new Date(latestActivity).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
 document.getElementById('userDetail').innerHTML=`<div class="detail-top"><div class="detail-meta"><span style="border:1px solid #176078;border-radius:5px;padding:4px 7px;color:#b9e9f1">${p.unit?'Unit '+p.unit:'External'}</span><span style="color:${statusColor}">● ${status.label}</span><span>Last login ${lastLogin}</span></div><div class="detail-profile"><div class="detail-avatar av-${p.role||'tenant'}" style="${roleStyle(p.role)}">${ini}</div><div><div class="detail-name">${p.full_name||p.email||'—'}</div><div class="detail-email">${p.email||'—'}</div></div><span class="role-badge ${roleClass(p.role)}" style="margin-left:auto">${role}</span></div><div class="detail-actions"><button class="detail-btn" onclick="openEditProfile('${safe(p.id)}','${safe(p.full_name||'')}','${safe(p.email||'')}','${safe(p.unit||'')}')">✎ Edit Profile</button><button class="detail-btn" onclick="openSetPassword('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">♙ Set Password</button><button class="detail-btn danger" onclick="removeUser('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">▣ Remove User</button></div></div><div class="detail-section"><div class="detail-title">User Information</div><div class="detail-grid"><div class="detail-field"><label>Full Name</label><div>${p.full_name||'—'}</div></div><div class="detail-field"><label>Email</label><div>${p.email||'—'}</div></div><div class="detail-field"><label>Phone</label><div>${p.phone||'—'}</div></div><div class="detail-field"><label>Role</label><div>${role}</div></div><div class="detail-field"><label>Unit</label><div>${p.unit||'—'}</div></div><div class="detail-field"><label>Account Status</label><div><span class="dot" style="display:inline-block;margin-right:5px;background:${statusColor}"></span>${status.label}</div></div></div></div><div class="detail-section"><div class="detail-title">Quick Actions</div><div class="quick-actions">${p.setup_complete===false?`<button class="detail-btn" onclick="sendExistingUserInvite('${safe(p.id)}')">✉ Resend Invite Email</button>`:`<button class="detail-btn" onclick="openSetPassword('${safe(p.id)}','${safe(p.full_name||p.email||'')}')">♙ Reset Password</button>`}<button class="detail-btn" onclick="document.querySelector('[data-tab=activity]').click()">◷ View Activity Log</button></div></div>`;
 };
 
@@ -958,6 +999,20 @@ document.getElementById('userRoleFilter').addEventListener('change', filterAndRe
 async function loadUsers() {
 const { data:profiles } = await supabase.from('profiles').select('*');
 if (!profiles) return;
+
+const { data:activityLogs } = await supabase
+.from('audit_logs')
+.select('user_email,created_at')
+.in('action',['LOGIN','PAGE_ENTER'])
+.order('created_at',{ascending:false})
+.limit(3000);
+
+const activityMap={};
+(activityLogs||[]).forEach(log=>{
+const email=(log.user_email||'').trim().toLowerCase();
+if(email && !activityMap[email]) activityMap[email]=log.created_at;
+});
+lastActivityMap=activityMap;
 
 // 정렬: admin → committee → 나머지 이름 알파벳순
 const roleOrder = { admin:1, committee:2 };
@@ -1560,7 +1615,7 @@ renderActivityTable();
 
 function dateGroup(d){const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const yesterday=new Date(today);yesterday.setDate(today.getDate()-1);const day=new Date(d.getFullYear(),d.getMonth(),d.getDate());if(day.getTime()===today.getTime())return 'Today';if(day.getTime()===yesterday.getTime())return 'Yesterday';return day.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});}
 
-function renderActivityTable(){const list=document.getElementById('activityList');const logQ=(document.getElementById('logSearch')?.value||'').trim().toLowerCase();const filteredLogs=logQ?allLogs.filter(log=>(log.user_name||'').toLowerCase().includes(logQ)||(log.user_email||'').toLowerCase().includes(logQ)||(log.action||'').toLowerCase().includes(logQ)):allLogs;if(!filteredLogs.length){list.innerHTML='<div class="log-empty">No user activity yet</div>';return;}const ACTION_CONFIG={PAGE_ENTER:{label:'PAGE VIEW',sub:log=>getPageName(log.details?.page||log.page||log.record_id||''),priority:'low'},LOGIN:{label:'LOGIN',sub:()=>'',priority:'medium'}};const ROLE_BADGE_CLASS={admin:'log-role-admin',committee:'log-role-committee',observer:'log-role-observer',owner:'log-role-owner',tenant:'log-role-tenant'};const ROLE_AVATAR_CLASS={admin:'log-av-admin',committee:'log-av-committee',observer:'log-av-observer',owner:'log-av-owner',tenant:'log-av-tenant'};const DOT_CLASS={high:'dot-high',medium:'dot-medium',low:'dot-low'};function formatAbsTime(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:false});}let html='<table class="log-table"><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Unit</th><th>Activity</th></tr></thead><tbody>';let lastGroup=null;filteredLogs.filter(log=>log.action==='LOGIN'||log.action==='PAGE_ENTER').forEach(log=>{const d=new Date(log.created_at),group=dateGroup(d);if(group!==lastGroup){html+=`<tr class="log-group-row"><td colspan="5" class="log-date-group">${group}</td></tr>`;lastGroup=group;}const name=log.user_name||log.user_email||'—',ini=(name||'U').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(),cfg=ACTION_CONFIG[log.action]||ACTION_CONFIG.LOGIN,sub=cfg.sub(log),role=log.user_role||'',roleCap=role?role.charAt(0).toUpperCase()+role.slice(1):'—',unit=allProfilesList.find(p=>p.email===log.user_email)?.unit||log.details?.unit||'—',av=ROLE_AVATAR_CLASS[role]||'log-av-default',badge=ROLE_BADGE_CLASS[role]||'log-role-default',dot=DOT_CLASS[cfg.priority]||'dot-low';html+=`<tr><td class="log-time" data-label="Time"><div class="log-time-ago">${formatTimeAgo(d)}</div><div class="log-time-abs">${formatAbsTime(d)}</div></td><td data-label="User"><div class="log-user-cell"><div class="log-user-avatar ${av}">${ini}</div><div class="log-user-name-wrap"><div class="log-user-name">${name}</div><div class="log-user-email">${log.user_email||'—'}</div></div></div></td><td data-label="Role"><span class="log-role-badge ${badge}">${roleCap}</span></td><td data-label="Unit" class="log-unit">${unit}</td><td data-label="Activity"><div class="log-action-cell"><span class="log-action-dot ${dot}"></span><span class="activity-login-pill ${log.action==='PAGE_ENTER'?'page-view':''}">${cfg.label}</span>${sub?`<span class="log-action-sub">${sub}</span>`:''}</div></td></tr>`;});html+='</tbody></table>';list.innerHTML=html;}
+function renderActivityTable(){const list=document.getElementById('activityList');const logQ=(document.getElementById('logSearch')?.value||'').trim().toLowerCase();const filteredLogs=logQ?allLogs.filter(log=>(log.user_name||'').toLowerCase().includes(logQ)||(log.user_email||'').toLowerCase().includes(logQ)||(log.action||'').toLowerCase().includes(logQ)):allLogs;if(!filteredLogs.length){list.innerHTML='<div class="log-empty">No user activity yet</div>';return;}function getPageName(p){if(!p)return '';const map={'/pages/quotes.html':'Quotes','/pages/works.html':'Works','/pages/reports.html':'Reports','/pages/complaints.html':'Requests','/pages/parking.html':'Parking','/pages/announcements.html':'Announcements','/pages/hvac.html':'HVAC','/pages/building.html':'Overview','/pages/users.html':'Users'};return map[p]||p.split('/').pop().replace('.html','');}const ACTION_CONFIG={PAGE_ENTER:{label:'PAGE VIEW',sub:log=>getPageName(log.details?.page||log.page||log.record_id||''),priority:'low'},LOGIN:{label:'LOGIN',sub:()=>'',priority:'medium'}};const ROLE_BADGE_CLASS={admin:'log-role-admin',committee:'log-role-committee',observer:'log-role-observer',owner:'log-role-owner',tenant:'log-role-tenant'};const ROLE_AVATAR_CLASS={admin:'log-av-admin',committee:'log-av-committee',observer:'log-av-observer',owner:'log-av-owner',tenant:'log-av-tenant'};const DOT_CLASS={high:'dot-high',medium:'dot-medium',low:'dot-low'};function formatAbsTime(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:false});}let html='<table class="log-table"><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Unit</th><th>Activity</th></tr></thead><tbody>';let lastGroup=null;filteredLogs.filter(log=>log.action==='LOGIN'||log.action==='PAGE_ENTER').forEach(log=>{const d=new Date(log.created_at),group=dateGroup(d);if(group!==lastGroup){html+=`<tr class="log-group-row"><td colspan="5" class="log-date-group">${group}</td></tr>`;lastGroup=group;}const name=log.user_name||log.user_email||'—',ini=(name||'U').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(),cfg=ACTION_CONFIG[log.action]||ACTION_CONFIG.LOGIN,sub=cfg.sub(log),role=log.user_role||'',roleCap=role?role.charAt(0).toUpperCase()+role.slice(1):'—',unit=allProfilesList.find(p=>p.email===log.user_email)?.unit||log.details?.unit||'—',av=ROLE_AVATAR_CLASS[role]||'log-av-default',badge=ROLE_BADGE_CLASS[role]||'log-role-default',dot=DOT_CLASS[cfg.priority]||'dot-low';html+=`<tr><td class="log-time" data-label="Time"><div class="log-time-ago">${formatTimeAgo(d)}</div><div class="log-time-abs">${formatAbsTime(d)}</div></td><td data-label="User"><div class="log-user-cell"><div class="log-user-avatar ${av}">${ini}</div><div class="log-user-name-wrap"><div class="log-user-name">${name}</div><div class="log-user-email">${log.user_email||'—'}</div></div></div></td><td data-label="Role"><span class="log-role-badge ${badge}">${roleCap}</span></td><td data-label="Unit" class="log-unit">${unit}</td><td data-label="Activity"><div class="log-action-cell"><span class="log-action-dot ${dot}"></span><span class="activity-login-pill ${log.action==='PAGE_ENTER'?'page-view':''}">${cfg.label}</span>${sub?`<span class="log-action-sub">${sub}</span>`:''}</div></td></tr>`;});html+='</tbody></table>';list.innerHTML=html;}
 
 window.clearLogsByDate = async () => {
 const dateVal = document.getElementById('logDeleteDate').value;
