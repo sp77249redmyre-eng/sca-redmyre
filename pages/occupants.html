@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -704,548 +704,292 @@
 }
 </style>
 
-<style id="occupants-console-style">
+<style id="occupants-redesign-v2-style">
 /* =========================================================
-   OCCUPANTS — DARK ADMIN CONSOLE REDESIGN
-   Visual/content layer only. Existing DB/storage/RPC behaviour
-   remains unchanged; layout/sidebar/topbar are supplied by layout.js.
+   OCCUPANTS V3 — APPROVED MOCKUP LAYOUT
+   Visual layer + rendering only. Existing data/storage paths preserved.
+   Sidebar/topbar remain owned by layout.js/style.css.
    ========================================================= */
-.content:has(.occupants-console) {
-  background: #030507 !important;
-  padding: 0 !important;
-  max-width: none !important;
-  min-height: calc(100vh - 60px);
+.content:has(.occupants-console-v2){
+  background:#03131d !important;
+  padding:0 !important;
+  max-width:none !important;
+  width:100% !important;
+  min-height:calc(100vh - 60px);
 }
-.occupants-console {
-  --oc-bg: #03131d;
-  --oc-panel: #071f2c;
-  --oc-panel-2: #092838;
-  --oc-panel-3: #062333;
-  --oc-line: #11465b;
-  --oc-line-2: #0b3547;
-  --oc-text: #f2fbff;
-  --oc-muted: #8ba9b8;
-  --oc-cyan: #19e8f1;
-  --oc-cyan-2: #0bcbd6;
-  --oc-green: #21e56b;
-  --oc-amber: #fbbf24;
-  --oc-red: #ff4650;
-  --oc-blue: #60a5fa;
-  --oc-purple: #c084fc;
-  --oc-role-green: #4ade80;
-  --oc-role-yellow: #fbbf24;
-  --oc-role-red: #fb7185;
-  width: 100%;
-  min-height: calc(100vh - 60px);
-  box-sizing: border-box;
-  padding: 18px 20px 36px;
-  color: var(--oc-text);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+.occupants-console-v2{
+  --ux-bg:#03131d;
+  --ux-surface:#071f2c;
+  --ux-surface2:#092838;
+  --ux-line:#11465b;
+  --ux-line2:#0b3547;
+  --ux-cyan:#19e8f1;
+  --ux-cyan2:#0bcbd6;
+  --ux-text:#f2fbff;
+  --ux-muted:#8ba9b8;
+  --ux-green:#21e56b;
+  --ux-blue:#60a5fa;
+  --ux-purple:#c084fc;
+  --ux-yellow:#fbbf24;
+  --ux-red:#fb7185;
+  width:100%; min-height:calc(100vh - 60px); box-sizing:border-box;
+  padding:22px 20px 32px;
+  color:var(--ux-text);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
   background:
-    radial-gradient(ellipse 75% 32% at 50% 0%, rgba(25,232,241,.07), transparent 68%),
-    repeating-linear-gradient(0deg, rgba(25,232,241,.025) 0, rgba(25,232,241,.025) 1px, transparent 1px, transparent 4px),
-    var(--oc-bg);
+    radial-gradient(ellipse 70% 28% at 50% 0%,rgba(25,232,241,.07),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(25,232,241,.022) 0,rgba(25,232,241,.022) 1px,transparent 1px,transparent 4px),
+    var(--ux-bg);
 }
-.occ-console * { box-sizing: border-box; }
-.occ-console button,
-.occ-console input,
-.occ-console select { font: inherit; }
+.occupants-console-v2 *{box-sizing:border-box}
+.occupants-console-v2 button,.occupants-console-v2 input,.occupants-console-v2 select{font:inherit}
 
-.occ-head { display:grid; grid-template-columns:minmax(250px, 1fr) minmax(360px, 1.15fr) auto; gap:12px; align-items:end; border-bottom:1px solid var(--oc-line); padding:4px 0 16px; }
-.occ-title-wrap { min-width:0; }
-.occ-title-row { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-.occ-page-title { font-family:Orbitron, Inter, sans-serif; font-size:28px; line-height:1.1; font-weight:700; letter-spacing:.12em; color:var(--oc-cyan); text-transform:uppercase; text-shadow:0 0 12px rgba(25,232,241,.45); }
-.occ-unit-total { font-family:JetBrains Mono, monospace; font-size:16px; color:#9EEBFF; letter-spacing:.06em; font-weight:700; }
-.occ-subtitle { margin-top:8px; font-family:JetBrains Mono, monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--oc-muted); }
-.occ-head-actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; }
-.occ-console-btn { min-height:42px; display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 15px; border-radius:6px; border:1px solid #176078; background:var(--oc-panel-3); color:var(--oc-text); cursor:pointer; font-size:13px; font-weight:700; letter-spacing:.05em; white-space:nowrap; }
-.occ-console-btn:hover { border-color:var(--oc-cyan); background:#15343C; color:#fff; box-shadow:0 0 14px rgba(25,232,241,.12); }
-.occ-console-btn.primary { background:rgba(25,232,241,.18); border-color:var(--oc-cyan); color:#61FAFF; box-shadow:0 0 12px rgba(25,232,241,.16); }
-.occ-console-btn.primary:hover { background:rgba(25,232,241,.26); }
-.occ-console-btn.bulk { background:rgba(25,232,241,.9); color:#001014; border-color:#19e8f1; }
-.occ-console-btn.bulk:hover { background:#63FBFF; box-shadow:0 0 18px rgba(25,232,241,.3); }
+.occ-v2-head{display:grid;grid-template-columns:minmax(320px,1fr) minmax(420px,1.35fr) auto;gap:12px;align-items:end;padding:2px 0 12px;border-bottom:1px solid var(--ux-line)}
+.occ-v2-title-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.occ-v2-title{font-family:Orbitron,Inter,sans-serif;font-size:30px;line-height:1;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--ux-cyan);text-shadow:0 0 10px rgba(25,232,241,.45)}
+.occ-v2-total{font:700 16px "JetBrains Mono",monospace;color:#c6fbff;letter-spacing:.05em}
+.occ-v2-sub{margin-top:7px;font:600 12px "JetBrains Mono",monospace;color:var(--ux-muted);letter-spacing:.10em;text-transform:uppercase}
+.occ-v2-search{position:relative;min-width:0}
+.occ-v2-search input{width:100%;height:48px;padding:0 46px 0 42px;border:1px solid var(--ux-line);border-radius:8px;background:#061b27;color:#fff;outline:none;font-size:14px}
+.occ-v2-search input::placeholder{color:#7592a0}
+.occ-v2-search input:focus{border-color:var(--ux-cyan);box-shadow:0 0 0 3px rgba(25,232,241,.08)}
+.occ-v2-search .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ux-cyan);font-size:18px}
+.occ-v2-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none;border:0;background:transparent;color:#87a3ad;cursor:pointer;font-size:16px}
+.occ-v2-actions{display:flex;gap:8px;align-items:center}
+.occ-v2-btn{height:48px;padding:0 16px;border:1px solid var(--ux-line);border-radius:8px;background:#072334;color:#dff5fa;font:700 13px "DM Sans",sans-serif;cursor:pointer;white-space:nowrap}
+.occ-v2-btn:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-btn.bulk{background:linear-gradient(135deg,var(--ux-cyan),#16d9e2);border-color:var(--ux-cyan);color:#02151c;box-shadow:0 7px 18px rgba(25,232,241,.12)}
+.occ-v2-btn.bulk:hover{color:#02151c}
 
-.occ-toolbar { display:grid; grid-template-columns:minmax(280px,1.35fr) auto; gap:10px; padding:14px 0 10px; align-items:center; }
-.occ-search { position:relative; min-width:0; }
-.occ-search input { width:100%; height:42px; padding:0 44px 0 42px; border:1px solid #176078; background:#061d2a; color:var(--oc-text); border-radius:7px; outline:none; font-size:14px; }
-.occ-search input::placeholder { color:#739190; }
-.occ-search input:focus { border-color:var(--oc-cyan); box-shadow:0 0 0 2px rgba(25,232,241,.08), 0 0 12px rgba(25,232,241,.12); }
-.occ-search .ti-search { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--oc-cyan); font-size:18px; }
-.occ-search-clear { position:absolute; right:10px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#6F9494; cursor:pointer; display:none; font-size:16px; }
-.occ-filterbar { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
-.occ-filterbar select { height:42px; min-width:150px; border:1px solid #176078; border-radius:7px; background:var(--oc-panel-3); color:var(--oc-text); padding:0 36px 0 12px; outline:none; font-size:13px; }
-.occ-no-vehicle { min-height:42px; padding:8px 12px; border:1px solid #176078; background:var(--oc-panel-3); color:#B8D2D1; border-radius:7px; cursor:pointer; font-size:12px; font-weight:700; }
-.occ-no-vehicle.active { border-color:var(--oc-red); background:rgba(255,70,80,.12); color:#FF8B8B; }
+.occ-v2-floor-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:14px 0 8px;border-bottom:1px solid var(--ux-line2)}
+.occ-v2-floor-tab{height:42px;padding:0 15px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#c9dce5;cursor:pointer;font:700 13px "JetBrains Mono",monospace;letter-spacing:.03em}
+.occ-v2-floor-tab:hover{border-color:var(--ux-cyan);color:#fff;background:#092a3b}
+.occ-v2-floor-tab.active{background:linear-gradient(135deg,var(--ux-cyan),#19dbe5);border-color:var(--ux-cyan);color:#02151c;box-shadow:0 0 18px rgba(25,232,241,.15)}
+.occ-v2-floor-tab .count{margin-left:6px;font-weight:600;opacity:.92}
 
-.occ-role-legend { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:3px 0 12px; }
-.occ-role-tag { display:inline-flex; align-items:center; gap:7px; min-height:33px; padding:7px 11px; border:1px solid var(--oc-line); background:#071014; border-radius:6px; color:#B8D2D1; font-size:12px; font-weight:700; }
-.occ-role-filter { cursor:pointer; font-family:inherit; }
-.occ-role-filter:hover { border-color:var(--oc-cyan); color:#fff; background:#0b3041; }
-.occ-role-filter.active { color:#fff; box-shadow:0 0 12px rgba(25,232,241,.12); }
-.occ-role-filter[data-role="owner"].active { border-color:#d97706; background:#3a2a08; color:#fbbf24; }
-.occ-role-filter[data-role="tenant"].active { border-color:#e11d48; background:#3a1220; color:#fb7185; }
-.occ-role-filter[data-role="committee"].active { border-color:#2563eb; background:#132a4a; color:#60a5fa; }
-.occ-role-filter[data-role="observer"].active { border-color:#16a34a; background:#0f2a1a; color:#4ade80; }
-.occ-role-filter[data-role="admin"].active { border-color:#9333ea; background:#2a1548; color:#c084fc; }
-.occ-role-dot { width:9px; height:9px; border-radius:50%; display:inline-block; box-shadow:0 0 6px currentColor; }
-.occ-role-dot.owner { color:#fbbf24; background:currentColor; }
-.occ-role-dot.tenant { color:#fb7185; background:currentColor; }
-.occ-role-dot.committee { color:#60a5fa; background:currentColor; }
-.occ-role-dot.observer { color:#4ade80; background:currentColor; }
-.occ-role-dot.admin { color:#c084fc; background:currentColor; }
+.occ-v2-role-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 0 12px}
+.occ-v2-role-label{margin-right:2px;color:#7595a2;font:700 12px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.05em}
+.occ-v2-role-chip{min-height:38px;padding:0 13px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#cfe1e8;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font:700 13px "DM Sans",sans-serif}
+.occ-v2-role-chip:hover{border-color:var(--ux-cyan);color:#fff}
+.occ-v2-role-chip.active{box-shadow:0 0 12px rgba(25,232,241,.08)}
+.occ-v2-role-dot{width:9px;height:9px;border-radius:50%;display:inline-block;box-shadow:0 0 7px currentColor}
+.occ-v2-role-chip.owner.active{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-role-chip.tenant.active{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-role-chip.committee.active{color:var(--ux-blue);border-color:#2563eb;background:#132a4a}
+.occ-v2-role-chip.observer.active{color:var(--ux-green);border-color:#16a34a;background:#0f2a1a}
+.occ-v2-role-chip.admin.active{color:var(--ux-purple);border-color:#9333ea;background:#2a1548}
+.occ-v2-role-chip.staff.active{color:#ff7b8b;border-color:#e11d48;background:#3a1220}
+.occ-v2-role-chip .occ-v2-role-dot.owner{color:var(--ux-yellow);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.tenant,.occ-v2-role-chip .occ-v2-role-dot.staff{color:var(--ux-red);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.committee{color:var(--ux-blue);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.observer{color:var(--ux-green);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.admin{color:var(--ux-purple);background:currentColor}
 
-.occ-floor-tabs { display:flex; gap:7px; overflow-x:auto; padding:2px 0 12px; scrollbar-width:thin; }
-.occ-floor-tab { flex:0 0 auto; height:38px; padding:0 14px; border:1px solid #2D6870; border-radius:6px; background:#0A171B; color:#B8D2D1; cursor:pointer; font-family:JetBrains Mono, monospace; font-size:12px; font-weight:700; }
-.occ-floor-tab:hover { border-color:var(--oc-cyan); color:#fff; background:#072334; }
-.occ-floor-tab.active { border-color:var(--oc-cyan); background:rgba(25,232,241,.17); color:#61FAFF; box-shadow:0 0 12px rgba(25,232,241,.16); }
-.occ-floor-tab .count { margin-left:5px; color:#7FA5A4; font-weight:500; }
-.occ-floor-tab.active .count { color:#C2FFFF; }
+.occ-v2-filter-strip{display:flex;justify-content:flex-end;gap:8px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
+.occ-v2-filter-strip select,.occ-v2-no-vehicle{height:42px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#dff2f7;padding:0 12px;font-size:13px;outline:none}
+.occ-v2-filter-strip select{min-width:150px}
+.occ-v2-no-vehicle{cursor:pointer;font-weight:700}
+.occ-v2-no-vehicle.active{border-color:#e11d48;background:#3a1220;color:#ff9ca4}
 
-.occ-main-grid { display:grid; grid-template-columns:minmax(330px,390px) minmax(0,1fr); gap:10px; min-height:0; }
-.occ-left-panel, .occ-detail-panel { border:1px solid var(--oc-line); border-radius:8px; background:var(--oc-panel); overflow:hidden; min-width:0; }
-.occ-left-panel { min-height:720px; display:flex; flex-direction:column; }
-.occ-list-head { display:grid; grid-template-columns:70px minmax(0,1fr) 58px 58px 22px; gap:8px; padding:12px 14px; border-bottom:1px solid var(--oc-line); background:#061d2a; color:#8FB5B4; font-family:JetBrains Mono, monospace; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
-.occ-list-scroll { overflow:auto; min-height:0; }
-.occ-unit-row { width:100%; display:grid; grid-template-columns:70px minmax(0,1fr) 58px 58px 22px; gap:8px; align-items:center; padding:13px 14px; border:0; border-bottom:1px solid rgba(24,52,58,.9); background:transparent; color:var(--oc-text); text-align:left; cursor:pointer; }
-.occ-unit-row:hover { background:#0C1519; }
-.occ-unit-row.selected { background:linear-gradient(90deg, rgba(25,232,241,.14), rgba(25,232,241,.04)); box-shadow:inset 3px 0 0 var(--oc-cyan); }
-.occ-unit-row.highlight-flash { animation: occRowFlash 2.8s ease; }
-@keyframes occRowFlash { 0% { background:rgba(33,229,107,.25); } 100% { background:inherit; } }
-.occ-row-unit { display:flex; flex-direction:column; gap:5px; min-width:0; }
-.occ-row-unit strong { font-family:JetBrains Mono, monospace; font-size:17px; color:#DFFBFF; letter-spacing:.04em; }
-.occ-row-badge { display:inline-flex; align-items:center; width:max-content; padding:3px 7px; border-radius:5px; border:1px solid currentColor; font-size:9px; font-weight:800; letter-spacing:.06em; }
-.occ-row-badge.owner { color:var(--oc-amber); background:rgba(251,191,36,.10); }
-.occ-row-badge.tenant { color:var(--oc-red); background:rgba(255,70,80,.08); }
-.occ-row-badge.none { color:#83A6A5; background:rgba(131,166,165,.06); }
-.occ-row-business { min-width:0; }
-.occ-row-business .primary { font-size:14px; line-height:1.35; font-weight:700; color:#f2fbff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.occ-row-business .secondary { margin-top:3px; font-size:12px; color:#7FA4A3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.occ-row-stat { display:flex; align-items:center; justify-content:center; gap:5px; font-family:JetBrains Mono, monospace; font-size:12px; color:#A5D8D8; }
-.occ-row-stat i { color:#76CFFF; font-size:15px; }
-.occ-row-stat.car i { color:#21e56b; }
-.occ-row-chevron { color:#4F7776; font-size:14px; text-align:right; }
+.occ-v2-result-line{padding:1px 0 9px;color:#7695a0;font:600 11px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.03em}
+.occ-v2-main{display:grid;grid-template-columns:minmax(360px,395px) minmax(0,1fr);gap:10px;align-items:stretch}
+.occ-v2-panel{min-width:0;border:1px solid var(--ux-line);border-radius:9px;background:linear-gradient(180deg,#061d2a,#051923);overflow:hidden}
+.occ-v2-left{min-height:680px;display:flex;flex-direction:column}
+.occ-v2-list-head{display:grid;grid-template-columns:62px minmax(0,1fr) 60px 62px 18px;gap:7px;padding:11px 12px;border-bottom:1px solid var(--ux-line);background:#041722;color:#7493a1;font:700 11px "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase}
+.occ-v2-list-scroll{overflow:auto;min-height:0;max-height:calc(100vh - 312px)}
+.occ-v2-unit-row{width:100%;display:grid;grid-template-columns:62px minmax(0,1fr) 60px 62px 18px;gap:7px;align-items:center;padding:12px;border:0;border-bottom:1px solid #0a3040;background:transparent;color:var(--ux-text);text-align:left;cursor:pointer}
+.occ-v2-unit-row:hover{background:#092938}
+.occ-v2-unit-row.selected{background:#0a3142;box-shadow:inset 3px 0 var(--ux-cyan)}
+.occ-v2-unit-row.highlight-flash{animation:occV2Flash 2.8s ease}
+@keyframes occV2Flash{0%{background:rgba(33,229,107,.24)}100%{background:transparent}}
+.occ-v2-unit-box{display:flex;flex-direction:column;gap:5px;min-width:0}
+.occ-v2-unit-code{font:700 17px "JetBrains Mono",monospace;color:#e7fbff;letter-spacing:.04em}
+.occ-v2-badge{width:max-content;padding:3px 7px;border-radius:5px;border:1px solid;font:800 9px "JetBrains Mono",monospace;letter-spacing:.06em}
+.occ-v2-badge.owner{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-badge.tenant{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-badge.committee{color:var(--ux-blue);border-color:#2563eb;background:#132a4a}
+.occ-v2-biz{min-width:0}
+.occ-v2-biz-primary{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.occ-v2-biz-secondary{margin-top:3px;font-size:12px;color:#80a2b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.occ-v2-stat{display:flex;justify-content:center;align-items:center;gap:5px;color:#b2d9e1;font:700 12px "JetBrains Mono",monospace}
+.occ-v2-stat i{color:#68cfff;font-size:15px}.occ-v2-stat.vehicle i{color:var(--ux-green)}
+.occ-v2-chevron{text-align:right;color:#4d7380;font-size:14px}
+.occ-v2-no-results{min-height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:30px;text-align:center;color:#7e9aa5}
+.occ-v2-clear-btn{height:42px;padding:0 16px;border:1px solid var(--ux-cyan);border-radius:7px;background:rgba(25,232,241,.12);color:var(--ux-cyan);font:700 13px "DM Sans",sans-serif;cursor:pointer}
 
-.occ-detail-scroll { max-height:calc(100vh - 250px); overflow:auto; padding:0; }
-.occ-detail-empty { min-height:720px; display:flex; align-items:center; justify-content:center; padding:40px; text-align:center; color:#73908F; font-family:JetBrains Mono, monospace; font-size:13px; }
-.occ-detail-top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--oc-line); background:#061d2a; position:sticky; top:0; z-index:3; }
-.occ-detail-heading { display:flex; align-items:center; gap:10px; min-width:0; flex-wrap:wrap; }
-.occ-detail-unit { font-family:JetBrains Mono, monospace; font-size:31px; font-weight:700; color:#DFFBFF; letter-spacing:.04em; }
-.occ-level-label { font-family:JetBrains Mono, monospace; font-size:13px; color:#8ba9b8; }
-.occ-detail-actions { display:flex; align-items:center; gap:7px; }
-.occ-mini-btn { min-height:38px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px; border-radius:6px; border:1px solid #176078; background:#072334; color:#f2fbff; cursor:pointer; font-size:12px; font-weight:700; }
-.occ-mini-btn:hover { border-color:var(--oc-cyan); color:#fff; }
-.occ-edit-top { background:rgba(25,232,241,.88); color:#001014; border-color:var(--oc-cyan); }
-.occ-edit-top:hover { background:#62FAFF; }
-.occ-private-lock { color:#FF8B8B; font-size:12px; font-family:JetBrains Mono, monospace; }
+.occ-v2-detail{min-height:680px;display:flex;flex-direction:column}
+.occ-v2-detail-scroll{overflow:auto;max-height:calc(100vh - 268px)}
+.occ-v2-detail-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ux-line);background:#051b27;position:sticky;top:0;z-index:4}
+.occ-v2-detail-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.occ-v2-detail-unit{font:700 31px "JetBrains Mono",monospace;color:#effcff;letter-spacing:.03em}
+.occ-v2-type-badge{padding:6px 10px;border-radius:7px;border:1px solid;font:800 12px "JetBrains Mono",monospace;letter-spacing:.05em}
+.occ-v2-type-badge.owner{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-type-badge.tenant{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-level{font:600 14px "JetBrains Mono",monospace;color:#9db6c0}
+.occ-v2-detail-actions{display:flex;gap:7px;flex-shrink:0}
+.occ-v2-mini{height:40px;padding:0 13px;border:1px solid var(--ux-line);border-radius:7px;background:#072334;color:#d9edf4;font:700 12px "DM Sans",sans-serif;cursor:pointer}
+.occ-v2-mini:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-mini.primary{background:linear-gradient(135deg,var(--ux-cyan),#18dbe5);border-color:var(--ux-cyan);color:#02151c}
 
-.occ-section { margin:10px; border:1px solid var(--oc-line); border-radius:8px; background:#051923; overflow:hidden; }
-.occ-section-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; border-bottom:1px solid var(--oc-line); }
-.occ-section-title { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; color:#f2fbff; }
-.occ-section-title .ico { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#072334; color:var(--oc-cyan); font-size:15px; }
-.occ-section-meta { font-family:JetBrains Mono, monospace; font-size:12px; color:#88ADAC; }
-.occ-section-body { padding:12px; }
+.occ-v2-section{margin:10px;border:1px solid var(--ux-line);border-radius:8px;background:#06141d;overflow:hidden}
+.occ-v2-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--ux-line)}
+.occ-v2-section-title{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;color:#fff}
+.occ-v2-section-icon{width:29px;height:29px;border-radius:6px;display:grid;place-items:center;background:#092838;color:var(--ux-cyan);font-size:15px}
+.occ-v2-section-count{font:700 12px "JetBrains Mono",monospace;color:#8eaab4}
+.occ-v2-section-body{padding:12px}
+.occ-v2-unit-business{border-color:#1a6170}
+.occ-v2-unit-grid{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 100px;gap:10px;align-items:end}
+.occ-v2-label{display:block;margin-bottom:5px;color:#6f919e;font:700 10px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.occ-v2-value{min-height:43px;display:flex;align-items:center;padding:8px 11px;border:1px solid #175066;border-radius:7px;background:#04131c;color:#fff;font-size:15px;font-weight:700;word-break:break-word}
+.occ-v2-value.mono{justify-content:center;font:700 14px "JetBrains Mono",monospace}
+.occ-v2-unit-contact{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px dashed #174657}
+.occ-v2-contact-label{color:#6f919e;font:700 10px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.occ-v2-contact-value{color:#f4fdff;font:700 15px "JetBrains Mono",monospace}
+.occ-v2-contact-note{color:#6e8d9a;font-size:11px}
+.occ-v2-existing{margin-top:8px;color:#bdd6df;font-size:13px}.occ-v2-existing strong{color:#fff}
 
-.occ-unit-business { border-color:var(--oc-line-2); }
-.occ-unit-business .occ-section-title .ico { color:var(--oc-cyan); }
-.occ-unit-business-grid { display:grid; grid-template-columns:minmax(0,1.35fr) 92px 92px 100px; gap:10px; align-items:end; }
-.occ-business-main { min-width:0; }
-.occ-label { display:block; margin-bottom:5px; font-family:JetBrains Mono, monospace; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#7EA7A5; }
-.occ-value-box { min-height:42px; display:flex; align-items:center; padding:8px 11px; border:1px solid #0b3547; border-radius:6px; background:#040A0D; color:#f2fbff; font-size:15px; font-weight:700; word-break:break-word; }
-.occ-value-box.small { font-family:JetBrains Mono, monospace; justify-content:center; font-size:14px; }
-.occ-unit-contact { margin-top:10px; padding-top:10px; border-top:1px dashed #21454B; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
-.occ-contact-value { color:#f2fbff; font-family:JetBrains Mono, monospace; font-size:15px; font-weight:700; }
-.occ-contact-note { color:#729393; font-size:11px; }
+.occ-v2-people-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.occ-v2-role-section.owner{border-color:rgba(251,191,36,.55);background:linear-gradient(180deg,rgba(251,191,36,.055),#06141d 30%)}
+.occ-v2-role-section.tenant{border-color:rgba(251,113,133,.55);background:linear-gradient(180deg,rgba(251,113,133,.055),#06141d 30%)}
+.occ-v2-role-section.staff{border-color:rgba(251,113,133,.55);background:linear-gradient(180deg,rgba(251,113,133,.045),#06141d 30%)}
+.occ-v2-role-section.committee{border-color:rgba(96,165,250,.58);background:linear-gradient(180deg,rgba(96,165,250,.055),#06141d 30%)}
+.occ-v2-role-section.owner .occ-v2-section-title{color:var(--ux-yellow)}
+.occ-v2-role-section.tenant .occ-v2-section-title,.occ-v2-role-section.staff .occ-v2-section-title{color:var(--ux-red)}
+.occ-v2-role-section.committee .occ-v2-section-title{color:var(--ux-blue)}
+.occ-v2-person-card{border:1px solid #114357;border-radius:7px;background:#06131b;padding:10px 11px}
+.occ-v2-person-card+.occ-v2-person-card{margin-top:8px}
+.occ-v2-person-top{display:flex;align-items:flex-start;gap:9px}
+.occ-v2-index{width:27px;height:27px;display:grid;place-items:center;flex:0 0 27px;border:1px solid #2a5a69;border-radius:6px;color:#d5eef4;font:700 12px "JetBrains Mono",monospace}
+.occ-v2-person-main{min-width:0;flex:1}.occ-v2-person-name{font-size:15px;font-weight:700;color:#fff;word-break:break-word}
+.occ-v2-person-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.occ-v2-person-line{display:flex;gap:7px;align-items:flex-start;margin-top:7px;color:#c9e2e8;font-size:13px;line-height:1.45;word-break:break-word}.occ-v2-person-line i{margin-top:2px;color:var(--ux-cyan);font-size:14px}
+.occ-v2-person-line a{color:#19e8f1!important;text-decoration:none}.occ-v2-person-line a:hover{text-decoration:underline}
+.occ-v2-person-empty{border:1px dashed #1f4e5c;border-radius:7px;background:#05131b;padding:14px;text-align:center;color:#6f8b96;font:600 12px "JetBrains Mono",monospace}
+.occ-v2-primary-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #d97706;border-radius:5px;background:#3a2a08;color:#fbbf24;font:800 9px "JetBrains Mono",monospace}
 
-.occ-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.occ-role-section.owner-section { border-color:rgba(217,119,6,.65); background:linear-gradient(180deg, rgba(217,119,6,.06), #051923 28%); }
-.occ-role-section.tenant-section { border-color:rgba(225,29,72,.62); background:linear-gradient(180deg, rgba(225,29,72,.06), #051923 28%); }
-.occ-role-section.staff-section { border-color:rgba(225,29,72,.55); background:linear-gradient(180deg, rgba(225,29,72,.045), #051923 28%); }
-.occ-role-section.committee-section { border-color:rgba(37,99,235,.62); background:linear-gradient(180deg, rgba(37,99,235,.06), #051923 28%); }
-.occ-role-section.owner-section .occ-section-title { color:#fbbf24; }
-.occ-role-section.tenant-section .occ-section-title { color:#fb7185; }
-.occ-role-section.staff-section .occ-section-title { color:#fb7185; }
-.occ-role-section.committee-section .occ-section-title { color:#60a5fa; }
-.occ-person-card { border:1px solid #11465b; background:#071014; border-radius:7px; padding:10px 11px; }
-.occ-person-card + .occ-person-card { margin-top:8px; }
-.occ-person-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-.occ-person-index { width:26px; height:26px; flex:0 0 26px; display:flex; align-items:center; justify-content:center; border:1px solid #34575C; border-radius:6px; font-family:JetBrains Mono, monospace; color:#CFE5E4; font-size:12px; }
-.occ-person-main { flex:1; min-width:0; }
-.occ-person-name { font-size:14px; font-weight:700; color:#f2fbff; word-break:break-word; }
-.occ-person-role { margin-top:4px; }
-.occ-person-role-badge { display:inline-flex; align-items:center; width:max-content; max-width:100%; padding:3px 7px; border-radius:5px; border:1px solid; font-family:JetBrains Mono, monospace; font-size:10px; line-height:1.2; font-weight:800; letter-spacing:.03em; }
-.occ-person-role-badge.role-admin { color:#c084fc; border-color:#9333ea; background:#2a1548; text-shadow:0 0 7px #c084fc; }
-.occ-person-role-badge.role-committee { color:#60a5fa; border-color:#2563eb; background:#132a4a; text-shadow:0 0 7px #60a5fa; }
-.occ-person-role-badge.role-observer { color:#4ade80; border-color:#16a34a; background:#0f2a1a; text-shadow:0 0 7px #4ade80; }
-.occ-person-role-badge.role-owner { color:#fbbf24; border-color:#d97706; background:#3a2a08; text-shadow:0 0 7px #fbbf24; }
-.occ-person-role-badge.role-tenant { color:#fb7185; border-color:#e11d48; background:#3a1220; text-shadow:0 0 7px #fb7185; }
-.occ-person-role-sub { margin-top:4px; color:#8ba9b8; font-size:11px; }
-.occ-primary-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 7px; border-radius:4px; background:rgba(251,191,36,.13); border:1px solid rgba(217,119,6,.55); color:#fbbf24; font-size:9px; font-family:JetBrains Mono, monospace; font-weight:700; }
-.occ-person-line { display:flex; align-items:flex-start; gap:7px; margin-top:7px; color:#CBE6E4; font-size:12px; line-height:1.45; word-break:break-word; }
-.occ-person-line i { margin-top:2px; color:var(--oc-cyan); font-size:14px; }
-.occ-person-line.muted { color:#728F8E; }
-.occ-person-empty { border:1px dashed #25484D; background:#061d2a; border-radius:7px; padding:14px; text-align:center; color:#698786; font-size:12px; font-family:JetBrains Mono, monospace; }
+.occ-v2-vehicles{border-color:rgba(33,229,107,.52);background:linear-gradient(180deg,rgba(33,229,107,.035),#06141d 30%)}
+.occ-v2-vehicle-table-wrap{overflow:auto}
+.occ-v2-vehicle-table{width:100%;border-collapse:collapse;min-width:460px}
+.occ-v2-vehicle-table th{padding:9px 10px;background:#041722;color:#7796a2;border-bottom:1px solid var(--ux-line);font:700 11px "JetBrains Mono",monospace;text-transform:uppercase;text-align:left;letter-spacing:.06em}
+.occ-v2-vehicle-table td{padding:10px;border-bottom:1px solid #0a3040;color:#e8f7fa;font-size:14px}
+.occ-v2-vehicle-table tr:last-child td{border-bottom:0}
+.occ-v2-vehicle-index{width:42px;color:#6f919d!important;font:700 12px "JetBrains Mono",monospace!important}
+.occ-v2-plate{display:inline-flex;align-items:center;min-height:34px;padding:5px 10px;border:1px solid #1b623f;border-radius:6px;background:#061a10;color:#21e56b;font:800 14px "JetBrains Mono",monospace;letter-spacing:.08em}
+.occ-v2-vehicle-note{margin-top:9px;color:#6e8d7d;font:600 11px "JetBrains Mono",monospace}
 
-.occ-vehicles-section { border-color:rgba(33,229,107,.45); background:linear-gradient(180deg, rgba(33,229,107,.035), #051923 32%); }
-.occ-vehicles-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; }
-.occ-vehicle-row { display:flex; align-items:center; gap:9px; padding:10px 11px; border:1px solid #19512C; background:#06150A; border-radius:6px; }
-.occ-vehicle-index { font-family:JetBrains Mono, monospace; color:#76A883; font-size:11px; width:22px; }
-.occ-plate { font-family:JetBrains Mono, monospace; font-size:14px; font-weight:700; color:#80FF6A; letter-spacing:.08em; }
-.occ-vehicle-note { margin-top:9px; color:#6F8D7A; font-size:10px; font-family:JetBrains Mono, monospace; }
+.occ-v2-bottom{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(0,1.3fr);gap:10px}
+.occ-v2-committee{border-color:rgba(96,165,250,.58)}.occ-v2-committee .occ-v2-section-title{color:var(--ux-blue)}
+.occ-v2-committee-row{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #0d3544;align-items:center}.occ-v2-committee-row:last-child{border-bottom:0}
+.occ-v2-committee-label{color:#6f919e;font:700 11px "JetBrains Mono",monospace;text-transform:uppercase}.occ-v2-committee-value{color:#fff;font-size:14px;font-weight:700}
+.occ-v2-primary-yes{color:var(--ux-green)}.occ-v2-primary-no{color:#849da8}
+.occ-v2-same-email{border-color:rgba(251,191,36,.55);background:linear-gradient(180deg,rgba(251,191,36,.04),#06141d 35%)}.occ-v2-same-email .occ-v2-section-title{color:var(--ux-yellow)}
+.occ-v2-email-group+.occ-v2-email-group{margin-top:10px;padding-top:10px;border-top:1px dashed #4b3f1d}
+.occ-v2-email-pill{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:6px 9px;border:1px solid #1d5966;border-radius:6px;background:#071821;color:#69f8ff;font:700 12px "JetBrains Mono",monospace;word-break:break-all}
+.occ-v2-unit-links{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.occ-v2-unit-link{height:32px;padding:0 10px;border:1px solid var(--ux-line);border-radius:6px;background:#072334;color:#dceef3;font:700 12px "JetBrains Mono",monospace;cursor:pointer}.occ-v2-unit-link.current{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-email-note{margin-top:8px;color:#8fa7af;font-size:11px;line-height:1.45}
 
-.occ-bottom-grid { display:grid; grid-template-columns:minmax(280px,.9fr) minmax(0,1.35fr); gap:10px; padding-bottom:10px; }
-.occ-committee-section .occ-section-title { color:#73A6FF; }
-.occ-committee-row { display:grid; grid-template-columns:120px 1fr; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #16353B; }
-.occ-committee-row:last-child { border-bottom:0; }
-.occ-committee-label { color:#769B9A; font-family:JetBrains Mono, monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; }
-.occ-committee-value { color:#f2fbff; font-size:13px; font-weight:700; }
-.occ-primary-yes { color:#69FF4A; }
-.occ-primary-no { color:#7A9695; }
+.occ-v2-restricted{min-height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:40px;text-align:center}.occ-v2-lock{width:46px;height:46px;display:grid;place-items:center;border:1px solid #7b3139;border-radius:8px;background:#2a1217;color:#ff7b86;font-size:20px}.occ-v2-restricted strong{font-size:18px;color:#ffd9dc}.occ-v2-restricted span{max-width:450px;color:#8ea2a9;font-size:13px;line-height:1.5}
 
-.occ-same-email { border-color:rgba(217,119,6,.55); background:linear-gradient(180deg, rgba(217,119,6,.04), #051923 40%); }
-.occ-email-group + .occ-email-group { margin-top:10px; padding-top:10px; border-top:1px dashed #4A3D1C; }
-.occ-email-line { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.occ-email-pill { display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:6px 9px; border:1px solid #245D65; background:#07151A; color:#69F8FF; border-radius:6px; font-family:JetBrains Mono, monospace; font-size:11px; word-break:break-all; }
-.occ-email-unit { display:inline-flex; align-items:center; min-height:32px; padding:5px 10px; border:1px solid #176078; background:#072334; border-radius:5px; color:#f2fbff; cursor:pointer; font-family:JetBrains Mono, monospace; font-size:12px; font-weight:700; }
-.occ-email-unit.current { border-color:var(--oc-cyan); color:#61FAFF; }
-.occ-email-note { margin-top:8px; color:#91A7A5; font-size:11px; line-height:1.45; }
-
-.occ-restricted { min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:40px; }
-.occ-restricted .lock { width:42px; height:42px; display:flex; align-items:center; justify-content:center; border:1px solid #5B3030; border-radius:8px; background:rgba(255,70,80,.07); color:#FF7575; font-size:20px; }
-.occ-restricted strong { color:#FFD0D0; font-size:16px; }
-.occ-restricted span { max-width:450px; color:#849695; font-size:12px; line-height:1.5; }
-
-.occ-result-line { padding:8px 0 2px; color:#769A99; font-family:JetBrains Mono, monospace; font-size:11px; }
-.occ-console .empty-state { min-height:240px; display:flex; align-items:center; justify-content:center; color:#6D8988; font-family:JetBrains Mono, monospace; font-size:12px; }
-
-/* Keep the existing Admin Quick Lookup functional, but make it fit the console. */
-.occupants-console + .admin-search-section { display:none !important; }
-.occ-quicklookup-shell { margin-top:10px; border:1px solid #11465b; border-radius:8px; padding:12px; background:#080D10; }
-.occ-quicklookup-shell .admin-search-title { color:#19e8f1 !important; font-family:Orbitron, Inter, sans-serif; letter-spacing:.08em; }
-.occ-quicklookup-shell .admin-search-bar { max-width:none !important; }
-.occ-quicklookup-shell .admin-search-input { background:#040A0D !important; color:#f2fbff !important; border-color:#0b3547 !important; }
-
-/* Existing modals — restyle for consistency without changing their IDs or behaviour. */
-.occupants-console ~ .modal-backdrop .modal-box { background:#080D10; border:1px solid #0b3547; color:#f2fbff; }
-.occupants-console ~ .modal-backdrop .modal-title { color:#19e8f1; font-family:Orbitron, Inter, sans-serif; letter-spacing:.08em; }
-.occupants-console ~ .modal-backdrop .modal-label { color:#8ba9b8 !important; }
-.occupants-console ~ .modal-backdrop .modal-input,
-.occupants-console ~ .modal-backdrop .modal-select { background:#040A0D !important; color:#f2fbff !important; border-color:#0b3547 !important; }
-.occupants-console ~ .modal-backdrop .btn-primary { background:rgba(25,232,241,.18) !important; border:1px solid #19e8f1 !important; color:#63FAFF !important; }
-.occupants-console ~ .modal-backdrop .btn-secondary { background:#072334 !important; border:1px solid #176078 !important; color:#f2fbff !important; }
-
-@media (max-width:1180px) {
-  .occ-head { grid-template-columns:1fr; align-items:stretch; }
-  .occ-head-actions { justify-content:flex-start; }
-  .occ-toolbar { grid-template-columns:1fr; }
-  .occ-filterbar { justify-content:flex-start; }
-  .occ-main-grid { grid-template-columns:minmax(300px,350px) minmax(0,1fr); }
-  .occ-unit-business-grid { grid-template-columns:minmax(0,1fr) 85px 85px 90px; }
+@media(max-width:1100px){
+  .occ-v2-head{grid-template-columns:1fr;align-items:stretch}.occ-v2-actions{justify-content:flex-start}.occ-v2-search{order:3}.occ-v2-main{grid-template-columns:minmax(320px,370px) minmax(0,1fr)}
 }
-@media (max-width:920px) {
-  .occ-main-grid { grid-template-columns:1fr; }
-  .occ-left-panel { min-height:340px; max-height:420px; }
-  .occ-list-scroll { max-height:320px; }
-  .occ-detail-scroll { max-height:none; }
-  .occ-info-grid, .occ-bottom-grid { grid-template-columns:1fr; }
-  .occ-vehicles-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:850px){
+  .occupants-console-v2{padding:16px 12px 28px}.occ-v2-main{grid-template-columns:1fr}.occ-v2-left{min-height:400px}.occ-v2-list-scroll{max-height:420px}.occ-v2-detail-scroll{max-height:none}.occ-v2-people-grid,.occ-v2-bottom{grid-template-columns:1fr}.occ-v2-unit-grid{grid-template-columns:1fr 1fr 1fr}.occ-v2-business-main{grid-column:1/-1}.occ-v2-filter-strip{justify-content:flex-start}
 }
-@media (max-width:640px) {
-  .occupants-console { padding:10px 8px 26px; }
-  .occ-page-title { font-size:22px; letter-spacing:.08em; }
-  .occ-unit-total { font-size:14px; }
-  .occ-subtitle { font-size:10px; }
-  .occ-head-actions { display:grid; grid-template-columns:1fr 1fr; }
-  .occ-head-actions .occ-console-btn { width:100%; }
-  .occ-toolbar { padding-top:10px; }
-  .occ-filterbar { display:grid; grid-template-columns:1fr 1fr; width:100%; }
-  .occ-filterbar select, .occ-no-vehicle { width:100%; min-width:0; }
-  .occ-list-head { display:none; }
-  .occ-left-panel { max-height:390px; }
-  .occ-unit-row { grid-template-columns:58px minmax(0,1fr) 48px 48px 16px; gap:6px; padding:11px 10px; }
-  .occ-row-unit strong { font-size:15px; }
-  .occ-row-business .primary { font-size:13px; }
-  .occ-row-business .secondary { font-size:11px; }
-  .occ-row-stat { font-size:11px; }
-  .occ-detail-unit { font-size:26px; }
-  .occ-detail-actions { width:100%; }
-  .occ-detail-top { align-items:flex-start; flex-direction:column; }
-  .occ-detail-actions > * { flex:1; }
-  .occ-unit-business-grid { grid-template-columns:1fr 1fr; }
-  .occ-business-main { grid-column:1 / -1; }
-  .occ-vehicles-grid { grid-template-columns:1fr; }
-  .occ-committee-row { grid-template-columns:100px 1fr; }
-  .occ-person-line { font-size:12px; }
-  .occ-console input, .occ-console select { font-size:16px; }
+@media(max-width:600px){
+  .occ-v2-title{font-size:25px}.occ-v2-total{font-size:14px}.occ-v2-actions{display:grid;grid-template-columns:1fr 1fr}.occ-v2-btn{width:100%;height:46px}.occ-v2-search input{height:46px}.occ-v2-role-chip{min-height:40px;font-size:12px;padding:0 11px}.occ-v2-floor-tab{height:42px;padding:0 13px}.occ-v2-detail-top{align-items:flex-start;flex-direction:column}.occ-v2-detail-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.occ-v2-mini{width:100%}.occ-v2-unit-grid{grid-template-columns:1fr 1fr}.occ-v2-unit-grid > :first-child{grid-column:1/-1}.occ-v2-value{font-size:14px}.occ-v2-list-head,.occ-v2-unit-row{grid-template-columns:56px minmax(0,1fr) 48px 54px 16px}.occ-v2-biz-primary{font-size:13px}.occ-v2-biz-secondary{font-size:11px}.occ-v2-section-title{font-size:16px}.occ-v2-person-name{font-size:14px}
 }
-<style id="occupants-visual-fix-v2">
-/* =========================================================
-   OCCUPANTS V2 — MATCH APPROVED REFERENCE LAYOUT
-   Visual layer only. No DB/API/storage behaviour changes.
-   ========================================================= */
-.occupants-console {
-  padding: 12px 18px 28px !important;
-  background:
-    radial-gradient(ellipse 72% 28% at 55% 0%, rgba(25,232,241,.065), transparent 68%),
-    repeating-linear-gradient(0deg, rgba(25,232,241,.018) 0, rgba(25,232,241,.018) 1px, transparent 1px, transparent 4px),
-    #030507 !important;
-}
-.occ-head {
-  grid-template-columns: minmax(260px, 1fr) minmax(430px, 1.35fr) auto !important;
-  align-items:end !important;
-  padding: 4px 0 14px !important;
-  margin-bottom: 10px !important;
-}
-.occ-page-title { font-size: 30px !important; letter-spacing: .11em !important; }
-.occ-unit-total { font-size: 16px !important; }
-.occ-subtitle { font-size: 12px !important; margin-top: 7px !important; }
-.occ-console-btn { min-height: 42px !important; padding: 9px 15px !important; font-size: 13px !important; }
-.occ-search input { height: 42px !important; font-size: 14px !important; }
-
-.occ-control-row {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:10px;
-  align-items:end;
-  padding: 2px 0 10px;
-  border-bottom: 1px solid var(--oc-line);
-}
-.occ-control-right {
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:7px;
-}
-.occ-control-right .occ-filterbar { justify-content:flex-end; }
-.occ-control-right .occ-role-legend { justify-content:flex-end; padding:0 !important; }
-.occ-floor-tabs { padding: 0 !important; margin:0 !important; min-width:0; }
-.occ-floor-tab { height:38px !important; padding:0 14px !important; font-size:13px !important; }
-.occ-filterbar select, .occ-no-vehicle { height:42px !important; min-height:42px !important; font-size:13px !important; }
-.occ-role-tag { min-height:34px !important; padding:7px 11px !important; font-size:12px !important; }
-.occ-role-dot { width:9px !important; height:9px !important; }
-
-.occ-result-line {
-  margin: 7px 0 7px !important;
-  color:#6f9998 !important;
-  font-family:JetBrains Mono, monospace !important;
-  font-size:11px !important;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-}
-.occ-main-grid {
-  grid-template-columns: 395px minmax(0,1fr) !important;
-  gap:10px !important;
-  min-height: calc(100vh - 310px);
-}
-.occ-left-panel, .occ-detail-panel {
-  border-radius:7px !important;
-  border-color:#18343A !important;
-  background:#080D10 !important;
-}
-.occ-left-panel { min-height: 700px !important; }
-.occ-list-head {
-  grid-template-columns:72px minmax(0,1fr) 58px 58px 20px !important;
-  padding:10px 12px !important;
-  font-size:10px !important;
-  background:#061116 !important;
-}
-.occ-unit-row {
-  grid-template-columns:72px minmax(0,1fr) 58px 58px 20px !important;
-  min-height:78px !important;
-  padding:11px 12px !important;
-  gap:8px !important;
-}
-.occ-row-unit strong { font-size:18px !important; }
-.occ-row-badge-line { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
-.occ-row-badge { font-size:9px !important; padding:3px 7px !important; }
-.occ-committee-mini {
-  display:inline-flex; align-items:center;
-  font-size:8px; font-weight:800; letter-spacing:.04em;
-  color:#60a5fa; border:1px solid rgba(96,165,250,.65);
-  background:rgba(96,165,250,.10); border-radius:4px; padding:2px 5px;
-}
-.occ-row-business .primary { font-size:14px !important; }
-.occ-row-business .secondary { font-size:12px !important; }
-.occ-row-stat { font-size:12px !important; }
-
-.occ-detail-scroll {
-  max-height: calc(100vh - 252px) !important;
-  overflow:auto !important;
-  padding:12px !important;
-}
-.occ-detail-empty { min-height:680px !important; color:#5f8b8a !important; }
-.occ-detail-top {
-  position:sticky; top:0; z-index:5;
-  background:linear-gradient(#080D10 86%, rgba(8,13,16,.94));
-  padding:2px 2px 10px !important;
-  margin-bottom:0 !important;
-  border-bottom:1px solid #18343A;
-}
-.occ-detail-unit { font-size:36px !important; line-height:1 !important; }
-.occ-level-label { font-size:15px !important; }
-.occ-detail-actions { gap:8px !important; }
-.occ-mini-btn { min-height:42px !important; padding:8px 13px !important; font-size:13px !important; }
-
-.occ-section { margin-bottom:10px !important; border-radius:7px !important; overflow:hidden; background:#080D10; }
-.occ-section-head { padding:9px 11px !important; min-height:42px; }
-.occ-section-title { font-size:16px !important; }
-.occ-section-body { padding:11px !important; }
-.occ-section-meta { font-size:10px !important; letter-spacing:.08em; }
-.occ-unit-business { border-color:#176078 !important; }
-.occ-unit-business .occ-section-head { border-bottom-color:#123b48 !important; }
-.occ-unit-business .occ-section-title .ico { color:var(--oc-cyan) !important; }
-.occ-label { font-size:11px !important; }
-.occ-value-box { min-height:38px !important; padding:8px 10px !important; font-size:15px !important; }
-.occ-value-box.small { font-size:15px !important; }
-.occ-unit-business-grid { grid-template-columns:minmax(0,1.6fr) 100px 100px 100px !important; gap:8px !important; }
-.occ-business-main { grid-column:auto !important; }
-.occ-unit-contact { margin-top:8px !important; padding-top:8px !important; }
-.occ-contact-value { font-size:15px !important; }
-.occ-contact-note { font-size:10px !important; }
-
-.occ-info-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; gap:10px !important; }
-.owner-section { border-color:#8a6600 !important; background:linear-gradient(180deg, rgba(251,191,36,.07), rgba(8,13,16,.4)) !important; }
-.owner-section .occ-section-title, .owner-section .occ-section-title .ico { color:#fbbf24 !important; }
-.tenant-section { border-color:#b52b3a !important; background:linear-gradient(180deg, rgba(255,70,80,.07), rgba(8,13,16,.4)) !important; }
-.tenant-section .occ-section-title, .tenant-section .occ-section-title .ico { color:#ff4650 !important; }
-.staff-section { border-color:#b52b3a !important; background:linear-gradient(180deg, rgba(255,70,80,.055), rgba(8,13,16,.35)) !important; }
-.staff-section .occ-section-title, .staff-section .occ-section-title .ico { color:#ff4650 !important; }
-.committee-section { border-color:#275aa5 !important; background:linear-gradient(180deg, rgba(96,165,250,.06), rgba(8,13,16,.35)) !important; }
-.committee-section .occ-section-title, .committee-section .occ-section-title .ico { color:#60a5fa !important; }
-.occ-same-email { border-color:#8a6600 !important; background:linear-gradient(180deg, rgba(251,191,36,.05), rgba(8,13,16,.35)) !important; }
-.occ-same-email .occ-section-title, .occ-same-email .occ-section-title .ico { color:#fbbf24 !important; }
-.occ-vehicles-section { border-color:#11824b !important; background:linear-gradient(180deg, rgba(33,229,107,.055), rgba(8,13,16,.35)) !important; }
-.occ-vehicles-section .occ-section-title, .occ-vehicles-section .occ-section-title .ico { color:#21e56b !important; }
-
-.occ-person-card { border-color:#1b4650 !important; background:#071014 !important; padding:10px !important; margin-bottom:7px !important; }
-.occ-person-name { font-size:15px !important; }
-.occ-person-role-badge { font-size:10px !important; padding:3px 7px !important; border-radius:4px; font-weight:800; letter-spacing:.05em; }
-.occ-person-role-badge.role-admin { color:#c084fc !important; border:1px solid rgba(192,132,252,.65); background:rgba(192,132,252,.10); }
-.occ-person-role-badge.role-committee { color:#60a5fa !important; border:1px solid rgba(96,165,250,.65); background:rgba(96,165,250,.10); }
-.occ-person-role-badge.role-observer { color:#4ade80 !important; border:1px solid rgba(74,222,128,.65); background:rgba(74,222,128,.10); }
-.occ-person-role-badge.role-owner { color:#fbbf24 !important; border:1px solid rgba(251,191,36,.65); background:rgba(251,191,36,.10); }
-.occ-person-role-badge.role-tenant { color:#fb7185 !important; border:1px solid rgba(251,113,133,.65); background:rgba(251,113,133,.10); }
-.occ-person-line { font-size:13px !important; }
-.occ-person-line i { font-size:15px !important; }
-.occ-primary-pill { color:#fbbf24 !important; border-color:rgba(251,191,36,.65) !important; background:rgba(251,191,36,.08) !important; }
-.occ-vehicles-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:7px !important; }
-.occ-vehicle-row { min-height:42px !important; padding:7px 9px !important; border:1px solid #145734 !important; background:#061510 !important; }
-.occ-plate { font-family:JetBrains Mono,monospace !important; font-size:15px !important; color:#70ff9f !important; }
-.occ-vehicle-note { font-size:10px !important; }
-.occ-bottom-grid { grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) !important; gap:10px !important; }
-.occ-email-pill { font-size:12px !important; }
-.occ-email-unit { min-height:32px !important; padding:6px 9px !important; font-size:11px !important; }
-.occ-email-note { font-size:10px !important; line-height:1.4; }
-
-@media (max-width: 1100px) {
-  .occ-head { grid-template-columns:1fr !important; align-items:stretch !important; }
-  .occ-search { order:3; }
-  .occ-head-actions { justify-content:flex-start; }
-  .occ-control-row { grid-template-columns:1fr !important; }
-  .occ-control-right { align-items:flex-start; }
-  .occ-control-right .occ-role-legend { justify-content:flex-start; }
-  .occ-main-grid { grid-template-columns:340px minmax(0,1fr) !important; }
-  .occ-unit-business-grid { grid-template-columns:1fr 1fr !important; }
-  .occ-business-main { grid-column:1 / -1 !important; }
-}
-@media (max-width: 760px) {
-  .occupants-console { padding:10px 10px 24px !important; }
-  .occ-main-grid { grid-template-columns:1fr !important; min-height:0 !important; }
-  .occ-left-panel { min-height:320px !important; max-height:48vh !important; }
-  .occ-detail-scroll { max-height:none !important; }
-  .occ-info-grid, .occ-bottom-grid { grid-template-columns:1fr !important; }
-  .occ-vehicles-grid { grid-template-columns:1fr 1fr !important; }
-  .occ-detail-actions { width:100%; flex-wrap:wrap; }
-  .occ-detail-actions > * { flex:1; }
-}
-@media (max-width: 480px) {
-  .occ-page-title { font-size:23px !important; }
-  .occ-unit-business-grid { grid-template-columns:1fr !important; }
-  .occ-business-main { grid-column:auto !important; }
-  .occ-vehicles-grid { grid-template-columns:1fr !important; }
+@media(max-width:420px){
+  .occ-v2-actions{grid-template-columns:1fr}.occ-v2-floor-tabs{overflow-x:auto;flex-wrap:nowrap}.occ-v2-floor-tab{flex:0 0 auto}.occ-v2-role-row{overflow-x:auto;flex-wrap:nowrap;padding-bottom:13px}.occ-v2-role-chip{flex:0 0 auto}.occ-v2-unit-grid{grid-template-columns:1fr}.occ-v2-unit-grid > :first-child{grid-column:auto}.occ-v2-bottom{gap:8px}.occ-v2-section{margin:8px}.occ-v2-detail-unit{font-size:27px}
 }
 </style>
-</style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
 <div class="main">
   <div id="topbarPlaceholder"></div>
   <div class="content">
-    <div class="occupants-console">
-      <div class="occ-head">
-        <div class="occ-title-wrap">
-          <div class="occ-title-row">
-            <div class="occ-page-title">Occupant Details</div>
-            <div class="occ-unit-total" id="occUnitTotal">0 UNITS</div>
-          </div>
-          <div class="occ-subtitle">UNIT · OWNER · TENANT · BUSINESS · VEHICLES</div>
+  <div class="occupants-console-v2">
+    <div class="occ-v2-head">
+      <div class="occ-v2-title-wrap">
+        <div class="occ-v2-title-row">
+          <div class="occ-v2-title">Occupant Details</div>
+          <div class="occ-v2-total" id="occV2Total">50 UNITS</div>
         </div>
-        <div class="occ-search">
-          <i class="ti ti-search"></i>
-          <input id="occupantSearchInput" type="text" placeholder="Unit, name, business, email, phone, vehicle plate…" autocomplete="off">
-          <button id="occupantSearchClear" class="occ-search-clear" type="button">✕</button>
-        </div>
-        <div class="occ-head-actions">
-          <button id="exportExcelBtn" class="occ-console-btn" onclick="exportOccupants()" style="display:none"><i class="ti ti-file-export"></i> Export</button>
-          <button class="occ-console-btn bulk" id="bulkInviteTopBtn" onclick="openBulkInvite()"><i class="ti ti-mail"></i> Bulk Invite</button>
-        </div>
+        <div class="occ-v2-sub">UNIT · OWNER · TENANT · BUSINESS · VEHICLES</div>
       </div>
-
-      <div class="occ-control-row">
-        <div class="occ-floor-tabs" id="occFloorTabs"></div>
-        <div class="occ-control-right">
-          <div class="occ-filterbar">
-            <select id="occupantTypeFilter" aria-label="Filter by type">
-              <option value="all">All Types</option>
-              <option value="owner">Owner Units</option>
-              <option value="tenant">Tenant Units</option>
-              <option value="staff">Has Staff / Occupants</option>
-              <option value="novehicle">No Vehicle</option>
-            </select>
-            <button id="occNoVehicleBtn" class="occ-no-vehicle" type="button">No Vehicle</button>
-          </div>
-          <div class="occ-role-legend" aria-label="Role filters">
-            <button class="occ-role-tag occ-role-filter" data-role="owner" data-role-filter="owner" type="button" aria-pressed="false"><span class="occ-role-dot owner"></span>Owner</button>
-            <button class="occ-role-tag occ-role-filter" data-role="tenant" data-role-filter="tenant" type="button" aria-pressed="false"><span class="occ-role-dot tenant"></span>Tenant</button>
-            <button class="occ-role-tag occ-role-filter" data-role="committee" data-role-filter="committee" id="occCommitteeFilter" type="button" aria-pressed="false"><span class="occ-role-dot committee"></span>Committee</button>
-            <button class="occ-role-tag occ-role-filter" data-role="observer" data-role-filter="observer" type="button" aria-pressed="false"><span class="occ-role-dot observer"></span>Observer</button>
-            <button class="occ-role-tag occ-role-filter" data-role="admin" data-role-filter="admin" type="button" aria-pressed="false"><span class="occ-role-dot admin"></span>Admin</button>
-            <span class="occ-role-tag"><span class="occ-role-dot tenant"></span>Staff / Occupant</span>
-          </div>
-        </div>
+      <div class="occ-v2-search">
+        <i class="ti ti-search search-icon"></i>
+        <input id="occSearchInput" type="text" placeholder="Unit, name, business, email, phone, vehicle plate..." autocomplete="off">
+        <button id="occSearchClear" class="occ-v2-search-clear" type="button" title="Clear search">✕</button>
       </div>
-
-      <div class="occ-result-line" id="occResultLine">Loading units…</div>
-
-      <div class="occ-main-grid">
-        <section class="occ-left-panel" aria-label="Unit list">
-          <div class="occ-list-head">
-            <div>Unit</div><div>Owner / Business</div><div>People</div><div>Vehicle</div><div></div>
-          </div>
-          <div class="occ-list-scroll" id="occList">
-            <div class="empty-state">Loading…</div>
-          </div>
-        </section>
-
-        <section class="occ-detail-panel" aria-label="Unit details">
-          <div class="occ-detail-scroll" id="occDetail"></div>
-        </section>
+      <div class="occ-v2-actions">
+        <button class="occ-v2-btn" id="exportExcelBtn" type="button" onclick="exportOccupants()"><i class="ti ti-file-export"></i> Export</button>
+        <button class="occ-v2-btn bulk" type="button" onclick="openBulkInvite()"><i class="ti ti-mail"></i> Bulk Invite</button>
       </div>
+    </div>
 
-      <div class="occ-quicklookup-shell" id="adminLookupSection">
-        <div class="admin-search-header">
-          <div class="admin-search-title">QUICK LOOKUP · ADMIN</div>
+    <div class="occ-v2-floor-tabs" id="occV2FloorTabs">
+      <button class="occ-v2-floor-tab active" data-suite="All">ALL <span class="count">50</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Ground">G <span class="count">1</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 1">L1 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 2">L2 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 3">L3 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 4">L4 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 5">L5 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="Level 6">L6 <span class="count">8</span></button>
+      <button class="occ-v2-floor-tab" data-suite="External">Ex <span class="count">1</span></button>
+    </div>
+
+    <div class="occ-v2-role-row">
+      <span class="occ-v2-role-label">Role</span>
+      <button class="occ-v2-role-chip owner" data-role-filter="owner"><span class="occ-v2-role-dot owner"></span>Owner</button>
+      <button class="occ-v2-role-chip tenant" data-role-filter="tenant"><span class="occ-v2-role-dot tenant"></span>Tenant</button>
+      <button class="occ-v2-role-chip committee" data-role-filter="committee"><span class="occ-v2-role-dot committee"></span>Committee</button>
+      <button class="occ-v2-role-chip observer" data-role-filter="observer"><span class="occ-v2-role-dot observer"></span>Observer</button>
+      <button class="occ-v2-role-chip admin" data-role-filter="admin"><span class="occ-v2-role-dot admin"></span>Admin</button>
+      <button class="occ-v2-role-chip staff" data-role-filter="staff"><span class="occ-v2-role-dot staff"></span>Staff / Occupant</button>
+    </div>
+
+    <div class="occ-v2-filter-strip">
+      <select id="occTypeFilter" aria-label="Unit type">
+        <option value="all">All Types</option>
+        <option value="Owner">Owner Units</option>
+        <option value="Tenant">Tenant Units</option>
+        <option value="Vacant">Vacant</option>
+      </select>
+      <button class="occ-v2-no-vehicle" id="occNoVehicleBtn" type="button">No Vehicle</button>
+    </div>
+
+    <div class="occ-v2-result-line" id="occV2ResultLine">50 UNITS SHOWN · ALL FLOORS</div>
+
+    <div class="occ-v2-main">
+      <section class="occ-v2-panel occ-v2-left">
+        <div class="occ-v2-list-head">
+          <div>Unit</div><div>Owner / Business</div><div>People</div><div>Vehicle</div><div></div>
         </div>
-        <div class="admin-search-bar" style="max-width:none">
-          <input type="text" class="admin-search-input" id="adminLookupInput" placeholder="Plate or phone…" autocomplete="off">
-          <button class="admin-search-clear" id="adminLookupClear" type="button">✕</button>
-        </div>
-        <div id="adminLookupResult" style="margin-top:12px;font-size:13px;min-height:20px"></div>
+        <div class="occ-v2-list-scroll" id="occV2List"></div>
+      </section>
+
+      <section class="occ-v2-panel occ-v2-detail">
+        <div id="occV2Detail" class="occ-v2-detail-scroll"></div>
+      </section>
+    </div>
+
+    <div class="admin-search-section" id="adminLookupSection" style="margin-top:12px">
+      <div class="admin-search-header">
+        <div class="admin-search-title">🔍 Quick Lookup (Admin)</div>
       </div>
+      <div class="admin-search-bar" style="max-width:340px">
+        <input type="text" class="admin-search-input" id="adminLookupInput" placeholder="Plate or phone…" autocomplete="off">
+        <button class="admin-search-clear" id="adminLookupClear" type="button">✕</button>
+      </div>
+      <div id="adminLookupResult" style="margin-top:12px;font-size:13px;color:var(--text);min-height:20px"></div>
     </div>
   </div>
 </div>
-
+</div>
 
 <!-- VIEW MODAL -->
 <div class="modal-backdrop" id="viewModal">
@@ -1377,29 +1121,53 @@ if (!['admin','committee','observer','owner','tenant'].includes(role)) {
 }
 
 let allOccupants = [];
-let currentSuite = 'All';
+let currentSuite = 'Ground';
 let myOwnedUnits = new Set(); // primary_email 기준 본인 소유 유닛들
-let selectedOccupantId = null;
-let occupantSearchQuery = '';
-let occupantTypeFilter = 'all';
+let currentRoleFilter = 'all';
+let currentTypeFilter = 'all';
 let noVehicleOnly = false;
-let roleFilter = 'all';
-let profileDirectory = new Map();
-let emailUnitMap = new Map();
+let selectedOccupantId = null;
+let currentSearch = '';
+window._profileMap = {};
+window._profileRoleMap = {};
 
-// Initial suite selection is applied after occupant/profile data loads.
+// owner/tenant: 본인 유닛의 level로 초기 탭 설정 (다른 탭도 모두 볼 수 있음)
+if (['owner','tenant'].includes(role) && myUnit) {
+  const unitList = (role === 'owner' && myOwnedUnits.size > 0) ? [...myOwnedUnits] : [myUnit];
+  const mySuites = new Set();
+  unitList.forEach(u => {
+    if (u === 'Unit 1') { mySuites.add('Ground'); return; }
+    const match = u.match(/^([0-9]+)([A-H])$/i);
+    if (!match) return;
+    mySuites.add('Level ' + match[1]);
+  });
+
+  if (mySuites.size === 0) {
+    currentSuite = 'External';
+    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+    const extTab = document.querySelector('.suite-tab[data-suite="External"]');
+    if (extTab) extTab.classList.add('active');
+  } else {
+    const firstSuite = [...mySuites][0];
+    currentSuite = firstSuite;
+    document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+    const myTab = document.querySelector(`.suite-tab[data-suite="${firstSuite}"]`);
+    if (myTab) myTab.classList.add('active');
+  }
+}
+
 // Load occupants
 async function loadOccupants() {
   const { data, error } = await supabase
     .from('occupants')
     .select('*')
     .order('unit', { ascending: true });
-
+  
   if (error) {
     showToast('Failed to load occupants', true);
     return;
   }
-
+  
   let combined = data || [];
 
   // owner/tenant: 다른 유닛도 보이게 하려면 public 함수로 보충
@@ -1414,506 +1182,423 @@ async function loadOccupants() {
 
   allOccupants = combined;
 
-  // Profiles: read only. Privileged roles receive all accessible profiles;
-  // owner/tenant receive their own profile under existing RLS.
-  const { data: profilesData } = await supabase
-    .from('profiles')
-    .select('email, role, full_name, unit, phone');
-
-  profileDirectory = new Map();
+  // profiles email → role 맵 생성
+  const { data: profilesData } = await supabase.from('profiles').select('email, role, full_name, phone, unit');
   window._profileRoleMap = {};
+  window._profileMap = {};
   (profilesData || []).forEach(p => {
     if (!p.email) return;
-    const key = p.email.trim().toLowerCase();
-    profileDirectory.set(key, p);
+    const key = p.email.toLowerCase().trim();
     window._profileRoleMap[key] = p.role;
+    window._profileMap[key] = p;
   });
 
-  // Build email -> units index for multi-unit visibility.
-  emailUnitMap = new Map();
-  allOccupants.forEach(o => {
-    const emails = [
-      ...splitEmails(o.primary_email),
-      ...splitEmails(o.business_email)
-    ];
-    [...new Set(emails)].forEach(email => {
-      if (!emailUnitMap.has(email)) emailUnitMap.set(email, new Set());
-      emailUnitMap.get(email).add(o.unit);
-    });
-  });
-
-  // committee/owner/tenant: primary_email + business_email all match (comma-separated)
+  // committee/owner/tenant: primary_email + business_email 모두 매칭 (콤마 분리 처리)
   if (myEmail && ['committee','owner','tenant'].includes(role)) {
     const myEmailLower = myEmail.toLowerCase();
     myOwnedUnits = new Set(
       allOccupants.filter(o => {
-        if (splitEmails(o.primary_email).includes(myEmailLower)) return true;
-        if (splitEmails(o.business_email).includes(myEmailLower)) return true;
+        // primary_email 매칭 (콤마 분리 — 공동 Owner 지원)
+        if (o.primary_email) {
+          const primaryEmails = o.primary_email.split(',').map(e => e.trim().toLowerCase());
+          if (primaryEmails.includes(myEmailLower)) return true;
+        }
+        // business_email 매칭 (콤마 분리)
+        if (o.business_email) {
+          const emails = o.business_email.split(',').map(e => e.trim().toLowerCase());
+          if (emails.includes(myEmailLower)) return true;
+        }
         return false;
       }).map(o => o.unit)
     );
+    // profiles.unit도 포함 (안전장치)
     if (myUnit) myOwnedUnits.add(myUnit);
   }
 
-  const bulkBtn = document.getElementById('bulkInviteTopBtn');
-  if (bulkBtn) bulkBtn.style.display = role === 'admin' ? 'inline-flex' : 'none';
-
+  // admin은 전체 유닛 접근이라 myOwnedUnits 안 쓰지만 호환성 위해 세팅
   if (role === 'admin') {
     myOwnedUnits = new Set(allOccupants.map(o => o.unit));
+    // Admin-only export/bulk controls
     const exportBtn = document.getElementById('exportExcelBtn');
     if (exportBtn) exportBtn.style.display = 'inline-flex';
   }
 
-  // Owner/Tenant still see all units in the list, but only their own detail is editable/fully visible.
+  // owner/tenant: 전체 탭 다 표시 (이웃 보게), 본인 유닛 있는 첫 번째 층으로 탭 active 이동
   if (['owner','tenant'].includes(role) && myOwnedUnits.size > 0) {
     const myLevels = new Set();
-    myOwnedUnits.forEach(u => myLevels.add(getSuiteForUnit(u)));
+    myOwnedUnits.forEach(u => {
+      if (u === 'Unit 1') { myLevels.add('Ground'); return; }
+      const match = u.match(/^([0-9]+)([A-H])$/i);
+      if (match) myLevels.add('Level ' + match[1]);
+    });
+    // 전체 탭 표시 (숨김 제거)
+    document.querySelectorAll('.suite-tab').forEach(tab => {
+      tab.style.display = '';
+    });
+    // 본인 유닛 있는 첫 번째 층으로 active 이동
     const firstLevel = [...myLevels][0];
-    if (firstLevel) currentSuite = firstLevel;
-  } else {
-    currentSuite = 'All';
+    if (firstLevel && firstLevel !== currentSuite) {
+      currentSuite = firstLevel;
+      document.querySelectorAll('.suite-tab').forEach(t => t.classList.remove('active'));
+      const myTab = document.querySelector(`.suite-tab[data-suite="${firstLevel}"]`);
+      if (myTab) myTab.classList.add('active');
+    }
   }
 
-  selectedOccupantId = selectedOccupantId && allOccupants.some(o => o.id === selectedOccupantId)
-    ? selectedOccupantId
-    : null;
-
+  const exportBtn = document.getElementById('exportExcelBtn');
+  const bulkBtn = document.querySelector('.occ-v2-btn.bulk');
+  if (exportBtn) exportBtn.style.display = role === 'admin' ? 'inline-flex' : 'none';
+  if (bulkBtn) bulkBtn.style.display = role === 'admin' ? 'inline-flex' : 'none';
   renderOccupants();
 }
 
-function splitEmails(value) {
-  return (value || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+// ─────────────────────────────────────────────────────────────
+// APPROVED MOCKUP RENDERING LAYER
+// ─────────────────────────────────────────────────────────────
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
-
+function normalizeEmail(value) { return String(value || '').trim().toLowerCase(); }
+function splitEmails(value) { return String(value || '').split(',').map(v => v.trim()).filter(Boolean); }
+function splitPlates(value) { return String(value || '').split(',').map(v => v.trim()).filter(Boolean); }
+function getProfilesForEmails(emails) {
+  return emails.map(email => window._profileMap[normalizeEmail(email)] || null);
+}
+function linkedEmails(occ) {
+  return [...new Set([...splitEmails(occ.primary_email), ...splitEmails(occ.business_email)].map(normalizeEmail).filter(Boolean))];
+}
+function profileRolesForOccupant(occ) {
+  return linkedEmails(occ).map(e => window._profileMap[e]?.role).filter(Boolean);
+}
+function profileNamesForOccupant(occ) {
+  return linkedEmails(occ).map(e => window._profileMap[e]?.full_name).filter(Boolean);
+}
+function personCount(occ) {
+  const emails = linkedEmails(occ);
+  if (emails.length) return emails.length;
+  return occ.contact_person ? 1 : 0;
+}
+function unitVehicleCount(occ) { return splitPlates(occ.license_plates).length; }
 function getSuiteForUnit(unit) {
   if (unit === 'Unit 1') return 'Ground';
-  const match = (unit || '').match(/^([0-9]+)([A-H])$/i);
-  if (!match) return 'External';
-  return 'Level ' + match[1];
+  const m = String(unit || '').match(/^([0-9]+)([A-H])$/i);
+  return m ? 'Level ' + m[1] : 'External';
 }
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function emailLink(email) {
-  const safe = escapeHtml(email);
-  return `<a href="mailto:${encodeURIComponent(email)}">${safe}</a>`;
-}
-
-function getProfile(email) {
-  return profileDirectory.get((email || '').trim().toLowerCase()) || null;
-}
-
-function getUnitEmails(occ, kind) {
-  if (kind === 'owner') return splitEmails(occ.primary_email);
-  return splitEmails(occ.business_email);
-}
-
-function getUnitProfiles(occ) {
-  const emails = [...new Set([
-    ...splitEmails(occ.primary_email),
-    ...splitEmails(occ.business_email)
-  ])];
-  return emails.map(getProfile).filter(Boolean);
-}
-
-function getPeopleForUnit(occ, kind) {
-  const emails = [...new Set(getUnitEmails(occ, kind))];
-  return emails.map((email, idx) => {
-    const p = getProfile(email);
-    return {
-      index: idx + 1,
-      email,
-      profile: p,
-      name: p?.full_name || (kind === 'owner' && emails.length === 1 ? (occ.contact_person || '') : ''),
-      phone: p?.phone || '',
-      role: p?.role || ''
-    };
-  });
-}
-
-function getCommitteePeople(occ) {
-  const emails = [...new Set([...splitEmails(occ.primary_email), ...splitEmails(occ.business_email)])];
-  const matched = emails
-    .map(email => ({ email, profile: getProfile(email) }))
-    .filter(x => x.profile?.role === 'committee');
-  if (matched.length) {
-    return matched.map((x, idx) => ({
-      index: idx + 1,
-      email: x.email,
-      profile: x.profile,
-      name: x.profile?.full_name || '',
-      phone: x.profile?.phone || '',
-      role: x.profile?.role || 'committee'
-    }));
-  }
-  if (occ.is_committee) {
-    const email = splitEmails(occ.primary_email)[0] || '';
-    const p = email ? getProfile(email) : null;
-    return [{
-      index: 1,
-      email,
-      profile: p,
-      name: p?.full_name || occ.contact_person || '',
-      phone: p?.phone || '',
-      role: p?.role || 'committee'
-    }];
-  }
-  return [];
-}
-
-function isMyUnit(unit) {
-  if (!['owner','tenant'].includes(role)) return true;
+function isAccessibleUnit(unit) {
+  if (['admin','committee','observer'].includes(role)) return true;
   return myOwnedUnits.has(unit) || unit === myUnit;
 }
-
-function canViewDetails(occ) {
-  return !['owner','tenant'].includes(role) || isMyUnit(occ.unit);
+function roleBadge(roleKey) {
+  const map = {
+    admin:{label:'ADMIN', cls:'admin'}, committee:{label:'COMMITTEE', cls:'committee'}, observer:{label:'OBSERVER', cls:'observer'},
+    owner:{label:'OWNER', cls:'owner'}, tenant:{label:'TENANT', cls:'tenant'}
+  };
+  const r = map[roleKey];
+  return r ? `<span class="occ-v2-badge ${r.cls}">${r.label}</span>` : '';
 }
-
-function isOwnerUnit(occ) { return occ.owner_type === 'Owner'; }
-function isTenantUnit(occ) { return occ.owner_type === 'Tenant'; }
-
-function getVisibleOccupants() {
-  let result = allOccupants.slice();
-  if (currentSuite !== 'All') result = result.filter(o => getSuiteForUnit(o.unit) === currentSuite);
-
-  if (occupantTypeFilter === 'owner') result = result.filter(o => isOwnerUnit(o));
-  if (occupantTypeFilter === 'tenant') result = result.filter(o => isTenantUnit(o));
-  if (occupantTypeFilter === 'staff') result = result.filter(o => splitEmails(o.business_email).length > 0 && isOwnerUnit(o));
-  if (roleFilter !== 'all') {
-    result = result.filter(o => {
-      if (roleFilter === 'owner') return isOwnerUnit(o) || getUnitProfiles(o).some(p => p?.role === 'owner');
-      if (roleFilter === 'tenant') return isTenantUnit(o) || getUnitProfiles(o).some(p => p?.role === 'tenant');
-      if (roleFilter === 'committee') return !!o.is_committee || getUnitProfiles(o).some(p => p?.role === 'committee');
-      if (roleFilter === 'observer') return getUnitProfiles(o).some(p => p?.role === 'observer');
-      if (roleFilter === 'admin') return getUnitProfiles(o).some(p => p?.role === 'admin');
-      return true;
-    });
-  }
-  if (occupantTypeFilter === 'novehicle' || noVehicleOnly) result = result.filter(o => splitEmails(o.license_plates).length === 0);
-
-  const q = occupantSearchQuery.trim().toLowerCase();
-  if (q) {
-    result = result.filter(o => {
-      const hay = [o.unit, o.level, o.business_name, o.contact_person, o.primary_email, o.business_email, o.phone, o.license_plates]
-        .filter(Boolean).join(' ').toLowerCase();
-      return hay.includes(q);
-    });
-  }
-  return result;
+function contextBadge(context) { return roleBadge(context); }
+function hasRoleOnUnit(occ, wanted) {
+  if (wanted === 'owner') return occ.owner_type === 'Owner';
+  if (wanted === 'tenant') return occ.owner_type === 'Tenant';
+  if (wanted === 'committee') return !!occ.is_committee;
+  if (wanted === 'observer' || wanted === 'admin') return profileRolesForOccupant(occ).includes(wanted);
+  if (wanted === 'staff') return splitEmails(occ.business_email).length > 0;
+  return true;
 }
-
+function matchesSearch(occ, q) {
+  if (!q) return true;
+  const needle = q.toLowerCase();
+  const hay = [occ.unit, occ.level, occ.suite, occ.business_name, occ.contact_person, occ.primary_email, occ.business_email, occ.phone, occ.license_plates, ...profileNamesForOccupant(occ)].join(' ').toLowerCase();
+  return hay.includes(needle);
+}
+function getFilteredOccupants() {
+  let items = allOccupants.filter(Boolean);
+  if (currentSuite !== 'All') {
+    items = items.filter(o => currentSuite === 'Ground' ? (o.level === 'Ground' || o.unit === 'Unit 1') : o.level === currentSuite);
+  }
+  if (currentTypeFilter === 'Owner') items = items.filter(o => o.owner_type === 'Owner');
+  if (currentTypeFilter === 'Tenant') items = items.filter(o => o.owner_type === 'Tenant');
+  if (currentTypeFilter === 'Vacant') items = items.filter(o => !String(o.business_name || '').trim());
+  if (currentRoleFilter !== 'all') items = items.filter(o => hasRoleOnUnit(o, currentRoleFilter));
+  if (noVehicleOnly) items = items.filter(o => unitVehicleCount(o) === 0);
+  if (currentSearch) items = items.filter(o => matchesSearch(o, currentSearch));
+  return items.sort((a,b) => String(a.unit || '').localeCompare(String(b.unit || ''), undefined, {numeric:true, sensitivity:'base'}));
+}
 function updateFloorTabs() {
-  const tabs = document.getElementById('occFloorTabs');
-  if (!tabs) return;
-  const suites = [
-    ['All','ALL'], ['Ground','G'], ['Level 1','L1'], ['Level 2','L2'], ['Level 3','L3'],
-    ['Level 4','L4'], ['Level 5','L5'], ['Level 6','L6'], ['External','Ex']
-  ];
-  const counts = {};
-  allOccupants.forEach(o => { const s = getSuiteForUnit(o.unit); counts[s] = (counts[s] || 0) + 1; });
-  counts.All = allOccupants.length;
-  tabs.innerHTML = suites.map(([value,label]) => {
-    const count = value === 'All' ? counts.All : (counts[value] || 0);
-    return `<button class="occ-floor-tab ${currentSuite === value ? 'active' : ''}" data-suite="${value}" type="button" onclick="setOccupantSuite('${value}')">${label} <span class="count">${count}</span></button>`;
-  }).join('');
-}
-
-window.setRoleFilter = (nextRole) => {
-  roleFilter = roleFilter === nextRole ? 'all' : nextRole;
-  document.querySelectorAll('.occ-role-filter[data-role-filter]').forEach(btn => {
-    const active = btn.dataset.roleFilter === roleFilter;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  const buttons = [...document.querySelectorAll('.occ-v2-floor-tab')];
+  buttons.forEach(btn => {
+    const suite = btn.dataset.suite;
+    btn.classList.toggle('active', suite === currentSuite);
+    let count = 0;
+    if (suite === 'All') count = allOccupants.length;
+    else if (suite === 'Ground') count = allOccupants.filter(o => o.level === 'Ground' || o.unit === 'Unit 1').length;
+    else count = allOccupants.filter(o => o.level === suite).length;
+    const countEl = btn.querySelector('.count');
+    if (countEl) countEl.textContent = count;
   });
-  renderOccupants();
-};
-
-document.querySelectorAll('.occ-role-filter[data-role-filter]').forEach(btn => {
-  btn.addEventListener('click', () => setRoleFilter(btn.dataset.roleFilter));
-});
-
-window.setOccupantSuite = (suite) => {
-  currentSuite = suite;
-  updateFloorTabs();
-  renderOccupants();
-};
-
-window.selectOccupant = (id, options = {}) => {
-  const occ = allOccupants.find(o => o.id === id);
-  if (!occ) return;
-  selectedOccupantId = id;
-  if (options.ensureSuite) {
-    currentSuite = getSuiteForUnit(occ.unit);
-    updateFloorTabs();
-  }
-  renderOccupants();
-  setTimeout(() => {
-    const row = document.querySelector(`.occ-unit-row[data-id="${CSS.escape(id)}"]`);
-    if (row && options.highlight) {
-      row.classList.add('highlight-flash');
-      row.scrollIntoView({behavior:'smooth', block:'center'});
-      setTimeout(() => row.classList.remove('highlight-flash'), 3000);
-    }
-  }, 80);
-};
-
-function renderOccupants() {
-  updateFloorTabs();
-  const visible = getVisibleOccupants();
-  const total = allOccupants.length;
-  const totalEl = document.getElementById('occUnitTotal');
-  if (totalEl) totalEl.textContent = `${total} UNITS`;
-
-  const resultLine = document.getElementById('occResultLine');
-  if (resultLine) resultLine.textContent = `${visible.length} unit${visible.length === 1 ? '' : 's'} shown · ${currentSuite === 'All' ? 'All floors' : currentSuite}`;
-
-  const list = document.getElementById('occList');
-  if (!visible.length) {
-    list.innerHTML = `<div class="empty-state">No units match the current filters.</div>`;
-    document.getElementById('occDetail').innerHTML = `<div class="occ-detail-empty">No unit selected.</div>`;
+}
+function updateRoleChips() {
+  document.querySelectorAll('[data-role-filter]').forEach(btn => btn.classList.toggle('active', btn.dataset.roleFilter === currentRoleFilter));
+}
+function updateSearchUI() {
+  const input = document.getElementById('occSearchInput');
+  const clear = document.getElementById('occSearchClear');
+  if (input && input.value !== currentSearch) input.value = currentSearch;
+  if (clear) clear.style.display = currentSearch ? 'block' : 'none';
+}
+function renderLeftList(items) {
+  const list = document.getElementById('occV2List');
+  if (!list) return;
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="occ-v2-no-results">
+        <i class="ti ti-filter-off" style="font-size:30px;color:#6d96a4"></i>
+        <div>No units match the current filters.</div>
+        <button class="occ-v2-clear-btn" type="button" id="occV2ClearResults">Clear Filters</button>
+      </div>`;
+    const clear = document.getElementById('occV2ClearResults');
+    if (clear) clear.addEventListener('click', clearAllFilters);
     return;
   }
-
-  if (!visible.some(o => o.id === selectedOccupantId)) selectedOccupantId = visible[0].id;
-  if (!selectedOccupantId) selectedOccupantId = visible[0].id;
-
-  list.innerHTML = visible.map(o => {
-    const plates = (o.license_plates || '').split(',').map(p => p.trim()).filter(Boolean);
-    const ownerPeople = getPeopleForUnit(o, 'owner');
-    const primaryName = ownerPeople.find(p => p.name)?.name || o.business_name || '—';
-    const secondary = o.business_name && primaryName !== o.business_name ? o.business_name : (o.contact_person || '');
-    const peopleCount = new Set([...getUnitEmails(o,'owner'), ...getUnitEmails(o,'tenant') , ...getUnitEmails(o,'staff')].filter(Boolean)).size;
-    const computedPeopleCount = peopleCount || (o.contact_person ? 1 : 0);
-    const badge = isOwnerUnit(o) ? '<span class="occ-row-badge owner">OWNER</span>' : isTenantUnit(o) ? '<span class="occ-row-badge tenant">TENANT</span>' : '<span class="occ-row-badge none">—</span>';
-    const restricted = !canViewDetails(o);
+  list.innerHTML = items.map(o => {
+    const type = o.owner_type === 'Owner' ? 'owner' : o.owner_type === 'Tenant' ? 'tenant' : '';
+    const plates = unitVehicleCount(o);
+    const committee = '';
+    const personName = (() => {
+      const emails = splitEmails(o.primary_email);
+      const prof = emails.map(e => window._profileMap[normalizeEmail(e)]).find(Boolean);
+      return prof?.full_name || o.contact_person || '—';
+    })();
     return `
-      <button class="occ-unit-row ${o.id === selectedOccupantId ? 'selected' : ''}" data-id="${escapeHtml(o.id)}" data-unit="${escapeHtml(o.unit)}" type="button" onclick="selectOccupant('${String(o.id).replace(/'/g,"\\'")}')" ${restricted ? 'title="Restricted detail"' : ''}>
-        <div class="occ-row-unit"><strong>${escapeHtml(o.unit)}</strong><div class="occ-row-badge-line">${badge}${o.is_committee ? '<span class="occ-committee-mini" title="Committee member">★ COMMITTEE</span>' : ''}</div></div>
-        <div class="occ-row-business"><div class="primary">${escapeHtml(primaryName)}</div><div class="secondary">${escapeHtml(secondary || '—')}</div></div>
-        <div class="occ-row-stat"><i class="ti ti-users"></i>${computedPeopleCount}</div>
-        <div class="occ-row-stat car"><i class="ti ti-car"></i>${plates.length}</div>
-        <div class="occ-row-chevron"><i class="ti ti-chevron-right"></i></div>
+      <button class="occ-v2-unit-row ${selectedOccupantId === o.id ? 'selected' : ''}" data-id="${esc(o.id)}" type="button">
+        <div class="occ-v2-unit-box">
+          <div class="occ-v2-unit-code">${esc(o.unit || '—')}</div>
+          ${type ? `<span class="occ-v2-badge ${type}">${type.toUpperCase()}</span>` : ''}
+          ${committee}
+        </div>
+        <div class="occ-v2-biz">
+          <div class="occ-v2-biz-primary">${esc(personName)}${o.is_committee ? ' <span title="Committee Member" style="color:var(--ux-yellow);font-size:13px">★</span>' : ''}</div>
+          <div class="occ-v2-biz-secondary">${esc(o.business_name || '—')}</div>
+        </div>
+        <div class="occ-v2-stat"><i class="ti ti-users"></i>${personCount(o)}</div>
+        <div class="occ-v2-stat vehicle"><i class="ti ti-car"></i>${plates}</div>
+        <div class="occ-v2-chevron"><i class="ti ti-chevron-right"></i></div>
       </button>`;
   }).join('');
-
-  renderSelectedDetail();
+  list.querySelectorAll('.occ-v2-unit-row').forEach(row => {
+    row.addEventListener('click', () => {
+      selectedOccupantId = row.dataset.id;
+      renderOccupants();
+      const sel = document.querySelector(`.occ-v2-unit-row[data-id="${CSS.escape(selectedOccupantId)}"]`);
+      if (sel) sel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  });
 }
-
-function renderPersonCard(person, kind, extraLabel='') {
-  const name = person.name || '—';
-  const phone = person.phone || '';
-  const profileRole = person.profile?.role || '';
-  const roleLabel = profileRole ? profileRole.toUpperCase() : '';
-  const roleClass = profileRole ? `role-${profileRole}` : '';
-  const subLabel = !profileRole && extraLabel ? extraLabel : (profileRole && extraLabel && extraLabel.toLowerCase() !== profileRole ? extraLabel : '');
+function personRecordHtml(occ, email, index, context, fallbackName) {
+  const profile = window._profileMap[normalizeEmail(email)] || null;
+  const nameValue = profile?.full_name || (fallbackName && !email ? fallbackName : '') || '—';
+  const phoneValue = profile?.phone || occ.phone || '';
+  const actualRole = profile?.role || null;
+  const badges = context === 'none' ? [] : [contextBadge(context)];
+  if (actualRole && actualRole !== context && !(actualRole === 'committee' && context === 'owner')) badges.push(roleBadge(actualRole));
   return `
-    <div class="occ-person-card">
-      <div class="occ-person-top">
-        <div style="display:flex;align-items:flex-start;gap:8px;min-width:0;flex:1">
-          <div class="occ-person-index">${person.index}</div>
-          <div class="occ-person-main">
-            <div class="occ-person-name">${escapeHtml(name)}</div>
-            ${roleLabel ? `<div class="occ-person-role"><span class="occ-person-role-badge ${roleClass}">${escapeHtml(roleLabel)}</span></div>` : ''}
-            ${subLabel ? `<div class="occ-person-role-sub">${escapeHtml(subLabel)}</div>` : ''}
-          </div>
+    <div class="occ-v2-person-card">
+      <div class="occ-v2-person-top">
+        <div class="occ-v2-index">${index}</div>
+        <div class="occ-v2-person-main">
+          <div class="occ-v2-person-name">${esc(nameValue)}</div>
+          <div class="occ-v2-person-badges">${badges.join('')}</div>
         </div>
-        ${person.index === 1 && kind === 'owner' ? '<span class="occ-primary-pill">OWNER</span>' : ''}
       </div>
-      <div class="occ-person-line"><i class="ti ti-mail"></i><span>${person.email ? emailLink(person.email) : '—'}</span></div>
-      <div class="occ-person-line ${phone ? '' : 'muted'}"><i class="ti ti-phone"></i><span>${phone ? escapeHtml(phone) : '—'}</span></div>
+      ${email ? `<div class="occ-v2-person-line"><i class="ti ti-mail"></i><a href="mailto:${esc(email)}">${esc(email)}</a></div>` : ''}
+      ${phoneValue ? `<div class="occ-v2-person-line"><i class="ti ti-phone"></i><a href="tel:${esc(phoneValue.replace(/\s/g,''))}">${esc(phoneValue)}</a></div>` : `<div class="occ-v2-person-line" style="color:#6f8994"><i class="ti ti-phone"></i>—</div>`}
     </div>`;
 }
-
-function roleSection(title, icon, className, people, emptyText) {
+function renderPeopleSection(occ, title, icon, cls, context, emails, fallbackName) {
+  const cleaned = [...new Set(emails.map(e => e.trim()).filter(Boolean))];
+  let body = '';
+  if (cleaned.length) body = cleaned.map((email, i) => personRecordHtml(occ, email, i+1, context, fallbackName)).join('');
+  else if (fallbackName) body = personRecordHtml(occ, '', 1, context, fallbackName);
+  else body = `<div class="occ-v2-person-empty">—</div>`;
   return `
-    <section class="occ-section occ-role-section ${className}">
-      <div class="occ-section-head">
-        <div class="occ-section-title"><span class="ico"><i class="ti ${icon}"></i></span>${title} <span style="opacity:.7">(${people.length})</span></div>
-      </div>
-      <div class="occ-section-body">
-        ${people.length ? people.map(p => renderPersonCard(p, className.includes('owner') ? 'owner' : className.includes('tenant') ? 'tenant' : 'staff')).join('') : `<div class="occ-person-empty">${escapeHtml(emptyText)}</div>`}
+    <section class="occ-v2-section occ-v2-role-section ${cls}">
+      <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="${icon}"></i></span>${title}</div><div class="occ-v2-section-count">${cleaned.length || (fallbackName ? 1 : 0)}</div></div>
+      <div class="occ-v2-section-body">${body}</div>
+    </section>`;
+}
+function renderCommitteeSection(occ) {
+  const primaryEmails = splitEmails(occ.primary_email);
+  const committeeProfiles = primaryEmails.map(e => window._profileMap[normalizeEmail(e)]).filter(p => p && p.role === 'committee');
+  const email = committeeProfiles[0]?.email || (occ.is_committee && primaryEmails.length === 1 ? primaryEmails[0] : '');
+  const p = email ? window._profileMap[normalizeEmail(email)] : null;
+  const memberName = p?.full_name || (occ.is_committee && primaryEmails.length === 1 ? occ.contact_person : '');
+  return `
+    <section class="occ-v2-section occ-v2-committee">
+      <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="ti ti-star"></i></span>Committee Information</div></div>
+      <div class="occ-v2-section-body">
+        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Role</div><div class="occ-v2-committee-value">${occ.is_committee ? esc(occ.committee_role || 'Committee Member') : '—'}</div></div>
+        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Primary Unit</div><div class="occ-v2-committee-value ${occ.is_primary ? 'occ-v2-primary-yes' : 'occ-v2-primary-no'}">${occ.is_primary ? 'Yes' : 'No'}</div></div>
+        <div style="margin-top:10px">${memberName || email ? personRecordHtml(occ, email, 1, 'none', memberName) : '<div class="occ-v2-person-empty">—</div>'}</div>
       </div>
     </section>`;
 }
-
-function getSameEmailGroups(occ) {
-  const currentEmails = [...new Set([...splitEmails(occ.primary_email), ...splitEmails(occ.business_email)])];
+function sameEmailHtml(occ) {
+  if (!['admin','committee','observer'].includes(role)) return '';
   const groups = [];
-  currentEmails.forEach(email => {
-    const units = [...(emailUnitMap.get(email) || new Set())];
-    const others = units.filter(unit => unit !== occ.unit);
-    if (others.length) groups.push({email, units});
+  const byEmail = {};
+  allOccupants.forEach(o => {
+    splitEmails(o.primary_email).concat(splitEmails(o.business_email)).forEach(email => {
+      const key = normalizeEmail(email); if (!key) return;
+      if (!byEmail[key]) byEmail[key] = [];
+      if (!byEmail[key].some(x => x.id === o.id)) byEmail[key].push(o);
+    });
   });
-  return groups;
-}
-
-function renderSelectedDetail() {
-  const detail = document.getElementById('occDetail');
-  const occ = allOccupants.find(o => o.id === selectedOccupantId);
-  if (!occ) { detail.innerHTML = '<div class="occ-detail-empty">No unit selected.</div>'; return; }
-
-  const fullDetailAccess = canViewDetails(occ);
-  const privileged = ['admin','committee','observer'].includes(role);
-  const ownerInfoVisible = isOwnerUnit(occ) || privileged || (role === 'owner' && myOwnedUnits.has(occ.unit));
-  const ownerPeople = ownerInfoVisible ? getPeopleForUnit(occ, 'owner') : [];
-  const tenantPeople = fullDetailAccess && isTenantUnit(occ) ? getPeopleForUnit(occ, 'tenant') : [];
-  const staffPeople = fullDetailAccess && isOwnerUnit(occ) ? getUnitEmails(occ,'staff').map((email,idx) => {
-    const p = getProfile(email);
-    return { index: idx+1, email, profile:p, name:p?.full_name || '', phone:p?.phone || '', role:p?.role || '' };
-  }) : [];
-  const committeePeople = fullDetailAccess ? getCommitteePeople(occ) : [];
-  const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(Boolean);
-  const sameGroups = fullDetailAccess ? getSameEmailGroups(occ) : [];
-
-  const ownerSection = ownerInfoVisible
-    ? roleSection('Owner Information','ti-user-square','owner-section', ownerPeople, 'No owner information available.')
-    : `<section class="occ-section occ-role-section owner-section"><div class="occ-section-head"><div class="occ-section-title"><span class="ico"><i class="ti ti-user-square"></i></span>Owner Information</div></div><div class="occ-section-body"><div class="occ-person-empty">Owner contact and primary email are protected on leased units.</div></div></section>`;
-  const tenantSection = roleSection('Tenant / Occupant Information','ti-users','tenant-section', tenantPeople, fullDetailAccess && isTenantUnit(occ) ? 'No tenant / occupant information on this unit.' : 'Private unit details.');
-  const staffSection = roleSection('Staff Information','ti-briefcase','staff-section', staffPeople, 'No staff information on this unit.');
-
-  const committeeHtml = `
-    <section class="occ-section occ-role-section committee-section">
-      <div class="occ-section-head"><div class="occ-section-title"><span class="ico"><i class="ti ti-star"></i></span>Committee Information</div></div>
-      <div class="occ-section-body">
-        ${occ.is_committee ? `
-          <div class="occ-committee-row"><div class="occ-committee-label">Role</div><div class="occ-committee-value">${escapeHtml(occ.committee_role || 'Committee Member')}</div></div>
-          <div class="occ-committee-row"><div class="occ-committee-label">Primary Unit</div><div class="occ-committee-value ${occ.is_primary ? 'occ-primary-yes' : 'occ-primary-no'}">${occ.is_primary ? 'Yes' : 'No'}</div></div>
-          ${committeePeople.length ? `<div style="margin-top:10px">${committeePeople.map(p=>renderPersonCard(p,'committee',occ.committee_role || 'Committee')).join('')}</div>` : ''}
-        ` : `<div class="occ-person-empty">Not marked as a committee unit.</div>`}
-      </div>
-    </section>`;
-
-  const sameHtml = `
-    <section class="occ-section occ-same-email">
-      <div class="occ-section-head"><div class="occ-section-title"><span class="ico" style="color:var(--oc-amber)"><i class="ti ti-link"></i></span>Same Email in Other Units</div></div>
-      <div class="occ-section-body">
-        ${sameGroups.length ? sameGroups.map(g => `
-          <div class="occ-email-group">
-            <div class="occ-email-line"><span class="occ-email-pill"><i class="ti ti-mail"></i>${escapeHtml(g.email)}</span></div>
-            <div class="occ-email-line" style="margin-top:8px">
-              ${g.units.map(unit => `<button class="occ-email-unit ${unit === occ.unit ? 'current' : ''}" type="button" onclick="navigateToUnit('${String(unit).replace(/'/g,"\\'")}')">${escapeHtml(unit)}</button>`).join('')}
+  Object.entries(byEmail).forEach(([email, units]) => {
+    if (units.some(u => u.id === occ.id) && units.length > 1) groups.push({email, units});
+  });
+  if (!groups.length) return '';
+  return `
+    <section class="occ-v2-section occ-v2-same-email">
+      <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon" style="color:var(--ux-yellow)"><i class="ti ti-link"></i></span>Same Email in Other Units</div></div>
+      <div class="occ-v2-section-body">
+        ${groups.map(g => `
+          <div class="occ-v2-email-group">
+            <div class="occ-v2-email-pill"><i class="ti ti-mail"></i>${esc(g.email)}</div>
+            <div class="occ-v2-unit-links">
+              ${g.units.map(u => `<button type="button" class="occ-v2-unit-link ${u.id===occ.id?'current':''}" data-linked-id="${esc(u.id)}">${esc(u.unit)}</button>`).join('')}
             </div>
-            <div class="occ-email-note">This email is used in multiple units. It may be the same person, but identity is not confirmed.</div>
-          </div>`).join('') : '<div class="occ-person-empty">No shared email links found for this unit.</div>'}
+            <div class="occ-v2-email-note">This email is used in multiple units. It may be the same person, but this is not confirmed.</div>
+          </div>`).join('')}
       </div>
     </section>`;
-
-  const editAllowed = role === 'admin';
-  const ownEditable = ['committee','owner','tenant'].includes(role) && isMyUnit(occ.unit);
-  const editButton = editAllowed
-    ? `<button class="occ-mini-btn occ-edit-top" type="button" onclick="openEditModal('${String(occ.id).replace(/'/g,"\\'")}')"><i class="ti ti-pencil"></i>Edit Details</button>`
-    : ownEditable
-      ? `<button class="occ-mini-btn occ-edit-top" type="button" onclick="openMyProfile()"><i class="ti ti-user-edit"></i>Edit Profile</button>`
-      : '';
-
-  const restrictedHtml = !fullDetailAccess ? `
-    <div class="occ-detail-top">
-      <div class="occ-detail-heading"><div class="occ-detail-unit">${escapeHtml(occ.unit)}</div><span class="occ-row-badge ${isOwnerUnit(occ) ? 'owner' : 'tenant'}">${isOwnerUnit(occ) ? 'OWNER' : 'TENANT'}</span><div class="occ-level-label">${escapeHtml(occ.level || getSuiteForUnit(occ.unit))}</div></div>
-      <div class="occ-detail-actions"><button class="occ-mini-btn" type="button" onclick="navigateRelative(-1)"><i class="ti ti-chevron-left"></i>Previous</button><button class="occ-mini-btn" type="button" onclick="navigateRelative(1)">Next<i class="ti ti-chevron-right"></i></button></div>
+}
+function renderVehicles(occ) {
+  const plates = splitPlates(occ.license_plates);
+  return `
+    <section class="occ-v2-section occ-v2-vehicles">
+      <div class="occ-v2-section-head"><div class="occ-v2-section-title" style="color:var(--ux-green)"><span class="occ-v2-section-icon" style="color:var(--ux-green)"><i class="ti ti-car"></i></span>Vehicles (${plates.length})</div><div class="occ-v2-section-count">LICENCE PLATES</div></div>
+      <div class="occ-v2-section-body">
+        ${plates.length ? `<div class="occ-v2-vehicle-table-wrap"><table class="occ-v2-vehicle-table"><thead><tr><th style="width:50px">#</th><th>Licence Plate</th></tr></thead><tbody>${plates.map((p,i)=>`<tr><td class="occ-v2-vehicle-index">${i+1}</td><td><span class="occ-v2-plate">${esc(p)}</span></td></tr>`).join('')}</tbody></table></div>` : `<div class="occ-v2-person-empty">No vehicles registered</div>`}
+        <div class="occ-v2-vehicle-note">Vehicle data is displayed from the existing licence_plates / vehicle sync flow. Vehicle notification email is handled separately in Parking.</div>
+      </div>
+    </section>`;
+}
+function renderRestrictedDetail(occ) {
+  return `
+    <div class="occ-v2-detail-top"><div class="occ-v2-detail-title"><div class="occ-v2-detail-unit">${esc(occ.unit)}</div><div class="occ-v2-level">${esc(occ.level || '')}</div></div></div>
+    <div class="occ-v2-section" style="margin-top:10px"><div class="occ-v2-restricted"><div class="occ-v2-lock"><i class="ti ti-lock"></i></div><strong>Private unit details</strong><span>This unit is visible in the directory, but its private occupant details are restricted to the authorised user for this unit.</span></div></div>`;
+}
+function renderDetail(occ) {
+  const container = document.getElementById('occV2Detail');
+  if (!container) return;
+  if (!occ) { container.innerHTML = '<div class="occ-v2-restricted"><span>No unit selected.</span></div>'; return; }
+  if (!isAccessibleUnit(occ.unit)) { container.innerHTML = renderRestrictedDetail(occ); return; }
+  const type = occ.owner_type === 'Owner' ? 'owner' : occ.owner_type === 'Tenant' ? 'tenant' : '';
+  const primaryEmails = splitEmails(occ.primary_email);
+  const businessEmails = splitEmails(occ.business_email);
+  const ownerName = primaryEmails.map(e => window._profileMap[normalizeEmail(e)]?.full_name).find(Boolean) || (primaryEmails.length === 1 ? occ.contact_person : '');
+  const ownersHtml = renderPeopleSection(occ, `Owner Information`, 'ti ti-user-check', 'owner', 'owner', primaryEmails, ownerName);
+  const peopleHtml = type === 'tenant' ? renderPeopleSection(occ, 'Tenant / Occupant Information', 'ti ti-users', 'tenant', 'tenant', businessEmails, '') : '';
+  const staffHtml = type === 'owner' ? renderPeopleSection(occ, 'Staff Information', 'ti ti-briefcase', 'staff', 'tenant', businessEmails, '') : '';
+  const bottom = `${renderCommitteeSection(occ)}${sameEmailHtml(occ)}`;
+  const canEdit = role === 'admin';
+  const ownProfileEdit = !canEdit && ['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(occ.unit) || occ.unit === myUnit);
+  container.innerHTML = `
+    <div class="occ-v2-detail-top">
+      <div class="occ-v2-detail-title">
+        <div class="occ-v2-detail-unit">${esc(occ.unit)}</div>
+        ${type ? `<span class="occ-v2-type-badge ${type}">${type.toUpperCase()}</span>` : ''}
+        <div class="occ-v2-level">${esc(occ.level || '')}</div>
+      </div>
+      <div class="occ-v2-detail-actions">
+        <button class="occ-v2-mini" type="button" id="occPrevBtn"><i class="ti ti-chevron-left"></i> Previous</button>
+        <button class="occ-v2-mini" type="button" id="occNextBtn">Next <i class="ti ti-chevron-right"></i></button>
+        ${canEdit ? '<button class="occ-v2-mini primary" type="button" id="occEditTopBtn"><i class="ti ti-pencil"></i> Edit Details</button>' : ownProfileEdit ? '<button class="occ-v2-mini primary" type="button" id="occMyProfileBtn"><i class="ti ti-user"></i> Edit Profile</button>' : ''}
+      </div>
     </div>
-    <section class="occ-section occ-unit-business">
-      <div class="occ-section-head"><div class="occ-section-title"><span class="ico"><i class="ti ti-building"></i></span>Unit &amp; Business</div><div class="occ-section-meta">DIRECTORY VIEW</div></div>
-      <div class="occ-section-body">
-        <div class="occ-unit-business-grid">
-          <div class="occ-business-main"><span class="occ-label">Representative Business</span><div class="occ-value-box">${escapeHtml(occ.business_name || '—')}</div></div>
-          <div><span class="occ-label">Unit</span><div class="occ-value-box small">${escapeHtml(occ.unit || '—')}</div></div>
-          <div><span class="occ-label">Suite</span><div class="occ-value-box small">${escapeHtml(occ.suite || occ.unit || '—')}</div></div>
-          <div><span class="occ-label">Level</span><div class="occ-value-box small">${escapeHtml(occ.level || getSuiteForUnit(occ.unit))}</div></div>
+
+    <section class="occ-v2-section occ-v2-unit-business">
+      <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="ti ti-building"></i></span>Unit &amp; Business</div><div class="occ-v2-section-count">CURRENT UNIT</div></div>
+      <div class="occ-v2-section-body">
+        <div class="occ-v2-unit-grid">
+          <div><span class="occ-v2-label">Representative Business</span><div class="occ-v2-value">${esc(occ.business_name || '—')}</div></div>
+          <div><span class="occ-v2-label">Unit</span><div class="occ-v2-value mono">${esc(occ.unit || '—')}</div></div>
+          <div><span class="occ-v2-label">Suite</span><div class="occ-v2-value mono">${esc(occ.suite || occ.unit || '—')}</div></div>
+          <div><span class="occ-v2-label">Level</span><div class="occ-v2-value mono">${esc(occ.level || '—')}</div></div>
         </div>
-        <div class="occ-unit-contact"><span class="occ-label" style="margin:0">Unit Contact</span><span class="occ-contact-value">${escapeHtml(occ.phone || '—')}</span></div>
+        <div class="occ-v2-unit-contact"><span class="occ-v2-contact-label">Unit Contact</span><span class="occ-v2-contact-value">${occ.phone ? esc(occ.phone) : '—'}</span><span class="occ-v2-contact-note">Existing occupant contact · preserved from <code>occupants.phone</code></span></div>
+        <div class="occ-v2-existing"><span class="occ-v2-label" style="display:inline-block;margin-right:8px">Existing Contact Person</span><strong>${esc(occ.contact_person || '—')}</strong></div>
       </div>
     </section>
-    <div class="occ-section"><div class="occ-restricted" style="min-height:210px"><div class="lock"><i class="ti ti-lock"></i></div><strong>Owner Details Protected</strong><span>This leased unit is visible in the directory, but Owner Contact and Primary Email are privacy-protected unless you are authorised to view them.</span></div></div>
-    <section class="occ-section occ-vehicles-section"><div class="occ-section-head"><div class="occ-section-title"><span class="ico" style="color:var(--oc-green)"><i class="ti ti-car"></i></span>Vehicles <span style="opacity:.7">(${plates.length})</span></div></div><div class="occ-section-body">${plates.length ? `<div class="occ-vehicles-grid">${plates.map((plate,i)=>`<div class="occ-vehicle-row"><div class="occ-vehicle-index">${i+1}</div><div class="occ-plate">${escapeHtml(plate)}</div></div>`).join('')}</div>` : '<div class="occ-person-empty">No vehicles registered.</div>'}</div></section>
-  ` : `
-    <div class="occ-detail-top">
-      <div class="occ-detail-heading"><div class="occ-detail-unit">${escapeHtml(occ.unit)}</div><span class="occ-row-badge ${isOwnerUnit(occ) ? 'owner' : isTenantUnit(occ) ? 'tenant' : 'none'}">${isOwnerUnit(occ) ? 'OWNER' : isTenantUnit(occ) ? 'TENANT' : '—'}</span><div class="occ-level-label">${escapeHtml(occ.level || getSuiteForUnit(occ.unit))}</div></div>
-      <div class="occ-detail-actions"><button class="occ-mini-btn" type="button" onclick="navigateRelative(-1)"><i class="ti ti-chevron-left"></i>Previous</button><button class="occ-mini-btn" type="button" onclick="navigateRelative(1)">Next<i class="ti ti-chevron-right"></i></button>${editButton}</div>
+
+    <div class="occ-v2-people-grid">
+      ${ownersHtml}
+      ${peopleHtml || `<section class="occ-v2-section occ-v2-role-section tenant"><div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon" style="color:var(--ux-red)"><i class="ti ti-users"></i></span>Tenant / Occupant Information</div><div class="occ-v2-section-count">0</div></div><div class="occ-v2-section-body"><div class="occ-v2-person-empty">—</div></div></section>`}
+      ${staffHtml || `<section class="occ-v2-section occ-v2-role-section staff"><div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon" style="color:var(--ux-red)"><i class="ti ti-briefcase"></i></span>Staff Information</div><div class="occ-v2-section-count">0</div></div><div class="occ-v2-section-body"><div class="occ-v2-person-empty">—</div></div></section>`}
     </div>
 
-    <section class="occ-section occ-unit-business">
-      <div class="occ-section-head"><div class="occ-section-title"><span class="ico"><i class="ti ti-building"></i></span>Unit &amp; Business</div><div class="occ-section-meta">CURRENT UNIT</div></div>
-      <div class="occ-section-body">
-        <div class="occ-unit-business-grid">
-          <div class="occ-business-main"><span class="occ-label">Representative Business</span><div class="occ-value-box">${escapeHtml(occ.business_name || '—')}</div></div>
-          <div><span class="occ-label">Unit</span><div class="occ-value-box small">${escapeHtml(occ.unit || '—')}</div></div>
-          <div><span class="occ-label">Suite</span><div class="occ-value-box small">${escapeHtml(occ.suite || occ.unit || '—')}</div></div>
-          <div><span class="occ-label">Level</span><div class="occ-value-box small">${escapeHtml(occ.level || getSuiteForUnit(occ.unit))}</div></div>
-        </div>
-        <div class="occ-unit-contact"><span class="occ-label" style="margin:0">Unit Contact</span><span class="occ-contact-value">${escapeHtml(occ.phone || '—')}</span><span class="occ-contact-note">Existing occupant contact · preserved from <code>occupants.phone</code></span></div>
-        ${occ.contact_person ? `<div style="margin-top:9px"><span class="occ-label">Existing Contact Person</span><div style="color:#CFE4E2;font-size:13px;line-height:1.45;word-break:break-word">${escapeHtml(occ.contact_person)}</div></div>` : ''}
-      </div>
-    </section>
+    ${renderVehicles(occ)}
+    <div class="occ-v2-bottom">${bottom}</div>
+  `;
 
-    <div class="occ-info-grid">${ownerSection}${tenantSection}</div>
-    ${staffSection}
-
-    <section class="occ-section occ-vehicles-section">
-      <div class="occ-section-head"><div class="occ-section-title"><span class="ico" style="color:var(--oc-green)"><i class="ti ti-car"></i></span>Vehicles <span style="opacity:.7">(${plates.length})</span></div><div class="occ-section-meta">LICENCE PLATES</div></div>
-      <div class="occ-section-body">
-        ${plates.length ? `<div class="occ-vehicles-grid">${plates.map((plate,i)=>`<div class="occ-vehicle-row"><div class="occ-vehicle-index">${i+1}</div><div class="occ-plate">${escapeHtml(plate)}</div></div>`).join('')}</div><div class="occ-vehicle-note">Vehicle data is shown from the existing <code>license_plates</code> / <code>vehicles</code> sync flow. Vehicle notification email is intentionally not part of this page.</div>` : '<div class="occ-person-empty">No vehicles registered.</div>'}
-      </div>
-    </section>
-
-    <div class="occ-bottom-grid">${committeeHtml}${sameHtml}</div>`;
-
-  detail.innerHTML = restrictedHtml;
+  const list = getFilteredOccupants();
+  const idx = list.findIndex(o => o.id === occ.id);
+  const prev = list[idx > 0 ? idx - 1 : list.length - 1];
+  const next = list[idx >= 0 && idx < list.length - 1 ? idx + 1 : 0];
+  const prevBtn = document.getElementById('occPrevBtn');
+  const nextBtn = document.getElementById('occNextBtn');
+  if (prevBtn) prevBtn.addEventListener('click', () => { if (prev) { selectedOccupantId = prev.id; renderOccupants(); } });
+  if (nextBtn) nextBtn.addEventListener('click', () => { if (next) { selectedOccupantId = next.id; renderOccupants(); } });
+  const edit = document.getElementById('occEditTopBtn'); if (edit) edit.addEventListener('click', () => openEditModal(occ.id));
+  const mp = document.getElementById('occMyProfileBtn'); if (mp) mp.addEventListener('click', () => openMyProfile());
+  container.querySelectorAll('[data-linked-id]').forEach(btn => btn.addEventListener('click', () => { selectedOccupantId = btn.dataset.linkedId; const target = allOccupants.find(o=>o.id===selectedOccupantId); if(target) { currentSuite = getSuiteForUnit(target.unit); updateFloorTabs(); renderOccupants(); } }));
+}
+function renderOccupants() {
+  updateFloorTabs(); updateRoleChips();
+  const items = getFilteredOccupants();
+  if (!items.some(o => o.id === selectedOccupantId)) selectedOccupantId = items[0]?.id || null;
+  const line = document.getElementById('occV2ResultLine');
+  const total = document.getElementById('occV2Total');
+  if (line) {
+    const floorLabel = currentSuite === 'All' ? 'ALL FLOORS' : currentSuite.toUpperCase();
+    line.textContent = `${items.length} UNITS SHOWN · ${floorLabel}`;
+  }
+  if (total) total.textContent = `${allOccupants.length} UNITS`;
+  document.getElementById('occTypeFilter').value = currentTypeFilter;
+  document.getElementById('occNoVehicleBtn').classList.toggle('active', noVehicleOnly);
+  renderLeftList(items);
+  const selected = allOccupants.find(o => o.id === selectedOccupantId) || null;
+  renderDetail(selected);
+}
+function clearAllFilters() {
+  currentSuite = 'All'; currentRoleFilter = 'all'; currentTypeFilter = 'all'; noVehicleOnly = false; currentSearch = ''; selectedOccupantId = null;
+  updateSearchUI(); renderOccupants();
 }
 
-window.navigateRelative = (step) => {
-  const visible = getVisibleOccupants();
-  const idx = visible.findIndex(o => o.id === selectedOccupantId);
-  if (idx < 0) return;
-  const next = visible[(idx + step + visible.length) % visible.length];
-  selectOccupant(next.id);
-};
-
-window.navigateToUnit = (unit) => {
-  const occ = allOccupants.find(o => o.unit === unit);
-  if (!occ) return;
-  selectOccupant(occ.id, {ensureSuite:true, highlight:true});
-};
-
-// Search / filter controls
-const occupantSearchInput = document.getElementById('occupantSearchInput');
-const occupantSearchClear = document.getElementById('occupantSearchClear');
-const occupantTypeSelect = document.getElementById('occupantTypeFilter');
-const noVehicleBtn = document.getElementById('occNoVehicleBtn');
-if (occupantSearchInput) occupantSearchInput.addEventListener('input', e => {
-  occupantSearchQuery = e.target.value || '';
-  occupantSearchClear.style.display = occupantSearchQuery ? 'block' : 'none';
-  renderOccupants();
+// Floor tabs — fixed below the header and above the role chips, as approved.
+document.querySelectorAll('.occ-v2-floor-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentSuite = tab.dataset.suite;
+    selectedOccupantId = null;
+    renderOccupants();
+    tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  });
 });
-if (occupantSearchClear) occupantSearchClear.addEventListener('click', () => {
-  occupantSearchInput.value = '';
-  occupantSearchQuery = '';
-  occupantSearchClear.style.display = 'none';
-  occupantSearchInput.focus();
-  renderOccupants();
+document.querySelectorAll('[data-role-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const next = btn.dataset.roleFilter;
+    currentRoleFilter = currentRoleFilter === next ? 'all' : next;
+    selectedOccupantId = null;
+    renderOccupants();
+  });
 });
-if (occupantTypeSelect) occupantTypeSelect.addEventListener('change', e => {
-  occupantTypeFilter = e.target.value;
-  noVehicleOnly = false;
-  if (noVehicleBtn) noVehicleBtn.classList.remove('active');
-  renderOccupants();
-});
-if (noVehicleBtn) noVehicleBtn.addEventListener('click', () => {
-  noVehicleOnly = !noVehicleOnly;
-  if (noVehicleOnly) {
-    occupantTypeFilter = 'all';
-    if (occupantTypeSelect) occupantTypeSelect.value = 'all';
-  }
-  noVehicleBtn.classList.toggle('active', noVehicleOnly);
-  renderOccupants();
-});
+document.getElementById('occTypeFilter').addEventListener('change', e => { currentTypeFilter = e.target.value; selectedOccupantId=null; renderOccupants(); });
+document.getElementById('occNoVehicleBtn').addEventListener('click', () => { noVehicleOnly = !noVehicleOnly; selectedOccupantId=null; renderOccupants(); });
+const searchInput = document.getElementById('occSearchInput');
+const searchClear = document.getElementById('occSearchClear');
+let searchTimer = null;
+searchInput.addEventListener('input', e => { clearTimeout(searchTimer); currentSearch=e.target.value.trim(); updateSearchUI(); searchTimer=setTimeout(()=>{selectedOccupantId=null;renderOccupants();}, 120); });
+searchClear.addEventListener('click', () => { currentSearch=''; searchInput.value=''; updateSearchUI(); selectedOccupantId=null; renderOccupants(); searchInput.focus(); });
 
 // Open View Modal
 window.openViewModal = (id) => {
@@ -2437,41 +2122,34 @@ window.exportOccupants = () => {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Occupants');
   const date = new Date().toISOString().split('T')[0];
-  const filterLabel = currentSuite && currentSuite !== 'All' ? currentSuite.replace(/\s+/g,'_') : '';
-  const suffix = filterLabel ? `_${filterLabel}` : '';
+  const activeChip = document.querySelector('.filter-chip.active');
+  const filterLabel = activeChip ? activeChip.dataset.filter : '';
+  const suffix = filterLabel && filterLabel !== 'all' ? `_${filterLabel}` : '';
   XLSX.writeFile(wb, `Redmyre_Occupants${suffix}_${date}.xlsx`);
 };
 
 // Initial load
 await loadOccupants();
 
-// ── URL 파라미터 처리: ?unit=XXX 로 들어온 경우 자동 이동/하이라이트 ──
+// ── URL 파라미터 처리: ?unit=XXX → floor switch + list highlight + detail selection
 (function handleUnitParam() {
   const params = new URLSearchParams(window.location.search);
   const targetUnit = params.get('unit');
   if (!targetUnit) return;
-
-  // 기존 연결 규칙 유지: admin / observer / committee만 작동
   if (!['admin','observer','committee'].includes(role)) return;
-
-  const match = allOccupants.find(o => (o.unit || '').toUpperCase() === targetUnit.toUpperCase());
+  const match = allOccupants.find(o => String(o.unit || '').toUpperCase() === targetUnit.toUpperCase());
   if (!match) return;
-
-  const suite = getSuiteForUnit(match.unit);
-  currentSuite = suite;
+  currentSuite = getSuiteForUnit(match.unit);
+  selectedOccupantId = match.id;
+  renderOccupants();
   setTimeout(() => {
-    updateFloorTabs();
-    selectedOccupantId = match.id;
-    renderOccupants();
-    setTimeout(() => {
-      const row = document.querySelector(`.occ-unit-row[data-id="${CSS.escape(match.id)}"]`);
-      if (row) {
-        row.classList.add('highlight-flash');
-        row.scrollIntoView({ behavior:'smooth', block:'center' });
-        setTimeout(() => row.classList.remove('highlight-flash'), 3000);
-      }
-    }, 120);
-  }, 80);
+    const row = document.querySelector(`.occ-v2-unit-row[data-id="${CSS.escape(match.id)}"]`);
+    if (row) {
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+      row.classList.add('highlight-flash');
+      setTimeout(() => row.classList.remove('highlight-flash'), 3000);
+    }
+  }, 120);
 })();
 
 // ===== ADMIN QUICK LOOKUP (occupants + contractors) =====
