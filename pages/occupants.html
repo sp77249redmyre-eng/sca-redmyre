@@ -1463,6 +1463,17 @@ html body .occupants-console-v2 .occ-v2-email-note{font-size:14px!important}
   html body .occupants-console-v2 .occ-v2-section-count{font-size:13px!important}
 }
 </style>
+<style id="occ-v21-vehicle-boxes">
+/* Vehicles: 4 per box, up to 3 boxes side by side; a new box appears automatically after every 4 vehicles. */
+.occ-v2-vbox-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.occ-v2-vbox{border:1px solid #1f4a52;border-radius:8px;background:#08171e;overflow:hidden}
+.occ-v2-vrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #0a3040}
+.occ-v2-vrow:last-child{border-bottom:0}
+.occ-v2-vrow .occ-v2-vehicle-index{width:22px;color:#7796a2;font-size:14px;flex:0 0 auto}
+.occ-v2-vemail{flex:1 1 auto;min-width:0;color:#69f8ff;font:600 13px "JetBrains Mono",monospace;word-break:break-all;line-height:1.3}
+.occ-v2-vrow .occ-v2-vehicle-actions{flex:0 0 auto}
+@media(max-width:900px){.occ-v2-vbox-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -2121,7 +2132,7 @@ function renderVehicles(occ) {
     <section class="occ-v2-section occ-v2-vehicles">
       <div class="occ-v2-section-head"><div class="occ-v2-section-title" style="color:var(--ux-green)"><span class="occ-v2-section-icon" style="color:var(--ux-green)"><i class="ti ti-car"></i></span>Vehicles (${plates.length})</div><div class="occ-v2-section-head-actions"><div class="occ-v2-section-count">LICENCE PLATES</div>${addBtn}</div></div>
       <div class="occ-v2-section-body">
-        ${plates.length ? `<div class="occ-v2-vehicle-table-wrap"><table class="occ-v2-vehicle-table"><thead><tr><th style="width:50px">#</th><th>Licence Plate</th>${canManage?'<th style="width:92px;text-align:center">Action</th>':''}</tr></thead><tbody>${plates.map((p,i)=>`<tr><td class="occ-v2-vehicle-index">${i+1}</td><td><span class="occ-v2-plate">${esc(p)}</span></td>${canManage?`<td class="occ-v2-vehicle-actions"><button type="button" onclick="openVehicleEdit('${esc(occ.id)}','${esc(p)}')" title="Edit"><i class="ti ti-pencil"></i></button><button type="button" onclick="removeVehicleFromDetail('${esc(occ.id)}','${esc(p)}')" title="Remove"><i class="ti ti-trash"></i></button></td>`:''}</tr>`).join('')}</tbody></table></div>` : `<div class="occ-v2-person-empty">No vehicles registered</div>`}
+        ${plates.length ? `<div class="occ-v2-vbox-grid">${Array.from({length: Math.ceil(plates.length/4)}, (_,b)=>`<div class="occ-v2-vbox">${plates.slice(b*4,b*4+4).map((p,k)=>{const i=b*4+k;return `<div class="occ-v2-vrow"><span class="occ-v2-vehicle-index">${i+1}</span><span class="occ-v2-plate">${esc(p)}</span><span class="occ-v2-vemail">${esc((window._plateEmailMap && window._plateEmailMap[String(p).toUpperCase().replace(/\s/g,'')]) || '—')}</span>${canManage?`<span class="occ-v2-vehicle-actions"><button type="button" onclick="openVehicleEdit('${esc(occ.id)}','${esc(p)}')" title="Edit"><i class="ti ti-pencil"></i></button><button type="button" onclick="removeVehicleFromDetail('${esc(occ.id)}','${esc(p)}')" title="Remove"><i class="ti ti-trash"></i></button></span>`:''}</div>`}).join('')}</div>`).join('')}</div>` : `<div class="occ-v2-person-empty">No vehicles registered</div>`}
         <div class="occ-v2-vehicle-note">Vehicle notification email is managed separately in Parking.</div>
       </div>
     </section>`;
