@@ -2319,7 +2319,42 @@ window.openEditModal = (id) => {
   const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(p => p);
   renderPlateList(plates.length ? plates : ['']);
   
-  // ── Card-level person / vehicle management ───────────────────
+// Toggle committee role field
+  toggleCommitteeRole();
+  
+  // role별 필드 제어
+  const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
+  const isOwnerTenant = ['owner','tenant'].includes(role);
+  document.getElementById('editIsCommittee').disabled = !isAdmin;
+  document.getElementById('editCommitteeRole').disabled = !isAdmin;
+  document.getElementById('editIsPrimary').disabled = !isAdmin;
+  // Owner Type: Admin만 수정 가능 (그 외는 보이지만 disabled)
+  document.getElementById('editOwnerType').disabled = !isAdmin;
+  document.getElementById('editOwnerType').style.opacity = isAdmin ? '1' : '0.6';
+  // Committee Member: admin만
+  document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
+  document.getElementById('committeeRoleField').style.display = 'none';
+  document.getElementById('primaryUnitField').style.display = (occ.is_committee && !isOwnerTenant) ? '' : 'none';
+  // Business Name 보임
+  document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
+  // 통합 Email 칸 보임
+  document.getElementById('businessEmailField').style.display = '';
+  // Contact Person: tenant는 disabled (오너 정보)
+  document.getElementById('editContactPerson').disabled = isTenant;
+  document.getElementById('editContactPerson').style.opacity = isTenant ? '0.5' : '1';
+  // Primary Email: tenant는 disabled (오너 이메일)
+  document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = '';
+  document.getElementById('editPrimaryEmail').disabled = isTenant;
+  document.getElementById('editPrimaryEmail').style.opacity = isTenant ? '0.5' : '1';
+  // 전화번호: admin + 본인 유닛
+  const canSeePhone = isAdmin || (['owner', 'committee'].includes(role) && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit);
+  document.getElementById('editPhone').closest('.modal-field').style.display = canSeePhone ? '' : 'none';
+  
+  openModal('editModal');
+};
+
+// ── Card-level person / vehicle management (top level) ───────────────────
 window.openPersonEdit = (unitId, email, context) => {
   if (role !== 'admin') return;
   const occ = allOccupants.find(o => o.id === unitId); if (!occ) return;
@@ -2454,40 +2489,6 @@ document.getElementById('vehicleEditSaveBtn').addEventListener('click', async ()
   showToast(oldPlate ? 'Vehicle updated ✓' : 'Vehicle added ✓');
 });
 
-// Toggle committee role field
-  toggleCommitteeRole();
-  
-  // role별 필드 제어
-  const isAdmin = role === 'admin';
-  const isTenant = role === 'tenant';
-  const isOwnerTenant = ['owner','tenant'].includes(role);
-  document.getElementById('editIsCommittee').disabled = !isAdmin;
-  document.getElementById('editCommitteeRole').disabled = !isAdmin;
-  document.getElementById('editIsPrimary').disabled = !isAdmin;
-  // Owner Type: Admin만 수정 가능 (그 외는 보이지만 disabled)
-  document.getElementById('editOwnerType').disabled = !isAdmin;
-  document.getElementById('editOwnerType').style.opacity = isAdmin ? '1' : '0.6';
-  // Committee Member: admin만
-  document.getElementById('editIsCommittee').closest('.modal-field').style.display = isOwnerTenant ? 'none' : '';
-  document.getElementById('committeeRoleField').style.display = 'none';
-  document.getElementById('primaryUnitField').style.display = (occ.is_committee && !isOwnerTenant) ? '' : 'none';
-  // Business Name 보임
-  document.getElementById('editBusinessName').closest('.modal-field').style.display = '';
-  // 통합 Email 칸 보임
-  document.getElementById('businessEmailField').style.display = '';
-  // Contact Person: tenant는 disabled (오너 정보)
-  document.getElementById('editContactPerson').disabled = isTenant;
-  document.getElementById('editContactPerson').style.opacity = isTenant ? '0.5' : '1';
-  // Primary Email: tenant는 disabled (오너 이메일)
-  document.getElementById('editPrimaryEmail').closest('.modal-field').style.display = '';
-  document.getElementById('editPrimaryEmail').disabled = isTenant;
-  document.getElementById('editPrimaryEmail').style.opacity = isTenant ? '0.5' : '1';
-  // 전화번호: admin + 본인 유닛
-  const canSeePhone = isAdmin || (['owner', 'committee'].includes(role) && myOwnedUnits.has(occ.unit)) || (role === 'tenant' && occ.unit === myUnit);
-  document.getElementById('editPhone').closest('.modal-field').style.display = canSeePhone ? '' : 'none';
-  
-  openModal('editModal');
-};
 
 // Toggle committee role field
 document.getElementById('editIsCommittee').addEventListener('change', toggleCommitteeRole);
