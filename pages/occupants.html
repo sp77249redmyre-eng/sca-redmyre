@@ -962,9 +962,6 @@
 </style>
 
 <style id="occ-v2-desktop-height-and-hide-lookup">
-/* Keep the existing Quick Lookup JS/permission logic intact, but remove its UI for now. */
-.occupants-console-v2 #adminLookupSection{display:none !important;}
-
 /* Give the unit list and detail console substantially more vertical room on desktop. */
 .occ-v2-main{min-height:780px;align-items:stretch;}
 .occ-v2-left{min-height:780px;}
@@ -1267,6 +1264,28 @@
   .occ-v2-role-section.owner,.occ-v2-role-section.tenant,.occ-v2-role-section.staff{grid-column:1!important}
 }
 </style>
+
+<style id="occ-v16-owner-tenant-audit">
+/* Source-faithful role rendering: one people grid, no duplicated empty cards. */
+.occ-v2-people-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;align-items:start!important}
+.occ-v2-people-grid-1{grid-template-columns:1fr!important}
+.occ-v2-role-section{min-width:0!important}
+.occ-v2-role-section .occ-v2-section-body{padding:10px!important}
+.occ-v2-person-card{padding:8px 10px!important;margin:0 0 7px!important;background:#071015!important;border-color:#18343A!important}
+.occ-v2-person-card:last-child{margin-bottom:0!important}
+.occ-v2-person-name{font-size:14px!important;color:#D7F7F5!important}
+.occ-v2-person-line{font-size:12px!important;margin-top:4px!important}
+.occ-v2-person-line a{color:#19e8f1!important}
+.occ-v2-badge.staff{color:#fb7185!important;border-color:#e11d48!important;background:#3a1220!important}
+.occ-v2-committee-member{margin-top:8px;padding-top:8px;border-top:1px solid #18343A;color:#D7F7F5;font-size:13px;display:flex;gap:7px;align-items:center}
+@media(max-width:1100px){.occ-v2-people-grid{grid-template-columns:1fr!important}}
+</style>
+
+
+<style id="occ-v16-privacy-compact">
+.occ-v2-role-section.owner-private .occ-v2-person-empty{padding:10px!important;font-size:12px!important;line-height:1.45!important}
+</style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -1655,7 +1674,8 @@ function roleBadge(roleKey) {
   const map = {
     committee:{label:'COMMITTEE', cls:'committee'},
     owner:{label:'OWNER', cls:'owner'},
-    tenant:{label:'TENANT', cls:'tenant'}
+    tenant:{label:'TENANT', cls:'tenant'},
+    staff:{label:'STAFF / OCCUPANT', cls:'staff'}
   };
   const r = map[roleKey];
   return r ? `<span class="occ-v2-badge ${r.cls}">${r.label}</span>` : '';
@@ -1740,11 +1760,22 @@ function renderLeftList(items) {
   list.innerHTML = items.map(o => {
     const type = getDisplayRole(o);
     const plates = unitVehicleCount(o);
+    const isOwnerUnit = o.owner_type === 'Owner';
+    const isPrivilegedRole = ['admin','committee','observer'].includes(role);
+    const isMyOwnedUnit = role === 'owner' && myOwnedUnits.has(o.unit);
+    const showStarFields = isOwnerUnit || isPrivilegedRole || isMyOwnedUnit;
     const personName = (() => {
-      const emails = splitEmails(o.primary_email);
+      const emails = o.owner_type === 'Tenant' && !showStarFields
+        ? splitEmails(o.business_email)
+        : splitEmails(o.primary_email);
       const prof = emails.map(e => window._profileMap[normalizeEmail(e)]).find(Boolean);
-      return prof?.full_name || o.contact_person || '—';
+      if (prof?.full_name) return prof.full_name;
+      if (o.owner_type === 'Tenant' && !showStarFields) return '';
+      return o.contact_person || '';
     })();
+    const businessNameHtml = o.business_name
+      ? esc(o.business_name)
+      : '<span style="color:#94a3b8;font-style:italic">Vacant</span>';
     return `
       <button class="occ-v2-unit-row ${selectedOccupantId === o.id ? 'selected' : ''}" data-id="${esc(o.id)}" type="button">
         <div class="occ-v2-unit-box">
@@ -1754,7 +1785,7 @@ function renderLeftList(items) {
         </div>
         <div class="occ-v2-biz">
           <div class="occ-v2-biz-primary">${esc(personName)}</div>
-          <div class="occ-v2-biz-secondary">${esc(o.business_name || '—')}</div>
+          <div class="occ-v2-biz-secondary">${businessNameHtml}</div>
         </div>
         <div class="occ-v2-stat"><i class="ti ti-users"></i>${personCount(o)}</div>
         <div class="occ-v2-stat vehicle"><i class="ti ti-car"></i>${plates}</div>
@@ -1773,8 +1804,25 @@ function renderLeftList(items) {
 function personRecordHtml(occ, email, index, context, fallbackName) {
   const profile = window._profileMap[normalizeEmail(email)] || null;
   const nameValue = profile?.full_name || (fallbackName && !email ? fallbackName : '') || '—';
-  const phoneValue = profile?.phone || occ.phone || '';
-  const displayRole = getDisplayRole(occ, context);
+  const phoneValue = profile?.phone || '';
+  let displayRole = context || '';
+  const isCommitteePrimary = occ.is_committee && splitEmails(occ.primary_email).length === 1 && normalizeEmail(email) === normalizeEmail(splitEmails(occ.primary_email)[0]);
+  const isCommitteeProfile = profile?.role === 'committee';
+  if (context === 'staff' || context === 'tenant') {
+    displayRole = context;
+  } else if (isCommitteePrimary || isCommitteeProfile) {
+    displayRole = 'committee';
+  } else if (displayRole === 'committee') {
+    displayRole = 'committee';
+  } else if (displayRole === 'owner') {
+    displayRole = 'owner';
+  } else if (displayRole === 'tenant') {
+    displayRole = 'tenant';
+  } else if (displayRole === 'staff') {
+    displayRole = 'staff';
+  } else {
+    displayRole = getDisplayRole(occ, context);
+  }
   const badges = displayRole ? [roleBadge(displayRole)] : [];
   return `
     <div class="occ-v2-person-card">
@@ -1792,9 +1840,18 @@ function personRecordHtml(occ, email, index, context, fallbackName) {
 function renderPeopleSection(occ, title, icon, cls, context, emails, fallbackName) {
   const cleaned = [...new Set(emails.map(e => e.trim()).filter(Boolean))];
   let body = '';
-  if (cleaned.length) body = cleaned.map((email, i) => personRecordHtml(occ, email, i+1, context, fallbackName)).join('');
-  else if (fallbackName) body = personRecordHtml(occ, '', 1, context, fallbackName);
-  else body = `<div class="occ-v2-person-empty">—</div>`;
+  if (cleaned.length) {
+    body = cleaned.map((email, i) => {
+      const profile = window._profileMap[normalizeEmail(email)] || null;
+      // A unit-level contact person is only a fallback for an owner record with no profile email.
+      const rowFallback = (context === 'owner' && i === 0) ? fallbackName : '';
+      return personRecordHtml(occ, email, i + 1, context, rowFallback);
+    }).join('');
+  } else if (fallbackName) {
+    body = personRecordHtml(occ, '', 1, context, fallbackName);
+  } else {
+    body = `<div class="occ-v2-person-empty">—</div>`;
+  }
   return `
     <section class="occ-v2-section occ-v2-role-section ${cls}">
       <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="${icon}"></i></span>${title}</div><div class="occ-v2-section-count">${cleaned.length || (fallbackName ? 1 : 0)}</div></div>
@@ -1802,19 +1859,21 @@ function renderPeopleSection(occ, title, icon, cls, context, emails, fallbackNam
     </section>`;
 }
 function renderCommitteeSection(occ) {
+  const isCommittee = isCommitteeOccupant(occ);
   const linked = linkedEmails(occ);
   const committeeProfiles = linked.map(e => window._profileMap[normalizeEmail(e)]).filter(p => p && p.role === 'committee');
   const primaryEmails = splitEmails(occ.primary_email);
-  const email = committeeProfiles[0]?.email || (isCommitteeOccupant(occ) && primaryEmails.length === 1 ? primaryEmails[0] : '');
+  const email = committeeProfiles[0]?.email || (isCommittee && primaryEmails.length === 1 ? primaryEmails[0] : '');
   const p = email ? window._profileMap[normalizeEmail(email)] : null;
-  const memberName = p?.full_name || (isCommitteeOccupant(occ) && primaryEmails.length === 1 ? occ.contact_person : '');
+  const memberName = p?.full_name || (isCommittee && primaryEmails.length === 1 ? occ.contact_person : '');
+  const committeeRole = occ.committee_role || (committeeProfiles[0]?.role === 'committee' ? 'Committee Member' : 'Committee Member');
   return `
     <section class="occ-v2-section occ-v2-committee">
       <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="ti ti-star"></i></span>Committee Information</div></div>
       <div class="occ-v2-section-body">
-        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Role</div><div class="occ-v2-committee-value">${isCommitteeOccupant(occ) ? esc(occ.committee_role || 'Committee Member') : '—'}</div></div>
-        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Primary Unit</div><div class="occ-v2-committee-value ${occ.is_primary ? 'occ-v2-primary-yes' : 'occ-v2-primary-no'}">${occ.is_primary ? 'Yes' : 'No'}</div></div>
-        <div style="margin-top:10px">${memberName || email ? personRecordHtml(occ, email, 1, 'none', memberName) : '<div class="occ-v2-person-empty">—</div>'}</div>
+        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Role</div><div class="occ-v2-committee-value">${isCommittee ? esc(committeeRole) : '—'}</div></div>
+        <div class="occ-v2-committee-row"><div class="occ-v2-committee-label">Primary Unit</div><div class="occ-v2-committee-value ${occ.is_primary ? 'occ-v2-primary-yes' : 'occ-v2-primary-no'}">${isCommittee && occ.is_primary ? 'Yes' : 'No'}</div></div>
+        ${isCommittee && memberName ? `<div class="occ-v2-committee-member"><i class="ti ti-user"></i>${esc(memberName)}</div>` : ''}
       </div>
     </section>`;
 }
@@ -1869,22 +1928,51 @@ function renderDetail(occ) {
   if (!container) return;
   if (!occ) { container.innerHTML = '<div class="occ-v2-restricted"><span>No unit selected.</span></div>'; return; }
   if (!isAccessibleUnit(occ.unit)) { container.innerHTML = renderRestrictedDetail(occ); return; }
+
   const type = getDisplayRole(occ);
   const primaryEmails = splitEmails(occ.primary_email);
   const businessEmails = splitEmails(occ.business_email);
-  const ownerName = primaryEmails.map(e => window._profileMap[normalizeEmail(e)]?.full_name).find(Boolean) || (primaryEmails.length === 1 ? occ.contact_person : '');
-  const ownersHtml = renderPeopleSection(occ, `Owner Information`, 'ti ti-user-check', 'owner', 'owner', primaryEmails, ownerName);
-  const peopleHtml = type === 'tenant' ? renderPeopleSection(occ, 'Tenant / Occupant Information', 'ti ti-users', 'tenant', 'tenant', businessEmails, '') : '';
-  const staffHtml = type === 'owner' ? renderPeopleSection(occ, 'Staff Information', 'ti ti-briefcase', 'staff', 'tenant', businessEmails, '') : '';
-  const bottom = `${renderCommitteeSection(occ)}${sameEmailHtml(occ)}`;
+  const privileged = ['admin','committee','observer'].includes(role);
+  const isOwnerUnit = occ.owner_type === 'Owner';
+  const isTenantUnit = occ.owner_type === 'Tenant';
+  const ownerInfoVisible = isOwnerUnit || privileged || (role === 'owner' && myOwnedUnits.has(occ.unit));
+
+  // OWNER: every primary email is a separate owner record. If there is no primary email,
+  // the existing unit contact person remains the owner fallback exactly as in the source data.
+  const ownerProfiles = primaryEmails.map(e => window._profileMap[normalizeEmail(e)]).filter(Boolean);
+  const ownerNameFallback = ownerInfoVisible ? (ownerProfiles[0]?.full_name || occ.contact_person || '') : '';
+  const ownersHtml = ownerInfoVisible
+    ? renderPeopleSection(occ, 'Owner Information', 'ti ti-user-check', 'owner', 'owner', primaryEmails, ownerNameFallback)
+    : (isTenantUnit ? `
+        <section class="occ-v2-section occ-v2-role-section owner owner-private">
+          <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="ti ti-user-lock"></i></span>Owner Information</div></div>
+          <div class="occ-v2-section-body"><div class="occ-v2-person-empty">Owner contact and primary email are privacy-protected for leased units.</div></div>
+        </section>`
+      : renderPeopleSection(occ, 'Owner Information', 'ti ti-user-check', 'owner', 'owner', [], occ.contact_person || ''));
+
+  // BUSINESS EMAIL is the source-of-truth people list. OWNER units use it as STAFF;
+  // TENANT units use it as TENANT / OCCUPANT. Never duplicate the same email in both sections.
+  let peopleHtml = '';
+  if (isTenantUnit) {
+    peopleHtml = renderPeopleSection(occ, 'Tenant / Occupant Information', 'ti ti-users', 'tenant', 'tenant', businessEmails, '');
+  } else if (isOwnerUnit) {
+    peopleHtml = renderPeopleSection(occ, 'Staff Information', 'ti ti-briefcase', 'staff', 'staff', businessEmails, '');
+  } else if (businessEmails.length) {
+    // For records with no owner_type, retain all business emails rather than dropping them.
+    peopleHtml = renderPeopleSection(occ, 'Staff / Occupant Information', 'ti ti-users', 'staff', 'staff', businessEmails, '');
+  }
+
   const canEdit = role === 'admin';
   const ownProfileEdit = !canEdit && ['committee','owner','tenant'].includes(role) && (myOwnedUnits.has(occ.unit) || occ.unit === myUnit);
+  const bottom = `${renderCommitteeSection(occ)}${sameEmailHtml(occ)}`;
+  const sectionCount = peopleHtml ? 2 : 1;
+
   container.innerHTML = `
     <div class="occ-v2-detail-top">
       <div class="occ-v2-detail-title">
         <div class="occ-v2-detail-unit">${esc(occ.unit)}</div>
         ${type ? `<span class="occ-v2-type-badge ${type}">${type.toUpperCase()}</span>` : ''}
-        <div class="occ-v2-level">${esc(occ.level || '')}</div>
+        <div class="occ-v2-level">${esc(occ.level || getSuiteForUnit(occ.unit))}</div>
       </div>
       <div class="occ-v2-detail-actions">
         <button class="occ-v2-mini" type="button" id="occPrevBtn"><i class="ti ti-chevron-left"></i> Previous</button>
@@ -1897,20 +1985,19 @@ function renderDetail(occ) {
       <div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon"><i class="ti ti-building"></i></span>Unit &amp; Business</div><div class="occ-v2-section-count">CURRENT UNIT</div></div>
       <div class="occ-v2-section-body">
         <div class="occ-v2-unit-grid">
-          <div><span class="occ-v2-label">Representative Business</span><div class="occ-v2-value">${esc(occ.business_name || '—')}</div></div>
+          <div><span class="occ-v2-label">Representative Business</span><div class="occ-v2-value">${occ.business_name ? esc(occ.business_name) : '<span style="color:#94a3b8;font-style:italic">Vacant</span>'}</div></div>
           <div><span class="occ-v2-label">Unit</span><div class="occ-v2-value mono">${esc(occ.unit || '—')}</div></div>
           <div><span class="occ-v2-label">Suite</span><div class="occ-v2-value mono">${esc(occ.suite || occ.unit || '—')}</div></div>
-          <div><span class="occ-v2-label">Level</span><div class="occ-v2-value mono">${esc(occ.level || '—')}</div></div>
+          <div><span class="occ-v2-label">Level</span><div class="occ-v2-value mono">${esc(occ.level || getSuiteForUnit(occ.unit) || '—')}</div></div>
         </div>
-        <div class="occ-v2-unit-contact"><span class="occ-v2-contact-label">Unit Contact</span><span class="occ-v2-contact-value">${occ.phone ? esc(occ.phone) : '—'}</span><span class="occ-v2-contact-note">Existing unit contact</span></div>
-        <div class="occ-v2-existing"><span class="occ-v2-label" style="display:inline-block;margin-right:8px">Existing Contact Person</span><strong>${esc(occ.contact_person || '—')}</strong></div>
+        <div class="occ-v2-unit-contact"><span class="occ-v2-contact-label">Unit Contact</span><span class="occ-v2-contact-value">${occ.phone ? occ.phone.split(/[,\/]/).map(p => `<a href="tel:${esc(p.trim().replace(/\s/g,''))}">${esc(p.trim())}</a>`).join(' · ') : '—'}</span><span class="occ-v2-contact-note">Existing unit contact</span></div>
+        ${ownerInfoVisible ? `<div class="occ-v2-existing"><span class="occ-v2-label" style="display:inline-block;margin-right:8px">Existing Contact Person</span><strong>${esc(occ.contact_person || '—')}</strong></div>` : ''}
       </div>
     </section>
 
-    <div class="occ-v2-people-grid">
+    <div class="occ-v2-people-grid occ-v2-people-grid-${sectionCount}">
       ${ownersHtml}
-      ${peopleHtml || `<section class="occ-v2-section occ-v2-role-section tenant"><div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon" style="color:var(--ux-red)"><i class="ti ti-users"></i></span>Tenant / Occupant Information</div><div class="occ-v2-section-count">0</div></div><div class="occ-v2-section-body"><div class="occ-v2-person-empty">—</div></div></section>`}
-      ${staffHtml || `<section class="occ-v2-section occ-v2-role-section staff"><div class="occ-v2-section-head"><div class="occ-v2-section-title"><span class="occ-v2-section-icon" style="color:var(--ux-red)"><i class="ti ti-briefcase"></i></span>Staff Information</div><div class="occ-v2-section-count">0</div></div><div class="occ-v2-section-body"><div class="occ-v2-person-empty">—</div></div></section>`}
+      ${peopleHtml}
     </div>
 
     ${renderVehicles(occ)}
