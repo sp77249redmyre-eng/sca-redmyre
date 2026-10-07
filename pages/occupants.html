@@ -14,7 +14,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 .content { padding: 24px; max-width: 100%; }
 /* Override: section-hdr — title with button next to it (not space-between) */
@@ -1316,6 +1315,15 @@
   .occupants-console-v2 .occ-v2-section-title{font-size:15px!important}
 }
 </style>
+<style id="occ-v18b-unit-link-size">
+/* Same-email unit buttons: same size as the email pill above; selected unit is highlighted. */
+.occupants-console-v2 .occ-v2-unit-links{gap:8px!important;margin-top:10px!important}
+.occupants-console-v2 .occ-v2-unit-link{font-size:15px!important;height:36px!important;min-width:52px!important;padding:6px 14px!important;border-radius:6px!important}
+.occupants-console-v2 .occ-v2-unit-link.current{background:#0e7c86!important;border-color:#69f8ff!important;color:#fff!important;box-shadow:0 0 0 1px #69f8ff}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-unit-link{font-size:14px!important}
+}
+</style>
 <style id="occ-v18-card-readable-type">
 /* Committee / same-email cards: enlarge the two key pieces of information. */
 .occupants-console-v2 .occ-v2-committee-member{font-size:17px!important;line-height:1.4!important}
@@ -1693,11 +1701,15 @@ if (['owner','tenant'].includes(role) && myUnit) {
 
 // Load occupants
 async function loadOccupants() {
-  const { data, error } = await supabase
-    .from('occupants')
-    .select('*')
-    .order('unit', { ascending: true });
-  
+  // occupants / (owner·tenant 전용 public rpc) / profiles 를 동시에 요청
+  const needPublic = ['owner','tenant'].includes(role);
+  const [occRes, pubRes, profRes] = await Promise.all([
+    supabase.from('occupants').select('*').order('unit', { ascending: true }),
+    needPublic ? supabase.rpc('get_all_occupants_public') : Promise.resolve({ data: null }),
+    supabase.from('profiles').select('id, email, role, full_name, phone, unit')
+  ]);
+  const { data, error } = occRes;
+
   if (error) {
     showToast('Failed to load occupants', true);
     return;
@@ -1706,19 +1718,17 @@ async function loadOccupants() {
   let combined = data || [];
 
   // owner/tenant: 다른 유닛도 보이게 하려면 public 함수로 보충
-  if (['owner','tenant'].includes(role)) {
-    const { data: publicData } = await supabase.rpc('get_all_occupants_public');
-    if (publicData) {
-      const myIds = new Set(combined.map(o => o.id));
-      const extras = publicData.filter(p => !myIds.has(p.id));
-      combined = [...combined, ...extras];
-    }
+  const publicData = pubRes.data;
+  if (publicData) {
+    const myIds = new Set(combined.map(o => o.id));
+    const extras = publicData.filter(p => !myIds.has(p.id));
+    combined = [...combined, ...extras];
   }
 
   allOccupants = combined;
 
   // profiles email → role 맵 생성
-  const { data: profilesData } = await supabase.from('profiles').select('id, email, role, full_name, phone, unit');
+  const profilesData = profRes.data;
   window._profileRoleMap = {};
   window._profileMap = {};
   (profilesData || []).forEach(p => {
@@ -2852,7 +2862,19 @@ document.getElementById('sendBulkInviteBtn').addEventListener('click', async () 
 
 // ─────────────────────────────────────────────────────────────
 
-window.exportOccupants = () => {
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = () => resolve();
+    sc.onerror = () => reject(new Error('xlsx load failed'));
+    document.head.appendChild(sc);
+  });
+}
+
+window.exportOccupants = async () => {
+  try { await loadXlsx(); } catch (e) { showToast('Excel library failed to load', true); return; }
   const data = allOccupants;
 
   // Excel은 화면 토글과 무관하게 항상 모든 컬럼 출력
