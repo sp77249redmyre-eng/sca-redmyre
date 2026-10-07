@@ -1215,7 +1215,7 @@
 .occ-v2-section-body{padding:8px!important}
 
 /* Unit & Business: compact single-row field blocks. */
-.occ-v2-unit-grid{grid-template-columns:minmax(0,1fr) 74px 82px 82px!important;gap:7px!important}
+.occ-v2-unit-grid{grid-template-columns:minmax(0,1fr) 92px 92px 92px!important;gap:7px!important}
 .occ-v2-label{margin-bottom:4px!important;font-size:9px!important}
 .occ-v2-value{min-height:36px!important;padding:6px 9px!important;font-size:14px!important;border-radius:6px!important}
 .occ-v2-value.mono{font-size:13px!important}
@@ -1226,8 +1226,6 @@
 
 /* People: Owner on the left, Tenant/Staff on the right when populated. */
 .occ-v2-people-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;align-items:start!important}
-.occ-v2-role-section.tenant:has(.occ-v2-person-empty),
-.occ-v2-role-section.staff:has(.occ-v2-person-empty){display:none!important}
 .occ-v2-role-section.owner{grid-column:1!important}
 .occ-v2-role-section.tenant,.occ-v2-role-section.staff{grid-column:2!important}
 
@@ -1288,6 +1286,55 @@
 .occ-v2-role-section.owner-private .occ-v2-person-empty{padding:10px!important;font-size:12px!important;line-height:1.45!important}
 </style>
 
+
+<style id="occ-v18-final-agreed-typography">
+/* FINAL AGREED OCCUPANTS TYPOGRAPHY — overrides legacy compact rules only. */
+.occ-v2-title{font-size:30px!important}
+.occ-v2-total{font-size:16px!important}
+.occ-v2-sub{font-size:12px!important}
+.occ-v2-search input{font-size:14px!important}
+.occ-v2-role-chip{font-size:14px!important}
+.occ-v2-list-head{font-size:13px!important}
+.occ-v2-unit-code{font-size:17px!important}
+.occ-v2-biz-primary{font-size:16px!important}
+.occ-v2-biz-secondary{font-size:13px!important}
+.occ-v2-stat{font-size:12px!important}
+.occ-v2-detail-unit{font-size:26px!important}
+.occ-v2-type-badge{font-size:12px!important}
+.occ-v2-level{font-size:13px!important}
+.occ-v2-section-title{font-size:16px!important}
+.occ-v2-label{font-size:10px!important}
+.occ-v2-value{font-size:15px!important}
+.occ-v2-value.mono{font-size:14px!important}
+.occ-v2-contact-label{font-size:10px!important}
+.occ-v2-contact-value{font-size:16px!important}
+.occ-v2-contact-note{font-size:12px!important}
+.occ-v2-person-name{font-size:16px!important}
+.occ-v2-person-line{font-size:14px!important}
+.occ-v2-vehicle-table td{font-size:14px!important}
+.occ-v2-plate{font-size:14px!important}
+.occ-v2-committee-value{font-size:14px!important}
+.occ-v2-email-pill{font-size:13px!important}
+.occ-v2-unit-link{font-size:12px!important}
+.occ-v2-email-note{font-size:11px!important}
+.occ-v2-unit-grid{grid-template-columns:minmax(0,1fr) 92px 92px 92px!important}
+.occ-v2-value.mono{justify-content:center!important;text-align:center!important}
+@media(max-width:850px){
+  .occ-v2-title{font-size:25px!important}
+  .occ-v2-total{font-size:14px!important}
+  .occ-v2-role-chip{font-size:13px!important}
+  .occ-v2-list-head{font-size:13px!important}
+  .occ-v2-biz-primary{font-size:15px!important}
+  .occ-v2-biz-secondary{font-size:12px!important}
+  .occ-v2-section-title{font-size:15px!important}
+  .occ-v2-label{font-size:10px!important}
+  .occ-v2-value{font-size:14px!important}
+  .occ-v2-contact-label{font-size:10px!important}
+  .occ-v2-contact-value{font-size:15px!important}
+  .occ-v2-person-name{font-size:15px!important}
+  .occ-v2-person-line{font-size:13px!important}
+}
+</style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -1328,10 +1375,9 @@
 
     <div class="occ-v2-role-row">
       <span class="occ-v2-role-label">Role</span>
-      <button class="occ-v2-role-chip owner" data-role-filter="owner"><span class="occ-v2-role-dot owner"></span>Owner</button>
-      <button class="occ-v2-role-chip tenant" data-role-filter="tenant"><span class="occ-v2-role-dot tenant"></span>Tenant</button>
       <button class="occ-v2-role-chip committee" data-role-filter="committee"><span class="occ-v2-role-dot committee"></span>Committee</button>
-      <button class="occ-v2-role-chip staff" data-role-filter="staff"><span class="occ-v2-role-dot staff"></span>Staff / Occupant</button>
+      <button class="occ-v2-role-chip owner" data-role-filter="owner"><span class="occ-v2-role-dot owner"></span>Owner</button>
+      <button class="occ-v2-role-chip tenant" data-role-filter="tenant"><span class="occ-v2-role-dot tenant"></span>Tenant / Staff</button>
       <div class="occ-v2-role-tools">
         <select id="occTypeFilter" aria-label="Unit type">
           <option value="all">All Types</option>
@@ -1718,7 +1764,7 @@ function getFilteredOccupants() {
   if (currentTypeFilter === 'Owner') items = items.filter(o => o.owner_type === 'Owner');
   if (currentTypeFilter === 'Tenant') items = items.filter(o => o.owner_type === 'Tenant');
   if (currentTypeFilter === 'Vacant') items = items.filter(o => !String(o.business_name || '').trim());
-  if (currentRoleFilter !== 'all') items = items.filter(o => hasRoleOnUnit(o, currentRoleFilter));
+  if (currentRoleFilter !== 'all') items = items.filter(o => currentRoleFilter === 'tenant' ? (hasRoleOnUnit(o, 'tenant') || hasRoleOnUnit(o, 'staff')) : hasRoleOnUnit(o, currentRoleFilter));
   if (noVehicleOnly) items = items.filter(o => unitVehicleCount(o) === 0);
   if (currentSearch) items = items.filter(o => matchesSearch(o, currentSearch));
   return items.sort((a,b) => String(a.unit || '').localeCompare(String(b.unit || ''), undefined, {numeric:true, sensitivity:'base'}));
