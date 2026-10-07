@@ -1228,6 +1228,9 @@
 .occ-v2-role-section.staff:has(.occ-v2-person-empty){display:none!important}
 .occ-v2-role-section.owner{grid-column:1!important}
 .occ-v2-role-section.tenant,.occ-v2-role-section.staff{grid-column:2!important}
+/* Always show Tenant/Staff box, even when empty, so people can be added. (overrides the hide rule above) */
+.occ-v2-role-section.tenant:has(.occ-v2-person-empty),
+.occ-v2-role-section.staff:has(.occ-v2-person-empty){display:block!important}
 
 .occ-v2-person-card{padding:7px 8px!important;border-radius:6px!important}
 .occ-v2-person-card+.occ-v2-person-card{margin-top:5px!important}
@@ -2105,8 +2108,8 @@ function renderDetail(occ) {
     peopleHtml = renderPeopleSection(occ, 'Tenant / Occupant Information', 'ti ti-users', 'tenant', 'tenant', businessEmails, '');
   } else if (isOwnerUnit) {
     peopleHtml = renderPeopleSection(occ, 'Staff Information', 'ti ti-briefcase', 'staff', 'staff', businessEmails, '');
-  } else if (businessEmails.length) {
-    // For records with no owner_type, retain all business emails rather than dropping them.
+  } else {
+    // For records with no owner_type, retain all business emails; always show the box (even empty) so a person can be added.
     peopleHtml = renderPeopleSection(occ, 'Staff / Occupant Information', 'ti ti-users', 'staff', 'staff', businessEmails, '');
   }
 
