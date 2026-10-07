@@ -775,6 +775,9 @@
 
 .occ-role-legend { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:3px 0 12px; }
 .occ-role-tag { display:inline-flex; align-items:center; gap:7px; min-height:33px; padding:7px 11px; border:1px solid var(--oc-line); background:#071014; border-radius:6px; color:#B8D2D1; font-size:12px; font-weight:700; }
+.occ-role-filter { cursor:pointer; font-family:inherit; }
+.occ-role-filter:hover { border-color:var(--oc-blue); color:#fff; background:#0A151B; }
+.occ-role-filter.active { border-color:var(--oc-blue); background:rgba(77,141,255,.14); color:#A8C6FF; box-shadow:0 0 10px rgba(77,141,255,.14); }
 .occ-role-dot { width:9px; height:9px; border-radius:50%; display:inline-block; box-shadow:0 0 6px currentColor; }
 .occ-role-dot.owner { color:var(--oc-amber); background:currentColor; }
 .occ-role-dot.tenant { color:var(--oc-red); background:currentColor; }
@@ -993,7 +996,6 @@
             <option value="all">All Types</option>
             <option value="owner">Owner Units</option>
             <option value="tenant">Tenant Units</option>
-            <option value="committee">Committee</option>
             <option value="staff">Has Staff / Occupants</option>
             <option value="novehicle">No Vehicle</option>
           </select>
@@ -1004,7 +1006,7 @@
       <div class="occ-role-legend" aria-label="Role legend">
         <span class="occ-role-tag"><span class="occ-role-dot owner"></span>Owner</span>
         <span class="occ-role-tag"><span class="occ-role-dot tenant"></span>Tenant</span>
-        <span class="occ-role-tag"><span class="occ-role-dot committee"></span>Committee</span>
+        <button class="occ-role-tag occ-role-filter" id="occCommitteeFilter" type="button" aria-pressed="false"><span class="occ-role-dot committee"></span>Committee</button>
         <span class="occ-role-tag"><span class="occ-role-dot observer"></span>Observer</span>
         <span class="occ-role-tag"><span class="occ-role-dot admin"></span>Admin</span>
         <span class="occ-role-tag"><span class="occ-role-dot staff"></span>Staff</span>
@@ -1178,6 +1180,7 @@ let selectedOccupantId = null;
 let occupantSearchQuery = '';
 let occupantTypeFilter = 'all';
 let noVehicleOnly = false;
+let committeeOnly = false;
 let profileDirectory = new Map();
 let emailUnitMap = new Map();
 
@@ -1372,7 +1375,7 @@ function getVisibleOccupants() {
 
   if (occupantTypeFilter === 'owner') result = result.filter(o => isOwnerUnit(o));
   if (occupantTypeFilter === 'tenant') result = result.filter(o => isTenantUnit(o));
-  if (occupantTypeFilter === 'committee') result = result.filter(o => !!o.is_committee);
+  if (committeeOnly) result = result.filter(o => !!o.is_committee);
   if (occupantTypeFilter === 'staff') result = result.filter(o => splitEmails(o.business_email).length > 0 && isOwnerUnit(o));
   if (occupantTypeFilter === 'novehicle' || noVehicleOnly) result = result.filter(o => splitEmails(o.license_plates).length === 0);
 
@@ -1528,9 +1531,9 @@ function renderSelectedDetail() {
     const p = getProfile(email);
     return { index: idx+1, email, profile:p, name:p?.full_name || '', phone:p?.phone || '', role:p?.role || '' };
   }) : [];
-  const committeePeople = fullAccess ? getCommitteePeople(occ) : [];
+  const committeePeople = fullDetailAccess ? getCommitteePeople(occ) : [];
   const plates = (occ.license_plates || '').split(',').map(p => p.trim()).filter(Boolean);
-  const sameGroups = fullAccess ? getSameEmailGroups(occ) : [];
+  const sameGroups = fullDetailAccess ? getSameEmailGroups(occ) : [];
 
   const ownerSection = ownerInfoVisible
     ? roleSection('Owner Information','ti-user-square','owner-section', ownerPeople, 'No owner information available.')
@@ -1662,6 +1665,13 @@ if (occupantTypeSelect) occupantTypeSelect.addEventListener('change', e => {
   occupantTypeFilter = e.target.value;
   noVehicleOnly = false;
   if (noVehicleBtn) noVehicleBtn.classList.remove('active');
+  renderOccupants();
+});
+const committeeFilterBtn = document.getElementById('occCommitteeFilter');
+if (committeeFilterBtn) committeeFilterBtn.addEventListener('click', () => {
+  committeeOnly = !committeeOnly;
+  committeeFilterBtn.classList.toggle('active', committeeOnly);
+  committeeFilterBtn.setAttribute('aria-pressed', committeeOnly ? 'true' : 'false');
   renderOccupants();
 });
 if (noVehicleBtn) noVehicleBtn.addEventListener('click', () => {
