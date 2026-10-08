@@ -1,24 +1,24 @@
 // ============================================================
-// Redmyre BMS — My Profile Modal (Unified Form)
+// Redmyre BMS — My Profile Modal (v3: side panel + unit tabs)
 // /js/my-profile.js
-// Multi-unit unified form architecture
-//   - Owner (≥2 units): checkbox section + bulk-applied business info / vehicles
-//   - Owner (single):   no checkboxes, applied to that unit
-//   - Tenant:           no checkboxes, applied to leased unit(s)
-//   - Staff:            personal info only (name + password), no business/vehicles
+//   - Owner/Tenant with 1 unit:  flat form (name + phone, business, vehicles)
+//   - 2+ units (or any leased):  one tab per unit
+//       · units the user operates → editable (own business name, phone, vehicles)
+//       · units leased out to a tenant → view only (never touched on save)
+//   - Staff:          name + password only
+//   - Admin/Observer: name + password only
 //
-// Bulk sync (OWNER side):
-//   Name change → profiles.full_name + occupants.contact_person (all checked OWNER units)
-//   Business Name / Phone / Vehicles → all checked OWNER units
-//   Unchecked OWNER units → only owner_type='Tenant' (no other fields touched)
-//   TENANT-leased units → business_name / phone / vehicles only (contact_person preserved)
+// Per-plate notice email (parking warnings) lives in occupants.plate_emails
+// as { "PLATE": "email" } — same field the Occupants page uses.
 // ============================================================
 
 (function() {
   'use strict';
 
   let myUnits = [];
-  let unifiedPlates = [];
+  let editUnits = [];     // units the user operates (editable)
+  let leasedUnits = [];   // owner's units leased to a tenant (view only)
+  let activeId = null;
   let isAdmin = false;
   let allVehicles = [];
 
@@ -35,7 +35,7 @@
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    body.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">Loading…</div>';
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:15px">Loading…</div>';
     if (footer) footer.style.display = 'none';
 
     await loadAndRender();
@@ -49,7 +49,9 @@
       document.body.style.overflow = '';
     }
     myUnits = [];
-    unifiedPlates = [];
+    editUnits = [];
+    leasedUnits = [];
+    activeId = null;
     allVehicles = [];
     const saveMsg = document.getElementById('myprofSaveMsg');
     if (saveMsg) {
@@ -84,6 +86,7 @@
     fillHeader();
 
     if (role === 'admin' || role === 'observer') {
+      setRailSuite('');
       renderSimpleProfile();
       return;
     }
@@ -101,8 +104,8 @@
 
       myUnits = [];
       (occupants || []).forEach(o => {
-        const primaryEmails = (o.primary_email || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-        const businessEmails = (o.business_email || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const primaryEmails = splitEmails(o.primary_email).map(e => e.toLowerCase());
+        const businessEmails = splitEmails(o.business_email).map(e => e.toLowerCase());
 
         const isPrimary = primaryEmails.includes(myEmail);
         const isInBusiness = businessEmails.includes(myEmail);
@@ -111,6 +114,7 @@
           myUnits.push({
             ...o,
             my_role: 'OWNER',
+            leased: (o.owner_type === 'Tenant'),   // already leased out → view only
             checked: (o.owner_type === 'Owner')
           });
         } else if (isInBusiness && o.owner_type === 'Tenant') {
@@ -128,7 +132,7 @@
         }
       });
 
-      computeUnifiedPlates();
+      prepareUnits();
 
       try {
         const { data: vehicles } = await supabase.rpc('lookup_vehicle_plates');
@@ -146,54 +150,139 @@
     }
   }
 
-  function computeUnifiedPlates() {
-    const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER' && u.checked);
-    const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
-    const targetUnits = ownerUnits.length > 0 ? ownerUnits : tenantUnits;
+  // Build per-unit editable state
+  function prepareUnits() {
+    editUnits = myUnits.filter(u =>
+      (u.my_role === 'OWNER' && !u.leased) || u.my_role === 'TENANT');
+    leasedUnits = myUnits.filter(u => u.my_role === 'OWNER' && u.leased);
 
-    const set = new Set();
-    targetUnits.forEach(u => {
+    editUnits.forEach(u => {
       const plates = (u.license_plates || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
-      plates.forEach(p => set.add(p));
+      u.plates = Array.from(new Set(plates));
+      u.pemails = {};
+      const pe = (u.plate_emails && typeof u.plate_emails === 'object') ? u.plate_emails : {};
+      Object.keys(pe).forEach(k => {
+        const key = String(k).trim().toUpperCase();
+        if (key && pe[k] && u.plates.includes(key)) u.pemails[key] = String(pe[k]).trim();
+      });
+      u.bn = u.business_name || '';
+      u.ph = u.phone || '';
     });
 
-    unifiedPlates = Array.from(set);
+    const first = editUnits[0] || leasedUnits[0] || null;
+    activeId = first ? first.id : null;
   }
 
-  // ── Header ──────────────────────────────────────────────
+  function getUnit(id) {
+    return editUnits.find(u => u.id === id) || leasedUnits.find(u => u.id === id) || null;
+  }
+  function isEditable(u) { return !!u && editUnits.includes(u); }
+
+  // Emails the user may choose for "parking notice" of a plate in this unit.
+  // OWNER units: primary + business emails of that unit.
+  // TENANT units: business emails only (never expose the owner's address to a tenant).
+  function emailPoolFor(u) {
+    const map = new Map();
+    const add = (e) => {
+      const t = String(e || '').trim();
+      const k = t.toLowerCase();
+      if (t && !map.has(k)) map.set(k, t);
+    };
+    add(window.__bmsCtx?.user?.email);
+    if (u) {
+      if (u.my_role === 'OWNER') {
+        splitEmails(u.primary_email).forEach(add);
+        splitEmails(u.business_email).forEach(add);
+      } else {
+        splitEmails(u.business_email).forEach(add);
+      }
+    }
+    return Array.from(map.values());
+  }
+
+  function emailOptionsHtml(u, selected, withNotSet) {
+    const pool = emailPoolFor(u);
+    const sel = String(selected || '').trim();
+    if (sel && !pool.some(e => e.toLowerCase() === sel.toLowerCase())) pool.push(sel);
+    let html = withNotSet ? '<option value="">— Not set —</option>' : '';
+    html += pool.map(e => {
+      const isSel = sel && e.toLowerCase() === sel.toLowerCase();
+      return `<option value="${escapeHtml(e)}"${isSel ? ' selected' : ''}>${escapeHtml(e)}</option>`;
+    }).join('');
+    return html;
+  }
+
+  // ── Header / left panel ─────────────────────────────────
   function fillHeader() {
     const ctx = window.__bmsCtx || {};
     const name = ctx.name || ctx.profile?.full_name || 'User';
     const role = ctx.role || '';
-    const avatarEl = document.getElementById('myprofAvatar');
-    const subtitleEl = document.getElementById('myprofSubtitle');
+    const email = ctx.user?.email || '';
 
-    if (avatarEl) avatarEl.textContent = getInitials(name);
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    set('myprofAvatar', getInitials(name));
+    set('myprofRailName', name);
+    set('myprofRailRole', getRoleLabel(role));
+    set('myprofRailEmail', email || '—');
+  }
 
-    const roleLabel = getRoleLabel(role);
-    if (subtitleEl) subtitleEl.textContent = `${name} · ${roleLabel}`;
+  function setRailSuite(text) {
+    const wrap = document.getElementById('myprofRailSuiteWrap');
+    const el = document.getElementById('myprofRailSuite');
+    if (!wrap || !el) return;
+    if (text) {
+      el.textContent = text;
+      wrap.style.display = '';
+    } else {
+      wrap.style.display = 'none';
+    }
   }
 
   // ── Error ───────────────────────────────────────────────
   function renderError(msg) {
     const body = document.getElementById('myProfileBody');
     if (body) {
-      body.innerHTML = `<div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">${escapeHtml(msg)}</div>`;
+      body.innerHTML = `<div style="padding:30px;text-align:center;color:#dc2626;font-size:15px">${escapeHtml(msg)}</div>`;
     }
+  }
+
+  // ── Shared blocks ───────────────────────────────────────
+  function passwordBlock() {
+    return `
+      <button class="myprof-pw-btn" id="myprofPwBtn" type="button" onclick="myProfileTogglePw()">
+        <span>Change Password</span>
+        <span class="myprof-pw-arrow">›</span>
+      </button>
+      <div class="myprof-pw-panel" id="myprofPwPanel">
+        <div class="myprof-field">
+          <label class="myprof-label">Current Password</label>
+          <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password" autocomplete="current-password">
+        </div>
+        <div class="myprof-field">
+          <label class="myprof-label">New Password</label>
+          <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <div class="myprof-field">
+          <label class="myprof-label">Confirm New Password</label>
+          <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+        <div class="myprof-pw-msg" id="myprofPwMsg"></div>
+        <button class="myprof-pw-submit" type="button" onclick="myProfileChangePw()">Update Password</button>
+      </div>
+    `;
   }
 
   // ── Simple profile (Admin / Observer) ───────────────────
   function renderSimpleProfile() {
     const ctx = window.__bmsCtx || {};
     const role = ctx.role || '';
-    const email = ctx.user?.email || '';
     const fullName = ctx.profile?.full_name || ctx.name || '';
 
     let infoNote = '';
     if (role === 'admin') {
-      infoNote = `<div style="padding:10px 14px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:9px;font-size:12px;color:#1e40af;margin-bottom:14px">You manage all units. Use the <strong>Occupants</strong> page to view & edit unit details.</div>`;
+      infoNote = `<div class="myprof-note">You manage all units. Use the <strong>Occupants</strong> page to view &amp; edit unit details.</div>`;
     } else if (role === 'observer') {
-      infoNote = `<div style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;font-size:12px;color:#475569;margin-bottom:14px">Observer (Strata) accounts have read-only access.</div>`;
+      infoNote = `<div class="myprof-note">Observer (Strata) accounts have read-only access.</div>`;
     }
 
     const body = document.getElementById('myProfileBody');
@@ -202,45 +291,11 @@
     body.innerHTML = `
       ${infoNote}
       <div class="myprof-section">
-        <div class="myprof-section-title">🔒 Account Info</div>
-        <div class="myprof-admin-box">
-          <div class="myprof-admin-row">
-            <span class="myprof-admin-label">Email</span>
-            <span class="myprof-admin-value">${escapeHtml(email)}</span>
-          </div>
-          <div class="myprof-admin-row">
-            <span class="myprof-admin-label">Role</span>
-            <span class="myprof-admin-value">${escapeHtml(getRoleLabel(role))}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="myprof-section">
-        <div class="myprof-section-title">✏️ My Info</div>
         <div class="myprof-field">
-          <label class="myprof-label">Name</label>
+          <label class="myprof-label">Full name</label>
           <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
         </div>
-        <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
-          <span>🔑 Change Password</span>
-          <span class="myprof-pw-arrow">›</span>
-        </button>
-        <div class="myprof-pw-panel" id="myprofPwPanel">
-          <div class="myprof-field">
-            <label class="myprof-label">Current Password</label>
-            <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
-          </div>
-          <div class="myprof-field">
-            <label class="myprof-label">New Password</label>
-            <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
-          </div>
-          <div class="myprof-field">
-            <label class="myprof-label">Confirm New Password</label>
-            <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
-          </div>
-          <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
-          <div class="myprof-pw-msg" id="myprofPwMsg"></div>
-        </div>
+        ${passwordBlock()}
       </div>
     `;
 
@@ -251,219 +306,225 @@
   // ── Full profile (Owner / Tenant / Staff) ──────────────
   function renderFullProfile() {
     const ctx = window.__bmsCtx || {};
-    const role = ctx.role || '';
-    const email = ctx.user?.email || '';
     const fullName = ctx.profile?.full_name || ctx.name || '';
+    const bodyEl = document.getElementById('myProfileBody');
+    const footer = document.getElementById('myprofFooter');
 
     if (myUnits.length === 0) {
+      setRailSuite('');
       renderSimpleProfile();
       return;
     }
 
-    const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
-    const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
-    const staffUnits = myUnits.filter(u => u.my_role === 'STAFF');
-    const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0 && staffUnits.length > 0;
+    setRailSuite(myUnits.map(u => u.unit).join(', '));
 
-    const suiteText = myUnits.map(u => u.unit).join(', ');
+    const displayUnits = editUnits.concat(leasedUnits);
 
-    const adminBox = `
-      <div class="myprof-section">
-        <div class="myprof-section-title">🔒 Admin Info</div>
-        <div class="myprof-admin-box">
-          <div class="myprof-admin-row">
-            <span class="myprof-admin-label">Suite</span>
-            <span class="myprof-admin-value">${escapeHtml(suiteText)}</span>
-          </div>
-          <div class="myprof-admin-row">
-            <span class="myprof-admin-label">Email</span>
-            <span class="myprof-admin-value">${escapeHtml(email)}</span>
-          </div>
-          <div class="myprof-admin-row">
-            <span class="myprof-admin-label">Role</span>
-            <span class="myprof-admin-value">${escapeHtml(getRoleLabel(role))}</span>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const myInfoBlock = `
-      <div class="myprof-section">
-        <div class="myprof-section-title">✏️ My Info</div>
-        <div class="myprof-field">
-          <label class="myprof-label">Name</label>
-          <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
-        </div>
-        <button class="myprof-pw-btn" id="myprofPwBtn" onclick="myProfileTogglePw()">
-          <span>🔑 Change Password</span>
-          <span class="myprof-pw-arrow">›</span>
-        </button>
-        <div class="myprof-pw-panel" id="myprofPwPanel">
-          <div class="myprof-field">
-            <label class="myprof-label">Current Password</label>
-            <input type="password" class="myprof-input" id="myprofPwCurrent" placeholder="Current password">
-          </div>
-          <div class="myprof-field">
-            <label class="myprof-label">New Password</label>
-            <input type="password" class="myprof-input" id="myprofPwNew" placeholder="At least 8 characters">
-          </div>
-          <div class="myprof-field">
-            <label class="myprof-label">Confirm New Password</label>
-            <input type="password" class="myprof-input" id="myprofPwConfirm" placeholder="Repeat new password">
-          </div>
-          <button class="myprof-pw-submit" onclick="myProfileChangePw()">Update Password</button>
-          <div class="myprof-pw-msg" id="myprofPwMsg"></div>
-        </div>
-      </div>
-    `;
-
-    if (isStaffOnly) {
-      const staffNote = `<div style="padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:9px;font-size:12px;color:#92400e;margin-bottom:14px">You are registered as Staff under the unit Owner. Vehicle registration is handled by the Owner of your unit.</div>`;
-      document.getElementById('myProfileBody').innerHTML = staffNote + adminBox + myInfoBlock;
-      const footer = document.getElementById('myprofFooter');
+    // Staff only (registered under an Owner's unit): name + password
+    if (displayUnits.length === 0) {
+      const staffNote = `<div class="myprof-note warn">You are registered as Staff under the unit Owner. Vehicle registration is handled by the Owner of your unit.</div>`;
+      bodyEl.innerHTML = staffNote + nameBlock(fullName, null) + `<div class="myprof-section">${passwordBlock()}</div>`;
       if (footer) footer.style.display = 'flex';
       return;
     }
 
-    let checkboxSection = '';
-    if (ownerUnits.length >= 2) {
-      checkboxSection = `
-        <div class="myprof-section">
-          <div class="myprof-section-title">🏢 Operating Units</div>
-          <div class="myprof-section-help">Check the units you operate yourself. Unchecked units = leased out (TENANT).</div>
-          <div id="myprofUnitCheckboxes">
-            ${ownerUnits.map(u => renderUnitRow(u)).join('')}
-          </div>
-        </div>
-      `;
-    }
+    const flat = displayUnits.length === 1 && editUnits.length === 1;   // simple single-unit form
+    const phoneForTop = flat ? editUnits[0].ph : null;
 
-    let prefillSource = null;
-    if (ownerUnits.length >= 2) {
-      const checkedOwners = ownerUnits.filter(u => u.checked);
-      prefillSource = checkedOwners[0] || ownerUnits[0];
-    } else if (ownerUnits.length === 1) {
-      prefillSource = ownerUnits[0];
-    } else if (tenantUnits.length > 0) {
-      prefillSource = tenantUnits[0];
-    }
+    bodyEl.innerHTML =
+      nameBlock(fullName, phoneForTop) +
+      `<div class="myprof-section">${passwordBlock()}</div>` +
+      `<div id="myprofUnitArea"></div>`;
 
-    const businessName = prefillSource?.business_name || '';
-    const phone = prefillSource?.phone || '';
-
-    let bulkNote = '';
-    if (ownerUnits.length >= 2) {
-      const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      bulkNote = `Applied to all checked OWNER units: <span id="myprofBulkUnits">${escapeHtml(checkedList)}</span>`;
-    } else if (ownerUnits.length === 1) {
-      bulkNote = `Applied to unit ${escapeHtml(ownerUnits[0].unit)}`;
-    } else if (tenantUnits.length > 0) {
-      const tList = tenantUnits.map(u => u.unit).join(', ');
-      bulkNote = `Applied to unit ${escapeHtml(tList)}`;
-    }
-
-    const businessSection = `
-      <div class="myprof-section">
-        <div class="myprof-section-title">🏪 Business Info</div>
-        <div class="myprof-section-help">${bulkNote}</div>
-        <div class="myprof-field">
-          <label class="myprof-label">Business Name</label>
-          <input type="text" class="myprof-input" id="myprofBusinessName" value="${escapeHtml(businessName)}" placeholder="Business name">
-        </div>
-        <div class="myprof-field">
-          <label class="myprof-label">Phone</label>
-          <input type="text" class="myprof-input" id="myprofPhone" value="${escapeHtml(phone)}" placeholder="Phone number">
-        </div>
-      </div>
-    `;
-
-    let vehicleNote = '';
-    if (ownerUnits.length >= 2) {
-      const checkedList = ownerUnits.filter(u => u.checked).map(u => u.unit).join(', ') || '(no units checked)';
-      vehicleNote = `Registered on all checked units: <span id="myprofVehUnits">${escapeHtml(checkedList)}</span>`;
-    } else if (ownerUnits.length === 1) {
-      vehicleNote = `Registered on unit ${escapeHtml(ownerUnits[0].unit)}`;
-    } else if (tenantUnits.length > 0) {
-      const tList = tenantUnits.map(u => u.unit).join(', ');
-      vehicleNote = `Registered on unit ${escapeHtml(tList)}`;
-    }
-
-    const vehicleSection = `
-      <div class="myprof-section">
-        <div class="myprof-section-title">🚗 Business Vehicles (<span id="myprofVehCount">${unifiedPlates.length}</span>)</div>
-        <div class="myprof-section-help">${vehicleNote}</div>
-        <div class="myprof-vehicles-list" id="myprofVehList">
-          ${unifiedPlates.map(p => renderVehBadge(p)).join('')}
-        </div>
-        <div class="myprof-veh-add-row">
-          <input type="text" class="myprof-veh-input" id="myprofVehInput" placeholder="ex: ABC123" maxlength="10"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();myProfileAddVehicle();}">
-          <button class="myprof-veh-add-btn" onclick="myProfileAddVehicle()">+ Add</button>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('myProfileBody').innerHTML =
-      adminBox + myInfoBlock + checkboxSection + businessSection + vehicleSection;
-
-    const footer = document.getElementById('myprofFooter');
+    renderUnitArea(flat);
+    bindBodyEvents();
     if (footer) footer.style.display = 'flex';
   }
 
-  function renderUnitRow(u) {
-    const cls = u.checked ? 'owner' : 'tenant';
-    const badge = u.checked ? 'OWNER' : 'TENANT';
+  function nameBlock(fullName, phoneOrNull) {
+    const withPhone = phoneOrNull !== null;
     return `
-      <div class="myprof-unit-row ${cls}" data-unit-id="${escapeHtml(u.id)}" onclick="myProfileToggleUnit('${escapeHtml(u.id)}')">
-        <div class="myprof-checkbox">
-          <span class="myprof-checkbox-tick">✓</span>
+      <div class="myprof-section">
+        <div class="${withPhone ? 'myprof-grid2' : ''}">
+          <div class="myprof-field">
+            <label class="myprof-label">Full name</label>
+            <input type="text" class="myprof-input" id="myprofName" value="${escapeHtml(fullName)}" placeholder="Your name">
+          </div>
+          ${withPhone ? `
+          <div class="myprof-field">
+            <label class="myprof-label">Phone</label>
+            <input type="tel" class="myprof-input" id="myprofPhone" value="${escapeHtml(phoneOrNull)}" placeholder="Phone number">
+          </div>` : ''}
         </div>
-        <div class="myprof-unit-name">${escapeHtml(u.unit)}</div>
-        <span class="myprof-unit-badge">${badge}</span>
       </div>
     `;
   }
 
-  function renderVehBadge(plate) {
-    const safe = escapeHtml(plate);
+  // Tabs + active unit panel
+  function renderUnitArea(flat) {
+    const area = document.getElementById('myprofUnitArea');
+    if (!area) return;
+    const u = getUnit(activeId);
+    if (!u) { area.innerHTML = ''; return; }
+
+    let html = '';
+    if (!flat) {
+      const all = editUnits.concat(leasedUnits);
+      html += `<div class="myprof-section-title" style="margin-top:20px">Your Units (${all.length})</div>`;
+      html += `<div class="myprof-utabs">` + all.map(x => {
+        const ed = isEditable(x);
+        const badge = ed ? (x.my_role === 'OWNER' ? 'OWNER' : 'TENANT') : '🔒 TENANT';
+        return `<button type="button" class="myprof-utab${x.id === activeId ? ' on' : ''}${ed ? '' : ' lease'}" data-uid="${escapeHtml(x.id)}">${escapeHtml(x.unit)}<small>${badge}</small></button>`;
+      }).join('') + `</div>`;
+    }
+
+    html += isEditable(u) ? renderEditPanel(u, flat) : renderLeasedCard(u);
+    area.innerHTML = html;
+  }
+
+  function renderEditPanel(u, flat) {
+    const note = flat
+      ? `Phone, business name and vehicles apply to unit ${escapeHtml(u.unit)}`
+      : '';
     return `
-      <span class="myprof-veh-badge" data-plate="${safe}">
-        <span class="myprof-veh-icon">🚗</span>
-        <span>${safe}</span>
-        <button class="myprof-veh-remove" onclick="myProfileRemoveVehicle('${safe}')" title="Remove">✕</button>
-      </span>
+      <div class="myprof-section" data-uid="${escapeHtml(u.id)}">
+        ${flat ? `
+        <div class="myprof-field" style="margin-top:2px">
+          <label class="myprof-label">Business name</label>
+          <input type="text" class="myprof-input" id="myprofBusinessName" value="${escapeHtml(u.bn)}" placeholder="Business name">
+        </div>
+        <div class="myprof-section-help" style="margin-top:-8px">${note}</div>
+        ` : `
+        <div class="myprof-grid2">
+          <div class="myprof-field">
+            <label class="myprof-label">Business name</label>
+            <input type="text" class="myprof-input" id="myprofBusinessName" value="${escapeHtml(u.bn)}" placeholder="Business name">
+          </div>
+          <div class="myprof-field">
+            <label class="myprof-label">Phone</label>
+            <input type="tel" class="myprof-input" id="myprofPhone" value="${escapeHtml(u.ph)}" placeholder="Phone number">
+          </div>
+        </div>`}
+        <div class="myprof-section-title">Business Vehicles (<span id="myprofVehCount">${u.plates.length}</span>)</div>
+        <div class="myprof-section-help">Parking notices for each plate go to the email you choose.</div>
+        <div class="myprof-vehicles-list" id="myprofVehList">
+          ${u.plates.map(p => renderVehRow(u, p)).join('')}
+        </div>
+        <div class="myprof-veh-add-row">
+          <input type="text" class="myprof-veh-input" id="myprofVehInput" placeholder="PLATE" maxlength="10" autocapitalize="characters" autocomplete="off">
+          <select class="myprof-select" id="myprofVehEmail" aria-label="Notice email for new plate">
+            ${emailOptionsHtml(u, window.__bmsCtx?.user?.email || '', false)}
+          </select>
+          <button class="myprof-veh-add-btn" type="button" data-action="add-vehicle">+ Add</button>
+        </div>
+      </div>
     `;
   }
 
-  // ── Toggle unit checkbox ────────────────────────────────
-  window.myProfileToggleUnit = function(unitId) {
-    const u = myUnits.find(x => x.id === unitId);
-    if (!u || u.my_role !== 'OWNER') return;
-    u.checked = !u.checked;
-
-    const row = document.querySelector(`.myprof-unit-row[data-unit-id="${unitId}"]`);
-    if (row) {
-      if (u.checked) {
-        row.classList.remove('tenant');
-        row.classList.add('owner');
-        row.querySelector('.myprof-unit-badge').textContent = 'OWNER';
-      } else {
-        row.classList.remove('owner');
-        row.classList.add('tenant');
-        row.querySelector('.myprof-unit-badge').textContent = 'TENANT';
-      }
+  function renderLeasedCard(u) {
+    const plates = (u.license_plates || '').split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
+    const pe = {};
+    if (u.plate_emails && typeof u.plate_emails === 'object') {
+      Object.keys(u.plate_emails).forEach(k => { pe[String(k).trim().toUpperCase()] = u.plate_emails[k]; });
     }
+    const emails = splitEmails(u.business_email);
+    const plateHtml = plates.length
+      ? plates.map(p => `
+          <div class="myprof-lease-plate-row">
+            <span class="myprof-plate myprof-plate-sm">${escapeHtml(p)}</span>
+            <span class="myprof-lease-pemail">${pe[p] ? escapeHtml(pe[p]) : '<i>No notice email</i>'}</span>
+          </div>`).join('')
+      : '<span class="myprof-lease-empty">None</span>';
+    return `
+      <div class="myprof-section-help">Leased out — the tenant manages these details. To change this, please contact Building Management.</div>
+      <div class="myprof-lease-card">
+        <div class="myprof-lease-head">
+          <div class="myprof-unit-name">Unit ${escapeHtml(u.unit)}</div>
+          <span class="myprof-unit-badge">TENANT</span>
+          <span class="myprof-lease-lock">🔒 View only</span>
+        </div>
+        <div class="myprof-lease-grid">
+          <div><small>Business</small><b>${escapeHtml(u.business_name || '—')}</b></div>
+          <div><small>Phone</small><b>${escapeHtml(u.phone || '—')}</b></div>
+        </div>
+        <div class="myprof-lease-veh"><small>Tenant email</small>${emails.length ? emails.map(e => `<b style="display:block">${escapeHtml(e)}</b>`).join('') : '<span class="myprof-lease-empty">—</span>'}</div>
+        <div class="myprof-lease-veh" style="margin-top:12px"><small>Vehicles</small><div class="myprof-lease-plates">${plateHtml}</div></div>
+      </div>
+    `;
+  }
 
-    const ownerUnits = myUnits.filter(x => x.my_role === 'OWNER');
-    const checkedList = ownerUnits.filter(x => x.checked).map(x => x.unit).join(', ') || '(no units checked)';
-    const bulkEl = document.getElementById('myprofBulkUnits');
-    if (bulkEl) bulkEl.textContent = checkedList;
-    const vehUnitsEl = document.getElementById('myprofVehUnits');
-    if (vehUnitsEl) vehUnitsEl.textContent = checkedList;
+  function renderVehRow(u, plate) {
+    const safe = escapeHtml(plate);
+    return `
+      <div class="myprof-veh-row" data-plate="${safe}">
+        <div class="myprof-plate">${safe}</div>
+        <select class="myprof-select myprof-veh-email-sel" aria-label="Notice email for ${safe}">
+          ${emailOptionsHtml(u, u.pemails[plate] || '', true)}
+        </select>
+        <button class="myprof-veh-remove" type="button" title="Remove" aria-label="Remove ${safe}">✕</button>
+      </div>
+    `;
+  }
+
+  // Read the visible inputs back into the active unit (before switching tabs / saving)
+  function captureActive() {
+    const u = getUnit(activeId);
+    if (!isEditable(u)) return;
+    const bn = document.getElementById('myprofBusinessName');
+    const ph = document.getElementById('myprofPhone');
+    if (bn) u.bn = bn.value.trim();
+    if (ph) u.ph = ph.value.trim();
+  }
+
+  // One delegated listener set for the whole body (bound once)
+  function bindBodyEvents() {
+    const body = document.getElementById('myProfileBody');
+    if (!body || body.dataset.bound === '1') return;
+    body.dataset.bound = '1';
+
+    body.addEventListener('click', function(e) {
+      const tab = e.target.closest('.myprof-utab');
+      if (tab) { window.myProfileSelectUnit(tab.dataset.uid); return; }
+      const rm = e.target.closest('.myprof-veh-remove');
+      if (rm) {
+        const row = rm.closest('.myprof-veh-row');
+        if (row) window.myProfileRemoveVehicle(row.dataset.plate);
+        return;
+      }
+      if (e.target.closest('[data-action="add-vehicle"]')) window.myProfileAddVehicle();
+    });
+
+    body.addEventListener('change', function(e) {
+      const sel = e.target.closest('.myprof-veh-email-sel');
+      if (!sel) return;
+      const row = sel.closest('.myprof-veh-row');
+      const u = getUnit(activeId);
+      if (!row || !isEditable(u)) return;
+      const plate = row.dataset.plate;
+      if (sel.value) u.pemails[plate] = sel.value;
+      else delete u.pemails[plate];
+    });
+
+    body.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target && e.target.id === 'myprofVehInput') {
+        e.preventDefault();
+        window.myProfileAddVehicle();
+      }
+    });
+  }
+
+  window.myProfileSelectUnit = function(unitId) {
+    if (unitId === activeId) return;
+    if (!getUnit(unitId)) return;
+    captureActive();
+    activeId = unitId;
+    renderUnitArea(false);
   };
 
   // ── Add vehicle ─────────────────────────────────────────
   window.myProfileAddVehicle = function() {
+    const u = getUnit(activeId);
+    if (!isEditable(u)) return;
     const input = document.getElementById('myprofVehInput');
     if (!input) return;
     const raw = (input.value || '').trim().toUpperCase();
@@ -474,18 +535,25 @@
       return;
     }
 
-    if (unifiedPlates.includes(plate)) {
+    // Already on one of my own units?
+    const ownerUnitOfPlate = editUnits.find(x => x.plates.includes(plate))
+      || leasedUnits.find(x => (x.license_plates || '').toUpperCase().split(',').map(p => p.trim()).includes(plate));
+    if (ownerUnitOfPlate) {
       input.value = '';
-      const dup = document.querySelector(`.myprof-veh-badge[data-plate="${plate}"]`);
-      if (dup) {
-        dup.classList.add('myprof-veh-flash');
-        setTimeout(() => dup.classList.remove('myprof-veh-flash'), 600);
+      if (ownerUnitOfPlate === u) {
+        const dup = document.querySelector(`.myprof-veh-row[data-plate="${plate}"]`);
+        if (dup) {
+          dup.classList.add('myprof-veh-flash');
+          setTimeout(() => dup.classList.remove('myprof-veh-flash'), 600);
+        }
+        showSaveMsg('Already registered.', 'error', 2500);
+      } else {
+        showSaveMsg(`This plate is already registered on unit ${ownerUnitOfPlate.unit}.`, 'error', 3500);
       }
-      showSaveMsg('Already registered.', 'error', 2500);
       return;
     }
 
-    const myUnitNumbers = new Set(myUnits.map(u => String(u.unit)));
+    const myUnitNumbers = new Set(myUnits.map(x => String(x.unit)));
     const otherUnitMatch = allVehicles.find(v => {
       if (!v?.plate) return false;
       const vp = v.plate.replace(/\s/g, '').toUpperCase();
@@ -493,27 +561,35 @@
     });
     if (otherUnitMatch) {
       input.value = '';
-      showSaveMsg(`This plate is already registered on another unit (${escapeHtml(otherUnitMatch.unit)}). Please contact Building Management.`, 'error', 4000);
+      showSaveMsg(`This plate is already registered on another unit (${otherUnitMatch.unit}). Please contact Building Management.`, 'error', 4000);
       return;
     }
 
-    unifiedPlates.push(plate);
+    const emailSel = document.getElementById('myprofVehEmail');
+    const chosenEmail = (emailSel?.value || '').trim();
+
+    u.plates.push(plate);
+    if (chosenEmail) u.pemails[plate] = chosenEmail;
+
     const list = document.getElementById('myprofVehList');
-    if (list) list.insertAdjacentHTML('beforeend', renderVehBadge(plate));
+    if (list) list.insertAdjacentHTML('beforeend', renderVehRow(u, plate));
     const count = document.getElementById('myprofVehCount');
-    if (count) count.textContent = unifiedPlates.length;
+    if (count) count.textContent = u.plates.length;
     input.value = '';
     input.focus();
   };
 
   window.myProfileRemoveVehicle = function(plate) {
-    const idx = unifiedPlates.indexOf(plate);
+    const u = getUnit(activeId);
+    if (!isEditable(u)) return;
+    const idx = u.plates.indexOf(plate);
     if (idx === -1) return;
-    unifiedPlates.splice(idx, 1);
-    const el = document.querySelector(`.myprof-veh-badge[data-plate="${plate}"]`);
+    u.plates.splice(idx, 1);
+    delete u.pemails[plate];
+    const el = document.querySelector(`.myprof-veh-row[data-plate="${plate}"]`);
     if (el) el.remove();
     const count = document.getElementById('myprofVehCount');
-    if (count) count.textContent = unifiedPlates.length;
+    if (count) count.textContent = u.plates.length;
   };
 
   // ── Toggle password panel ───────────────────────────────
@@ -615,11 +691,11 @@
         return;
       }
 
-      const ownerUnits = myUnits.filter(u => u.my_role === 'OWNER');
-      const tenantUnits = myUnits.filter(u => u.my_role === 'TENANT');
-      const isStaffOnly = ownerUnits.length === 0 && tenantUnits.length === 0;
+      // Leased-out units (owner_type='Tenant' at load) are view-only and never touched here.
+      // Leased-out units are view-only and never touched here.
+      captureActive();
 
-      if (isStaffOnly) {
+      if (editUnits.length === 0) {
         showSaveMsg('✓ Saved successfully.', 'success', 2500);
         if (saveBtn) saveBtn.disabled = false;
         if (window.showToast) window.showToast('Updated ✓');
@@ -627,123 +703,49 @@
         return;
       }
 
-      // Safety guard — any OWNER unit unchecked (= about to be cleared)
-      const uncheckedOwners = ownerUnits.filter(u => !u.checked);
-      if (uncheckedOwners.length > 0) {
-        const unitList = uncheckedOwners.map(u => `  • ${u.unit}`).join('\n');
-        const confirmed = confirm(
-          'The following unit(s) will be set as TENANT-leased:\n\n' +
-          unitList + '\n\n' +
-          'Their business info and vehicles will be cleared.\n' +
-          '(Your name remains as the registered owner.)\n\n' +
-          'Continue?'
-        );
-        if (!confirmed) {
-          showSaveMsg('Cancelled.', 'error', 2000);
-          if (saveBtn) saveBtn.disabled = false;
-          return;
+      for (const u of editUnits) {
+        const plates = u.plates.slice();
+        const pe = {};
+        plates.forEach(p => { if (u.pemails[p]) pe[p] = u.pemails[p]; });
+        const platesStr = plates.join(', ');
+
+        const upd = {
+          business_name: u.bn || null,
+          phone: u.ph || null,
+          license_plates: platesStr || null,
+          plate_emails: pe
+        };
+        if (u.my_role === 'OWNER') {
+          upd.owner_type = 'Owner';
+          upd.contact_person = newName || null;   // Name → contact_person (owner units only)
         }
-      }
 
-      // b) Collect business info
-      const businessName = (document.getElementById('myprofBusinessName')?.value || '').trim();
-      const phone = (document.getElementById('myprofPhone')?.value || '').trim();
-      const platesStr = unifiedPlates.join(', ');
-
-      // c) OWNER units
-      // - Checked: contact_person + business_name + phone + license_plates + owner_type='Owner' (all bulk-applied)
-      // - Unchecked: owner_type='Tenant' + clear business_name/phone/license_plates + clear vehicles
-      //              (contact_person is preserved — owner is still the same person)
-      for (const u of ownerUnits) {
-        if (u.checked) {
-          const { error: upErr } = await supabase
-            .from('occupants')
-            .update({
-              owner_type: 'Owner',
-              contact_person: newName || null,        // ← Name → contact_person bulk sync
-              business_name: businessName || null,
-              phone: phone || null,
-              license_plates: platesStr || null
-            })
-            .eq('id', u.id);
-          if (upErr) {
-            showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
-            if (saveBtn) saveBtn.disabled = false;
-            return;
-          }
-          u.owner_type = 'Owner';
-          u.contact_person = newName || null;
-          u.business_name = businessName || null;
-          u.phone = phone || null;
-          u.license_plates = platesStr || null;
-
-          // sync_vehicles uses the new contact_person
-          const ownerName = newName || businessName || '';
-          const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
-            p_unit: u.unit,
-            p_owner_name: ownerName,
-            p_plates: unifiedPlates
-          });
-          if (rpcErr) {
-            console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
-          }
-        } else {
-          // Unchecked = leased to tenant: clear business/phone/plates, keep contact_person
-          const { error: upErr } = await supabase
-            .from('occupants')
-            .update({
-              owner_type: 'Tenant',
-              business_name: null,
-              phone: null,
-              license_plates: null
-            })
-            .eq('id', u.id);
-          if (upErr) {
-            showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
-            if (saveBtn) saveBtn.disabled = false;
-            return;
-          }
-          u.owner_type = 'Tenant';
-          u.business_name = null;
-          u.phone = null;
-          u.license_plates = null;
-
-          // Clear vehicles for this unit (empty array → DELETE only, no INSERT)
-          const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
-            p_unit: u.unit,
-            p_owner_name: u.contact_person || '',
-            p_plates: []
-          });
-          if (rpcErr) {
-            console.warn(`[my-profile] sync_vehicles clear failed for ${u.unit}:`, rpcErr);
-          }
-        }
-      }
-
-      // d) TENANT-leased units (do NOT touch contact_person — that's the actual Owner's name)
-      for (const u of tenantUnits) {
         const { error: upErr } = await supabase
           .from('occupants')
-          .update({
-            business_name: businessName || null,
-            phone: phone || null,
-            license_plates: platesStr || null
-          })
+          .update(upd)
           .eq('id', u.id);
         if (upErr) {
           showSaveMsg(`Unit ${u.unit} save failed: ${upErr.message}`, 'error', 4000);
           if (saveBtn) saveBtn.disabled = false;
           return;
         }
-        u.business_name = businessName || null;
-        u.phone = phone || null;
-        u.license_plates = platesStr || null;
 
-        const ownerName = u.contact_person || businessName || '';
+        if (u.my_role === 'OWNER') {
+          u.owner_type = 'Owner';
+          u.contact_person = newName || null;
+        }
+        u.business_name = u.bn || null;
+        u.phone = u.ph || null;
+        u.license_plates = platesStr || null;
+        u.plate_emails = pe;
+
+        const ownerName = (u.my_role === 'OWNER')
+          ? (newName || u.bn || '')
+          : (u.contact_person || u.bn || '');
         const { error: rpcErr } = await supabase.rpc('sync_vehicles', {
           p_unit: u.unit,
           p_owner_name: ownerName,
-          p_plates: unifiedPlates
+          p_plates: plates
         });
         if (rpcErr) console.warn(`[my-profile] sync_vehicles failed for ${u.unit}:`, rpcErr);
       }
@@ -775,6 +777,10 @@
   }
 
   // ── Helpers ─────────────────────────────────────────────
+  function splitEmails(str) {
+    return String(str || '').split(/[,;]/).map(e => e.trim()).filter(Boolean);
+  }
+
   function getInitials(name) {
     if (!name) return '?';
     const parts = name.trim().split(/\s+/);
