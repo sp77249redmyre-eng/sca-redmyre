@@ -754,6 +754,7 @@
       if (saveBtn) saveBtn.disabled = false;
       if (window.showToast) window.showToast('Updated ✓');
       fillHeader();
+      try { window.dispatchEvent(new Event('myprofile-saved')); } catch (e) {}
 
     } catch (err) {
       console.error('[my-profile] save error:', err);
