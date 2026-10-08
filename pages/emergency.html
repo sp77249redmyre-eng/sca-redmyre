@@ -299,13 +299,18 @@ async function renderManagerCard() {
   const noteEl=document.getElementById('mgrNote');
 
   document.getElementById('mgrCompany').textContent='SCA Facility Management';
-  document.getElementById('mgrName').textContent='Jacob Kim';
+  // Leave cover: 12 Oct – 31 Oct 2026 (Sydney time) shows David Yun; reverts automatically afterwards.
+  const sydneyToday = new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Sydney'}).format(now);
+  const onLeave = sydneyToday >= '2026-10-12' && sydneyToday <= '2026-10-31';
+  const mgrNameText = onLeave ? 'David Yun' : 'Jacob Kim';
+  const mgrInitials = onLeave ? 'DY' : 'JK';
+  document.getElementById('mgrName').textContent=mgrNameText;
   document.getElementById('mgrRole').textContent='Building Manager';
 
   if (available) {
     card.className='person-card blue';
     av.className='person-av av-blue';
-    av.textContent='JK';
+    av.textContent=mgrInitials;
     statusEl.className='status-badge sb-green';
     statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
     phoneEl.textContent='0478 705 406';
