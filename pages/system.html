@@ -164,6 +164,16 @@
 .system-console .sc-meta-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
 .system-console .sc-meta-val { margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--sc-text); font-family: var(--sc-font-mono); }
 .system-console .sc-meta-val.dim { color: var(--sc-text-2); font-family: inherit; }
+/* Integration status: glow only the status text, based on the existing check result. */
+.system-console .sc-meta-val.int-status-ok {
+  color: #39FF72 !important;
+  text-shadow: 0 0 5px rgba(57,255,114,.65), 0 0 12px rgba(57,255,114,.35);
+}
+.system-console .sc-meta-val.int-status-error {
+  color: #FF3B55 !important;
+  text-shadow: 0 0 5px rgba(255,59,85,.7), 0 0 12px rgba(255,59,85,.4);
+}
+
 
 .system-console .sc-door {
   display: grid; grid-template-columns: 1.3fr .9fr 1.1fr 1.5fr; gap: 14px; align-items: center;
@@ -2143,6 +2153,12 @@ async function checkDoors() {
   const intTile = (state, text, sub) => { setTile('st-int', state, text, sub); setTile('hl-int', state, text, sub + ' · ' + stamp); };
   const lc = document.getElementById('door-lastcheck');
   const ig = document.getElementById('door-integration');
+  const setIntegrationStatus = (text, state) => {
+    if (!ig) return;
+    ig.textContent = text;
+    ig.classList.remove('int-status-ok', 'int-status-error');
+    ig.classList.add(state === 'ok' ? 'int-status-ok' : 'int-status-error');
+  };
   const allUnknown = (why) => DOOR_IDS.forEach(id => setDoorBadge(id, 'unknown', 'Unknown', why));
   try {
     const [hbRes, stRes] = await Promise.all([
@@ -2154,7 +2170,7 @@ async function checkDoors() {
     if (!hb || !hb.last_seen) {
       allUnknown('Door Daemon has not reported yet');
       intTile('', '—', 'Door Daemon not reporting');
-      if (ig) ig.textContent = 'Not connected';
+      setIntegrationStatus('Not connected', 'error');
       if (lc) lc.textContent = '—';
       return;
     }
@@ -2164,7 +2180,7 @@ async function checkDoors() {
     if (hbAge > DOOR_FRESH_SEC) {
       allUnknown('Door Daemon stopped · last seen ' + agoText(hbAge));
       intTile('err', 'Daemon stopped', 'Last seen ' + agoText(hbAge));
-      if (ig) ig.textContent = 'Daemon stopped';
+      setIntegrationStatus('Daemon stopped', 'error');
       if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
       return;
     }
@@ -2173,7 +2189,7 @@ async function checkDoors() {
     if (info.indexOf('status_write_failed') === 0) {
       allUnknown('Status could not be saved');
       intTile('warn', 'Save failed', 'Status could not be saved');
-      if (ig) ig.textContent = 'Save failed';
+      setIntegrationStatus('Save failed', 'error');
       if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
       return;
     }
@@ -2182,11 +2198,11 @@ async function checkDoors() {
       const why = unknownWhy[code] || 'Cannot read Integriti';
       allUnknown(why);
       intTile('warn', 'Not readable', why);
-      if (ig) ig.textContent = 'Not readable';
+      setIntegrationStatus('Not readable', 'error');
       if (lc) lc.textContent = readAge === null ? 'never' : agoText(readAge);
       return;
     }
-    if (ig) ig.textContent = 'Status monitor · reading';
+    setIntegrationStatus('Status monitor · reading', 'ok');
     if (lc) lc.textContent = agoText(readAge);
     intTile('ok', 'Reading', 'Doors read ' + agoText(readAge));
     const rows = {};
@@ -2203,6 +2219,7 @@ async function checkDoors() {
   } catch (e) {
     allUnknown('Could not read door status');
     intTile('warn', 'Unknown', 'Could not read');
+    setIntegrationStatus('Not readable', 'error');
   }
 }
 
