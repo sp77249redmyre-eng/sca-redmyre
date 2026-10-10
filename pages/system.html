@@ -2054,15 +2054,39 @@ function renderDoorNote(id) {
   if (n) n.textContent = (DOOR_BASE[id] || '') + (DOOR_EXTRA[id] ? (DOOR_BASE[id] ? ' \u00b7 ' : '') + DOOR_EXTRA[id] : '');
 }
 function setDoorBadge(id, cls, label, note) {
+  // Keep the real state for command permissions; use a separate class for schedule-aware display.
+  let displayCls = cls;
+  let abnormalOpen = false;
+  if (cls === 'locked' || cls === 'unlocked') {
+    if (id === 'D5') {
+      displayCls = cls === 'locked' ? 'locked' : 'unlocked';
+      abnormalOpen = cls === 'unlocked';
+    } else {
+      const openHours = isOpenHoursSydney(id);
+      if (openHours === true) {
+        // D1-D3 should be unlocked during operating hours.
+        displayCls = cls === 'unlocked' ? 'locked' : 'unlocked';
+        abnormalOpen = false;
+      } else if (openHours === false) {
+        // D1-D3 should be locked outside operating hours.
+        displayCls = cls;
+        abnormalOpen = cls === 'unlocked';
+      } else {
+        // If Sydney time cannot be determined, do not present the state as normal or abnormal.
+        displayCls = 'unknown';
+        abnormalOpen = cls === 'unlocked';
+      }
+    }
+  }
   const b = document.getElementById('door-badge-' + id);
   if (b) {
-    b.className = 'sc-badge ' + cls;
+    b.className = 'sc-badge ' + displayCls;
     b.textContent = '';
     const dot = document.createElement('span'); dot.className = 'sc-dot';
     b.appendChild(dot); b.appendChild(document.createTextNode(label));
   }
   DOOR_STATE[id] = cls; DOOR_BASE[id] = note;
-  const card = document.getElementById('door-' + id); if (card) card.classList.toggle('is-open', cls === 'unlocked');
+  const card = document.getElementById('door-' + id); if (card) card.classList.toggle('is-open', abnormalOpen);
   renderDoorNote(id);
   updateDoorButtons();
 }
