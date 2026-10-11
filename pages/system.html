@@ -1205,12 +1205,12 @@
                 </tr>
                 <tr>
                   <td><span class="door-code">D2</span><span class="door-label">Front Roller Door</span></td>
-                  <td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–15:00</td><td>Closed</td>
+                  <td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–15:00</td><td>Closed</td>
                   <td><span id="ac-current-D2" class="ac-current">—</span></td>
                 </tr>
                 <tr>
                   <td><span class="door-code">D3</span><span class="door-label">Car Park Door</span></td>
-                  <td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–19:00</td><td>06:58–15:00</td><td>Closed</td>
+                  <td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–19:00</td><td>06:58:45–15:00</td><td>Closed</td>
                   <td><span id="ac-current-D3" class="ac-current">—</span></td>
                 </tr>
                 <tr>
@@ -2096,7 +2096,7 @@ function setDoorBadge(id, cls, label, note) {
       if (openHours === true) {
         // D1-D3 should be unlocked during operating hours.
         displayCls = cls === 'unlocked' ? 'locked' : 'unlocked';
-        abnormalOpen = false;
+        abnormalOpen = cls === 'locked'; // Locked during operating hours is abnormal: red card glow.
       } else if (openHours === false) {
         // D1-D3 should be locked outside operating hours.
         displayCls = cls;
@@ -2193,8 +2193,8 @@ async function checkDoors() {
       if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
       return;
     }
-    if (!readOk) {
-      const code = info.replace(/^unknown:\s*/, '').split(',')[0].trim();
+    if (!readOk || info.trim().toLowerCase().startsWith('unknown:')) {
+      const code = info.trim().replace(/^unknown:\s*/i, '').split(',')[0].trim();
       const why = unknownWhy[code] || 'Cannot read Integriti';
       allUnknown(why);
       intTile('warn', 'Not readable', why);
