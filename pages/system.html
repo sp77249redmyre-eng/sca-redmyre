@@ -2136,7 +2136,7 @@ function updateDoorButtons() {
     const en = DOOR_UI_ENABLED.indexOf(id) >= 0 && !doorBusy[id];
     const autoWait = !!act && act.source === 'autolock' && act.status === 'pending';
     const offU = !(en && !act && st === 'locked');
-    const offL = !(en && (!act || autoWait) && (st === 'unlocked' || st === 'unknown'));   // Lock is the safe direction: allowed when status is unknown
+    const offL = !(en && (!act || autoWait) && (st === 'unlocked'));   // no clicks at all while Integriti cannot be read (status unknown)
     bu.disabled = offU; bu.setAttribute('aria-disabled', String(offU));
     bl.disabled = offL; bl.setAttribute('aria-disabled', String(offL));
     const tip = DOOR_UI_ENABLED.indexOf(id) >= 0 ? '' : 'Not enabled yet';
@@ -2202,6 +2202,9 @@ async function checkDoors() {
     }
     const readOk = readAge !== null && readAge <= DOOR_FRESH_SEC;
     const info = (hb.info || '');
+    // The daemon reports 'unknown: <why>' the moment it cannot read Integriti. Act on it after 2 checks in a row
+    // (about 10-20 s) instead of waiting for the 3 min freshness limit; a single blip does not trigger it.
+    window.__doorUnkStreak = (info.indexOf('unknown') === 0) ? (window.__doorUnkStreak || 0) + 1 : 0;
     if (info.indexOf('status_write_failed') === 0) {
       allUnknown('Status could not be saved');
       intTile('warn', 'Save failed', 'Status could not be saved');
@@ -2210,7 +2213,7 @@ async function checkDoors() {
       if (lc) lc.textContent = readAge === null ? '—' : agoText(readAge);
       return;
     }
-    if (!readOk) {
+    if (!readOk || window.__doorUnkStreak >= 2) {
       const code = info.replace(/^unknown:\s*/, '').split(',')[0].trim();
       const why = unknownWhy[code] || 'Cannot read Integriti';
       allUnknown(why);
