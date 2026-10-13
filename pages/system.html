@@ -1276,13 +1276,6 @@
       <div class="sc-stat"><div class="sc-stat-num" id="sn-hb">—</div><div class="sc-stat-label">Daemon Heartbeat</div></div>
     </div>
 
-    <!-- 6. RECENT ACTIVITIES -->
-    <div class="sc-section">Recent Activities</div>
-    <div class="sc-panel">
-      <div class="sc-panel-head"><div class="sc-panel-title">Latest 10 Events</div><div class="sc-panel-actions"><span class="sc-panel-desc" id="activityStamp">—</span></div></div>
-      <div class="sc-panel-body" id="activityList" style="padding:6px 20px"><div class="sc-empty">Loading…</div></div>
-    </div>
-
     <!-- 9. DATABASE / STORAGE -->
     <div class="sc-section">Database / Storage</div>
     <div class="sc-grid-ops">
@@ -2463,44 +2456,12 @@ async function checkDaemon() {
   }
 }
 
-async function loadActivities() {
-  const box = document.getElementById('activityList');
-  const stamp = document.getElementById('activityStamp');
-  if (!box) return;
-  try {
-    const { data, error } = await supabase.from('audit_logs')
-      .select('created_at, action, user_email')
-      .eq('user_role', 'admin')
-      .order('created_at', { ascending: false })
-      .limit(10);
-    if (error) throw error;
-    box.textContent = '';
-    if (!data || !data.length) {
-      const empty = document.createElement('div'); empty.className = 'sc-empty'; empty.textContent = 'No recent events.'; box.appendChild(empty);
-    } else {
-      data.forEach(r => {
-        const row = document.createElement('div'); row.className = 'sc-act-row';
-        const t = document.createElement('div'); t.className = 'sc-act-time';
-        t.textContent = new Date(r.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
-        const u = document.createElement('div'); u.className = 'sc-act-user'; u.textContent = r.user_email || '—';
-        const a = document.createElement('div'); a.className = 'sc-act-action'; a.textContent = r.action || '—';
-        row.appendChild(t); row.appendChild(u); row.appendChild(a); box.appendChild(row);
-      });
-    }
-    if (stamp) stamp.textContent = 'Last check ' + sydTime(new Date());
-  } catch (e) {
-    box.textContent = '';
-    const err = document.createElement('div'); err.className = 'sc-empty'; err.textContent = 'Could not load events.'; box.appendChild(err);
-    if (stamp) stamp.textContent = '—';
-  }
-}
-
 async function refreshStatus() {
   const btn = document.getElementById('refreshStatusBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     checkPortalTile();
-    await Promise.all([checkDatabase(), checkEdgeFunction(), checkDaemon(), checkDoors(), loadSnapshot(), loadActivities()]);
+    await Promise.all([checkDatabase(), checkEdgeFunction(), checkDaemon(), checkDoors(), loadSnapshot()]);
     checkStorageTile();
   } catch (e) { console.warn('[status]', e); }
   if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; Refresh status'; }
