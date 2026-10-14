@@ -1461,6 +1461,7 @@ function switchTab(name) {
   if (name === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
   if (name === 'lift')   renderLiftDashboard();
   currentTab = name;
+  if (name === 'overview' && typeof fitHero === 'function') requestAnimationFrame(fitHero);
 }
 let currentTab = 'overview';
 const TAB_GROUP = { lift: 'Lift', hvac: 'HVAC', fire: 'Fire', garage: 'Garage' };
@@ -2517,6 +2518,14 @@ function playHeroFx(svgEl, key, ms) {
   return setTimeout(() => svgEl.classList.remove('fx-' + key), ms);
 }
 
+function fitHero() {
+  const host = document.getElementById('srHero');
+  if (!host || host.offsetParent === null) return;
+  if (window.innerWidth <= 760) { host.style.height = ''; return; }
+  const top = host.getBoundingClientRect().top;
+  host.style.height = Math.max(360, Math.floor(window.innerHeight - top - 30)) + 'px';
+}
+window.addEventListener('resize', fitHero);
 function renderHero() {
   const host = document.getElementById('srHero');
   if (!host) return;
@@ -2575,6 +2584,7 @@ function renderHero() {
     const b = dw ? `<span class="a">${dw} ${dw === 1 ? 'is' : 'are'} due this week</span>` : '';
     lead.innerHTML = (a && b) ? `${a} and ${b}` : (a || b || '<span class="g">Everything is up to date</span>');
   }
+  fitHero();
 }
 
 init();
