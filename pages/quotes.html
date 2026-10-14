@@ -1494,7 +1494,20 @@ function renderPendingQuotes(quotes) {
     // Insert the result row at the TOP of the voting section (before Voting Status)
     votingSection.insertBefore(resultRow, votingSection.firstChild);
 
-    card.appendChild(votingSection);
+    // Layout (display only): left = vendors + discussion, right = vote panel
+    {
+      const qcBody = document.createElement('div'); qcBody.className = 'qc-body';
+      const qcMain = document.createElement('div'); qcMain.className = 'qc-main';
+      const s1 = card.querySelector(':scope > .step-title'); if (s1) qcMain.appendChild(s1);
+      qcMain.appendChild(vendorList);
+      const qcDisc = document.createElement('div'); qcDisc.className = 'qc-discuss';
+      [commTitle, thread, inputTitle].forEach(n => qcDisc.appendChild(n));
+      const ia = votingSection.querySelector(':scope > .input-area'); if (ia) qcDisc.appendChild(ia);
+      qcMain.appendChild(qcDisc);
+      votingSection.classList.add('qc-side');
+      qcBody.appendChild(qcMain); qcBody.appendChild(votingSection);
+      card.appendChild(qcBody);
+    }
     container.appendChild(card);
   });
 }
@@ -2488,6 +2501,46 @@ init();
 }
 
 .project-header-left>div[style*="width:36px"]{display:none!important}
+
+/* ── Layout v3: vendors + discussion left, vote panel right ── */
+.qc-body{display:grid;grid-template-columns:minmax(0,1fr) 340px}
+.qc-main{min-width:0}
+.qc-side.voting-section{border-top:0;border-left:1px solid #e3e9f1;padding:20px 22px;background:#f8fafc;min-width:0}
+.qc-side .section-title{font-size:16px;margin:20px 0 8px}
+.qc-side .section-title:first-child{margin-top:0}
+.qc-discuss{padding:0 28px 24px}
+.qc-discuss .section-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:#0f1b33;background:none;border:0;padding:0;margin:22px 0 10px}
+.qc-main .step-title{font-size:16px;padding:20px 28px 0}
+.qc-main .vendor-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px 28px 4px}
+.qc-main .vendor-header{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-width:1.5px}
+.qc-main .vendor-name{font-size:16px}
+.qc-main .vendor-amount{font-size:21px}
+.qc-main .btn-view-details{font-size:13.5px}
+.qc-main .vendor-status{flex:0 0 auto}
+.qc-main .select-btn,.qc-main .deselect-btn{flex:none;padding:7px 14px;font-size:14px}
+.qc-main .badge-x{flex:none;font-size:16px;padding:4px 8px}
+.qc-main .vendor-header.hdr-selected{box-shadow:none}
+.qc-main .vendor-header.is-open{box-shadow:none}
+.qc-side .vote-top{display:flex;flex-direction:column;gap:18px;margin-bottom:0}
+.qc-side .vote-top>div:nth-child(2){order:-1}
+.qc-side .vote-top>div:nth-child(2)>div[style*="gap:6px"]{grid-template-columns:1fr!important;gap:8px!important}
+.qc-side .vote-top .btn-action{width:100%;min-width:0;padding:9px 14px!important}
+.qc-side .m-lead{font-size:16px}
+.qc-side .m-sub{font-size:14px}
+.qc-side .m-row{font-size:14px}.qc-side .m-row b{font-size:15px}
+.qc-side .voting-grid{grid-template-columns:1fr;gap:0}
+.qc-side .vote-cell,.qc-side .vote-cell-me{margin:0;padding:7px 0}
+.qc-side .vote-cell-me{background:transparent}
+.qc-side .result-row{margin-bottom:14px}
+.qc-side>.section-title:not(.roster-title){display:none}
+.qc-side .roster-title{margin-top:22px}
+.qc-discuss .section-title{border-left:0!important;padding-left:0!important}
+.qc-discuss .pc-msg-name{font-size:15px!important}
+.qc-discuss .pc-msg{font-size:15px}
+.qc-discuss .section-title::before,.qc-discuss .section-title::after{display:none!important;content:none!important}
+.qc-side .btn-action,.qc-side .btn-mgmt{font-size:14px!important;padding:8px 14px!important;min-width:0!important}
+@media(max-width:1100px){.qc-body{grid-template-columns:1fr}.qc-side.voting-section{border-left:0;border-top:1px solid #e3e9f1}}
+@media(max-width:768px){.qc-main .vendor-list{grid-template-columns:1fr;padding:12px 14px 4px}.qc-discuss{padding:0 14px 20px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script>
