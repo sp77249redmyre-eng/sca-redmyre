@@ -1007,17 +1007,40 @@ function renderLiftMatrix() {
       if (list.length === 1) {
         highlightAndOpenReport(list[0].id);
       } else {
-        // Multiple — show most recent (date desc) modal + toast for extra count
         const sorted = [...list].sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
-        highlightAndOpenReport(sorted[0].id);
-        if (sorted.length > 1) {
-          setTimeout(() => {
-            showToast(`This month has ${sorted.length} reports. Showing the most recent.`, 'info');
-          }, 200);
-        }
+        openReportPicker(sorted, cell);
       }
     });
   });
+}
+
+function openReportPicker(list, cell) {
+  let m = document.getElementById('reportPicker');
+  if (!m) {
+    m = document.createElement('div');
+    m.className = 'modal-backdrop';
+    m.id = 'reportPicker';
+    m.innerHTML = '<div class="modal-box"><div class="modal-title" id="rpTitle"></div><div id="rpList"></div><div class="modal-footer"><button class="btn-secondary" id="rpClose">Close</button></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m || e.target.id === 'rpClose') m.classList.remove('open'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') m.classList.remove('open'); });
+  }
+  const unit = cell.getAttribute('data-unit') === 'lift_2' ? 'Lift 2' : 'Lift 1';
+  const tl = { pm: 'Maintenance', callout: 'Callouts', repair: 'Repairs', notify: 'Notify', inspection: 'Investigation' }[cell.getAttribute('data-type')] || 'Reports';
+  document.getElementById('rpTitle').textContent = `${unit} · ${tl} — ${list.length} reports`;
+  document.getElementById('rpList').innerHTML = list.map(r => {
+    const raw = (r.summary || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const note = raw.length > 110 ? raw.slice(0, 110) + '…' : raw;
+    return `<button type="button" class="sr-rp-item" data-id="${r.id}">
+      <span class="sr-rp-date">${fmtDate(r.report_date)}</span>
+      <span class="sr-rp-main"><b>${escHtml(r.title || 'Report')}</b>${note ? `<span>${escHtml(note)}</span>` : ''}</span>
+      <span class="sr-rp-go">View</span></button>`;
+  }).join('');
+  document.querySelectorAll('#rpList .sr-rp-item').forEach(b => b.addEventListener('click', () => {
+    m.classList.remove('open');
+    highlightAndOpenReport(b.dataset.id);
+  }));
+  m.classList.add('open');
 }
 
 function renderLiftTimeline() {
