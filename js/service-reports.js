@@ -1667,6 +1667,10 @@ function cleanNoteHtml(html) {
       if (_keepCol.includes(col)) ch.setAttribute('style', 'color:' + col);
     });
   })(doc.body);
+  doc.body.querySelectorAll('div, p').forEach(el => {
+    const t = el.textContent.trim();
+    if (t && t.length <= 28 && !/[.:;,]/.test(t) && !el.querySelector('div, p, b, strong, br') && el.nextElementSibling) el.innerHTML = '<b>' + el.innerHTML + '</b>';
+  });
   let out = doc.body.innerHTML;
   for (let i = 0; i < 3; i++) out = out.replace(/<(div|p|span|b|strong|i|em|u)>(\s|<br>)*<\/\1>/gi, '');
   out = out.replace(/<(b|strong)>\s+/gi, '<$1>').replace(/<br\s*\/?>\s*(?=<(p|div|ul|ol)\b)/gi, '').replace(/(<\/(p|div|ul|ol)>)\s*<br\s*\/?>/gi, '$1').replace(/(<(div|li)>)\s*(<br\s*\/?>\s*)+/gi, '$1');
@@ -1702,7 +1706,11 @@ function syncNote() {
 function buildUploadChips() {
   const wrap = document.getElementById('upCategoryChips');
   if (wrap) {
-    const opts = [...upCategoryEl.options].filter(o => o.value);
+    let opts = [...upCategoryEl.options].filter(o => o.value);
+    if (editingReportId) {
+      const g = (categories.find(c => c.id === upCategoryEl.value) || {}).group_label;
+      if (g) opts = opts.filter(o => (categories.find(c => c.id === o.value) || {}).group_label === g);
+    }
     wrap.innerHTML = opts.length ? opts.map(o => {
       const cat = categories.find(c => c.id === o.value);
       const col = CAT_COLOURS[cat && cat.group_label] || '#1b2f5b';
