@@ -2557,7 +2557,7 @@ function renderHero() {
   host.innerHTML = `<svg viewBox="0 0 2040 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
     ${fx.defs}<image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
   const svgEl = host.querySelector('svg');
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = false; // effects always on (this page is an internal tool; Windows 'animation effects off' must not hide them)
   host.querySelectorAll('.sr-tag').forEach(t => {
     if (reduce) return;
     t.addEventListener('mouseenter', () => svgEl.classList.add('fx-' + t.dataset.fx));
