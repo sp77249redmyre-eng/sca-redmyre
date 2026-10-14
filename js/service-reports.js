@@ -59,7 +59,7 @@ function daysBetween(a, b) {
 // ─── ROLE-BASED UI ───────────────────────────────────────────
 if (isAdmin) {
   // Categories + tab Add buttons visible to admin only
-  ['newCategoryBtn', 'addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn'].forEach(id => {
+  ['newCategoryBtn', 'addLiftBtn', 'addHvacBtn', 'addFireBtn', 'addGarageBtn', 'addReportBtn', 'manageCatsBtn'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.style.display = 'inline-flex';
   });
@@ -375,7 +375,7 @@ function renderUpcoming() {
   countEl.textContent = items.length;
 
   if (!items.length) {
-    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">✅</div><div>No upcoming services in the next 60 days.</div></div>';
+    body.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon"><i class="ti ti-circle-check"></i></div><div>No upcoming services in the next 60 days.</div></div>';
     return;
   }
 
@@ -516,18 +516,46 @@ function fmtCellDate(d) {
   return String(dt.getDate()).padStart(2,'0') + ' ' + MONTH_LABELS[dt.getMonth()];
 }
 
+
+// ─── GLYPHS (register marks) ─────────────────────────────────
+const GL = {
+  check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  x:     '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  bang:  '<svg viewBox="0 0 24 24"><path d="M12 5v9"/><circle cx="12" cy="19" r=".6"/></svg>',
+  due:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/></svg>',
+  minus: '<svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg>',
+  q:     '<svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.1-1.5 2.4"/><circle cx="12" cy="18.5" r=".6"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24"><path d="M6 12h12M13 7l5 5-5 5"/></svg>',
+  dots:  '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r=".8"/><circle cx="12" cy="12" r=".8"/><circle cx="18" cy="12" r=".8"/></svg>',
+};
+function glyph(kind, svg) { return `<span class="sr-g g-${kind}">${svg || ''}</span>`; }
+function fmtMonYear(d) { return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }); }
+function statusFor(cat) {
+  const nd = nextDueFor(cat);
+  if (nd.status === 'overdue') return { cls: 'od',  main: `Overdue ${-nd.diff} day${-nd.diff === 1 ? '' : 's'}`, sub: 'Was due ' + fmtMonYear(nd.date) };
+  if (nd.status === 'due')     return { cls: 'due', main: nd.diff === 0 ? 'Due today' : `Due in ${nd.diff} day${nd.diff === 1 ? '' : 's'}`, sub: fmtCellDate(nd.date) };
+  if (nd.status === 'ok')      return { cls: 'ok',  main: 'Up to date', sub: 'Next ' + fmtMonYear(nd.date) };
+  if (nd.status === 'first')   return { cls: 'na',  main: 'No record yet', sub: '' };
+  return { cls: 'na', main: 'Not scheduled', sub: '' };
+}
+function statusHtml(cat) {
+  const s = statusFor(cat);
+  return `<span class="sr-st-${s.cls}">${s.main}</span>${s.sub ? `<span class="sr-st-sub">${s.sub}</span>` : ''}`;
+}
+
 function cellInner(cs) {
   if (cs.state === 'done') {
-    return `<span class="sr-cell-icon">✓</span><span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
+    const attn = isManagement && cs.report && cs.report.has_issues;
+    return glyph(attn ? 'attn' : 'done', attn ? GL.bang : GL.check) + `<span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
   }
-  if (cs.state === 'due')         return `<span class="sr-cell-icon">●</span><span class="sr-cell-date">DUE</span>`;
-  if (cs.state === 'overdue')     return `<span class="sr-cell-icon">!</span><span class="sr-cell-date">MISSED</span>`;
-  if (cs.state === 'scheduled')   return `<span class="sr-cell-icon">${tablerIcon('📅')}</span><span class="sr-cell-date">SCHEDULED</span>`;
-  if (cs.state === 'in_progress') return `<span class="sr-cell-icon">${tablerIcon('⚙')}</span><span class="sr-cell-date">IN PROGRESS</span>`;
-  if (cs.state === 'postponed')   return `<span class="sr-cell-icon">↪</span><span class="sr-cell-date">POSTPONED</span>`;
-  if (cs.state === 'cancelled')   return `<span class="sr-cell-icon">✕</span><span class="sr-cell-date">CANCELLED</span>`;
-  if (cs.state === 'future')      return `<span class="sr-cell-icon">○</span>`;
-  return `<span class="sr-cell-icon">—</span>`;
+  if (cs.state === 'due')         return glyph('due', GL.due) + `<span class="sr-cell-date">Due</span>`;
+  if (cs.state === 'overdue')     return glyph('overdue', GL.x) + `<span class="sr-cell-date">Missed</span>`;
+  if (cs.state === 'scheduled')   return glyph('sched', GL.due) + `<span class="sr-cell-date">Booked</span>`;
+  if (cs.state === 'in_progress') return glyph('prog', GL.dots) + `<span class="sr-cell-date">On site</span>`;
+  if (cs.state === 'postponed')   return glyph('post', GL.arrow) + `<span class="sr-cell-date">Moved</span>`;
+  if (cs.state === 'cancelled')   return glyph('cancel', GL.minus) + `<span class="sr-cell-date">Cancelled</span>`;
+  if (cs.state === 'future')      return glyph('future') + `<span class="sr-cell-date"></span>`;
+  return glyph('na', '<i></i>') + `<span class="sr-cell-date"></span>`;
 }
 
 function buildYearOptions(selectEl, currentYear) {
@@ -559,6 +587,7 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
   const thead = `<thead><tr>
     <th class="sr-row-th">Service</th>
     ${MONTH_LABELS.map(m => `<th>${m}</th>`).join('')}
+    <th class="sr-status-th">Status</th>
   </tr></thead>`;
 
   const tbody = '<tbody>' + cats.map(cat => {
@@ -575,8 +604,9 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       return `<td><div class="sr-cell ${cs.state}" ${clickAttr}>${cellInner(cs)}</div></td>`;
     }).join('');
     return `<tr>
-      <td class="sr-row-th">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
+      <td class="sr-row-th">${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
       ${cells}
+      <td class="sr-status-td">${statusHtml(cat)}</td>
     </tr>`;
   }).join('') + '</tbody>';
 
@@ -605,7 +635,8 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
       </div>`;
     }).join('');
     return `<div class="sr-mobile-row">
-      <div class="sr-mobile-row-title">${tablerIcon(cat.icon || '📋')} ${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
+      <div class="sr-mobile-row-title">${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
+      <div class="sr-status-td" style="margin:-2px 0 8px;font-size:14px;font-weight:700">${statusHtml(cat)}</div>
       <div class="sr-mobile-months">${months}</div>
     </div>`;
   }).join('');
@@ -810,8 +841,8 @@ function renderLiftStats() {
    ───────────────────────────────────────────── */
 const LIFT_SERVICE_TYPES = [
   { key: 'pm',            label: 'Maintenance',   cls: 'ok'    },
-  { key: 'callout',       label: 'Callout',       cls: 'warn'  },
-  { key: 'repair',        label: 'Repair',        cls: 'crit'  },
+  { key: 'callout',       label: 'Callouts',      cls: 'warn'  },
+  { key: 'repair',        label: 'Repairs',       cls: 'crit'  },
   { key: 'investigation', label: 'Investigation', cls: 'other' },
 ];
 
@@ -920,16 +951,16 @@ function renderLiftMatrix() {
           // Determine cell state
           if (t.key === 'pm') {
             cls += ' ok';
-            content = cnt === 1 ? '✓' : `✓<sup>${cnt}</sup>`;
+            content = glyph('done', GL.check) + (cnt > 1 ? `<sup>${cnt}</sup>` : '');
           } else if (t.key === 'callout') {
             cls += cnt >= 3 ? ' crit' : ' warn';
-            content = String(cnt);
+            content = glyph(cnt >= 3 ? 'overdue' : 'attn', String(cnt));
           } else if (t.key === 'repair') {
             cls += ' crit';
-            content = String(cnt);
+            content = glyph('overdue', String(cnt));
           } else {
             cls += ' other';
-            content = String(cnt);
+            content = glyph('inv', GL.q) + (cnt > 1 ? `<sup>${cnt}</sup>` : '');
           }
           cls += ' clickable';
         }
@@ -941,7 +972,10 @@ function renderLiftMatrix() {
         cellsHtml += `<td class="${cls}" ${dataAttr}>${content}</td>`;
       });
       const trCls = (isFirst && unit === 'lift_2') ? `sr-mx-row ${unitCls} lift2-start` : `sr-mx-row ${unitCls}`;
-      return `<tr class="${trCls}">${groupCellHtml}<td class="sr-mx-typehead">${t.label}</td>${cellsHtml}</tr>`;
+      const total = Object.values(bucket[unit][t.key]).reduce((a, l) => a + l.length, 0);
+      const crit = (t.key === 'repair' && total > 0) || (t.key === 'callout' && total >= 3);
+      const badge = `<span class="sr-mx-badge ${total === 0 ? 'zero' : (crit ? 'cr' : '')}">${total}</span>`;
+      return `<tr class="${trCls}">${groupCellHtml}<td class="sr-mx-typehead">${t.label}${badge}</td>${cellsHtml}</tr>`;
     }).join('');
   }
 
@@ -1129,7 +1163,7 @@ window.openDetailModal = function(reportId) {
       <span class="sr-attach-name">${escHtml(a.name)}</span>
       <span class="sr-attach-size">${fmtSize(a.size || 0)}</span>
     </a>`;
-  }).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 0">No attachments.</div>';
+  }).join('') : '<div style="font-size:15px;color:#334155;padding:8px 0">No attachments.</div>';
 
   const liftLine = (cat?.group_label === 'Lift' && (r.lift_unit || r.service_type))
     ? `<div class="sr-detail-section">
@@ -1233,7 +1267,7 @@ window.printViewer = function() {
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && document.getElementById('fileViewerModal').style.display === 'flex') closeViewer();
-  if (e.key === 'Escape' && cellViewOverlay) closeCellNoteView();
+  if (e.key === 'Escape' && typeof cellViewOverlay !== 'undefined' && cellViewOverlay) closeCellNoteView();
 });
 
 // ─── EDIT / DELETE (admin only) ──────────────────────────────
@@ -1327,6 +1361,7 @@ detailModal.addEventListener('click', (e) => {
 
 // ─── RENDER: RECENT REPORTS (last 5) ─────────────────────────
 function renderRecent() {
+  try { renderHero(); } catch (e) { console.warn('hero', e); }
   const body = document.getElementById('recentBody');
   const countEl = document.getElementById('recentCount');
   const recent = reports.slice(0, 5);
@@ -1391,12 +1426,12 @@ function switchTab(name) {
     overview: {
       eyebrow: 'Compliance & Maintenance',
       title:   'Service Reports',
-      sub:     'Track HVAC, Fire, Lift, and Garage inspection records for the building.',
+      sub:     'Lift, HVAC, Fire and Garage service records',
     },
     lift: {
       eyebrow: 'Vertical Transport',
       title:   'Lift Service Reports',
-      sub:     'TKE service records for Lift 1 and Lift 2 — maintenance, callouts, and repairs.',
+      sub:     'Lift 1 and Lift 2 — maintenance, callouts and repairs by contract year.',
     },
     hvac: {
       eyebrow: 'Cooling Tower System',
@@ -1419,14 +1454,25 @@ function switchTab(name) {
   const titleEl   = document.getElementById('srHeroTitle');
   const subEl     = document.getElementById('srHeroSub');
   if (eyebrowEl) eyebrowEl.textContent = ht.eyebrow;
-  if (titleEl)   titleEl.textContent   = ht.title;
   if (subEl)     subEl.textContent     = ht.sub;
   // render matrix on tab switch
   if (name === 'garage') renderMatrix('Garage', 'garageMatrix', 'garageMatrixMobile', matrixState.garage.year);
   if (name === 'hvac')   renderMatrix('HVAC',   'hvacMatrix',   'hvacMatrixMobile',   matrixState.hvac.year);
   if (name === 'fire')   renderMatrix('Fire',   'fireMatrix',   'fireMatrixMobile',   matrixState.fire.year);
   if (name === 'lift')   renderLiftDashboard();
+  currentTab = name;
 }
+let currentTab = 'overview';
+const TAB_GROUP = { lift: 'Lift', hvac: 'HVAC', fire: 'Fire', garage: 'Garage' };
+(function wireHeaderButtons() {
+  const addBtn = document.getElementById('addReportBtn');
+  if (addBtn) addBtn.addEventListener('click', () => openUploadModal('create', null, TAB_GROUP[currentTab] || null));
+  const man = document.getElementById('manageCatsBtn');
+  const panel = document.getElementById('catManage');
+  const close = document.getElementById('catManageClose');
+  if (man && panel) man.addEventListener('click', () => panel.classList.add('open'));
+  if (close && panel) close.addEventListener('click', () => panel.classList.remove('open'));
+})();
 document.querySelectorAll('.sr-tab').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
 });
@@ -1461,12 +1507,12 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function populateUploadDropdowns() {
   upCategoryEl.innerHTML = '<option value="">Select category…</option>' +
-    categories.map(c => `<option value="${c.id}">${escHtml(c.icon || '📋')} ${escHtml(c.name)} (${escHtml(c.group_label)})</option>`).join('');
+    categories.map(c => `<option value="${c.id}">${escHtml(c.name)} (${escHtml(c.group_label)})</option>`).join('');
   upContractorEl.innerHTML = '<option value="">—</option>' +
     contractors.map(c => `<option value="${c.id}">${escHtml(c.company)}</option>`).join('');
 }
 
-function openUploadModal(mode = 'create', report = null, preselectGroup = null) {
+function _openUploadModalBase(mode = 'create', report = null, preselectGroup = null) {
   editingReportId = (mode === 'edit' && report) ? report.id : null;
   removedExistingPaths = [];
   pendingFiles = [];
@@ -1477,7 +1523,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
     ? categories.filter(c => c.group_label === preselectGroup && c.active !== false)
     : categories.filter(c => c.active !== false);
   upCategoryEl.innerHTML = '<option value="">Select category…</option>' +
-    filteredCats.map(c => `<option value="${c.id}">${escHtml(c.icon || '')} ${escHtml(c.name)}</option>`).join('');
+    filteredCats.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
 
   if (mode === 'edit' && report) {
     document.getElementById('upModalTitle').innerHTML = tablerIcon('✏️') + ' Edit Service Report';
@@ -1547,11 +1593,53 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
   // sync issue toggle border radius with checkbox state
   const toggle = document.querySelector('.sr-issue-toggle');
   if (toggle) {
-    toggle.style.borderRadius = upHasIssuesEl.checked ? '12px 12px 0 0' : '12px';
-    toggle.style.borderBottom = upHasIssuesEl.checked ? 'none' : '1.5px solid #fca5a5';
+    toggle.style.borderRadius = upHasIssuesEl.checked ? '10px 10px 0 0' : '10px';
+    toggle.style.borderBottom = upHasIssuesEl.checked ? 'none' : '1.5px solid #c5cfdd';
   }
+  // extra fields stay folded away for new reports; open them when editing
+  const upMoreEl = document.getElementById('upMore');
+  if (upMoreEl) upMoreEl.open = !!editingReportId;
+  _autoTitle = '';
   upModal.classList.add('open');
 }
+// ─── UPLOAD MODAL: colour chips (selects stay as the source of truth) ───
+const CAT_COLOURS = { Lift: '#3d5a99', HVAC: '#2c7a7b', Fire: '#b5543c', Garage: '#6f5f2e' };
+function openUploadModal(mode = 'create', report = null, preselectGroup = null) {
+  _openUploadModalBase(mode, report, preselectGroup);
+  buildUploadChips();
+}
+function buildSelectChips(containerId, selectEl, colour, labels) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  const opts = [...selectEl.options].filter(o => o.value);
+  wrap.innerHTML = opts.map(o => {
+    const label = (labels && labels[o.value]) || o.textContent;
+    return `<button type="button" class="sr-chip${o.value === selectEl.value ? ' on' : ''}" style="--c:${colour}" data-v="${o.value}"><i></i>${escHtml(label)}</button>`;
+  }).join('');
+  wrap.querySelectorAll('.sr-chip').forEach(b => b.addEventListener('click', () => {
+    selectEl.value = (selectEl.value === b.dataset.v) ? '' : b.dataset.v;
+    buildSelectChips(containerId, selectEl, colour, labels);
+  }));
+}
+function buildUploadChips() {
+  const wrap = document.getElementById('upCategoryChips');
+  if (wrap) {
+    const opts = [...upCategoryEl.options].filter(o => o.value);
+    wrap.innerHTML = opts.length ? opts.map(o => {
+      const cat = categories.find(c => c.id === o.value);
+      const col = CAT_COLOURS[cat && cat.group_label] || '#1b2f5b';
+      return `<button type="button" class="sr-chip${o.value === upCategoryEl.value ? ' on' : ''}" style="--c:${col}" data-v="${o.value}"><i></i>${escHtml(cat ? cat.name : o.textContent)}</button>`;
+    }).join('') : '<span class="sr-chips-empty">No categories set up yet.</span>';
+    wrap.querySelectorAll('.sr-chip').forEach(b => b.addEventListener('click', () => {
+      upCategoryEl.value = b.dataset.v;
+      upCategoryEl.dispatchEvent(new Event('change'));
+      buildUploadChips();
+    }));
+  }
+  buildSelectChips('upLiftUnitChips', upLiftUnitEl, CAT_COLOURS.Lift);
+  buildSelectChips('upServiceTypeChips', upServiceTypeEl, CAT_COLOURS.Lift, { pm: 'Maintenance', callout: 'Callout', repair: 'Repair', notify: 'Notify', inspection: 'Investigation' });
+}
+
 function closeUploadModal() {
   upModal.classList.remove('open');
   editingReportId = null;
@@ -2130,8 +2218,21 @@ upHasIssuesEl.addEventListener('change', () => {
   // Unchecked: toggle box alone with rounded corners. Checked: connects to red box below
   const toggle = document.querySelector('.sr-issue-toggle');
   if (toggle) {
-    toggle.style.borderRadius = upHasIssuesEl.checked ? '12px 12px 0 0' : '12px';
-    toggle.style.borderBottom = upHasIssuesEl.checked ? 'none' : '1.5px solid #fca5a5';
+    toggle.style.borderRadius = upHasIssuesEl.checked ? '10px 10px 0 0' : '10px';
+    toggle.style.borderBottom = upHasIssuesEl.checked ? 'none' : '1.5px solid #c5cfdd';
+  }
+});
+
+let _autoTitle = '';
+function suggestTitle(cat) {
+  const dt = new Date(upDateEl.value || Date.now());
+  return `${cat.name} – ${monthLabel(dt.getMonth() + 1)} ${dt.getFullYear()}`;
+}
+upDateEl.addEventListener('change', () => {
+  const cat = categories.find(c => c.id === upCategoryEl.value);
+  if (cat && (!upTitleEl.value || upTitleEl.value === _autoTitle)) {
+    _autoTitle = suggestTitle(cat);
+    upTitleEl.value = _autoTitle;
   }
 });
 
@@ -2140,11 +2241,10 @@ upCategoryEl.addEventListener('change', () => {
   const cat = categories.find(c => c.id === upCategoryEl.value);
   if (!cat) { upLiftRow.style.display = 'none'; return; }
   if (cat.default_contractor_id) upContractorEl.value = cat.default_contractor_id;
-  // suggest title
-  if (!upTitleEl.value) {
-    const m = monthLabel(new Date(upDateEl.value || Date.now()).getMonth() + 1);
-    const y = new Date(upDateEl.value || Date.now()).getFullYear();
-    upTitleEl.value = `${cat.name} – ${m} ${y}`;
+  // suggest title (keeps following the date until the title is edited by hand)
+  if (!upTitleEl.value || upTitleEl.value === _autoTitle) {
+    _autoTitle = suggestTitle(cat);
+    upTitleEl.value = _autoTitle;
   }
   upLiftRow.style.display = (cat.group_label === 'Lift') ? 'grid' : 'none';
 });
@@ -2357,5 +2457,75 @@ async function init() {
   // lift dashboard
   setupLiftDashboard();
 }
+
+// ─── OVERVIEW HERO (building picture + live status tags) ───
+const HERO_O = 450;
+function heroSummary(cats, preferLast) {
+  const items = cats.map(c => ({ c, nd: nextDueFor(c) }));
+  const od = items.filter(i => i.nd.status === 'overdue');
+  if (od.length) {
+    const days = Math.max(...od.map(i => -i.nd.diff));
+    return { text: `${od.length} overdue, ${days} day${days === 1 ? '' : 's'}`, cls: 'od' };
+  }
+  const du = items.filter(i => i.nd.status === 'due');
+  if (du.length) {
+    const m = Math.min(...du.map(i => i.nd.diff));
+    return { text: m <= 0 ? 'Due today' : `Due in ${m} day${m === 1 ? '' : 's'}`, cls: 'am' };
+  }
+  const lasts = cats.map(c => lastByCategory[c.id]).filter(Boolean).map(r => r.report_date).sort();
+  const lastTxt = lasts.length ? `Last service ${fmtCellDate(lasts[lasts.length - 1])}` : '';
+  const nexts = items.filter(i => i.nd.status === 'ok' && i.nd.date).map(i => i.nd.date).sort((a, b) => a - b);
+  if (preferLast && lastTxt) return { text: lastTxt, cls: '' };
+  if (nexts.length) return { text: `Next due ${fmtMonYear(nexts[0])}`, cls: '' };
+  if (lastTxt) return { text: lastTxt, cls: '' };
+  return { text: cats.length ? 'No schedule set' : 'Nothing set up', cls: '' };
+}
+function renderHero() {
+  const host = document.getElementById('srHero');
+  if (!host) return;
+  const garage = getCategoriesForGroup('Garage');
+  const roller = garage.filter(c => /roller|shutter/i.test(c.name));
+  const sect = garage.filter(c => !roller.includes(c));
+  const defs = [
+    { tab: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 500, dx: 1090, dy: 130, ex: 510,  ey: 100 },
+    { tab: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 500, dx: 930,  dy: 745, ex: 510,  ey: 870 },
+    { tab: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1490, y: 10,  w: 490, dx: 1265, dy: 330, ex: 1490, ey: 80, last: true },
+    { tab: 'garage', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1490, y: 180, w: 490, dx: 1870, dy: 420, ex: 1490, ey: 250 },
+    { tab: 'garage', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1550, y: 870, w: 490, dx: 1350, dy: 820, ex: 1550, ey: 940 },
+  ];
+  let svg = '', list = '';
+  defs.forEach(d => {
+    const s = heroSummary(d.cats, d.last);
+    const t2 = s.cls === 'od' ? 'od' : (s.cls === 'am' ? 'am' : '');
+    const bar = `<rect class="bar" x="${d.x}" y="${d.y}" width="11" height="140" rx="5"/>`;
+    svg += `<g class="sr-tag" data-tab="${d.tab}" role="button" tabindex="0" aria-label="${d.title}: ${escHtml(s.text)}" style="--c:${d.col}">
+      <path class="ln" d="M${d.dx} ${d.dy} L${d.ex} ${d.ey}"/><circle class="d1" cx="${d.dx}" cy="${d.dy}" r="28"/><circle class="d2" cx="${d.dx}" cy="${d.dy}" r="12"/>
+      <rect class="bg" x="${d.x}" y="${d.y}" width="${d.w}" height="140" rx="18"/>${bar}
+      <text class="t1" x="${d.x + 40}" y="${d.y + 64}">${d.title}</text>
+      <text class="t2 ${t2}" x="${d.x + 40}" y="${d.y + 114}">${escHtml(s.text)}</text>
+      <circle class="ar" cx="${d.x + d.w - 48}" cy="${d.y + 70}" r="30"/><path class="arp" d="M${d.x + d.w - 55} ${d.y + 54} l13 16 l-13 16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+    list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b><span class="${s.cls === 'od' ? 'od' : ''}">${escHtml(s.text)}</span></button>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 2040 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
+    <image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${svg}</svg><div class="sr-hero-list">${list}</div>`;
+  host.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) switchTab(t.dataset.tab); };
+  host.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { const t = e.target.closest('[data-tab]'); if (t) { e.preventDefault(); switchTab(t.dataset.tab); } } };
+
+  // headline
+  const lead = document.getElementById('srLead');
+  if (lead) {
+    let od = 0, dw = 0;
+    categories.forEach(c => {
+      const nd = nextDueFor(c);
+      if (nd.status === 'overdue') od++;
+      else if (nd.status === 'due' && nd.diff <= 7) dw++;
+    });
+    const a = od ? `<span class="r">${od} service${od === 1 ? ' is' : 's are'} overdue</span>` : '';
+    const b = dw ? `<span class="a">${dw} ${dw === 1 ? 'is' : 'are'} due this week</span>` : '';
+    lead.innerHTML = (a && b) ? `${a} and ${b}` : (a || b || '<span class="g">Everything is up to date</span>');
+  }
+}
+
 init();
 
