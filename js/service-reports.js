@@ -111,7 +111,6 @@ async function loadReports() {
   reports = data || [];
   for (const r of reports) {
     const mm = /^\[\[c:([a-z]+)\]\]\n?/.exec(r.summary || '');
-    r.color = '';
     if (mm) r.summary = r.summary.slice(mm[0].length) || null;
   }
 
@@ -533,8 +532,7 @@ const GL = {
   arrow: '<svg viewBox="0 0 24 24"><path d="M6 12h12M13 7l5 5-5 5"/></svg>',
   dots:  '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r=".8"/><circle cx="12" cy="12" r=".8"/><circle cx="18" cy="12" r=".8"/></svg>',
 };
-const RC = { red:'#d64545', amber:'#e09a1a', green:'#2e9e5b', blue:'#2f6fd6', purple:'#7c4dc4' };
-function glyph(kind, svg, col) { return `<span class="sr-g g-${kind}"${RC[col] ? ` data-col="${col}" style="--rc:${RC[col]}"` : ''}>${svg || ''}</span>`; }
+function glyph(kind, svg) { return `<span class="sr-g g-${kind}">${svg || ''}</span>`; }
 function fmtMonYear(d) { return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }); }
 function statusFor(cat) {
   const nd = nextDueFor(cat);
@@ -552,7 +550,7 @@ function statusHtml(cat) {
 function cellInner(cs) {
   if (cs.state === 'done') {
     const attn = isManagement && cs.report && cs.report.has_issues;
-    return glyph(attn ? 'attn' : 'done', attn ? GL.bang : GL.check, cs.report.color) + `<span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
+    return glyph(attn ? 'attn' : 'done', attn ? GL.bang : GL.check) + `<span class="sr-cell-date">${fmtCellDate(cs.report.report_date)}</span>`;
   }
   if (cs.state === 'due')         return glyph('due', GL.due) + `<span class="sr-cell-date">Due</span>`;
   if (cs.state === 'overdue')     return glyph('overdue', GL.x) + `<span class="sr-cell-date">Missed</span>`;
@@ -1225,8 +1223,7 @@ window.openDetailModal = function(reportId) {
     </div>`;
   }
 
-  const _bar = RC[r.color] ? `<div class="sr-detail-colbar" style="--rc:${RC[r.color]}"></div>` : '';
-  document.getElementById('detailBody').innerHTML = _bar + `<div class="sr-dcol-l">
+  document.getElementById('detailBody').innerHTML = `<div class="sr-dcol-l">
     <div class="sr-detail-section">
       <div class="sr-detail-label">Category</div>
       <div class="sr-detail-val">${tablerIcon(cat?.icon || '📋')} ${escHtml(cat?.name || '—')}</div>
@@ -1524,7 +1521,6 @@ const upCategoryEl  = document.getElementById('upCategory');
 const upDateEl      = document.getElementById('upDate');
 const upContractorEl= document.getElementById('upContractor');
 const upTitleEl     = document.getElementById('upTitle');
-let upColorEl = null;
 const upSummaryEl   = document.getElementById('upSummary');
 const upHasIssuesEl = document.getElementById('upHasIssues');
 const upIssueBox    = document.getElementById('upIssueBox');
@@ -1646,10 +1642,8 @@ const CAT_COLOURS = { Lift: '#3d5a99', HVAC: '#2c7a7b', Fire: '#b5543c', Garage:
 function openUploadModal(mode = 'create', report = null, preselectGroup = null) {
   _openUploadModalBase(mode, report, preselectGroup);
   buildUploadChips();
-  if (!upColorEl) { upColorEl = document.createElement('input'); upColorEl.type = 'hidden'; document.getElementById('upMore').appendChild(upColorEl); }
-  upColorEl.value = '';
   setNoteEditor(upSummaryEl.value);
-  buildColorChips();
+
 }
 function buildSelectChips(containerId, selectEl, colour, labels) {
   const wrap = document.getElementById(containerId);
@@ -1709,13 +1703,6 @@ function syncNote() {
     syncNote();
   });
 })();
-function buildColorChips() {
-  const wrap = document.getElementById('upColorChips');
-  if (!wrap) return;
-  const list = [['', 'No colour', '#475569'], ['red', 'Red', RC.red], ['amber', 'Amber', RC.amber], ['green', 'Green', RC.green], ['blue', 'Blue', RC.blue], ['purple', 'Purple', RC.purple]];
-  wrap.innerHTML = list.map(([k, n, c]) => `<button type="button" class="sr-sw${k ? '' : ' none'}${upColorEl.value === k ? ' on' : ''}" style="--c:${c}" data-v="${k}" title="${n}" aria-label="${n}"></button>`).join('');
-  wrap.querySelectorAll('.sr-sw').forEach(b => b.addEventListener('click', () => { upColorEl.value = b.dataset.v; buildColorChips(); }));
-}
 function buildUploadChips() {
   const wrap = document.getElementById('upCategoryChips');
   if (wrap) {
@@ -2389,8 +2376,7 @@ document.getElementById('upSaveBtn').addEventListener('click', async () => {
   const contractorId = upContractorEl.value || null;
   const title = upTitleEl.value.trim();
   const _noteTxt = upSummaryEl.value.trim();
-  const _col = upColorEl ? upColorEl.value : '';
-  const summary = (_col ? `[[c:${_col}]]` + (_noteTxt ? '\n' + _noteTxt : '') : _noteTxt) || null;
+  const summary = _noteTxt || null;
   const hasIssues = upHasIssuesEl.checked;
   const issueDesc = hasIssues ? (upIssueDescEl.value.trim() || null) : null;
   const liftUnit = upLiftUnitEl.value || null;
