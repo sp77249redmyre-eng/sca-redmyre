@@ -597,7 +597,7 @@ return '';
 function erHtmlToText(h) {
 if (!h || !/[<&]/.test(h)) return h || '';
 const d = document.createElement('div');
-d.innerHTML = String(h).replace(/<br\s*\/?>/gi,'\n').replace(/<\/(div|p|li|h[1-6])>/gi,'\n');
+d.innerHTML = String(h).replace(/<br\s*\/?>/gi,'\n').replace(/<(div|p|li|h[1-6])[\s>]/gi,m=>'\n'+m).replace(/<\/(div|p|li|h[1-6])>/gi,'\n');
 return (d.textContent || '').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 let erOrig = { notesHtml:'', notesText:'', noteHtml:'', noteText:'' };
