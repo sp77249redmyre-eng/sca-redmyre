@@ -2547,27 +2547,6 @@ async function init() {
 
 // ─── OVERVIEW HERO (building picture + live status tags) ───
 const HERO_O = 450;
-function heroSummary(cats, preferLast) {
-  const items = cats.map(c => ({ c, nd: nextDueFor(c) }));
-  const od = items.filter(i => i.nd.status === 'overdue');
-  if (od.length) {
-    const days = Math.max(...od.map(i => -i.nd.diff));
-    return { text: `${od.length} overdue, ${days} day${days === 1 ? '' : 's'}`, cls: 'od' };
-  }
-  const du = items.filter(i => i.nd.status === 'due');
-  if (du.length) {
-    const m = Math.min(...du.map(i => i.nd.diff));
-    return { text: m <= 0 ? 'Due today' : `Due in ${m} day${m === 1 ? '' : 's'}`, cls: 'am' };
-  }
-  const lasts = cats.map(c => lastByCategory[c.id]).filter(Boolean).map(r => r.report_date).sort();
-  const lastTxt = lasts.length ? `Last service ${fmtCellDate(lasts[lasts.length - 1])}` : '';
-  const nexts = items.filter(i => i.nd.status === 'ok' && i.nd.date).map(i => i.nd.date).sort((a, b) => a - b);
-  if (preferLast && lastTxt) return { text: lastTxt, cls: '' };
-  if (nexts.length) return { text: `Next due ${fmtMonYear(nexts[0])}`, cls: '' };
-  if (lastTxt) return { text: lastTxt, cls: '' };
-  return { text: cats.length ? 'No schedule set' : 'Nothing set up', cls: '' };
-}
-
 // ─── HOVER / CLICK EFFECTS (drawn over the building picture) ───
 function heroEffects() {
   const O = HERO_O, IMGSRC = '/img/redmyre-building.jpg';
@@ -2623,17 +2602,14 @@ function renderHero() {
   const fx = heroEffects();
   let svg = '', list = '';
   defs.forEach(d => {
-    const s = heroSummary(d.cats, d.last);
-    const t2 = s.cls === 'od' ? 'od' : (s.cls === 'am' ? 'am' : '');
     const bar = `<rect class="bar" x="${d.x}" y="${d.y}" width="11" height="140" rx="5"/>`;
-    svg += `<g class="sr-tag" data-tab="${d.tab}" data-fx="${d.fx}" role="button" tabindex="0" aria-label="${d.title}: ${escHtml(s.text)}" style="--c:${d.col}">
+    svg += `<g class="sr-tag" data-tab="${d.tab}" data-fx="${d.fx}" role="button" tabindex="0" aria-label="${d.title}" style="--c:${d.col}">
       <path class="ln" d="M${d.dx} ${d.dy} L${d.ex} ${d.ey}"/><circle class="d1" cx="${d.dx}" cy="${d.dy}" r="28"/><circle class="d2" cx="${d.dx}" cy="${d.dy}" r="12"/>
       <rect class="bg" x="${d.x}" y="${d.y}" width="${d.w}" height="140" rx="18"/>${bar}
-      <text class="t1" x="${d.x + 40}" y="${d.y + 64}">${d.title}</text>
-      <text class="t2 ${t2}" x="${d.x + 40}" y="${d.y + 114}">${escHtml(s.text)}</text>
+      <text class="t1" x="${d.x + 40}" y="${d.y + 87}">${d.title}</text>
       <circle class="ar" cx="${d.x + d.w - 48}" cy="${d.y + 70}" r="30"/><path class="arp" d="M${d.x + d.w - 55} ${d.y + 54} l13 16 l-13 16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
-    list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b><span class="${s.cls === 'od' ? 'od' : ''}">${escHtml(s.text)}</span></button>`;
+    list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b></button>`;
   });
   host.innerHTML = `<svg viewBox="0 0 2040 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
     ${fx.defs}<image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
