@@ -2486,6 +2486,37 @@ function heroSummary(cats, preferLast) {
   if (lastTxt) return { text: lastTxt, cls: '' };
   return { text: cats.length ? 'No schedule set' : 'Nothing set up', cls: '' };
 }
+
+// ─── HOVER / CLICK EFFECTS (drawn over the building picture) ───
+function heroEffects() {
+  const O = HERO_O, IMGSRC = '/img/redmyre-building.jpg';
+  const IMG = `<image href="${IMGSRC}" x="${O}" width="1536" height="1024"/>`;
+  const fans = [[616,99],[653,112],[694,123],[587,119],[624,132],[664,144]];
+  const blade = [0,1,2,3,4,5].map(i => `<path d="M0 0 C5 -3 12 -9 19 -3 C13 -5 7 -3 0 0Z" fill="#6d737c" transform="rotate(${i*60})"/>`).join('');
+  const fanSvg = fans.map(([x,y]) => `<g transform="translate(${x+O} ${y}) scale(1 .47)" class="fxo fxo-hvac"><circle r="20" fill="#14171c"/><g class="fxspin">${blade}<circle r="20" fill="none" stroke="#9aa3ad" stroke-width="1.2" stroke-dasharray="3 9" opacity=".6"/></g><circle r="3.2" fill="#d5dae0"/><circle r="21" fill="none" stroke="#cfd5dc" stroke-width="1.6"/></g>`).join('');
+  const puffs = fans.map(([x,y],i) => `<ellipse class="fxpuff" cx="${x+O}" cy="${y-10}" rx="14" ry="5" style="animation-delay:${i*.18}s"/>`).join('');
+  const defs = `<defs>
+    <clipPath id="fxcl1"><rect x="${O+782}" y="455" width="44" height="98"/></clipPath>
+    <clipPath id="fxcl2"><rect x="${O+832}" y="416" width="48" height="108"/></clipPath>
+    <clipPath id="fxcs"><polygon points="${O+795},749 ${O+1039},860 ${O+1039},960 ${O+799},895"/></clipPath>
+    <clipPath id="fxcr"><polygon points="${O+1347},391 ${O+1466},428 ${O+1464},485 ${O+1405},493 ${O+1347},468"/></clipPath>
+    <pattern id="fxslat" width="8" height="7" patternUnits="userSpaceOnUse"><rect width="8" height="7" fill="#9aa1aa"/><rect y="5" width="8" height="2" fill="#5b616a"/><rect y="0" width="8" height="1" fill="#c3c8ce"/></pattern>
+    <pattern id="fxslat2" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#3a3632"/><rect y="4" width="8" height="2" fill="#1f1d1b"/><rect y="0" width="8" height="1" fill="#6b645b"/></pattern>
+    <linearGradient id="fxroom" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4034"/><stop offset=".6" stop-color="#8a7a60"/><stop offset="1" stop-color="#b9a47c"/></linearGradient>
+    <radialGradient id="fxglow"><stop offset="0" stop-color="#ff2a2a" stop-opacity=".9"/><stop offset="1" stop-color="#ff2a2a" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  const lifts = `<g class="fxcar fxcar1"><g clip-path="url(#fxcl1)">${IMG}</g></g><g class="fxcar fxcar2"><g clip-path="url(#fxcl2)">${IMG}</g></g>`;
+  const curtain = (w, cls, pat) => `<rect class="fxcurt ${cls}" width="${w}" height="40" fill="url(#${pat})"/><rect class="fxbar ${cls}b" width="${w}" height="9" fill="#3a4049"/><rect class="fxbar ${cls}b" width="${w}" height="2.5" fill="#cfd5dc" opacity=".55"/>`;
+  const sect = `<g clip-path="url(#fxcs)" class="fxo fxo-sect"><g transform="translate(${O+795} 749) skewY(24.5)">${curtain(250, 'fxs', 'fxslat')}</g></g>`;
+  const roll = `<g clip-path="url(#fxcr)" class="fxo fxo-roller"><rect x="${O+1340}" y="380" width="140" height="125" fill="url(#fxroom)"/><g transform="translate(${O+1347} 391) skewY(17.2)">${curtain(125, 'fxr', 'fxslat2')}</g></g>`;
+  const fire = `<g class="fxo fxo-fire"><circle class="fxhalo" cx="${O+481}" cy="746" r="90" fill="url(#fxglow)"/><rect class="fxlamp" x="${O+461}" y="712" width="42" height="68" rx="5" fill="#ff1f1f"/></g>`;
+  return { defs, under: fanSvg + `<g class="fxo fxo-hvac">${puffs}</g>` + lifts + sect + roll + fire };
+}
+function playHeroFx(svgEl, key, ms) {
+  svgEl.classList.add('fx-' + key);
+  return setTimeout(() => svgEl.classList.remove('fx-' + key), ms);
+}
+
 function renderHero() {
   const host = document.getElementById('srHero');
   if (!host) return;
@@ -2493,18 +2524,19 @@ function renderHero() {
   const roller = garage.filter(c => /roller|shutter/i.test(c.name));
   const sect = garage.filter(c => !roller.includes(c));
   const defs = [
-    { tab: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 500, dx: 1090, dy: 130, ex: 510,  ey: 100 },
-    { tab: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 500, dx: 930,  dy: 745, ex: 510,  ey: 870 },
-    { tab: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1490, y: 10,  w: 490, dx: 1265, dy: 330, ex: 1490, ey: 80, last: true },
-    { tab: 'garage', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1550, y: 180, w: 490, dx: 1870, dy: 420, ex: 1550, ey: 250 },
-    { tab: 'garage', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1550, y: 870, w: 490, dx: 1350, dy: 820, ex: 1550, ey: 940 },
+    { tab: 'hvac', fx: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 500, dx: 1090, dy: 130, ex: 510,  ey: 100 },
+    { tab: 'fire', fx: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 500, dx: 930,  dy: 745, ex: 510,  ey: 870 },
+    { tab: 'lift', fx: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1490, y: 10,  w: 490, dx: 1265, dy: 330, ex: 1490, ey: 80, last: true },
+    { tab: 'garage', fx: 'roller', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1550, y: 180, w: 490, dx: 1870, dy: 420, ex: 1550, ey: 250 },
+    { tab: 'garage', fx: 'sect', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1550, y: 870, w: 490, dx: 1350, dy: 820, ex: 1550, ey: 940 },
   ];
+  const fx = heroEffects();
   let svg = '', list = '';
   defs.forEach(d => {
     const s = heroSummary(d.cats, d.last);
     const t2 = s.cls === 'od' ? 'od' : (s.cls === 'am' ? 'am' : '');
     const bar = `<rect class="bar" x="${d.x}" y="${d.y}" width="11" height="140" rx="5"/>`;
-    svg += `<g class="sr-tag" data-tab="${d.tab}" role="button" tabindex="0" aria-label="${d.title}: ${escHtml(s.text)}" style="--c:${d.col}">
+    svg += `<g class="sr-tag" data-tab="${d.tab}" data-fx="${d.fx}" role="button" tabindex="0" aria-label="${d.title}: ${escHtml(s.text)}" style="--c:${d.col}">
       <path class="ln" d="M${d.dx} ${d.dy} L${d.ex} ${d.ey}"/><circle class="d1" cx="${d.dx}" cy="${d.dy}" r="28"/><circle class="d2" cx="${d.dx}" cy="${d.dy}" r="12"/>
       <rect class="bg" x="${d.x}" y="${d.y}" width="${d.w}" height="140" rx="18"/>${bar}
       <text class="t1" x="${d.x + 40}" y="${d.y + 64}">${d.title}</text>
@@ -2514,9 +2546,21 @@ function renderHero() {
     list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b><span class="${s.cls === 'od' ? 'od' : ''}">${escHtml(s.text)}</span></button>`;
   });
   host.innerHTML = `<svg viewBox="0 0 2040 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
-    <image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${svg}</svg><div class="sr-hero-list">${list}</div>`;
-  host.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) switchTab(t.dataset.tab); };
-  host.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { const t = e.target.closest('[data-tab]'); if (t) { e.preventDefault(); switchTab(t.dataset.tab); } } };
+    ${fx.defs}<image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
+  const svgEl = host.querySelector('svg');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  host.querySelectorAll('.sr-tag').forEach(t => {
+    if (reduce) return;
+    t.addEventListener('mouseenter', () => svgEl.classList.add('fx-' + t.dataset.fx));
+    t.addEventListener('mouseleave', () => svgEl.classList.remove('fx-' + t.dataset.fx));
+  });
+  const go = t => {
+    if (reduce) { switchTab(t.dataset.tab); return; }
+    svgEl.classList.add('fx-' + t.dataset.fx);
+    setTimeout(() => { svgEl.classList.remove('fx-' + t.dataset.fx); switchTab(t.dataset.tab); }, 1000);
+  };
+  host.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) { if (t.classList.contains('sr-tag')) go(t); else switchTab(t.dataset.tab); } };
+  host.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { const t = e.target.closest('[data-tab]'); if (t) { e.preventDefault(); if (t.classList.contains('sr-tag')) go(t); else switchTab(t.dataset.tab); } } };
 
   // headline
   const lead = document.getElementById('srLead');
