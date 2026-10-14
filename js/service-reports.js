@@ -1470,8 +1470,14 @@ const TAB_GROUP = { lift: 'Lift', hvac: 'HVAC', fire: 'Fire', garage: 'Garage' }
   const man = document.getElementById('manageCatsBtn');
   const panel = document.getElementById('catManage');
   const close = document.getElementById('catManageClose');
-  if (man && panel) man.addEventListener('click', () => panel.classList.add('open'));
+  if (man && panel) man.addEventListener('click', () => { document.body.appendChild(panel); panel.classList.add('open'); });
   if (close && panel) close.addEventListener('click', () => panel.classList.remove('open'));
+  if (panel) {
+    // any action inside the panel opens its own modal -> close the panel first so it is not covered
+    panel.addEventListener('click', e => { if (e.target.closest('.sr-cat-card, #newCategoryBtn, [onclick]')) panel.classList.remove('open'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') panel.classList.remove('open'); });
+    panel.addEventListener('mousedown', e => e.stopPropagation());
+  }
 })();
 document.querySelectorAll('.sr-tab').forEach(b => {
   b.addEventListener('click', () => switchTab(b.dataset.tab));
