@@ -666,11 +666,11 @@ function getLiftReports() {
 
 // ── CONTRACT YEAR LOGIC (Lift / TKE) ──────────────────────────
 // TKE Platinum contract starts 1 May. Year 1 = May 2025 – Apr 2026.
-const LIFT_CONTRACT_START_MONTH = 5;        // May
-const LIFT_CONTRACT_START_YEAR  = 2025;     // first year of contract
+const LIFT_CONTRACT_START_MONTH = 1;        // Jan
+const LIFT_CONTRACT_START_YEAR  = 2025;     // first calendar year with records
 // Months in display order, starting from contract month:
 // [May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Apr]
-const LIFT_CONTRACT_MONTHS = [5,6,7,8,9,10,11,12,1,2,3,4];
+const LIFT_CONTRACT_MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
 
 // Given a (year, month), return which contract year it belongs to.
 // e.g. (2025, 5) → 1, (2026, 4) → 1, (2026, 5) → 2
@@ -692,7 +692,7 @@ function liftContractYearRange(n) {
   return {
     startYear: startY, startMonth: startM,
     endYear: endY, endMonth: endM,
-    label: `Year ${n} (${monthLabels[startM-1]} ${startY} – ${monthLabels[endM-1]} ${endY})`
+    label: String(startY)
   };
 }
 
@@ -904,7 +904,7 @@ function renderLiftMatrix() {
   // Header (Group + Service + 12 months = 14 cols, matching data rows)
   let headHtml = '<thead><tr><th class="sr-mx-grouphead"></th><th class="sr-mx-rowhead">Service</th>';
   slots.forEach(s => {
-    const yearSuffix = (s.month <= 4) ? `<span class="sr-mx-year">'${String(s.year).slice(-2)}</span>` : '';
+    const yearSuffix = '';
     headHtml += `<th class="sr-mx-month">${s.label}${yearSuffix}</th>`;
   });
   headHtml += '</tr></thead>';
@@ -1444,7 +1444,7 @@ function switchTab(name) {
     lift: {
       eyebrow: 'Vertical Transport',
       title:   'Lift Service Reports',
-      sub:     'Lift 1 and Lift 2 — maintenance, callouts and repairs by contract year.',
+      sub:     'Lift 1 and Lift 2 — maintenance, callouts and repairs by year.',
     },
     hvac: {
       eyebrow: 'Cooling Tower System',
