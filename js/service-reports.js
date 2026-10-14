@@ -1623,8 +1623,9 @@ const CAT_COLOURS = { Lift: '#3d5a99', HVAC: '#2c7a7b', Fire: '#b5543c', Garage:
 function openUploadModal(mode = 'create', report = null, preselectGroup = null) {
   _openUploadModalBase(mode, report, preselectGroup);
   buildUploadChips();
-  if (!upColorEl) { upColorEl = document.createElement('input'); upColorEl.type = 'hidden'; document.getElementById('upColorChips').after(upColorEl); }
+  if (!upColorEl) { upColorEl = document.createElement('input'); upColorEl.type = 'hidden'; document.getElementById('upMore').appendChild(upColorEl); }
   upColorEl.value = (mode === 'edit' && report && report.color) || '';
+  setNoteEditor(upSummaryEl.value);
   buildColorChips();
 }
 function buildSelectChips(containerId, selectEl, colour, labels) {
@@ -1640,6 +1641,51 @@ function buildSelectChips(containerId, selectEl, colour, labels) {
     buildSelectChips(containerId, selectEl, colour, labels);
   }));
 }
+
+// ─── NOTE EDITOR (bold + text colour) ───
+const _okTags = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, DIV:1, P:1, SPAN:1 };
+function cleanNoteHtml(html) {
+  const doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
+  (function walk(node) {
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 3) return;
+      if (ch.nodeType !== 1) { ch.remove(); return; }
+      walk(ch);
+      if (!_okTags[ch.tagName]) { while (ch.firstChild) node.insertBefore(ch.firstChild, ch); ch.remove(); return; }
+      const col = ch.style.color || '';
+      [...ch.attributes].forEach(a => ch.removeAttribute(a.name));
+      if (col && /^(#[0-9a-f]{3,8}|rgb\([\d\s,.]+\))$/i.test(col)) ch.setAttribute('style', 'color:' + col);
+    });
+  })(doc.body);
+  return doc.body.innerHTML;
+}
+function setNoteEditor(val) {
+  const ed = document.getElementById('upSummaryEd');
+  if (!ed) return;
+  const v = val || '';
+  ed.innerHTML = /<[a-z][\s\S]*>/i.test(v) ? cleanNoteHtml(v) : escHtml(v).replace(/\n/g, '<br>');
+}
+function syncNote() {
+  const ed = document.getElementById('upSummaryEd');
+  const html = cleanNoteHtml(ed.innerHTML);
+  const formatted = /<(b|strong|i|em|u|span)[\s>]/i.test(html);
+  upSummaryEl.value = formatted ? html.replace(/<div>/gi, '<br>').replace(/<\/div>/gi, '') : ed.innerText.replace(/\u00a0/g, ' ').trim();
+}
+(function wireNoteEditor() {
+  const ed = document.getElementById('upSummaryEd'), bar = document.getElementById('upRtBar');
+  if (!ed || !bar) return;
+  ed.addEventListener('input', syncNote);
+  ed.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+  bar.addEventListener('mousedown', e => e.preventDefault());
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    ed.focus();
+    try { document.execCommand('styleWithCSS', false, !!b.dataset.col); } catch (x) {}
+    if (b.dataset.col) document.execCommand('foreColor', false, b.dataset.col);
+    else document.execCommand(b.dataset.cmd, false, null);
+    syncNote();
+  });
+})();
 function buildColorChips() {
   const wrap = document.getElementById('upColorChips');
   if (!wrap) return;
