@@ -2496,7 +2496,7 @@ function renderHero() {
     { tab: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 500, dx: 1090, dy: 130, ex: 510,  ey: 100 },
     { tab: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 500, dx: 930,  dy: 745, ex: 510,  ey: 870 },
     { tab: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1490, y: 10,  w: 490, dx: 1265, dy: 330, ex: 1490, ey: 80, last: true },
-    { tab: 'garage', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1490, y: 180, w: 490, dx: 1870, dy: 420, ex: 1490, ey: 250 },
+    { tab: 'garage', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1550, y: 180, w: 490, dx: 1870, dy: 420, ex: 1550, ey: 250 },
     { tab: 'garage', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1550, y: 870, w: 490, dx: 1350, dy: 820, ex: 1550, ey: 940 },
   ];
   let svg = '', list = '';
