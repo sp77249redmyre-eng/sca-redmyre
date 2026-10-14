@@ -592,6 +592,16 @@ if (['DOC','DOCX'].includes(e)) return 'doc';
 return '';
 }
 
+// Edit popup shows rich-text notes as plain text. If the text is left unchanged, the original
+// formatted HTML is saved back untouched (so colours/bold are never lost by just opening Edit).
+function erHtmlToText(h) {
+if (!h || !/[<&]/.test(h)) return h || '';
+const d = document.createElement('div');
+d.innerHTML = String(h).replace(/<br\s*\/?>/gi,'\n').replace(/<\/(div|p|li|h[1-6])>/gi,'\n');
+return (d.textContent || '').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+let erOrig = { notesHtml:'', notesText:'', noteHtml:'', noteText:'' };
+
 let _editReportId = null;
 let erDeletedPaths = [];
 let erNewFiles = [];
@@ -647,8 +657,9 @@ document.getElementById('erVendor').value = q.vendor || '';
 document.getElementById('erCategory').value = parsed.category || q.category || 'General';
 document.getElementById('erAmount').value = q.amount || '';
 document.getElementById('erDate').value = q.completion_date || '';
-document.getElementById('erNotes').value = q.notes || '';
-document.getElementById('erInternalNote').value = parsed.note || '';
+erOrig = { notesHtml: q.notes || '', notesText: erHtmlToText(q.notes), noteHtml: parsed.note || '', noteText: erHtmlToText(parsed.note) };
+document.getElementById('erNotes').value = erOrig.notesText;
+document.getElementById('erInternalNote').value = erOrig.noteText;
 erDeletedPaths = [];
 erNewFiles = [];
 document.getElementById('erFileInput').value = '';
@@ -695,7 +706,7 @@ await supabase.storage.from('quotes').remove(cleanPaths);
 }
 
 const newComment = JSON.stringify({
-note: document.getElementById('erInternalNote').value,
+note: (document.getElementById('erInternalNote').value === erOrig.noteText) ? erOrig.noteHtml : document.getElementById('erInternalNote').value,
 files: [...existingFiles, ...uploadedFiles],
 category: newCat,
 priority: parsed.priority
@@ -709,7 +720,7 @@ vendor: document.getElementById('erVendor').value,
 category: newCat,
 amount: amount,
 completion_date: date,
-notes: document.getElementById('erNotes').value,
+notes: (document.getElementById('erNotes').value === erOrig.notesText) ? erOrig.notesHtml : document.getElementById('erNotes').value,
 comment: newComment
 }).eq('id', _editReportId);
 if (error) throw error;
