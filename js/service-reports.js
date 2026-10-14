@@ -534,18 +534,6 @@ const GL = {
 };
 function glyph(kind, svg) { return `<span class="sr-g g-${kind}">${svg || ''}</span>`; }
 function fmtMonYear(d) { return d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }); }
-function statusFor(cat) {
-  const nd = nextDueFor(cat);
-  if (nd.status === 'overdue') return { cls: 'od',  main: `Overdue ${-nd.diff} day${-nd.diff === 1 ? '' : 's'}`, sub: 'Was due ' + fmtMonYear(nd.date) };
-  if (nd.status === 'due')     return { cls: 'due', main: nd.diff === 0 ? 'Due today' : `Due in ${nd.diff} day${nd.diff === 1 ? '' : 's'}`, sub: fmtCellDate(nd.date) };
-  if (nd.status === 'ok')      return { cls: 'ok',  main: 'Up to date', sub: 'Next ' + fmtMonYear(nd.date) };
-  if (nd.status === 'first')   return { cls: 'na',  main: 'No record yet', sub: '' };
-  return { cls: 'na', main: 'Not scheduled', sub: '' };
-}
-function statusHtml(cat) {
-  const s = statusFor(cat);
-  return `<span class="sr-st-${s.cls}">${s.main}</span>${s.sub ? `<span class="sr-st-sub">${s.sub}</span>` : ''}`;
-}
 
 function cellInner(cs) {
   if (cs.state === 'done') {
@@ -591,7 +579,6 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
   const thead = `<thead><tr>
     <th class="sr-row-th">Service</th>
     ${MONTH_LABELS.map(m => `<th>${m}</th>`).join('')}
-    <th class="sr-status-th">Status</th>
   </tr></thead>`;
 
   const tbody = '<tbody>' + cats.map(cat => {
@@ -610,7 +597,6 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     return `<tr>
       <td class="sr-row-th">${escHtml(cat.name.replace(/^.*–\s*/, ''))}</td>
       ${cells}
-      <td class="sr-status-td">${statusHtml(cat)}</td>
     </tr>`;
   }).join('') + '</tbody>';
 
@@ -640,7 +626,6 @@ function renderMatrix(groupLabel, tableId, mobileId, year) {
     }).join('');
     return `<div class="sr-mobile-row">
       <div class="sr-mobile-row-title">${escHtml(cat.name.replace(/^.*–\s*/, ''))}</div>
-      <div class="sr-status-td" style="margin:-2px 0 8px;font-size:14px;font-weight:700">${statusHtml(cat)}</div>
       <div class="sr-mobile-months">${months}</div>
     </div>`;
   }).join('');
@@ -1215,7 +1200,7 @@ window.openDetailModal = function(reportId) {
   if (r.summary) {
     const hasHTML = /<[a-z][\s\S]*>/i.test(r.summary);
     const rendered = hasHTML
-      ? r.summary.replace(/\n/g, '<br>')
+      ? cleanNoteHtml(r.summary)
       : escHtml(r.summary).replace(/\n/g, '<br>');
     summaryHtml = `<div class="sr-detail-section">
       <div class="sr-detail-label">Summary</div>
@@ -1660,21 +1645,32 @@ function buildSelectChips(containerId, selectEl, colour, labels) {
 }
 
 // ─── NOTE EDITOR (bold + text colour) ───
-const _okTags = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, DIV:1, P:1, SPAN:1 };
+const _okTags = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, DIV:1, P:1, SPAN:1, UL:1, OL:1, LI:1 };
+const _keepCol = ['rgb(214,69,69)', 'rgb(224,154,26)', 'rgb(46,158,91)', 'rgb(47,111,214)', 'rgb(124,77,196)', 'rgb(31,41,55)'];
+const _emojiRe = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+// Keeps only plain structure: bold, italic, underline, line breaks, lists and the 6 note colours. Drops boxes, backgrounds, sizes and emoji.
 function cleanNoteHtml(html) {
   const doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
   (function walk(node) {
     [...node.childNodes].forEach(ch => {
-      if (ch.nodeType === 3) return;
+      if (ch.nodeType === 3) { ch.nodeValue = ch.nodeValue.replace(_emojiRe, ''); return; }
       if (ch.nodeType !== 1) { ch.remove(); return; }
+      if (/^H[1-6]$/.test(ch.tagName)) {
+        const d = doc.createElement('div'), bb = doc.createElement('b');
+        while (ch.firstChild) bb.appendChild(ch.firstChild);
+        d.appendChild(bb); node.replaceChild(d, ch); walk(d); return;
+      }
       walk(ch);
       if (!_okTags[ch.tagName]) { while (ch.firstChild) node.insertBefore(ch.firstChild, ch); ch.remove(); return; }
-      const col = ch.style.color || '';
+      const col = (ch.style.color || '').replace(/\s+/g, '').toLowerCase();
       [...ch.attributes].forEach(a => ch.removeAttribute(a.name));
-      if (col && /^(#[0-9a-f]{3,8}|rgb\([\d\s,.]+\))$/i.test(col)) ch.setAttribute('style', 'color:' + col);
+      if (_keepCol.includes(col)) ch.setAttribute('style', 'color:' + col);
     });
   })(doc.body);
-  return doc.body.innerHTML;
+  let out = doc.body.innerHTML;
+  for (let i = 0; i < 3; i++) out = out.replace(/<(div|p|span|b|strong|i|em|u)>(\s|<br>)*<\/\1>/gi, '');
+  out = out.replace(/<(b|strong)>\s+/gi, '<$1>').replace(/<br\s*\/?>\s*(?=<(p|div|ul|ol)\b)/gi, '').replace(/(<\/(p|div|ul|ol)>)\s*<br\s*\/?>/gi, '$1').replace(/(<(div|li)>)\s*(<br\s*\/?>\s*)+/gi, '$1');
+  return out.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>').replace(/^(\s*<br>)+|(<br>\s*)+$/gi, '').trim();
 }
 function setNoteEditor(val) {
   const ed = document.getElementById('upSummaryEd');
@@ -2648,19 +2644,6 @@ function renderHero() {
   host.onclick = e => { const t = e.target.closest('[data-tab]'); if (t) { if (t.classList.contains('sr-tag')) go(t); else switchTab(t.dataset.tab); } };
   host.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { const t = e.target.closest('[data-tab]'); if (t) { e.preventDefault(); if (t.classList.contains('sr-tag')) go(t); else switchTab(t.dataset.tab); } } };
 
-  // headline
-  const lead = document.getElementById('srLead');
-  if (lead) {
-    let od = 0, dw = 0;
-    categories.forEach(c => {
-      const nd = nextDueFor(c);
-      if (nd.status === 'overdue') od++;
-      else if (nd.status === 'due' && nd.diff <= 7) dw++;
-    });
-    const a = od ? `<span class="r">${od} service${od === 1 ? ' is' : 's are'} overdue</span>` : '';
-    const b = dw ? `<span class="a">${dw} ${dw === 1 ? 'is' : 'are'} due this week</span>` : '';
-    lead.innerHTML = (a && b) ? `${a} and ${b}` : (a || b || '<span class="g">Everything is up to date</span>');
-  }
   fitHero();
 }
 
