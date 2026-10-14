@@ -2500,6 +2500,7 @@ function heroEffects() {
     <clipPath id="fxcl1"><rect x="${O+782}" y="455" width="44" height="98"/></clipPath>
     <clipPath id="fxcl2"><rect x="${O+832}" y="416" width="48" height="108"/></clipPath>
     <clipPath id="fxcs"><polygon points="${O+795},749 ${O+1039},860 ${O+1039},960 ${O+799},895"/></clipPath>
+    <clipPath id="fxcsb"><polygon points="0,48 250,18 250,200 0,200"/></clipPath>
     <clipPath id="fxcr"><polygon points="${O+1347},391 ${O+1466},428 ${O+1464},485 ${O+1405},493 ${O+1347},468"/></clipPath>
     <pattern id="fxslat" width="8" height="7" patternUnits="userSpaceOnUse"><rect width="8" height="7" fill="#9aa1aa"/><rect y="5" width="8" height="2" fill="#5b616a"/><rect y="0" width="8" height="1" fill="#c3c8ce"/></pattern>
     <pattern id="fxslat2" width="8" height="6" patternUnits="userSpaceOnUse"><rect width="8" height="6" fill="#3a3632"/><rect y="4" width="8" height="2" fill="#1f1d1b"/><rect y="0" width="8" height="1" fill="#6b645b"/></pattern>
@@ -2508,7 +2509,7 @@ function heroEffects() {
   </defs>`;
   const lifts = `<g class="fxcar fxcar1"><g clip-path="url(#fxcl1)">${IMG}</g></g><g class="fxcar fxcar2"><g clip-path="url(#fxcl2)">${IMG}</g></g>`;
   const curtain = (w, cls, pat) => `<rect class="fxcurt ${cls}" width="${w}" height="40" fill="url(#${pat})"/><rect class="fxbar ${cls}b" width="${w}" height="9" fill="#3a4049"/><rect class="fxbar ${cls}b" width="${w}" height="2.5" fill="#cfd5dc" opacity=".55"/>`;
-  const sect = `<g clip-path="url(#fxcs)" class="fxo fxo-sect"><g transform="translate(${O+795} 749) skewY(24.5)">${curtain(250, 'fxs', 'fxslat')}</g></g>`;
+  const sect = `<g clip-path="url(#fxcs)" class="fxo fxo-sect"><g transform="translate(${O+795} 749) skewY(24.5)"><g clip-path="url(#fxcsb)">${curtain(250, 'fxs', 'fxslat')}</g></g></g>`;
   const roll = `<g clip-path="url(#fxcr)" class="fxo fxo-roller"><rect x="${O+1340}" y="380" width="140" height="125" fill="url(#fxroom)"/><g transform="translate(${O+1347} 391) skewY(17.2)">${curtain(125, 'fxr', 'fxslat2')}</g></g>`;
   const fire = `<g class="fxo fxo-fire"><circle class="fxhalo" cx="${O+481}" cy="746" r="90" fill="url(#fxglow)"/><rect class="fxlamp" x="${O+461}" y="712" width="42" height="68" rx="5" fill="#ff1f1f"/></g>`;
   return { defs, under: fanSvg + `<g class="fxo fxo-hvac">${puffs}</g>` + lifts + sect + roll + fire };
