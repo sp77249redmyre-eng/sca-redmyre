@@ -111,7 +111,7 @@ async function loadReports() {
   reports = data || [];
   for (const r of reports) {
     const mm = /^\[\[c:([a-z]+)\]\]\n?/.exec(r.summary || '');
-    r.color = mm ? mm[1] : '';
+    r.color = '';
     if (mm) r.summary = r.summary.slice(mm[0].length) || null;
   }
 
@@ -1624,7 +1624,7 @@ function openUploadModal(mode = 'create', report = null, preselectGroup = null) 
   _openUploadModalBase(mode, report, preselectGroup);
   buildUploadChips();
   if (!upColorEl) { upColorEl = document.createElement('input'); upColorEl.type = 'hidden'; document.getElementById('upMore').appendChild(upColorEl); }
-  upColorEl.value = (mode === 'edit' && report && report.color) || '';
+  upColorEl.value = '';
   setNoteEditor(upSummaryEl.value);
   buildColorChips();
 }
