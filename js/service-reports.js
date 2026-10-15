@@ -2546,7 +2546,7 @@ async function init() {
 }
 
 // ─── OVERVIEW HERO (building picture + live status tags) ───
-const HERO_O = 450;
+const HERO_O = 250;
 // ─── HOVER / CLICK EFFECTS (drawn over the building picture) ───
 function heroEffects() {
   const O = HERO_O, IMGSRC = '/img/redmyre-building.jpg';
@@ -2593,25 +2593,25 @@ function renderHero() {
   const roller = garage.filter(c => /roller|shutter/i.test(c.name));
   const sect = garage.filter(c => !roller.includes(c));
   const defs = [
-    { tab: 'hvac', fx: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 500, dx: 1090, dy: 130, ex: 510,  ey: 100 },
-    { tab: 'fire', fx: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 500, dx: 930,  dy: 745, ex: 510,  ey: 870 },
-    { tab: 'lift', fx: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1490, y: 10,  w: 490, dx: 1265, dy: 330, ex: 1490, ey: 80, last: true },
-    { tab: 'garage', fx: 'roller', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1550, y: 180, w: 490, dx: 1870, dy: 420, ex: 1550, ey: 250 },
-    { tab: 'garage', fx: 'sect', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1550, y: 870, w: 490, dx: 1350, dy: 820, ex: 1550, ey: 940 },
+    { tab: 'hvac', fx: 'hvac',   title: 'HVAC',           col: '#2c7a7b', cats: getCategoriesForGroup('HVAC'), x: 10,   y: 30,  w: 370, dx: 890, dy: 130, ex: 380,  ey: 85 },
+    { tab: 'fire', fx: 'fire',   title: 'Fire',           col: '#b5543c', cats: getCategoriesForGroup('Fire'), x: 10,   y: 800, w: 370, dx: 730,  dy: 745, ex: 380,  ey: 855 },
+    { tab: 'lift', fx: 'lift',   title: 'Lift 1 and 2',   col: '#3d5a99', cats: getCategoriesForGroup('Lift'), x: 1800, y: 40,  w: 520, dx: 1065, dy: 330, ex: 1800, ey: 95, last: true },
+    { tab: 'garage', fx: 'roller', title: 'Roller Shutter', col: '#6f5f2e', cats: roller,                         x: 1800, y: 360, w: 520, dx: 1670, dy: 420, ex: 1800, ey: 415 },
+    { tab: 'garage', fx: 'sect', title: 'Sectional Door', col: '#6f5f2e', cats: sect,                           x: 1800, y: 870, w: 520, dx: 1150, dy: 820, ex: 1800, ey: 925 },
   ];
   const fx = heroEffects();
   let svg = '', list = '';
   defs.forEach(d => {
-    const bar = `<rect class="bar" x="${d.x}" y="${d.y}" width="11" height="140" rx="5"/>`;
+    const bar = `<rect class="bar" x="${d.x}" y="${d.y}" width="11" height="110" rx="5"/>`;
     svg += `<g class="sr-tag" data-tab="${d.tab}" data-fx="${d.fx}" role="button" tabindex="0" aria-label="${d.title}" style="--c:${d.col}">
       <path class="ln" d="M${d.dx} ${d.dy} L${d.ex} ${d.ey}"/><circle class="d1" cx="${d.dx}" cy="${d.dy}" r="28"/><circle class="d2" cx="${d.dx}" cy="${d.dy}" r="12"/>
-      <rect class="bg" x="${d.x}" y="${d.y}" width="${d.w}" height="140" rx="18"/>${bar}
-      <text class="t1" x="${d.x + 40}" y="${d.y + 87}">${d.title}</text>
-      <circle class="ar" cx="${d.x + d.w - 48}" cy="${d.y + 70}" r="30"/><path class="arp" d="M${d.x + d.w - 55} ${d.y + 54} l13 16 l-13 16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect class="bg" x="${d.x}" y="${d.y}" width="${d.w}" height="110" rx="18"/>${bar}
+      <text class="t1" x="${d.x + 40}" y="${d.y + 73}">${d.title}</text>
+      <circle class="ar" cx="${d.x + d.w - 48}" cy="${d.y + 55}" r="30"/><path class="arp" d="M${d.x + d.w - 55} ${d.y + 39} l13 16 l-13 16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
     </g>`;
     list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b></button>`;
   });
-  host.innerHTML = `<svg viewBox="0 0 2040 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
+  host.innerHTML = `<svg viewBox="0 0 2340 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
     ${fx.defs}<image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
   const svgEl = host.querySelector('svg');
   const reduce = false; // effects always on (this page is an internal tool; Windows 'animation effects off' must not hide them)
