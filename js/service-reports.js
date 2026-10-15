@@ -2547,6 +2547,7 @@ async function init() {
 
 // ─── OVERVIEW HERO (building picture + live status tags) ───
 const HERO_O = 250;
+let heroTabsBound = false;
 // ─── HOVER / CLICK EFFECTS (drawn over the building picture) ───
 function heroEffects() {
   const O = HERO_O, IMGSRC = '/img/redmyre-building.jpg';
@@ -2620,6 +2621,19 @@ function renderHero() {
     t.addEventListener('mouseenter', () => svgEl.classList.add('fx-' + t.dataset.fx));
     t.addEventListener('mouseleave', () => svgEl.classList.remove('fx-' + t.dataset.fx));
   });
+  // Top tab buttons (Lift / HVAC / Fire / Garage): hovering lights up the linked picture button and plays its animation
+  if (!heroTabsBound) {
+    heroTabsBound = true;
+    const tabsEl = document.getElementById('srTabs');
+    if (tabsEl) tabsEl.querySelectorAll('.sr-tab').forEach(btn => {
+      const tags = () => [...document.querySelectorAll('#srHero .sr-tag')].filter(t => t.dataset.tab === btn.dataset.tab);
+      const on = () => { const s = document.querySelector('#srHero svg'); if (!s) return; tags().forEach(t => { t.classList.add('lit'); s.classList.add('fx-' + t.dataset.fx); }); };
+      const off = () => { const s = document.querySelector('#srHero svg'); tags().forEach(t => { t.classList.remove('lit'); if (s) s.classList.remove('fx-' + t.dataset.fx); }); };
+      btn.addEventListener('mouseenter', on); btn.addEventListener('mouseleave', off);
+      btn.addEventListener('focus', on); btn.addEventListener('blur', off);
+      btn.addEventListener('click', off);
+    });
+  }
   const go = t => {
     if (reduce) { switchTab(t.dataset.tab); return; }
     svgEl.classList.add('fx-' + t.dataset.fx);
