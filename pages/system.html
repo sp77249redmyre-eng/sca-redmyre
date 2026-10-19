@@ -1263,7 +1263,7 @@
         </div>
 
 
-        <!-- CCTV cards: live via go2rtc (MSE over WSS, Tailscale Serve). View-only; admin-only page. -->
+        <!-- CCTV cards: live view through the admin-authenticated gatekeeper. View-only; admin-only page. -->
         <div class="bms-cctv-grid" aria-label="CCTV camera panels">
           <section class="bms-cctv-card" aria-label="Main Entrance CH5" data-cctv-src="ch5" data-state="connecting">
             <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
@@ -1495,6 +1495,8 @@ import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role } = ctx;
+// CCTV: lets the live-view script fetch a fresh login token (auto-refreshed by supabase-js).
+window.__bmsGetToken = async () => { try { const { data } = await supabase.auth.getSession(); return (data && data.session) ? data.session.access_token : null; } catch (e) { return null; } };
 
 if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
 
@@ -2849,7 +2851,7 @@ window.downloadBackup = async function() {
 </script>
 
 <script>
-/* CCTV live view: go2rtc MSE over WebSocket (Tailscale Serve HTTPS). View-only. Independent of the door-control module. */
+/* CCTV live view: MSE over WSS through the BMS CCTV gatekeeper (admin login token required). View-only. Independent of the door-control module. */
 (function initBmsCctv(){
   var HOST = 'redmyre-pc.tail8f8836.ts.net';
   var CODEC_LIST = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
@@ -2886,16 +2888,31 @@ window.downloadBackup = async function() {
     if (this.video) { try { this.video.pause(); this.video.removeAttribute('src'); this.video.load(); } catch(e){} }
     this.ms = null;
   };
-  Player.prototype.fail = function(text){
+  Player.prototype.fail = function(text, code){
     var self = this;
     this.cleanup();
     if (this.stopped) return;
     this.setState('offline', text || 'Camera offline');
-    this.retry = Math.min(this.retry + 1, 6);
-    var delay = Math.min(30000, 2000 * Math.pow(1.7, this.retry));
+    var delay;
+    if (code === 4401) { delay = 800; }                       // token expired: reconnect right away with a fresh token
+    else {
+      this.retry = Math.min(this.retry + 1, 6);
+      delay = Math.min(30000, 2000 * Math.pow(1.7, this.retry));
+      if (code === 4403) delay = 30000;                       // not an admin: do not hammer
+    }
     clearTimeout(this.timer);
     this.timer = setTimeout(function(){ if (!self.stopped) self.open(); }, delay);
   };
+  function getToken(){
+    return new Promise(function(resolve){
+      var tries = 0;
+      (function poll(){
+        if (typeof window.__bmsGetToken === 'function') { window.__bmsGetToken().then(resolve, function(){ resolve(null); }); return; }
+        if (++tries > 50) { resolve(null); return; }
+        setTimeout(poll, 200);
+      })();
+    });
+  }
   Player.prototype.open = function(){
     var self = this;
     if (!window.MediaSource || !window.WebSocket) { this.setState('offline', 'Browser not supported'); return; }
@@ -2903,25 +2920,37 @@ window.downloadBackup = async function() {
     if (!supported) { this.setState('offline', 'Codec not supported'); return; }
     this.cleanup();
     this.setState('connecting', 'Connecting to camera…');
-    var ws = new WebSocket('wss://' + HOST + '/api/ws?src=' + encodeURIComponent(this.src));
+    var ws = new WebSocket('wss://' + HOST + '/ws');
     ws.binaryType = 'arraybuffer';
     this.ws = ws;
     var ms = new MediaSource();
     this.ms = ms;
     this.video.src = URL.createObjectURL(ms);
-    var opened = false, sourceOpen = false;
+    var ready = false, sourceOpen = false, authed = false;
     function sendInit(){
-      if (opened && sourceOpen && ws.readyState === 1) ws.send(JSON.stringify({type:'mse', value: supported}));
+      if (ready && sourceOpen && ws.readyState === 1) ws.send(JSON.stringify({type:'mse', value: supported}));
     }
     ms.addEventListener('sourceopen', function(){ sourceOpen = true; try { URL.revokeObjectURL(self.video.src); } catch(e){} sendInit(); }, {once:true});
-    ws.onopen = function(){ opened = true; sendInit(); };
-    ws.onerror = function(){ self.fail('Cannot reach camera server'); };
-    ws.onclose = function(){ self.fail('Connection lost'); };
+    ws.onopen = function(){
+      getToken().then(function(tok){
+        if (self.ws !== ws) return;
+        if (!tok) { self.fail('Please sign in again'); return; }
+        if (ws.readyState === 1) { authed = true; ws.send(JSON.stringify({type:'auth', token: tok, src: self.src})); }
+      });
+    };
+    ws.onerror = function(){ if (self.ws === ws) self.fail('Cannot reach camera server'); };
+    ws.onclose = function(ev){
+      if (self.ws !== ws) return;
+      if (ev && ev.code === 4403) self.fail('Admin access required', 4403);
+      else if (ev && ev.code === 4401) self.fail('Reconnecting…', 4401);
+      else self.fail('Connection lost');
+    };
     ws.onmessage = function(ev){
       self.lastData = Date.now();
       if (typeof ev.data === 'string') {
         var msg; try { msg = JSON.parse(ev.data); } catch(e){ return; }
-        if (msg.type === 'mse') {
+        if (msg.type === 'ready') { ready = true; sendInit(); }
+        else if (msg.type === 'mse') {
           try {
             self.sb = ms.addSourceBuffer(msg.value);
             self.sb.mode = 'segments';
