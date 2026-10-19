@@ -2879,6 +2879,8 @@ window.downloadBackup = async function() {
     this.msgEl = card.querySelector('.bms-cctv-msg');
     this.ws = null; this.ms = null; this.sb = null; this.queue = [];
     this.retry = 0; this.timer = null; this.watchdog = null; this.lastData = 0; this.stopped = true;
+    // CH27 sub-stream sends a keyframe only every ~20s: wait longer before declaring 'No signal' (others keep 12s).
+    this.maxSilence = (this.src === 'ch27') ? 45000 : 12000;
   }
   Player.prototype.setState = function(st, text){
     this.card.setAttribute('data-state', st);
@@ -2980,7 +2982,7 @@ window.downloadBackup = async function() {
     clearInterval(this.watchdog);
     this.lastData = Date.now();
     this.watchdog = setInterval(function(){
-      if (Date.now() - self.lastData > 12000) self.fail('No signal');
+      if (Date.now() - self.lastData > self.maxSilence) self.fail('No signal');
     }, 4000);
   };
   Player.prototype.pump = function(){
