@@ -1074,6 +1074,14 @@
   border-left: 2px solid #00F5FF;
   box-sizing: border-box;
 }
+/* Layout B: door card + its CCTV card side by side, same box size. */
+.system-console .ac-doors > .bms-cctv-card { display: flex; flex-direction: column; min-height: 272px; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-head { min-height: 30px; padding: 5px 10px; font-size: 13px; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-screen { flex: 1 1 auto; aspect-ratio: auto; min-height: 0; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-caption { padding: 4px 9px; }
+@container system-console (max-width: 1199px) { .system-console .ac-doors > .bms-cctv-card { min-height: 300px; } }
+@container system-console (max-width: 600px) { .system-console .ac-doors > .bms-cctv-card { min-height: 280px; } }
+
 </style>
 </head>
 <body>
@@ -1138,6 +1146,7 @@
           <div class="sc-meta-item"><div class="sc-meta-label">Last Check</div><div class="sc-meta-val dim" id="door-lastcheck">—</div></div>
         </div>
 
+        <!-- Door cards + CCTV: each door is followed by its camera (2 per row, 4 columns on wide screens). -->
         <div class="ac-doors">
           <div class="sc-door ac-door-card" id="door-D1">
             <div class="sc-door-head">
@@ -1171,6 +1180,12 @@
             </div>
           </div>
 
+          <section class="bms-cctv-card" aria-label="Main Entrance CH5" data-cctv-src="ch5" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D1 · Front Door</div>
+          </section>
+
           <div class="sc-door ac-door-card" id="door-D2">
             <div class="sc-door-head">
               <div class="sc-door-id">D2</div>
@@ -1203,6 +1218,12 @@
             </div>
           </div>
 
+          <section class="bms-cctv-card" aria-label="Garage Exit CH2" data-cctv-src="ch2" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Garage Exit (CH2)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D2 · Front Roller Door</div>
+          </section>
+
           <div class="sc-door ac-door-card" id="door-D3">
             <div class="sc-door-head">
               <div class="sc-door-id">D3</div>
@@ -1228,6 +1249,12 @@
               <button class="sc-btn" data-door-save="D3" disabled>Save</button>
             </div>
           </div>
+
+          <section class="bms-cctv-card" aria-label="Foyer CH1" data-cctv-src="ch1" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Foyer (CH1)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D3 · Car Park Door</div>
+          </section>
 
           <div class="sc-door ac-door-card" id="door-D5">
             <div class="sc-door-head">
@@ -1260,31 +1287,13 @@
               <button class="sc-btn" data-door-save="D5" disabled>Save</button>
             </div>
           </div>
-        </div>
 
-
-        <!-- CCTV cards: live view through the admin-authenticated gatekeeper. View-only; admin-only page. -->
-        <div class="bms-cctv-grid" aria-label="CCTV camera panels">
-          <section class="bms-cctv-card" aria-label="Main Entrance CH5" data-cctv-src="ch5" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
-            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
-            <div class="bms-cctv-caption">D1 · Front Door</div>
-          </section>
-          <section class="bms-cctv-card" aria-label="Garage Exit CH2" data-cctv-src="ch2" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Garage Exit (CH2)</span><span class="bms-cctv-state">CONNECTING</span></div>
-            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
-            <div class="bms-cctv-caption">D2 · Front Roller Door</div>
-          </section>
-          <section class="bms-cctv-card" aria-label="Foyer CH1" data-cctv-src="ch1" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Foyer (CH1)</span><span class="bms-cctv-state">CONNECTING</span></div>
-            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
-            <div class="bms-cctv-caption">D3 · Car Park Door</div>
-          </section>
           <section class="bms-cctv-card" aria-label="Basement Entry CH27" data-cctv-src="ch27" data-state="connecting">
             <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Basement Entry (CH27)</span><span class="bms-cctv-state">CONNECTING</span></div>
             <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
             <div class="bms-cctv-caption">D5 · Back Roller Door</div>
           </section>
+
         </div>
 
 <div class="sc-hint ac-hint">Auto-lock: 60 sec &ndash; 5 min per door (default 3 min). Admins only. Every change is logged.</div>
