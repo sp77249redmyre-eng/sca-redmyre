@@ -1085,6 +1085,14 @@
 /* CH27: the right-hand shutter is the focus, so crop the left side instead. */
 .system-console .bms-cctv-card[data-cctv-src="ch27"] .bms-cctv-video { object-position: right center; }
 
+/* Camera selector inside a CCTV card (D1: CH5/CH1, D2: CH2/CH4). */
+.system-console .bms-cctv-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.system-console .bms-cctv-tabs { display: inline-flex; gap: 4px; margin-left: auto; flex: 0 0 auto; }
+.system-console .bms-cctv-tabs + .bms-cctv-state { margin-left: 6px; }
+.system-console .bms-cctv-tab { padding: 2px 8px; font-size: 11px; font-weight: 700; line-height: 1.5; color: #9fc0bf; background: #04141b; border: 1px solid #154252; border-radius: 5px; cursor: pointer; }
+.system-console .bms-cctv-tab:hover { color: #d7f7f5; border-color: #00b9d8; }
+.system-console .bms-cctv-tab.is-active { color: #021016; background: #00dcf0; border-color: #00dcf0; }
+
 </style>
 </head>
 <body>
@@ -1183,8 +1191,8 @@
             </div>
           </div>
 
-          <section class="bms-cctv-card" aria-label="Main Entrance CH5" data-cctv-src="ch5" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
+          <section class="bms-cctv-card" aria-label="D1 cameras" data-cctv-src="ch5" data-cctv-opts="ch5|Main Entrance,ch1|Foyer" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span class="bms-cctv-title">Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
             <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
             <div class="bms-cctv-caption">D1 · Front Door</div>
           </section>
@@ -1221,8 +1229,8 @@
             </div>
           </div>
 
-          <section class="bms-cctv-card" aria-label="Garage Exit CH2" data-cctv-src="ch2" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Garage Exit (CH2)</span><span class="bms-cctv-state">CONNECTING</span></div>
+          <section class="bms-cctv-card" aria-label="D2 cameras" data-cctv-src="ch2" data-cctv-opts="ch2|Garage Exit,ch4|Garage Ent" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span class="bms-cctv-title">Garage Exit (CH2)</span><span class="bms-cctv-state">CONNECTING</span></div>
             <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
             <div class="bms-cctv-caption">D2 · Front Roller Door</div>
           </section>
@@ -1253,8 +1261,8 @@
             </div>
           </div>
 
-          <section class="bms-cctv-card" aria-label="Foyer CH1" data-cctv-src="ch1" data-state="connecting">
-            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Foyer (CH1)</span><span class="bms-cctv-state">CONNECTING</span></div>
+          <section class="bms-cctv-card" aria-label="Foyer Lifts CH24" data-cctv-src="ch24" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span class="bms-cctv-title">Foyer Lifts (CH24)</span><span class="bms-cctv-state">CONNECTING</span></div>
             <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
             <div class="bms-cctv-caption">D3 · Car Park Door</div>
           </section>
@@ -2879,8 +2887,6 @@ window.downloadBackup = async function() {
     this.msgEl = card.querySelector('.bms-cctv-msg');
     this.ws = null; this.ms = null; this.sb = null; this.queue = [];
     this.retry = 0; this.timer = null; this.watchdog = null; this.lastData = 0; this.stopped = true;
-    // CH27 sub-stream sends a keyframe only every ~20s: wait longer before declaring 'No signal' (others keep 12s).
-    this.maxSilence = (this.src === 'ch27') ? 45000 : 12000;
   }
   Player.prototype.setState = function(st, text){
     this.card.setAttribute('data-state', st);
@@ -2890,6 +2896,16 @@ window.downloadBackup = async function() {
   Player.prototype.start = function(){
     if (!this.stopped) return;
     this.stopped = false; this.open();
+  };
+  Player.prototype.switchTo = function(src){
+    if (!src || src === this.src) return;
+    this.src = src;
+    this.card.setAttribute('data-cctv-src', src);
+    this.retry = 0;
+    clearTimeout(this.timer);
+    this.cleanup();
+    this.setState('connecting', 'Connecting to camera…');
+    if (!this.stopped) this.open();
   };
   Player.prototype.stop = function(){
     this.stopped = true; this.cleanup();
@@ -2982,7 +2998,7 @@ window.downloadBackup = async function() {
     clearInterval(this.watchdog);
     this.lastData = Date.now();
     this.watchdog = setInterval(function(){
-      if (Date.now() - self.lastData > self.maxSilence) self.fail('No signal');
+      if (Date.now() - self.lastData > (self.src === 'ch27' ? 45000 : 12000)) self.fail('No signal');
     }, 4000);
   };
   Player.prototype.pump = function(){
@@ -3009,6 +3025,27 @@ window.downloadBackup = async function() {
     document.querySelectorAll('.bms-cctv-card[data-cctv-src]').forEach(function(card){
       var p = new Player(card);
       players.push(p);
+      var opts = (card.getAttribute('data-cctv-opts') || '').split(',').filter(Boolean).map(function(o){ var a = o.split('|'); return { src: a[0], label: a[1] }; });
+      if (opts.length > 1) {
+        var titleEl = card.querySelector('.bms-cctv-title');
+        var tabs = document.createElement('span');
+        tabs.className = 'bms-cctv-tabs';
+        opts.forEach(function(o){
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'bms-cctv-tab' + (o.src === p.src ? ' is-active' : '');
+          b.textContent = o.src.toUpperCase();
+          b.setAttribute('aria-label', o.label + ' (' + o.src.toUpperCase() + ')');
+          b.addEventListener('click', function(){
+            tabs.querySelectorAll('.bms-cctv-tab').forEach(function(x){ x.classList.remove('is-active'); });
+            b.classList.add('is-active');
+            if (titleEl) titleEl.textContent = o.label + ' (' + o.src.toUpperCase() + ')';
+            p.switchTo(o.src);
+          });
+          tabs.appendChild(b);
+        });
+        card.querySelector('.bms-cctv-head').insertBefore(tabs, card.querySelector('.bms-cctv-state'));
+      }
       var v = card.querySelector('.bms-cctv-video');
       v.addEventListener('playing', function(){ p.retry = 0; p.setState('live'); });
       v.addEventListener('click', function(){
