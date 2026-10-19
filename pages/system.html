@@ -986,6 +986,86 @@
   }
 }
 
+
+
+/* CCTV display cards (live view). */
+.system-console .bms-cctv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0 14px;
+}
+.system-console .bms-cctv-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #00b9d8;
+  border-radius: 9px;
+  background: #020b10;
+  box-shadow: 0 0 9px rgba(0,220,255,.12);
+}
+.system-console .bms-cctv-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 10px;
+  color: #d7f7f5;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid #154252;
+}
+.system-console .bms-cctv-lock {
+  color: #00f5ff;
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+.system-console .bms-cctv-state {
+  margin-left: auto;
+  color: #9fc0bf;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.system-console .bms-cctv-state::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #ffb000;
+  vertical-align: middle;
+}
+.system-console .bms-cctv-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  min-height: 100px;
+  padding: 12px;
+  color: #7faeb6;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(0,245,255,.07), transparent 70%), #010609;
+  font-family: var(--sc-font-mono);
+  font-size: 12px;
+}
+.system-console .bms-cctv-screen-inner { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.system-console .bms-cctv-camera-icon { font-size: 25px; color: #00cde8; line-height: 1; }
+.system-console .bms-cctv-caption { padding: 5px 9px; color: #b8d2d1; font-size: 11px; border-top: 1px solid #102c34; }
+
+/* CCTV live: video fills the screen box; overlay text hidden once LIVE. */
+.system-console .bms-cctv-screen { position: relative; padding: 0; overflow: hidden; }
+.system-console .bms-cctv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #010609; display: none; cursor: zoom-in; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-video { display: block; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-screen-inner { display: none; }
+.system-console .bms-cctv-screen-inner { padding: 12px; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-state::before { background: #19e08a; box-shadow: 0 0 6px #19e08a; }
+.system-console .bms-cctv-card[data-state="connecting"] .bms-cctv-state::before { background: #ffb000; }
+.system-console .bms-cctv-card[data-state="offline"] .bms-cctv-state::before { background: #ff4d4d; }
+.system-console .bms-cctv-card[data-state="offline"] { border-color: #6b2a2a; box-shadow: none; }
+@media (max-width: 1100px) { .system-console .bms-cctv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .system-console .bms-cctv-grid { grid-template-columns: 1fr; } }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style id="admin-page-divider">
@@ -1180,6 +1260,31 @@
               <button class="sc-btn" data-door-save="D5" disabled>Save</button>
             </div>
           </div>
+        </div>
+
+
+        <!-- CCTV cards: live via go2rtc (MSE over WSS, Tailscale Serve). View-only; admin-only page. -->
+        <div class="bms-cctv-grid" aria-label="CCTV camera panels">
+          <section class="bms-cctv-card" aria-label="Main Entrance CH5" data-cctv-src="ch5" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Main Entrance (CH5)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D1 · Front Door</div>
+          </section>
+          <section class="bms-cctv-card" aria-label="Garage Exit CH2" data-cctv-src="ch2" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Garage Exit (CH2)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D2 · Front Roller Door</div>
+          </section>
+          <section class="bms-cctv-card" aria-label="Foyer CH1" data-cctv-src="ch1" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Foyer (CH1)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D3 · Car Park Door</div>
+          </section>
+          <section class="bms-cctv-card" aria-label="Basement Entry CH27" data-cctv-src="ch27" data-state="connecting">
+            <div class="bms-cctv-head"><span class="bms-cctv-lock" aria-hidden="true">▣</span><span>Basement Entry (CH27)</span><span class="bms-cctv-state">CONNECTING</span></div>
+            <div class="bms-cctv-screen"><video class="bms-cctv-video" muted autoplay playsinline disablepictureinpicture></video><div class="bms-cctv-screen-inner"><span class="bms-cctv-camera-icon" aria-hidden="true">◉</span><span class="bms-cctv-msg">Connecting to camera…</span></div></div>
+            <div class="bms-cctv-caption">D5 · Back Roller Door</div>
+          </section>
         </div>
 
 <div class="sc-hint ac-hint">Auto-lock: 60 sec &ndash; 5 min per door (default 3 min). Admins only. Every change is logged.</div>
@@ -2740,6 +2845,142 @@ window.downloadBackup = async function() {
   }
   update();
   setInterval(update, 15000);
+})();
+</script>
+
+<script>
+/* CCTV live view: go2rtc MSE over WebSocket (Tailscale Serve HTTPS). View-only. Independent of the door-control module. */
+(function initBmsCctv(){
+  var HOST = 'redmyre-pc.tail8f8836.ts.net';
+  var CODEC_LIST = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
+  function codecs(){
+    if (!window.MediaSource) return '';
+    return CODEC_LIST.filter(function(c){ return MediaSource.isTypeSupported('video/mp4; codecs="' + c + '"'); }).join();
+  }
+  function Player(card){
+    this.card = card;
+    this.src = card.getAttribute('data-cctv-src');
+    this.video = card.querySelector('.bms-cctv-video');
+    this.stateEl = card.querySelector('.bms-cctv-state');
+    this.msgEl = card.querySelector('.bms-cctv-msg');
+    this.ws = null; this.ms = null; this.sb = null; this.queue = [];
+    this.retry = 0; this.timer = null; this.watchdog = null; this.lastData = 0; this.stopped = true;
+  }
+  Player.prototype.setState = function(st, text){
+    this.card.setAttribute('data-state', st);
+    this.stateEl.textContent = st === 'live' ? 'LIVE' : (st === 'offline' ? 'OFFLINE' : 'CONNECTING');
+    if (this.msgEl && text) this.msgEl.textContent = text;
+  };
+  Player.prototype.start = function(){
+    if (!this.stopped) return;
+    this.stopped = false; this.open();
+  };
+  Player.prototype.stop = function(){
+    this.stopped = true; this.cleanup();
+    clearTimeout(this.timer);
+  };
+  Player.prototype.cleanup = function(){
+    clearInterval(this.watchdog); this.watchdog = null;
+    if (this.ws) { try { this.ws.onclose = null; this.ws.onerror = null; this.ws.onmessage = null; this.ws.close(); } catch(e){} this.ws = null; }
+    this.queue = []; this.sb = null;
+    if (this.video) { try { this.video.pause(); this.video.removeAttribute('src'); this.video.load(); } catch(e){} }
+    this.ms = null;
+  };
+  Player.prototype.fail = function(text){
+    var self = this;
+    this.cleanup();
+    if (this.stopped) return;
+    this.setState('offline', text || 'Camera offline');
+    this.retry = Math.min(this.retry + 1, 6);
+    var delay = Math.min(30000, 2000 * Math.pow(1.7, this.retry));
+    clearTimeout(this.timer);
+    this.timer = setTimeout(function(){ if (!self.stopped) self.open(); }, delay);
+  };
+  Player.prototype.open = function(){
+    var self = this;
+    if (!window.MediaSource || !window.WebSocket) { this.setState('offline', 'Browser not supported'); return; }
+    var supported = codecs();
+    if (!supported) { this.setState('offline', 'Codec not supported'); return; }
+    this.cleanup();
+    this.setState('connecting', 'Connecting to camera…');
+    var ws = new WebSocket('wss://' + HOST + '/api/ws?src=' + encodeURIComponent(this.src));
+    ws.binaryType = 'arraybuffer';
+    this.ws = ws;
+    var ms = new MediaSource();
+    this.ms = ms;
+    this.video.src = URL.createObjectURL(ms);
+    var opened = false, sourceOpen = false;
+    function sendInit(){
+      if (opened && sourceOpen && ws.readyState === 1) ws.send(JSON.stringify({type:'mse', value: supported}));
+    }
+    ms.addEventListener('sourceopen', function(){ sourceOpen = true; try { URL.revokeObjectURL(self.video.src); } catch(e){} sendInit(); }, {once:true});
+    ws.onopen = function(){ opened = true; sendInit(); };
+    ws.onerror = function(){ self.fail('Cannot reach camera server'); };
+    ws.onclose = function(){ self.fail('Connection lost'); };
+    ws.onmessage = function(ev){
+      self.lastData = Date.now();
+      if (typeof ev.data === 'string') {
+        var msg; try { msg = JSON.parse(ev.data); } catch(e){ return; }
+        if (msg.type === 'mse') {
+          try {
+            self.sb = ms.addSourceBuffer(msg.value);
+            self.sb.mode = 'segments';
+            self.sb.addEventListener('updateend', function(){ self.pump(); });
+            self.pump();
+          } catch(e){ self.fail('Stream format error'); }
+        } else if (msg.type === 'error') {
+          self.fail('Camera offline');
+        }
+        return;
+      }
+      self.queue.push(ev.data);
+      self.pump();
+    };
+    clearInterval(this.watchdog);
+    this.lastData = Date.now();
+    this.watchdog = setInterval(function(){
+      if (Date.now() - self.lastData > 12000) self.fail('No signal');
+    }, 4000);
+  };
+  Player.prototype.pump = function(){
+    var sb = this.sb, v = this.video;
+    if (!sb || sb.updating || !this.ms || this.ms.readyState !== 'open') return;
+    try {
+      if (this.queue.length) {
+        var chunk = this.queue.shift();
+        sb.appendBuffer(chunk);
+        return;
+      }
+      if (v.buffered.length) {
+        var start = v.buffered.start(0), end = v.buffered.end(v.buffered.length - 1);
+        if (end - v.currentTime > 2.5 || v.currentTime < start) v.currentTime = Math.max(start, end - 0.4);
+        if (v.currentTime - start > 8) sb.remove(start, v.currentTime - 4);
+      }
+    } catch(e){ this.fail('Stream error'); return; }
+    if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function(){}); }
+    if (v.readyState >= 2 && !v.paused) { this.retry = 0; this.setState('live'); }
+  };
+
+  var players = [];
+  function init(){
+    document.querySelectorAll('.bms-cctv-card[data-cctv-src]').forEach(function(card){
+      var p = new Player(card);
+      players.push(p);
+      var v = card.querySelector('.bms-cctv-video');
+      v.addEventListener('playing', function(){ p.retry = 0; p.setState('live'); });
+      v.addEventListener('click', function(){
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (v.requestFullscreen) { v.requestFullscreen().catch(function(){}); }
+      });
+    });
+    if (!document.hidden) players.forEach(function(p){ p.start(); });
+  }
+  document.addEventListener('visibilitychange', function(){
+    players.forEach(function(p){ if (document.hidden) p.stop(); else p.start(); });
+  });
+  window.addEventListener('pagehide', function(){ players.forEach(function(p){ p.stop(); }); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 800); });
+  else setTimeout(init, 800);
 })();
 </script>
 </body>
