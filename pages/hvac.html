@@ -1332,10 +1332,6 @@ body.observer-readonly .option-box{
     </div>
 
     <div class="submit-form">
-      <div id="hvacMaintBanner" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-left:5px solid #d97706;border-radius:10px;padding:14px 16px;margin-bottom:14px;color:#78350f">
-        <div style="font-size:16px;font-weight:700;margin-bottom:4px">System maintenance in progress</div>
-        <div style="font-size:14px;line-height:1.5">A/C requests are temporarily unavailable while we carry out system maintenance. <span id="hvacMaintUntil">Service is expected to resume shortly.</span> We apologise for the inconvenience.</div>
-      </div>
       <div id="tempLimitsBar" style="display:none">
         <div class="section-hdr"><div class="section-title">Temperature Limits</div></div>
         <div class="limits-bar">
@@ -2059,33 +2055,7 @@ function renderTenancyBoxes() {
 renderFloorBoxes();
 renderTenancyBoxes();
 
-// System maintenance switch: true = A/C requests are blocked and a notice is shown. Set to false to re-enable.
-const HVAC_MAINTENANCE = true;
-const HVAC_MAINT_UNTIL = '11:15 AM today';   // shown to users; set to '' to hide the time
-(function(){
-  const el = document.getElementById('hvacMaintBanner'); if (el) el.style.display = HVAC_MAINTENANCE ? 'block' : 'none';
-  const u = document.getElementById('hvacMaintUntil'); if (u && HVAC_MAINT_UNTIL) u.textContent = 'Service is expected to resume by ' + HVAC_MAINT_UNTIL + '.';
-  if (!HVAC_MAINTENANCE) return;
-  // Lock the whole temperature card (slider, - / + buttons, Request button): no mouse, touch or keyboard input.
-  const card = document.getElementById('dynamicTempCard');
-  if (card) { card.inert = true; card.setAttribute('aria-disabled', 'true'); card.style.pointerEvents = 'none'; card.style.opacity = '.45'; card.style.filter = 'grayscale(.6)'; }
-  // Maintenance popup shown as soon as the page opens.
-  const msg = 'A/C requests are temporarily unavailable while we carry out system maintenance. ' + (HVAC_MAINT_UNTIL ? 'Service is expected to resume by ' + HVAC_MAINT_UNTIL + '.' : 'Please try again later.');
-  const ov = document.createElement('div');
-  ov.id = 'hvacMaintPopup';
-  ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML = '<div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)">'
-    + '<div style="font-size:40px;line-height:1">&#128736;</div>'
-    + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin:10px 0 8px">System Maintenance</div>'
-    + '<div id="hvacMaintPopupMsg" style="font-size:15px;line-height:1.55;color:#334155"></div>'
-    + '<button type="button" id="hvacMaintPopupOk" style="margin-top:18px;background:#1d4ed8;color:#fff;border:0;border-radius:10px;padding:12px 28px;font-size:16px;font-weight:700;cursor:pointer">OK</button></div>';
-  document.body.appendChild(ov);
-  ov.querySelector('#hvacMaintPopupMsg').textContent = msg;
-  ov.querySelector('#hvacMaintPopupOk').addEventListener('click', function(){ ov.remove(); });
-})();
-
 async function submitHvacRequestHandler() {
-  if (HVAC_MAINTENANCE) { showToast('A/C requests are temporarily unavailable due to system maintenance.' + (HVAC_MAINT_UNTIL ? ' Expected back by ' + HVAC_MAINT_UNTIL + '.' : ' Please try again later.'), true); return; }
   let level, tenancy;
 
   if (selectedUnit) {
