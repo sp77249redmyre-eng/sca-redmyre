@@ -3021,6 +3021,20 @@ window.downloadBackup = async function() {
   };
 
   var players = [];
+  var startTimers = [];
+  var START_GAP_MS = 700;
+  function clearScheduledStarts(){
+    startTimers.forEach(function(timer){ clearTimeout(timer); });
+    startTimers = [];
+  }
+  function startPlayersStaggered(){
+    clearScheduledStarts();
+    players.forEach(function(p, i){
+      startTimers.push(setTimeout(function(){
+        if (!document.hidden) p.start();
+      }, i * START_GAP_MS));
+    });
+  }
   function init(){
     document.querySelectorAll('.bms-cctv-card[data-cctv-src]').forEach(function(card){
       var p = new Player(card);
@@ -3053,12 +3067,20 @@ window.downloadBackup = async function() {
         else if (v.requestFullscreen) { v.requestFullscreen().catch(function(){}); }
       });
     });
-    if (!document.hidden) players.forEach(function(p){ p.start(); });
+    if (!document.hidden) startPlayersStaggered();
   }
   document.addEventListener('visibilitychange', function(){
-    players.forEach(function(p){ if (document.hidden) p.stop(); else p.start(); });
+    if (document.hidden) {
+      clearScheduledStarts();
+      players.forEach(function(p){ p.stop(); });
+    } else {
+      startPlayersStaggered();
+    }
   });
-  window.addEventListener('pagehide', function(){ players.forEach(function(p){ p.stop(); }); });
+  window.addEventListener('pagehide', function(){
+    clearScheduledStarts();
+    players.forEach(function(p){ p.stop(); });
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 800); });
   else setTimeout(init, 800);
 })();
