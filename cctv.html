@@ -15,47 +15,190 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
-/* ════════════════════════════════════════════════════════════
-   CCTV VIEWER — three tabs (Parking / Lobby & Lifts / Upper Levels).
-   Every rule is scoped to .cctv-console. Sidebar / topbar / layout.js /
-   style.css are not modified.
-   ════════════════════════════════════════════════════════════ */
-.main { border-left: 2px solid #00F5FF; box-sizing: border-box; }
+/* CCTV page only. Keep the existing BMS sidebar, topbar, layout.js and style.css intact. */
+/* Use the available viewport height so the 4 x 3 camera wall does not create page scrolling. */
+html:has(.cctv-console),
+body:has(.cctv-console) {
+  height: 100%;
+  overflow: hidden;
+}
+body:has(.cctv-console) { margin: 0; }
+
+.main:has(.cctv-console) {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 2px solid #00F5FF;
+  box-sizing: border-box;
+}
+.main:has(.cctv-console) > #topbarPlaceholder { flex: 0 0 auto; }
+
 .content:has(> .cctv-console) {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   background:
     radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,245,255,.07), transparent 70%),
     repeating-linear-gradient(0deg, rgba(0,245,255,.035) 0, rgba(0,245,255,.035) 1px, transparent 1px, transparent 3px),
     #030507;
-  min-height: calc(100vh - 60px);
 }
-.cctv-console { --c-text: #D7F7F5; --c-muted: #9FC0BF; --c-line: #154252; --c-cyan: #00F5FF; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--c-text); container-type: inline-size; container-name: cctv-console; }
+.cctv-console {
+  --c-text: #D7F7F5;
+  --c-muted: #9FC0BF;
+  --c-line: #154252;
+  --c-cyan: #00F5FF;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--c-text);
+  container-type: inline-size;
+  container-name: cctv-console;
+  box-sizing: border-box;
+}
 
-.cctv-console .cv-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
-.cctv-console .cv-title { font-family: 'Orbitron', 'Segoe UI', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: .04em; color: #D7F7F5; margin-right: 8px; }
+.cctv-console .cv-top {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+}
+.cctv-console .cv-title {
+  font-family: 'Orbitron', 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #D7F7F5;
+  margin-right: 8px;
+}
 .cctv-console .cv-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.cctv-console .cv-tab { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-size: 14px; font-weight: 700; color: #d7f7f5; background: #04141b; border: 1px solid var(--c-line); border-radius: 9px; cursor: pointer; }
+.cctv-console .cv-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d7f7f5;
+  background: #04141b;
+  border: 1px solid var(--c-line);
+  border-radius: 9px;
+  cursor: pointer;
+}
 .cctv-console .cv-tab:hover { border-color: #00b9d8; }
 .cctv-console .cv-tab[data-tab="parking"].is-active { background: #0a56c8; border-color: #3b8cff; }
 .cctv-console .cv-tab[data-tab="lobby"].is-active { background: #0b6b3a; border-color: #2fd47a; }
 .cctv-console .cv-tab[data-tab="upper"].is-active { background: #8a3a16; border-color: #ff8a4c; }
 
-.cctv-console .cv-panel { display: none; border: 1px solid var(--c-line); border-radius: 12px; padding: 12px; background: rgba(2,11,16,.7); }
-.cctv-console .cv-panel.is-active { display: block; }
+.cctv-console .cv-panel {
+  display: none;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid var(--c-line);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(2,11,16,.7);
+}
+.cctv-console .cv-panel.is-active { display: flex; }
 .cctv-console .cv-panel[data-tab="parking"] { border-color: #2f6fd8; }
 .cctv-console .cv-panel[data-tab="lobby"] { border-color: #26a862; }
 .cctv-console .cv-panel[data-tab="upper"] { border-color: #d9743a; }
-.cctv-console .cv-panel-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 10px; font-size: 18px; font-weight: 700; }
-.cctv-console .cv-panel-head small { font-size: 13px; font-weight: 500; color: var(--c-muted); }
+.cctv-console .cv-panel-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 7px;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+.cctv-console .cv-panel-head small { font-size: 12px; font-weight: 500; color: var(--c-muted); }
 
-.cctv-console .cv-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.cctv-console .cv-tile { position: relative; min-width: 0; overflow: hidden; border: 1px solid #00b9d8; border-radius: 8px; background: #020b10; aspect-ratio: 16 / 9; }
-.cctv-console .cv-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #010609; display: none; cursor: zoom-in; }
+.cctv-console .cv-grid {
+  display: grid;
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  align-content: stretch;
+}
+.cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.cctv-console .cv-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #00b9d8;
+  border-radius: 7px;
+  background: #020b10;
+  aspect-ratio: auto;
+}
+.cctv-console .cv-tile video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #010609;
+  display: none;
+  cursor: zoom-in;
+}
 .cctv-console .cv-tile[data-state="live"] video { display: block; }
 .cctv-console .cv-tile[data-src="ch27"] video { object-position: right center; }
-.cctv-console .cv-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8px; text-align: center; color: #7faeb6; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12px; }
+.cctv-console .cv-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  color: #7faeb6;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+}
 .cctv-console .cv-tile[data-state="live"] .cv-msg { display: none; }
-.cctv-console .cv-label { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,0)); color: #fff; font-size: 13px; font-weight: 700; text-shadow: 0 1px 2px #000; }
-.cctv-console .cv-label span.cv-dot { width: 8px; height: 8px; border-radius: 50%; background: #ffb000; flex: 0 0 auto; }
+.cctv-console .cv-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  background: linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,0));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+}
+.cctv-console .cv-label span.cv-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffb000;
+  flex: 0 0 auto;
+}
 .cctv-console .cv-tile[data-state="live"] .cv-dot { background: #19e08a; box-shadow: 0 0 6px #19e08a; }
 .cctv-console .cv-tile[data-state="offline"] .cv-dot { background: #ff4d4d; }
 .cctv-console .cv-tile[data-state="offline"] { border-color: #6b2a2a; }
@@ -63,9 +206,38 @@
 .cctv-console .cv-tile.is-empty .cv-msg { color: #6f8f95; font-size: 13px; }
 .cctv-console .cv-tile.is-pending .cv-label { color: #ffd27a; }
 
-@container cctv-console (max-width: 1100px) { .cctv-console .cv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@container cctv-console (max-width: 760px)  { .cctv-console .cv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container cctv-console (max-width: 420px)  { .cctv-console .cv-grid { grid-template-columns: 1fr; } }
+/* Compact layouts remain within the viewport on narrower browser windows. */
+@container cctv-console (max-width: 1100px) {
+  .cctv-console .cv-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+}
+@container cctv-console (max-width: 760px) {
+  .cctv-console .cv-title { font-size: 18px; }
+  .cctv-console .cv-tab { padding: 6px 9px; font-size: 12px; }
+  .cctv-console .cv-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  .cctv-console .cv-label { font-size: 10px; padding: 3px 5px; }
+}
+@container cctv-console (max-width: 420px) {
+  .cctv-console .cv-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(12, minmax(0, 1fr));
+  }
+  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+  }
+}
 </style>
 </head>
 <body>
