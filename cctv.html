@@ -165,6 +165,18 @@ body:has(.cctv-console) { margin: 0; }
 .cctv-console .cv-tile[data-state="live"] video { display: block; }
 .cctv-console .cv-tile[data-src="ch27"] video { object-position: right center; }
 .cctv-console .cv-tile[data-src="ch24"] video { object-position: left center; }
+
+/* Full-screen CCTV must show the complete source frame, not the cropped tile view. */
+.cctv-console .cv-tile video:fullscreen,
+.cctv-console .cv-tile video:-webkit-full-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: #000 !important;
+}
 .cctv-console .cv-msg {
   position: absolute;
   inset: 0;
@@ -240,10 +252,8 @@ body:has(.cctv-console) { margin: 0; }
   }
 }
 
-
-/* Mobile layout: one full-width camera tile per row with natural page scrolling.
-   Desktop layout, camera mapping, authentication, and stream logic remain unchanged. */
-@media screen and (max-width: 760px) {
+/* Mobile: one large camera per row, natural page scrolling, and no fixed-height wall. */
+@media (max-width: 760px) {
   html:has(.cctv-console),
   body:has(.cctv-console) {
     height: auto;
@@ -252,139 +262,99 @@ body:has(.cctv-console) { margin: 0; }
     overflow-y: auto;
   }
 
-  body:has(.cctv-console) { min-height: 100dvh; }
-
   .main:has(.cctv-console) {
     height: auto;
+    min-height: 100vh;
     min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
     overflow: visible;
   }
 
   .content:has(> .cctv-console) {
-    flex: 0 0 auto;
-    min-height: 0;
+    flex: 1 0 auto;
     height: auto;
+    min-height: 0;
     overflow: visible;
     display: block;
+    padding-bottom: 16px;
   }
 
   .cctv-console {
-    flex: 0 0 auto;
-    min-height: 0;
+    display: block;
+    flex: none;
     width: 100%;
+    min-height: 0;
   }
 
   .cctv-console .cv-top {
+    align-items: flex-start;
     gap: 8px;
     margin-bottom: 8px;
   }
 
   .cctv-console .cv-title {
     width: 100%;
-    margin-right: 0;
+    margin: 0 0 2px;
     font-size: 18px;
   }
 
   .cctv-console .cv-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    gap: 5px;
+    gap: 6px;
   }
 
   .cctv-console .cv-tab {
-    min-width: 0;
+    flex: 1 1 auto;
     justify-content: center;
-    gap: 4px;
-    padding: 8px 4px;
-    font-size: clamp(10px, 2.8vw, 12px);
-    line-height: 1.25;
-    text-align: center;
-    white-space: normal;
+    padding: 8px 6px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .cctv-console .cv-panel {
-    flex: 0 0 auto;
+    flex: none;
     min-height: 0;
-    height: auto;
     overflow: visible;
-    padding: 6px;
-    border-radius: 9px;
+    padding: 7px;
+  }
+
+  .cctv-console .cv-panel.is-active {
+    display: block;
   }
 
   .cctv-console .cv-panel-head {
-    flex: 0 0 auto;
     flex-wrap: wrap;
-    gap: 5px 8px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 15px;
-  }
-
-  .cctv-console .cv-panel-head small { font-size: 11px; }
-
-  .cctv-console .cv-grid {
-    display: grid;
-    flex: 0 0 auto;
-    min-height: 0;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: auto;
-    align-content: start;
-    gap: 7px;
-  }
-
-  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: auto;
-  }
-
-  .cctv-console .cv-tile {
-    height: auto;
-    min-height: 0;
-    aspect-ratio: 16 / 9;
-    border-radius: 5px;
-  }
-
-  .cctv-console .cv-label {
-    gap: 4px;
-    padding: 3px 4px;
-    font-size: clamp(9px, 2.7vw, 11px);
-    line-height: 1.2;
-  }
-
-  .cctv-console .cv-label span.cv-dot {
-    width: 6px;
-    height: 6px;
-  }
-
-  .cctv-console .cv-msg {
-    padding: 4px;
-    font-size: 10px;
-  }
-}
-
-/* Very narrow phones: keep all three tabs accessible without horizontal overflow. */
-@media screen and (max-width: 360px) {
-  .cctv-console .cv-tab {
-    gap: 2px;
-    padding: 7px 2px;
-    font-size: 10px;
   }
 
   .cctv-console .cv-grid,
   .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
-    gap: 4px;
+    display: grid;
+    flex: none;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    gap: 9px;
+    align-content: start;
+  }
+
+  .cctv-console .cv-tile {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
   }
 
   .cctv-console .cv-label {
-    font-size: 9px;
-    padding: 2px 3px;
+    padding: 5px 7px;
+    font-size: 12px;
+  }
+
+  .cctv-console .cv-msg {
+    font-size: 12px;
   }
 }
-
 </style>
 </head>
 <body>
@@ -432,7 +402,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
 
 <script>
 /* CCTV viewer: MSE over WSS through the BMS CCTV gatekeeper (admin login token required). View-only.
-   Only the visible tab is connected; cameras connect one at a time. */
+   Only the visible tab is connected; desktop cameras connect one at a time, while mobile connects up to three visible tiles. */
 (function initCctvViewer(){
   var HOST = 'redmyre-pc.tail8f8836.ts.net';
   var CODEC_LIST = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
@@ -611,6 +581,35 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   var players = {};          // tab name -> [Player]
   var current = 'parking';
   var startTimers = [];
+  var mobileMedia = window.matchMedia('(max-width: 760px)');
+  var mobileObserver = null;
+  var MOBILE_MAX_ACTIVE = 3; // Keep mobile decoding/network load limited to three visible cameras.
+
+  function isMobile(){ return mobileMedia.matches; }
+
+  function updateMobileStreams(){
+    if (!isMobile() || document.hidden) return;
+    var list = players[current] || [];
+
+    // Fallback for older browsers without IntersectionObserver.
+    if (!mobileObserver) {
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      list.forEach(function(p){
+        var rect = p.tile.getBoundingClientRect();
+        var visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
+        p.visibilityRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
+      });
+    }
+
+    var selected = new Set(list.filter(function(p){ return p.visibilityRatio > 0; })
+      .sort(function(a, b){ return b.visibilityRatio - a.visibilityRatio; })
+      .slice(0, MOBILE_MAX_ACTIVE));
+
+    list.forEach(function(p){
+      if (selected.has(p)) p.start();
+      else if (!p.stopped) p.stop();
+    });
+  }
 
   function buildTab(tabName){
     var grid = document.querySelector('.cv-panel[data-tab="' + tabName + '"] .cv-grid');
@@ -631,7 +630,10 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
       grid.appendChild(tile);
       if (cam.src) {
         var p = new Player(tile, cam.src);
+        p.visibilityRatio = 0;
+        tile.__cctvPlayer = p;
         players[tabName].push(p);
+        if (mobileObserver) mobileObserver.observe(tile);
         var v = tile.querySelector('video');
         v.addEventListener('playing', function(){ p.retry = 0; p.setState('live'); });
         v.addEventListener('click', function(){
@@ -648,6 +650,11 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   }
   function startTab(tabName){
     startTimers.forEach(clearTimeout); startTimers = [];
+    if (isMobile()) {
+      // Only start the cameras currently visible on mobile; scrolling activates the next ones.
+      setTimeout(updateMobileStreams, 120);
+      return;
+    }
     players[tabName].forEach(function(p, i){
       startTimers.push(setTimeout(function(){ if (!document.hidden && current === tabName) p.start(); }, i * STAGGER_MS));
     });
@@ -661,11 +668,38 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   }
 
   function init(){
+    if ('IntersectionObserver' in window) {
+      mobileObserver = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          var p = entry.target.__cctvPlayer;
+          if (p) p.visibilityRatio = entry.isIntersecting ? entry.intersectionRatio : 0;
+        });
+        updateMobileStreams();
+      }, { root: null, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
+    }
+
     Object.keys(TABS).forEach(buildTab);
     document.querySelectorAll('.cv-tab').forEach(function(b){
       b.addEventListener('click', function(){ var t = b.getAttribute('data-tab'); if (t !== current) showTab(t); });
     });
     if (!document.hidden) startTab(current);
+
+    var onViewportModeChange = function(){
+      stopAll();
+      if (!document.hidden) startTab(current);
+    };
+    if (mobileMedia.addEventListener) mobileMedia.addEventListener('change', onViewportModeChange);
+    else if (mobileMedia.addListener) mobileMedia.addListener(onViewportModeChange);
+
+    if (!mobileObserver) {
+      var scrollScheduled = false;
+      window.addEventListener('scroll', function(){
+        if (!isMobile() || scrollScheduled) return;
+        scrollScheduled = true;
+        requestAnimationFrame(function(){ scrollScheduled = false; updateMobileStreams(); });
+      }, { passive: true });
+      window.addEventListener('resize', function(){ if (isMobile()) updateMobileStreams(); }, { passive: true });
+    }
   }
   document.addEventListener('visibilitychange', function(){
     if (document.hidden) stopAll(); else startTab(current);
