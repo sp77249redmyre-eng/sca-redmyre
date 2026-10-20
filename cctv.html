@@ -239,6 +239,152 @@ body:has(.cctv-console) { margin: 0; }
     grid-template-rows: repeat(8, minmax(0, 1fr));
   }
 }
+
+
+/* Mobile layout: one full-width camera tile per row with natural page scrolling.
+   Desktop layout, camera mapping, authentication, and stream logic remain unchanged. */
+@media screen and (max-width: 760px) {
+  html:has(.cctv-console),
+  body:has(.cctv-console) {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body:has(.cctv-console) { min-height: 100dvh; }
+
+  .main:has(.cctv-console) {
+    height: auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .content:has(> .cctv-console) {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .cctv-console {
+    flex: 0 0 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .cctv-console .cv-top {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cctv-console .cv-title {
+    width: 100%;
+    margin-right: 0;
+    font-size: 18px;
+  }
+
+  .cctv-console .cv-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 5px;
+  }
+
+  .cctv-console .cv-tab {
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    font-size: clamp(10px, 2.8vw, 12px);
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .cctv-console .cv-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 6px;
+    border-radius: 9px;
+  }
+
+  .cctv-console .cv-panel-head {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 5px 8px;
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+
+  .cctv-console .cv-panel-head small { font-size: 11px; }
+
+  .cctv-console .cv-grid {
+    display: grid;
+    flex: 0 0 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+    gap: 7px;
+  }
+
+  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+  }
+
+  .cctv-console .cv-tile {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+    border-radius: 5px;
+  }
+
+  .cctv-console .cv-label {
+    gap: 4px;
+    padding: 3px 4px;
+    font-size: clamp(9px, 2.7vw, 11px);
+    line-height: 1.2;
+  }
+
+  .cctv-console .cv-label span.cv-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .cctv-console .cv-msg {
+    padding: 4px;
+    font-size: 10px;
+  }
+}
+
+/* Very narrow phones: keep all three tabs accessible without horizontal overflow. */
+@media screen and (max-width: 360px) {
+  .cctv-console .cv-tab {
+    gap: 2px;
+    padding: 7px 2px;
+    font-size: 10px;
+  }
+
+  .cctv-console .cv-grid,
+  .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
+    gap: 4px;
+  }
+
+  .cctv-console .cv-label {
+    font-size: 9px;
+    padding: 2px 3px;
+  }
+}
+
 </style>
 </head>
 <body>
