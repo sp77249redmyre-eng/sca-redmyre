@@ -97,6 +97,7 @@ body:has(.cctv-console) { margin: 0; }
   cursor: pointer;
 }
 .cctv-console .cv-tab:hover { border-color: #00b9d8; }
+.cctv-console .cv-tab[data-tab="all"].is-active { background: #00798a; border-color: #00F5FF; }
 .cctv-console .cv-tab[data-tab="parking"].is-active { background: #0a56c8; border-color: #3b8cff; }
 .cctv-console .cv-tab[data-tab="lobby"].is-active { background: #0b6b3a; border-color: #2fd47a; }
 .cctv-console .cv-tab[data-tab="upper"].is-active { background: #8a3a16; border-color: #ff8a4c; }
@@ -114,6 +115,7 @@ body:has(.cctv-console) { margin: 0; }
   background: rgba(2,11,16,.7);
 }
 .cctv-console .cv-panel.is-active { display: flex; }
+.cctv-console .cv-panel[data-tab="all"] { border-color: #00b9d8; }
 .cctv-console .cv-panel[data-tab="parking"] { border-color: #2f6fd8; }
 .cctv-console .cv-panel[data-tab="lobby"] { border-color: #26a862; }
 .cctv-console .cv-panel[data-tab="upper"] { border-color: #d9743a; }
@@ -141,6 +143,33 @@ body:has(.cctv-console) { margin: 0; }
 .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
   grid-template-rows: repeat(2, minmax(0, 1fr));
 }
+
+/* All tab: one scrolling page, 5 columns, 16:9 tiles. Parking, then Lobby, then Upper Levels. */
+.cctv-console .cv-panel[data-tab="all"] {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y proximity;
+  scrollbar-color: #1d6a80 #020b10;
+  scrollbar-width: thin;
+}
+.cctv-console .cv-sec {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+.cctv-console .cv-sec + .cv-sec { margin-top: 14px; }
+.cctv-console .cv-sec[data-sec="parking"] .cv-sec-title { color: #7fb8ff; }
+.cctv-console .cv-sec[data-sec="lobby"] .cv-sec-title { color: #4fe08f; }
+.cctv-console .cv-sec[data-sec="upper"] .cv-sec-title { color: #ffa070; }
+.cctv-console .cv-agrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.cctv-console .cv-agrid .cv-tile {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
 .cctv-console .cv-tile {
   position: relative;
   min-width: 0;
@@ -228,6 +257,7 @@ body:has(.cctv-console) { margin: 0; }
   .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
     grid-template-rows: repeat(3, minmax(0, 1fr));
   }
+  .cctv-console .cv-agrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @container cctv-console (max-width: 760px) {
   .cctv-console .cv-title { font-size: 18px; }
@@ -240,6 +270,7 @@ body:has(.cctv-console) { margin: 0; }
   .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
     grid-template-rows: repeat(4, minmax(0, 1fr));
   }
+  .cctv-console .cv-agrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
   .cctv-console .cv-label { font-size: 10px; padding: 3px 5px; }
 }
 @container cctv-console (max-width: 420px) {
@@ -250,6 +281,7 @@ body:has(.cctv-console) { margin: 0; }
   .cctv-console .cv-panel[data-tab="lobby"] .cv-grid {
     grid-template-rows: repeat(8, minmax(0, 1fr));
   }
+  .cctv-console .cv-agrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
 </head>
@@ -263,13 +295,15 @@ body:has(.cctv-console) { margin: 0; }
     <div class="cv-top">
       <div class="cv-title">Redmyre CCTV</div>
       <div class="cv-tabs" role="tablist">
-        <button class="cv-tab is-active" data-tab="parking" type="button" role="tab">&#128663; Parking</button>
+        <button class="cv-tab is-active" data-tab="all" type="button" role="tab">All</button>
+        <button class="cv-tab" data-tab="parking" type="button" role="tab">&#128663; Parking</button>
         <button class="cv-tab" data-tab="lobby" type="button" role="tab">&#128716; Lobby &amp; Lifts</button>
         <button class="cv-tab" data-tab="upper" type="button" role="tab">&#127970; Upper Levels</button>
       </div>
     </div>
 
-    <div class="cv-panel is-active" data-tab="parking">
+    <div class="cv-panel is-active" data-tab="all"></div>
+    <div class="cv-panel" data-tab="parking">
       <div class="cv-panel-head">Parking <small>4 x 3 (12 cameras)</small></div>
       <div class="cv-grid"></div>
     </div>
@@ -298,7 +332,8 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
 
 <script>
 /* CCTV viewer: MSE over WSS through the BMS CCTV gatekeeper (admin login token required). View-only.
-   Only the visible tab is connected; cameras connect one at a time. */
+   Only the visible tab is connected; cameras connect one at a time.
+   All tab: every camera once (29), cameras connect only while they are on screen. */
 (function initCctvViewer(){
   var HOST = 'redmyre-pc.tail8f8836.ts.net';
   var CODEC_LIST = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
@@ -348,6 +383,45 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
     ]
   };
 
+  /* All tab: each camera appears once. Parking, then Lobby (lifts here only), then Upper Levels. */
+  var ALL_SECTIONS = [
+    { key:'parking', title:'Parking', cams:[
+      { src:'ch4',  name:'Garage Entry' },
+      { src:'ch2',  name:'Garage Exit' },
+      { src:'ch3',  name:'Bins' },
+      { src:'ch22', name:'Car Park Up Ramp' },
+      { src:'ch27', name:'Basement Entry' },
+      { src:'ch26', name:'Car Park to Foyer' },
+      { src:'ch6',  name:'Car Park Disabled Spots' },
+      { src:'ch25', name:'Back Car Park' },
+      { src:'ch7',  name:'B1 Car Park' },
+      { src:'ch8',  name:'B2 Car Park' }
+    ]},
+    { key:'lobby', title:'Lobby & Lifts', cams:[
+      { src:'ch5',  name:'Main Entrance' },
+      { src:'ch1',  name:'Foyer' },
+      { src:'ch24', name:'Foyer Lifts' },
+      { src:'ch31', name:'Office' },
+      { src:'ch28', name:'Loading Dock to Lobby' },
+      { src:'ch23', name:'Lift 1' },
+      { src:'ch21', name:'Lift 2' }
+    ]},
+    { key:'upper', title:'Upper Levels', cams:[
+      { src:'ch9',  name:'Level 6 R' },
+      { src:'ch10', name:'Level 6 L' },
+      { src:'ch11', name:'Level 5 R' },
+      { src:'ch12', name:'Level 5 L' },
+      { src:'ch13', name:'Level 4 R' },
+      { src:'ch14', name:'Level 4 L' },
+      { src:'ch15', name:'Level 3 R' },
+      { src:'ch16', name:'Level 3 L' },
+      { src:'ch18', name:'Level 2 R' },
+      { src:'ch17', name:'Level 2 L' },
+      { src:'ch20', name:'Level 1 R' },
+      { src:'ch19', name:'Level 1 L' }
+    ]}
+  ];
+
   function codecs(){
     if (!window.MediaSource) return '';
     return CODEC_LIST.filter(function(c){ return MediaSource.isTypeSupported('video/mp4; codecs="' + c + '"'); }).join();
@@ -369,6 +443,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
     this.msgEl = tile.querySelector('.cv-msg');
     this.ws = null; this.ms = null; this.sb = null; this.queue = [];
     this.retry = 0; this.timer = null; this.watchdog = null; this.lastData = 0; this.stopped = true;
+    this.inView = false;
   }
   Player.prototype.setState = function(st, text){
     this.tile.setAttribute('data-state', st);
@@ -474,46 +549,124 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
     if (v.readyState >= 2 && !v.paused) { this.retry = 0; this.setState('live'); }
   };
 
-  var players = {};          // tab name -> [Player]
-  var current = 'parking';
+  var players = { all: [] };   // tab name -> [Player]
+  var current = 'all';
   var startTimers = [];
+
+  // All tab: connect only the cameras that are on screen, one at a time.
+  var allQueue = [];
+  var allTimer = null;
+  var allObserver = null;
+
+  function makeTile(cam, list){
+    var tile = document.createElement('div');
+    tile.className = 'cv-tile';
+    if (cam.pending) tile.className += ' is-pending';
+    if (!cam.src) tile.className += ' is-empty';
+    tile.setAttribute('data-state', cam.src ? 'connecting' : 'offline');
+    if (cam.src) tile.setAttribute('data-src', cam.src);
+    var label = cam.name + (cam.src ? ' · ' + cam.src.toUpperCase() : '');
+    tile.innerHTML = '<video muted autoplay playsinline disablepictureinpicture></video>' +
+      '<div class="cv-msg"></div>' +
+      '<div class="cv-label"><span class="cv-dot"></span><span class="cv-name"></span></div>';
+    tile.querySelector('.cv-name').textContent = label;
+    tile.querySelector('.cv-msg').textContent = cam.src ? 'Waiting…' : (cam.spare ? '(spare)' : 'Not connected yet');
+    if (cam.src) {
+      var p = new Player(tile, cam.src);
+      list.push(p);
+      tile._player = p;
+      var v = tile.querySelector('video');
+      v.addEventListener('playing', function(){ p.retry = 0; p.setState('live'); });
+      v.addEventListener('click', function(){
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (v.requestFullscreen) { v.requestFullscreen().catch(function(){}); }
+      });
+    }
+    return tile;
+  }
 
   function buildTab(tabName){
     var grid = document.querySelector('.cv-panel[data-tab="' + tabName + '"] .cv-grid');
     players[tabName] = [];
     TABS[tabName].forEach(function(cam){
-      var tile = document.createElement('div');
-      tile.className = 'cv-tile';
-      if (cam.pending) tile.className += ' is-pending';
-      if (!cam.src) tile.className += ' is-empty';
-      tile.setAttribute('data-state', cam.src ? 'connecting' : 'offline');
-      if (cam.src) tile.setAttribute('data-src', cam.src);
-      var label = cam.name + (cam.src ? ' · ' + cam.src.toUpperCase() : '');
-      tile.innerHTML = '<video muted autoplay playsinline disablepictureinpicture></video>' +
-        '<div class="cv-msg"></div>' +
-        '<div class="cv-label"><span class="cv-dot"></span><span class="cv-name"></span></div>';
-      tile.querySelector('.cv-name').textContent = label;
-      tile.querySelector('.cv-msg').textContent = cam.src ? 'Waiting…' : (cam.spare ? '(spare)' : 'Not connected yet');
-      grid.appendChild(tile);
-      if (cam.src) {
-        var p = new Player(tile, cam.src);
-        players[tabName].push(p);
-        var v = tile.querySelector('video');
-        v.addEventListener('playing', function(){ p.retry = 0; p.setState('live'); });
-        v.addEventListener('click', function(){
-          if (document.fullscreenElement) { document.exitFullscreen(); }
-          else if (v.requestFullscreen) { v.requestFullscreen().catch(function(){}); }
-        });
-      }
+      grid.appendChild(makeTile(cam, players[tabName]));
     });
+  }
+
+  function allPump(){
+    if (allTimer) return;
+    var p = null;
+    while (allQueue.length) {
+      var c = allQueue.shift();
+      if (c.inView && c.stopped && current === 'all' && !document.hidden) { p = c; break; }
+    }
+    if (!p) return;
+    p.start();
+    allTimer = setTimeout(function(){ allTimer = null; allPump(); }, STAGGER_MS);
+  }
+  function allEnqueue(p){
+    if (allQueue.indexOf(p) < 0) allQueue.push(p);
+    allPump();
+  }
+  function allClear(){
+    allQueue = [];
+    clearTimeout(allTimer); allTimer = null;
+  }
+
+  function buildAll(){
+    var panel = document.querySelector('.cv-panel[data-tab="all"]');
+    players.all = [];
+    var tiles = [];
+    ALL_SECTIONS.forEach(function(sec){
+      var el = document.createElement('div');
+      el.className = 'cv-sec';
+      el.setAttribute('data-sec', sec.key);
+      el.innerHTML = '<div class="cv-panel-head"><span class="cv-sec-title"></span><small></small></div><div class="cv-agrid"></div>';
+      el.querySelector('.cv-sec-title').textContent = sec.title;
+      el.querySelector('small').textContent = sec.cams.length + ' cameras';
+      var grid = el.querySelector('.cv-agrid');
+      sec.cams.forEach(function(cam){
+        var tile = makeTile(cam, players.all);
+        grid.appendChild(tile);
+        tiles.push(tile);
+      });
+      panel.appendChild(el);
+    });
+    if ('IntersectionObserver' in window) {
+      allObserver = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          var p = e.target._player;
+          if (!p) return;
+          if (e.isIntersecting) {
+            p.inView = true;
+            if (p.stopped) allEnqueue(p);
+          } else {
+            p.inView = false;
+            var i = allQueue.indexOf(p);
+            if (i >= 0) allQueue.splice(i, 1);
+            if (!p.stopped) p.stop();
+          }
+        });
+      }, { root: panel, rootMargin: '80px 0px 80px 0px', threshold: 0.05 });
+      tiles.forEach(function(t){ if (t._player) allObserver.observe(t); });
+    } else {
+      players.all.forEach(function(p){ p.inView = true; });
+    }
   }
 
   function stopAll(){
     startTimers.forEach(clearTimeout); startTimers = [];
+    allClear();
     Object.keys(players).forEach(function(t){ players[t].forEach(function(p){ p.stop(); }); });
   }
   function startTab(tabName){
     startTimers.forEach(clearTimeout); startTimers = [];
+    if (tabName === 'all') {
+      allClear();
+      players.all.forEach(function(p){ if (p.inView && p.stopped) allQueue.push(p); });
+      allPump();
+      return;
+    }
     players[tabName].forEach(function(p, i){
       startTimers.push(setTimeout(function(){ if (!document.hidden && current === tabName) p.start(); }, i * STAGGER_MS));
     });
@@ -527,6 +680,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   }
 
   function init(){
+    buildAll();
     Object.keys(TABS).forEach(buildTab);
     document.querySelectorAll('.cv-tab').forEach(function(b){
       b.addEventListener('click', function(){ var t = b.getAttribute('data-tab'); if (t !== current) showTab(t); });
