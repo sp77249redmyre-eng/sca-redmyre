@@ -448,6 +448,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   Player.prototype.setState = function(st, text){
     this.tile.setAttribute('data-state', st);
     if (this.msgEl && text) this.msgEl.textContent = text;
+    if (gateHolder === this && (st === 'live' || st === 'offline')) releaseGate();
   };
   Player.prototype.start = function(){ if (!this.stopped) return; this.stopped = false; this.open(); };
   Player.prototype.stop = function(){
@@ -472,6 +473,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
       this.retry = Math.min(this.retry + 1, 6);
       delay = Math.min(30000, 2000 * Math.pow(1.7, this.retry));
       if (code === 4403) delay = 30000;
+      delay += Math.random() * 1500;
     }
     clearTimeout(this.timer);
     this.timer = setTimeout(function(){ if (!self.stopped) self.open(); }, delay);
@@ -557,6 +559,8 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   var allQueue = [];
   var allTimer = null;
   var allObserver = null;
+  var gateHolder = null;          // the camera currently connecting; the next one waits for it
+  var GATE_MAX_MS = 5000;         // never wait longer than this for one camera
 
   function makeTile(cam, list){
     var tile = document.createElement('div');
@@ -601,8 +605,14 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
       if (c.inView && c.stopped && current === 'all' && !document.hidden) { p = c; break; }
     }
     if (!p) return;
+    gateHolder = p;
     p.start();
-    allTimer = setTimeout(function(){ allTimer = null; allPump(); }, STAGGER_MS);
+    allTimer = setTimeout(releaseGate, GATE_MAX_MS);
+  }
+  function releaseGate(){
+    clearTimeout(allTimer); allTimer = null;
+    gateHolder = null;
+    setTimeout(allPump, 150);
   }
   function allEnqueue(p){
     if (allQueue.indexOf(p) < 0) allQueue.push(p);
@@ -611,6 +621,7 @@ if (role !== 'admin') { window.location.href = '/pages/announcement.html'; }
   function allClear(){
     allQueue = [];
     clearTimeout(allTimer); allTimer = null;
+    gateHolder = null;
   }
 
   function buildAll(){
