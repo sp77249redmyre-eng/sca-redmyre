@@ -3137,7 +3137,13 @@ async function loadAdminData() {
           <div style="font-size:11px;color:var(--muted)">${escapeAttr(r.user_name || 'Unknown')} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
           ${renderStepsHtml(r)}
         </div>
-        <span class="badge badge-blue">${r.status}</span>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
+          <span class="badge badge-blue">${r.status}</span>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn-success" style="padding:5px 10px;font-size:12px" onclick="retryReq('${r.id}')">Retry</button>
+            <button type="button" class="btn-danger" style="padding:5px 10px;font-size:12px" onclick="cancelReq('${r.id}')">Cancel</button>
+          </div>
+        </div>
       </div>
     `).join('');
   }
@@ -3307,6 +3313,35 @@ window.approveReq = async (id, type, level, tenancy) => {
     }
   } catch(pushErr) {}
   showToast('Approved! Temperature adjustment queued ✓');
+  await loadAdminData();
+};
+
+// Admin: a request stuck in "approved"/"processing" (e.g. daemon was off). Retry sets it back to "approved" so the
+// daemon picks it up again; Cancel closes it as rejected. Only touches status/approved_at/admin_comment, same as Approve/Reject.
+function stuckAgeMinutes(r) {
+  const t = new Date(r.approved_at || r.created_at).getTime();
+  return isNaN(t) ? 9999 : Math.round((Date.now() - t) / 60000);
+}
+window.retryReq = async (id) => {
+  const { data: r, error: rErr } = await supabase.from('hvac_requests').select('id,status,approved_at,created_at,level,tenancy,type').eq('id', id).single();
+  if (rErr || !r) { showToast('Could not read request', true); return; }
+  if (!['approved', 'processing'].includes(r.status)) { showToast('Request is no longer in progress', true); await loadAdminData(); return; }
+  const age = stuckAgeMinutes(r);
+  const warn = age < 10 ? `\n\n⚠ Only ${age} min since approval. The daemon may still be working on it, and a retry could change the temperature twice.` : '';
+  if (!confirm(`Retry this request?\n${r.level}, ${r.tenancy} (status: ${r.status})\nThe daemon will process it again.${warn}`)) return;
+  const { error } = await supabase.from('hvac_requests').update({status: 'approved', approved_at: new Date().toISOString()}).eq('id', id).in('status', ['approved', 'processing']);
+  if (error) { showToast('Retry failed', true); return; }
+  showToast('Retry queued ✓ (daemon will pick it up)');
+  await loadAdminData();
+};
+window.cancelReq = async (id) => {
+  const { data: r, error: rErr } = await supabase.from('hvac_requests').select('id,status,level,tenancy').eq('id', id).single();
+  if (rErr || !r) { showToast('Could not read request', true); return; }
+  if (!['approved', 'processing'].includes(r.status)) { showToast('Request is no longer in progress', true); await loadAdminData(); return; }
+  if (!confirm(`Cancel this request?\n${r.level}, ${r.tenancy} (status: ${r.status})\nIt will be closed as rejected and the temperature will NOT be changed by it.`)) return;
+  const { error } = await supabase.from('hvac_requests').update({status: 'rejected', admin_comment: 'Cancelled by admin (request was stuck)'}).eq('id', id).in('status', ['approved', 'processing']);
+  if (error) { showToast('Cancel failed', true); return; }
+  showToast('Request cancelled');
   await loadAdminData();
 };
 
