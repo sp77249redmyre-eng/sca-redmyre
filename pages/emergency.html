@@ -286,6 +286,7 @@
     <div class="modal-field"><label class="modal-label">Start hour (24h, e.g. 8)</label><input id="mgrEditStart" class="modal-input" type="number" min="0" max="23"></div>
     <div class="modal-field"><label class="modal-label">End hour (24h, e.g. 16)</label><input id="mgrEditEnd" class="modal-input" type="number" min="1" max="24"></div>
     <div class="modal-field"><label class="modal-label">After hours – Name</label><input id="mgrEditAfterName" class="modal-input"></div>
+    <div class="modal-field"><label class="modal-label">After hours – Email</label><input id="mgrEditAfterEmail" class="modal-input"></div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('mgrEditModal')">Cancel</button>
       <button class="btn-primary" id="saveMgrEditBtn">Save →</button>
@@ -354,8 +355,8 @@ async function renderManagerCard() {
     statusEl.innerHTML='<div class="status-dot dot-orange"></div> Building manager unavailable';
     phoneEl.textContent=mgrAfterRow?.phone||'1300 785 007';
     phoneLabelEl.textContent='Available 24/7 for urgent matters';
-    emailLabel.textContent='info@scafacility.com';
-    emailLabel.href='mailto:info@scafacility.com';
+    emailLabel.textContent=mgrAfterRow?.email||'info@scafacility.com';
+    emailLabel.href='mailto:'+(mgrAfterRow?.email||'info@scafacility.com');
     noteEl.style.display='block';
     noteEl.innerHTML='<strong>Building Manager is available '+sched.label+', '+fmtHour(sched.start)+' – '+fmtHour(sched.end)+'.</strong><strong>For urgent matters outside these hours, call SCA.</strong>';
   }
@@ -513,6 +514,7 @@ function openMgrEdit() {
   document.getElementById('mgrEditWorkPhone').value = mgrRow?.phone || '0478 705 406';
   document.getElementById('mgrEditWorkEmail').value = mgrRow?.email || 'sp77249.redmyre@gmail.com';
   document.getElementById('mgrEditAfterName').value = mgrAfterRow?.contact_name || 'SCA Facility Management';
+  document.getElementById('mgrEditAfterEmail').value = mgrAfterRow?.email || 'info@scafacility.com';
   document.getElementById('mgrEditAfterPhone').value = mgrAfterRow?.phone || '1300 785 007';
   document.getElementById('mgrEditModal').classList.add('open');
 }
@@ -535,7 +537,7 @@ async function saveMgrEdit() {
         });
       })() },
     { existing: mgrAfterRow, service: 'Building Manager After Hours', company: 'SCA Facility Management',
-      contact_name: val('mgrEditAfterName'), phone: val('mgrEditAfterPhone'), email: null }
+      contact_name: val('mgrEditAfterName'), phone: val('mgrEditAfterPhone'), email: val('mgrEditAfterEmail') }
   ];
   try {
     for (const r of rows) {
