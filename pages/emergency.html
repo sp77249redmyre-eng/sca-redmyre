@@ -299,21 +299,18 @@ async function renderManagerCard() {
   const noteEl=document.getElementById('mgrNote');
 
   document.getElementById('mgrCompany').textContent='SCA Facility Management';
-  // Leave cover: 12 Oct – 31 Oct 2026 (Sydney time) shows David Yun; reverts automatically afterwards.
-  const sydneyToday = new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Sydney'}).format(now);
-  const onLeave = sydneyToday >= '2026-10-12' && sydneyToday <= '2026-10-31';
-  const mgrNameText = onLeave ? 'David Yun' : 'Jacob Kim';
-  const mgrInitials = onLeave ? 'DY' : 'JK';
-  document.getElementById('mgrName').textContent=mgrNameText;
+  document.getElementById('mgrName').textContent=available?'Jacob Kim':'SCA Facility Management';
+  document.getElementById('mgrCompany').style.display=available?'':'none';
   document.getElementById('mgrRole').textContent='Building Manager';
+  document.getElementById('mgrRole').style.display=available?'':'none';
 
   if (available) {
     card.className='person-card blue';
     av.className='person-av av-blue';
-    av.textContent=mgrInitials;
+    av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-green';
     statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
-    phoneEl.textContent='0478 705 406';
+    phoneEl.innerHTML='<div>1300 785 007</div><div>0478 705 406</div>';
     phoneLabelEl.textContent='Mon / Wed / Fri · 8:00 AM – 4:00 PM';
     emailLabel.textContent='sp77249.redmyre@gmail.com';
     emailLabel.href='mailto:sp77249.redmyre@gmail.com';
@@ -321,7 +318,7 @@ async function renderManagerCard() {
   } else {
     card.className='person-card orange';
     av.className='person-av av-orange';
-    av.textContent='SCA';
+    av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-orange';
     statusEl.innerHTML='<div class="status-dot dot-orange"></div> Building manager unavailable';
     phoneEl.textContent='1300 785 007';
