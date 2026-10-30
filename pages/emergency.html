@@ -187,6 +187,7 @@
               <div class="person-role" id="mgrRole">Building Manager</div>
             </div>
             <div class="status-badge" id="mgrStatus"></div>
+            <button id="mgrEditBtn" style="display:none;font-size:10px;padding:3px 8px;border-radius:5px;border:0.5px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0"><i class="ti ti-pencil"></i> Edit</button>
           </div>
           <div class="person-phone-row">
             <div class="person-phone" id="mgrPhone">—</div>
@@ -263,6 +264,35 @@
 </div>
 
 
+<div class="modal-backdrop" id="mgrEditModal">
+  <div class="modal-box">
+    <div class="modal-title">Edit Building Manager Contact</div>
+    <div class="modal-field"><label class="modal-label">Working hours – Name</label><input id="mgrEditWorkName" class="modal-input"></div>
+    <div class="modal-field"><label class="modal-label">Working hours – Mobile</label><input id="mgrEditWorkPhone" class="modal-input"></div>
+    <div class="modal-field"><label class="modal-label">Working hours – Email</label><input id="mgrEditWorkEmail" class="modal-input"></div>
+    <div class="modal-field"><label class="modal-label">Working days (tap to turn on or off)</label>
+      <style>.mgr-day{height:44px;border:2px solid #CBD5E1;border-radius:10px;background:#fff;color:#334155;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}.mgr-day.on{background:#2563EB;border-color:#2563EB;color:#fff}</style>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+        <button type="button" class="mgr-day" data-day="1">Mon</button>
+        <button type="button" class="mgr-day" data-day="2">Tue</button>
+        <button type="button" class="mgr-day" data-day="3">Wed</button>
+        <button type="button" class="mgr-day" data-day="4">Thu</button>
+        <button type="button" class="mgr-day" data-day="5">Fri</button>
+        <button type="button" class="mgr-day" data-day="6">Sat</button>
+        <button type="button" class="mgr-day" data-day="0">Sun</button>
+      </div>
+    </div>
+    <div class="modal-field"><label class="modal-label">Start hour (24h, e.g. 8)</label><input id="mgrEditStart" class="modal-input" type="number" min="0" max="23"></div>
+    <div class="modal-field"><label class="modal-label">End hour (24h, e.g. 16)</label><input id="mgrEditEnd" class="modal-input" type="number" min="1" max="24"></div>
+    <div class="modal-field"><label class="modal-label">After hours – Name</label><input id="mgrEditAfterName" class="modal-input"></div>
+    <div class="modal-field"><label class="modal-label">After hours – Phone</label><input id="mgrEditAfterPhone" class="modal-input"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('mgrEditModal')">Cancel</button>
+      <button class="btn-primary" id="saveMgrEditBtn">Save →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -285,8 +315,9 @@ async function renderManagerCard() {
   const now = new Date();
   const day = now.getDay();
   const timeNum = now.getHours()*60+now.getMinutes();
-  const isWorkDay = [1,3,5].includes(day);
-  const isWorkHours = timeNum>=8*60 && timeNum<16*60;
+  const sched = getSchedule();
+  const isWorkDay = sched.days.includes(day);
+  const isWorkHours = timeNum>=sched.start*60 && timeNum<sched.end*60;
   const isHoliday = await isNSWPublicHoliday(now);
   const available = isWorkDay && isWorkHours && !isHoliday;
 
@@ -299,7 +330,7 @@ async function renderManagerCard() {
   const noteEl=document.getElementById('mgrNote');
 
   document.getElementById('mgrCompany').textContent='SCA Facility Management';
-  document.getElementById('mgrName').textContent=available?'Jacob Kim':'SCA Facility Management';
+  document.getElementById('mgrName').textContent=available?(mgrRow?.contact_name||'Jacob Kim'):(mgrAfterRow?.contact_name||'SCA Facility Management');
   document.getElementById('mgrCompany').style.display=available?'':'none';
   document.getElementById('mgrRole').textContent='Building Manager';
   document.getElementById('mgrRole').style.display=available?'':'none';
@@ -310,10 +341,10 @@ async function renderManagerCard() {
     av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-green';
     statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
-    phoneEl.innerHTML='<div>1300 785 007</div><div>0478 705 406</div>';
-    phoneLabelEl.textContent='Mon / Wed / Fri · 8:00 AM – 4:00 PM';
-    emailLabel.textContent='sp77249.redmyre@gmail.com';
-    emailLabel.href='mailto:sp77249.redmyre@gmail.com';
+    phoneEl.innerHTML='<div>1300 785 007</div><div>'+(mgrRow?.phone||'0478 705 406')+'</div>';
+    phoneLabelEl.textContent=sched.label+' · '+fmtHour(sched.start)+' – '+fmtHour(sched.end);
+    emailLabel.textContent=mgrRow?.email||'sp77249.redmyre@gmail.com';
+    emailLabel.href='mailto:'+(mgrRow?.email||'sp77249.redmyre@gmail.com');
     noteEl.style.display='none';
   } else {
     card.className='person-card orange';
@@ -321,12 +352,12 @@ async function renderManagerCard() {
     av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-orange';
     statusEl.innerHTML='<div class="status-dot dot-orange"></div> Building manager unavailable';
-    phoneEl.textContent='1300 785 007';
+    phoneEl.textContent=mgrAfterRow?.phone||'1300 785 007';
     phoneLabelEl.textContent='Available 24/7 for urgent matters';
     emailLabel.textContent='info@scafacility.com';
     emailLabel.href='mailto:info@scafacility.com';
     noteEl.style.display='block';
-    noteEl.innerHTML='<strong>Building Manager is available Mon/Wed/Fri 8AM–4PM.</strong><strong>For urgent matters outside these hours, call SCA.</strong>';
+    noteEl.innerHTML='<strong>Building Manager is available '+sched.label+', '+fmtHour(sched.start)+' – '+fmtHour(sched.end)+'.</strong><strong>For urgent matters outside these hours, call SCA.</strong>';
   }
 }
 
@@ -362,6 +393,8 @@ function categoriesFor(service) {
 }
 
 let contractorsData = [];
+let mgrRow = null; // Building Manager row (contractors table, service = 'Building Manager')
+let mgrAfterRow = null; // After-hours row (service = 'Building Manager After Hours')
 // Option 3 accordion: single category open at a time. Holds the currently
 // open category's key, or null when all are collapsed.
 let openAccordionService = null;
@@ -392,7 +425,7 @@ function groupByCategory(list) {
 function renderAccordion(searchTerm) {
   const wrap = document.getElementById('serviceAccordion');
   const term = (searchTerm || '').trim().toLowerCase();
-  let list = contractorsData.filter(c => (c.service || '').toLowerCase() !== 'strata manager');
+  let list = contractorsData.filter(c => !['strata manager','building manager','building manager after hours'].includes((c.service || '').toLowerCase()));
   if (term) {
     list = list.filter(c =>
       (c.service||'').toLowerCase().includes(term) ||
@@ -452,10 +485,88 @@ document.getElementById('serviceSearch').addEventListener('input', (e) => {
   renderAccordion(e.target.value);
 });
 
+// Working schedule: stored as JSON in the Building Manager row's website field
+// (no DB schema change). Defaults = Mon/Wed/Fri 8:00–16:00.
+const DAY_MAP = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
+function getSchedule() {
+  let s = { days:[1,3,5], start:8, end:16, label:'Mon / Wed / Fri' };
+  try {
+    if (mgrRow?.website) {
+      const j = JSON.parse(mgrRow.website);
+      if (Array.isArray(j.days) && j.start != null && j.end != null) s = j;
+    }
+  } catch (e) {}
+  return s;
+}
+function fmtHour(h) {
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = ((h + 11) % 12) + 1;
+  return hh + ':00 ' + ampm;
+}
+
+function openMgrEdit() {
+  const sched = getSchedule();
+  document.querySelectorAll('.mgr-day').forEach(b => b.classList.toggle('on', sched.days.includes(Number(b.dataset.day))));
+  document.getElementById('mgrEditStart').value = sched.start;
+  document.getElementById('mgrEditEnd').value = sched.end;
+  document.getElementById('mgrEditWorkName').value = mgrRow?.contact_name || 'Jacob Kim';
+  document.getElementById('mgrEditWorkPhone').value = mgrRow?.phone || '0478 705 406';
+  document.getElementById('mgrEditWorkEmail').value = mgrRow?.email || 'sp77249.redmyre@gmail.com';
+  document.getElementById('mgrEditAfterName').value = mgrAfterRow?.contact_name || 'SCA Facility Management';
+  document.getElementById('mgrEditAfterPhone').value = mgrAfterRow?.phone || '1300 785 007';
+  document.getElementById('mgrEditModal').classList.add('open');
+}
+
+async function saveMgrEdit() {
+  const val = id => document.getElementById(id).value.trim() || null;
+  const rows = [
+    { existing: mgrRow, service: 'Building Manager', company: 'SCA Facility Management',
+      contact_name: val('mgrEditWorkName'), phone: val('mgrEditWorkPhone'), email: val('mgrEditWorkEmail'),
+      website: (() => {
+        const picked = [...document.querySelectorAll('.mgr-day.on')].map(b => Number(b.dataset.day));
+        const order = [1,2,3,4,5,6,0];
+        const names = {0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+        const days = order.filter(d => picked.includes(d));
+        return JSON.stringify({
+          days: days.length ? days : [1,3,5],
+          start: Number(val('mgrEditStart')) || 8,
+          end: Number(val('mgrEditEnd')) || 16,
+          label: days.length ? days.map(d => names[d]).join(' / ') : 'Mon / Wed / Fri'
+        });
+      })() },
+    { existing: mgrAfterRow, service: 'Building Manager After Hours', company: 'SCA Facility Management',
+      contact_name: val('mgrEditAfterName'), phone: val('mgrEditAfterPhone'), email: null }
+  ];
+  try {
+    for (const r of rows) {
+      const { existing, ...data } = r;
+      if (existing) {
+        await supabase.from('contractors').update(data).eq('id', existing.id);
+      } else {
+        const maxPos = contractorsData.length ? Math.max(...contractorsData.map(c => c.position || 0)) + 1 : 1;
+        await supabase.from('contractors').insert({ ...data, position: maxPos });
+      }
+    }
+    closeModal('mgrEditModal');
+    await loadContractors();
+    showToast('Saved ✓');
+  } catch (e) { showToast(e.message || 'Failed to save', true); }
+}
+document.getElementById('saveMgrEditBtn').addEventListener('click', saveMgrEdit);
+document.querySelectorAll('.mgr-day').forEach(b => b.addEventListener('click', () => b.classList.toggle('on')));
+
 async function loadContractors() {
   const { data } = await supabase.rpc('get_contractors');
   contractorsData = data||[];
+  mgrRow = contractorsData.find(c => (c.service || '').toLowerCase() === 'building manager') || null;
+  mgrAfterRow = contractorsData.find(c => (c.service || '').toLowerCase() === 'building manager after hours') || null;
   renderAccordion(document.getElementById('serviceSearch').value);
+  renderManagerCard();
+  if (role === 'admin') {
+    const mgrEditBtn = document.getElementById('mgrEditBtn');
+    mgrEditBtn.style.display = 'inline-flex';
+    mgrEditBtn.onclick = () => openMgrEdit();
+  }
 }
 
 window.openContractorEdit = (id) => {
