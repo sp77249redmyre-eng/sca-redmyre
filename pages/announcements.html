@@ -341,14 +341,19 @@ font-size:14px;
 min-height:190px !important;
 }
 
-/* Announcement rich-text editor — same Quill toolbar as Resident Requests */
-#annContentEditor .ql-toolbar.ql-snow{
+/* Announcement rich-text editor */
+.ann-editor-toolbar.ql-toolbar.ql-snow{
+position:relative;
 border:0.5px solid #e2e8f0;
 border-radius:10px 10px 0 0;
 background:#f8fafc;
 padding:6px 8px;
+display:flex;
+align-items:center;
+flex-wrap:wrap;
+gap:3px;
 }
-#annContentEditor .ql-container.ql-snow{
+#annContentEditor.ql-container.ql-snow{
 border:0.5px solid #e2e8f0;
 border-top:none;
 border-radius:0 0 10px 10px;
@@ -361,28 +366,33 @@ min-height:190px;
 padding:11px 14px;
 line-height:1.5;
 }
-#annContentEditor .ql-editor.ql-blank::before{
-color:#94a3b8;
-font-style:normal;
+#annContentEditor .ql-editor.ql-blank::before{color:#94a3b8;font-style:normal;}
+.ann-font-size-select{
+height:27px;
+min-width:88px;
+padding:2px 7px;
+border:1px solid #cbd5e1;
+border-radius:4px;
+background:#fff;
+color:#334155;
+font:12px 'DM Sans',sans-serif;
+cursor:pointer;
 }
-#annContentEditor .ann-size-select{
-  height:28px;min-width:132px;padding:0 25px 0 8px;
-  border:1px solid #cbd5e1;border-radius:5px;background:#fff;
-  color:#334155;font:12px 'DM Sans',sans-serif;cursor:pointer;
-  vertical-align:middle;margin:0 7px 0 0;
+.ann-editor-toolbar .ql-formats{margin-right:4px !important;}
+.ann-emoji-toolbar-btn{
+width:30px;height:27px;border:1px solid transparent;background:transparent;
+border-radius:4px;cursor:pointer;font-size:18px;line-height:1;
 }
-#annContentEditor .ann-size-select:focus{outline:2px solid #93c5fd;outline-offset:1px;}
-#annContentEditor .ann-emoji-toolbar-btn{width:32px;height:24px;border:0;background:transparent;border-radius:4px;cursor:pointer;font-size:18px;line-height:1;}
-#annContentEditor .ann-emoji-toolbar-btn:hover{background:#e2e8f0;}
-#annContentEditor .ann-emoji-picker{
-position:absolute;z-index:30;display:none;grid-template-columns:repeat(8,32px);gap:3px;
-padding:8px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;
+.ann-emoji-toolbar-btn:hover{background:#e2e8f0;}
+.ann-emoji-picker{
+position:absolute;z-index:100;top:calc(100% + 4px);left:6px;display:none;
+grid-template-columns:repeat(8,32px);gap:3px;padding:8px;
+background:#fff;border:1px solid #cbd5e1;border-radius:10px;
 box-shadow:0 8px 24px rgba(15,23,42,.16);max-width:calc(100vw - 48px);
 }
-#annContentEditor .ann-emoji-picker.open{display:grid;}
-#annContentEditor .ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;
-width:32px;height:32px;font-size:19px;cursor:pointer;}
-#annContentEditor .ann-emoji-picker button:hover{background:#dbeafe;}
+.ann-emoji-picker.open{display:grid;}
+.ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;width:32px;height:32px;font-size:19px;cursor:pointer;}
+.ann-emoji-picker button:hover{background:#dbeafe;}
 
 /* Compact notification control — replaces the old full-width banner */
 .ann-notification-btn{
@@ -604,10 +614,11 @@ if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
 
 const annContentField = document.getElementById('annContent');
-// Use inline font-size styles so the selected sizes are retained in email HTML.
+// Use inline font-size styles so selected sizes are retained in saved and emailed HTML.
 const AnnSizeStyle = Quill.import('attributors/style/size');
 AnnSizeStyle.whitelist = ['12px', '14px', '16px', '20px', '24px', '30px'];
 Quill.register(AnnSizeStyle, true);
+
 const annContentQuill = new Quill('#annContentEditor', {
   theme: 'snow',
   modules: {
@@ -621,85 +632,116 @@ const annContentQuill = new Quill('#annContentEditor', {
   placeholder: 'Write your announcement here…'
 });
 
-// Add a working native font-size selector. This avoids Quill's picker
-// label mismatch and applies the selected inline font-size to the selection.
-const annToolbar = document.querySelector('#annContentEditor .ql-toolbar');
-let savedAnnRange = { index: 0, length: 0 };
-annContentQuill.on('selection-change', range => {
-  if (range) savedAnnRange = range;
-});
-const annSizeSelect = document.createElement('select');
-annSizeSelect.className = 'ann-size-select';
-annSizeSelect.setAttribute('aria-label', 'Text size');
-annSizeSelect.title = 'Text size';
+// Quill creates its toolbar as a sibling of #annContentEditor.
+// Get the real toolbar from the Quill module rather than querying inside the editor.
+const annToolbar = annContentQuill.getModule('toolbar').container;
+annToolbar.classList.add('ann-editor-toolbar');
+
+// One reliable native font-size selector: 12px–30px.
+const annFontSize = document.createElement('select');
+annFontSize.className = 'ann-font-size-select';
+annFontSize.setAttribute('aria-label', 'Text size');
+annFontSize.title = 'Text size';
 [
-  ['12px', '12px – Small'],
-  ['14px', '14px – Normal'],
-  ['16px', '16px – Medium'],
-  ['20px', '20px – Large'],
-  ['24px', '24px – Heading'],
-  ['30px', '30px – Large heading']
+  ['12px', '12 px'],
+  ['14px', '14 px'],
+  ['16px', '16 px'],
+  ['20px', '20 px'],
+  ['24px', '24 px'],
+  ['30px', '30 px']
 ].forEach(([value, label]) => {
   const option = document.createElement('option');
   option.value = value;
   option.textContent = label;
-  annSizeSelect.appendChild(option);
+  annFontSize.appendChild(option);
 });
-annSizeSelect.value = '14px';
-annSizeSelect.addEventListener('mousedown', () => {
-  const range = annContentQuill.getSelection();
-  if (range) savedAnnRange = range;
-});
-annSizeSelect.addEventListener('change', () => {
-  const maxIndex = Math.max(0, annContentQuill.getLength() - 1);
-  const index = Math.min(savedAnnRange.index, maxIndex);
-  annContentQuill.setSelection(index, savedAnnRange.length, 'silent');
-  annContentQuill.format('size', annSizeSelect.value, 'user');
-  annContentQuill.focus();
-});
-annToolbar?.insertBefore(annSizeSelect, annToolbar.firstChild);
+annFontSize.value = '14px';
+annToolbar.insertBefore(annFontSize, annToolbar.firstChild);
 
-// Add a dedicated emoji button beside the formatting controls.
+let annLastRange = { index: 0, length: 0 };
+annContentQuill.on('selection-change', range => {
+  if (range) {
+    annLastRange = range;
+    const currentSize = annContentQuill.getFormat(range).size;
+    annFontSize.value = AnnSizeStyle.whitelist.includes(currentSize) ? currentSize : '14px';
+  }
+});
+annFontSize.addEventListener('pointerdown', () => {
+  const range = annContentQuill.getSelection();
+  if (range) annLastRange = range;
+});
+annFontSize.addEventListener('change', () => {
+  const value = annFontSize.value;
+  const maxIndex = Math.max(0, annContentQuill.getLength() - 1);
+  const index = Math.min(annLastRange.index, maxIndex);
+  const length = Math.min(annLastRange.length, maxIndex - index);
+  annContentQuill.focus();
+  annContentQuill.setSelection(index, length, 'silent');
+  if (length > 0) {
+    annContentQuill.formatText(index, length, 'size', value, 'user');
+  } else {
+    annContentQuill.format('size', value, 'user');
+  }
+  annContentQuill.setSelection(index + length, 0, 'silent');
+  annLastRange = { index: index + length, length: 0 };
+});
+
+// Emoji picker: 50 common Unicode emoji, inserted at the saved cursor position.
 const emojiButton = document.createElement('button');
 emojiButton.type = 'button';
 emojiButton.className = 'ann-emoji-toolbar-btn';
 emojiButton.textContent = '😀';
 emojiButton.setAttribute('aria-label', 'Insert emoji');
-emojiButton.setAttribute('title', 'Insert emoji');
-emojiButton.addEventListener('click', () => emojiPicker.classList.toggle('open'));
-annToolbar?.appendChild(emojiButton);
+emojiButton.title = 'Insert emoji';
 const emojiPicker = document.createElement('div');
 emojiPicker.className = 'ann-emoji-picker';
 emojiPicker.setAttribute('role', 'group');
 emojiPicker.setAttribute('aria-label', 'Choose an emoji');
-const commonEmoji = ['😀','😊','🙂','😉','😍','🤝','👍','🙏','👏','🎉','🎄','🎁','🎈','❤️','💙','⚠️','🚨','📢','📌','📅','🕒','🔔','🔧','🛠️','🧹','🚗','🅿️','🏢','🏠','💧','🔥','❄️','✅','❌','ℹ️','📎','📷','📄','⭐','🌟','☀️','🌧️','🌿','🐾','🍀','💡','🔑','🚪'];
+const commonEmoji = [
+  '😀','😃','😄','😁','😊','🙂','😉','😍','🤝','👍',
+  '🙏','👏','🎉','🎄','🎁','🎈','❤️','💙','⚠️','🚨',
+  '📢','📌','📅','🕒','🔔','🔧','🛠️','🧹','🚗','🅿️',
+  '🏢','🏠','💧','🔥','❄️','✅','❌','ℹ️','📎','📷',
+  '📄','⭐','🌟','☀️','🌧️','🌿','🍀','💡','🔑','🚪'
+];
 commonEmoji.forEach(emoji => {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = emoji;
   button.setAttribute('aria-label', `Insert ${emoji}`);
+  button.title = emoji;
+  button.addEventListener('mousedown', event => event.preventDefault());
   button.addEventListener('click', () => {
-    const range = annContentQuill.getSelection() || savedAnnRange;
-    const index = Math.min(range ? range.index + range.length : annContentQuill.getLength() - 1, annContentQuill.getLength() - 1);
-    annContentQuill.insertText(index, emoji, 'user');
-    annContentQuill.setSelection(index + emoji.length, 0, 'silent');
+    const maxIndex = Math.max(0, annContentQuill.getLength() - 1);
+    const index = Math.min(annLastRange.index, maxIndex);
+    const length = Math.min(annLastRange.length, maxIndex - index);
     annContentQuill.focus();
+    if (length > 0) annContentQuill.deleteText(index, length, 'user');
+    annContentQuill.insertText(index, emoji, 'user');
+    const nextIndex = index + emoji.length;
+    annContentQuill.setSelection(nextIndex, 0, 'silent');
+    annLastRange = { index: nextIndex, length: 0 };
     emojiPicker.classList.remove('open');
   });
   emojiPicker.appendChild(button);
 });
-annToolbar?.insertAdjacentElement('afterend', emojiPicker);
+emojiButton.addEventListener('mousedown', event => event.preventDefault());
+emojiButton.addEventListener('click', () => emojiPicker.classList.toggle('open'));
+annToolbar.appendChild(emojiButton);
+annToolbar.appendChild(emojiPicker);
+
 document.addEventListener('click', event => {
-  if (!event.target.closest('#annContentEditor .ql-toolbar') && !event.target.closest('#annContentEditor .ann-emoji-picker')) {
-    emojiPicker.classList.remove('open');
-  }
+  if (!annToolbar.contains(event.target)) emojiPicker.classList.remove('open');
 });
+
 annContentQuill.on('text-change', () => {
   annContentField.value = annContentQuill.root.innerHTML;
 });
 function setAnnouncementContent(value = '') {
   annContentQuill.root.innerHTML = value || '';
   annContentField.value = value || '';
+  annLastRange = { index: 0, length: 0 };
+  annFontSize.value = '14px';
 }
 function getAnnouncementContent() {
   annContentField.value = annContentQuill.root.innerHTML;
