@@ -71,12 +71,6 @@
 .resident-request-detail-row{width:100%;margin-top:-2px}
 .resident-request-detail-box{width:100%;border:2px solid;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;box-sizing:border-box}
 
-.resident-request-card.status-open .visibility-public{color:#1d4ed8!important}
-.resident-request-card.status-open .visibility-private{color:#dc2626!important}
-.resident-request-card.status-inprog .visibility-public{color:#1d4ed8!important}
-.resident-request-card.status-inprog .visibility-private{color:#dc2626!important}
-.resident-request-card.status-resolved .visibility-public{color:#1d4ed8!important}
-.resident-request-card.status-resolved .visibility-private{color:#dc2626!important}
 
 /* NEW / REPLY badge must always remain a red button with bold white text.
    This comes after the status-wide wildcard rules so they cannot override it. */
@@ -193,17 +187,6 @@
 .filter-btn:hover{border-color:var(--blue-400);color:var(--text)}
 .filter-btn.active{background:var(--blue-50);border-color:var(--blue-600);color:var(--blue-600)}
 
-/* Public Checkbox */
-.public-checkbox{display:flex;align-items:center;gap:10px;padding:12px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;cursor:pointer}
-.public-checkbox input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--blue-600)}
-.public-checkbox-label{flex:1}
-.public-checkbox-title{font-size:13px;font-weight:600;color:var(--text)}
-.public-checkbox-desc{font-size:12px;color:var(--muted);margin-top:2px}
-
-/* Visibility Badges */
-.visibility-badge{display:inline-flex;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:0.02em;padding:5px 10px;border-radius:999px;white-space:nowrap}
-.visibility-public{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
-.visibility-private{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
 .yours-badge{display:inline-block;font-size:10px;font-weight:600;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:4px;margin-left:6px}
 
 /* ───── 모바일 최적화 (PC 영향 0%) ───── */
@@ -257,11 +240,6 @@
   /* Reply 액션 row */
   #replyWrap div[style*="display:flex;gap:8px;margin-top:10px"]{flex-direction:column}
   #adminStatusSelect{width:100%}
-
-  /* Public 체크박스 패딩 축소 */
-  .public-checkbox{padding:10px}
-  .public-checkbox-title{font-size:12px}
-  .public-checkbox-desc{font-size:11px}
 
   /* Unit auto/radio 박스 */
   .unit-auto-box{padding:12px}
@@ -375,15 +353,6 @@
       <input type="file" id="complaintPhotoInputCamera" accept="image/*" capture="environment" multiple style="display:none">
       <input type="file" id="complaintPhotoInputFile" accept="image/*,application/pdf" multiple style="display:none">
       <div class="photo-preview-grid" id="photoPreviewGrid"></div>
-    </div>
-    <div class="modal-field">
-      <label class="public-checkbox">
-        <input type="checkbox" id="complaintIsPublic">
-        <div class="public-checkbox-label">
-          <div class="public-checkbox-title">🌐 Make this request public</div>
-          <div class="public-checkbox-desc">Your name will be hidden. Other residents will only see "A Resident".</div>
-        </div>
-      </label>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('complaintModal')">Cancel</button>
@@ -674,13 +643,15 @@ async function refreshUnreadForComplaint(id) {
 }
 
 async function loadComplaints(options = {}) {
-  // RLS determines which requests the current role may see.
-  // Existing public/private visibility is intentionally unchanged.
+  // Admin can review all requests. Every other role sees only its own requests.
+  // This client-side filter is an additional restriction; database RLS must
+  // enforce the same rule for actual data security.
   const refreshUnread = options.refreshUnread !== false;
-  const { data, error } = await supabase
+  let query = supabase
     .from('complaints')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
+  if (role !== 'admin') query = query.eq('user_id', user.id);
+  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) {
     console.error('Failed to load requests:', error);
     allComplaints = [];
@@ -748,15 +719,11 @@ function renderComplaints() {
       : (isOwn ? 'You' : 'A Resident');
 
     const unreadBadge = unreadIndicatorHtml(c.id);
-    const visibilityBadge = c.is_public
-      ? '<span class="visibility-badge visibility-public">🌐 PUBLIC</span>'
-      : '<span class="visibility-badge visibility-private">🔒 PRIVATE</span>';
-
     return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
       <div class="resident-request-title-wrap">
         <div class="resident-request-title">${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>
         <div class="resident-request-meta">
-          <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span><span class="resident-request-meta-sep">•</span>${visibilityBadge}
+          <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span>
         </div>
       </div>
     </div>`;
@@ -886,7 +853,6 @@ document.getElementById('addComplaintBtn').addEventListener('click', () => {
   document.getElementById('complaintCategory').value = 'noise';
   document.getElementById('complaintTitle').value = '';
   document.getElementById('complaintBody').value = '';
-  document.getElementById('complaintIsPublic').checked = false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   renderUnitSelection();
@@ -911,25 +877,11 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
   try {
     const editId = document.getElementById('complaintEditId').value;
     if (editId) {
-      const newIsPublic = document.getElementById('complaintIsPublic').checked;
-      
-      // 비공개 → 공개 전환 시 경고
-      const original = allComplaints.find(x => x.id === editId);
-      if (original && !original.is_public && newIsPublic) {
-        btn.disabled = false; btn.textContent = 'Submit →';
-        const confirmed = confirm(
-          '⚠️ WARNING: Making this request public\n\n' +
-          'All previous messages (your comments and management responses) will become visible to other residents.\n\n' +
-          'Please make sure no sensitive information is included.\n\n' +
-          'Continue?'
-        );
-        if (!confirmed) return;
-        btn.disabled = true; btn.textContent = 'Submitting…';
-      }
-      
+      // All requests are private. Keep the existing database column for
+      // backward compatibility and force edited requests to private.
       let query = supabase.from('complaints').update({
         title, body, category,
-        is_public: newIsPublic,
+        is_public: false,
         updated_at: new Date().toISOString()
       }).eq('id', editId);
       if (role !== 'admin') query = query.eq('user_id', user.id);
@@ -989,7 +941,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
         unit: unitInfo,
         status: 'open',
         has_photos: pendingPhotos.length > 0,
-        is_public: document.getElementById('complaintIsPublic').checked,
+        is_public: false,
       }).select().single();
       if (error) throw error;
       // 첫 번째 메시지 insert (본문 + 사진)
@@ -1054,7 +1006,6 @@ function renderAttachmentsHtml(attachments) {
 async function loadMessageThread(complaintId, complaint = null) {
   const thread = document.getElementById('messageThread');
   if (!complaint) complaint = allComplaints.find(x => x.id === complaintId) || null;
-  const isPublicComplaint = complaint?.is_public === true;
   const { data: messages } = await supabase
     .from('complaint_messages')
     .select('*')
@@ -1080,14 +1031,13 @@ async function loadMessageThread(complaintId, complaint = null) {
   thread.innerHTML = threadMessages.map(m => {
     const isSenderAdmin = m.sender_role === 'admin';
     const isMine = m.user_id === user.id;
-    // BUG FIX: previously this checked the MESSAGE SENDER's role for the anonymity branch,
-    // so admins viewing a public complaint saw "A Resident" instead of the real name.
-    // The current VIEWER's role (outer `isAdmin`) must always win: admin always sees real names.
+    // Requests are private. Admin sees the sender's real name; residents see
+    // the names within their own request conversation only.
     const displaySenderName = isSenderAdmin
       ? (isMine ? 'You' : (m.sender_name || 'SCA Management'))
       : isAdmin
         ? (isMine ? 'You' : (m.sender_name || 'Unknown'))
-        : (isPublicComplaint ? (isMine ? 'You' : 'A Resident') : (isMine ? 'You' : (m.sender_name || 'Unknown')));
+        : (isMine ? 'You' : (m.sender_name || 'Unknown'));
     const date = new Date(m.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const editBtns = isMine ? `<div style="display:flex;gap:6px;margin-top:8px"><button onclick="editMessage('${m.id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Edit</button><button onclick="deleteMessage('${m.id}')" style="padding:4px 10px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🗑️ Delete</button></div>` : '';
     const attachments = m.attachments && m.attachments.length > 0 ? `
@@ -1578,7 +1528,6 @@ window.openEditComplaint = () => {
   document.getElementById('complaintCategory').value = c.category || 'other';
   document.getElementById('complaintTitle').value = c.title || '';
   document.getElementById('complaintBody').value = c.body || '';
-  document.getElementById('complaintIsPublic').checked = c.is_public || false;
   document.getElementById('photoPreviewGrid').innerHTML = '';
   pendingPhotos = [];
   document.getElementById('unitAutoBox').style.display = 'none';
