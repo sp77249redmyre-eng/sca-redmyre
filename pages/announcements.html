@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <style>
 .content{
 padding:10px 14px 20px;
@@ -340,6 +341,52 @@ font-size:14px;
 min-height:190px !important;
 }
 
+/* Announcement rich-text editor — same Quill toolbar as Resident Requests */
+#annContentEditor .ql-toolbar.ql-snow{
+border:0.5px solid #e2e8f0;
+border-radius:10px 10px 0 0;
+background:#f8fafc;
+padding:6px 8px;
+}
+#annContentEditor .ql-container.ql-snow{
+border:0.5px solid #e2e8f0;
+border-top:none;
+border-radius:0 0 10px 10px;
+font-family:'DM Sans',sans-serif;
+font-size:14px;
+color:#0f172a;
+}
+#annContentEditor .ql-editor{
+min-height:190px;
+padding:11px 14px;
+line-height:1.5;
+}
+#annContentEditor .ql-editor.ql-blank::before{
+color:#94a3b8;
+font-style:normal;
+}
+#annContentEditor .ql-snow .ql-picker.ql-size{width:100px;}
+#annContentEditor .ql-snow .ql-picker.ql-header{width:105px;}
+#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label::before{content:'Text size';}
+#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='12px']::before{content:'Small';}
+#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='14px']::before{content:'Normal';}
+#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='20px']::before{content:'Large';}
+#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='30px']::before{content:'Very large';}
+#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label::before{content:'Heading';}
+#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='1']::before{content:'Title';}
+#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='2']::before{content:'Heading 2';}
+#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='3']::before{content:'Heading 3';}
+#annContentEditor .ql-emoji{width:30px!important;font-size:17px!important;}
+#annContentEditor .ann-emoji-picker{
+position:absolute;z-index:30;display:none;grid-template-columns:repeat(8,32px);gap:3px;
+padding:8px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;
+box-shadow:0 8px 24px rgba(15,23,42,.16);max-width:calc(100vw - 48px);
+}
+#annContentEditor .ann-emoji-picker.open{display:grid;}
+#annContentEditor .ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;
+width:32px;height:32px;font-size:19px;cursor:pointer;}
+#annContentEditor .ann-emoji-picker button:hover{background:#dbeafe;}
+
 /* Compact notification control — replaces the old full-width banner */
 .ann-notification-btn{
 display:inline-flex;
@@ -437,7 +484,8 @@ html,body{overflow:auto;}
 </div>
 <div class="modal-field">
 <label class="modal-label">Content</label>
-<textarea class="modal-textarea" id="annContent" style="min-height:160px" placeholder="Write your announcement here…"></textarea>
+<div id="annContentEditor"></div>
+<textarea class="modal-textarea" id="annContent" style="display:none" aria-hidden="true"></textarea>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 <div class="modal-field">
@@ -551,11 +599,84 @@ html,body{overflow:auto;}
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script type="module">
 import { initLayout } from '/js/layout.js';
 const ctx = await initLayout();
 if (!ctx) throw new Error('Layout init failed');
 const { supabase, user, role, name } = ctx;
+
+const annContentField = document.getElementById('annContent');
+// Use inline font-size styles so the selected sizes are retained in email HTML.
+const AnnSizeStyle = Quill.import('attributors/style/size');
+AnnSizeStyle.whitelist = ['12px', '14px', '16px', '20px', '24px', '30px'];
+Quill.register(AnnSizeStyle, true);
+const annContentQuill = new Quill('#annContentEditor', {
+  theme: 'snow',
+  modules: {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        [{ size: ['12px', '14px', '16px', '20px', '24px', '30px'] }],
+        ['bold', 'italic'],
+        [{ color: [] }],
+        ['emoji']
+      ],
+      handlers: {
+        emoji: function() {
+          const picker = document.querySelector('#annContentEditor .ann-emoji-picker');
+          if (picker) picker.classList.toggle('open');
+        }
+      }
+    }
+  },
+  placeholder: 'Write your announcement here…'
+});
+
+// Add a small picker of standard Unicode emoji (no images or custom fonts).
+const annToolbar = document.querySelector('#annContentEditor .ql-toolbar');
+const emojiButton = annToolbar?.querySelector('.ql-emoji');
+if (emojiButton) {
+  emojiButton.setAttribute('aria-label', 'Insert emoji');
+  emojiButton.setAttribute('title', 'Insert emoji');
+  emojiButton.textContent = '😀';
+}
+const emojiPicker = document.createElement('div');
+emojiPicker.className = 'ann-emoji-picker';
+emojiPicker.setAttribute('role', 'group');
+emojiPicker.setAttribute('aria-label', 'Choose an emoji');
+const commonEmoji = ['😀','😊','🙂','😉','😍','🤝','👍','🙏','👏','🎉','🎄','🎁','🎈','❤️','💙','⚠️','🚨','📢','📌','📅','🕒','🔔','🔧','🛠️','🧹','🚗','🅿️','🏢','🏠','💧','🔥','❄️','✅','❌','ℹ️','📎','📷','📄','⭐','🌟','☀️','🌧️','🌿','🐾','🍀','💡','🔑','🚪'];
+commonEmoji.forEach(emoji => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = emoji;
+  button.setAttribute('aria-label', `Insert ${emoji}`);
+  button.addEventListener('click', () => {
+    const range = annContentQuill.getSelection(true);
+    annContentQuill.insertText(range ? range.index : annContentQuill.getLength() - 1, emoji, 'user');
+    annContentQuill.focus();
+    emojiPicker.classList.remove('open');
+  });
+  emojiPicker.appendChild(button);
+});
+annToolbar?.insertAdjacentElement('afterend', emojiPicker);
+document.addEventListener('click', event => {
+  if (!event.target.closest('#annContentEditor .ql-toolbar') && !event.target.closest('#annContentEditor .ann-emoji-picker')) {
+    emojiPicker.classList.remove('open');
+  }
+});
+annContentQuill.on('text-change', () => {
+  annContentField.value = annContentQuill.root.innerHTML;
+});
+function setAnnouncementContent(value = '') {
+  annContentQuill.root.innerHTML = value || '';
+  annContentField.value = value || '';
+}
+function getAnnouncementContent() {
+  annContentField.value = annContentQuill.root.innerHTML;
+  return annContentField.value.trim();
+}
+
 async function logActivity(action, record_id = null) {
 try {
 if (role === 'admin') return;
@@ -1017,7 +1138,7 @@ document.getElementById('annModalTitle').textContent = 'New Announcement';
 document.getElementById('annEditId').value = '';
 editWasScheduled = false;
 document.getElementById('annTitle').value = '';
-document.getElementById('annContent').value = '';
+setAnnouncementContent('');
 document.getElementById('annCategory').value = 'urgent';
 document.getElementById('annPinned').checked = false;
 document.getElementById('pinToggle').classList.remove('on');
@@ -1043,7 +1164,7 @@ window.openEditAnn = (a) => {
 document.getElementById('annModalTitle').textContent = 'Edit Announcement';
 document.getElementById('annEditId').value = a.id;
 document.getElementById('annTitle').value = a.title;
-document.getElementById('annContent').value = a.content;
+setAnnouncementContent(a.content);
 document.getElementById('annCategory').value = a.category||'urgent';
 document.getElementById('annPinned').checked = a.pinned;
 document.getElementById('pinToggle').classList.toggle('on', a.pinned);
@@ -1167,7 +1288,7 @@ document.getElementById('annInputFile').addEventListener('change', e => { annHan
 
 document.getElementById('annTestBtn').addEventListener('click', async () => {
 const title = document.getElementById('annTitle').value.trim();
-const content = document.getElementById('annContent').value.trim();
+const content = getAnnouncementContent();
 if (!title || !content) { showToast('Please fill in title and content first', true); return; }
 
 const input = document.getElementById('annTestEmail');
@@ -1219,7 +1340,7 @@ const existingAnn = id ? allAnns.find(x => x.id === id) : null;
 
 const data = {
 title: document.getElementById('annTitle').value.trim(),
-content: document.getElementById('annContent').value.trim(),
+content: getAnnouncementContent(),
 category: document.getElementById('annCategory').value,
 pinned: document.getElementById('annPinned').checked,
 archived: document.getElementById('annArchived').checked,
