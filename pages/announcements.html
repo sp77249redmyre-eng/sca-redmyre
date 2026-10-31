@@ -342,7 +342,7 @@ min-height:190px !important;
 }
 
 /* Announcement rich-text editor — same Quill toolbar as Resident Requests */
-#annContentEditor .ql-toolbar.ql-snow{
+.ql-toolbar.ql-snow{
 border:0.5px solid #e2e8f0;
 border-radius:10px 10px 0 0;
 background:#f8fafc;
@@ -365,23 +365,23 @@ line-height:1.5;
 color:#94a3b8;
 font-style:normal;
 }
-#annContentEditor .ql-snow .ql-picker.ql-size{width:100px;}
-#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label::before{content:'Text size';}
-#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='12px']::before{content:'Small';}
-#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='14px']::before{content:'Normal';}
-#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='20px']::before{content:'Large';}
-#annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='30px']::before{content:'Very large';}
-#annContentEditor .ann-emoji-toolbar-btn{width:32px;height:24px;border:0;background:transparent;border-radius:4px;cursor:pointer;font-size:18px;line-height:1;}
-#annContentEditor .ann-emoji-toolbar-btn:hover{background:#e2e8f0;}
-#annContentEditor .ann-emoji-picker{
-position:absolute;z-index:30;display:none;grid-template-columns:repeat(8,32px);gap:3px;
+.ql-toolbar.ql-snow .ql-picker.ql-size{width:100px;}
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label::before{content:'Text size';}
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value='12px']::before{content:'Small';}
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value='14px']::before{content:'Normal';}
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value='20px']::before{content:'Large';}
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value='30px']::before{content:'Very large';}
+.ann-emoji-toolbar-btn{width:32px;height:24px;border:0;background:transparent;border-radius:4px;cursor:pointer;font-size:18px;line-height:1;}
+.ann-emoji-toolbar-btn:hover{background:#e2e8f0;}
+.ann-emoji-picker{
+position:absolute;top:44px;left:8px;z-index:1000;display:none;grid-template-columns:repeat(8,32px);gap:3px;
 padding:8px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;
 box-shadow:0 8px 24px rgba(15,23,42,.16);max-width:calc(100vw - 48px);
 }
-#annContentEditor .ann-emoji-picker.open{display:grid;}
-#annContentEditor .ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;
+.ann-emoji-picker.open{display:grid;}
+.ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;
 width:32px;height:32px;font-size:19px;cursor:pointer;}
-#annContentEditor .ann-emoji-picker button:hover{background:#dbeafe;}
+.ann-emoji-picker button:hover{background:#dbeafe;}
 
 /* Compact notification control — replaces the old full-width banner */
 .ann-notification-btn{
@@ -622,7 +622,9 @@ const annContentQuill = new Quill('#annContentEditor', {
 });
 
 // Add a dedicated emoji button beside the formatting controls.
-const annToolbar = document.querySelector('#annContentEditor .ql-toolbar');
+const annEditorHost = document.getElementById('annContentEditor').parentElement;
+const annToolbar = annEditorHost.querySelector('.ql-toolbar');
+annEditorHost.style.position = 'relative';
 const emojiButton = document.createElement('button');
 emojiButton.type = 'button';
 emojiButton.className = 'ann-emoji-toolbar-btn';
@@ -649,9 +651,9 @@ commonEmoji.forEach(emoji => {
   });
   emojiPicker.appendChild(button);
 });
-annToolbar?.insertAdjacentElement('afterend', emojiPicker);
+if (annToolbar) annToolbar.insertAdjacentElement('afterend', emojiPicker);
 document.addEventListener('click', event => {
-  if (!event.target.closest('#annContentEditor .ql-toolbar') && !event.target.closest('#annContentEditor .ann-emoji-picker')) {
+  if (!event.target.closest('.ql-toolbar') && !event.target.closest('.ann-emoji-picker')) {
     emojiPicker.classList.remove('open');
   }
 });
