@@ -366,17 +366,13 @@ color:#94a3b8;
 font-style:normal;
 }
 #annContentEditor .ql-snow .ql-picker.ql-size{width:100px;}
-#annContentEditor .ql-snow .ql-picker.ql-header{width:105px;}
 #annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label::before{content:'Text size';}
 #annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='12px']::before{content:'Small';}
 #annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='14px']::before{content:'Normal';}
 #annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='20px']::before{content:'Large';}
 #annContentEditor .ql-snow .ql-picker.ql-size .ql-picker-label[data-value='30px']::before{content:'Very large';}
-#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label::before{content:'Heading';}
-#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='1']::before{content:'Title';}
-#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='2']::before{content:'Heading 2';}
-#annContentEditor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value='3']::before{content:'Heading 3';}
-#annContentEditor .ql-emoji{width:30px!important;font-size:17px!important;}
+#annContentEditor .ann-emoji-toolbar-btn{width:32px;height:24px;border:0;background:transparent;border-radius:4px;cursor:pointer;font-size:18px;line-height:1;}
+#annContentEditor .ann-emoji-toolbar-btn:hover{background:#e2e8f0;}
 #annContentEditor .ann-emoji-picker{
 position:absolute;z-index:30;display:none;grid-template-columns:repeat(8,32px);gap:3px;
 padding:8px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;
@@ -616,31 +612,25 @@ const annContentQuill = new Quill('#annContentEditor', {
   modules: {
     toolbar: {
       container: [
-        [{ header: [1, 2, 3, false] }],
         [{ size: ['12px', '14px', '16px', '20px', '24px', '30px'] }],
         ['bold', 'italic'],
-        [{ color: [] }],
-        ['emoji']
-      ],
-      handlers: {
-        emoji: function() {
-          const picker = document.querySelector('#annContentEditor .ann-emoji-picker');
-          if (picker) picker.classList.toggle('open');
-        }
-      }
+        [{ color: [] }]
+      ]
     }
   },
   placeholder: 'Write your announcement here…'
 });
 
-// Add a small picker of standard Unicode emoji (no images or custom fonts).
+// Add a dedicated emoji button beside the formatting controls.
 const annToolbar = document.querySelector('#annContentEditor .ql-toolbar');
-const emojiButton = annToolbar?.querySelector('.ql-emoji');
-if (emojiButton) {
-  emojiButton.setAttribute('aria-label', 'Insert emoji');
-  emojiButton.setAttribute('title', 'Insert emoji');
-  emojiButton.textContent = '😀';
-}
+const emojiButton = document.createElement('button');
+emojiButton.type = 'button';
+emojiButton.className = 'ann-emoji-toolbar-btn';
+emojiButton.textContent = '😀';
+emojiButton.setAttribute('aria-label', 'Insert emoji');
+emojiButton.setAttribute('title', 'Insert emoji');
+emojiButton.addEventListener('click', () => emojiPicker.classList.toggle('open'));
+annToolbar?.appendChild(emojiButton);
 const emojiPicker = document.createElement('div');
 emojiPicker.className = 'ann-emoji-picker';
 emojiPicker.setAttribute('role', 'group');
