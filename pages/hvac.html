@@ -1618,6 +1618,208 @@ body.observer-readonly .option-box{
 }
 </style>
 
+
+<style id="hvac-location-inline-layout-fix">
+/* LOCATION PICKER — place Suite selection beside the unit details card. */
+
+/* Respect the existing JavaScript display:none / display:block state. */
+#unitAutoBox[style*="display: none"],
+#unitRadioBox[style*="display: none"] {
+  display: none !important;
+}
+#unitAutoBox[style*="display: block"],
+#unitRadioBox[style*="display: block"] {
+  display: grid !important;
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Suite tabs occupy a compact column on the left. */
+#unitAutoBox .location-tabs,
+#unitRadioBox .location-tabs {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 132px !important;
+  min-width: 0 !important;
+  max-width: 132px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+#unitAutoBox .location-tab,
+#unitRadioBox .location-tab {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 52px !important;
+  padding: 10px 8px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+}
+
+/* Unit detail card fills only the remaining right-hand space. */
+#unitAutoBox > .location-card,
+#unitRadioBox > .location-card {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  margin: 0 !important;
+  padding: 8px 10px !important;
+  box-sizing: border-box !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+#unitAutoBox .location-card-main,
+#unitRadioBox .location-card-main {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+#unitAutoBox .location-card-main > div:last-child,
+#unitRadioBox .location-card-main > div:last-child {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+#unitAutoBox .location-unit-name,
+#unitRadioBox .location-unit-name,
+#unitAutoBox .location-unit-detail,
+#unitRadioBox .location-unit-detail {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+#unitAutoBox .location-unit-detail,
+#unitRadioBox .location-unit-detail {
+  font-size: 12.5px !important;
+  line-height: 1.25 !important;
+}
+
+/* Keep LEVEL and Floor badge in a fixed right column without overlap. */
+#unitAutoBox .location-level,
+#unitRadioBox .location-level {
+  display: flex !important;
+  flex: 0 0 222px !important;
+  width: 222px !important;
+  min-width: 222px !important;
+  max-width: 222px !important;
+  height: 48px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 0 0 10px !important;
+  margin: 0 !important;
+  border-left: 1px solid rgba(137,170,209,.48) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+#unitAutoBox .location-level > span:not(.location-floor-setpoint),
+#unitRadioBox .location-level > span:not(.location-floor-setpoint) {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+}
+#unitAutoBox .location-level strong,
+#unitRadioBox .location-level strong {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  font-size: 27px !important;
+}
+#unitAutoBox .location-floor-setpoint,
+#unitRadioBox .location-floor-setpoint {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  padding: 5px 8px 5px 5px !important;
+  gap: 4px !important;
+  font-size: 12px !important;
+}
+
+/* Narrow screens: keep the selection above the card rather than squeezing either. */
+@media (max-width: 700px) {
+  #unitAutoBox[style*="display: block"],
+  #unitRadioBox[style*="display: block"] {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 8px !important;
+  }
+  #unitAutoBox .location-tabs,
+  #unitRadioBox .location-tabs {
+    flex-direction: row !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    padding: 1px 1px 5px !important;
+  }
+  #unitAutoBox .location-tab,
+  #unitRadioBox .location-tab {
+    flex: 0 0 132px !important;
+    width: 132px !important;
+  }
+  #unitAutoBox > .location-card,
+  #unitRadioBox > .location-card {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 70px !important;
+  }
+  #unitAutoBox .location-level,
+  #unitRadioBox .location-level {
+    flex-basis: 205px !important;
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+  }
+}
+@media (max-width: 430px) {
+  #unitAutoBox > .location-card,
+  #unitRadioBox > .location-card {
+    flex-wrap: wrap !important;
+    height: auto !important;
+  }
+  #unitAutoBox .location-card-main,
+  #unitRadioBox .location-card-main {
+    flex: 1 1 100% !important;
+  }
+  #unitAutoBox .location-level,
+  #unitRadioBox .location-level {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    border-left: 0 !important;
+    border-top: 1px solid rgba(137,170,209,.48) !important;
+    justify-content: flex-start !important;
+    padding: 7px 0 0 !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
