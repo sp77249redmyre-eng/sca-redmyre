@@ -99,15 +99,6 @@ async function insertSidebar() {
   }
 }
 
-async function insertTopbar() {
-  const html = await loadComponent('/components/topbar.html');
-  const placeholder = document.getElementById('topbarPlaceholder');
-
-  if (placeholder) {
-    placeholder.outerHTML = html;
-  }
-}
-
 async function applyRoleMenuControl(role, supabase) {
   const privileged = ['admin', 'committee', 'observer'];
 
@@ -603,7 +594,6 @@ function initNotification(supabase) {
 
 export async function initLayout() {
   await insertSidebar();
-  await insertTopbar();
 
   await new Promise(r => setTimeout(r, 0));
 
