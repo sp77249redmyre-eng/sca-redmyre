@@ -394,27 +394,6 @@ box-shadow:0 8px 24px rgba(15,23,42,.16);max-width:calc(100vw - 48px);
 .ann-emoji-picker button{border:0;background:#f8fafc;border-radius:6px;width:32px;height:32px;font-size:19px;cursor:pointer;}
 .ann-emoji-picker button:hover{background:#dbeafe;}
 
-/* Compact notification control — replaces the old full-width banner */
-.ann-notification-btn{
-display:inline-flex;
-align-items:center;
-gap:5px;
-padding:5px 10px;
-border:1px solid #93c5fd;
-border-radius:999px;
-background:#eff6ff;
-color:#1d4ed8;
-font-family:'DM Sans',sans-serif;
-font-size:11px;
-font-weight:700;
-line-height:1;
-cursor:pointer;
-white-space:nowrap;
-transition:all .15s ease;
-}
-.ann-notification-btn:hover{background:#dbeafe;border-color:#60a5fa;}
-.ann-notification-btn:active{transform:translateY(1px);}
-
 @media(max-width:1200px){
 .ann-active-shell{grid-template-columns:minmax(0,1fr) 380px;}
 .ann-modal-layout{grid-template-columns:minmax(0,1fr) 360px;}
@@ -486,6 +465,9 @@ html,body{overflow:auto;}
 }
 </style>
 
+
+
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -501,7 +483,7 @@ html,body{overflow:auto;}
 <div class="page-header-title-row">
 <div style="display:flex;align-items:center;gap:10px;min-width:0">
 <span class="page-header-title">Announcements</span>
-<button type="button" class="ann-notification-btn" id="enablePushBtn" style="display:none">🔔 Enable notifications</button>
+
 </div>
 </div>
 <div class="page-header-sub">Important notices and updates from building management.</div>
@@ -1717,22 +1699,6 @@ if (!sub) sub = await swRegistration.pushManager.subscribe({ userVisibleOnly:tru
 await supabase.from('push_subscriptions').upsert({ user_id:user.id, subscription:sub.toJSON() },{ onConflict:'user_id' });
 } catch(e){}
 }
-document.getElementById('enablePushBtn').addEventListener('click', async () => {
-try {
-const permission = await Notification.requestPermission();
-const btn = document.getElementById('enablePushBtn');
-if (permission === 'granted') {
-await subscribeUser();
-btn.style.display = 'none';
-showToast('Notifications enabled ✓');
-} else {
-btn.style.display = 'none';
-showToast('Notifications blocked', true);
-}
-} catch(e) {
-document.getElementById('enablePushBtn').style.display = 'none';
-}
-});
 initServiceWorker();
 
 window.openAttachModal = function(url, type, name) {
