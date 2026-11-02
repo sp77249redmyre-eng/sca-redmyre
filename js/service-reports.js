@@ -2607,7 +2607,7 @@ function renderHero() {
     list += `<button type="button" data-tab="${d.tab}" style="--c:${d.col}"><b>${d.title}</b></button>`;
   });
   host.innerHTML = `<svg viewBox="0 0 2340 1024" preserveAspectRatio="xMidYMid meet" font-family="DM Sans,Inter,Arial,sans-serif" role="group" aria-label="Redmyre House building services">
-    ${fx.defs}<image href="/img/redmyre-building.jpg" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
+    ${fx.defs}<image href="/img/redmyre-building-transparent.png" x="${HERO_O}" width="1536" height="1024"/>${fx.under}${svg}</svg><div class="sr-hero-list">${list}</div>`;
   const svgEl = host.querySelector('svg');
   const reduce = false; // effects always on (this page is an internal tool; Windows 'animation effects off' must not hide them)
   host.querySelectorAll('.sr-tag').forEach(t => {
