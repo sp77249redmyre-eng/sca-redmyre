@@ -342,6 +342,67 @@
 }
 </style>
 
+
+<style id="complaints-glass-detail-white-fixes">
+/* =========================================================
+   COMPLAINTS — GLASS DETAIL PANEL FIX
+   Outer frame stays glass; all content areas stay solid white.
+   ========================================================= */
+
+/* The detail box receives a status pastel from JavaScript.
+   Keep that inner wrapper transparent so the outer glass frame shows. */
+#detailModalBox {
+  background: transparent !important;
+}
+
+/* Solid white content surfaces inside the expanded request panel. */
+#detailModalBox > #detailProgressWrap,
+#detailModalBox > #messageThread,
+#detailModalBox > #replyWrap,
+#detailModalBox > .modal-footer {
+  background: #ffffff !important;
+}
+
+/* Description panel */
+#detailModalBox > div[style*="background:#fff"] {
+  background: #ffffff !important;
+}
+
+/* Reduced-transparency mode: preserve the status colours on request cards. */
+@media (prefers-reduced-transparency: reduce) {
+  .resident-request-list .resident-request-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #f5faff !important;
+  }
+
+  .resident-request-list .resident-request-card.status-open {
+    background: #fff1f2 !important;
+    border-color: #ef4444 !important;
+  }
+
+  .resident-request-list .resident-request-card.status-inprog {
+    background: #fffbeb !important;
+    border-color: #f59e0b !important;
+  }
+
+  .resident-request-list .resident-request-card.status-resolved {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+  }
+
+  /* No blur in this mode; retain the status-coloured outer border. */
+  .resident-request-detail-box,
+  .resident-request-detail-box.status-open,
+  .resident-request-detail-box.status-inprog,
+  .resident-request-detail-box.status-resolved {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #ffffff !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -388,7 +449,7 @@
         <option value="other">📝 Other</option>
       </select>
     </div>
-    
+
     <!-- Unit Auto Selection (Single Unit) -->
     <div id="unitAutoBox" style="display:none">
       <div class="unit-auto-box">
@@ -397,15 +458,14 @@
         <div class="unit-auto-detail" id="unitAutoDetail">—</div>
       </div>
     </div>
-    
-    <!-- Unit Radio Selection (Multiple Units) -->
+        <!-- Unit Radio Selection (Multiple Units) -->
     <div id="unitRadioBox" style="display:none">
       <div class="modal-field">
         <label class="modal-label">Select Your Unit</label>
         <div class="unit-radio-list" id="unitRadioList"></div>
       </div>
     </div>
-    
+
     <div class="modal-field">
       <label class="modal-label">Subject</label>
       <input class="modal-input" id="complaintTitle" placeholder="Brief description of the issue…">
@@ -797,8 +857,7 @@ function renderComplaints() {
     const unreadBadge = unreadIndicatorHtml(c.id);
     return `<div class="resident-request-card status-${normalizedStatus}${Number(unreadMessageCounts[c.id] || 0) > 0 ? ' has-unread-message' : ''}" data-cid="${c.id}" onclick="toggleDetail('${c.id}')">
       <div class="resident-request-title-wrap">
-        <div class="resident-request-title">${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>
-        <div class="resident-request-meta">
+        <div class="resident-request-title">${unreadBadge}<span>${emoji} ${c.title || 'Untitled Request'}</span></div>        <div class="resident-request-meta">
           <span>${catLabel}</span><span class="resident-request-meta-sep">•</span><span>${displayName}</span><span class="resident-request-meta-sep">•</span><span>${date} ${time}</span>
         </div>
       </div>
@@ -942,13 +1001,13 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
   const category = document.getElementById('complaintCategory').value;
   const btn = document.getElementById('saveComplaintBtn');
   if (!title || !body) { showToast('Please fill in all fields', true); return; }
-  
+
   // Get unit info
   let unitInfo = null;
   if (selectedUnit) {
     unitInfo = selectedUnit.unit;
   }
-  
+
   btn.disabled = true; btn.textContent = 'Submitting…';
   try {
     const editId = document.getElementById('complaintEditId').value;
@@ -997,8 +1056,7 @@ document.getElementById('saveComplaintBtn').addEventListener('click', async () =
               .update({ has_photos: true })
               .eq('id', editId);
             if (hasPhotoErr) console.warn('has_photos flag update failed:', hasPhotoErr);
-          }
-        } catch (photoErr) {
+          }        } catch (photoErr) {
           console.error('Failed to attach new photos to edited request:', photoErr);
           showToast('Request updated, but new photos failed to upload', true);
         }
@@ -1197,9 +1255,7 @@ function handleEditMsgFiles(files) {
     }
     grid.appendChild(item);
   });
-}
-
-window.removeEditNewPhoto = (idx, el) => {
+}window.removeEditNewPhoto = (idx, el) => {
   editMsgNewPhotos[idx] = null;
   el.closest('.photo-preview-item').remove();
   editMsgNewPhotos = editMsgNewPhotos.filter(x => x !== null);
@@ -1397,8 +1453,7 @@ document.getElementById('saveAdminResponseBtn').addEventListener('click', async 
       const { data: msg, error: messageError } = await supabase.from('complaint_messages').insert({
         complaint_id: currentComplaintId,
         user_id: user.id,
-        sender_name: name,
-        sender_role: role,
+        sender_name: name,        sender_role: role,
         message: hasResponse ? response : ''
       }).select('id').single();
       if (messageError) throw messageError;
@@ -1597,8 +1652,7 @@ document.getElementById('editMsgModal').addEventListener('click', (e) => {
 
 window.openEditComplaint = () => {
   const c = allComplaints.find(x => x.id === currentComplaintId);
-  if (!c) return;
-  if (role !== 'admin' && c.user_id !== user.id) return;
+  if (!c) return;  if (role !== 'admin' && c.user_id !== user.id) return;
   document.getElementById('complaintModalTitle').textContent = 'Edit Request';
   document.getElementById('complaintEditId').value = c.id;
   document.getElementById('complaintCategory').value = c.category || 'other';
@@ -1621,9 +1675,9 @@ async function loadMyUnits() {
     const { data, error } = await supabase
       .from('occupants')
       .select('*');
-    
+
     if (error) throw error;
-    
+
     // 이메일 정확히 매칭 (콤마/세미콜론으로 구분된 이메일 처리)
     const userEmail = user.email.toLowerCase();
     myUnits = (data || []).filter(occ => {
@@ -1641,10 +1695,10 @@ async function loadMyUnits() {
 function renderUnitSelection() {
   const autoBox = document.getElementById('unitAutoBox');
   const radioBox = document.getElementById('unitRadioBox');
-  
+
   autoBox.style.display = 'none';
   radioBox.style.display = 'none';
-  
+
   if (myUnits.length === 1) {
     // Single unit - auto select
     selectedUnit = myUnits[0];
@@ -1663,9 +1717,9 @@ function renderUnitSelection() {
         </div>
       </label>
     `).join('');
-    
+
     selectedUnit = myUnits[0];
-    
+
     document.querySelectorAll('input[name="unitRadio"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const idx = parseInt(e.target.value);
@@ -1674,7 +1728,7 @@ function renderUnitSelection() {
         e.target.closest('.unit-radio-item').classList.add('selected');
       });
     });
-    
+
     document.querySelector('.unit-radio-item').classList.add('selected');
     radioBox.style.display = 'block';
   } else {
