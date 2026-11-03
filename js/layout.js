@@ -10,54 +10,18 @@ const PAGE_CONFIG = {
   'hvac': { title: 'A/C Temperature', allowedRoles: null },
   'emergency': { title: 'Emergency Contacts', allowedRoles: null },
   'works': { title: 'Ongoing Works', allowedRoles: null },
-  'cost-dashboard': {
-    title: 'Cost Analysis',
-    allowedRoles: ['admin', 'committee', 'observer', 'owner']
-  },
-  'documents': {
-    title: 'Building Documents',
-    allowedRoles: ['admin', 'committee', 'observer', 'owner']
-  },
-  'history': {
-    title: 'Temperature History',
-    allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant']
-  },
-  'quotes': {
-    title: 'Quote Approvals',
-    allowedRoles: ['admin', 'committee', 'observer']
-  },
-  'reports': {
-    title: 'Completed Works',
-    allowedRoles: ['admin', 'committee', 'observer', 'owner']
-  },
-  'occupants': {
-    title: 'Occupant Details',
-    allowedRoles: ['admin', 'committee', 'observer', 'owner', 'tenant']
-  },
-  'signboard': {
-    title: 'Signboard Manager',
-    allowedRoles: ['admin']
-  },
-  'users': {
-    title: 'User Management',
-    allowedRoles: ['admin']
-  },
-  'system': {
-    title: 'System Management',
-    allowedRoles: ['admin']
-  },
-  'guide-tenant': {
-    title: 'Tenant Guide',
-    allowedRoles: ['admin', 'tenant']
-  },
-  'guide-owner': {
-    title: 'Owner Guide',
-    allowedRoles: ['admin', 'owner']
-  },
-  'guide-committee': {
-    title: 'Committee Guide',
-    allowedRoles: ['admin', 'committee', 'observer']
-  },
+  'cost-dashboard': { title: 'Cost Analysis', allowedRoles: null },
+  'documents': { title: 'Building Documents', allowedRoles: null },
+  'history': { title: 'Temperature History', allowedRoles: null },
+  'quotes': { title: 'Quote Approvals', allowedRoles: null },
+  'reports': { title: 'Completed Works', allowedRoles: null },
+  'occupants': { title: 'Occupant Details', allowedRoles: ['admin'] },
+  'signboard': { title: 'Signboard Manager', allowedRoles: ['admin'] },
+  'users': { title: 'User Management', allowedRoles: ['admin'] },
+  'system': { title: 'System Management', allowedRoles: ['admin'] },
+  'guide-tenant': { title: 'Tenant Guide', allowedRoles: null },
+  'guide-owner': { title: 'Owner Guide', allowedRoles: null },
+  'guide-committee': { title: 'Committee Guide', allowedRoles: null },
 };
 
 function getCurrentPage() {
@@ -102,19 +66,12 @@ async function insertSidebar() {
 async function applyRoleMenuControl(role, supabase) {
   const privileged = ['admin', 'committee', 'observer'];
 
-  if (privileged.includes(role)) {
-    document.body.classList.add('role-privileged');
-  }
+  document.body.classList.toggle('role-privileged', privileged.includes(role));
+  document.body.classList.toggle('role-admin', role === 'admin');
 
-  if (role === 'admin') {
-    document.body.classList.add('role-admin');
-  }
-
-  // Sidebar 메뉴 권한 제어
   let allowedPages = [];
 
   if (role === 'admin') {
-    // Admin은 모든 페이지 접근 가능
     allowedPages = [
       'building',
       'service-reports',
@@ -138,89 +95,48 @@ async function applyRoleMenuControl(role, supabase) {
       'guide-committee'
     ];
   } else {
-    // DB에서 sidebar_permissions 조회
     const { data: permissions, error } = await supabase
       .from('sidebar_permissions')
       .select('page')
       .eq('role', role)
       .eq('allowed', true);
 
-    if (!error && permissions && permissions.length > 0) {
-      allowedPages = permissions.map(p => p.page);
-    } else {
-      // DB 조회 실패 시 기본 권한 (fallback)
-      const defaultPermissions = {
-        committee: [
-          'announcements',
-          'service-reports',
-          'parking',
-          'complaints',
-          'hvac',
-          'emergency',
-          'works',
-          'history',
-          'quotes',
-          'reports',
-          'cost-dashboard',
-          'documents',
-          'occupants',
-          'guide-committee'
-        ],
-        observer: [
-          'announcements',
-          'service-reports',
-          'parking',
-          'complaints',
-          'hvac',
-          'emergency',
-          'works',
-          'history',
-          'quotes',
-          'reports',
-          'cost-dashboard',
-          'documents',
-          'occupants',
-          'guide-committee'
-        ],
-        owner: [
-          'announcements',
-          'service-reports',
-          'parking',
-          'complaints',
-          'hvac',
-          'emergency',
-          'works',
-          'reports',
-          'cost-dashboard',
-          'occupants',
-          'guide-owner'
-        ],
-        tenant: [
-          'announcements',
-          'complaints',
-          'emergency',
-          'guide-tenant',
-          'history',
-          'hvac',
-          'parking',
-          'works'
-        ]
-      };
-
-      allowedPages = defaultPermissions[role] || ['building'];
+    if (error) {
+      console.error('[layout.js] Sidebar permissions could not be loaded:', error);
+      document.querySelectorAll('.nav-item[data-page], .nav-admin-only').forEach(item => {
+        item.style.display = 'none';
+      });
+      return false;
     }
+
+    allowedPages = (permissions || []).map(p => p.page);
   }
 
-  // Sidebar 메뉴 항목 숨기기/표시
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     const page = item.dataset.page;
+    const isAdminOnly = item.classList.contains('nav-admin-only');
+    const allowed = role === 'admin'
+      ? allowedPages.includes(page)
+      : !isAdminOnly && allowedPages.includes(page);
 
-    if (allowedPages.includes(page)) {
-      item.style.display = 'flex';
-    } else {
-      item.style.display = 'none';
-    }
+    item.style.display = allowed ? 'flex' : 'none';
   });
+
+  // Admin group and links without data-page (such as CCTV) are Admin-only.
+  document.querySelectorAll('.nav-admin-only').forEach(item => {
+    item.style.display = role === 'admin'
+      ? (item.classList.contains('nav-group') ? 'block' : 'flex')
+      : 'none';
+  });
+
+  // Hide a navigation group when the current role has no visible pages in it.
+  document.querySelectorAll('.nav-group:not(.nav-admin-only)').forEach(group => {
+    const hasVisiblePage = [...group.querySelectorAll('.nav-item[data-page]')]
+      .some(item => item.style.display !== 'none');
+    group.style.display = hasVisiblePage ? '' : 'none';
+  });
+
+  return true;
 }
 
 function setActiveMenu() {
@@ -233,16 +149,38 @@ function setActiveMenu() {
   });
 }
 
-function checkPageAccess(role) {
+async function checkPageAccess(role, supabase) {
   const currentPage = getCurrentPage();
   const config = PAGE_CONFIG[currentPage];
 
-  if (!config) return;
-  if (!config.allowedRoles) return;
+  if (!config) return true;
 
-  if (!config.allowedRoles.includes(role)) {
-    window.location.href = '/pages/announcements.html';
+  if (config.allowedRoles && !config.allowedRoles.includes(role)) {
+    window.location.replace('/pages/announcements.html');
+    return false;
   }
+
+  if (role === 'admin') return true;
+
+  const { data: permission, error } = await supabase
+    .from('sidebar_permissions')
+    .select('allowed')
+    .eq('role', role)
+    .eq('page', currentPage)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[layout.js] Page permission check failed:', error);
+    window.location.replace('/index.html');
+    return false;
+  }
+
+  if (permission?.allowed !== true) {
+    window.location.replace('/pages/announcements.html');
+    return false;
+  }
+
+  return true;
 }
 
 function updateUserUI(name, role) {
@@ -648,12 +586,14 @@ export async function initLayout() {
       return null;
     }
 
-    checkPageAccess(role);
+    const hasPageAccess = await checkPageAccess(role, supabase);
+    if (!hasPageAccess) return null;
 
-    await applyRoleMenuControl(
-      role,
-      supabase
-    );
+    const sidebarReady = await applyRoleMenuControl(role, supabase);
+    if (!sidebarReady) {
+      window.location.replace('/index.html');
+      return null;
+    }
 
     setActiveMenu();
 
