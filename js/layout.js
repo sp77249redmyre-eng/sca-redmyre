@@ -197,14 +197,13 @@ async function applyRoleMenuControl(role, supabase) {
         ],
         tenant: [
           'announcements',
-          'service-reports',
-          'parking',
           'complaints',
-          'hvac',
           'emergency',
-          'works',
-          'occupants',
-          'guide-tenant'
+          'guide-tenant',
+          'history',
+          'hvac',
+          'parking',
+          'works'
         ]
       };
 
