@@ -115,9 +115,11 @@ async function applyRoleMenuControl(role, supabase) {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     const page = item.dataset.page;
     const isAdminOnly = item.classList.contains('nav-admin-only');
+    const pageConfig = PAGE_CONFIG[page];
+    const roleAllowedByPage = !pageConfig?.allowedRoles || pageConfig.allowedRoles.includes(role);
     const allowed = role === 'admin'
       ? allowedPages.includes(page)
-      : !isAdminOnly && allowedPages.includes(page);
+      : !isAdminOnly && roleAllowedByPage && allowedPages.includes(page);
 
     item.style.display = allowed ? 'flex' : 'none';
   });
