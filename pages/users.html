@@ -689,7 +689,7 @@ if (permissionsDisplayEl) {
     const ring = document.getElementById('permRing');
     if (!ring || document.getElementById('permRoleSelect')?.value === 'admin') return;
     const total = SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.length,0);
-    const denied = SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.filter(p=>currentPermissions[p]===false).length,0);
+    const denied = SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.filter(p=>currentPermissions[p]!==true).length,0);
     ring.textContent = total - denied;
   });
 }
@@ -1291,12 +1291,45 @@ await loadUsers();
 
 // Sidebar Permissions
 let currentPermissions = {};
+let sidebarPermissionsLoaded = false;
 
 async function loadSidebarPermissions() {
-const selectedRole=document.getElementById('permRoleSelect').value;
-if(selectedRole==='admin') currentPermissions={};
-else {const {data:perms}=await supabase.from('sidebar_permissions').select('*').eq('role',selectedRole);currentPermissions={};if(perms)perms.forEach(p=>currentPermissions[p.page]=p.allowed);}
-renderSidebarPermissions(selectedRole);
+  const selectedRole = document.getElementById('permRoleSelect').value;
+  sidebarPermissionsLoaded = false;
+
+  if (selectedRole === 'admin') {
+    currentPermissions = {};
+  } else {
+    const { data: perms, error } = await supabase
+      .from('sidebar_permissions')
+      .select('page, allowed')
+      .eq('role', selectedRole);
+
+    if (error) {
+      console.error('[Users] Failed to load sidebar permissions:', error);
+      document.getElementById('savePermBtn').disabled = true;
+      showToast('Failed to load role permissions. No changes were saved.', true);
+      return;
+    }
+
+    currentPermissions = {};
+    (perms || []).forEach(p => {
+      currentPermissions[p.page] = p.allowed === true;
+    });
+
+    // Missing permission rows must be treated as denied, never granted by default.
+    SIDEBAR_PERMISSION_GROUPS.forEach(group => {
+      group.pages.forEach(page => {
+        if (typeof currentPermissions[page] !== 'boolean') {
+          currentPermissions[page] = false;
+        }
+      });
+    });
+  }
+
+  sidebarPermissionsLoaded = true;
+  document.getElementById('savePermBtn').disabled = selectedRole === 'admin';
+  renderSidebarPermissions(selectedRole);
 }
 
 const SIDEBAR_PERMISSION_GROUPS = [
@@ -1355,7 +1388,7 @@ function renderSidebarPermissions(selectedRole){
   const groupsHTML=SIDEBAR_PERMISSION_GROUPS.map(group=>{
     const groupPages=group.pages;
     const items=groupPages.map(page=>{
-      const on=disabled||currentPermissions[page]!==false;
+      const on=disabled||currentPermissions[page]===true;
       return `<div class="perm-group-row ${on?'is-on':'is-off'}">
         <span class="perm-page-icon">${PAGE_ICONS[page]}</span>
         <div class="perm-copy">
@@ -1381,7 +1414,7 @@ function renderSidebarPermissions(selectedRole){
     </section>`;
   }).join('');
 
-  document.getElementById('permissionsDisplay').innerHTML=`<div class="perm-layout"><div class="role-panel"><div class="role-panel-title">Select Role</div>${roleHTML}</div><div class="perm-main"><div class="perm-main-head"><div><div class="perm-main-title">${selectedRole.charAt(0).toUpperCase()+selectedRole.slice(1)} Role Permissions</div><div class="perm-main-sub">Manage which pages this role can access</div></div><div class="perm-summary"><div class="perm-ring" id="permRing">${disabled?'ALL':SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.length,0) - SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.filter(p=>currentPermissions[p]===false).length,0)}</div><span>Pages Allowed</span></div></div>${disabled?'<div class="perm-warning" style="margin-bottom:12px">⚠️ <strong>Admin role cannot be modified.</strong><br>Admin has full access to all pages for security and system management purposes.</div>':''}<div class="perm-group-grid">${groupsHTML}</div></div></div>`;
+  document.getElementById('permissionsDisplay').innerHTML=`<div class="perm-layout"><div class="role-panel"><div class="role-panel-title">Select Role</div>${roleHTML}</div><div class="perm-main"><div class="perm-main-head"><div><div class="perm-main-title">${selectedRole.charAt(0).toUpperCase()+selectedRole.slice(1)} Role Permissions</div><div class="perm-main-sub">Manage which pages this role can access</div></div><div class="perm-summary"><div class="perm-ring" id="permRing">${disabled?'ALL':SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.length,0) - SIDEBAR_PERMISSION_GROUPS.reduce((n,g)=>n+g.pages.filter(p=>currentPermissions[p]!==true).length,0)}</div><span>Pages Allowed</span></div></div>${disabled?'<div class="perm-warning" style="margin-bottom:12px">⚠️ <strong>Admin role cannot be modified.</strong><br>Admin has full access to all pages for security and system management purposes.</div>':''}<div class="perm-group-grid">${groupsHTML}</div></div></div>`;
 
   document.getElementById('savePermBtn').style.display=disabled?'none':'block';
 }
@@ -1389,36 +1422,78 @@ function renderSidebarPermissions(selectedRole){
 document.getElementById('permRoleSelect').addEventListener('change', () => { appReadyPromise.then(ready => { if (ready && appReady) return loadSidebarPermissions(); }).catch(e => console.error('[Users] permission role change failed:', e)); });
 
 document.getElementById('savePermBtn').addEventListener('click', async () => {
-const selectedRole = document.getElementById('permRoleSelect').value;
-const btn = document.getElementById('savePermBtn');
+  const selectedRole = document.getElementById('permRoleSelect').value;
+  const btn = document.getElementById('savePermBtn');
 
-btn.disabled = true; btn.textContent = 'Saving...';
+  if (selectedRole === 'admin') {
+    showToast('Admin permissions cannot be changed.', true);
+    return;
+  }
 
-try {
-await supabase.from('sidebar_permissions').delete().eq('role', selectedRole);
+  if (!sidebarPermissionsLoaded) {
+    showToast('Permissions are not loaded. Reload the role before saving.', true);
+    return;
+  }
 
-const permsToInsert = Object.entries(currentPermissions).map(([page, allowed]) => ({
-role: selectedRole, page: page, allowed: allowed
-}));
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
-const { error } = await supabase.from('sidebar_permissions').insert(permsToInsert);
-if (error) throw error;
+  try {
+    const permsToSave = Object.entries(currentPermissions).map(([page, allowed]) => ({
+      role: selectedRole,
+      page,
+      allowed: allowed === true
+    }));
 
-await writeAuditLog({
-user_id: user.id,
-user_name: user.user_metadata?.full_name || user.email,
-user_email: user.email,
-action: 'sidebar_permissions_updated',
-details: { role: selectedRole, permissions: currentPermissions }
-});
+    if (!permsToSave.length) {
+      throw new Error('No permission records are available to save.');
+    }
 
-showToast(`Sidebar permissions saved for ${selectedRole} ✓`);
-} catch(e) {
-console.error('Save permissions error:', e);
-showToast('Failed to save permissions', true);
-} finally {
-btn.disabled = false; btn.textContent = '💾 Save Changes';
-}
+    // Upsert avoids deleting the role's complete permission set before reinserting it.
+    const { error: saveError } = await supabase
+      .from('sidebar_permissions')
+      .upsert(permsToSave, { onConflict: 'role,page' });
+
+    if (saveError) throw saveError;
+
+    // Read back the saved values before reporting success.
+    const { data: savedRows, error: verifyError } = await supabase
+      .from('sidebar_permissions')
+      .select('page, allowed')
+      .eq('role', selectedRole);
+
+    if (verifyError) throw verifyError;
+
+    const verifiedPermissions = {};
+    (savedRows || []).forEach(row => {
+      verifiedPermissions[row.page] = row.allowed === true;
+    });
+
+    for (const row of permsToSave) {
+      if (verifiedPermissions[row.page] !== row.allowed) {
+        throw new Error(`Permission verification failed for ${row.page}.`);
+      }
+    }
+
+    currentPermissions = verifiedPermissions;
+    renderSidebarPermissions(selectedRole);
+
+    await writeAuditLog({
+      user_id: user.id,
+      user_name: user.user_metadata?.full_name || user.email,
+      user_email: user.email,
+      action: 'sidebar_permissions_updated',
+      details: { role: selectedRole, permissions: currentPermissions }
+    });
+
+    showToast(`Sidebar permissions saved and verified for ${selectedRole} ✓`);
+  } catch(e) {
+    console.error('Save permissions error:', e);
+    showToast(e.message || 'Failed to save permissions', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Changes';
+  }
 });
 
 // Activity Log
