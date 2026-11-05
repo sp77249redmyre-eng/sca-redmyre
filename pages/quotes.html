@@ -395,11 +395,21 @@
   box-shadow:0 1px 3px rgba(15,23,42,.05);
   transition:border-color .15s,background .15s,box-shadow .15s;
 }
-.vendor-details.show .detail-file-link::before{
-  content:"▤";position:absolute;left:12px;top:50%;transform:translateY(-50%);
-  width:34px;height:38px;display:flex;align-items:center;justify-content:center;
-  border:1px solid #fecaca;border-radius:8px;background:#fff1f2;
-  color:#dc2626;font-size:22px;line-height:1;
+.vendor-details.show .detail-file-link::before{content:none}
+.vendor-details.show .quote-file-badge{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  width:38px;height:40px;display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;border:1px solid #fecaca;border-radius:8px;
+  background:#dc2626;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:10px;font-weight:800;letter-spacing:.02em;line-height:1;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);
+}
+.vendor-details.show .quote-file-badge-word{background:#2563eb;border-color:#bfdbfe}
+.vendor-details.show .quote-file-badge-xls{background:#15803d;border-color:#bbf7d0}
+.vendor-details.show .quote-file-badge-img{background:#7c3aed;border-color:#ddd6fe}
+.vendor-details.show .quote-file-badge-file{background:#64748b;border-color:#cbd5e1}
+.vendor-details.show .quote-file-name{
+  display:block;min-width:0;width:100%;overflow-wrap:anywhere;line-height:1.4;
 }
 .vendor-details.show .detail-file-link::after{
   content:"OPEN ↗";position:absolute;right:10px;top:50%;transform:translateY(-50%);
@@ -1118,7 +1128,13 @@ function renderPendingQuotes(quotes) {
         files.forEach(f => {
           const a = document.createElement('a');
           a.className = 'detail-file-link'; a.href = '#';
-          a.innerHTML = '' + escHtml(f.name);
+          const ext = (f.name || '').split('.').pop().toLowerCase();
+          const fileBadge = ext === 'pdf' ? 'PDF'
+            : ['doc','docx'].includes(ext) ? 'WORD'
+            : ['xls','xlsx'].includes(ext) ? 'XLS'
+            : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'IMG' : 'FILE';
+          const badgeClass = fileBadge.toLowerCase();
+          a.innerHTML = `<span class="quote-file-badge quote-file-badge-${badgeClass}">${fileBadge}</span><span class="quote-file-name">${escHtml(f.name)}</span>`;
           a.onclick = (e) => { e.preventDefault(); openFileViewer(f.path || f.url || '', f.name, f.type || ''); };
           fw.appendChild(a);
         });
