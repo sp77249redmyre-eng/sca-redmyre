@@ -1546,7 +1546,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
         detailsDiv.appendChild(filesLine);
       }
       // Admin Edit 버튼 — 기존 editQuote() 함수 호출
-      const _editFinalized = group.some(q => ['approved','declined','onhold','force_approved'].includes(q.status));
+      const _editFinalized = group.some(q => ['approved','declined','force_approved'].includes(q.status));
       if (role === 'admin' && !_editFinalized) {
         const editRow = document.createElement('div');
         editRow.style.cssText = 'padding:10px 0 4px;display:flex;justify-content:flex-end';
@@ -2272,6 +2272,21 @@ function renderOnHoldQuotes(quotes) {
         filesLine.appendChild(noFiles);
       }
       detail.appendChild(filesLine);
+
+      if (role === 'admin') {
+        const editQuoteRow = document.createElement('div');
+        editQuoteRow.style.cssText = 'display:flex;justify-content:flex-end;padding-top:14px;margin-top:8px;border-top:1px solid rgba(128,166,204,.2)';
+        const editQuoteBtn = document.createElement('button');
+        editQuoteBtn.type = 'button';
+        editQuoteBtn.className = 'btn-mgmt btn-mgmt-blue';
+        editQuoteBtn.textContent = 'Edit Quote';
+        editQuoteBtn.onclick = (e) => {
+          e.stopPropagation();
+          editQuote(q.id);
+        };
+        editQuoteRow.appendChild(editQuoteBtn);
+        detail.appendChild(editQuoteRow);
+      }
 
       const toggleDetail = (e) => {
         if (e) e.stopPropagation();
