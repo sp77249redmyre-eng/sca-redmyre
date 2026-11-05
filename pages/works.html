@@ -485,6 +485,133 @@
 }
 
 </style>
+<style>
+
+/* ── Unified attachments: Quotes / Works / Reports ── */
+.attachment-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));
+  gap:10px;
+  align-items:stretch;
+}
+.attachment-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  min-height:74px;
+  box-sizing:border-box;
+  padding:12px 14px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);
+  color:#174ea6;
+  text-decoration:none;
+  cursor:pointer;
+  box-shadow:0 1px 3px rgba(15,23,42,.05);
+  transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.attachment-card:hover{
+  border-color:#60a5fa;
+  background:#eff6ff;
+  box-shadow:0 3px 10px rgba(37,99,235,.10);
+}
+.attachment-card:focus-visible{
+  outline:3px solid rgba(37,99,235,.25);
+  outline-offset:2px;
+}
+.attachment-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:44px;
+  flex:0 0 42px;
+  box-sizing:border-box;
+  border:1px solid #fecaca;
+  border-radius:8px;
+  background:#dc2626;
+  color:#fff;
+  font-family:'DM Sans',sans-serif;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.02em;
+  line-height:1;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);
+}
+.attachment-badge-word{background:#2563eb;border-color:#bfdbfe}
+.attachment-badge-xls{background:#15803d;border-color:#bbf7d0}
+.attachment-badge-img{background:#7c3aed;border-color:#ddd6fe}
+.attachment-badge-file{background:#64748b;border-color:#cbd5e1}
+.attachment-info{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+}
+.attachment-name{
+  display:block;
+  min-width:0;
+  color:#174ea6;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.attachment-size{
+  display:block;
+  color:#64748b;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.3;
+}
+.attachment-open{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  margin-left:auto;
+  padding:8px 10px;
+  border:1px solid #bfdbfe;
+  border-radius:7px;
+  background:#eff6ff;
+  color:#1d4ed8;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+.attachment-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  margin-left:auto;
+}
+.attachment-delete{
+  padding:7px 9px;
+  border:1px solid #fecaca;
+  border-radius:7px;
+  background:#fff;
+  color:#b91c1c;
+  font:700 11px 'DM Sans',sans-serif;
+  cursor:pointer;
+}
+.attachment-delete:hover{background:#fef2f2}
+@media(max-width:560px){
+  .attachment-grid{grid-template-columns:1fr;gap:8px}
+  .attachment-card{min-height:66px;padding:10px;gap:10px}
+  .attachment-badge{width:36px;height:38px;flex-basis:36px;font-size:9px}
+  .attachment-name{font-size:13.5px}
+  .attachment-open{padding:7px 8px;font-size:10px}
+  .attachment-actions{gap:5px}
+}
+
+</style>
 </head>
 <body>
 <div id="sidebarPlaceholder"></div>
@@ -946,11 +1073,13 @@ function workCard(w) {
       const fileBadge = ext === 'pdf' ? 'PDF'
         : ['doc','docx'].includes(ext) ? 'WORD'
         : ['xls','xlsx'].includes(ext) ? 'XLS'
-        : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'IMG' : 'FILE';
+        : ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'IMG' : 'FILE';
       const badgeClass = fileBadge.toLowerCase();
-      filesHtml += `<div class="file-preview" onclick="openFileViewer('${f.path}','${f.name}','${f.type}');event.stopPropagation();">
-        <span class="file-icon file-icon-${badgeClass}">${fileBadge}</span>
-        <span class="file-name">${f.name}</span>
+      const sizeLabel = f.size ? Math.round(Number(f.size)/1024).toLocaleString('en-AU') + ' KB' : '';
+      filesHtml += `<div class="attachment-card work-attachment" onclick="openFileViewer('${f.path}','${f.name}','${f.type}');event.stopPropagation();">
+        <span class="attachment-badge attachment-badge-${badgeClass}">${fileBadge}</span>
+        <span class="attachment-info"><span class="attachment-name">${f.name}</span><span class="attachment-size">${sizeLabel}</span></span>
+        <span class="attachment-open">OPEN ↗</span>
       </div>`;
     });
   }
