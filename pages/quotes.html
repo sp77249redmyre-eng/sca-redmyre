@@ -1,89 +1,3482 @@
-/* ── C layout: clear status bands above the existing project cards ── */
-.quote-section-stack{
-  display:flex;
-  flex-direction:column;
-  gap:20px;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote Approvals – Redmyre House</title>
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Redmyre BMS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+/* ── Page Header ── */
+.page-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;margin-bottom:0}
+.page-label-bar{width:4px;height:16px;border-radius:2px;background:#2563eb;display:inline-block;flex-shrink:0}
+.rule-info{font-size:13px;line-height:1.7;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:0 10px 10px 0;color:#475569;margin-bottom:28px}
+.project-card{background:#fff;border:0.5px solid #e2e8f0;border-radius:16px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow 0.2s}
+.project-card:hover{box-shadow:0 6px 24px rgba(0,0,0,0.08)}
+.project-header{padding:16px 20px;border-bottom:0.5px solid #f1f5f9;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.project-header-left{display:flex;align-items:center;gap:12px}
+.project-title{font-size:15px;font-weight:600;color:#1e293b}
+.project-meta{font-size:12px;color:#64748b;margin-left:4px}
+.send-btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;box-shadow:0 2px 6px rgba(37,99,235,0.25)}
+.send-btn:hover{background:#1d4ed8;transform:translateY(-1px)}
+.send-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+.voting-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:#dcfce7;border:0.5px solid #4ade80;border-radius:100px;font-size:12px;font-weight:600;color:#166534}
+.draft-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:#f1f5f9;border:0.5px solid #cbd5e1;border-radius:100px;font-size:12px;font-weight:600;color:#64748b}
+.vendor-list{padding:14px 16px 8px;max-width:70%;box-sizing:border-box}
+.vendor-item{border:0.5px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color 0.15s,box-shadow 0.15s}
+.vendor-item:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06)}
+.vendor-item.is-selected{border-color:#4ade80;box-shadow:0 2px 10px rgba(34,197,94,0.12)}
+.vendor-item.is-winner{animation:winnerPulse 1.8s ease-in-out infinite;border:2px solid #22c55e !important;background:#f0fdf4 !important}
+.vendor-item.is-winner .vendor-header{background:#f0fdf4 !important}
+@keyframes winnerPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.45)}50%{box-shadow:0 0 0 10px rgba(34,197,94,0)}}
+.vendor-item:last-child{margin-bottom:4px}
+.vendor-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background 0.15s;background:#fff}
+.vendor-header:hover{background:#f8fafc}
+.vendor-header.hdr-selected{background:#f0fdf4}
+.vendor-content{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.vendor-name{font-size:16px;font-weight:800;color:#0f172a;line-height:1.4;word-break:normal;overflow-wrap:break-word;letter-spacing:-0.01em}
+.vendor-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.vendor-amount{font-size:13px;color:#475569;font-weight:600}
+.vendor-selected-tag{font-size:11px;color:#16a34a;font-weight:700;letter-spacing:0.5px;line-height:1}
+.view-hint-banner{display:flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(90deg,#fef3c7 0%,#fde68a 100%);border-bottom:1.5px solid #f59e0b;font-size:13px;color:#92400e;font-weight:600}
+.view-hint-banner svg{flex-shrink:0}
+.view-hint-banner .bounce-arrow{display:inline-block;animation:bounceArrow 1.2s ease-in-out infinite;font-size:16px}
+@keyframes bounceArrow{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.btn-view-details{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;animation:viewDetailsPulse 2s ease-in-out infinite;transition:transform 0.15s,background 0.15s}
+.btn-view-details:hover{transform:scale(1.05);animation:none;background:#1d4ed8}
+.btn-view-details.is-open{animation:none;background:#475569}
+.btn-view-details.is-open:hover{background:#334155}
+@keyframes viewDetailsPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.6)}50%{box-shadow:0 0 0 8px rgba(37,99,235,0)}}
+@keyframes pulseVote{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.5)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.vendor-status{min-width:130px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.select-btn{background:#22c55e;color:#fff;padding:6px 16px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all 0.15s;box-shadow:0 2px 6px rgba(34,197,94,0.25)}
+.select-btn:hover{background:#16a34a;transform:translateY(-1px)}
+.select-btn:disabled{background:#86efac;cursor:not-allowed;transform:none;box-shadow:none}
+.deselect-btn{background:#fff;color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #fca5a5;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.deselect-btn:hover{background:#fef2f2;border-color:#ef4444}
+.deselect-btn:disabled{opacity:0.5;cursor:not-allowed}
+.badge-selected{color:#16a34a;font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px}
+.badge-x{color:#ef4444;font-size:20px;font-weight:700;line-height:1}
+.vendor-details{display:none;padding:14px 18px 16px;background:#f8fafc;border-top:0.5px solid #e2e8f0;font-size:15px;color:#0f172a;line-height:1.7;white-space:pre-wrap}
+.vendor-details.show{display:block}
+.detail-line{margin-bottom:10px;display:flex;gap:10px}
+.detail-label{font-weight:800;color:#0f172a;min-width:96px;flex-shrink:0;font-size:14px}
+.detail-files{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.detail-file-link{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;background:#fff;border:0.5px solid #dbeafe;border-radius:7px;font-size:14px;color:#2563eb;text-decoration:none;transition:background 0.15s}
+.detail-file-link:hover{background:#eff6ff}
+.voting-section{padding:24px 20px 18px;border-top:0.5px solid #f1f5f9;background:transparent}
+.section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#0c2756;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 10px;padding:7px 14px;background:#dbeafe;border:1px solid #60a5fa;border-radius:8px;width:fit-content;min-width:340px;flex-wrap:wrap}
+.section-title:not(:first-child){margin-top:14px}
+.section-title:first-child{margin-top:0}
+.section-title:first-child{margin-top:-18px}
+.section-title .tally-inline{display:flex;gap:5px;margin-left:8px}
+.section-title .tally-pill{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0}
+.action-buttons{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.btn-admin-row{display:flex;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.btn-action{padding:10px 24px;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;min-width:100px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+.btn-action:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-approve{background:linear-gradient(135deg,#16a34a,#22c55e)}.btn-approve:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,0.3)}
+.btn-hold{background:linear-gradient(135deg,#ca8a04,#eab308)}.btn-hold:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(234,179,8,0.3)}
+.btn-decline{background:linear-gradient(135deg,#dc2626,#ef4444)}.btn-decline:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(239,68,68,0.3)}
+.comments-box{padding:12px 14px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:10px;margin-bottom:4px;font-size:13px;max-height:140px;overflow-y:auto}
+.comment-item{margin-bottom:8px;line-height:1.5;padding-bottom:8px;border-bottom:0.5px solid #f1f5f9}
+.comment-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.comment-author{font-weight:600;color:#1e293b}
+.comment-text{color:#475569;margin-left:4px}
+.pc-thread{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;max-height:1200px;overflow-y:auto;background:#fff;border:0.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;max-width:70%;box-sizing:border-box}
+.pc-msg{border-radius:9px;padding:11px 15px;font-size:16px;line-height:1.7}
+.pc-msg-admin{background:#f0fdf4;border:0.5px solid #bbf7d0}
+.pc-msg-committee{background:#f8fafc;border:0.5px solid #e2e8f0}
+.pc-msg-name{font-size:11px;font-weight:600;margin-bottom:3px}
+.pc-msg-name-admin{color:#166534}
+.pc-msg-name-committee{color:#475569}
+.pc-msg-time{font-size:12px;color:#94a3b8;margin-top:3px}
+.pc-msg-body{color:#0f172a}
+.pc-del{margin-left:8px;font-size:11px;color:#ef4444;cursor:pointer;opacity:0.7}
+.pc-del:hover{opacity:1}
+.input-area{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-bottom:4px;max-width:70%}
+.input-area textarea{width:100%;padding:11px 14px;border:0.5px solid #e2e8f0;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;min-height:160px;background:#fff;color:#0f172a;resize:vertical;box-sizing:border-box;transition:border-color 0.15s}
+.input-area textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.input-area .submit-row{display:flex;justify-content:flex-end}
+.submit-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:9px 22px;border:none;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;box-shadow:0 2px 8px rgba(37,99,235,0.25)}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,0.35)}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+.voting-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0;background:transparent;border:none;border-radius:0;margin-bottom:4px}
+.vote-cell{padding:10px 14px;background:#fff;border-radius:9px;border:0.5px solid #e2e8f0;min-width:0;display:flex;flex-direction:column;gap:6px}
+.vote-cell-me{background:#eff6ff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(37,99,235,0.1)}
+.vote-name{font-weight:700;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.01em;width:100%}
+.vote-value{font-size:14px;font-weight:800;letter-spacing:0.01em;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vote-value.v-approve{color:#15803d}
+.vote-value.v-hold{color:#a16207}
+.vote-value.v-decline{color:#b91c1c}
+.vote-value.v-pending{color:#6366f1}
+.vote-value.v-closed{color:#cbd5e1}
+@media(max-width:900px){.voting-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.voting-grid{grid-template-columns:repeat(2,1fr)}}
+.result-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.result-box{padding:12px 22px!important;border-radius:10px;border:2px solid;font-size:16px!important;font-weight:800!important;line-height:1.2!important;display:inline-flex!important;align-items:center;gap:10px;margin:0!important;letter-spacing:0.02em;align-self:flex-start;width:fit-content!important}
+.result-pending{background:#fff7ed;border-color:#f97316;color:#c2410c}
+.result-approved{background:#ecfdf5;border-color:#4ade80;color:#166534}
+.result-declined{background:#fee2e2;border-color:#f87171;color:#991b1b}
+.result-onhold{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.result-tie{background:#f3e8ff;border-color:#c084fc;color:#6b21a8}
+.confirm-btn{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:8px 18px;border:none;border-radius:9999px;font-size:13px;font-weight:700;cursor:pointer;width:auto;margin:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(37,99,235,0.3);letter-spacing:0.02em;white-space:nowrap}
+.confirm-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,0.4)}
+.confirm-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+.draft-overlay{padding:24px;text-align:center;color:#94a3b8;font-size:14px;border-top:0.5px solid #f1f5f9}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn-pill{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;border:0.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.btn-pill:hover{border-color:#2563eb;color:#2563eb}
+.btn-pill-active{background:#1e3a8a;color:#fff;border-color:#1e3a8a}
+.btn-pill-primary{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:10px;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:all 0.2s}
+.btn-pill-primary:hover{box-shadow:0 6px 20px rgba(37,99,235,0.4);transform:translateY(-1px)}
+.btn-pill-danger{background:#fff;color:#dc2626;border:0.5px solid #fca5a5}
+.btn-pill-danger:hover{background:#fef2f2}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.status-draft{background:#f1f5f9;color:#64748b}
+.status-voting{background:#dbeafe;color:#1e40af}
+.status-onhold{background:#fef3c7;color:#92400e}
+.status-declined{background:#fee2e2;color:#991b1b}
+.status-approved{background:#dcfce7;color:#166534}
+.status-expired{background:#f1f5f9;color:#64748b}
+.reopen-btn{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;padding:6px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.reopen-btn:hover{transform:translateY(-1px)}
+.toast{position:fixed;bottom:28px;right:28px;padding:14px 22px;border-radius:12px;color:#fff;font-size:14px;display:none;z-index:9999;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+.toast.show{display:block}
+.modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);display:none;align-items:center;justify-content:center;z-index:1000;overflow-y:auto;backdrop-filter:blur(2px)}
+.modal-backdrop.open{display:flex}
+.modal-box{background:#fff;border-radius:18px;padding:28px;max-width:680px;width:92%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.modal-title{font-size:20px;font-weight:600;color:#1e293b;margin-bottom:24px}
+.modal-field{margin-bottom:20px}
+.modal-label{font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:8px}
+.modal-input,.modal-select,.modal-textarea{width:100%;padding:12px 16px;border:0.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;box-sizing:border-box;transition:border-color 0.15s}
+.modal-input:focus,.modal-select:focus,.modal-textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.modal-textarea{min-height:90px;resize:vertical}
+.modal-footer{display:flex;gap:12px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
+.modal-input:disabled,.modal-select:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
+.file-upload-area{border:2px dashed #e2e8f0;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;background:#fafafa}
+.file-upload-area:hover{border-color:#2563eb;background:#eff6ff}
+.file-upload-area input[type=file]{display:none}
+.file-list{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.file-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:#eff6ff;border:0.5px solid #bfdbfe;border-radius:7px;font-size:12px;color:#1d4ed8}
+.file-chip button{background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;line-height:1;padding:0;transition:color 0.15s}
+.file-chip button:hover{color:#ef4444}
+@media(max-width:768px){
+  .action-buttons,.btn-admin-row{flex-direction:column}
+  .btn-action{width:100%}
+  .confirm-btn{width:auto}
+  .voting-grid{grid-template-columns:1fr}
+
+  /* 줌인 방지 */
+  .modal-input,.modal-select,.modal-textarea{font-size:16px}
+  .edit-form-input,.edit-form-select{font-size:16px;height:44px}
+  .input-area textarea{font-size:14px;min-height:160px}
+
+  /* 모달 패딩 축소 */
+  .modal-box{padding:18px;max-height:94vh}
+  .modal-title{font-size:17px;margin-bottom:16px}
+  .modal-field{margin-bottom:14px}
+  .modal-footer{flex-direction:column-reverse;gap:8px;margin-top:18px}
+  .modal-footer button{width:100%;height:46px;font-size:14px}
+
+  /* 입력 영역 (input-area) 모바일 정리 */
+  .input-area{flex-direction:column;align-items:stretch;gap:8px;max-width:100%}
+  .pc-thread{max-width:100%}
+  .submit-btn{width:100%;height:46px;font-size:14px}
+
+  /* 벤더 컴팩트 */
+  .vendor-name{font-size:14px;font-weight:800}
+  .vendor-amount{font-size:12px}
+  .vendor-status{min-width:auto}
+  .vendor-content{gap:6px}
+  .vendor-header{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .vendor-status{flex-shrink:0}
+  .btn-view-details{padding:5px 10px;font-size:11px;flex-shrink:0}
+  .btn-view-details svg{display:none}
+  .view-hint-banner{font-size:11px;padding:7px 12px}
+  .detail-label{min-width:70px;font-size:11px}
+
+  /* 프로젝트 헤더 */
+  .project-title{font-size:14px}
+  .project-meta{font-size:11px}
+
+  /* 필터바 가로 스크롤 */
+  .filter-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .btn-pill{flex-shrink:0;white-space:nowrap}
+
+  /* Rule info 컴팩트 */
+  .rule-info{padding:12px 14px;font-size:12px;line-height:1.6;margin-bottom:18px}
+
+  /* Section title */
+  .section-title{font-size:12px;padding:5px 9px;min-width:auto;width:auto;max-width:100%}
+
+  /* Vendor details */
+  .vendor-details{padding:10px 12px}
 }
-.quote-section-heading{
-  min-height:42px;
-  box-sizing:border-box;
-  padding:9px 14px!important;
-  margin-bottom:10px!important;
-  border:1px solid rgba(255,255,255,.92);
-  border-radius:12px;
-  box-shadow:0 5px 16px rgba(52,105,160,.08),inset 0 1px 0 rgba(255,255,255,.92);
-  backdrop-filter:blur(16px) saturate(145%);
-  -webkit-backdrop-filter:blur(16px) saturate(145%);
+.btn-mgmt{padding:7px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.btn-mgmt-blue{background:#eff6ff;color:#1d4ed8;border:0.5px solid #bfdbfe}.btn-mgmt-blue:hover{background:#dbeafe}
+.btn-mgmt-yellow{background:#fefce8;color:#854d0e;border:0.5px solid #fde68a}.btn-mgmt-yellow:hover{background:#fef9c3}
+.btn-mgmt-green{background:#f0fdf4;color:#166534;border:0.5px solid #bbf7d0}.btn-mgmt-green:hover{background:#dcfce7}
+.btn-mgmt-red{background:#fff1f2;color:#9f1239;border:0.5px solid #fecdd3}.btn-mgmt-red:hover{background:#ffe4e6}
+.edit-project-form{background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-top:10px}
+.edit-form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.edit-form-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+.edit-form-label{font-size:12px;font-weight:600;color:#374151}
+.edit-form-input,.edit-form-select{padding:8px 12px;border:0.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;transition:border-color 0.15s}
+.edit-form-input:focus,.edit-form-select:focus{outline:none;border-color:#2563eb}
+
+/* ── 카테고리별 좌측 컬러 바 ── */
+.project-card[data-cat="General"]{background:#eff6ff}
+.project-card[data-cat="HVAC"]{background:#fff7ed}
+.project-card[data-cat="Fire"]{background:#fef2f2}
+.project-card[data-cat="Electrical"]{background:#fefce8}
+.project-card[data-cat="Security"]{background:#f5f3ff}
+.project-card[data-cat="Plumbing"]{background:#ecfeff}
+.project-card[data-cat="Lift"]{background:#f0fdf4}
+.project-card[data-cat="Legal"]{background:#fdf2f8}
+.project-card[data-cat="Other"]{background:#f8fafc}
+
+.project-card[data-cat="General"]    {border-left:5px solid #2563eb}
+.project-card[data-cat="HVAC"]       {border-left:5px solid #d97706}
+.project-card[data-cat="Fire"]       {border-left:5px solid #dc2626}
+.project-card[data-cat="Electrical"] {border-left:5px solid #ca8a04}
+.project-card[data-cat="Security"]   {border-left:5px solid #7c3aed}
+.project-card[data-cat="Plumbing"]   {border-left:5px solid #0891b2}
+.project-card[data-cat="Lift"]       {border-left:5px solid #059669}
+.project-card[data-cat="Legal"]      {border-left:5px solid #db2777}
+.project-card[data-cat="Other"]      {border-left:5px solid #94a3b8}
+
+.project-card[data-cat="General"] .project-header{background:#bfdbfe!important;border-color:#60a5fa!important;color:#1e3a8a!important}
+.project-card[data-cat="HVAC"] .project-header{background:#fed7aa!important;border-color:#fb923c!important;color:#7c2d12!important}
+.project-card[data-cat="Fire"] .project-header{background:#fecaca!important;border-color:#f87171!important;color:#7f1d1d!important}
+.project-card[data-cat="Electrical"] .project-header{background:#fde68a!important;border-color:#facc15!important;color:#713f12!important}
+.project-card[data-cat="Security"] .project-header{background:#ddd6fe!important;border-color:#a78bfa!important;color:#4c1d95!important}
+.project-card[data-cat="Plumbing"] .project-header{background:#a5f3fc!important;border-color:#22d3ee!important;color:#164e63!important}
+.project-card[data-cat="Lift"] .project-header{background:#bbf7d0!important;border-color:#4ade80!important;color:#14532d!important}
+.project-card[data-cat="Legal"] .project-header{background:#fbcfe8!important;border-color:#f472b6!important;color:#831843!important}
+.project-card[data-cat="Other"] .project-header{background:#e2e8f0!important;border-color:#94a3b8!important;color:#334155!important}
+
+/* ═══════════════════════════════════════════════════
+   GLASSMORPHISM — quotes.html only
+   배경 이미지가 body에 고정된 상태에서 카드에 blur 적용
+   JS / Supabase / 기존 레이아웃 일체 변경 없음
+   ═══════════════════════════════════════════════════ */
+
+/* Project Card 외곽 — 강한 Glass */
+.project-card {
+  background: rgba(255,255,255,0.62) !important;
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border-top: 1px solid rgba(255,255,255,0.82) !important;
+  border-right: 1px solid rgba(255,255,255,0.82) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.82) !important;
+  /* border-left is intentionally untouched: category colour stripe remains visible. */
+  box-shadow: 0 8px 32px rgba(30,58,138,0.10), inset 0 1px 0 rgba(255,255,255,0.85) !important;
 }
-#draftSection .quote-section-heading{
-  background:rgba(239,246,255,.76);
-  border-color:rgba(147,197,253,.68);
+.project-card:hover {
+  box-shadow: 0 12px 40px rgba(30,58,138,0.15), inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
-#currentVotingSection .quote-section-heading{
-  background:rgba(220,252,231,.72);
-  border-color:rgba(134,239,172,.76);
+
+/* 카테고리별 배경색 → Glass로 교체 (컬러 바는 border-left로 유지) */
+.project-card[data-cat="General"]    { background: rgba(239,246,255,0.68) !important; }
+.project-card[data-cat="HVAC"]       { background: rgba(255,247,237,0.68) !important; }
+.project-card[data-cat="Fire"]       { background: rgba(254,242,242,0.68) !important; }
+.project-card[data-cat="Electrical"] { background: rgba(254,252,232,0.68) !important; }
+.project-card[data-cat="Security"]   { background: rgba(245,243,255,0.68) !important; }
+.project-card[data-cat="Plumbing"]   { background: rgba(236,254,255,0.68) !important; }
+.project-card[data-cat="Lift"]       { background: rgba(240,253,244,0.68) !important; }
+.project-card[data-cat="Legal"]      { background: rgba(253,242,248,0.68) !important; }
+.project-card[data-cat="Other"]      { background: rgba(248,250,252,0.68) !important; }
+
+/* Project Header — 카테고리 색상 유지하되 약간 투명하게 */
+.project-card[data-cat="General"] .project-header    { background: rgba(191,219,254,0.75) !important; }
+.project-card[data-cat="HVAC"] .project-header       { background: rgba(254,215,170,0.75) !important; }
+.project-card[data-cat="Fire"] .project-header       { background: rgba(254,202,202,0.75) !important; }
+.project-card[data-cat="Electrical"] .project-header { background: rgba(253,230,138,0.75) !important; }
+.project-card[data-cat="Security"] .project-header   { background: rgba(221,214,254,0.75) !important; }
+.project-card[data-cat="Plumbing"] .project-header   { background: rgba(165,243,252,0.75) !important; }
+.project-card[data-cat="Lift"] .project-header       { background: rgba(187,247,208,0.75) !important; }
+.project-card[data-cat="Legal"] .project-header      { background: rgba(251,207,232,0.75) !important; }
+.project-card[data-cat="Other"] .project-header      { background: rgba(226,232,240,0.75) !important; }
+
+/* Vendor Details (펼쳤을 때) — 약한 Glass */
+.vendor-details {
+  background: rgba(248,250,252,0.82) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 0.5px solid rgba(255,255,255,0.7) !important;
 }
-#onHoldSection .quote-section-heading{
-  background:rgba(255,247,220,.78);
-  border-color:rgba(251,191,36,.62);
+
+/* Voting section 배경 투명 유지 (기존값 transparent) */
+.voting-section { background: transparent !important; }
+
+/* 실제 견적 페이지의 Voting Rule 안내 박스 — 약한 Glass */
+.vote-rule-banner {
+  background: rgba(219,234,254,0.78) !important;
+  backdrop-filter: blur(10px) saturate(125%);
+  -webkit-backdrop-filter: blur(10px) saturate(125%);
+  border: 1px solid rgba(147,197,253,0.88) !important;
+  box-shadow:
+    0 4px 14px rgba(30,64,175,0.07),
+    inset 0 1px 0 rgba(255,255,255,0.70) !important;
 }
-#draftSection .quote-section-toggle{
-  flex:1;
-  width:100%;
-  min-height:22px;
-  padding:0!important;
-  background:transparent!important;
+
+/* Result-box uses status colors (Option 2), not category */
+.result-pending{background:#fff7ed!important;border-color:#f97316!important;color:#c2410c!important}
+.result-approved{background:#dcfce7!important;border-color:#86efac!important;color:#166534!important}
+.result-declined{background:#fee2e2!important;border-color:#f87171!important;color:#7f1d1d!important}
+.result-onhold{background:#fef3c7!important;border-color:#fcd34d!important;color:#92400e!important}
+.result-tie{background:#f3e8ff!important;border-color:#c084fc!important;color:#6b21a8!important}
+/* 번호 뱃지 */
+.pnum{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;flex-shrink:0;white-space:nowrap;margin-right:4px}
+.pnum-blue  {background:#dbeafe;color:#1e40af}
+.pnum-amber {background:#fef3c7;color:#92400e}
+.pnum-red   {background:#fee2e2;color:#991b1b}
+.pnum-yellow{background:#fefce8;color:#854d0e}
+.pnum-purple{background:#ede9fe;color:#5b21b6}
+.pnum-teal  {background:#ecfeff;color:#0e7490}
+.pnum-green {background:#dcfce7;color:#166534}
+.pnum-pink  {background:#fce7f3;color:#9d174d}
+.pnum-gray  {background:#f1f5f9;color:#475569}
+/* Create Project 버튼 D 스타일 */
+.btn-create-project{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:10px;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:all 0.2s}
+.btn-create-project:hover{box-shadow:0 6px 20px rgba(37,99,235,0.4);transform:translateY(-1px)}
+.btn-create-project-icon{width:24px;height:24px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.btn-create-project-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1}
+.btn-create-project-main{font-size:13px;font-weight:600}
+.btn-create-project-sub{font-size:10px;opacity:0.75;margin-top:2px;font-weight:400}
+/* 모바일 */
+@media(max-width:768px){
+  .btn-create-project-sub{display:none}
+  .btn-create-project{padding:7px 12px;font-size:12px;flex-shrink:0}
+  .btn-create-project-icon{width:20px;height:20px;font-size:12px}
+  .btn-create-project-main{font-size:12px}
+  .project-header{padding:12px 14px}
+  .vendor-list{padding:10px 12px 6px;max-width:100%}
+  .vendor-header{padding:10px 12px}
+  .voting-section{padding:14px}
+  .voting-grid{grid-template-columns:1fr!important}
 }
-#draftSection .quote-section-toggle:hover{background:transparent!important}
-#draftSection .quote-section-accent{background:#3b82f6}
-#currentVotingSection .quote-section-accent{background:#16a34a}
-#onHoldSection .quote-section-accent{background:#d97706}
-#draftSection .quote-section-title,
-#currentVotingSection .quote-section-title,
-#onHoldSection .quote-section-title{
-  font-size:15px!important;
-  font-weight:800!important;
-  letter-spacing:.035em!important;
-  color:#17365d!important;
+
+/* ── Priority 뱃지 ── */
+.badge-priority{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;margin-left:6px}
+.badge-priority-normal{background:#f1f5f9;color:#64748b}
+.badge-priority-high{background:#fef3c7;color:#92400e;border:0.5px solid #fde68a}
+.badge-priority-urgent{background:#fee2e2;color:#991b1b;border:0.5px solid #fca5a5}
+</style>
+<style>
+
+/* ── Attachment readability: quote details only ── */
+.vendor-details.show>.detail-line:nth-child(5){
+  align-items:center;padding-top:14px;padding-bottom:10px;
+  font-weight:700;color:#0f1b33;
 }
-#currentVotingSection .quote-section-count{
-  background:rgba(187,247,208,.86);
-  color:#166534;
+.vendor-details.show>.detail-files{
+  grid-column:1/-1;grid-row:4;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));
+  gap:10px;padding:4px 26px 20px;margin:0;align-items:stretch;
 }
-#onHoldSection .quote-section-count{
-  background:rgba(253,230,138,.88);
-  color:#92400e;
+.vendor-details.show .detail-file-link{
+  position:relative;display:flex;align-items:center;min-width:0;min-height:68px;
+  box-sizing:border-box;padding:12px 88px 12px 58px;
+  border:1px solid #cbd5e1;border-radius:10px;
+  background:linear-gradient(180deg,#fff 0%,#f7faff 100%);
+  color:#174ea6;font-size:14px;font-weight:700;line-height:1.4;
+  text-decoration:none;white-space:normal;overflow-wrap:anywhere;
+  box-shadow:0 1px 3px rgba(15,23,42,.05);
+  transition:border-color .15s,background .15s,box-shadow .15s;
 }
-.quote-section-body{min-width:0}
-.quote-section-body[hidden]{display:none!important}
-@media(max-width:700px){
-  .quote-section-heading{padding:9px 11px!important}
-  #draftSection .quote-section-title,
-  #currentVotingSection .quote-section-title,
-  #onHoldSection .quote-section-title{font-size:14px!important}
+.vendor-details.show .detail-file-link::before{content:none}
+.vendor-details.show .quote-file-badge{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  width:38px;height:40px;display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;border:1px solid #fecaca;border-radius:8px;
+  background:#dc2626;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:10px;font-weight:800;letter-spacing:.02em;line-height:1;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);
+}
+.vendor-details.show .quote-file-badge-word{background:#2563eb;border-color:#bfdbfe}
+.vendor-details.show .quote-file-badge-xls{background:#15803d;border-color:#bbf7d0}
+.vendor-details.show .quote-file-badge-img{background:#7c3aed;border-color:#ddd6fe}
+.vendor-details.show .quote-file-badge-file{background:#64748b;border-color:#cbd5e1}
+.vendor-details.show .quote-file-name{
+  display:block;min-width:0;width:100%;overflow-wrap:anywhere;line-height:1.4;
+}
+.vendor-details.show .detail-file-link::after{
+  content:"OPEN ↗";position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  padding:7px 9px;border:1px solid #bfdbfe;border-radius:7px;
+  background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:800;letter-spacing:.02em;
+}
+.vendor-details.show .detail-file-link:hover{
+  border-color:#60a5fa;background:#eff6ff;box-shadow:0 3px 10px rgba(37,99,235,.10);
+}
+.vendor-details.show .detail-file-link:focus-visible{outline:3px solid rgba(37,99,235,.25);outline-offset:2px}
+@media(max-width:768px){
+  .vendor-details.show>.detail-files{grid-template-columns:1fr;padding:4px 16px 16px}
+  .vendor-details.show>.detail-line:nth-child(5){padding:14px 16px 8px}
 }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-<script>
-let _qN, _qI;
-window._initQuill = function(notes, note){
-  const notesTA = document.getElementById('quoteNotes');
-  const intTA = document.getElementById('quoteInternalNote');
-  if(!_qN){
-    const nd = document.createElement('div'); nd.id='_qNDiv'; notesTA.parentNode.insertBefore(nd, notesTA); notesTA.style.display='none';
-    const id = document.createElement('div'); id.id='_qIDiv'; intTA.parentNode.insertBefore(id, intTA); intTA.style.display='none';
-    _qN = new Quill('#_qNDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Brief description visible to voters…'});
-    _qI = new Quill('#_qIDiv',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Private notes for committee...'});
-    _qN.on('text-change',()=>{ notesTA.value=_qN.root.innerHTML; });
-    _qI.on('text-change',()=>{ intTA.value=_qI.root.innerHTML; });
+<style>
+
+/* ── Unified attachments: Quotes / Works / Reports ── */
+.attachment-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));
+  gap:10px;
+  align-items:stretch;
+}
+.attachment-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  min-height:74px;
+  box-sizing:border-box;
+  padding:12px 14px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);
+  color:#174ea6;
+  text-decoration:none;
+  cursor:pointer;
+  box-shadow:0 1px 3px rgba(15,23,42,.05);
+  transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.attachment-card:hover{
+  border-color:#60a5fa;
+  background:#eff6ff;
+  box-shadow:0 3px 10px rgba(37,99,235,.10);
+}
+.attachment-card:focus-visible{
+  outline:3px solid rgba(37,99,235,.25);
+  outline-offset:2px;
+}
+.attachment-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:44px;
+  flex:0 0 42px;
+  box-sizing:border-box;
+  border:1px solid #fecaca;
+  border-radius:8px;
+  background:#dc2626;
+  color:#fff;
+  font-family:'DM Sans',sans-serif;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.02em;
+  line-height:1;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);
+}
+.attachment-badge-word{background:#2563eb;border-color:#bfdbfe}
+.attachment-badge-xls{background:#15803d;border-color:#bbf7d0}
+.attachment-badge-img{background:#7c3aed;border-color:#ddd6fe}
+.attachment-badge-file{background:#64748b;border-color:#cbd5e1}
+.attachment-info{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+}
+.attachment-name{
+  display:block;
+  min-width:0;
+  color:#174ea6;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.attachment-size{
+  display:block;
+  color:#64748b;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.3;
+}
+.attachment-open{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  margin-left:auto;
+  padding:8px 10px;
+  border:1px solid #bfdbfe;
+  border-radius:7px;
+  background:#eff6ff;
+  color:#1d4ed8;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+.attachment-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  margin-left:auto;
+}
+.attachment-delete{
+  padding:7px 9px;
+  border:1px solid #fecaca;
+  border-radius:7px;
+  background:#fff;
+  color:#b91c1c;
+  font:700 11px 'DM Sans',sans-serif;
+  cursor:pointer;
+}
+.attachment-delete:hover{background:#fef2f2}
+@media(max-width:560px){
+  .attachment-grid{grid-template-columns:1fr;gap:8px}
+  .attachment-card{min-height:66px;padding:10px;gap:10px}
+  .attachment-badge{width:36px;height:38px;flex-basis:36px;font-size:9px}
+  .attachment-name{font-size:13.5px}
+  .attachment-open{padding:7px 8px;font-size:10px}
+  .attachment-actions{gap:5px}
+}
+
+
+/* ── Quotes attachment compatibility: unified card override ── */
+.vendor-details.show>.detail-files.attachment-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));
+  gap:10px;
+  padding:4px 26px 16px;
+  margin:0;
+  align-items:stretch;
+}
+.vendor-details.show .detail-file-link.attachment-card{
+  position:relative;
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-width:0;
+  min-height:74px;
+  box-sizing:border-box;
+  padding:12px 14px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);
+  color:#174ea6;
+  text-decoration:none;
+  overflow:visible;
+}
+.vendor-details.show .detail-file-link.attachment-card::before,
+.vendor-details.show .detail-file-link.attachment-card::after{
+  content:none!important;
+  display:none!important;
+}
+.vendor-details.show .detail-file-link.attachment-card .attachment-info{
+  display:flex;
+  flex:1 1 auto;
+  min-width:0;
+  padding:0;
+}
+.vendor-details.show .detail-file-link.attachment-card .attachment-name{
+  width:auto;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.vendor-details.show .detail-file-link.attachment-card .attachment-open{
+  position:static;
+  display:inline-flex;
+  flex:0 0 auto;
+  margin-left:auto;
+  transform:none;
+}
+@media(max-width:768px){
+  .vendor-details.show>.detail-files.attachment-grid{
+    grid-template-columns:1fr;
+    padding:4px 16px 16px;
   }
-  _qN.root.innerHTML = notes||'';
-  _qI.root.innerHTML = note||'';
+}
+
+
+/* ── Quotes sections: compact collapsible headings ── */
+.quote-section-stack{display:flex;flex-direction:column;gap:18px}
+.quote-section{min-width:0}
+.quote-section-heading{display:flex;align-items:center;gap:12px;margin-bottom:10px;min-width:0}
+.quote-section-toggle{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:9px 10px;background:transparent;border:0;border-radius:9px;text-align:left;cursor:pointer;color:#1e293b}
+.quote-section-toggle:hover{background:#f8fafc}
+.quote-section-accent{width:4px;height:22px;border-radius:3px;flex:0 0 4px;background:#2563eb}
+.quote-section-accent-voting{background:#2563eb}
+.quote-section-accent-hold{background:#d97706}
+.quote-section-title{font-size:15px;font-weight:800;letter-spacing:.045em;color:#1e293b}
+.quote-section-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 7px;border-radius:6px;background:#e2e8f0;color:#475569;font-size:12px;font-weight:800}
+.quote-section-count-hold{background:#fff4df;color:#9a6700}
+.quote-section-chevron{margin-left:auto;color:#64748b;font-size:19px;line-height:1}
+.quote-section-body[hidden]{display:none!important}
+.quote-place-hold-btn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.quote-place-hold-btn:hover{background:#ffedd5}
+.quote-place-hold-btn:disabled{opacity:.55;cursor:not-allowed}
+.onhold-table{width:100%;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff}
+.onhold-list-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;align-items:center;gap:14px;padding:14px 16px}
+.onhold-list-row{width:100%;border:0;border-bottom:1px solid #edf1f5;background:#fff;text-align:left;cursor:pointer;color:#1e293b;font-family:'DM Sans',sans-serif;font-size:13px}
+.onhold-list-row:last-of-type{border-bottom:0}
+.onhold-list-row:hover{background:#fffbf2}
+.onhold-project-name{font-size:14px;font-weight:700;color:#1e3a8a;min-width:0;overflow-wrap:anywhere}
+.onhold-meta{font-size:12px;color:#64748b}
+.onhold-status-pill{justify-self:start;padding:4px 9px;border:1px solid #f4d49b;border-radius:6px;background:#fff8e9;color:#9a6700;font-size:10px;font-weight:800;letter-spacing:.035em;white-space:nowrap}
+.onhold-row-chevron{justify-self:end;color:#9a6700;font-size:17px}
+.onhold-project-details{padding:14px 16px 16px;background:#fcfcfd;border-bottom:1px solid #e2e8f0}
+.onhold-project-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.onhold-project-actions .send-btn{margin-left:auto}
+.onhold-vendor-list{max-width:100%;width:100%;padding:0}
+.onhold-vendor-item{max-width:100%}
+.onhold-vendor-detail{padding:14px 16px;background:#fff;border-top:1px solid #edf1f5}
+.onhold-detail-line{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:13px;line-height:1.55}
+.onhold-detail-line:last-child{border-bottom:0}
+.onhold-detail-label{flex:0 0 112px;color:#64748b;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.035em}
+.onhold-detail-value{flex:1;min-width:0;color:#1e293b;overflow-wrap:anywhere}
+.onhold-edit-form{margin:8px 0 14px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px}
+@media(max-width:700px){
+  .quote-section-heading{align-items:flex-start;gap:6px}
+  .quote-section-toggle{padding:9px 6px}
+  .quote-section-title{font-size:14px}
+  .quote-section-heading .btn-create-project{flex:0 0 auto}
+  .onhold-list-row{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;padding:13px 12px}
+  .onhold-project-name{grid-column:1}
+  .onhold-meta{grid-column:1}
+  .onhold-status-pill{grid-column:2;grid-row:1;justify-self:end}
+  .onhold-row-chevron{grid-column:2;grid-row:2}
+  .onhold-project-details{padding:12px}
+  .onhold-project-actions .send-btn{margin-left:0}
+  .onhold-detail-line{display:block}
+  .onhold-detail-label{display:block;margin-bottom:3px}
+}
+
+
+/* Keep the existing Quote card and header styling for both project lists. */
+.quote-section-heading-static{padding:7px 10px;cursor:default}
+.quote-section-heading-static .quote-section-title{font-size:16px;letter-spacing:.055em}
+.current-voting-project-toggle{cursor:pointer}
+.current-voting-project-toggle:focus-visible{outline:2px solid #2563eb;outline-offset:-2px}
+.current-voting-project-content[hidden],.onhold-project-details[hidden]{display:none!important}
+.onhold-table{display:flex;flex-direction:column;gap:12px;width:100%;border:0;border-radius:0;overflow:visible;background:transparent}
+.onhold-project-card{margin-bottom:0}
+.onhold-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:#f8fafc;text-align:left;cursor:pointer;color:#1e293b;font-family:'DM Sans',sans-serif}
+.onhold-list-row:hover{background:#f1f5f9}
+.onhold-header-left{min-width:0}
+.onhold-project-name{display:block;font-size:15px;font-weight:600;color:#1e293b;overflow-wrap:anywhere}
+.onhold-meta{display:block;margin-left:4px;margin-top:3px;font-size:12px;color:#64748b}
+.onhold-row-right{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.onhold-status-pill{padding:4px 9px;border:1px solid #f4d49b;border-radius:6px;background:#fff8e9;color:#9a6700;font-size:10px;font-weight:800;letter-spacing:.035em;white-space:nowrap}
+.onhold-row-chevron{color:#9a6700;font-size:17px}
+.onhold-project-details{padding:14px 16px 16px;background:#fff;border-top:1px solid #f1f5f9}
+@media(max-width:700px){
+  .quote-section-heading-static{padding:7px 6px}
+  .onhold-list-row{padding:13px 12px}
+  .onhold-row-right{gap:7px}
+  .onhold-project-details{padding:12px}
+}
+
+/* ── On Hold: isolate its vendor stack from the global 3-column vendor grid ── */
+.onhold-vendor-list{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:12px!important;
+  width:100%!important;
+  max-width:100%!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+.onhold-vendor-item{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  border:1px solid rgba(255,255,255,.92)!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.34)!important;
+  box-shadow:0 7px 22px rgba(38,83,137,.08),inset 0 1px 0 rgba(255,255,255,.88)!important;
+  overflow:hidden!important;
+}
+.onhold-vendor-item .vendor-header{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+  padding:16px 18px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.48)!important;
+  backdrop-filter:blur(14px) saturate(145%);
+  -webkit-backdrop-filter:blur(14px) saturate(145%);
+}
+.onhold-vendor-item .vendor-name{font-size:17px!important;line-height:1.4!important;color:#102653!important}
+.onhold-vendor-item .vendor-amount{font-size:16px!important;font-weight:700!important;color:#21456f!important}
+.onhold-vendor-item .btn-view-details{font-size:13px!important;padding:7px 13px!important;animation:none!important}
+.onhold-vendor-detail{
+  padding:18px 20px!important;
+  background:rgba(247,251,255,.54)!important;
+  border-top:1px solid rgba(255,255,255,.82)!important;
+  backdrop-filter:blur(16px) saturate(145%);
+  -webkit-backdrop-filter:blur(16px) saturate(145%);
+}
+.onhold-detail-line{gap:16px!important;padding:10px 0!important;font-size:14px!important;line-height:1.7!important;border-color:rgba(128,166,204,.2)!important}
+.onhold-detail-label{flex:0 0 124px!important;font-size:11px!important;color:#56708f!important}
+.onhold-detail-value{font-size:14px!important;line-height:1.7!important;color:#203b5d!important}
+.onhold-detail-value p{margin:0 0 8px!important}
+.onhold-detail-value p:last-child{margin-bottom:0!important}
+.onhold-project-details{
+  background:rgba(232,244,255,.28)!important;
+  border-top:1px solid rgba(255,255,255,.78)!important;
+  border-bottom:0!important;
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+}
+.onhold-project-actions .btn-mgmt{min-height:34px;padding:8px 13px!important;font-size:13px!important}
+.onhold-project-actions .send-btn{min-height:34px;padding:8px 16px!important;font-size:13px!important}
+.quote-section-heading-static .quote-section-title{font-size:17px!important}
+.onhold-project-card .onhold-project-name{font-size:16px!important;color:#163b68!important}
+.onhold-project-card .onhold-meta{font-size:12px!important;color:#5b7391!important}
+.onhold-project-card .onhold-status-pill{font-size:11px!important}
+@media(max-width:700px){
+  .onhold-vendor-item .vendor-header{align-items:flex-start!important;flex-direction:column!important;gap:10px!important}
+  .onhold-vendor-detail{padding:14px!important}
+  .onhold-detail-line{padding:9px 0!important}
+  .onhold-detail-label{display:block;margin-bottom:4px}
+}
+
+</style>
+</head>
+<body>
+<div id="sidebarPlaceholder"></div>
+<div class="main">
+  <div id="topbarPlaceholder"></div>
+  <div class="content">
+
+    <!-- Page Hero -->
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+      </div>
+      <div class="page-header-body">
+        <div class="page-header-title-row">
+          <span class="page-header-title">Quote Approvals</span>
+        </div>
+        <div class="page-header-sub">Review and vote on contractor quotes for building projects.</div>
+      </div>
+    </div>
+    <div class="vote-rule-banner" style="background:#DBEAFE;border:1px solid #93C5FD;border-radius:10px;padding:11px 24px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px">
+      <span style="font-size:16px;flex-shrink:0;line-height:1.4"></span>
+      <span style="font-size:13px;color:#1E40AF;font-weight:600;line-height:1.5;flex:1;min-width:0;word-break:break-word">8 committee members vote · 5+ approve → Approved · 5+ decline → Declined · 4+ hold → On Hold</span>
+    </div>
+
+    <div class="quote-section-stack">
+      <section class="quote-section" id="draftSection">
+        <div class="quote-section-heading">
+          <button type="button" class="quote-section-toggle" aria-expanded="true" aria-controls="draftSectionBody" onclick="toggleQuoteSection('draftSectionBody',this)">
+            <span class="quote-section-accent quote-section-accent-draft"></span>
+            <span class="quote-section-title">DRAFT</span>
+            <span class="quote-section-count" id="draftCount">0</span>
+            <span class="quote-section-chevron">⌃</span>
+          </button>
+          <button class="btn-create-project" id="createProjectBtn" style="display:none" onclick="openCreateProject()">
+            <span class="btn-create-project-icon"></span>
+            <span class="btn-create-project-label">
+              <span class="btn-create-project-main">Create Project</span>
+              <span class="btn-create-project-sub">New quote group</span>
+            </span>
+          </button>
+        </div>
+        <div class="quote-section-body" id="draftSectionBody">
+          <div id="pendingList"></div>
+        </div>
+      </section>
+
+      <section class="quote-section" id="currentVotingSection">
+        <div class="quote-section-heading quote-section-heading-static">
+          <span class="quote-section-accent quote-section-accent-voting"></span>
+          <span class="quote-section-title">CURRENT VOTING</span>
+          <span class="quote-section-count" id="currentVotingCount">0</span>
+        </div>
+        <div class="quote-section-body" id="currentVotingSectionBody">
+          <div id="currentVotingList"></div>
+        </div>
+      </section>
+
+      <section class="quote-section" id="onHoldSection">
+        <div class="quote-section-heading quote-section-heading-static">
+          <span class="quote-section-accent quote-section-accent-hold"></span>
+          <span class="quote-section-title">ON HOLD</span>
+          <span class="quote-section-count quote-section-count-hold" id="onHoldCount">0</span>
+        </div>
+        <div class="quote-section-body" id="onHoldSectionBody">
+          <div id="onHoldList"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="fileViewerModal" tabindex="-1" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;flex-direction:column;padding:16px;outline:none" onclick="if(event.target===this)closeViewer()">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0" onclick="event.stopPropagation()">
+    <span id="viewerFileName" style="color:#e5e7eb;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 120px)"></span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="printViewer()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;padding:6px 14px;display:flex;align-items:center;gap:6px">Print</button>
+      <button onclick="closeViewer()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+  </div>
+  <div id="viewerContent" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;border-radius:10px" onclick="event.stopPropagation()"></div>
+</div>
+
+<div class="modal-backdrop" id="filePreviewModal" onclick="if(event.target===this)closeModal('filePreviewModal')">
+  <div class="modal-box" style="max-width:860px;width:96%;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;background:#f8fafc">
+      <span id="filePreviewTitle" style="font-weight:600;color:#1f2937;font-size:15px"></span>
+      <button onclick="closeModal('filePreviewModal')" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">&times;</button>
+    </div>
+    <div id="filePreviewBody" style="min-height:420px;display:flex;align-items:center;justify-content:center;padding:20px;background:#fff"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<div class="modal-backdrop" id="quoteModal">
+  <div class="modal-box">
+    <div class="modal-title" id="quoteModalTitle">Add New Quote</div>
+    <input type="hidden" id="quoteEditId">
+    <div class="modal-field">
+      <label class="modal-label">Project / Works Description</label>
+      <select class="modal-select" id="projectSelect" onchange="handleProjectSelect()">
+        <option value="">+ New Project</option>
+      </select>
+      <input type="text" class="modal-input" id="quoteProject" placeholder="Enter new project name" style="display:none;margin-top:8px">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Vendor / Contractor</label>
+      <input type="text" class="modal-input" id="quoteVendor" placeholder="Company name">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Amount (AUD, ex GST)</label>
+      <input type="text" class="modal-input" id="quoteAmount" placeholder="0.00" oninput="formatAmount(this)">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Category</label>
+      <select class="modal-select" id="quoteCategory">
+        <option value="General">General</option>
+        <option value="HVAC">HVAC</option>
+        <option value="Fire">Fire</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Security">Security</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Lift">Lift</option>
+        <option value="Legal">Legal</option>
+              </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Priority</label>
+      <select class="modal-select" id="quotePriority">
+        <option value="Normal">Normal</option>
+        <option value="High">High</option>
+        <option value="Urgent">Urgent</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Scope / Notes (Public)</label>
+      <textarea class="modal-textarea" id="quoteNotes" placeholder="Brief description visible to voters…" style="min-height:200px"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Internal Notes</label>
+      <textarea class="modal-textarea" id="quoteInternalNote" placeholder="Private notes for committee..." style="min-height:200px"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Attachments</label>
+      <div id="existingFilesList" style="margin-bottom:8px"></div>
+      <div class="file-upload-area" onclick="document.getElementById('quoteFiles').click()">
+        <input type="file" id="quoteFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" onchange="handleFileSelect(event)">
+        <div style="color:#6b7280;font-size:13.5px">Click to upload files (PDF, Word, Excel, Images)</div>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-pill" onclick="closeModal('quoteModal')">Cancel</button>
+      <button class="btn-pill btn-pill-danger" id="deleteQuoteBtn" onclick="deleteQuote()" style="display:none">Delete Quote</button>
+      <button class="btn-pill btn-pill-primary" id="saveQuoteBtn" onclick="saveQuote()">Save Quote</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initLayout } from '/js/layout.js';
+import { parseComment } from '/js/common.js';
+
+window.deletePc = async function(id, el) {
+  if (!confirm('Delete this comment?')) return;
+  const { error } = await supabase.from('project_comments').delete().eq('id', id);
+  if (error) { showToast('Failed to delete', true); return; }
+  const msg = el.closest('.pc-msg');
+  if (msg) msg.remove();
 };
+
+window.editPc = function(id, el) {
+  const msgDiv = el.closest('.pc-msg');
+  const bodyDiv = msgDiv.querySelector('.pc-msg-body');
+  if (!bodyDiv) return;
+  const original = bodyDiv.innerHTML;
+  // Build modal
+  const overlay = document.createElement('div');
+  overlay.id = 'pc-edit-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:#fff;border-radius:14px;padding:28px;width:100%;max-width:780px;box-shadow:0 20px 60px rgba(0,0,0,0.25);display:flex;flex-direction:column;gap:14px';
+  const title = document.createElement('div');
+  title.textContent = 'Edit Comment';
+  title.style.cssText = 'font-size:16px;font-weight:700;color:#1e293b';
+  const editorWrap = document.createElement('div');
+  editorWrap.id = 'pc-edit-quill';
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:#f1f5f9;color:#374151;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer';
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer';
+  const close = () => overlay.remove();
+  cancelBtn.onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  saveBtn.onclick = async () => {
+    const qEdit = modal._quill;
+    const txt = qEdit ? qEdit.root.innerHTML : '';
+    const plain = qEdit ? qEdit.getText().trim() : '';
+    if (!plain) return;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    const { error } = await supabase.from('project_comments').update({ comment: txt }).eq('id', id);
+    if (error) { showToast('Failed to update', true); saveBtn.disabled = false; saveBtn.textContent = 'Save'; return; }
+    bodyDiv.innerHTML = txt;
+    close();
+    showToast('Comment updated');
+  };
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(saveBtn);
+  modal.appendChild(title);
+  modal.appendChild(editorWrap);
+  modal.appendChild(btnRow);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(()=>{
+    if(window.Quill){
+      modal._quill = new Quill('#pc-edit-quill',{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Edit your comment...'});
+      modal._quill.root.innerHTML = original;
+    }
+  }, 100);
+};
+import { getSupabase } from '/js/auth.js';
+
+let allQuotes   = [];
+let allVotes    = [];
+let supabase    = null;
+let user        = null;
+let role        = 'observer';
+let allProfiles = {};
+let committeeMembers = [];
+
+const COMMITTEE_ORDER = [
+  { name: 'Jimmy',    role: 'Chairman'          },
+  { name: 'Michael',  role: 'Treasurer'         },
+  { name: 'Michelle', role: 'Secretary'         },
+  { name: 'Sudesh',   role: 'Committee Member'  },
+  { name: 'Niranjan', role: 'Committee Member'  },
+  { name: 'Sarah',    role: 'Committee Member'  },
+  { name: 'Laura',    role: 'Committee Member'  },
+  { name: 'Eva',      role: 'Committee Member'  }
+];
+let expandedVendors = {};
+let pendingFiles    = [];
+
+// Per-(projectId+email) lock – prevents race conditions under fast clicks
+const actionLocks = new Map();
+const resultEmailSent = new Set(); // PATCH 5: track projects where result email was sent
+
+const RULES = { approvalsRequired: 5, declinesToAutoDecline: 5, holdsToAutoHold: 4 };
+const TOTAL_VOTERS = 8;
+
+// ── SINGLE SOURCE OF TRUTH: Voting result calculator ──────────────
+// 8명 committee 기준:
+// 5+ Approve → approved
+// 5+ Decline → declined
+// 4+ Hold    → hold
+// 8명 전원 투표 후 과반 없음 → hold (재투표)
+// 복수견적: 어느 vendor도 5A 못 받으면 → hold (재투표)
+function calculateResult({ approvals, declines, holds, hasTie = false, totalVoted = 0 }) {
+  if (approvals >= RULES.approvalsRequired)       return 'approved';
+  if (declines  >= RULES.declinesToAutoDecline)   return 'declined';
+  if (holds     >= RULES.holdsToAutoHold)         return 'hold';
+  if (hasTie    && approvals > 0)                 return 'hold';
+  if (totalVoted >= TOTAL_VOTERS)                 return 'hold';
+  return 'pending';
+}
+
+// ── Internal validation (runs once on load, logs to console) ──────
+(function validateCalculateResult() {
+  const cases = [
+    { input: { approvals:5, declines:0, holds:0, totalVoted:5 }, expected:'approved', label:'5A → approved'                        },
+    { input: { approvals:6, declines:0, holds:0, totalVoted:6 }, expected:'approved', label:'6A → approved'                        },
+    { input: { approvals:0, declines:5, holds:0, totalVoted:5 }, expected:'declined', label:'5D → declined'                        },
+    { input: { approvals:0, declines:0, holds:4, totalVoted:4 }, expected:'hold',     label:'4H → hold'                            },
+    { input: { approvals:5, declines:3, holds:0, totalVoted:8 }, expected:'approved', label:'5A 3D → approved'                     },
+    { input: { approvals:3, declines:5, holds:0, totalVoted:8 }, expected:'declined', label:'3A 5D → declined'                     },
+    { input: { approvals:4, declines:4, holds:0, totalVoted:8 }, expected:'hold',     label:'4A 4D 전원투표 → hold'                },
+    { input: { approvals:3, declines:3, holds:2, totalVoted:8 }, expected:'hold',     label:'3A 3D 2H 전원투표 → hold'             },
+    { input: { approvals:4, declines:3, holds:1, totalVoted:8 }, expected:'hold',     label:'4A 3D 1H 전원투표 → hold'             },
+    { input: { approvals:4, declines:0, holds:0, totalVoted:4 }, expected:'pending',  label:'4A 4명만 투표 → pending'              },
+    { input: { approvals:0, declines:4, holds:0, totalVoted:4 }, expected:'pending',  label:'4D 4명만 투표 → pending'              },
+    { input: { approvals:0, declines:0, holds:3, totalVoted:3 }, expected:'pending',  label:'3H 3명만 투표 → pending'              },
+    { input: { approvals:2, declines:2, holds:4, totalVoted:8 }, expected:'hold',     label:'2A 2D 4H → hold'                      },
+    { input: { approvals:3, declines:0, holds:0, totalVoted:8, hasTie:true }, expected:'hold', label:'Tie 전원투표 → hold'          },
+    { input: { approvals:2, declines:0, holds:0, totalVoted:4, hasTie:true }, expected:'hold', label:'Tie hasTie → hold'            },
+    { input: { approvals:0, declines:0, holds:0, totalVoted:0 }, expected:'pending',  label:'0 → pending'                          },
+  ];
+  let passed = 0; let failed = 0;
+  cases.forEach(({ input, expected, label }) => {
+    const got = calculateResult(input);
+    if (got === expected) { passed++; }
+    else { failed++; console.error(`[calculateResult] FAIL: ${label} → got "${got}", expected "${expected}"`); }
+  });
+  if (failed === 0) console.log(`[calculateResult] All ${passed} validation tests passed`);
+  else console.error(`[calculateResult] ✖ ${failed} test(s) FAILED – check voting logic`);
+})();
+
+async function init() {
+  const layoutResult = await initLayout();
+  if (!layoutResult) return;
+  supabase = layoutResult.supabase;
+  user     = layoutResult.user;
+  role     = layoutResult.role || 'observer';
+
+  window.logActivity = async function(action, record_id = null) {
+    try {
+      if (role === 'admin') return;
+      await supabase.from('audit_logs').insert({
+        user_email: user.email,
+        user_role: role,
+        action,
+        record_id,
+        created_at: new Date().toISOString()
+      });
+    } catch (e) {}
+  };
+  const { data: profiles } = await supabase.from('profiles').select('email, full_name, role');
+  committeeMembers = [];
+  (profiles || []).forEach(p => {
+    allProfiles[p.email] = p.full_name || p.email.split('@')[0];
+  });
+  // COMMITTEE_ORDER 기준으로 고정 순서 + role 매핑
+  COMMITTEE_ORDER.forEach(member => {
+    const profile = (profiles || []).find(p => (p.full_name || '').trim().toLowerCase().startsWith(member.name.toLowerCase()));
+    committeeMembers.push({
+      email: profile ? profile.email : '',
+      name: member.name,
+      committeeRole: member.role
+    });
+  });
+  if (role === 'admin') {
+    const btn = document.getElementById('createProjectBtn');
+    if (btn) {
+      btn.style.display = '';
+      btn.style.visibility = 'visible';
+      btn.classList.add('is-visible');
+    }
+  }
+  await loadData();
+  renderQuotes();
+
+  supabase.channel('quotes-realtime')
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'quotes'}, async () => { await loadData(); renderQuotes(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'votes'}, async () => { await loadData(); renderQuotes(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'project_comments'}, async () => { await loadData(); renderQuotes(); })
+    .subscribe();
+}
+
+async function loadData() {
+  try {
+    const [qRes, vRes] = await Promise.all([
+      supabase.from('quotes').select('*').eq('archived', false).or('is_emergency.eq.false,is_emergency.is.null').order('created_at', { ascending: false }),
+      supabase.from('votes').select('*')
+    ]);
+    allQuotes = qRes.data || [];
+    allVotes  = vRes.data || [];
+  } catch(e) {
+    console.error('loadData failed:', e);
+    showToast('Failed to load data', true);
+  }
+}
+
+
+
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// One row per (project_id, user_email)
+function getUserVoteRow(projectId) {
+  if (!projectId || !user?.email) return null;
+  return allVotes.find(v => v.project_id === projectId && v.user_email === user.email) || null;
+}
+
+function getProjectVotes(projectId) {
+  if (!projectId) return [];
+  return allVotes.filter(v => v.project_id === projectId);
+}
+
+function countQuoteProjects(quotes) {
+  return new Set((quotes || []).map(q => q.project_id || q.id).filter(Boolean)).size;
+}
+
+window.toggleQuoteSection = function(bodyId, button) {
+  const body = document.getElementById(bodyId);
+  if (!body || !button) return;
+  const willOpen = body.hidden;
+  body.hidden = !willOpen;
+  button.setAttribute('aria-expanded', String(willOpen));
+  const chevron = button.querySelector('.quote-section-chevron');
+  if (chevron) chevron.textContent = willOpen ? '⌃' : '⌄';
+};
+
+function renderQuotes() {
+  const visible = allQuotes.filter(q => {
+    if (q.work_status !== null || q.completion_date !== null || q.archived || q.is_emergency === true) return false;
+    return true;
+  });
+  const drafts = role === 'admin' ? visible.filter(q => q.status === 'draft') : [];
+  const voting = visible.filter(q => q.status === 'voting' || q.status === 'pending');
+  const onHold = visible.filter(q => q.status === 'onhold');
+
+  const draftSection = document.getElementById('draftSection');
+  if (draftSection) draftSection.style.display = role === 'admin' ? '' : 'none';
+
+  const draftCount = document.getElementById('draftCount');
+  const votingCount = document.getElementById('currentVotingCount');
+  const holdCount = document.getElementById('onHoldCount');
+  if (draftCount) draftCount.textContent = countQuoteProjects(drafts);
+  if (votingCount) votingCount.textContent = countQuoteProjects(voting);
+  if (holdCount) holdCount.textContent = countQuoteProjects(onHold);
+
+  renderPendingQuotes(drafts, 'pendingList', 'No draft quotes.');
+  renderPendingQuotes(voting, 'currentVotingList', 'No quotes are currently open for voting.');
+  renderOnHoldQuotes(onHold);
+}
+
+function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage = 'No quotes to display.') {
+  const container = document.getElementById(containerId);
+  if (!quotes.length) {
+    container.innerHTML = '<div style="padding:36px 20px;text-align:center;color:#94a3b8;font-size:14px">' + escHtml(emptyMessage) + '</div>';
+    return;
+  }
+
+  const projectMap = {};
+  quotes.forEach(q => {
+    const key = q.project_id || q.id;
+    if (!projectMap[key]) projectMap[key] = [];
+    projectMap[key].push(q);
+  });
+
+  container.innerHTML = '';
+  const useProjectAccordion = containerId === 'currentVotingList';
+  let projectIndex = 0;
+
+  Object.values(projectMap).forEach(group => {
+    projectIndex++;
+    const first      = group[0];
+    const parsed     = parseComment(first.comment);
+    const projectKey = first.project_id || first.id;
+    if (!projectKey) return;
+
+    const isDraft  = group.every(q => q.status === 'draft');
+    const isVoting = group.some(q => q.status === 'voting' || q.status === 'pending');
+
+    const userVoteRow      = getUserVoteRow(projectKey);
+    const selectedQuoteId  = userVoteRow?.selected_quote_id || null;
+    const selectedQuote    = selectedQuoteId ? (group.find(q => q.id === selectedQuoteId) ?? null) : null;
+    const userAlreadyVoted = !!(userVoteRow?.vote && userVoteRow.vote !== '');
+
+    const projectVotes = getProjectVotes(projectKey);
+    const votedRows    = projectVotes.filter(v => v.vote && v.vote !== '');
+
+    // ── Unified Voting Engine ──────────────────────────────
+    // Per-vendor approve counts (only votes that selected that vendor)
+    const vendorApproveMap = {};
+    group.forEach(q => { vendorApproveMap[q.id] = 0; });
+    votedRows.forEach(v => {
+      if (v.vote === 'approve' && v.selected_quote_id && vendorApproveMap[v.selected_quote_id] !== undefined) {
+        vendorApproveMap[v.selected_quote_id]++;
+      }
+    });
+
+    const totalApprovals = votedRows.filter(v => v.vote === 'approve').length;
+    const declines       = votedRows.filter(v => v.vote === 'decline').length;
+    const holds          = votedRows.filter(v => v.vote === 'hold').length;
+
+    // Max approvals for any single vendor
+    const vendorApproveCounts = Object.values(vendorApproveMap);
+    const maxVendorApprovals  = vendorApproveCounts.length > 0 ? Math.max(...vendorApproveCounts) : 0;
+    // Count vendors tied at the max
+    const vendorsAtMax = vendorApproveCounts.filter(c => c === maxVendorApprovals && c > 0).length;
+
+    // For single-quote projects use total approvals directly
+    const isSingle  = group.length === 1;
+    const approvals = isSingle ? totalApprovals : maxVendorApprovals;
+
+    // Tie: multiple vendors share highest approval count → force hold
+    const hasTie = !isSingle && vendorsAtMax > 1 && maxVendorApprovals > 0;
+
+    // ── Single source of truth: calculateResult() ─────────
+    const calcResult       = calculateResult({ approvals, declines, holds, hasTie, totalVoted: votedRows.length });
+    const resultApproved   = calcResult === 'approved';
+    const resultDeclined   = calcResult === 'declined';
+    const resultHold       = calcResult === 'hold';
+    const isTieHold        = resultHold && hasTie;
+    const resultDetermined = resultApproved || resultDeclined || (resultHold && !hasTie);
+    const isLocked         = resultDetermined;
+
+    // Winning vendor (for approved result)
+    const winnerQuoteId = resultApproved && !isSingle
+      ? Object.entries(vendorApproveMap).find(([,c]) => c === maxVendorApprovals)?.[0] || null
+      : null;
+    const winnerQuote = winnerQuoteId ? (group.find(q => q.id === winnerQuoteId) ?? selectedQuote) : selectedQuote;
+
+    const cat = first.category || parsed.category || 'General';
+    const catNumClass = {'General':'pnum-blue','HVAC':'pnum-amber','Fire':'pnum-red','Electrical':'pnum-yellow','Security':'pnum-purple','Plumbing':'pnum-teal','Lift':'pnum-green','Legal':'pnum-pink','Other':'pnum-gray'}[cat] || 'pnum-gray';
+    const catIcon = {'General':'','HVAC':'','Fire':'','Electrical':'','Security':'','Plumbing':'','Lift':'','Legal':'','Other':''}[cat] || '';
+    const projectIndex_str = String(projectIndex).padStart(2,'0');
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.setAttribute('data-cat', cat);
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'project-header';
+    const headerLeft = document.createElement('div');
+    headerLeft.className = 'project-header-left';
+    headerLeft.innerHTML = `
+      <span class="pnum ${catNumClass}">${projectIndex_str}</span>
+      <div style="width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${catIcon}</div>
+      <div>
+        <span class="project-title">${escHtml(first.project || first.project_title || 'Project')}</span>
+        <span class="project-meta">${escHtml(cat)} · ${group.length} vendor${group.length!==1?'s':''}</span>
+        ${{Normal:'<span class="badge-priority badge-priority-normal">Normal</span>',High:'<span class="badge-priority badge-priority-high">High</span>',Urgent:'<span class="badge-priority badge-priority-urgent">Urgent</span>'}[parsed.priority||'Normal']||''}
+      </div>`;
+    header.appendChild(headerLeft);
+
+    const headerRight = document.createElement('div');
+    headerRight.style.cssText = 'display:flex;align-items:center;gap:10px';
+
+    if (isDraft) {
+      const badge = document.createElement('span');
+      badge.className = 'draft-badge';
+      badge.textContent = 'Draft';
+      headerRight.appendChild(badge);
+      if (role === 'admin') {
+        const sendBtn = document.createElement('button');
+        sendBtn.className = 'send-btn';
+        sendBtn.textContent = 'Send to Committee';
+        sendBtn.onclick = () => sendToCommittee(group, sendBtn, projectKey);
+        headerRight.appendChild(sendBtn);
+
+        const holdBtn = document.createElement('button');
+        holdBtn.className = 'quote-place-hold-btn';
+        holdBtn.textContent = 'Place on Hold';
+        holdBtn.onclick = () => placeProjectOnHold(group, holdBtn);
+        headerRight.appendChild(holdBtn);
+      }
+    } else if (isVoting) {
+      const badge = document.createElement('span');
+      badge.className = 'voting-badge';
+      badge.textContent = 'Voting';
+      headerRight.appendChild(badge);
+    }
+    header.appendChild(headerRight);
+    card.appendChild(header);
+
+    // Admin Actions – relocated from the former Management Archive (Add Quote / Edit Project / Mark Expired)
+    if (role === 'admin') {
+      const adminActionsRow = document.createElement('div');
+      adminActionsRow.style.cssText = 'padding:10px 20px 0;display:flex;gap:8px;flex-wrap:wrap';
+
+      const addQuoteBtn = document.createElement('button');
+      addQuoteBtn.className = 'btn-mgmt btn-mgmt-green';
+      addQuoteBtn.textContent = '➕ Add Quote';
+      addQuoteBtn.onclick = () => openAddQuoteToProject(projectKey, first.project || first.project_title || 'Project', cat, parsed.priority || 'Normal');
+      adminActionsRow.appendChild(addQuoteBtn);
+
+      const editFormId = 'ef-form-' + projectKey;
+      const editProjBtn = document.createElement('button');
+      editProjBtn.className = 'btn-mgmt btn-mgmt-blue';
+      editProjBtn.textContent = 'Edit Project';
+      editProjBtn.onclick = () => {
+        const f = document.getElementById(editFormId);
+        if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+      };
+      adminActionsRow.appendChild(editProjBtn);
+
+      const expireBtn = document.createElement('button');
+      expireBtn.className = 'btn-mgmt btn-mgmt-red';
+      expireBtn.textContent = 'Mark as Expired';
+      expireBtn.onclick = () => markExpired(group, expireBtn);
+      adminActionsRow.appendChild(expireBtn);
+
+      card.appendChild(adminActionsRow);
+
+      // Inline Edit Project form (hidden by default) — reuses existing saveProjectEdit()
+      const editForm = document.createElement('div');
+      editForm.className = 'edit-project-form';
+      editForm.id = editFormId;
+      editForm.style.cssText = 'margin:10px 20px 0;display:none';
+      editForm.innerHTML = `
+        <div class="edit-form-row">
+          <div class="edit-form-field">
+            <label class="edit-form-label">Project Title</label>
+            <input class="edit-form-input" id="ef-title-${projectKey}" value="${escHtml(first.project || first.project_title || '')}" placeholder="Project title">
+          </div>
+          <div class="edit-form-field">
+            <label class="edit-form-label">Category</label>
+            <select class="edit-form-select" id="ef-cat-${projectKey}">
+              ${['General','HVAC','Fire','Electrical','Security','Plumbing','Lift','Legal'].map(c => `<option value="${c}"${c===cat?' selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="edit-form-field">
+            <label class="edit-form-label">Priority</label>
+            <select class="edit-form-select" id="ef-pri-${projectKey}">
+              ${['Normal','High','Urgent'].map(p => `<option value="${p}"${p===(parsed.priority||'Normal')?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <button class="btn-mgmt btn-mgmt-blue" onclick="saveProjectEdit('${projectKey}', ${JSON.stringify(group.map(q=>q.id))})">Save</button>
+            <button class="btn-mgmt" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="document.getElementById('${editFormId}').style.display='none'">Cancel</button>
+          </div>
+        </div>`;
+      card.appendChild(editForm);
+    }
+
+    // Vote summary bar (visible during voting)
+    const VENDOR_COLORS = [
+      { bg: '#dbeafe', border: '#3b82f6', dot: '#1d4ed8' },
+      { bg: '#dcfce7', border: '#22c55e', dot: '#15803d' },
+      { bg: '#fef3c7', border: '#eab308', dot: '#a16207' },
+      { bg: '#fce7f3', border: '#ec4899', dot: '#be185d' },
+      { bg: '#ede9fe', border: '#8b5cf6', dot: '#6d28d9' },
+    ];
+    const vendorColorMap = {};
+    group.forEach((q, idx) => { vendorColorMap[q.id] = VENDOR_COLORS[idx % VENDOR_COLORS.length]; });
+
+    // Tally summary now shown inline in the Voting / Admin Controls section title
+
+    // Click hint banner removed
+
+    // Vendor list
+    const vendorList = document.createElement('div');
+    const isMultiVendorVoting = isVoting && group.length > 1;
+    vendorList.className = 'vendor-list' + (isMultiVendorVoting ? ' multi-vendor-voting' : '');
+
+    group.forEach(q => {
+      const quoteId = q.id;
+      if (!quoteId) return;
+      const qParsed    = parseComment(q.comment);
+      const isSelected = selectedQuoteId === quoteId;
+      const hasSelection = !!selectedQuoteId;
+
+      const vendorItem = document.createElement('div');
+      const isWinner = resultApproved && (isSingle || quoteId === winnerQuoteId);
+      vendorItem.className = `vendor-item${isSelected ? ' is-selected' : ''}${isWinner ? ' is-winner' : ''}`;
+      vendorItem.id = `vendor-${quoteId}`;
+      const vColor = vendorColorMap[quoteId];
+      // Option D: white background + colored left bar only
+      if (vColor && !isSelected && !isMultiVendorVoting) {
+        vendorItem.style.background = '#fff';
+        vendorItem.style.borderLeft = `4px solid ${vColor.dot}`;
+      }
+
+      const vendorHeader = document.createElement('div');
+      vendorHeader.className = `vendor-header${isSelected ? ' hdr-selected' : ''}`;
+      if (vColor && !isSelected && !isMultiVendorVoting) vendorHeader.style.background = '#fff';
+
+      const vendorContent = document.createElement('div');
+      vendorContent.className = 'vendor-content';
+      const selectedTagHtml = (isVoting && (isSingle || isSelected)) ? '<span class="vendor-selected-tag">✓ SELECTED</span>' : '';
+      const submittedDate = q.created_at
+        ? new Date(q.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
+        : '';
+      vendorContent.innerHTML = `
+        ${selectedTagHtml}
+        <div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
+        ${isMultiVendorVoting && submittedDate ? '<div class="vendor-quote-date">Submitted ' + escHtml(submittedDate) + '</div>' : ''}
+        <div class="vendor-meta-row">
+          <div class="vendor-amount">${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>
+        </div>`;
+      vendorHeader.appendChild(vendorContent);
+
+      const statusDiv = document.createElement('div');
+      statusDiv.className = 'vendor-status';
+
+      if (isVoting) {
+        if (isSingle) {
+          // Single quote – auto-selected, badge already in vendor-content
+        } else if (isSelected) {
+          // Selected badge already in vendor-content, only show Change button here
+          if (role === 'committee' && !isLocked) {
+            const deselBtn = document.createElement('button');
+            deselBtn.className = 'deselect-btn';
+            deselBtn.textContent = 'Change';
+            deselBtn.onclick = (e) => {
+              e.stopImmediatePropagation();
+              doUpsert(projectKey, { selected_quote_id: null }, deselBtn, 'Change');
+            };
+            statusDiv.appendChild(deselBtn);
+          }
+        } else if (hasSelection) {
+          statusDiv.innerHTML = '<span class="badge-x">✕</span>';
+        } else if (role === 'committee' && !isLocked) {
+          const selectBtn = document.createElement('button');
+          selectBtn.className = 'select-btn';
+          selectBtn.textContent = 'Select';
+          selectBtn.onclick = (e) => {
+            e.stopImmediatePropagation();
+            doUpsert(projectKey, { selected_quote_id: quoteId }, selectBtn, 'Select');
+          };
+          statusDiv.appendChild(selectBtn);
+        }
+      }
+      vendorHeader.appendChild(statusDiv);
+
+      // Show one vendor's details at a time (display only)
+      const closeOtherDetails = () => {
+        vendorList.querySelectorAll('.vendor-item').forEach(it => {
+          if (it === vendorItem) return;
+          const d = it.querySelector('.vendor-details'); if (d) d.classList.remove('show');
+          const h = it.querySelector('.vendor-header'); if (h) h.classList.remove('is-open');
+          const b = it.querySelector('.btn-view-details');
+          if (b) { b.classList.remove('is-open'); const sp = b.querySelector('span'); if (sp) sp.textContent = 'View Details'; }
+          expandedVendors[it.id.replace('vendor-','')] = false;
+        });
+      };
+      // View Details pulsing button — clear click affordance
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'btn-view-details';
+      viewBtn.type = 'button';
+      viewBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>View Details</span>';
+      viewBtn.onclick = (e) => {
+        e.stopImmediatePropagation();
+        const details = vendorItem.querySelector('.vendor-details');
+        if (!details) return;
+        const opened = details.classList.toggle('show');
+        if (opened) closeOtherDetails();
+        vendorHeader.classList.toggle('is-open', opened);
+        viewBtn.classList.toggle('is-open', opened);
+        viewBtn.querySelector('span').textContent = opened ? 'Hide Details' : 'View Details';
+        expandedVendors[quoteId] = opened;
+      };
+      vendorContent.querySelector('.vendor-meta-row').appendChild(viewBtn);
+
+      vendorHeader.onclick = (e) => {
+        if (e.target.closest('button')) return;
+        const details = vendorItem.querySelector('.vendor-details');
+        if (!details) return;
+        const opened = details.classList.toggle('show');
+        if (opened) closeOtherDetails();
+        vendorHeader.classList.toggle('is-open', opened);
+        viewBtn.classList.toggle('is-open', opened);
+        viewBtn.querySelector('span').textContent = opened ? 'Hide Details' : 'View Details';
+        expandedVendors[quoteId] = opened;
+      };
+
+      vendorItem.appendChild(vendorHeader);
+
+      const files = Array.isArray(qParsed.files) ? qParsed.files : [];
+      const detailsDiv = document.createElement('div');
+      detailsDiv.className = 'vendor-details' + (expandedVendors[quoteId] ? ' show' : '');
+      if (expandedVendors[quoteId]) {
+        vendorHeader.classList.add('is-open');
+        viewBtn.classList.add('is-open');
+        viewBtn.querySelector('span').textContent = 'Hide Details';
+      }
+      const mkLine = (label, val) => {
+        const d = document.createElement('div'); d.className = 'detail-line';
+        d.innerHTML = '<span class="detail-label">' + label + '</span><span>' + escHtml(val) + '</span>';
+        return d;
+      };
+      if(q.notes){const nd=document.createElement('div');nd.className='detail-line';nd.innerHTML='<span class="detail-label">Notes:</span><span>'+q.notes+'</span>';detailsDiv.appendChild(nd);}else{detailsDiv.appendChild(mkLine('Notes:','—'));}
+      if(qParsed.note){const id=document.createElement('div');id.className='detail-line';id.innerHTML='<span class="detail-label">Internal:</span><span>'+qParsed.note+'</span>';detailsDiv.appendChild(id);}else{detailsDiv.appendChild(mkLine('Internal:','—'));}
+      detailsDiv.appendChild(mkLine('Category:', q.category || qParsed.category || '—'));
+      detailsDiv.appendChild(mkLine('Priority:', qParsed.priority || '—'));
+      const filesLine = document.createElement('div'); filesLine.className = 'detail-line';
+      filesLine.innerHTML = '<span class="detail-label">Files:</span>';
+      if (files.length) {
+        const fw = document.createElement('div'); fw.className = 'detail-files attachment-grid';
+        files.forEach(f => {
+          const a = document.createElement('a');
+          a.className = 'detail-file-link attachment-card'; a.href = '#';
+          const ext = (f.name || '').split('.').pop().toLowerCase();
+          const fileBadge = ext === 'pdf' ? 'PDF'
+            : ['doc','docx'].includes(ext) ? 'WORD'
+            : ['xls','xlsx'].includes(ext) ? 'XLS'
+            : ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'IMG' : 'FILE';
+          const badgeClass = fileBadge.toLowerCase();
+          const sizeLabel = f.size ? Math.round(Number(f.size)/1024).toLocaleString('en-AU') + ' KB' : '';
+          a.innerHTML = `<span class="attachment-badge attachment-badge-${badgeClass}">${fileBadge}</span><span class="attachment-info"><span class="attachment-name">${escHtml(f.name)}</span><span class="attachment-size">${sizeLabel}</span></span><span class="attachment-open">OPEN ↗</span>`;
+          a.onclick = (e) => { e.preventDefault(); openFileViewer(f.path || f.url || '', f.name, f.type || ''); };
+          fw.appendChild(a);
+        });
+        detailsDiv.appendChild(filesLine);
+        detailsDiv.appendChild(fw);
+      } else {
+        const ns = document.createElement('span');
+        ns.style.cssText = 'color:#9ca3af;margin-left:4px;font-size:13px';
+        ns.textContent = 'No files attached';
+        filesLine.appendChild(ns);
+        detailsDiv.appendChild(filesLine);
+      }
+      // Admin Edit 버튼 — 기존 editQuote() 함수 호출
+      const _editFinalized = group.some(q => ['approved','declined','force_approved'].includes(q.status));
+      if (role === 'admin' && !_editFinalized) {
+        const editRow = document.createElement('div');
+        editRow.style.cssText = 'padding:10px 0 4px;display:flex;justify-content:flex-end';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-mgmt btn-mgmt-blue';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = (e) => { e.stopPropagation(); editQuote(quoteId); };
+        editRow.appendChild(editBtn);
+        detailsDiv.appendChild(editRow);
+      }
+      vendorItem.appendChild(detailsDiv);
+      vendorList.appendChild(vendorItem);
+    });
+
+    if (isVoting && group.length > 1) {
+      const step1 = document.createElement('div');
+      step1.className = 'step-title';
+      step1.innerHTML = '<span class="step-num">1</span>' + (isMultiVendorVoting ? 'Quotes (' + group.length + ') · Choose a vendor' : 'Choose a vendor');
+      card.appendChild(step1);
+    }
+    card.appendChild(vendorList);
+
+    // Draft: non-admin sees placeholder, admin still sees controls
+    if (isDraft && role !== 'admin') {
+      const overlay = document.createElement('div');
+      overlay.className = 'draft-overlay';
+      overlay.textContent = 'This quote is in draft. Waiting for admin to send to committee.';
+      card.appendChild(overlay);
+      container.appendChild(card);
+      return;
+    }
+
+    const votingSection = document.createElement('div');
+    votingSection.className = 'voting-section';
+
+    // (Old "Voting" section removed — vote buttons now inline next to YOU HAVE NOT VOTED banner)
+
+    // Admin force controls – always visible when voting
+    if (role === 'admin' && isVoting) {
+      const adminTitle = document.createElement('div');
+      adminTitle.className = 'section-title';
+      adminTitle.innerHTML = 'Admin Controls';
+      votingSection.appendChild(adminTitle);
+
+      const adminRow = document.createElement('div');
+      adminRow.className = 'btn-admin-row';
+      [
+        { label: 'Force Approve', status: 'approved', cls: 'btn-approve' },
+        { label: 'Force Hold',    status: 'onhold',   cls: 'btn-hold'    },
+        { label: 'Force Decline', status: 'declined', cls: 'btn-decline' }
+      ].forEach(({ label, status, cls }) => {
+        const btn = document.createElement('button');
+        btn.className = `btn-action ${cls}`;
+        btn.textContent = label;
+        btn.onclick = () => {
+          if (status !== 'declined' && !selectedQuote && group.length > 1) { showToast('Please select a vendor first', true); return; }
+          const targetId = selectedQuote?.id || group[0]?.id || null;
+          forceAction(status, targetId, group, btn);
+        };
+        adminRow.appendChild(btn);
+      });
+      votingSection.appendChild(adminRow);
+
+      const pjId = group[0]?.project_id || projectKey;
+      const pjVotes = allVotes.filter(v => v.project_id === pjId);
+      const votedSet = new Set(pjVotes.filter(v => v.vote).map(v => v.user_email));
+      const pendingMs = committeeMembers.filter(m => m.email && !votedSet.has(m.email));
+
+      if (pendingMs.length > 0) {
+        const remindRow = document.createElement('div');
+        remindRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center';
+
+        const isSingleVendor = group.length === 1;
+
+        const buildPayload = (recipients) => ({
+          project: group[0].project || group[0].project_title || 'Project',
+          recipients,
+          quotes: group.filter(q => q.vendor).map(q => ({
+            vendor: q.vendor, amount: q.amount || 0,
+            approvals: isSingleVendor
+              ? pjVotes.filter(v => v.vote === 'approve').length
+              : pjVotes.filter(v => v.vote === 'approve' && v.selected_quote_id === q.id).length,
+            holds: pjVotes.filter(v => v.vote === 'hold').length,
+            declines: pjVotes.filter(v => v.vote === 'decline').length
+          })),
+          votes: committeeMembers.map(cm => {
+            const vRow = pjVotes.find(v => v.user_email === cm.email);
+            const selQ = vRow?.selected_quote_id
+              ? group.find(q => q.id === vRow.selected_quote_id)
+              : (isSingleVendor && vRow?.vote === 'approve' ? group[0] : null);
+            return { name: cm.name, committeeRole: cm.committeeRole || '', vote: vRow?.vote || '', vendor: selQ?.vendor || '' };
+          }),
+          totalMembers: committeeMembers.length || 8
+        });
+
+        const remindAllBtn = document.createElement('button');
+        remindAllBtn.className = 'btn-mgmt btn-mgmt-blue';
+        remindAllBtn.innerHTML = `Remind Non-Voters (${pendingMs.length})`;
+        remindAllBtn.onclick = async () => {
+          remindAllBtn.disabled = true; remindAllBtn.textContent = 'Sending...';
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+              body: JSON.stringify(buildPayload(pendingMs.map(m => m.email)))
+            });
+            showToast(`Reminder sent to ${pendingMs.length} members`);
+          } catch(e) { showToast('Failed to send reminder', true); }
+          remindAllBtn.disabled = false; remindAllBtn.innerHTML = `Remind Non-Voters (${pendingMs.length})`;
+        };
+        remindRow.appendChild(remindAllBtn);
+
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn-mgmt';
+        testBtn.style.cssText = 'background:#fff7ed;color:#9a3412;border-color:#fdba74;font-size:12px;';
+        testBtn.innerHTML = `Test (Me)`;
+        testBtn.onclick = async () => {
+          testBtn.disabled = true; testBtn.textContent = 'Sending...';
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+              body: JSON.stringify(buildPayload(['sp77249.redmyre@gmail.com']))
+            });
+            showToast('Test reminder sent to yourself');
+          } catch(e) { showToast('Failed to send test', true); }
+          testBtn.disabled = false; testBtn.innerHTML = `Test (Me)`;
+        };
+        remindRow.appendChild(testBtn);
+
+        pendingMs.forEach(m => {
+          const pb = document.createElement('button');
+          pb.className = 'btn-mgmt';
+          pb.style.cssText = 'background:#f0fdf4;color:#166534;border-color:#86efac;font-size:12px;';
+          pb.innerHTML = `${m.name.split(' ')[0]}`;
+          pb.onclick = async () => {
+            pb.disabled = true; pb.textContent = 'Sent';
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-reminder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify(buildPayload([m.email]))
+              });
+              showToast(`Reminder sent to ${m.name.split(' ')[0]}`);
+            } catch(e) {
+              showToast('Failed to send reminder', true);
+              pb.disabled = false; pb.innerHTML = `${m.name.split(' ')[0]}`;
+            }
+          };
+          remindRow.appendChild(pb);
+        });
+
+        votingSection.appendChild(remindRow);
+      }
+    }
+
+    // Voting status – full committee grid (RENDERED FIRST, but moved to top via DOM)
+    const voteStatusFrag = document.createDocumentFragment();
+    const voteTitle = document.createElement('div');
+    voteTitle.className = 'section-title';
+    const voteTallyHTML = isVoting ? `<span class="tally-inline"><span class="tally-pill" style="background:#dcfce7;color:#166534">${totalApprovals}</span><span class="tally-pill" style="background:#fee2e2;color:#991b1b">${declines}</span><span class="tally-pill" style="background:#fef3c7;color:#92400e">${holds}</span></span>` : '';
+    voteTitle.innerHTML = 'Voting Status' + voteTallyHTML;
+    voteStatusFrag.appendChild(voteTitle);
+
+    // Vote tally bars (display only — uses the numbers already calculated above)
+    const voteTop = document.createElement('div');
+    voteTop.className = 'vote-top';
+    const tallyBox = document.createElement('div');
+    tallyBox.className = 'tally-box';
+    const tallyLeft = Math.max(0, TOTAL_VOTERS - votedRows.length);
+    const tallyLead = isDraft ? 'Voting has not started'
+      : resultApproved ? 'Approved'
+      : resultDeclined ? 'Declined'
+      : resultHold ? (isTieHold ? 'Tie – please reconsider' : 'On hold')
+      : 'Not decided yet';
+    const tallyRow = (cls, label, n, need) =>
+      '<div class="meter m-' + cls + '"><div class="m-row"><span class="m-name">' + label + '</span><span class="m-count"><b>' + n + '</b> of ' + need + ' needed</span></div>' +
+      '<div class="m-track"><div class="m-fill" style="width:' + Math.min(100, Math.round(n / need * 100)) + '%"></div></div></div>';
+    tallyBox.innerHTML = '<div class="m-lead">' + tallyLead + '</div><div class="m-sub">' + tallyLeft + ' of ' + TOTAL_VOTERS + ' members still to vote</div>' +
+      tallyRow('ok', 'Approve', approvals, RULES.approvalsRequired) +
+      tallyRow('hold', 'Hold', holds, RULES.holdsToAutoHold) +
+      tallyRow('no', 'Decline', declines, RULES.declinesToAutoDecline);
+    voteTop.appendChild(tallyBox);
+    voteStatusFrag.appendChild(voteTop);
+
+    const voteGrid = document.createElement('div');
+    voteGrid.className = 'voting-grid';
+
+    const isFinalized = group.some(q => ['approved','declined','onhold','force_approved'].includes(q.status));
+    const membersToShow = committeeMembers.length > 0
+      ? committeeMembers
+      : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
+
+    // My vote status banner + inline action buttons (committee only)
+    if (role === 'committee' && isVoting && !isLocked) {
+      const myVoteRow = getUserVoteRow(projectKey);
+      const hasVoted = myVoteRow && myVoteRow.vote && myVoteRow.vote !== '';
+
+      const bannerWrap = document.createElement('div');
+      bannerWrap.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap';
+
+      const myVoteBanner = document.createElement('div');
+      if (hasVoted) {
+        const myVoteLabel = myVoteRow.vote === 'approve' ? 'Approve' : myVoteRow.vote === 'hold' ? 'Hold' : 'Decline';
+        const mySelQ = myVoteRow.selected_quote_id
+          ? group.find(q => q.id === myVoteRow.selected_quote_id)
+          : (isSingle && myVoteRow.vote === 'approve' ? group[0] : null);
+        const myVendorText = mySelQ ? ' → ' + escHtml(mySelQ.vendor) : '';
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#dcfce7;border:1.5px solid #16a34a;border-radius:8px;font-size:13px;font-weight:800;color:#14532d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto';
+        myVoteBanner.innerHTML = 'YOU VOTED: ' + myVoteLabel + myVendorText;
+      } else {
+        myVoteBanner.style.cssText = 'padding:6px 12px;background:#fee2e2;border:1.5px solid #dc2626;border-radius:8px;font-size:13px;font-weight:800;color:#7f1d1d;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.02em;width:auto;animation:pulseVote 1.8s ease-in-out infinite';
+        myVoteBanner.innerHTML = 'YOU HAVE NOT VOTED YET';
+      }
+      bannerWrap.appendChild(myVoteBanner);
+
+      // Inline action buttons next to the banner
+      const inlineActions = document.createElement('div');
+      inlineActions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
+
+      const canVoteNow = (selectedQuote || isSingle);
+
+      if (hasVoted) {
+        // Change Vote button
+        const changeBtn = document.createElement('button');
+        changeBtn.className = 'btn-action';
+        changeBtn.style.cssText = 'padding:7px 14px;font-size:12px;background:#475569;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;letter-spacing:0.02em';
+        changeBtn.textContent = 'Change Vote';
+        changeBtn.onclick = async () => {
+          changeBtn.disabled = true;
+          await doUpsert(projectKey, { vote: '', selected_quote_id: null }, changeBtn, 'Change Vote');
+          changeBtn.disabled = false;
+        };
+        inlineActions.appendChild(changeBtn);
+      } else if (canVoteNow) {
+        ['approve','hold','decline'].forEach(type => {
+          const btn = document.createElement('button');
+          btn.className = `btn-action btn-${type}`;
+          btn.style.cssText = 'padding:7px 16px;font-size:12px;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;letter-spacing:0.02em';
+          btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+          btn.onclick = async () => {
+            inlineActions.querySelectorAll('button').forEach(b => { b.disabled = true; });
+            const payload = { vote: type };
+            if (!isSingle && type === 'approve' && !myVoteRow?.selected_quote_id && selectedQuote) {
+              payload.selected_quote_id = selectedQuote.id;
+            }
+            await doUpsert(projectKey, payload, btn, btn.textContent);
+            inlineActions.querySelectorAll('button').forEach(b => { b.disabled = false; });
+          };
+          inlineActions.appendChild(btn);
+        });
+      }
+
+      bannerWrap.appendChild(inlineActions);
+      const step2 = document.createElement('div');
+      step2.className = 'step-title step-vote';
+      step2.innerHTML = '<span class="step-num">2</span>Your vote' + (selectedQuote ? ' on ' + escHtml(selectedQuote.vendor) : '');
+      bannerWrap.insertBefore(step2, bannerWrap.firstChild);
+      voteTop.appendChild(bannerWrap);
+    }
+
+    if (membersToShow.length > 0) {
+      membersToShow.forEach(member => {
+        const vRow = projectVotes.find(v => v.user_email === member.email);
+        const cell = document.createElement('div');
+        const isMe = member.email === user.email;
+        cell.className = 'vote-cell' + (isMe ? ' vote-cell-me' : '');
+
+        let valueText = 'Pending';
+        let valueCls  = 'v-pending';
+
+        if (vRow && vRow.vote && vRow.vote !== '') {
+          const selQ = vRow.selected_quote_id
+            ? group.find(q => q.id === vRow.selected_quote_id)
+            : (group.length === 1 && vRow.vote === 'approve' ? group[0] : null);
+          const voteLabel = vRow.vote === 'approve' ? '✓ Approve' : vRow.vote === 'hold' ? 'Hold' : '✕ Decline';
+          valueCls  = vRow.vote === 'approve' ? 'v-approve' : vRow.vote === 'hold' ? 'v-hold' : 'v-decline';
+          valueText = (selQ ? escHtml(selQ.vendor) + ' → ' : '') + voteLabel;
+        } else if (isFinalized) {
+          valueCls  = 'v-closed';
+          valueText = 'Closed';
+        }
+
+        const shortRole = (member.committeeRole || '').replace('Committee Member', 'Committee');
+        const memberLabel = shortRole ? escHtml(member.name) + (isMe ? ' (You)' : '') + ' (' + escHtml(shortRole) + ')' : escHtml(member.name) + (isMe ? ' (You)' : '');
+        cell.innerHTML = '<span class="vote-who"><span class="vote-name">' + escHtml(member.name) + (isMe ? ' (You)' : '') + '</span>' + (shortRole ? '<span class="vote-role">' + escHtml(shortRole) + '</span>' : '') + '</span><span class="vote-value ' + valueCls + '">' + valueText + '</span>';
+        voteGrid.appendChild(cell);
+      });
+    } else {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color:#94a3b8;padding:12px;text-align:center;grid-column:1/-1';
+      empty.textContent = 'No votes recorded yet';
+      voteGrid.appendChild(empty);
+    }
+    const rosterTitle = document.createElement('div');
+    rosterTitle.className = 'roster-title';
+    rosterTitle.textContent = 'Votes so far';
+    voteStatusFrag.appendChild(rosterTitle);
+    voteStatusFrag.appendChild(voteGrid);
+    // Insert the entire Voting Status block at the TOP of the voting section
+    votingSection.insertBefore(voteStatusFrag, votingSection.firstChild);
+
+    // Discussion
+    const commTitle = document.createElement('div');
+    commTitle.className = 'section-title';
+    commTitle.innerHTML = 'Discussion';
+    votingSection.appendChild(commTitle);
+
+    const thread = document.createElement('div');
+    thread.className = 'pc-thread';
+    thread.id = 'pcThread_' + projectKey;
+    votingSection.appendChild(thread);
+
+    const loadProjectComments = async () => {
+      const { data: pcs } = await supabase.from('project_comments')
+        .select('*').eq('project_id', projectKey).order('created_at', { ascending: true });
+      thread.innerHTML = '';
+      if (!pcs || !pcs.length) {
+        thread.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px">No comments yet</div>';
+        return;
+      }
+      pcs.forEach((pc, idx) => {
+        const isOwn = pc.user_email === user.email;
+        const isEven = idx % 2 === 0;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'pc-msg ' + (isEven ? 'pc-msg-committee' : 'pc-msg-admin');
+        const displayName = pc.user_name || allProfiles[pc.user_email] || pc.user_email?.split('@')[0] || 'Unknown';
+        const nameColor = isEven ? '#2563eb' : '#166534';
+        const dt = new Date(pc.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        msgDiv.innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><div class="pc-msg-name" style="color:${nameColor};font-weight:900;font-size:18px">${escHtml(displayName)}</div><div class="pc-msg-time" style="margin-top:0">${dt}</div>${isOwn ? '<div style="display:flex;gap:5px;margin-left:auto"><button onclick="editPc(\'' + pc.id + '\', this)" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Edit</button><button onclick="deletePc(\'' + pc.id + '\', this)" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer">Delete</button></div>' : ''}</div><div class="pc-msg-body">${pc.comment.includes("<") ? pc.comment : pc.comment.replace(/\n/g, "<br>")}</div>`;
+        const pcMain = document.createElement('div');
+        pcMain.className = 'pc-main';
+        while (msgDiv.firstChild) pcMain.appendChild(msgDiv.firstChild);
+        const pcAv = document.createElement('div');
+        pcAv.className = 'pc-av' + (isOwn ? ' pc-av-me' : '');
+        pcAv.textContent = String(displayName || '?').trim().charAt(0).toUpperCase();
+        msgDiv.appendChild(pcAv);
+        msgDiv.appendChild(pcMain);
+        thread.appendChild(msgDiv);
+      });
+      thread.scrollTop = thread.scrollHeight;
+    }
+    loadProjectComments();
+
+    // Add Comment
+    const inputTitle = document.createElement('div');
+    inputTitle.className = 'section-title';
+    inputTitle.innerHTML = 'Add Comment';
+    votingSection.appendChild(inputTitle);
+
+    if (role !== 'observer') {
+      const inputArea = document.createElement('div');
+      inputArea.className = 'input-area';
+      const editorDiv = document.createElement('div');
+      editorDiv.id = 'commentEditor_' + projectKey;
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'submit-btn';
+      submitBtn.textContent = 'Send';
+      submitBtn.onclick = async () => {
+        const qEditor = inputArea._quill;
+        const txt = qEditor ? qEditor.root.innerHTML : '';
+        const plainTxt = qEditor ? qEditor.getText().trim() : '';
+        if (!plainTxt) { showToast('Please enter a comment', true); return; }
+        submitBtn.disabled = true;
+        const { error } = await supabase.from('project_comments').insert({
+          project_id: projectKey,
+          user_email: user.email,
+          user_name: allProfiles[user.email] || user.email?.split('@')[0] || '',
+          comment: txt
+        });
+        if (error) { showToast('Failed to send', true); }
+        else {
+          if(qEditor) qEditor.root.innerHTML = '';
+          await loadProjectComments();
+          if (window.logActivity) window.logActivity('QUOTE_COMMENTED', projectKey);
+        }
+        submitBtn.disabled = false;
+      };
+      inputArea.appendChild(editorDiv);
+      setTimeout(()=>{
+        if(window.Quill){
+          inputArea._quill = new Quill('#commentEditor_' + projectKey, {theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder:'Type your comment...'});
+        }
+      }, 100);
+      const submitRow = document.createElement('div');
+      submitRow.className = 'submit-row';
+      submitRow.appendChild(submitBtn);
+      inputArea.appendChild(submitRow);
+      votingSection.appendChild(inputArea);
+    }
+
+    // Result box
+    const resultBox = document.createElement('div');
+    let resultClass = 'result-pending';
+    let resultHTML  = 'RESULT: PENDING';
+
+    if (resultApproved) {
+      resultClass = 'result-approved';
+      const displayVendor = winnerQuote ? escHtml(winnerQuote.vendor) : (selectedQuote ? escHtml(selectedQuote.vendor) : '—');
+      resultHTML  = '' + displayVendor + ' selected by majority';
+    } else if (resultDeclined) {
+      resultClass = 'result-declined';
+      resultHTML  = 'RESULT: Declined';
+    } else if (resultHold) {
+      if (isTieHold) {
+        resultClass = 'result-tie';
+        resultHTML  = 'RESULT: Tie — Please reconsider your selection';
+      } else {
+        resultClass = 'result-onhold';
+        const holdReason = (approvals >= 4 && declines >= 4) ? ' (Conflict)' : '';
+        resultHTML  = 'RESULT: On Hold' + holdReason;
+      }
+    }
+
+    resultBox.className = 'result-box ' + resultClass;
+    resultBox.innerHTML = resultHTML;
+
+    // Build a row that will hold result + confirm button, placed at the TOP of voting section
+    const resultRow = document.createElement('div');
+    resultRow.className = 'result-row';
+
+    resultRow.appendChild(resultBox);
+
+    if (resultDetermined) {
+      const lockNotice = document.createElement('div');
+      lockNotice.style.cssText = 'font-size:15px;font-weight:800;color:#dc2626;display:flex;align-items:center;gap:6px';
+      lockNotice.innerHTML = 'Voting Closed';
+      resultRow.appendChild(lockNotice);
+    }
+
+    // Confirm button – only when result determined
+    if (role === 'admin' && isVoting && resultDetermined) {
+      // BUG 1 FIX: winnerQuoteId 없으면 votes에서 직접 재계산
+      let confirmQuoteId = null;
+      if (resultApproved) {
+        if (winnerQuoteId) {
+          confirmQuoteId = winnerQuoteId;
+        } else if (isSingle) {
+          confirmQuoteId = group[0]?.id || null;
+        } else {
+          const reMap = {};
+          group.forEach(q => { reMap[q.id] = 0; });
+          votedRows.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && reMap[v.selected_quote_id] !== undefined) reMap[v.selected_quote_id]++; });
+          const maxC = Math.max(...Object.values(reMap), 0);
+          confirmQuoteId = maxC > 0 ? Object.entries(reMap).find(([,c]) => c === maxC)?.[0] || null : null;
+        }
+      }
+      const confirmBtn = document.createElement('button');
+      confirmBtn.className = 'confirm-btn';
+      confirmBtn.innerHTML = 'Confirm &amp; Send Notification';
+      confirmBtn.onclick = () => confirmSelection(confirmQuoteId, group, confirmBtn, calcResult);
+      resultRow.appendChild(confirmBtn);
+
+      // NEW: Test Email button — sends preview to admin's own inbox only.
+      // Does NOT touch quotes/votes tables (no status change, no vote deletion).
+      const testBtn = document.createElement('button');
+      testBtn.className = 'confirm-btn';
+      testBtn.style.cssText = 'background:#f59e0b;margin-left:8px;';
+      testBtn.innerHTML = 'Send Test Email';
+      testBtn.onclick = () => sendTestEmail(confirmQuoteId, group, calcResult, votedRows, approvals, declines, holds, testBtn);
+      resultRow.appendChild(testBtn);
+    }
+
+    // Insert the result row at the TOP of the voting section (before Voting Status)
+    votingSection.insertBefore(resultRow, votingSection.firstChild);
+
+    // Layout (display only): left = vendors + discussion, right = vote panel
+    {
+      const qcBody = document.createElement('div'); qcBody.className = 'qc-body';
+      const qcMain = document.createElement('div'); qcMain.className = 'qc-main';
+      const s1 = card.querySelector(':scope > .step-title'); if (s1) qcMain.appendChild(s1);
+      qcMain.appendChild(vendorList);
+      const qcDisc = document.createElement('div'); qcDisc.className = 'qc-discuss';
+      [commTitle, thread, inputTitle].forEach(n => qcDisc.appendChild(n));
+      const ia = votingSection.querySelector(':scope > .input-area'); if (ia) qcDisc.appendChild(ia);
+      qcMain.appendChild(qcDisc);
+      votingSection.classList.add('qc-side');
+      if (isDraft) {
+        votingSection.classList.add('qc-draft');
+        const dn = document.createElement('div'); dn.className = 'qc-draft-note';
+        dn.innerHTML = '<b>Voting has not started</b><span>Voting opens after you click Send to Committee. Vote buttons and results will appear here.</span>';
+        votingSection.insertBefore(dn, votingSection.firstChild);
+      }
+      qcBody.appendChild(qcMain); qcBody.appendChild(votingSection);
+      card.appendChild(qcBody);
+    }
+    if (useProjectAccordion && isVoting) {
+      const accordionBody = document.createElement('div');
+      accordionBody.className = 'current-voting-project-content';
+      accordionBody.id = 'current-voting-content-' + projectIndex;
+      accordionBody.hidden = true;
+
+      header.classList.add('current-voting-project-toggle');
+      header.setAttribute('role', 'button');
+      header.setAttribute('tabindex', '0');
+      header.setAttribute('aria-expanded', 'false');
+      header.setAttribute('aria-controls', accordionBody.id);
+
+      const toggleProject = () => {
+        const opened = accordionBody.hidden;
+        accordionBody.hidden = !opened;
+        header.setAttribute('aria-expanded', String(opened));
+      };
+      header.onclick = toggleProject;
+      header.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleProject();
+        }
+      };
+
+      card.removeChild(header);
+      while (card.firstChild) accordionBody.appendChild(card.firstChild);
+      card.appendChild(header);
+      card.appendChild(accordionBody);
+    }
+    container.appendChild(card);
+  });
+}
+
+
+
+function renderOnHoldQuotes(quotes) {
+  const container = document.getElementById('onHoldList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!quotes.length) {
+    container.innerHTML = '<div style="padding:28px 20px;text-align:center;color:#94a3b8;font-size:14px">No quotes are currently on hold.</div>';
+    return;
+  }
+
+  const projectMap = {};
+  quotes.forEach(q => {
+    const key = q.project_id || q.id;
+    if (!projectMap[key]) projectMap[key] = [];
+    projectMap[key].push(q);
+  });
+
+  const projects = Object.values(projectMap);
+  const table = document.createElement('div');
+  table.className = 'onhold-table';
+
+  projects.forEach((group, index) => {
+    const first = group[0];
+    const projectKey = first.project_id || first.id;
+    const projectName = first.project || first.project_title || 'Project';
+    const parsedFirst = parseComment(first.comment);
+    const category = first.category || parsedFirst.category || 'General';
+    const priority = parsedFirst.priority || 'Normal';
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'project-header onhold-list-row';
+    row.setAttribute('aria-expanded', 'false');
+    const holdTimestamp = first.status_changed_at || first.created_at;
+    const holdDate = holdTimestamp ? new Date(holdTimestamp).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    row.innerHTML = '<span class="project-header-left onhold-header-left">' +
+      '<span style="width:36px;height:36px;border-radius:10px;background:#fff4df;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">Ⅱ</span>' +
+      '<span><span class="onhold-project-name">' + escHtml(projectName) + '</span>' +
+      '<span class="onhold-meta">' + escHtml(category) + ' · ' + group.length + ' vendor' + (group.length === 1 ? '' : 's') + ' · ' + escHtml(holdDate) + '</span></span></span>' +
+      '<span class="onhold-row-right"><span class="onhold-status-pill">ON HOLD</span><span class="onhold-row-chevron">⌄</span></span>';
+
+    const details = document.createElement('div');
+    details.className = 'onhold-project-details';
+    details.hidden = true;
+
+    row.onclick = () => {
+      const opened = details.hidden;
+      details.hidden = !opened;
+      row.setAttribute('aria-expanded', String(opened));
+      const chevron = row.querySelector('.onhold-row-chevron');
+      if (chevron) chevron.textContent = opened ? '⌃' : '⌄';
+    };
+
+    if (role === 'admin') {
+      const actions = document.createElement('div');
+      actions.className = 'onhold-project-actions';
+
+      const addQuoteBtn = document.createElement('button');
+      addQuoteBtn.type = 'button';
+      addQuoteBtn.className = 'btn-mgmt btn-mgmt-green';
+      addQuoteBtn.textContent = '+ Add Quote';
+      addQuoteBtn.onclick = (e) => {
+        e.stopPropagation();
+        openAddQuoteToProject(projectKey, projectName, category, priority);
+      };
+      actions.appendChild(addQuoteBtn);
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn-mgmt btn-mgmt-blue';
+      editBtn.textContent = 'Edit Project';
+      actions.appendChild(editBtn);
+
+      const expireBtn = document.createElement('button');
+      expireBtn.type = 'button';
+      expireBtn.className = 'btn-mgmt btn-mgmt-red';
+      expireBtn.textContent = 'Mark as Expired';
+      expireBtn.onclick = (e) => {
+        e.stopPropagation();
+        markExpired(group, expireBtn);
+      };
+      actions.appendChild(expireBtn);
+
+      const sendBtn = document.createElement('button');
+      sendBtn.type = 'button';
+      sendBtn.className = 'send-btn';
+      sendBtn.textContent = 'Send to Committee';
+      sendBtn.onclick = (e) => {
+        e.stopPropagation();
+        sendToCommittee(group, sendBtn, projectKey);
+      };
+      actions.appendChild(sendBtn);
+
+      const editForm = document.createElement('div');
+      editForm.className = 'edit-project-form onhold-edit-form';
+      editForm.id = 'ef-form-' + projectKey;
+      editForm.style.display = 'none';
+      editForm.innerHTML = '<div class="edit-form-row">' +
+        '<div class="edit-form-field"><label class="edit-form-label">Project Title</label><input class="edit-form-input" id="ef-title-' + projectKey + '" value="' + escHtml(projectName) + '" placeholder="Project title"></div>' +
+        '<div class="edit-form-field"><label class="edit-form-label">Category</label><select class="edit-form-select" id="ef-cat-' + projectKey + '">' +
+        ['General','HVAC','Fire','Electrical','Security','Plumbing','Lift','Legal'].map(v => '<option value="' + v + '"' + (v === category ? ' selected' : '') + '>' + v + '</option>').join('') +
+        '</select></div>' +
+        '<div class="edit-form-field"><label class="edit-form-label">Priority</label><select class="edit-form-select" id="ef-pri-' + projectKey + '">' +
+        ['Normal','High','Urgent'].map(v => '<option value="' + v + '"' + (v === priority ? ' selected' : '') + '>' + v + '</option>').join('') +
+        '</select></div><div><button type="button" class="btn-mgmt btn-mgmt-blue" onclick="saveProjectEdit(\'' + projectKey + '\',' + JSON.stringify(group.map(q => q.id)) + ')">Save</button> ' +
+        '<button type="button" class="btn-mgmt" onclick="document.getElementById(\'ef-form-' + projectKey + '\').style.display=\'none\'">Cancel</button></div></div>';
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
+      };
+
+      details.appendChild(actions);
+      details.appendChild(editForm);
+    }
+
+    const vendorList = document.createElement('div');
+    vendorList.className = 'vendor-list onhold-vendor-list';
+
+    group.forEach(q => {
+      const parsed = parseComment(q.comment);
+      const item = document.createElement('div');
+      item.className = 'vendor-item onhold-vendor-item';
+
+      const header = document.createElement('div');
+      header.className = 'vendor-header';
+      const content = document.createElement('div');
+      content.className = 'vendor-content';
+      content.innerHTML = '<div class="vendor-name">' + escHtml(q.vendor || 'Unknown Vendor') + '</div>' +
+        '<div class="vendor-meta-row"><div class="vendor-amount">$' + Number(q.amount || 0).toLocaleString('en-AU') + ' + GST</div></div>';
+
+      const viewBtn = document.createElement('button');
+      viewBtn.type = 'button';
+      viewBtn.className = 'btn-view-details';
+      viewBtn.innerHTML = '<span>View Details</span>';
+      content.querySelector('.vendor-meta-row').appendChild(viewBtn);
+      header.appendChild(content);
+
+      const detail = document.createElement('div');
+      detail.className = 'onhold-vendor-detail';
+      detail.hidden = true;
+
+      const addLine = (label, value, isHtml = false) => {
+        const line = document.createElement('div');
+        line.className = 'onhold-detail-line';
+        const labelEl = document.createElement('span');
+        labelEl.className = 'onhold-detail-label';
+        labelEl.textContent = label;
+        const valueEl = document.createElement('div');
+        valueEl.className = 'onhold-detail-value';
+        if (isHtml) valueEl.innerHTML = value || '—';
+        else valueEl.textContent = value || '—';
+        line.appendChild(labelEl);
+        line.appendChild(valueEl);
+        detail.appendChild(line);
+      };
+
+      addLine('Scope / Notes', q.notes || '—', true);
+      addLine('Internal Notes', parsed.note || '—', true);
+      addLine('Category', q.category || parsed.category || 'General');
+      addLine('Priority', parsed.priority || 'Normal');
+
+      const files = Array.isArray(parsed.files) ? parsed.files : [];
+      const filesLine = document.createElement('div');
+      filesLine.className = 'onhold-detail-line';
+      const filesLabel = document.createElement('span');
+      filesLabel.className = 'onhold-detail-label';
+      filesLabel.textContent = 'Attachments';
+      filesLine.appendChild(filesLabel);
+
+      if (files.length) {
+        const filesWrap = document.createElement('div');
+        filesWrap.className = 'detail-files attachment-grid';
+        files.forEach(f => {
+          const ext = (f.name || '').split('.').pop().toLowerCase();
+          const badge = ext === 'pdf' ? 'PDF'
+            : ['doc','docx'].includes(ext) ? 'WORD'
+            : ['xls','xlsx'].includes(ext) ? 'XLS'
+            : ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'IMG' : 'FILE';
+          const size = f.size ? Math.round(Number(f.size)/1024).toLocaleString('en-AU') + ' KB' : '';
+          const link = document.createElement('a');
+          link.href = '#';
+          link.className = 'detail-file-link attachment-card';
+          link.innerHTML = '<span class="attachment-badge attachment-badge-' + badge.toLowerCase() + '">' + badge + '</span>' +
+            '<span class="attachment-info"><span class="attachment-name">' + escHtml(f.name || 'Attachment') + '</span><span class="attachment-size">' + size + '</span></span>' +
+            '<span class="attachment-open">OPEN ↗</span>';
+          link.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openFileViewer(f.path || f.url || '', f.name || 'Attachment', f.type || '');
+          };
+          filesWrap.appendChild(link);
+        });
+        filesLine.appendChild(filesWrap);
+      } else {
+        const noFiles = document.createElement('span');
+        noFiles.className = 'onhold-detail-value';
+        noFiles.textContent = 'No files attached';
+        filesLine.appendChild(noFiles);
+      }
+      detail.appendChild(filesLine);
+
+      if (role === 'admin') {
+        const editQuoteRow = document.createElement('div');
+        editQuoteRow.style.cssText = 'display:flex;justify-content:flex-end;padding-top:14px;margin-top:8px;border-top:1px solid rgba(128,166,204,.2)';
+        const editQuoteBtn = document.createElement('button');
+        editQuoteBtn.type = 'button';
+        editQuoteBtn.className = 'btn-mgmt btn-mgmt-blue';
+        editQuoteBtn.textContent = 'Edit Quote';
+        editQuoteBtn.onclick = (e) => {
+          e.stopPropagation();
+          editQuote(q.id);
+        };
+        editQuoteRow.appendChild(editQuoteBtn);
+        detail.appendChild(editQuoteRow);
+      }
+
+      const toggleDetail = (e) => {
+        if (e) e.stopPropagation();
+        const opened = detail.hidden;
+        detail.hidden = !opened;
+        viewBtn.classList.toggle('is-open', opened);
+        const label = viewBtn.querySelector('span');
+        if (label) label.textContent = opened ? 'Hide Details' : 'View Details';
+      };
+      viewBtn.onclick = toggleDetail;
+      header.onclick = toggleDetail;
+
+      item.appendChild(header);
+      item.appendChild(detail);
+      vendorList.appendChild(item);
+    });
+
+    details.appendChild(vendorList);
+    const projectCard = document.createElement('div');
+    projectCard.className = 'project-card onhold-project-card';
+    projectCard.setAttribute('data-cat', category);
+    projectCard.appendChild(row);
+    projectCard.appendChild(details);
+    table.appendChild(projectCard);
+  });
+
+  container.appendChild(table);
+}
+
+async function placeProjectOnHold(group, triggerBtn) {
+  if (!Array.isArray(group) || !group.length || !group.every(q => q.status === 'draft')) {
+    showToast('Only Draft projects can be placed on hold', true);
+    return;
+  }
+  const projectName = group[0].project || group[0].project_title || 'this project';
+  if (!confirm('Place "' + projectName + '" on hold? Committee members will be able to view the quotes without an email being sent.')) return;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Saving…'; }
+  try {
+    const ids = group.map(q => q.id).filter(Boolean);
+    if (!ids.length) throw new Error('No quote IDs found');
+    const { error } = await supabase.from('quotes').update({
+      status: 'onhold',
+      status_changed_at: new Date().toISOString()
+    }).in('id', ids);
+    if (error) throw error;
+    showToast('Project placed on hold');
+    await loadData();
+    renderQuotes();
+  } catch (e) {
+    console.error('placeProjectOnHold error:', e);
+    showToast('Failed to place project on hold', true);
+    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Place on Hold'; }
+  }
+}
+
+async function permanentlyDeleteProject(group) {
+  if (!Array.isArray(group) || !group.length) throw new Error('No project quotes supplied');
+  const projectId = group[0].project_id || group[0].id;
+  const ids = group.map(q => q.id).filter(Boolean);
+  if (!projectId || !ids.length) throw new Error('Invalid project identifiers');
+
+  const storagePaths = [];
+  group.forEach(q => {
+    const parsed = parseComment(q.comment);
+    (Array.isArray(parsed.files) ? parsed.files : []).forEach(file => {
+      const rawPath = String(file.path || '').replace(/^\/+/, '');
+      const cleanPath = rawPath.replace(/^quotes\//, '');
+      if (cleanPath.startsWith(String(q.id) + '/')) storagePaths.push(cleanPath);
+    });
+  });
+  const uniquePaths = [...new Set(storagePaths)];
+
+  // Remove the project rows first and verify the DELETE policy actually allowed it.
+  const { data: deletedQuotes, error: quoteError } = await supabase
+    .from('quotes').delete().in('id', ids).select('id');
+  if (quoteError) throw quoteError;
+  const deletedIds = new Set((deletedQuotes || []).map(row => row.id));
+  if (deletedIds.size !== ids.length) {
+    throw new Error('Quote deletion was blocked or incomplete. No related records were intentionally removed.');
+  }
+
+  const cleanupWarnings = [];
+  const { data: existingVotes, error: voteReadError } = await supabase
+    .from('votes').select('id').eq('project_id', projectId);
+  if (voteReadError) {
+    cleanupWarnings.push('vote records');
+  } else {
+    const { data: deletedVotes, error: votesError } = await supabase
+      .from('votes').delete().eq('project_id', projectId).select('id');
+    if (votesError || (deletedVotes || []).length !== (existingVotes || []).length) {
+      cleanupWarnings.push('vote records');
+    }
+  }
+
+  const { data: existingComments, error: commentReadError } = await supabase
+    .from('project_comments').select('id').eq('project_id', projectId);
+  if (commentReadError) {
+    cleanupWarnings.push('project comments');
+  } else {
+    const { data: deletedComments, error: commentsError } = await supabase
+      .from('project_comments').delete().eq('project_id', projectId).select('id');
+    if (commentsError || (deletedComments || []).length !== (existingComments || []).length) {
+      cleanupWarnings.push('project comments');
+    }
+  }
+
+  for (let i = 0; i < uniquePaths.length; i += 1000) {
+    const batch = uniquePaths.slice(i, i + 1000);
+    const { data: removedFiles, error: storageError } = await supabase.storage.from('quotes').remove(batch);
+    if (storageError || (removedFiles || []).length !== batch.length) {
+      cleanupWarnings.push('attached files');
+      console.error('Quote attachment cleanup incomplete:', storageError || 'Removed file count did not match requested count');
+      break;
+    }
+  }
+  return { cleanupWarnings };
+}
+
+/*
+  CORE UPSERT
+  - Uses supabase upsert with onConflict: 'project_id,user_email'
+  - No insert/update branching
+  - Strict vote-once guard
+  - Strict null checks
+*/
+async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
+  // PATCH 5: strict null/undefined safety
+  if (!projectId || typeof projectId !== 'string' || !projectId.trim()) { showToast('Invalid project', true); return; }
+  if (!user?.email || typeof user.email !== 'string' || !user.email.trim()) { showToast('Authentication error', true); return; }
+
+  const lockKey = projectId + '|' + user.email;
+  if (actionLocks.get(lockKey)) return;
+  actionLocks.set(lockKey, true);
+
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '…'; }
+
+  try {
+    // Hard vote lock – re-fetch from local state, block any overwrite
+    if (fields.vote !== undefined && fields.vote !== null) {
+      const current = getUserVoteRow(projectId);
+      // Result-lock guard: recalculate from latest allVotes before allowing vote
+      const guardGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+      const guardVoted   = allVotes.filter(v => v.project_id === projectId && v.vote && v.vote !== '');
+      const guardSingle  = guardGroup.length === 1;
+      const gVMap        = {};
+      guardGroup.forEach(q => { gVMap[q.id] = 0; });
+      guardVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && gVMap[v.selected_quote_id] !== undefined) gVMap[v.selected_quote_id]++; });
+      const gVals        = Object.values(gVMap);
+      const gMaxA        = guardSingle ? guardVoted.filter(v => v.vote === 'approve').length : (gVals.length > 0 ? Math.max(...gVals) : 0);
+      const gCntMax      = gVals.filter(c => c === gMaxA && c > 0).length;
+      const gHasTie      = !guardSingle && gCntMax > 1 && gMaxA > 0;
+      const gDec         = guardVoted.filter(v => v.vote === 'decline').length;
+      const gHold        = guardVoted.filter(v => v.vote === 'hold').length;
+      const gResult      = calculateResult({ approvals: gMaxA, declines: gDec, holds: gHold, hasTie: gHasTie, totalVoted: guardVoted.length });
+      if (gResult !== 'pending' && !(gResult === 'hold' && gHasTie)) {
+        showToast('Voting is already closed – result determined', true);
+        if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = btnOrigText; }
+        return;
+      }
+
+      // Voting requires vendor selection (skip for single-quote projects)
+      const pGroupForCheck = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+      if (pGroupForCheck.length !== 1 && fields.vote !== 'hold' && fields.vote !== 'decline' && !current?.selected_quote_id) {
+        showToast('Please select a vendor first', true);
+        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = btnOrigText; }
+        return;
+      }
+    }
+
+    // INSERT / UPDATE 분기 — 중복 row 원천 차단
+    const existingRow = getUserVoteRow(projectId);
+    const mergedFields = {};
+    Object.entries(fields).forEach(([k, v]) => { if (v !== undefined) mergedFields[k] = v; });
+
+    let error;
+    if (existingRow?.id) {
+      // 기존 row → UPDATE (id 기준, 절대 중복 없음)
+      ({ error } = await supabase
+        .from('votes')
+        .update(mergedFields)
+        .eq('id', existingRow.id));
+    } else {
+      // 새 row → INSERT
+      const insertPayload = { project_id: projectId, user_email: user.email, ...mergedFields };
+      ({ error } = await supabase
+        .from('votes')
+        .insert(insertPayload));
+    }
+
+    if (error) throw error;
+
+    if (onSuccess) onSuccess();
+
+    const key = Object.keys(fields)[0];
+    const msgs = {
+      selected_quote_id: fields.selected_quote_id ? 'Vendor selected' : 'Selection cleared',
+      vote:    `Vote recorded: ${fields.vote}`,
+      comment: 'Comment submitted'
+    };
+    showToast(msgs[key] || '✔ Saved');
+    await loadData();
+    renderQuotes();
+
+    // Notify admin when voting result is first determined (non-blocking)
+    if (fields.vote) {
+      try {
+        const pVotes   = getProjectVotes(projectId);
+        const pVoted   = pVotes.filter(v => v.vote && v.vote !== '');
+        const pGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
+        if (pGroup.length > 0) {
+          const pFirst      = pGroup[0];
+          const pIsSingle   = pGroup.length === 1;
+          const vMap        = {};
+          pGroup.forEach(q => { vMap[q.id] = 0; });
+          pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && vMap[v.selected_quote_id] !== undefined) vMap[v.selected_quote_id]++; });
+          const vMapVals    = Object.values(vMap);
+          const maxA        = pIsSingle ? pVoted.filter(v => v.vote === 'approve').length : (vMapVals.length > 0 ? Math.max(...vMapVals) : 0);
+          const cntAtMax    = vMapVals.filter(c => c === maxA && c > 0).length;
+          const pHasTie     = !pIsSingle && cntAtMax > 1 && maxA > 0;
+          const pDec        = pVoted.filter(v => v.vote === 'decline').length;
+          const pHold       = pVoted.filter(v => v.vote === 'hold').length;
+          const pCalcResult = calculateResult({ approvals: maxA, declines: pDec, holds: pHold, hasTie: pHasTie, totalVoted: pVoted.length });
+          if (pCalcResult !== 'pending' && !resultEmailSent.has(projectId)) {
+            resultEmailSent.add(projectId);
+            const resultLabel = pCalcResult === 'approved' ? 'Approved' : pCalcResult === 'declined' ? 'Declined' : 'On Hold';
+            // Push to Jacob (admin) only
+            try {
+              const { data: adminProfiles } = await supabase.from('profiles').select('id').eq('role', 'admin').single();
+              if (adminProfiles?.id) {
+                const { data: { session: pushSession } } = await supabase.auth.getSession();
+                await fetch('/api/send-push', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+                  body: JSON.stringify({ user_id: adminProfiles.id, title: `🗳 Voting Complete — ${resultLabel}`, message: `${pFirst.project || pFirst.project_title || 'Project'} — Please confirm`, url: '/pages/quotes.html' })
+                });
+              }
+            } catch(pushErr) {}
+          }
+        }
+      } catch(notifyErr) { console.warn('Result notification error:', notifyErr); }
+    }
+  } catch(e) {
+    console.error('doUpsert error:', JSON.stringify(e));
+    showToast('Failed to save. Please try again.', true);
+    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = btnOrigText; }
+  } finally {
+    actionLocks.set(lockKey, false);
+    if (triggerBtn && triggerBtn.textContent === '…') {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = btnOrigText;
+    }
+  }
+}
+
+// Send Draft or On Hold project → Committee voting
+async function sendToCommittee(group, btn, projectKey) {
+  if (!Array.isArray(group) || !group.length) return;
+  const isDraftProject = group.every(q => q.status === 'draft');
+  const isOnHoldProject = group.every(q => q.status === 'onhold');
+  if (!isDraftProject && !isOnHoldProject) {
+    showToast('This project is not in Draft or On Hold', true);
+    return;
+  }
+  const projectName = group[0].project || group[0].project_title || 'this project';
+  const prompt = isOnHoldProject
+    ? 'Send all On Hold quotes for "' + projectName + '" to Committee and start a new voting round? Previous votes for this project will be cleared.'
+    : 'Send these quotes to committee for voting?';
+  if (!confirm(prompt)) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    const ids = group.map(q => q.id).filter(Boolean);
+    if (!ids.length) throw new Error('No valid quote IDs');
+
+    // A resumed On Hold project starts a fresh vote. Clear its earlier vote rows first.
+    if (isOnHoldProject) {
+      const { error: voteError } = await supabase.from('votes').delete().eq('project_id', projectKey);
+      if (voteError) throw voteError;
+    }
+
+    const { error } = await supabase.from('quotes').update({
+      status: 'voting',
+      status_changed_at: new Date().toISOString()
+    }).in('id', ids);
+    if (error) throw error;
+
+    showToast('Quotes sent to committee');
+    try {
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '🗳 Voting Started', message: `${projectName} — Please cast your vote`, url: '/pages/quotes.html' })
+      });
+      await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-voting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ project: projectName, quotes: group.filter(q => q.vendor).map(q => ({ vendor: q.vendor, amount: q.amount || 0 })) })
+      });
+    } catch(pushErr) {}
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('sendToCommittee error:', e);
+    showToast('Failed to send', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send to Committee'; }
+  }
+}
+
+// Force action – deterministic status transitions
+window.forceAction = async function(status, quoteId, group, triggerBtn) {
+  if (!Array.isArray(group) || !group.length) { showToast('Invalid group', true); return; }
+  if (status === 'declined') {
+    const projectName = group[0].project || group[0].project_title || 'this project';
+    const vendorCount = group.length;
+    if (!confirm('Permanently delete "' + projectName + '" and all ' + vendorCount + ' quote(s), votes, project comments and attached files? This cannot be undone.')) return;
+  }
+  if (triggerBtn) triggerBtn.disabled = true;
+  try {
+    const allIds = group.map(q => q.id).filter(Boolean);
+    const otherIds = quoteId ? allIds.filter(id => id !== quoteId) : allIds;
+
+    if (status === 'approved') {
+      if (!quoteId) { showToast('Select a vendor first', true); if (triggerBtn) triggerBtn.disabled = false; return; }
+      if (otherIds.length) {
+        const { error } = await supabase.from('quotes').update({ status: 'declined', status_changed_at: new Date().toISOString() }).in('id', otherIds);
+        if (error) throw error;
+      }
+      const { error } = await supabase.from('quotes').update({
+        status: 'approved',
+        status_changed_at: new Date().toISOString(),
+        work_status: 'scheduled',
+        work_start_date: new Date().toISOString().split('T')[0]
+      }).eq('id', quoteId);
+      if (error) throw error;
+    } else if (status === 'declined') {
+      const deleteResult = await permanentlyDeleteProject(group);
+      if (deleteResult.cleanupWarnings.length) {
+        showToast('Project deleted, but cleanup needs attention: ' + deleteResult.cleanupWarnings.join(', '), true);
+      }
+    } else if (status === 'onhold') {
+      const { error } = await supabase.from('quotes').update({
+        status: 'onhold',
+        status_changed_at: new Date().toISOString()
+      }).in('id', allIds);
+      if (error) throw error;
+    }
+
+    if (status !== 'declined') showToast(`Quote set to ${status}`);
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('forceAction error:', e);
+    showToast(e.message || 'Failed to apply action', true);
+    if (triggerBtn) triggerBtn.disabled = false;
+  }
+};
+
+// Confirm – selected → approved, others → declined (always)
+// NEW: Test Email — preview the confirmation email without touching quotes/votes tables.
+// Sends only to the admin's own inbox (testRecipient), never to the full committee.
+window.sendTestEmail = async function(quoteId, group, calcResult, votedRows, approvals, declines, holds, triggerBtn) {
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Sending test…'; }
+  try {
+    const voteDetails = votedRows.map(v => ({
+      name: allProfiles[v.user_email] || v.user_email,
+      email: v.user_email,
+      vote: v.vote
+    }));
+    const { data: { session: testSession } } = await supabase.auth.getSession();
+    await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${testSession.access_token}` },
+      body: JSON.stringify({
+        project: group[0].project || group[0].project_title || 'Project',
+        result: calcResult,
+        quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })),
+        voteCounts: { approvals, declines, holds },
+        project_id: group[0]?.project_id || null,
+        selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '',
+        voteDetails,
+        testRecipient: user.email
+      })
+    });
+    showToast('🧪 Test email sent to ' + user.email);
+  } catch(e) {
+    console.error('sendTestEmail error:', e);
+    showToast('Failed to send test email', true);
+  } finally {
+    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = 'Send Test Email'; }
+  }
+};
+
+window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult) {
+  if (!Array.isArray(group) || !group.length) return;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Confirming…'; }
+  try {
+    // Recalculate result at confirm time — final authority, overrides UI-passed value
+    const projectId    = group[0]?.project_id || group[0]?.id;
+    const pVotes       = allVotes.filter(v => v.project_id === projectId);
+    const pVoted       = pVotes.filter(v => v.vote && v.vote !== '');
+    const pIsSingle    = group.length === 1;
+    const vMap         = {};
+    group.forEach(q => { vMap[q.id] = 0; });
+    pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && vMap[v.selected_quote_id] !== undefined) vMap[v.selected_quote_id]++; });
+    const vVals        = Object.values(vMap);
+    const maxApprovals = pIsSingle ? pVoted.filter(v => v.vote === 'approve').length : (vVals.length ? Math.max(...vVals) : 0);
+    const pDeclines    = pVoted.filter(v => v.vote === 'decline').length;
+    const pHolds       = pVoted.filter(v => v.vote === 'hold').length;
+    const tieCnt       = vVals.filter(c => c === maxApprovals && c > 0).length;
+    const pHasTie      = !pIsSingle && tieCnt > 1;
+    calcResult = calculateResult({ approvals: maxApprovals, declines: pDeclines, holds: pHolds, hasTie: pHasTie, totalVoted: pVoted.length });
+
+    const allIds   = group.map(q => q.id).filter(Boolean);
+    const otherIds = quoteId ? allIds.filter(id => id !== quoteId) : allIds;
+    let declineCleanupWarnings = [];
+
+    if (calcResult === 'approved') {
+      // BUG 1+5 FIX: quoteId 없으면 votes에서 자동 재계산
+      if (!quoteId) {
+        const reMap = {};
+        group.forEach(q => { reMap[q.id] = 0; });
+        pVoted.forEach(v => { if (v.vote === 'approve' && v.selected_quote_id && reMap[v.selected_quote_id] !== undefined) reMap[v.selected_quote_id]++; });
+        const maxC = Math.max(...Object.values(reMap), 0);
+        quoteId = maxC > 0 ? Object.entries(reMap).find(([,c]) => c === maxC)?.[0] || null : null;
+      }
+      if (!quoteId) { showToast('No vendor selected', true); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Confirm & Send Notification'; } return; }
+      // Winner → approved + work_status=scheduled (single source of truth: quotes table)
+      const { error: eA } = await supabase.from('quotes').update({
+        status: 'approved',
+        status_changed_at: new Date().toISOString(),
+        work_status: 'scheduled',
+        work_start_date: new Date().toISOString().split('T')[0]
+      }).eq('id', quoteId);
+      if (eA) throw eA;
+      if (otherIds.length) {
+        const { error: eD } = await supabase.from('quotes').update({ status: 'declined', status_changed_at: new Date().toISOString() }).in('id', otherIds);
+        if (eD) throw eD;
+      }
+
+    } else if (calcResult === 'hold') {
+      // ALL quotes → onhold
+      const { error: eH } = await supabase.from('quotes').update({ status: 'onhold', status_changed_at: new Date().toISOString() }).in('id', allIds);
+      if (eH) throw eH;
+
+    } else if (calcResult === 'declined') {
+      const projectName = group[0].project || group[0].project_title || 'this project';
+      if (!confirm('Committee voting resulted in Declined. Permanently delete "' + projectName + '" and all related quote data, votes, comments and attachments?')) {
+        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Confirm & Send Notification'; }
+        return;
+      }
+      const deleteResult = await permanentlyDeleteProject(group);
+      declineCleanupWarnings = deleteResult.cleanupWarnings || [];
+
+    } else {
+      console.error('Invalid result state in confirmSelection:', calcResult);
+      showToast('Invalid result state – please reload and try again', true);
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Confirm & Send Notification'; }
+      return;
+    }
+
+    // NEW: votes 삭제되기 전에 이름별 투표 내역 스냅샷 (email-quote-confirm 이메일용)
+    const voteDetails = pVoted.map(v => ({
+      name: allProfiles[v.user_email] || v.user_email,
+      email: v.user_email,
+      vote: v.vote
+    }));
+
+    // 투표 완료 후 votes 삭제 (프로젝트 완료 시 깨끗하게)
+    const projectIdToClean = group[0]?.project_id || group[0]?.id;
+    if (projectIdToClean) {
+      await supabase.from('votes').delete().eq('project_id', projectIdToClean);
+    }
+    showToast(declineCleanupWarnings.length
+      ? 'Project deleted, but cleanup needs attention: ' + declineCleanupWarnings.join(', ')
+      : '✔ Selection confirmed and notification sent');
+    try {
+      const { data: { session: pushSession } } = await supabase.auth.getSession();
+      await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ target_roles: ['admin','committee','observer'], title: '✔ Quote Confirmed', message: `${group[0].project || group[0].project_title || 'Project'} — ${calcResult === 'approved' ? 'Approved' : calcResult === 'declined' ? 'Declined' : 'On Hold'}`, url: calcResult === 'approved' ? '/pages/works.html' : '/pages/quotes.html' })
+      });
+      await fetch('https://wunsexdnqathluplkkvo.supabase.co/functions/v1/email-quote-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
+        body: JSON.stringify({ project: group[0].project || group[0].project_title || 'Project', result: calcResult, quotes: group.map(q => ({ vendor: q.vendor, amount: q.amount || 0 })), voteCounts: { approvals: maxApprovals, declines: pDeclines, holds: pHolds }, project_id: group[0]?.project_id || null, selectedVendor: calcResult === 'approved' ? (group.find(q => q.id === quoteId)?.vendor || '') : '', voteDetails })
+      });
+    } catch(pushErr) {}
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('confirmSelection error:', e);
+    showToast('Failed to confirm', true);
+    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Confirm & Send Notification'; }
+  }
+};
+
+// Edit individual quote (opens modal pre-filled)
+window.editQuote = function(id) {
+  const q = allQuotes.find(x => x.id === id);
+  if (!q) return;
+  const parsed = parseComment(q.comment);
+
+  // Populate project select
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  const opt = document.createElement('option');
+  opt.value = q.project_id || q.id;
+  opt.textContent = q.project || q.project_title || '';
+  sel.appendChild(opt);
+  sel.value = q.project_id || q.id;
+
+  document.getElementById('quoteProject').style.display  = 'none';
+  document.getElementById('quoteEditId').value           = q.id;
+  document.getElementById('quoteVendor').value           = q.vendor  || '';
+  document.getElementById('quoteAmount').value           = q.amount  || '';
+  document.getElementById('quoteCategory').value         = q.category || parsed.category || 'General';
+  document.getElementById('quotePriority').value         = parsed.priority || 'Normal';
+  document.getElementById('quoteNotes').value            = q.notes   || '';
+  document.getElementById('quoteInternalNote').value     = parsed.note || '';
+  document.getElementById('quoteCategory').disabled      = false;
+  document.getElementById('quotePriority').disabled      = false;
+  document.getElementById('quoteModalTitle').textContent = 'Edit Quote';
+  document.getElementById('deleteQuoteBtn').style.display = 'inline-flex';
+  pendingFiles = [];
+  document.getElementById('fileList').innerHTML = '';
+
+  // Render existing files with remove buttons
+  window._editingExistingFiles = Array.isArray(parsed.files) ? [...parsed.files] : [];
+  renderExistingFilesList();
+
+  document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill(q.notes||'', parsed.note||''); },50);
+};
+
+window.renderExistingFilesList = function() {
+  const wrap = document.getElementById('existingFilesList');
+  if (!wrap) return;
+  const files = window._editingExistingFiles || [];
+  if (!files.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:500">Current files:</div>' +
+    files.map((f, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;margin-bottom:6px">
+        <span style="font-size:14px"></span>
+        <span style="flex:1;font-size:13px;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(f.name||'(unnamed)')}</span>
+        <button type="button" onclick="removeExistingFile(${i})" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer">✕ Remove</button>
+      </div>`).join('');
+};
+
+window.removeExistingFile = function(idx) {
+  if (!Array.isArray(window._editingExistingFiles)) return;
+  const f = window._editingExistingFiles[idx];
+  if (!f) return;
+  if (!confirm(`Remove file "${f.name||'(unnamed)'}" from this quote?\n\nThis will be applied when you click Save Quote.`)) return;
+  window._editingExistingFiles.splice(idx, 1);
+  renderExistingFilesList();
+};
+
+// Mark all quotes in project as expired (non-destructive)
+window.markExpired = async function(group, btn) {
+  if (!Array.isArray(group) || !group.length) return;
+  if (!confirm('Mark this project as Expired? This will not delete any data.')) return;
+  if (btn) btn.disabled = true;
+  try {
+    const ids = group.map(q => q.id).filter(Boolean);
+    const { error } = await supabase.from('quotes').update({ status: 'expired', status_changed_at: new Date().toISOString() }).in('id', ids);
+    if (error) throw error;
+    showToast('Project marked as expired');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('markExpired error:', e);
+    showToast('Failed to mark expired', true);
+    if (btn) btn.disabled = false;
+  }
+};
+
+// Save project edits: title, category, priority
+window.saveProjectEdit = async function(projectKey, quoteIds) {
+  const titleEl = document.getElementById('ef-title-' + projectKey);
+  const catEl   = document.getElementById('ef-cat-'   + projectKey);
+  const priEl   = document.getElementById('ef-pri-'   + projectKey);
+  if (!titleEl || !catEl || !priEl) return;
+
+  const newTitle = titleEl.value.trim();
+  const newCat   = catEl.value;
+  const newPri   = priEl.value;
+  if (!newTitle) { showToast('Project title cannot be empty', true); return; }
+
+  try {
+    // Batch update: single upsert instead of N queries
+    const updatedQuotes = quoteIds.map(qid => {
+      const q = allQuotes.find(x => x.id === qid);
+      if (!q) return null;
+      const parsed    = parseComment(q.comment);
+      parsed.priority = newPri;
+      return {
+        id:            qid,
+        project:       newTitle,
+        project_title: newTitle,
+        category:      newCat,
+        comment:       JSON.stringify(parsed)
+      };
+    }).filter(Boolean);
+    const { error } = await supabase
+      .from('quotes')
+      .upsert(updatedQuotes, { onConflict: 'id' });
+    if (error) throw error;
+    showToast('Project updated');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('saveProjectEdit error:', e);
+    showToast('Failed to update project', true);
+  }
+};
+
+// Open quote create modal pre-filled for existing project
+window.openAddQuoteToProject = function(projectId, projectName, category, priority) {
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  // Add existing project as option and select it
+  const opt = document.createElement('option');
+  opt.value       = projectId;
+  opt.textContent = projectName;
+  sel.appendChild(opt);
+  sel.value = projectId;
+
+  // Pre-fill and lock category / priority
+  document.getElementById('quoteProject').style.display  = 'none';
+  document.getElementById('quoteProject').value          = '';
+  document.getElementById('quoteCategory').value         = category;
+  document.getElementById('quotePriority').value         = priority;
+  document.getElementById('quoteCategory').disabled      = true;
+  document.getElementById('quotePriority').disabled      = true;
+
+  pendingFiles = [];
+  document.getElementById('fileList').innerHTML       = '';
+  document.getElementById('quoteEditId').value        = '';
+  document.getElementById('quoteModalTitle').textContent = 'Add Quote to ' + projectName;
+  document.getElementById('deleteQuoteBtn').style.display = 'none';
+  document.getElementById('quoteVendor').value  = '';
+  document.getElementById('quoteAmount').value  = '';
+  document.getElementById('quoteNotes').value   = '';
+  document.getElementById('quoteInternalNote').value = '';
+  document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill('',''); },50);
+};
+
+// File upload
+window.handleFileSelect = function(event) {
+  Array.from(event.target.files).forEach(f => {
+    if (!pendingFiles.find(p => p.name === f.name)) pendingFiles.push(f);
+  });
+  renderFileList();
+  event.target.value = '';
+};
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  pendingFiles.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = `${escHtml(f.name)} <button onclick="removeFile(${i})">✕</button>`;
+    list.appendChild(chip);
+  });
+}
+window.removeFile = function(idx) { pendingFiles.splice(idx, 1); renderFileList(); };
+async function uploadFiles(quoteId) {
+  const uploaded = [];
+  for (const file of pendingFiles) {
+    const ext  = file.name.split('.').pop();
+    const safeName = file.name.replace(/[^\w.\-]/g, '_');
+    const path = `${quoteId}/${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabase.storage.from('quotes').upload(path, file);
+    if (error) { console.error('upload error:', error); continue; }
+    uploaded.push({ name: file.name, path, type: file.type || '', size: file.size || 0 });
+  }
+  return uploaded;
+}
+
+// Modal
+window.openCreateProject = function() {
+  const sel = document.getElementById('projectSelect');
+  sel.innerHTML = '<option value="">+ New Project</option>';
+  const seen = new Set();
+  allQuotes.filter(q => ['draft','voting','pending'].includes(q.status)).forEach(q => {
+    const name = q.project || q.project_title;
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      const opt = document.createElement('option');
+      opt.value = q.project_id || q.id;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  });
+  pendingFiles = [];
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('quoteEditId').value = '';
+  document.getElementById('quoteModalTitle').textContent = 'Add New Quote';
+  document.getElementById('deleteQuoteBtn').style.display = 'none';
+  document.getElementById('quoteProject').style.display = 'block';
+  document.getElementById('quoteProject').value  = '';
+  document.getElementById('quoteVendor').value   = '';
+  document.getElementById('quoteAmount').value   = '';
+  document.getElementById('quoteCategory').value = 'General';
+  document.getElementById('quotePriority').value = 'Normal';
+  document.getElementById('quoteCategory').disabled = false;
+  document.getElementById('quotePriority').disabled = false;
+  document.getElementById('quoteNotes').value    = '';
+  document.getElementById('quoteInternalNote').value = '';
+  document.getElementById('quoteModal').classList.add('open');
+  setTimeout(()=>{ if(window._initQuill) window._initQuill('',''); },50);
+};
+
+window.handleProjectSelect = function() {
+  const sel   = document.getElementById('projectSelect');
+  const isNew = sel.value === '';
+  document.getElementById('quoteProject').style.display = isNew ? 'block' : 'none';
+  if (!isNew) {
+    const existing = allQuotes.find(q => (q.project_id || q.id) === sel.value);
+    if (existing) {
+      const parsed = parseComment(existing.comment);
+      document.getElementById('quoteCategory').value    = existing.category || parsed.category || 'General';
+      document.getElementById('quotePriority').value    = parsed.priority || 'Normal';
+      document.getElementById('quoteCategory').disabled = true;
+      document.getElementById('quotePriority').disabled = true;
+    }
+  } else {
+    document.getElementById('quoteCategory').disabled = false;
+    document.getElementById('quotePriority').disabled = false;
+  }
+};
+
+window.closeModal = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+  if (id === 'quoteModal') {
+    window._editingExistingFiles = [];
+    const wrap = document.getElementById('existingFilesList');
+    if (wrap) wrap.innerHTML = '';
+  }
+};
+
+window.formatAmount = function(input) { input.value = input.value.replace(/[^0-9.]/g, ''); };
+
+window.saveQuote = async function() {
+  const sel         = document.getElementById('projectSelect');
+  const isNew       = sel.value === '';
+  const projectName = isNew ? document.getElementById('quoteProject').value.trim() : (sel.options[sel.selectedIndex]?.text || '');
+  const vendor      = document.getElementById('quoteVendor').value.trim();
+  const amount      = parseFloat(document.getElementById('quoteAmount').value.replace(/[^0-9.]/g,'')) || 0;
+  const category    = document.getElementById('quoteCategory').value;
+  const priority    = document.getElementById('quotePriority').value;
+  const notes       = document.getElementById('quoteNotes').value.trim();
+  const internalNote = document.getElementById('quoteInternalNote').value.trim();
+
+  if (!vendor || amount <= 0) { showToast('Please fill all required fields', true); return; }
+
+  const btn = document.getElementById('saveQuoteBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    // ── 기존 견적 수정 (editId 있을 때) ──
+    const editId = document.getElementById('quoteEditId').value;
+    if (editId) {
+      const existingQ   = allQuotes.find(x => x.id === editId);
+      if (!existingQ) { showToast('Quote not found', true); btn.disabled=false; btn.textContent='Save Quote'; return; }
+      const existingParsed = parseComment(existingQ.comment);
+      const uploadedNew    = pendingFiles.length > 0 ? await uploadFiles(editId) : [];
+      // Use edited files list (with removals) instead of existingParsed.files
+      const keptExistingFiles = Array.isArray(window._editingExistingFiles) ? window._editingExistingFiles : (existingParsed.files||[]);
+      const mergedFiles    = [...keptExistingFiles, ...uploadedNew];
+      const updatedComment = JSON.stringify({ ...existingParsed, note: internalNote, files: mergedFiles, category, priority });
+      const { error: uErr } = await supabase.from('quotes').update({
+        vendor, amount, category, notes, comment: updatedComment
+      }).eq('id', editId);
+      if (uErr) throw uErr;
+      pendingFiles = [];
+      showToast('Quote updated ✓');
+      closeModal('quoteModal');
+      await loadData();
+      renderQuotes();
+      return;
+    }
+
+    if (!projectName) { showToast('Please fill all required fields', true); btn.disabled=false; btn.textContent='Save Quote'; return; }
+    const quoteId   = crypto.randomUUID();
+    const projectId = isNew ? crypto.randomUUID() : sel.value;
+    const uploadedFiles = pendingFiles.length > 0 ? await uploadFiles(quoteId) : [];
+    const commentPayload = JSON.stringify({ note: internalNote, files: uploadedFiles, category, priority });
+
+    // Determine status — block adding to approved project
+    let newStatus = 'draft';
+    if (!isNew) {
+      const existing = allQuotes.filter(q => (q.project_id || q.id) === projectId && q.status !== 'removed');
+      if (existing.some(q => q.status === 'approved')) {
+        showToast('Cannot add quote to an approved project', true);
+        btn.disabled = false; btn.textContent = 'Save Quote';
+        return;
+      }
+      if (existing.some(q => q.status === 'voting' || q.status === 'pending')) newStatus = 'voting';
+      else if (existing.some(q => q.status === 'onhold')) newStatus = 'onhold';
+      else if (existing.some(q => q.status === 'declined' || q.status === 'expired')) newStatus = 'voting';
+    }
+
+    const { error } = await supabase.from('quotes').insert({
+      id: quoteId, project_id: projectId,
+      project: projectName, project_title: projectName,
+      vendor, amount, category, notes,
+      comment: commentPayload,
+      status: newStatus,
+      is_emergency: false,
+      archived: false,
+      created_at: new Date().toISOString()
+    });
+    if (error) throw error;
+
+    // On Hold projects stay On Hold when another tender quote is added.
+    // Only legacy Declined / Expired projects retain their previous reopen behaviour.
+    if (!isNew) {
+      const expiredOrDeclinedIds = allQuotes
+        .filter(q => (q.project_id || q.id) === projectId && ['declined','expired'].includes(q.status))
+        .map(q => q.id).filter(Boolean);
+      if (expiredOrDeclinedIds.length) {
+        const { error: voteError } = await supabase.from('votes').delete().eq('project_id', projectId);
+        if (voteError) throw voteError;
+        const { error: reopenError } = await supabase.from('quotes').update({
+          status: 'voting',
+          status_changed_at: new Date().toISOString(),
+          work_status: null,
+          completion_date: null
+        }).in('id', expiredOrDeclinedIds);
+        if (reopenError) throw reopenError;
+      }
+    }
+    pendingFiles = [];
+    showToast('Quote created');
+    closeModal('quoteModal');
+    await loadData();
+    renderQuotes();
+  } catch(e) {
+    console.error('saveQuote error:', e);
+    showToast('Failed to save quote', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Quote';
+  }
+};
+
+window.deleteQuote = async function() {
+  const editId = document.getElementById('quoteEditId').value;
+  if (!editId || !confirm('Remove this quote from Management?')) return;
+  try {
+    const q = allQuotes.find(x => x.id === editId);
+    if (!q) return;
+    if (q.work_status) {
+      alert('This item is already in Works and cannot be deleted.');
+      return;
+    }
+    const projId = q.project_id || editId;
+    await supabase.from('votes').delete().eq('project_id', projId);
+    const { error } = await supabase.from('quotes').update({ status: 'removed', status_changed_at: new Date().toISOString() }).eq('id', editId);
+    if (error) throw error;
+    showToast('Quote removed');
+    closeModal('quoteModal');
+    await loadData();
+    renderQuotes();
+  } catch(e) { showToast('Failed to remove', true); }
+};
+
+function showToast(message, isError = false) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = message;
+  el.style.background = isError ? '#991b1b' : '#0f172a';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+let _viewerCurrentUrl = '';
+window.openFileViewer = async function(path, name, type) {
+  if (!path) return;
+  try {
+    let url;
+    if (path.startsWith('http')) {
+      url = path;
+    } else {
+      const cleanPath = path.replace(/^quotes\//, '');
+      const { data } = await supabase.storage.from('quotes').createSignedUrl(cleanPath, 3600);
+      url = data?.signedUrl;
+    }
+    if (!url) throw new Error('No URL');
+    _viewerCurrentUrl = url;
+    let html = '';
+    document.getElementById('viewerFileName').textContent = name || '';
+    if ((type && type.includes('pdf')) || (name && name.toLowerCase().endsWith('.pdf'))) {
+      html = `<iframe src="${url}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
+    } else if (['png','jpg','jpeg','gif','webp','svg'].some(e => name?.toLowerCase().endsWith('.'+e))) {
+      html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="${name}"></div>`;
+    } else {
+      html = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="font-size:52px"></div><a href="${url}" download="${name}" style="padding:12px 28px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">⬇ Download ${name}</a></div>`;
+    }
+    document.getElementById('viewerContent').innerHTML = html;
+    document.getElementById('fileViewerModal').style.display = 'flex';
+    document.getElementById('fileViewerModal').focus();
+  } catch(e) {
+    console.error('openFileViewer failed:', e);
+    alert('Failed to load file');
+  }
+};
+
+window.closeViewer = function() {
+  document.getElementById('fileViewerModal').style.display = 'none';
+  document.getElementById('viewerContent').innerHTML = '';
+};
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('fileViewerModal').style.display === 'flex') closeViewer();
+});
+
+window.printViewer = function() {
+  if (!_viewerCurrentUrl) return;
+  const w = window.open(_viewerCurrentUrl, '_blank');
+  if (w) w.onload = () => { w.focus(); w.print(); };
+};
+
+init();
 </script>
-</body>
-</html>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+.ql-toolbar.ql-snow{border:0.5px solid #e2e8f0;border-radius:10px 10px 0 0;background:#f8fafc;padding:6px 8px}
+.ql-container.ql-snow{border:0.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;font-family:'DM Sans',sans-serif;font-size:15px;color:#0f172a}
+.ql-editor{min-height:180px;padding:11px 14px}
+.ql-editor.ql-blank::before{color:#94a3b8;font-style:normal}
+</style>
+<style id="redesign-2026-10">
+/* ══════════ QUOTES PAGE REDESIGN (CSS only — no JS changed) ══════════ */
+.page-header-title{font-size:24px;color:#0f1b33}
+.page-header-sub{font-size:15px;color:#3b4a63}
+.vote-rule-banner span:last-child{font-size:14px!important}
+.btn-create-project{background:#2563eb;box-shadow:none;border-radius:8px;padding:11px 22px}
+.btn-create-project:hover{background:#1d4ed8;box-shadow:none;transform:none}
+.btn-create-project-icon,.btn-create-project-sub{display:none}
+.btn-create-project-main{font-size:15px}
+
+/* project card */
+.project-card[data-cat]{background:#fff;border-top:1px solid #c5cfdd;border-right:1px solid #c5cfdd;border-bottom:1px solid #c5cfdd;border-radius:12px;box-shadow:none}
+.project-card:hover{box-shadow:none}
+.project-card[data-cat] .project-header{background:#fff!important;border-color:#e3e9f1!important;color:#0f1b33!important;border-bottom:1px solid #e3e9f1;padding:20px 28px}
+.project-title{font-size:20px;font-weight:700;color:#0f1b33}
+.project-meta{font-size:14px;color:#3b4a63}
+.pnum{font-size:13px}
+.badge-priority{font-size:13px}
+.voting-badge,.draft-badge{font-size:13px;font-weight:700;border-radius:6px;padding:5px 14px}
+.draft-badge{color:#0f1b33}
+.send-btn{font-size:14px;border-radius:8px;box-shadow:none;padding:9px 18px}
+.send-btn:hover{transform:none}
+.project-card>div[style*="padding:10px 20px 0"]{padding:16px 28px 0!important}
+.btn-mgmt{font-size:14px;padding:8px 16px}
+
+/* vendor cards */
+.vendor-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row dense;gap:18px;padding:20px 28px 24px;max-width:100%}
+.vendor-item,.vendor-item.is-selected,.vendor-item.is-winner{display:contents;animation:none}
+.vendor-header{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:16px;padding:20px;border:1.5px solid #c5cfdd;border-radius:10px;min-width:0}
+.vendor-header.hdr-selected{background:#f5f9ff;border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe}
+.vendor-header.is-open{border-color:#0f1b33;box-shadow:0 0 0 3px #e2e8f0}
+.vendor-header.hdr-selected.is-open{border-color:#2563eb;box-shadow:0 0 0 3px #bfdbfe}
+.vendor-item.is-winner .vendor-header{border-color:#16a34a;box-shadow:0 0 0 3px #bbf7d0}
+.vendor-content{gap:6px}
+.vendor-name{font-size:17px;font-weight:700;color:#0f1b33}
+.vendor-meta-row{flex-direction:column;align-items:flex-start;gap:8px}
+.vendor-amount{font-size:24px;font-weight:700;color:#0f1b33;letter-spacing:-.5px;line-height:1.15}
+.vendor-selected-tag{font-size:13px;color:#1d4ed8;letter-spacing:0;font-weight:700}
+.btn-view-details{background:none;border:0;padding:0;color:#1d4ed8;font-size:15px;font-weight:700;animation:none;box-shadow:none;border-radius:0}
+.btn-view-details svg{display:none}
+.btn-view-details::after{content:" ▾"}
+.btn-view-details.is-open::after{content:" ▴"}
+.btn-view-details:hover,.btn-view-details.is-open,.btn-view-details.is-open:hover{background:none;transform:none;color:#1d4ed8;text-decoration:underline}
+.vendor-status{min-width:0;text-align:center;display:flex;justify-content:stretch}
+.vendor-status:empty{display:none}
+.select-btn{flex:1;background:#fff;color:#2563eb;border:1.5px solid #2563eb;border-radius:8px;padding:11px;font-size:15px;font-weight:600;box-shadow:none}
+.select-btn:hover{background:#eff6ff;transform:none}
+.select-btn:disabled{background:#fff;color:#64748b;border-color:#c5cfdd}
+.deselect-btn{flex:1;background:#fff;color:#0f1b33;border:1.5px solid #c5cfdd;border-radius:8px;padding:11px;font-size:15px;font-weight:600}
+.deselect-btn:hover{background:#f7f9fc;border-color:#64748b}
+.badge-x{flex:1;color:#64748b;font-size:17px;padding:8px}
+.vendor-details{grid-column:1/-1;border:1.5px solid #0f1b33;border-radius:10px;background:#fff;padding:20px 24px;font-size:15px;color:#0f1b33}
+.detail-label{font-size:14px;min-width:110px}
+.detail-file-link{font-size:14px;border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8}
+
+/* voting area */
+.voting-section{padding:26px 28px 24px;border-top:1px solid #e3e9f1;background:#f7f9fc}
+.voting-section .section-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:#0f1b33;background:none;border:0;border-radius:0;padding:0;min-width:0;width:auto;margin:24px 0 12px}
+.voting-section .section-title:first-child{margin-top:0}
+.section-title .tally-pill{font-size:13px;font-weight:700;padding:3px 10px;border-radius:6px}
+.voting-grid{gap:12px}
+.vote-cell{padding:12px 16px;border:1px solid #c5cfdd;border-radius:8px}
+.vote-cell-me{border-color:#2563eb;box-shadow:none}
+.vote-name{font-size:15px;font-weight:700;color:#0f1b33}
+.vote-value{font-size:14px;font-weight:700}
+.vote-value.v-hold{color:#b45309}
+.vote-value.v-pending{color:#3b4a63}
+.vote-value.v-closed{color:#64748b}
+.voting-section [style*="animation:pulseVote"]{animation:none!important;font-size:15px!important;padding:8px 14px!important}
+.voting-section [style*="background:#dcfce7;border:1.5px solid #16a34a"]{font-size:15px!important;padding:8px 14px!important}
+.btn-action{font-size:15px!important;font-weight:600!important;padding:13px 28px!important;border:1.5px solid currentColor!important;border-radius:8px!important;background:#fff!important;box-shadow:none!important;min-width:130px;letter-spacing:0!important}
+.btn-approve{color:#15803d!important}.btn-hold{color:#b45309!important}.btn-decline{color:#b91c1c!important}
+.btn-approve:hover:not(:disabled),.btn-hold:hover:not(:disabled),.btn-decline:hover:not(:disabled){transform:none;box-shadow:none!important;background:#f7f9fc!important}
+.btn-action:not(.btn-approve):not(.btn-hold):not(.btn-decline){background:#475569!important;color:#fff!important;border-color:#475569!important}
+.result-box{font-size:15px!important;border-radius:8px}
+.confirm-btn{background:#2563eb;box-shadow:none;border-radius:8px;font-size:14px;padding:10px 22px}
+.confirm-btn:hover{transform:none;box-shadow:none}
+.voting-section .btn-mgmt{font-size:14px!important}
+.draft-overlay{font-size:15px;color:#3b4a63}
+
+/* discussion */
+.pc-thread{max-width:100%;border:0;padding:0;gap:0;background:transparent}
+.pc-msg,.pc-msg-admin,.pc-msg-committee{background:#fff;border:0;border-bottom:1px solid #e3e9f1;border-radius:0;font-size:15px;padding:16px 6px}
+.pc-msg-time{font-size:13px;color:#3b4a63}
+.pc-msg button{font-size:13px!important;padding:4px 14px!important}
+.pc-thread>div[style*="color:#94a3b8"]{color:#3b4a63!important;font-size:15px!important}
+.input-area{max-width:100%}
+.voting-section .ql-toolbar.ql-snow{border:1.5px solid #c5cfdd;border-radius:8px 8px 0 0;background:#fff}
+.voting-section .ql-container.ql-snow{border:1.5px solid #c5cfdd;border-top:0;border-radius:0 0 8px 8px;font-size:15px;background:#fff}
+.voting-section .ql-editor{min-height:110px}
+.ql-editor.ql-blank::before{color:#64748b}
+.submit-btn{background:#2563eb;border-radius:8px;font-size:15px;padding:12px 32px;box-shadow:none}
+.submit-btn:hover{transform:none;box-shadow:none}
+
+/* Add / Edit quote window — wide, two columns */
+.modal-box{max-width:none;width:min(1240px,calc(100vw - 80px));max-height:calc(100vh - 60px);padding:0;border-radius:14px;overflow-y:auto;display:grid;grid-template-columns:400px minmax(0,1fr);align-content:start;background:linear-gradient(to right,#f7f9fc 400px,#fff 400px)}
+.modal-title{grid-column:1/-1;margin:0;padding:22px 30px;font-size:20px;font-weight:700;color:#0f1b33;background:#fff;border-bottom:1px solid #e3e9f1}
+.modal-box>.modal-field{margin:0;padding:0 30px 18px}
+.modal-box>.modal-field:has(#projectSelect){grid-column:1;grid-row:2;padding-top:24px}
+.modal-box>.modal-field:has(#quoteVendor){grid-column:1;grid-row:3}
+.modal-box>.modal-field:has(#quoteAmount){grid-column:1;grid-row:4}
+.modal-box>.modal-field:has(#quoteCategory){grid-column:1;grid-row:5}
+.modal-box>.modal-field:has(#quotePriority){grid-column:1;grid-row:6}
+.modal-box>.modal-field:has(#quoteNotes){grid-column:2;grid-row:2/5;padding-top:24px}
+.modal-box>.modal-field:has(#quoteInternalNote){grid-column:2;grid-row:5/7}
+.modal-box>.modal-field:has(#quoteFiles){grid-column:2;grid-row:7}
+.modal-box>.modal-field:has(#quoteFiles){padding-bottom:24px}
+.modal-footer{grid-column:1/-1;grid-row:8;margin:0;padding:16px 30px;border-top:1px solid #e3e9f1;background:#fff}
+.modal-label{font-size:14px;font-weight:700;text-transform:none;letter-spacing:0;color:#0f1b33}
+.modal-input,.modal-select,.modal-textarea{font-size:15px;padding:12px 14px;border:1.5px solid #c5cfdd;border-radius:8px;color:#1e293b}
+.modal-input::placeholder,.modal-textarea::placeholder{color:#64748b}
+.modal-input:disabled,.modal-select:disabled{background:#eef2f7;color:#3b4a63}
+.modal-box .ql-toolbar.ql-snow{border:1.5px solid #c5cfdd;border-radius:8px 8px 0 0;background:#f7f9fc}
+.modal-box .ql-container.ql-snow{border:1.5px solid #c5cfdd;border-top:0;border-radius:0 0 8px 8px;font-size:15px;background:#fff}
+.modal-box .ql-container.ql-snow{height:auto}
+.modal-box .ql-editor{height:auto}
+#_qNDiv .ql-editor{min-height:240px}
+#_qIDiv .ql-editor{min-height:130px}
+.file-upload-area{border:2px dashed #93a4be;background:#f7f9fc;padding:20px}
+.file-upload-area div{font-size:14px!important;color:#1e293b!important}
+.file-chip{font-size:13px}
+.modal-footer .btn-pill{font-size:15px;padding:12px 26px;border-radius:8px;border:1.5px solid #c5cfdd;color:#0f1b33;background:#fff}
+.modal-footer .btn-pill-danger{color:#b91c1c;border-color:#fca5a5}
+.modal-footer .btn-pill-primary{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:none}
+.modal-footer .btn-pill-primary:hover{transform:none;box-shadow:none;background:#1d4ed8}
+
+@media(max-width:1100px){.vendor-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){
+  .modal-box{display:block;width:94%;background:#fff}
+  .modal-title{padding:16px 18px;font-size:17px}
+  .modal-box>.modal-field{padding:14px 18px 0}
+  .modal-footer{padding:16px 18px}
+  #_qNDiv .ql-editor{min-height:160px}#_qIDiv .ql-editor{min-height:100px}
+}
+@media(max-width:768px){
+  .vendor-list{grid-template-columns:1fr;padding:14px 14px 18px}
+  .project-card[data-cat] .project-header{padding:14px 16px}
+  .voting-section{padding:18px 14px}
+  .project-card>div[style*="padding:10px 20px 0"]{padding:12px 16px 0!important}
+}
+.voting-section .section-title::before{display:none}
+.project-meta{margin-left:12px}
+/* ── step titles, tally bars, roster, comments, detail panel (matches approved mockup) ── */
+.step-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:#0f1b33;padding:22px 28px 0}
+.step-num{width:26px;height:26px;border-radius:50%;background:#1e3a8a;color:#fff;font-size:13px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title+.vendor-list{padding-top:14px}
+.step-vote{padding:0;flex:0 0 100%;margin-bottom:4px}
+.vote-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 48px;align-items:start;margin-bottom:8px}
+.vote-top>div[style*="display:flex"]{flex-wrap:wrap;gap:12px!important}
+.vote-top .btn-action{flex:1;min-width:0}
+.vote-top>div:nth-child(2)>div:last-child{flex:1 1 100%}
+.vote-top>div:nth-child(2)>div[style*="gap:6px"]{display:grid!important;grid-template-columns:repeat(3,1fr);gap:12px!important;width:100%}
+.section-title .tally-inline{display:none}
+.roster-title{font-size:16px;font-weight:700;color:#0f1b33;margin:26px 0 8px}
+.m-lead{font-size:17px;font-weight:700;color:#0f1b33}
+.m-sub{font-size:15px;color:#3b4a63;margin:2px 0 4px}
+.meter{margin-top:16px}
+.m-row{display:flex;justify-content:space-between;font-size:15px;font-weight:700}
+.m-row b{font-size:17px;color:#0f1b33}.m-count{font-weight:500;color:#1e293b}
+.m-ok .m-name{color:#15803d}.m-hold .m-name{color:#b45309}.m-no .m-name{color:#b91c1c}
+.m-track{height:10px;background:#dde4ee;border-radius:5px;margin-top:7px;overflow:hidden}
+.m-fill{height:10px;border-radius:5px}
+.m-ok .m-fill{background:#15803d}.m-hold .m-fill{background:#b45309}.m-no .m-fill{background:#b91c1c}
+.voting-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 26px}
+.vote-cell{flex-direction:row;justify-content:space-between;align-items:center;gap:10px;background:transparent;border:0;border-bottom:1px solid #e3e9f1;border-radius:0;padding:12px 0}
+.vote-cell-me{background:#eff6ff;border-radius:8px;margin:0 -10px;padding:12px 10px;border-bottom:1px solid #e3e9f1}
+.vote-who{display:flex;flex-direction:column;min-width:0}
+.vote-name{font-size:15px;white-space:normal}
+.vote-role{font-size:13px;color:#3b4a63}
+.vote-value{width:auto;flex-shrink:0;max-width:62%;white-space:normal;text-align:right;font-size:13px;border-radius:6px;padding:4px 11px}
+.vote-value.v-approve{background:#dcfce7}.vote-value.v-hold{background:#fef3c7}.vote-value.v-decline{background:#fee2e2;color:#b91c1c}
+.vote-value.v-pending,.vote-value.v-closed{background:#fff;border:1.5px dashed #c5cfdd}
+.pc-msg{display:flex;gap:16px;align-items:flex-start}
+.pc-main{flex:1;min-width:0}
+.pc-av{width:44px;height:44px;border-radius:50%;background:#dbeafe;color:#1e3a8a;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pc-av-me{background:#1e3a8a;color:#fff}
+.pc-msg-name{color:#0f1b33!important}
+/* detail panel: Notes | Internal side by side */
+.vendor-details.show{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:0;overflow:hidden;white-space:normal}
+.vendor-details>.detail-line{margin:0;flex-direction:column;gap:8px;padding:22px 26px;font-size:15px;line-height:1.6;white-space:pre-wrap}
+.vendor-details>.detail-line:nth-child(1){grid-column:1;grid-row:1}
+.vendor-details>.detail-line:nth-child(2){grid-column:2;grid-row:1;background:#fffdf5;border-left:1px solid #e3e9f1}
+.vendor-details>.detail-line:nth-child(3),.vendor-details>.detail-line:nth-child(4){flex-direction:row;gap:12px;padding:12px 26px;border-top:1px solid #e3e9f1;background:#f7f9fc}
+.vendor-details>.detail-line:nth-child(3){grid-column:1;grid-row:2}
+.vendor-details>.detail-line:nth-child(4){grid-column:2;grid-row:2;border-left:1px solid #e3e9f1}
+.vendor-details>.detail-line:nth-child(5){grid-column:1/-1;grid-row:3;flex-direction:row;flex-wrap:wrap;padding:14px 26px 6px;border-top:1px solid #e3e9f1}
+.vendor-details>.detail-files{grid-column:1/-1;grid-row:4;padding:0 26px 16px}
+.vendor-details>div[style*="justify-content:flex-end"]{grid-column:1/-1;justify-self:end;padding:0 26px 16px!important}
+.detail-label{font-size:15px;min-width:0;color:#0f1b33}
+@media(max-width:900px){.voting-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vote-top{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .voting-grid{grid-template-columns:1fr!important}
+  .step-title{padding:18px 14px 0}
+  .vendor-details.show{display:block}
+  .vendor-details>.detail-line{padding:16px 16px}
+  .vendor-details>.detail-line:nth-child(3),.vendor-details>.detail-line:nth-child(4){border-left:0}
+}
+
+.project-header-left>div[style*="width:36px"]{display:none!important}
+
+/* ── Layout v3: vendors + discussion left, vote panel right ── */
+.qc-body{display:grid;grid-template-columns:460px minmax(0,1fr);grid-template-areas:"vote main";align-items:start}
+.qc-main{grid-area:main;min-width:0}
+.qc-side.voting-section{grid-area:vote;border-top:0;border-left:0;border-right:1px solid #e3e9f1;padding:20px 22px;background:#f8fafc;min-width:0}
+.qc-side .section-title{font-size:16px;margin:20px 0 8px}
+.qc-side .section-title:first-child{margin-top:0}
+.qc-discuss{padding:0 28px 24px}
+.qc-discuss .section-title{font-size:16px;font-weight:700;text-transform:none;letter-spacing:0;color:#0f1b33;background:none;border:0;padding:0;margin:22px 0 10px}
+.qc-main .step-title{font-size:16px;padding:20px 28px 0}
+.qc-main .vendor-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px 28px 4px}
+.qc-main .vendor-header{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-width:1.5px}
+.qc-main .vendor-name{font-size:16px}
+.qc-main .vendor-amount{font-size:21px}
+.qc-main .btn-view-details{font-size:13.5px}
+.qc-main .vendor-status{flex:0 0 auto}
+.qc-main .select-btn,.qc-main .deselect-btn{flex:none;padding:7px 14px;font-size:14px}
+.qc-main .badge-x{flex:none;font-size:16px;padding:4px 8px}
+.qc-main .vendor-header.hdr-selected{box-shadow:none}
+.qc-main .vendor-header.is-open{box-shadow:none}
+.qc-side .vote-top{display:flex;flex-direction:column;gap:18px;margin-bottom:0}
+.qc-side .vote-top>div:nth-child(2){order:-1}
+.qc-side .vote-top>div:nth-child(2)>div[style*="gap:6px"]{grid-template-columns:1fr!important;gap:8px!important}
+.qc-side .vote-top .btn-action{width:100%;min-width:0;padding:9px 14px!important}
+.qc-side .m-lead{font-size:16px}
+.qc-side .m-sub{font-size:14px}
+.qc-side .m-row{font-size:14px}.qc-side .m-row b{font-size:15px}
+.qc-side .voting-grid{grid-template-columns:1fr;gap:0}
+.qc-side .vote-cell,.qc-side .vote-cell-me{margin:0;padding:7px 0}
+.qc-side .vote-cell-me{background:transparent}
+.qc-side .result-row{margin-bottom:14px}
+.qc-side>.section-title:not(.roster-title){display:none}
+.qc-side .roster-title{margin-top:22px}
+.qc-discuss .section-title{border-left:0!important;padding-left:0!important}
+.qc-discuss .pc-msg-name{font-size:15px!important}
+.qc-discuss .pc-msg{font-size:15px}
+.qc-discuss .section-title::before,.qc-discuss .section-title::after{display:none!important;content:none!important}
+.qc-side .btn-action,.qc-side .btn-mgmt{font-size:14px!important;padding:8px 14px!important;min-width:0!important}
+.qc-main .vendor-list:has(.vendor-item:only-child){grid-template-columns:1fr}
+.qc-draft-note{margin-bottom:14px;background:#fff;border:1.5px dashed #c5cfdd;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:#334155}
+.qc-draft-note b{font-size:16px;color:#0f1b33}
+.qc-draft .result-row,.qc-draft .vote-top,.qc-draft .roster-title,.qc-draft .voting-grid{display:none}
+.qc-side .vote-top>*{width:100%;min-width:0}
+.qc-side .meter,.qc-side .tally-box{width:100%;max-width:none}
+.qc-main .vendor-amount{font-size:19px;white-space:nowrap}
+@media(max-width:1100px){
+  .qc-body{grid-template-columns:minmax(0,1fr);grid-template-areas:"vote" "main"}
+  .qc-side.voting-section{border-right:0;border-bottom:1px solid #e3e9f1;border-top:0}
+}
+@media(max-width:768px){.qc-main .vendor-list{grid-template-columns:1fr;padding:12px 14px 4px}.qc-discuss{padding:0 14px 20px}}
+
 
 /* ── Multi-vendor voting list: compact rows with existing expandable details ── */
 .qc-main .vendor-list.multi-vendor-voting{
@@ -216,29 +3609,16 @@ window._initQuill = function(notes, note){
   backdrop-filter:blur(14px) saturate(145%);
   -webkit-backdrop-filter:blur(14px) saturate(145%);
 }
-.qc-main .vendor-list.multi-vendor-voting .vendor-details>.detail-line{
-  min-width:0!important;
-}
-.qc-main .vendor-list.multi-vendor-voting .vendor-details>.detail-files{
-  min-width:0!important;
-}
-.qc-main .vendor-list.multi-vendor-voting .vendor-details>div[style*="justify-content:flex-end"]{
-  grid-column:1/-1!important;
-}
+.qc-main .vendor-list.multi-vendor-voting .vendor-details>.detail-line,
+.qc-main .vendor-list.multi-vendor-voting .vendor-details>.detail-files{min-width:0!important}
+.qc-main .vendor-list.multi-vendor-voting .vendor-details>div[style*="justify-content:flex-end"]{grid-column:1/-1!important}
 @media(max-width:900px){
   .qc-main .vendor-list.multi-vendor-voting{padding:12px 16px 10px!important}
 }
 @media(max-width:600px){
   .qc-main .vendor-list.multi-vendor-voting{padding:10px 12px 8px!important}
-  .qc-main .vendor-list.multi-vendor-voting .vendor-header{
-    align-items:flex-start!important;
-    flex-wrap:wrap!important;
-    padding:11px 12px!important;
-  }
-  .qc-main .vendor-list.multi-vendor-voting .vendor-status{
-    margin-left:auto!important;
-    min-width:0!important;
-  }
+  .qc-main .vendor-list.multi-vendor-voting .vendor-header{align-items:flex-start!important;flex-wrap:wrap!important;padding:11px 12px!important}
+  .qc-main .vendor-list.multi-vendor-voting .vendor-status{margin-left:auto!important;min-width:0!important}
   .qc-main .vendor-list.multi-vendor-voting .vendor-details.show{display:block!important}
 }
 
