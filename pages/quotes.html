@@ -629,8 +629,7 @@
 .quote-place-hold-btn:hover{background:#ffedd5}
 .quote-place-hold-btn:disabled{opacity:.55;cursor:not-allowed}
 .onhold-table{width:100%;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff}
-.onhold-table-head,.onhold-list-row{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(90px,.8fr) minmax(90px,.8fr) 116px 20px;align-items:center;gap:12px;padding:12px 16px}
-.onhold-table-head{background:#f8fafc;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11px;font-weight:800;letter-spacing:.055em;text-transform:uppercase}
+.onhold-list-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;align-items:center;gap:14px;padding:14px 16px}
 .onhold-list-row{width:100%;border:0;border-bottom:1px solid #edf1f5;background:#fff;text-align:left;cursor:pointer;color:#1e293b;font-family:'DM Sans',sans-serif;font-size:13px}
 .onhold-list-row:last-of-type{border-bottom:0}
 .onhold-list-row:hover{background:#fffbf2}
@@ -654,16 +653,38 @@
   .quote-section-toggle{padding:9px 6px}
   .quote-section-title{font-size:14px}
   .quote-section-heading .btn-create-project{flex:0 0 auto}
-  .onhold-table-head{display:none}
   .onhold-list-row{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;padding:13px 12px}
   .onhold-project-name{grid-column:1}
   .onhold-meta{grid-column:1}
   .onhold-status-pill{grid-column:2;grid-row:1;justify-self:end}
-  .onhold-row-chevron{grid-column:2;grid-row:3}
+  .onhold-row-chevron{grid-column:2;grid-row:2}
   .onhold-project-details{padding:12px}
   .onhold-project-actions .send-btn{margin-left:0}
   .onhold-detail-line{display:block}
   .onhold-detail-label{display:block;margin-bottom:3px}
+}
+
+
+/* ── Project-title accordions under Current Voting ── */
+.quote-section-heading-static{padding:7px 10px;cursor:default}
+.quote-section-heading-static .quote-section-title{font-size:16px;letter-spacing:.055em}
+.current-voting-project{margin:0 0 9px;border:1px solid #dce4ef;border-radius:10px;background:#fff;overflow:hidden}
+.current-voting-project:last-child{margin-bottom:0}
+.current-voting-project-toggle{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;border:0;background:#fff;text-align:left;cursor:pointer;color:#1e293b;font-family:'DM Sans',sans-serif}
+.current-voting-project-toggle:hover{background:#f8fafc}
+.current-voting-project-name{flex:1;min-width:0;font-size:14px;font-weight:700;color:#1e3a8a;overflow-wrap:anywhere}
+.current-voting-project-meta{flex:0 0 auto;color:#64748b;font-size:12px;white-space:nowrap}
+.current-voting-project-chevron{flex:0 0 auto;color:#64748b;font-size:18px;line-height:1}
+.current-voting-project-body{border-top:1px solid #e8edf4;background:#fff}
+.current-voting-project-body[hidden]{display:none!important}
+.current-voting-project-body>.project-card{margin:0;border:0;border-radius:0;box-shadow:none}
+.current-voting-project-body>.project-card:hover{box-shadow:none}
+.onhold-table-head{grid-template-columns:minmax(0,2.3fr) minmax(90px,.8fr) minmax(110px,.9fr) 116px 20px}
+@media(max-width:700px){
+  .quote-section-heading-static{padding:7px 6px}
+  .current-voting-project-toggle{padding:13px 12px;gap:8px}
+  .current-voting-project-name{font-size:13px}
+  .current-voting-project-meta{font-size:11px}
 }
 
 </style>
@@ -715,29 +736,23 @@
       </section>
 
       <section class="quote-section" id="currentVotingSection">
-        <div class="quote-section-heading">
-          <button type="button" class="quote-section-toggle" aria-expanded="false" aria-controls="currentVotingSectionBody" onclick="toggleQuoteSection('currentVotingSectionBody',this)">
-            <span class="quote-section-accent quote-section-accent-voting"></span>
-            <span class="quote-section-title">CURRENT VOTING</span>
-            <span class="quote-section-count" id="currentVotingCount">0</span>
-            <span class="quote-section-chevron">⌄</span>
-          </button>
+        <div class="quote-section-heading quote-section-heading-static">
+          <span class="quote-section-accent quote-section-accent-voting"></span>
+          <span class="quote-section-title">CURRENT VOTING</span>
+          <span class="quote-section-count" id="currentVotingCount">0</span>
         </div>
-        <div class="quote-section-body" id="currentVotingSectionBody" hidden>
+        <div class="quote-section-body" id="currentVotingSectionBody">
           <div id="currentVotingList"></div>
         </div>
       </section>
 
       <section class="quote-section" id="onHoldSection">
-        <div class="quote-section-heading">
-          <button type="button" class="quote-section-toggle" aria-expanded="false" aria-controls="onHoldSectionBody" onclick="toggleQuoteSection('onHoldSectionBody',this)">
-            <span class="quote-section-accent quote-section-accent-hold"></span>
-            <span class="quote-section-title">ON HOLD</span>
-            <span class="quote-section-count quote-section-count-hold" id="onHoldCount">0</span>
-            <span class="quote-section-chevron">⌄</span>
-          </button>
+        <div class="quote-section-heading quote-section-heading-static">
+          <span class="quote-section-accent quote-section-accent-hold"></span>
+          <span class="quote-section-title">ON HOLD</span>
+          <span class="quote-section-count quote-section-count-hold" id="onHoldCount">0</span>
         </div>
-        <div class="quote-section-body" id="onHoldSectionBody" hidden>
+        <div class="quote-section-body" id="onHoldSectionBody">
           <div id="onHoldList"></div>
         </div>
       </section>
@@ -1110,6 +1125,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
   });
 
   container.innerHTML = '';
+  const useProjectAccordion = containerId === 'currentVotingList';
   let projectIndex = 0;
 
   Object.values(projectMap).forEach(group => {
@@ -1121,6 +1137,30 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
 
     const isDraft  = group.every(q => q.status === 'draft');
     const isVoting = group.some(q => q.status === 'voting' || q.status === 'pending');
+
+    let projectAccordion = null;
+    let projectAccordionBody = null;
+    if (useProjectAccordion && isVoting) {
+      projectAccordion = document.createElement('button');
+      projectAccordion.type = 'button';
+      projectAccordion.className = 'current-voting-project-toggle';
+      projectAccordion.setAttribute('aria-expanded', 'false');
+      projectAccordion.innerHTML =
+        '<span class="current-voting-project-name">' + escHtml(first.project || first.project_title || 'Project') + '</span>' +
+        '<span class="current-voting-project-meta">' + group.length + ' vendor' + (group.length === 1 ? '' : 's') + '</span>' +
+        '<span class="current-voting-project-chevron">⌄</span>';
+
+      projectAccordionBody = document.createElement('div');
+      projectAccordionBody.className = 'current-voting-project-body';
+      projectAccordionBody.hidden = true;
+      projectAccordion.onclick = () => {
+        const opened = projectAccordionBody.hidden;
+        projectAccordionBody.hidden = !opened;
+        projectAccordion.setAttribute('aria-expanded', String(opened));
+        const chevron = projectAccordion.querySelector('.current-voting-project-chevron');
+        if (chevron) chevron.textContent = opened ? '⌃' : '⌄';
+      };
+    }
 
     const userVoteRow      = getUserVoteRow(projectKey);
     const selectedQuoteId  = userVoteRow?.selected_quote_id || null;
@@ -1948,7 +1988,13 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       qcBody.appendChild(qcMain); qcBody.appendChild(votingSection);
       card.appendChild(qcBody);
     }
-    container.appendChild(card);
+    if (projectAccordion && projectAccordionBody) {
+      projectAccordionBody.appendChild(card);
+      container.appendChild(projectAccordion);
+      container.appendChild(projectAccordionBody);
+    } else {
+      container.appendChild(card);
+    }
   });
 }
 
@@ -1974,11 +2020,6 @@ function renderOnHoldQuotes(quotes) {
   const projects = Object.values(projectMap);
   const table = document.createElement('div');
   table.className = 'onhold-table';
-
-  const tableHead = document.createElement('div');
-  tableHead.className = 'onhold-table-head';
-  tableHead.innerHTML = '<span>Project</span><span>Vendors</span><span>Hold Date</span><span>Status</span><span></span>';
-  table.appendChild(tableHead);
 
   projects.forEach((group, index) => {
     const first = group[0];
