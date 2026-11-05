@@ -1422,7 +1422,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
         ? new Date(q.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
         : '';
       const quoteFiles = Array.isArray(qParsed.files) ? qParsed.files : [];
-      const fileReference = quoteFiles.map(file => (file.name || '').match(/\\bQ[- ]?\\d{3,}\\b/i)?.[0].replace(/\\s/g, '-')).find(Boolean) || '';
+      const fileReference = quoteFiles.map(file => (file.name || '').match(/\bQ[- ]?\d{3,}\b/i)?.[0].replace(/\s/g, '-')).find(Boolean) || '';
       const quoteReference = q.quote_number || q.quotation_number || q.reference ||
         qParsed.quote_number || qParsed.quotation_number || qParsed.reference || fileReference;
       vendorContent.innerHTML = `
@@ -3496,16 +3496,16 @@ init();
 
 
 /* ── Voting card: preserve the current 3-panel layout ── */
-.qc-main{
+#currentVotingList .qc-main{
   display:grid!important;
   grid-template-columns:minmax(0,1.18fr) minmax(285px,.82fr)!important;
   grid-template-areas:"step discussion" "vendors discussion"!important;
   align-items:start!important;
   min-width:0!important;
 }
-.qc-main>.step-title{grid-area:step;min-width:0}
-.qc-main>.vendor-list{grid-area:vendors;min-width:0}
-.qc-main>.qc-discuss{
+#currentVotingList .qc-main>.step-title{grid-area:step;min-width:0}
+#currentVotingList .qc-main>.vendor-list{grid-area:vendors;min-width:0}
+#currentVotingList .qc-main>.qc-discuss{
   grid-area:discussion;
   align-self:stretch;
   min-width:0;
@@ -3516,15 +3516,15 @@ init();
   backdrop-filter:blur(12px) saturate(140%);
   -webkit-backdrop-filter:blur(12px) saturate(140%);
 }
-.qc-main>.qc-discuss>.section-title:first-child{margin-top:20px!important}
-.qc-main>.qc-discuss .pc-thread,
-.qc-main>.qc-discuss .pc-input-area{min-width:0}
+#currentVotingList .qc-main>.qc-discuss>.section-title:first-child{margin-top:20px!important}
+#currentVotingList .qc-main>.qc-discuss .pc-thread,
+#currentVotingList .qc-main>.qc-discuss .pc-input-area{min-width:0}
 @media(max-width:900px){
-  .qc-main{
+  #currentVotingList .qc-main{
     grid-template-columns:minmax(0,1fr)!important;
     grid-template-areas:"step" "vendors" "discussion"!important;
   }
-  .qc-main>.qc-discuss{
+  #currentVotingList .qc-main>.qc-discuss{
     border-left:0;
     border-top:1px solid rgba(255,255,255,.78);
     padding:0 16px 20px!important;
