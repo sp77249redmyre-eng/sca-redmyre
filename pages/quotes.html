@@ -1977,7 +1977,7 @@ function renderOnHoldQuotes(quotes) {
 
   const tableHead = document.createElement('div');
   tableHead.className = 'onhold-table-head';
-  tableHead.innerHTML = '<span>Project</span><span>Vendors</span><span>Quotes</span><span>Status</span><span></span>';
+  tableHead.innerHTML = '<span>Project</span><span>Vendors</span><span>Hold Date</span><span>Status</span><span></span>';
   table.appendChild(tableHead);
 
   projects.forEach((group, index) => {
@@ -1992,9 +1992,11 @@ function renderOnHoldQuotes(quotes) {
     row.type = 'button';
     row.className = 'onhold-list-row';
     row.setAttribute('aria-expanded', 'false');
+    const holdTimestamp = first.status_changed_at || first.created_at;
+    const holdDate = holdTimestamp ? new Date(holdTimestamp).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '—';
     row.innerHTML = '<span class="onhold-project-name">' + escHtml(projectName) + '</span>' +
       '<span class="onhold-meta">' + group.length + ' vendor' + (group.length === 1 ? '' : 's') + '</span>' +
-      '<span class="onhold-meta">' + group.length + ' quote' + (group.length === 1 ? '' : 's') + '</span>' +
+      '<span class="onhold-meta">' + escHtml(holdDate) + '</span>' +
       '<span class="onhold-status-pill">ON HOLD</span><span class="onhold-row-chevron">⌄</span>';
 
     const details = document.createElement('div');
@@ -2233,15 +2235,21 @@ async function permanentlyDeleteProject(group) {
     throw new Error('Quote deletion was blocked or incomplete. No related records were intentionally removed.');
   }
 
+  const cleanupWarnings = [];
   const { error: votesError } = await supabase.from('votes').delete().eq('project_id', projectId);
-  if (votesError) throw votesError;
+  if (votesError) cleanupWarnings.push('votes');
   const { error: commentsError } = await supabase.from('project_comments').delete().eq('project_id', projectId);
-  if (commentsError) throw commentsError;
+  if (commentsError) cleanupWarnings.push('project comments');
 
   for (let i = 0; i < uniquePaths.length; i += 1000) {
     const { error: storageError } = await supabase.storage.from('quotes').remove(uniquePaths.slice(i, i + 1000));
-    if (storageError) throw new Error('Project records were deleted, but attachment cleanup failed: ' + storageError.message);
+    if (storageError) {
+      cleanupWarnings.push('attached files');
+      console.error('Quote attachment cleanup failed:', storageError);
+      break;
+    }
   }
+  return { cleanupWarnings };
 }
 
 /*
@@ -2462,7 +2470,10 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
       }).eq('id', quoteId);
       if (error) throw error;
     } else if (status === 'declined') {
-      await permanentlyDeleteProject(group);
+      const deleteResult = await permanentlyDeleteProject(group);
+      if (deleteResult.cleanupWarnings.length) {
+        showToast('Project deleted, but cleanup needs attention: ' + deleteResult.cleanupWarnings.join(', '), true);
+      }
     } else if (status === 'onhold') {
       const { error } = await supabase.from('quotes').update({
         status: 'onhold',
@@ -2471,7 +2482,7 @@ window.forceAction = async function(status, quoteId, group, triggerBtn) {
       if (error) throw error;
     }
 
-    showToast(status === 'declined' ? 'Project and related data permanently deleted' : `Quote set to ${status}`);
+    if (status !== 'declined') showToast(`Quote set to ${status}`);
     await loadData();
     renderQuotes();
   } catch(e) {
@@ -2538,6 +2549,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
 
     const allIds   = group.map(q => q.id).filter(Boolean);
     const otherIds = quoteId ? allIds.filter(id => id !== quoteId) : allIds;
+    let declineCleanupWarnings = [];
 
     if (calcResult === 'approved') {
       // BUG 1+5 FIX: quoteId 없으면 votes에서 자동 재계산
@@ -2573,7 +2585,8 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
         if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = 'Confirm & Send Notification'; }
         return;
       }
-      await permanentlyDeleteProject(group);
+      const deleteResult = await permanentlyDeleteProject(group);
+      declineCleanupWarnings = deleteResult.cleanupWarnings || [];
 
     } else {
       console.error('Invalid result state in confirmSelection:', calcResult);
@@ -2594,7 +2607,9 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
     if (projectIdToClean) {
       await supabase.from('votes').delete().eq('project_id', projectIdToClean);
     }
-    showToast('✔ Selection confirmed and notification sent');
+    showToast(declineCleanupWarnings.length
+      ? 'Project deleted, but cleanup needs attention: ' + declineCleanupWarnings.join(', ')
+      : '✔ Selection confirmed and notification sent');
     try {
       const { data: { session: pushSession } } = await supabase.auth.getSession();
       await fetch('/api/send-push', {
