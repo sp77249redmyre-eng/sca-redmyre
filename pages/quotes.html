@@ -1421,10 +1421,14 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       const submittedDate = q.created_at
         ? new Date(q.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
         : '';
+      const quoteFiles = Array.isArray(qParsed.files) ? qParsed.files : [];
+      const fileReference = quoteFiles.map(file => (file.name || '').match(/\\bQ[- ]?\\d{3,}\\b/i)?.[0].replace(/\\s/g, '-')).find(Boolean) || '';
+      const quoteReference = q.quote_number || q.quotation_number || q.reference ||
+        qParsed.quote_number || qParsed.quotation_number || qParsed.reference || fileReference;
       vendorContent.innerHTML = `
         ${selectedTagHtml}
         <div class="vendor-name">${escHtml(q.vendor || 'Unknown Vendor')}</div>
-        ${isMultiVendorVoting && submittedDate ? '<div class="vendor-quote-date">Submitted ' + escHtml(submittedDate) + '</div>' : ''}
+        ${isMultiVendorVoting && (quoteReference || submittedDate) ? '<div class="vendor-quote-date">' + (quoteReference ? 'Quote: ' + escHtml(quoteReference) : '') + (quoteReference && submittedDate ? ' · ' : '') + (submittedDate ? escHtml(submittedDate) : '') + '</div>' : ''}
         <div class="vendor-meta-row">
           <div class="vendor-amount">${Number(q.amount || 0).toLocaleString('en-AU')} + GST</div>
         </div>`;
@@ -1433,11 +1437,23 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       const statusDiv = document.createElement('div');
       statusDiv.className = 'vendor-status';
 
-      if (isVoting) {
+      if (isVoting && isMultiVendorVoting) {
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'quote-choice-' + projectKey;
+        radio.className = 'vendor-choice-radio';
+        radio.checked = isSelected;
+        radio.disabled = role !== 'committee' || isLocked;
+        radio.setAttribute('aria-label', 'Select ' + (q.vendor || 'vendor'));
+        radio.addEventListener('click', e => e.stopPropagation());
+        radio.addEventListener('change', () => {
+          if (radio.checked) doUpsert(projectKey, { selected_quote_id: quoteId }, radio, '');
+        });
+        statusDiv.appendChild(radio);
+      } else if (isVoting) {
         if (isSingle) {
           // Single quote – auto-selected, badge already in vendor-content
         } else if (isSelected) {
-          // Selected badge already in vendor-content, only show Change button here
           if (role === 'committee' && !isLocked) {
             const deselBtn = document.createElement('button');
             deselBtn.className = 'deselect-btn';
@@ -1493,7 +1509,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       vendorContent.querySelector('.vendor-meta-row').appendChild(viewBtn);
 
       vendorHeader.onclick = (e) => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button,input,label')) return;
         const details = vendorItem.querySelector('.vendor-details');
         if (!details) return;
         const opened = details.classList.toggle('show');
@@ -3477,6 +3493,43 @@ init();
 }
 @media(max-width:768px){.qc-main .vendor-list{grid-template-columns:1fr;padding:12px 14px 4px}.qc-discuss{padding:0 14px 20px}}
 
+
+
+/* ── Voting card: preserve the current 3-panel layout ── */
+.qc-main{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.18fr) minmax(285px,.82fr)!important;
+  grid-template-areas:"step discussion" "vendors discussion"!important;
+  align-items:start!important;
+  min-width:0!important;
+}
+.qc-main>.step-title{grid-area:step;min-width:0}
+.qc-main>.vendor-list{grid-area:vendors;min-width:0}
+.qc-main>.qc-discuss{
+  grid-area:discussion;
+  align-self:stretch;
+  min-width:0;
+  height:100%;
+  padding:0 20px 22px!important;
+  border-left:1px solid rgba(255,255,255,.78);
+  background:rgba(255,255,255,.16);
+  backdrop-filter:blur(12px) saturate(140%);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);
+}
+.qc-main>.qc-discuss>.section-title:first-child{margin-top:20px!important}
+.qc-main>.qc-discuss .pc-thread,
+.qc-main>.qc-discuss .pc-input-area{min-width:0}
+@media(max-width:900px){
+  .qc-main{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-areas:"step" "vendors" "discussion"!important;
+  }
+  .qc-main>.qc-discuss{
+    border-left:0;
+    border-top:1px solid rgba(255,255,255,.78);
+    padding:0 16px 20px!important;
+  }
+}
 
 /* ── Multi-vendor voting list: compact rows with existing expandable details ── */
 .qc-main .vendor-list.multi-vendor-voting{
