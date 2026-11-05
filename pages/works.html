@@ -284,6 +284,7 @@
   background:#fffbeb;
   border-color:#c5cfdd;
 }
+.dwo-rte-textarea:empty::before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none;}
 
 /* 첨부파일 영역 — quotes.html .file-upload-area와 동일 */
 .dwo-upload-area{
@@ -471,17 +472,17 @@
   <div class="dwo-modal-box">
 
     <!-- 타이틀 -->
-    <div class="dwo-modal-title">
-      Direct Work Order
-      <span class="dwo-modal-subtitle">No Committee Approval Required</span>
-    </div>
+    <div class="dwo-modal-title">Add Direct Work Order</div>
 
     <!-- 좌측: 기본 정보 -->
     <div class="dwo-left-col">
 
       <div class="dwo-field">
         <label class="dwo-label">Project / Works Description</label>
-        <input type="text" id="emergencyProject" class="dwo-input" placeholder="e.g. Emergency roof leak repair">
+        <select id="emergencyProject" class="dwo-select">
+          <option value="Building Manager Direct Work">Building Manager Direct Work</option>
+          <option value="Committee Approved Work">Committee Approved Work</option>
+        </select>
       </div>
 
       <div class="dwo-field">
@@ -512,7 +513,7 @@
         <select id="emergencyPriority" class="dwo-select">
           <option value="Normal">Normal</option>
           <option value="High">High</option>
-          <option value="Urgent" selected>Urgent</option>
+          <option value="Urgent">Urgent</option>
         </select>
       </div>
 
@@ -537,7 +538,7 @@
           <div class="dwo-rte-sep"></div>
           <button type="button" onclick="dwoRteClear('emergencyNotes')" style="font-size:10px">CLR</button>
         </div>
-        <div class="dwo-rte-textarea" id="emergencyNotes" contenteditable="true"></div>
+        <div class="dwo-rte-textarea" id="emergencyNotes" contenteditable="true" data-placeholder="Brief description visible to owners and occupants..."></div>
       </div>
 
       <!-- Internal Notes -->
@@ -556,7 +557,7 @@
           <div class="dwo-rte-sep"></div>
           <button type="button" onclick="dwoRteClear('emergencyInternalNotes')" style="font-size:10px">CLR</button>
         </div>
-        <div class="dwo-rte-textarea dwo-rte-textarea-inote" id="emergencyInternalNotes" contenteditable="true"></div>
+        <div class="dwo-rte-textarea dwo-rte-textarea-inote" id="emergencyInternalNotes" contenteditable="true" data-placeholder="Private notes for building management and committee only..."></div>
       </div>
 
       <!-- Attachments -->
@@ -996,8 +997,8 @@ window.moveToReports = async (quoteId) => {
       await fetch('/api/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${pushSession.access_token}` },
-        body: JSON.stringify({ title: '✅ Work Completed', message: `${projectName} has been completed.`, url: '/pages/works.html' })
-      });    } catch(pushErr) {}
+        body: JSON.stringify({ title: '✅ Work Completed', message: `${projectName} has been completed.`, url: '/pages/works.html' })      });
+    } catch(pushErr) {}
     showToast('Work moved to Reports');
     await loadWorks();
   } catch(e) {
@@ -1008,11 +1009,11 @@ window.moveToReports = async (quoteId) => {
 
 // ── Direct Work Order ──
 window.openAddEmergencyWork = () => {
-  document.getElementById('emergencyProject').value       = '';
+  document.getElementById('emergencyProject').value       = 'Building Manager Direct Work';
   document.getElementById('emergencyVendor').value        = '';
   document.getElementById('emergencyAmount').value        = '';
   document.getElementById('emergencyCategory').value      = 'General';
-  document.getElementById('emergencyPriority').value      = 'Urgent';
+  document.getElementById('emergencyPriority').value      = 'Normal';
   document.getElementById('emergencyNotes').innerHTML     = '';
   document.getElementById('emergencyInternalNotes').innerHTML = '';
   emergencyFiles = [];
@@ -1075,11 +1076,15 @@ window.saveEmergencyWork = async () => {
       }
     }
 
+    const workType = project;
     const commentPayload = {
-      note:     internalNote || 'Direct work order — authorised by Building Manager',
-      files:    fileData,
-      category: category,
-      priority: priority
+      note:       internalNote || (workType === 'Building Manager Direct Work'
+        ? 'Direct work order — authorised by Building Manager'
+        : 'Committee-approved work'),
+      files:      fileData,
+      category:   category,
+      priority:   priority,
+      work_type:  workType
     };
 
     const { error } = await supabase.from('quotes').insert({
@@ -1093,8 +1098,8 @@ window.saveEmergencyWork = async () => {
       category:        category,
       status:          'approved',
       work_status:     'scheduled',
-      is_emergency:    true,
-      source:          'direct',                               // ← 수정: 기존 데이터 기준
+      is_emergency:    workType === 'Building Manager Direct Work',
+      source:          'direct',
       work_start_date: localWorkStartDate
     });
 
