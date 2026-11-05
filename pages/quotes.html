@@ -659,7 +659,7 @@
   .onhold-project-name{grid-column:1}
   .onhold-meta{grid-column:1}
   .onhold-status-pill{grid-column:2;grid-row:1;justify-self:end}
-  .onhold-row-chevron{grid-column:2;grid-row:2}
+  .onhold-row-chevron{grid-column:2;grid-row:3}
   .onhold-project-details{padding:12px}
   .onhold-project-actions .send-btn{margin-left:0}
   .onhold-detail-line{display:block}
@@ -2236,16 +2236,36 @@ async function permanentlyDeleteProject(group) {
   }
 
   const cleanupWarnings = [];
-  const { error: votesError } = await supabase.from('votes').delete().eq('project_id', projectId);
-  if (votesError) cleanupWarnings.push('votes');
-  const { error: commentsError } = await supabase.from('project_comments').delete().eq('project_id', projectId);
-  if (commentsError) cleanupWarnings.push('project comments');
+  const { data: existingVotes, error: voteReadError } = await supabase
+    .from('votes').select('id').eq('project_id', projectId);
+  if (voteReadError) {
+    cleanupWarnings.push('vote records');
+  } else {
+    const { data: deletedVotes, error: votesError } = await supabase
+      .from('votes').delete().eq('project_id', projectId).select('id');
+    if (votesError || (deletedVotes || []).length !== (existingVotes || []).length) {
+      cleanupWarnings.push('vote records');
+    }
+  }
+
+  const { data: existingComments, error: commentReadError } = await supabase
+    .from('project_comments').select('id').eq('project_id', projectId);
+  if (commentReadError) {
+    cleanupWarnings.push('project comments');
+  } else {
+    const { data: deletedComments, error: commentsError } = await supabase
+      .from('project_comments').delete().eq('project_id', projectId).select('id');
+    if (commentsError || (deletedComments || []).length !== (existingComments || []).length) {
+      cleanupWarnings.push('project comments');
+    }
+  }
 
   for (let i = 0; i < uniquePaths.length; i += 1000) {
-    const { error: storageError } = await supabase.storage.from('quotes').remove(uniquePaths.slice(i, i + 1000));
-    if (storageError) {
+    const batch = uniquePaths.slice(i, i + 1000);
+    const { data: removedFiles, error: storageError } = await supabase.storage.from('quotes').remove(batch);
+    if (storageError || (removedFiles || []).length !== batch.length) {
       cleanupWarnings.push('attached files');
-      console.error('Quote attachment cleanup failed:', storageError);
+      console.error('Quote attachment cleanup incomplete:', storageError || 'Removed file count did not match requested count');
       break;
     }
   }
