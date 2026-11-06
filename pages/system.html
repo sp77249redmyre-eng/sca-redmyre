@@ -1591,7 +1591,7 @@ body.admin-neon-page .main:has(.cctv-console) {
     <div class="sc-snapshot">
       <div class="sc-stat"><div class="sc-stat-num" id="sn-hvac">—</div><div class="sc-stat-label">HVAC Requests · 24h</div></div>
       <div class="sc-stat"><div class="sc-stat-num" id="sn-audit">—</div><div class="sc-stat-label">Audit Events · 24h</div></div>
-      <div class="sc-stat"><div class="sc-stat-num" id="sn-err">—</div><div class="sc-stat-label">Errors · 7d</div></div>
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-err">—</div><div class="sc-stat-label">Error Audit Events · 7d</div></div>
       <div class="sc-stat"><div class="sc-stat-num" id="sn-hb">—</div><div class="sc-stat-label">Daemon Heartbeat</div></div>
     </div>
 
@@ -3177,7 +3177,16 @@ async function refreshDoorExtras() {
       supabase.from('door_commands').select(cols).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
       supabase.from('door_settings').select('door_id, autolock_seconds')
     ]);
-    if (a.error || r.error) return;
+    if (a.error || r.error) {
+      // Do not leave door controls enabled using a stale pending-command snapshot.
+      DOOR_IDS.forEach(id => {
+        DOOR_ACTIVE[id] = { status: 'unknown' };
+        DOOR_EXTRA[id] = 'Could not verify pending door commands — controls disabled';
+        renderDoorNote(id);
+      });
+      updateDoorButtons();
+      return;
+    }
     DOOR_IDS.forEach(id => {
       const act = (a.data || []).find(x => x.door_id === id);
       DOOR_ACTIVE[id] = act || null;
@@ -3197,13 +3206,47 @@ async function refreshDoorExtras() {
       }
       if (!doorBusy[id] && !((SAVE_NOTE_UNTIL[id] || 0) > Date.now())) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
     });
-    if (!s.error) (s.data || []).forEach(x => {
-      const inp = document.querySelector('[data-door-input="' + x.door_id + '"]');
-      if (inp && !inp.dataset.dirty && document.activeElement !== inp) inp.value = x.autolock_seconds;
-      if (inp) { inp.disabled = false; const sv = document.querySelector('[data-door-save="' + x.door_id + '"]'); if (sv) sv.disabled = false; }   // enabled only after the REAL value is loaded
+    if (s.error) {
+      DOOR_IDS.forEach(id => {
+        const inp = document.querySelector('[data-door-input="' + id + '"]');
+        const save = document.querySelector('[data-door-save="' + id + '"]');
+        if (inp) inp.disabled = true;
+        if (save) save.disabled = true;
+        DOOR_EXTRA[id] = 'Auto-lock settings could not be read — editing disabled';
+        renderDoorNote(id);
+      });
+    } else {
+      const settingsByDoor = new Map((s.data || []).map(x => [x.door_id, x]));
+      DOOR_IDS.forEach(id => {
+        const setting = settingsByDoor.get(id);
+        const inp = document.querySelector('[data-door-input="' + id + '"]');
+        const save = document.querySelector('[data-door-save="' + id + '"]');
+        if (!setting || !Number.isInteger(Number(setting.autolock_seconds))) {
+          if (inp) inp.disabled = true;
+          if (save) save.disabled = true;
+          DOOR_EXTRA[id] = 'Auto-lock setting unavailable — editing disabled';
+          renderDoorNote(id);
+          return;
+        }
+        if (inp && !inp.dataset.dirty && document.activeElement !== inp) {
+          inp.value = setting.autolock_seconds;
+        }
+        if (inp) inp.disabled = false;
+        if (save) save.disabled = false;
+      });
+    }
+    updateDoorButtons();
+  } catch (e) {
+    // Fail closed if the current command/settings snapshot cannot be confirmed.
+    DOOR_IDS.forEach(id => {
+      DOOR_ACTIVE[id] = { status: 'unknown' };
+      const inp = document.querySelector('[data-door-input="' + id + '"]');
+      const save = document.querySelector('[data-door-save="' + id + '"]');
+      if (inp) inp.disabled = true;
+      if (save) save.disabled = true;
     });
     updateDoorButtons();
-  } catch (e) { /* keep last notes */ }
+  }
 }
 async function pollDoorCommand(id, cmdId) {
   const text = { pending: 'Waiting for Door Daemon…', claimed: 'Starting…', executing: 'Executing…' };
@@ -3272,15 +3315,22 @@ async function sendDoorCommand(id, action) {
 async function saveDoorAutolock(id) {
   const inp = document.querySelector('[data-door-input="' + id + '"]');
   if (!inp || inp.disabled) return;
-  const v = parseInt(inp && inp.value, 10);
-  if (!Number.isInteger(v) || v < 60 || v > 300) { DOOR_EXTRA[id] = 'Auto-lock must be 60–300 sec'; renderDoorNote(id); return; }
-  const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
-  if (error) {
-    DOOR_EXTRA[id] = 'Auto-lock NOT saved – please try again';
+  const v = Number(inp.value);
+  if (!Number.isInteger(v) || v < 60 || v > 300) {
+    DOOR_EXTRA[id] = 'Auto-lock must be a whole number from 60–300 sec';
     SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
-  } else {
+    renderDoorNote(id);
+    return;
+  }
+  try {
+    const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
+    if (error) throw error;
     delete inp.dataset.dirty;
     DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s (applies now, also to a waiting Auto-lock)';
+    SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
+  } catch (e) {
+    console.error('[door autolock] save failed:', e);
+    DOOR_EXTRA[id] = 'Auto-lock NOT saved: ' + (e && e.message ? String(e.message).slice(0, 120) : 'Please try again');
     SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
   }
   renderDoorNote(id);
@@ -3372,14 +3422,18 @@ refreshStatus(); // not awaited: a slow check must never block the rest of the p
 // ─── DATA BACKUP ─────────────────────────────────────────────────
 // 마지막 백업 정보 표시 (localStorage에 저장)
 function showLastBackupInfo() {
-  const lastDate = localStorage.getItem('bms_last_backup_date');
-  if (lastDate) {
-    const info = document.getElementById('backupLastInfo');
-    const dateSpan = document.getElementById('backupLastDate');
-    if (info && dateSpan) {
-      dateSpan.textContent = lastDate;
-      info.style.display = 'block';
+  try {
+    const lastDate = localStorage.getItem('bms_last_backup_date');
+    if (lastDate) {
+      const info = document.getElementById('backupLastInfo');
+      const dateSpan = document.getElementById('backupLastDate');
+      if (info && dateSpan) {
+        dateSpan.textContent = lastDate;
+        info.style.display = 'block';
+      }
     }
+  } catch (e) {
+    console.warn('[backup] Last-download date is unavailable in this browser.');
   }
 }
 showLastBackupInfo();
