@@ -2143,6 +2143,20 @@ function renderOnHoldQuotes(quotes) {
 
     row.onclick = () => {
       const opened = details.hidden;
+
+      // Keep only one ON HOLD project panel open at a time.
+      container.querySelectorAll('.onhold-project-card').forEach(otherCard => {
+        const otherDetails = otherCard.querySelector('.onhold-project-details');
+        const otherRow = otherCard.querySelector('.onhold-list-row');
+        if (!otherDetails || otherDetails === details) return;
+        otherDetails.hidden = true;
+        if (otherRow) {
+          otherRow.setAttribute('aria-expanded', 'false');
+          const otherChevron = otherRow.querySelector('.onhold-row-chevron');
+          if (otherChevron) otherChevron.textContent = '⌄';
+        }
+      });
+
       details.hidden = !opened;
       row.setAttribute('aria-expanded', String(opened));
       const chevron = row.querySelector('.onhold-row-chevron');
