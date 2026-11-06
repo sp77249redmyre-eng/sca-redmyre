@@ -1325,16 +1325,6 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       addQuoteBtn.onclick = () => openAddQuoteToProject(projectKey, first.project || first.project_title || 'Project', cat, parsed.priority || 'Normal');
       adminActionsRow.appendChild(addQuoteBtn);
 
-      const editFormId = 'ef-form-' + projectKey;
-      const editProjBtn = document.createElement('button');
-      editProjBtn.className = 'btn-mgmt btn-mgmt-blue';
-      editProjBtn.textContent = 'Edit Project';
-      editProjBtn.onclick = () => {
-        const f = document.getElementById(editFormId);
-        if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
-      };
-      adminActionsRow.appendChild(editProjBtn);
-
       const expireBtn = document.createElement('button');
       expireBtn.className = 'btn-mgmt btn-mgmt-red';
       expireBtn.textContent = 'Mark as Expired';
@@ -1343,43 +1333,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
 
       card.appendChild(adminActionsRow);
 
-      // Inline Edit Project form (hidden by default) — reuses existing saveProjectEdit()
-      const editForm = document.createElement('div');
-      editForm.className = 'edit-project-form';
-      editForm.id = editFormId;
-      editForm.style.cssText = 'margin:10px 20px 0;display:none';
-      editForm.innerHTML = `
-        <div class="edit-form-row">
-          <div class="edit-form-field">
-            <label class="edit-form-label">Project Title</label>
-            <input class="edit-form-input" id="ef-title-${projectKey}" value="${escHtml(first.project || first.project_title || '')}" placeholder="Project title">
-          </div>
-          <div class="edit-form-field">
-            <label class="edit-form-label">Category</label>
-            <select class="edit-form-select" id="ef-cat-${projectKey}">
-              ${['General','HVAC','Fire','Electrical','Security','Plumbing','Lift','Legal'].map(c => `<option value="${c}"${c===cat?' selected':''}>${c}</option>`).join('')}
-            </select>
-          </div>
-          <div class="edit-form-field">
-            <label class="edit-form-label">Priority</label>
-            <select class="edit-form-select" id="ef-pri-${projectKey}">
-              ${['Normal','High','Urgent'].map(p => `<option value="${p}"${p===(parsed.priority||'Normal')?' selected':''}>${p}</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <button type="button" class="btn-mgmt btn-mgmt-blue" id="ef-save-${projectKey}">Save</button>
-            <button class="btn-mgmt" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="document.getElementById('${editFormId}').style.display='none'">Cancel</button>
-          </div>
-        </div>`;
-      const saveBtn = editForm.querySelector('#ef-save-' + CSS.escape(String(projectKey)));
-      if (saveBtn) {
-        saveBtn.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          window.saveProjectEdit(projectKey, group.map(q => q.id));
-        });
-      }
-      card.appendChild(editForm);
+
     }
 
     // Vote summary bar (visible during voting)
