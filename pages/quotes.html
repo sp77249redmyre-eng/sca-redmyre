@@ -1367,10 +1367,18 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
             </select>
           </div>
           <div>
-            <button class="btn-mgmt btn-mgmt-blue" onclick="saveProjectEdit('${projectKey}', ${JSON.stringify(group.map(q=>q.id))})">Save</button>
+            <button type="button" class="btn-mgmt btn-mgmt-blue" id="ef-save-${projectKey}">Save</button>
             <button class="btn-mgmt" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="document.getElementById('${editFormId}').style.display='none'">Cancel</button>
           </div>
         </div>`;
+      const saveBtn = editForm.querySelector('#ef-save-' + CSS.escape(String(projectKey)));
+      if (saveBtn) {
+        saveBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          window.saveProjectEdit(projectKey, group.map(q => q.id));
+        });
+      }
       card.appendChild(editForm);
     }
 
@@ -2244,8 +2252,16 @@ function renderOnHoldQuotes(quotes) {
         '</select></div>' +
         '<div class="edit-form-field"><label class="edit-form-label">Priority</label><select class="edit-form-select" id="ef-pri-' + projectKey + '">' +
         ['Normal','High','Urgent'].map(v => '<option value="' + v + '"' + (v === priority ? ' selected' : '') + '>' + v + '</option>').join('') +
-        '</select></div><div><button type="button" class="btn-mgmt btn-mgmt-blue" onclick="saveProjectEdit(\'' + projectKey + '\',' + JSON.stringify(group.map(q => q.id)) + ')">Save</button> ' +
+        '</select></div><div><button type="button" class="btn-mgmt btn-mgmt-blue" id="ef-save-' + projectKey + '">Save</button> ' +
         '<button type="button" class="btn-mgmt" onclick="document.getElementById(\'ef-form-' + projectKey + '\').style.display=\'none\'">Cancel</button></div></div>';
+      const holdSaveBtn = editForm.querySelector('#ef-save-' + CSS.escape(String(projectKey)));
+      if (holdSaveBtn) {
+        holdSaveBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          window.saveProjectEdit(projectKey, group.map(q => q.id));
+        });
+      }
       editBtn.onclick = (e) => {
         e.stopPropagation();
         editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
