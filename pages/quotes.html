@@ -2394,6 +2394,7 @@ function renderOnHoldQuotes(quotes) {
 }
 
 async function placeProjectOnHold(group, triggerBtn) {
+  if (!requireAdmin('place projects on hold')) return;
   if (!Array.isArray(group) || !group.length || !group.every(q => q.status === 'draft')) {
     showToast('Only Draft projects can be placed on hold', true);
     return;
@@ -2420,6 +2421,7 @@ async function placeProjectOnHold(group, triggerBtn) {
 }
 
 async function permanentlyDeleteProject(group) {
+  if (!requireAdmin('permanently delete projects')) throw new Error('Administrator access required.');
   if (!Array.isArray(group) || !group.length) throw new Error('No project quotes supplied');
   const projectId = group[0].project_id || group[0].id;
   const ids = group.map(q => q.id).filter(Boolean);
@@ -2620,6 +2622,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
 
 // Send Draft or On Hold project → Committee voting
 async function sendToCommittee(group, btn, projectKey) {
+  if (!requireAdmin('send projects to Committee')) return;
   if (!Array.isArray(group) || !group.length) return;
   const isDraftProject = group.every(q => q.status === 'draft');
   const isOnHoldProject = group.every(q => q.status === 'onhold');
@@ -2675,6 +2678,7 @@ async function sendToCommittee(group, btn, projectKey) {
 
 // Force action – deterministic status transitions
 window.forceAction = async function(status, quoteId, group, triggerBtn) {
+  if (!requireAdmin('change project results')) return;
   if (!Array.isArray(group) || !group.length) { showToast('Invalid group', true); return; }
   if (status === 'declined') {
     const projectName = group[0].project || group[0].project_title || 'this project';
@@ -2758,6 +2762,7 @@ window.sendTestEmail = async function(quoteId, group, calcResult, votedRows, app
 };
 
 window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult) {
+  if (!requireAdmin('confirm voting results')) return;
   if (!Array.isArray(group) || !group.length) return;
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Confirming…'; }
   try {
@@ -2864,6 +2869,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
 
 // Edit individual quote (opens modal pre-filled)
 window.editQuote = function(id) {
+  if (!requireAdmin('edit quotations')) return;
   const q = allQuotes.find(x => x.id === id);
   if (!q) return;
   const parsed = parseComment(q.comment);
@@ -2925,6 +2931,7 @@ window.removeExistingFile = function(idx) {
 
 // Mark all quotes in project as expired (non-destructive)
 window.markExpired = async function(group, btn) {
+  if (!requireAdmin('mark projects as expired')) return;
   if (!Array.isArray(group) || !group.length) return;
   if (!confirm('Mark this project as Expired? This will not delete any data.')) return;
   if (btn) btn.disabled = true;
@@ -2944,6 +2951,7 @@ window.markExpired = async function(group, btn) {
 
 // Save project edits: title, category, priority
 window.saveProjectEdit = async function(projectKey, quoteIds) {
+  if (!requireAdmin('edit projects')) return;
   const titleEl = document.getElementById('ef-title-' + projectKey);
   const catEl   = document.getElementById('ef-cat-'   + projectKey);
   const priEl   = document.getElementById('ef-pri-'   + projectKey);
@@ -3027,6 +3035,7 @@ window.saveProjectEdit = async function(projectKey, quoteIds) {
 
 // Open quote create modal pre-filled for existing project
 window.openAddQuoteToProject = function(projectId, projectName, category, priority) {
+  if (!requireAdmin('add quotations')) return;
   const sel = document.getElementById('projectSelect');
   sel.innerHTML = '<option value="">+ New Project</option>';
   // Add existing project as option and select it
@@ -3091,6 +3100,7 @@ async function uploadFiles(quoteId) {
 
 // Modal
 window.openCreateProject = function() {
+  if (!requireAdmin('create projects')) return;
   const sel = document.getElementById('projectSelect');
   sel.innerHTML = '<option value="">+ New Project</option>';
   const seen = new Set();
@@ -3155,6 +3165,7 @@ window.closeModal = function(id) {
 window.formatAmount = function(input) { input.value = input.value.replace(/[^0-9.]/g, ''); };
 
 window.saveQuote = async function() {
+  if (!requireAdmin('save quotations')) return;
   const sel         = document.getElementById('projectSelect');
   const isNew       = sel.value === '';
   const projectName = isNew ? document.getElementById('quoteProject').value.trim() : (sel.options[sel.selectedIndex]?.text || '');
@@ -3258,6 +3269,7 @@ window.saveQuote = async function() {
 };
 
 window.deleteQuote = async function() {
+  if (!requireAdmin('remove quotations')) return;
   const editId = document.getElementById('quoteEditId').value;
   if (!editId || !confirm('Remove this quote from Management?')) return;
   try {
@@ -3277,6 +3289,12 @@ window.deleteQuote = async function() {
     renderQuotes();
   } catch(e) { showToast('Failed to remove', true); }
 };
+
+function requireAdmin(action = 'perform this action') {
+  if (role === 'admin') return true;
+  showToast('Administrator access is required to ' + action + '.', true);
+  return false;
+}
 
 function showToast(message, isError = false) {
   const el = document.getElementById('toast');
