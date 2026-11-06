@@ -2947,23 +2947,36 @@ window.saveProjectEdit = async function(projectKey, quoteIds) {
   const titleEl = document.getElementById('ef-title-' + projectKey);
   const catEl   = document.getElementById('ef-cat-'   + projectKey);
   const priEl   = document.getElementById('ef-pri-'   + projectKey);
-  if (!titleEl || !catEl || !priEl) return;
+  if (!titleEl || !catEl || !priEl) {
+    showToast('Project edit fields could not be found.', true);
+    return;
+  }
 
   const newTitle = titleEl.value.trim();
   const newCat   = catEl.value;
   const newPri   = priEl.value;
-  if (!newTitle) { showToast('Project title cannot be empty', true); return; }
+  const ids = Array.isArray(quoteIds) ? quoteIds : [quoteIds];
+
+  if (!newTitle) {
+    showToast('Project title cannot be empty', true);
+    return;
+  }
+  if (!ids.length || ids.some(id => !id)) {
+    showToast('No quote records were selected for this project.', true);
+    return;
+  }
 
   try {
-    // Use UPDATE, not UPSERT: Committee members may update quotes but cannot insert them.
-    // Each quote keeps its own notes and attachments while sharing project-level fields.
-    const updates = await Promise.all(quoteIds.map(async qid => {
-      const q = allQuotes.find(x => x.id === qid);
-      if (!q) throw new Error('Quote not found: ' + qid);
+    // Preserve the existing JSONB-string storage format used by the quotes table.
+    // Update sequentially and verify each saved row before reporting success.
+    for (const qid of ids) {
+      const q = allQuotes.find(x => String(x.id) === String(qid));
+      if (!q) throw new Error('Quote record not found: ' + qid);
 
       const parsed = parseComment(q.comment);
       parsed.category = newCat;
       parsed.priority = newPri;
+      const commentValue = JSON.stringify(parsed);
 
       const { data, error } = await supabase
         .from('quotes')
@@ -2971,28 +2984,44 @@ window.saveProjectEdit = async function(projectKey, quoteIds) {
           project: newTitle,
           project_title: newTitle,
           category: newCat,
-          comment: parsed
+          comment: commentValue
         })
         .eq('id', qid)
-        .select('id');
+        .select('id, project, category, comment');
 
       if (error) throw error;
-      if (!data || data.length !== 1) {
-        throw new Error('Quote was not updated: ' + qid);
+      if (!Array.isArray(data) || data.length !== 1) {
+        throw new Error('Database did not confirm the update for quote ' + qid);
       }
-      return data[0].id;
-    }));
 
-    if (updates.length !== quoteIds.length) {
-      throw new Error('Not all project quotations were updated.');
+      const savedComment = parseComment(data[0].comment);
+      if (
+        data[0].project !== newTitle ||
+        data[0].category !== newCat ||
+        savedComment.priority !== newPri
+      ) {
+        throw new Error('Saved values did not match the selected Project, Category and Priority.');
+      }
     }
 
-    showToast('Project updated');
     await loadData();
+
+    const notUpdated = ids.filter(qid => {
+      const q = allQuotes.find(x => String(x.id) === String(qid));
+      return !q ||
+        q.project !== newTitle ||
+        q.category !== newCat ||
+        parseComment(q.comment).priority !== newPri;
+    });
+    if (notUpdated.length) {
+      throw new Error('Reload verification failed for ' + notUpdated.length + ' quote record(s).');
+    }
+
+    showToast('Project and Priority saved successfully');
     renderQuotes();
   } catch(e) {
     console.error('saveProjectEdit error:', e);
-    showToast('Failed to update project. Please check your permissions.', true);
+    showToast('Save failed: ' + (e?.message || 'Unknown database error'), true);
   }
 };
 
