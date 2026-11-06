@@ -2175,8 +2175,11 @@ async function deleteOrphans() {
     }
     for (let i = 0; i < expectedPaths.length; i += 100) {
       const batch = expectedPaths.slice(i, i + 100);
-      const { error } = await supabase.storage.from('quotes').remove(batch);
+      const { data: removed, error } = await supabase.storage.from('quotes').remove(batch);
       if (error) throw new Error(error.message);
+      if (!Array.isArray(removed) || removed.length !== batch.length) {
+        throw new Error('Storage confirmed removal of ' + (removed || []).length + ' of ' + batch.length + ' requested file(s).');
+      }
     }
     const after = await analyzeQuoteOrphans();
     orphanPaths = after.candidates.map(file => file.path);
@@ -2194,7 +2197,13 @@ async function deleteOrphans() {
   } catch (e) {
     setStatus('orphanStatus', 'Delete stopped: ' + e.message + '. Scan again to see what remains.', 'error');
     showToast('Orphan deletion did not complete.', true);
-    try { await scanOrphans(); } catch (scanError) { console.error(scanError); }
+    try {
+      await scanOrphans();
+      setStatus('orphanStatus', 'Delete stopped: ' + e.message + '. The refreshed scan shows what remains; nothing else was attempted.', 'error');
+    } catch (scanError) {
+      setStatus('orphanStatus', 'Delete stopped and re-scan failed: ' + scanError.message, 'error');
+      console.error(scanError);
+    }
   } finally {
     btn.disabled = false;
   }
@@ -2310,7 +2319,21 @@ async function analyzeJunkProjects() {
 }
 
 function renderJunkAnalysis(analysis) {
-  const groups = [...analysis.deletableGroups, ...analysis.protectedGroups];
+  const groups = [
+    ...analysis.deletableGroups.map(group => ({ ...group, displayState: 'READY' })),
+    ...analysis.protectedGroups.map(group => ({ ...group, displayState: 'PROTECTED' })),
+    ...analysis.partialGroups.map(group => ({
+      ...group,
+      title: quoteDisplayName(group),
+      filePaths: [],
+      sharedFilePaths: [],
+      votes: [],
+      comments: [],
+      legacyComments: [],
+      blocked: true,
+      displayState: 'MIXED / RETAINED'
+    }))
+  ];
   const quoteCount = analysis.deletableGroups.reduce((n, g) => n + g.quotes.length, 0);
   const fileCount = analysis.deletableGroups.reduce((n, g) => n + g.filePaths.length, 0);
   const voteCount = analysis.deletableGroups.reduce((n, g) => n + g.votes.length, 0);
@@ -2334,7 +2357,7 @@ function renderJunkAnalysis(analysis) {
     name.className = 'preview-item-val';
     name.textContent = group.title;
     const status = document.createElement('span');
-    status.textContent = group.blocked ? 'PROTECTED' : 'READY';
+    status.textContent = group.displayState;
     status.className = group.blocked ? 'badge-removed' : 'badge-declined';
     title.append(name, status);
     const detail = document.createElement('div');
@@ -2350,6 +2373,12 @@ function renderJunkAnalysis(analysis) {
       if (group.legacyComments.length) reasons.push(group.legacyComments.length + ' legacy quote comment(s)');
       if (group.votes.length) reasons.push(group.votes.length + ' vote record(s)');
       if (group.comments.length) reasons.push(group.comments.length + ' discussion comment(s) — use Comments Cleanup first');
+      if (group.displayState === 'MIXED / RETAINED') {
+        const activeStates = [...new Set(group.quotes.filter(q => !isJunkQuoteRow(q)).map(q =>
+          String(q.status || 'unknown') + (q.work_status ? ' / ' + q.work_status : '')
+        ))];
+        reasons.push('Contains non-junk quote(s): ' + activeStates.join(', '));
+      }
       note.textContent = reasons.join(' · ') + '; project retained.';
       row.appendChild(note);
     }
@@ -2473,8 +2502,12 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
       await deleteRowsByIds('quotes', group.quotes, 'Quote');
       for (let i = 0; i < group.filePaths.length; i += 100) {
         const batch = group.filePaths.slice(i, i + 100);
-        const { error } = await supabase.storage.from('quotes').remove(batch);
+        const { data: removed, error } = await supabase.storage.from('quotes').remove(batch);
         if (error) throw new Error('Quote file cleanup failed for ' + projectName + ': ' + error.message);
+        if (!Array.isArray(removed) || removed.length !== batch.length) {
+          throw new Error('Quote file cleanup incomplete for ' + projectName + ': Storage confirmed ' +
+            (removed || []).length + ' of ' + batch.length + ' requested file(s).');
+        }
       }
       deletedProjects++;
     }
