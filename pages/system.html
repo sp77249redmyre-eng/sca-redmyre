@@ -1961,6 +1961,7 @@ async function loadAllTableRowsForCleanup(table, columns) {
   while (true) {
     const { data, error } = await supabase.from(table)
       .select(columns)
+      .order('id', { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw new Error('Could not read ' + table + ': ' + error.message);
     const batch = Array.isArray(data) ? data : [];
@@ -1983,6 +1984,7 @@ async function loadRowsByValuesForCleanup(table, column, values, columns) {
       const { data, error } = await supabase.from(table)
         .select(columns)
         .in(column, valuesBatch)
+        .order('id', { ascending: true })
         .range(offset, offset + pageSize - 1);
       if (error) throw new Error('Could not read ' + table + ' references: ' + error.message);
       const batch = Array.isArray(data) ? data : [];
@@ -2270,7 +2272,11 @@ async function analyzeJunkProjects() {
       votes: groupVotes,
       comments: groupComments,
       legacyComments: groupLegacyComments,
-      blocked: groupLegacyComments.length > 0
+      blocked: groupLegacyComments.length > 0 || groupVotes.length > 0,
+      blockReasons: [
+        ...(groupLegacyComments.length ? ['Legacy quote comments exist'] : []),
+        ...(groupVotes.length ? ['Vote history exists; the current votes table does not permit deletion'] : [])
+      ]
     };
     if (item.blocked) protectedGroups.push(item);
     else candidates.push(item);
@@ -2319,7 +2325,10 @@ function renderJunkAnalysis(analysis) {
     if (group.blocked) {
       const note = document.createElement('div');
       note.style.cssText = 'font-size:11px;color:#f2c21a;margin-top:4px';
-      note.textContent = group.legacyComments.length + ' legacy quote comment(s) exist; project retained.';
+      const reasons = [];
+      if (group.legacyComments.length) reasons.push(group.legacyComments.length + ' legacy quote comment(s)');
+      if (group.votes.length) reasons.push(group.votes.length + ' vote record(s) — no DELETE policy');
+      note.textContent = reasons.join(' · ') + '; project retained.';
       row.appendChild(note);
     }
     list.appendChild(row);
@@ -2349,7 +2358,8 @@ function getJunkSnapshotKey(analysis) {
   const protectedRows = analysis.protectedGroups.map(group => ({
     projectId: group.projectId,
     quoteIds: group.quotes.map(q => String(q.id)).sort(),
-    legacyCommentIds: group.legacyComments.map(c => String(c.id)).sort()
+    legacyCommentIds: group.legacyComments.map(c => String(c.id)).sort(),
+    voteIds: group.votes.map(v => String(v.id)).sort()
   })).sort((a, b) => a.projectId.localeCompare(b.projectId));
   return JSON.stringify({ rows, protectedRows });
 }
@@ -2418,7 +2428,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
   const commentCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.comments.length, 0);
   if (!confirm('Permanently delete ' + groupCount + ' complete junk project(s): ' + quoteCount +
       ' quote(s), ' + fileCount + ' attached file(s), ' + voteCount + ' vote(s), and ' +
-      commentCount + ' project comment(s)? Projects containing active quotes or legacy quote comments are protected. This cannot be undone.')) return;
+      commentCount + ' project comment(s)? Projects containing active quotes, vote history or legacy quote comments are protected. This cannot be undone.')) return;
 
   const deleteBtn = document.getElementById('deleteBtn');
   const scanBtn = document.getElementById('scanBtn');
@@ -2439,7 +2449,6 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
       const projectName = group.title;
       setJunkStatus('Deleting ' + projectName + '…', 'loading');
       await deleteRowsByIds('quotes', group.quotes, 'Quote');
-      await deleteRowsByIds('votes', group.votes, 'Vote');
       await deleteRowsByIds('project_comments', group.comments, 'Project comment');
       for (let i = 0; i < group.filePaths.length; i += 100) {
         const batch = group.filePaths.slice(i, i + 100);
@@ -2469,6 +2478,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
     try {
       junkAnalysis = await analyzeJunkProjects();
       renderJunkAnalysis(junkAnalysis);
+      setJunkStatus('Cleanup stopped: ' + e.message + '. Review the refreshed scan before retrying.', 'error');
     } catch (scanError) {
       setJunkStatus('Cleanup stopped and re-scan failed: ' + scanError.message, 'error');
     }
@@ -2633,6 +2643,7 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
     try {
       pcAnalysis = await analyzeProjectComments();
       renderProjectCommentAnalysis(pcAnalysis);
+      setPcStatus('Delete stopped: ' + e.message + '. Review the refreshed comment list before retrying.', 'error');
     } catch (scanError) {
       setPcStatus('Delete stopped and re-scan failed: ' + scanError.message, 'error');
     }
