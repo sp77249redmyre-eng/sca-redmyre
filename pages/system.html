@@ -1450,7 +1450,7 @@ body.admin-neon-page .main:has(.cctv-console) {
             </div>
             <div class="sc-auto">
               <span class="sc-auto-label">Auto-lock</span>
-              <input class="sc-input" type="number" value="30" min="60" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds" disabled>
+              <input class="sc-input" type="number" value="60" min="60" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds" disabled>
               <span class="sc-unit">sec</span>
               <button class="sc-btn" data-door-save="D3" disabled>Save</button>
             </div>
@@ -1571,13 +1571,12 @@ body.admin-neon-page .main:has(.cctv-console) {
       <div class="sc-tile" id="hl-storage"><div class="sc-tile-label">Storage</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
       <div class="sc-tile" id="hl-edge"><div class="sc-tile-label">Edge Function</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
       <div class="sc-tile" id="hl-int"><div class="sc-tile-label">Integriti</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
-      <div class="sc-tile" id="hl-cctv"><div class="sc-tile-label">CCTV</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
     </div>
     <div class="alert-card" id="recentErrorsCard" onclick="toggleErrorDetails()">
       <div class="alert-row">
         <span class="alert-icon" id="errorIcon">✅</span>
         <div class="alert-text">
-          <div class="alert-title">Recent Errors</div>
+          <div class="alert-title">Recent Error Events</div>
           <div class="alert-stat" id="errorStat">No errors in last 7 days · System healthy</div>
         </div>
         <span class="alert-arrow" id="errorArrow">▸</span>
@@ -1791,8 +1790,8 @@ async function loadDbSummary() {
   const counts = [];
   for (const t of DB_TABLES) {
     try {
-      const { count } = await supabase.from(t.key).select('*', { count: 'exact', head: true });
-      counts.push({ label: t.label, count: count ?? 0 });
+      const { count, error } = await supabase.from(t.key).select('*', { count: 'exact', head: true });
+      counts.push({ label: t.label, count: error ? '—' : (count ?? 0) });
     } catch {
       counts.push({ label: t.label, count: '—' });
     }
@@ -1875,6 +1874,7 @@ async function loadStorageBuckets() {
   }
 
   window.__storageSummary = { files: grandFiles, bytes: grandBytes, failed: bucketData.filter(b => b.files === '—').length, at: new Date() };
+  if (typeof checkStorageTile === 'function') checkStorageTile();
   el.innerHTML = `
     ${bucketData.map(b => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px">
@@ -2013,6 +2013,8 @@ function makeQuoteProjectGroups(quotes) {
 
 function isJunkQuoteRow(quote) {
   const status = String(quote.status || '').toLowerCase();
+  // On Hold and archived records are never cleanup candidates.
+  if (status === 'onhold' || status === 'hold' || quote.archived === true) return false;
   return ['declined', 'expired', 'removed'].includes(status) &&
     (quote.work_status === null || quote.work_status === undefined || quote.work_status === '') &&
     !quote.completion_date;
@@ -2022,6 +2024,8 @@ function isClosedProjectQuote(quote) {
   const status = String(quote.status || '').toLowerCase();
   const workStatus = String(quote.work_status || '').toLowerCase();
   const hasCompletionDate = !!quote.completion_date;
+  // On Hold and archived records are retained by every cleanup tool.
+  if (status === 'onhold' || status === 'hold' || quote.archived === true) return false;
   if (status === 'approved') return workStatus === 'completed' && hasCompletionDate;
   if (['declined', 'expired', 'removed', 'archived'].includes(status)) {
     if (workStatus === 'in_progress') return false;
@@ -2398,12 +2402,13 @@ function renderJunkAnalysis(analysis) {
 
   setDeleteBtn(analysis.deletableGroups.length > 0);
   if (!groups.length && !analysis.partialGroups.length) {
-    setJunkStatus('No eligible junk projects found. No quote records or files are marked for deletion.', 'success');
+    setJunkStatus('No eligible junk projects found. On Hold and archived quotes are excluded. Nothing is marked for deletion.', 'success');
   } else {
     let message = analysis.deletableGroups.length + ' project(s) ready · ' + quoteCount +
       ' quote(s) · ' + fileCount + ' file(s) · ' + voteCount + ' vote(s) · ' + commentCount + ' project comment(s)';
     if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' project(s) protected by votes/comments';
     if (analysis.partialGroups.length) message += ' · ' + analysis.partialGroups.length + ' mixed/active project(s) retained';
+    message += ' · On Hold and archived quotes are never Junk and are never deleted';
     setJunkStatus(message, analysis.deletableGroups.length ? 'warning' : 'ready');
   }
 }
@@ -2722,62 +2727,74 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
 let qrCurrentDays = 0;
 
 async function loadQRAnalytics(days) {
-  qrCurrentDays = days;
+  qrCurrentDays = Number.isInteger(days) && days >= 0 ? days : 0;
   let since;
-  if (days === 0) {
+  if (qrCurrentDays === 0) {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
     since = midnight.toISOString();
   } else {
-    since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    since = new Date(Date.now() - qrCurrentDays * 24 * 60 * 60 * 1000).toISOString();
   }
 
   try {
-    const { data, error } = await supabase
-      .from('qr_analytics')
-      .select('event_type')
-      .gte('created_at', since);
-
-    if (error) throw error;
-
     const counts = { lift_entry: 0, lift_resident: 0, lift_visitor: 0 };
-    (data || []).forEach(r => {
-      if (counts[r.event_type] !== undefined) counts[r.event_type]++;
-    });
+    const pageSize = 500;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('qr_analytics')
+        .select('id,event_type')
+        .gte('created_at', since)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      rows.forEach(row => {
+        if (Object.prototype.hasOwnProperty.call(counts, row.event_type)) counts[row.event_type]++;
+      });
+      if (rows.length < pageSize) break;
+      offset += rows.length;
+    }
 
-    document.getElementById('qrLiftEntry').textContent = counts.lift_entry;
-    document.getElementById('qrLiftResident').textContent = counts.lift_resident;
-    document.getElementById('qrLiftVisitor').textContent = counts.lift_visitor;
+    document.getElementById('qrLiftEntry').textContent = counts.lift_entry.toLocaleString();
+    document.getElementById('qrLiftResident').textContent = counts.lift_resident.toLocaleString();
+    document.getElementById('qrLiftVisitor').textContent = counts.lift_visitor.toLocaleString();
 
     const decided = counts.lift_resident + counts.lift_visitor;
-    const dropoff = counts.lift_entry - decided;
+    const dropoff = Math.max(0, counts.lift_entry - decided);
     const dropoffPct = counts.lift_entry > 0 ? Math.round((dropoff / counts.lift_entry) * 100) : 0;
     const dropoffEl = document.getElementById('qrLiftDropoff');
-    if (dropoffEl) dropoffEl.textContent = dropoff > 0 ? `${dropoff} (${dropoffPct}%)` : '0';
+    if (dropoffEl) dropoffEl.textContent = dropoff > 0
+      ? dropoff.toLocaleString() + ' (' + dropoffPct + '%)' : '0';
 
     const lastUpdateEl = document.getElementById('qrLastUpdate');
-    if (lastUpdateEl) lastUpdateEl.textContent = `Last updated: ${new Date().toLocaleString()} · ${days === 0 ? 'Today' : 'Last ' + days + ' days'}`;
+    if (lastUpdateEl) {
+      lastUpdateEl.textContent = 'Last updated: ' +
+        new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' }) + ' · ' +
+        (qrCurrentDays === 0 ? 'Today' : 'Last ' + qrCurrentDays + ' days');
+    }
   } catch (e) {
-    document.getElementById('qrLiftEntry').textContent = '—';
-    document.getElementById('qrLiftResident').textContent = '—';
-    document.getElementById('qrLiftVisitor').textContent = '—';
+    console.error('[QR analytics] Could not load the full result:', e);
+    ['qrLiftEntry', 'qrLiftResident', 'qrLiftVisitor', 'qrLiftDropoff'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    const lastUpdateEl = document.getElementById('qrLastUpdate');
+    if (lastUpdateEl) lastUpdateEl.textContent = 'Update failed — please refresh';
   }
 }
 
-document.querySelectorAll('.qr-range-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.qr-range-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadQRAnalytics(parseInt(btn.dataset.days));
+function setQRRangeActive(days) {
+  document.querySelectorAll('.qr-range-btn, .qr-range-btn-mini').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.days) === Number(days));
   });
-});
-
-// QR range buttons (mini, in Daily section)
-document.querySelectorAll('.qr-range-btn-mini').forEach(btn => {
+}
+document.querySelectorAll('.qr-range-btn, .qr-range-btn-mini').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.qr-range-btn-mini').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadQRAnalytics(parseInt(btn.dataset.days));
+    const days = parseInt(btn.dataset.days, 10);
+    setQRRangeActive(days);
+    loadQRAnalytics(days);
   });
 });
 
@@ -2785,55 +2802,71 @@ document.querySelectorAll('.qr-range-btn-mini').forEach(btn => {
 // ─── INIT ─────────────────────────────────────────────────────
 // ─── RECENT ERRORS (Audit Logs) ─────────────────────────────────
 async function loadRecentErrors() {
+  const card = document.getElementById('recentErrorsCard');
+  const icon = document.getElementById('errorIcon');
+  const stat = document.getElementById('errorStat');
+  const list = document.getElementById('errorList');
+  if (!card || !icon || !stat || !list) return;
+
   try {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('audit_logs')
-      .select('action, details, created_at, user_email')
+      .select('action, details, created_at, user_email', { count: 'exact' })
       .gte('created_at', sevenDaysAgo.toISOString())
       .or('action.ilike.%error%,action.ilike.%fail%')
       .order('created_at', { ascending: false })
       .limit(20);
 
-    const card = document.getElementById('recentErrorsCard');
-    const icon = document.getElementById('errorIcon');
-    const stat = document.getElementById('errorStat');
-    const list = document.getElementById('errorList');
+    if (error) throw error;
+    const errors = Array.isArray(data) ? data : [];
+    const total = count ?? errors.length;
+    list.replaceChildren();
 
-    if (error) {
-      icon.textContent = '⚠️';
-      stat.textContent = 'Could not check errors: ' + (error.message || 'Unknown');
+    if (total === 0) {
+      card.classList.remove('has-errors', 'expanded');
+      icon.textContent = '✅';
+      stat.textContent = 'No error/failure audit events in the last 7 days';
+      const detail = document.getElementById('errorDetail');
+      if (detail) detail.style.display = 'none';
       return;
     }
 
-    const errors = data || [];
+    card.classList.add('has-errors');
+    icon.textContent = '🚨';
+    stat.textContent = total + ' error/failure audit event(s) in the last 7 days' +
+      (total > errors.length ? ' · showing latest ' + errors.length : '') + ' · click to view';
 
-    if (errors.length === 0) {
-      card.classList.remove('has-errors');
-      icon.textContent = '✅';
-      stat.textContent = 'No errors in last 7 days · System healthy';
-      list.innerHTML = '';
-    } else {
-      card.classList.add('has-errors');
-      icon.textContent = '🚨';
-      stat.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''} in last 7 days · click to view`;
-      list.innerHTML = errors.map(e => {
-        const date = new Date(e.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
-        const detailStr = e.details ? (typeof e.details === 'object' ? JSON.stringify(e.details).slice(0, 200) : String(e.details).slice(0, 200)) : '';
-        return `
-          <div style="padding:10px 0;border-bottom:1px dashed var(--border)">
-            <div style="font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600">${date}</div>
-            <div style="font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0">${e.action || 'unknown'}</div>
-            <div style="font-size:13px;color:#9FC0BF">${e.user_email || ''}</div>
-            ${detailStr ? `<div style="font-size:13px;color:#9FC0BF;margin-top:3px">${detailStr}</div>` : ''}
-          </div>
-        `;
-      }).join('');
-    }
+    errors.forEach(entry => {
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:10px 0;border-bottom:1px dashed var(--border)';
+      const date = document.createElement('div');
+      date.style.cssText = 'font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600';
+      date.textContent = entry.created_at
+        ? new Date(entry.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+        : 'Unknown date';
+      const action = document.createElement('div');
+      action.style.cssText = 'font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0';
+      action.textContent = entry.action || 'unknown';
+      const email = document.createElement('div');
+      email.style.cssText = 'font-size:13px;color:#9FC0BF';
+      email.textContent = entry.user_email || '';
+      item.append(date, action, email);
+      if (entry.details !== null && entry.details !== undefined) {
+        const detail = document.createElement('div');
+        detail.style.cssText = 'font-size:13px;color:#9FC0BF;margin-top:3px;overflow-wrap:anywhere';
+        const raw = typeof entry.details === 'object' ? JSON.stringify(entry.details) : String(entry.details);
+        detail.textContent = raw.slice(0, 200);
+        item.appendChild(detail);
+      }
+      list.appendChild(item);
+    });
   } catch (e) {
     console.warn('[recentErrors]', e);
+    icon.textContent = '⚠️';
+    stat.textContent = 'Could not check error audit events: ' + (e.message || 'Unknown error');
+    list.replaceChildren();
   }
 }
 
@@ -3376,108 +3409,129 @@ window.downloadBackup = async function() {
   const progressDetail = document.getElementById('backupProgressDetail');
   const result = document.getElementById('backupResult');
 
-  // 결과 메시지 초기화
   result.style.display = 'none';
   result.textContent = '';
-
   btn.disabled = true;
   btn.style.opacity = '0.6';
   btn.style.cursor = 'not-allowed';
   progress.style.display = 'block';
 
-  // 백업할 테이블 목록 (실제 DB 기준 — backup 테이블은 제외)
+  // Complete list of application data tables. Internal cron queues and old backup snapshots are excluded.
   const tables = [
-    // 사용자 / 입주자
-    'profiles',
-    'occupants',
-    'vehicles',
-    // 공지 / 신고
-    'announcements',
-    'complaints',
-    'complaint_messages',
-    'hvac_requests',
-    'parking_reports',
-    // 견적 / 프로젝트
-    'quotes',
-    'quote_comments',
-    'project_comments',
-    'votes',
-    'contractors',
-    // 빌딩 / 시스템
-    'building_cards',
-    'settings',
-    'sidebar_permissions',
-    // 전광판
-    'signboard_entries',
-    'signboard_fullpage',
-    'signboard_notice',
-    // 분석 / 로그
-    'qr_analytics',
-    'push_subscriptions',
-    'audit_logs'
+    'profiles', 'occupants', 'vehicles',
+    'announcements', 'complaints', 'complaint_messages', 'hvac_requests', 'parking_reports',
+    'quotes', 'quote_comments', 'project_comments', 'votes', 'contractors',
+    'building_cards', 'building_categories', 'building_documents', 'settings',
+    'sidebar_permissions', 'scm_documents', 'scm_meetings',
+    'signboard_entries', 'signboard_fullpage', 'signboard_fullpage2', 'signboard_notice',
+    'qr_analytics', 'push_subscriptions', 'audit_logs',
+    'service_categories', 'service_cell_notes', 'service_reports',
+    'hvac_messages', 'hvac_setpoints', 'hvac_floor_setpoints',
+    'door_commands', 'door_settings', 'door_status', 'daemon_heartbeat'
   ];
 
+  // Each table is paginated in its primary-key order, including composite keys.
+  const orderKeys = {
+    profiles: ['id'], occupants: ['id'], vehicles: ['plate', 'unit'],
+    announcements: ['id'], complaints: ['id'], complaint_messages: ['id'],
+    hvac_requests: ['id'], parking_reports: ['id'], quotes: ['id'],
+    quote_comments: ['id'], project_comments: ['id'], votes: ['id'],
+    contractors: ['id'], building_cards: ['id'], building_categories: ['id'],
+    building_documents: ['id'], settings: ['key'], sidebar_permissions: ['id'],
+    scm_documents: ['id'], scm_meetings: ['id'],
+    signboard_entries: ['id'], signboard_fullpage: ['id'],
+    signboard_fullpage2: ['id'], signboard_notice: ['id'],
+    qr_analytics: ['id'], push_subscriptions: ['user_id'], audit_logs: ['id'],
+    service_categories: ['id'], service_cell_notes: ['id'], service_reports: ['id'],
+    hvac_messages: ['id'], hvac_setpoints: ['id'], hvac_floor_setpoints: ['level'],
+    door_commands: ['id'], door_settings: ['door_id'], door_status: ['door_id'],
+    daemon_heartbeat: ['name']
+  };
+
   try {
-    // JSZip 인스턴스
     const zip = new JSZip();
     const folder = zip.folder('BMS_Backup');
-
+    const pageSize = 500;
     let totalRows = 0;
+    const tableResults = [];
 
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
-      progressText.textContent = `Backing up... ${i + 1}/${tables.length}`;
-      progressDetail.textContent = `Reading: ${tableName}`;
+      const keys = orderKeys[tableName];
+      if (!keys || !keys.length) throw new Error('No stable primary-key order configured for ' + tableName);
 
-      try {
-        const { data, error } = await supabase.from(tableName).select('*');
-        if (error) {
-          console.warn(`[backup] ${tableName} fetch error:`, error);
-          folder.file(`${tableName}_ERROR.txt`, `Error fetching ${tableName}:\n${error.message}`);
-          continue;
+      progressText.textContent = 'Backing up... ' + (i + 1) + '/' + tables.length;
+      progressDetail.textContent = 'Reading: ' + tableName;
+
+      const rows = [];
+      let offset = 0;
+      let expectedCount = null;
+
+      while (expectedCount === null || offset < expectedCount) {
+        let query = supabase.from(tableName).select('*', offset === 0 ? { count: 'exact' } : undefined);
+        keys.forEach(key => { query = query.order(key, { ascending: true }); });
+        const { data, error, count } = await query.range(offset, offset + pageSize - 1);
+        if (error) throw new Error(tableName + ' export failed: ' + error.message);
+
+        const batch = Array.isArray(data) ? data : [];
+        if (offset === 0) {
+          if (!Number.isInteger(count) || count < 0) {
+            throw new Error(tableName + ' export failed: exact row count was not returned.');
+          }
+          expectedCount = count;
+        }
+        if (!batch.length && offset < expectedCount) {
+          throw new Error(tableName + ' export stopped early at row ' + offset + ' of ' + expectedCount + '.');
         }
 
-        if (!data || data.length === 0) {
-          folder.file(`${tableName}.csv`, '(no data)');
-          continue;
-        }
+        rows.push(...batch);
+        offset += batch.length;
+        progressDetail.textContent = 'Reading: ' + tableName + ' · ' +
+          rows.length.toLocaleString() + ' / ' + expectedCount.toLocaleString() + ' rows';
 
-        const csv = tableToCSV(data);
-        folder.file(`${tableName}.csv`, '\ufeff' + csv); // UTF-8 BOM (한글 깨짐 방지)
-        totalRows += data.length;
-      } catch (e) {
-        console.warn(`[backup] ${tableName} exception:`, e);
-        folder.file(`${tableName}_ERROR.txt`, `Exception:\n${e.message}`);
+        if (batch.length < pageSize) break;
       }
+
+      if (rows.length !== expectedCount) {
+        throw new Error(tableName + ' export incomplete: ' + rows.length + ' of ' + expectedCount + ' rows were read.');
+      }
+
+      folder.file(tableName + '.csv', rows.length ? '\ufeff' + tableToCSV(rows) : '(no data)');
+      totalRows += rows.length;
+      tableResults.push({ table: tableName, rows: rows.length });
     }
 
-    // 메타데이터 파일 추가
     const now = new Date();
+    const dateParts = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Sydney', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now);
+    const part = type => (dateParts.find(x => x.type === type) || {}).value || '';
+    const localDate = part('year') + '-' + part('month') + '-' + part('day');
     const dateStr = now.toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
     const meta = [
-      'BMS Data Backup',
-      '======================',
-      `Backup Date: ${dateStr}`,
-      `Total Rows: ${totalRows}`,
-      `Tables: ${tables.length}`,
+      'BMS DATABASE DATA BACKUP',
+      '========================',
+      'Backup Date (Sydney): ' + dateStr,
+      'Total Rows: ' + totalRows,
+      'Tables Exported: ' + tableResults.length + ' / ' + tables.length,
+      '',
+      'TABLE ROW COUNTS:',
+      ...tableResults.map(x => x.table + ': ' + x.rows),
       '',
       'IMPORTANT NOTES:',
-      '- This backup contains DATA only. Passwords are NOT included (Supabase Auth).',
-      '- File uploads (Storage) are NOT included.',
-      '- To restore: contact Supabase support or import via SQL.',
-      '',
-      'Recommended storage: Google Drive or external drive.',
-      'Recommended frequency: Once a month.',
+      '- This ZIP contains database table data only.',
+      '- Storage file contents, Supabase Auth credentials/passwords, schema definitions, RLS policies and cron jobs are NOT included.',
+      '- Internal announcement scheduler queues and legacy backup snapshot tables are excluded.',
+      '- This export reads tables one at a time and is not a single transaction-wide point-in-time snapshot.',
+      '- The ZIP contains personal information and notification subscription data. Store it securely.',
+      '- Restore requires the matching database schema and a controlled CSV import process.'
     ].join('\n');
     folder.file('README.txt', meta);
 
-    // 진행 상태: 압축
     progressText.textContent = 'Compressing...';
-    progressDetail.textContent = 'Creating ZIP file';
-
-    // ZIP 생성 + 다운로드
+    progressDetail.textContent = 'Creating ZIP file from ' + totalRows.toLocaleString() + ' rows';
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    const filename = `BMS_Backup_${now.toISOString().slice(0, 10)}.zip`;
+    const filename = 'BMS_Backup_' + localDate + '.zip';
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -3486,32 +3540,29 @@ window.downloadBackup = async function() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-    // 마지막 백업 일시 저장
-    localStorage.setItem('bms_last_backup_date', dateStr);
+    try { localStorage.setItem('bms_last_backup_date', dateStr); } catch (e) { /* browser storage optional */ }
 
-    // 성공 메시지
     progress.style.display = 'none';
     result.style.display = 'block';
     result.style.background = 'rgba(57,255,20,.10)';
     result.style.border = '1px solid rgba(57,255,20,.35)';
     result.style.color = '#39FF14';
-    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:13px;color:#9FC0BF">💡 Please move the file to Google Drive or a safe location.</span>`;
+    result.textContent = 'Backup complete: ' + filename + ' · ' +
+      tableResults.length + ' tables · ' + totalRows.toLocaleString() + ' rows. Storage files and Auth credentials are not included.';
 
-    // audit log
     try {
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         user_name: user.user_metadata?.full_name || user.email,
         user_email: user.email,
         action: 'data_backup_downloaded',
-        details: { total_rows: totalRows, tables: tables, filename: filename }
+        details: { total_rows: totalRows, tables: tableResults, filename: filename }
       });
-    } catch (e) { /* audit log 실패해도 사용자 작업은 성공 */ }
+    } catch (e) { /* audit logging must not invalidate a completed download */ }
 
     showLastBackupInfo();
-
   } catch (e) {
     console.error('[backup] error:', e);
     progress.style.display = 'none';
@@ -3519,7 +3570,7 @@ window.downloadBackup = async function() {
     result.style.background = 'rgba(255,49,49,.10)';
     result.style.border = '1px solid rgba(255,49,49,.35)';
     result.style.color = '#ff6b6b';
-    result.textContent = `❌ Backup failed: ${e.message || 'Unknown error'}`;
+    result.textContent = 'Backup failed — no complete ZIP was downloaded: ' + (e.message || 'Unknown error');
   } finally {
     btn.disabled = false;
     btn.style.opacity = '1';
