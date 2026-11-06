@@ -2362,9 +2362,11 @@ function renderJunkAnalysis(analysis) {
     title.append(name, status);
     const detail = document.createElement('div');
     detail.className = 'preview-item-row';
-    detail.textContent = group.quotes.length + ' quote(s) · ' + group.filePaths.length +
-      ' file(s) · ' + group.votes.length + ' vote(s) · ' + group.comments.length + ' project comment(s)' +
-      (group.sharedFilePaths.length ? ' · ' + group.sharedFilePaths.length + ' shared file(s) protected' : '');
+    detail.textContent = group.displayState === 'MIXED / RETAINED'
+      ? group.quotes.length + ' quote(s) · not eligible because this project also contains active/non-junk quote rows'
+      : group.quotes.length + ' quote(s) · ' + group.filePaths.length +
+        ' file(s) · ' + group.votes.length + ' vote(s) · ' + group.comments.length + ' project comment(s)' +
+        (group.sharedFilePaths.length ? ' · ' + group.sharedFilePaths.length + ' shared file(s) protected' : '');
     row.append(title, detail);
     if (group.blocked) {
       const note = document.createElement('div');
@@ -2690,7 +2692,7 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
     renderProjectCommentAnalysis(pcAnalysis);
     setPcStatus('Deleted ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
       ' closed project(s). Active, incomplete and unlinked comments were retained.', 'success');
-    showToast('Completed-project comments cleanup finished.');
+    showToast('Closed-project comments cleanup finished.');
   } catch (e) {
     setPcStatus('Delete stopped: ' + e.message + '. Scan again to verify remaining comments.', 'error');
     showToast('Comments cleanup did not complete.', true);
