@@ -1450,7 +1450,7 @@ body.admin-neon-page .main:has(.cctv-console) {
             </div>
             <div class="sc-auto">
               <span class="sc-auto-label">Auto-lock</span>
-              <input class="sc-input" type="number" value="30" min="60" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds" disabled>
+              <input class="sc-input" type="number" value="60" min="60" max="300" step="10" data-door-input="D3" aria-label="D3 auto-lock seconds" disabled>
               <span class="sc-unit">sec</span>
               <button class="sc-btn" data-door-save="D3" disabled>Save</button>
             </div>
@@ -1571,13 +1571,12 @@ body.admin-neon-page .main:has(.cctv-console) {
       <div class="sc-tile" id="hl-storage"><div class="sc-tile-label">Storage</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
       <div class="sc-tile" id="hl-edge"><div class="sc-tile-label">Edge Function</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
       <div class="sc-tile" id="hl-int"><div class="sc-tile-label">Integriti</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
-      <div class="sc-tile" id="hl-cctv"><div class="sc-tile-label">CCTV</div><div class="sc-tile-val"><span class="sc-dot"></span>—</div><div class="sc-tile-sub">Last check: —</div></div>
     </div>
     <div class="alert-card" id="recentErrorsCard" onclick="toggleErrorDetails()">
       <div class="alert-row">
         <span class="alert-icon" id="errorIcon">✅</span>
         <div class="alert-text">
-          <div class="alert-title">Recent Errors</div>
+          <div class="alert-title">Recent Error Events</div>
           <div class="alert-stat" id="errorStat">No errors in last 7 days · System healthy</div>
         </div>
         <span class="alert-arrow" id="errorArrow">▸</span>
@@ -1592,7 +1591,7 @@ body.admin-neon-page .main:has(.cctv-console) {
     <div class="sc-snapshot">
       <div class="sc-stat"><div class="sc-stat-num" id="sn-hvac">—</div><div class="sc-stat-label">HVAC Requests · 24h</div></div>
       <div class="sc-stat"><div class="sc-stat-num" id="sn-audit">—</div><div class="sc-stat-label">Audit Events · 24h</div></div>
-      <div class="sc-stat"><div class="sc-stat-num" id="sn-err">—</div><div class="sc-stat-label">Errors · 7d</div></div>
+      <div class="sc-stat"><div class="sc-stat-num" id="sn-err">—</div><div class="sc-stat-label">Error Audit Events · 7d</div></div>
       <div class="sc-stat"><div class="sc-stat-num" id="sn-hb">—</div><div class="sc-stat-label">Daemon Heartbeat</div></div>
     </div>
 
@@ -1667,9 +1666,10 @@ body.admin-neon-page .main:has(.cctv-console) {
       </div>
 
       <div class="maint-card">
-        <div class="maint-card-header"><span>🧹</span><div class="maint-title">Junk Files</div></div>
+        <div class="maint-card-header"><span>🧹</span><div class="maint-title">Junk Quotes &amp; Files</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="margin-bottom:8px">Files found: <span id="fileCount">—</span></div>
+          <div class="files-found" style="margin-bottom:5px">Eligible projects: <span id="junkProjectCount">—</span> · Quotes: <span id="fileCount">—</span></div>
+          <div class="files-found" style="margin-bottom:8px">Eligible files: <span id="junkFileCount">—</span> · Eligible votes: <span id="junkVoteCount">—</span> · Eligible comments: <span id="junkCommentCount">—</span></div>
           <div class="status-box ready" id="statusBox">Ready</div>
           <div id="previewSection" style="display:none;margin-top:8px">
             <div class="preview-list" id="previewList" style="max-height:120px;overflow-y:auto"></div>
@@ -1685,7 +1685,8 @@ body.admin-neon-page .main:has(.cctv-console) {
       <div class="maint-card">
         <div class="maint-card-header"><span>💬</span><div class="maint-title">Comments Cleanup</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="margin-bottom:8px">Projects: <span id="pcCount">—</span></div>
+          <div class="files-found" style="margin-bottom:5px">Closed projects: <span id="pcCount">—</span></div>
+          <div class="files-found" style="margin-bottom:8px">Discussion comments: <span id="pcCommentCount">—</span></div>
           <div class="status-box ready" id="pcStatusBox">Ready</div>
           <div id="pcPreviewSection" style="display:none;margin-top:8px">
             <div class="preview-list" id="pcPreviewList" style="max-height:120px;overflow-y:auto"></div>
@@ -1789,8 +1790,8 @@ async function loadDbSummary() {
   const counts = [];
   for (const t of DB_TABLES) {
     try {
-      const { count } = await supabase.from(t.key).select('*', { count: 'exact', head: true });
-      counts.push({ label: t.label, count: count ?? 0 });
+      const { count, error } = await supabase.from(t.key).select('*', { count: 'exact', head: true });
+      counts.push({ label: t.label, count: error ? '—' : (count ?? 0) });
     } catch {
       counts.push({ label: t.label, count: '—' });
     }
@@ -1820,25 +1821,33 @@ async function loadDbSummary() {
 document.getElementById('dbRefreshBtn')?.addEventListener('click', loadDbSummary);
 
 // ─── 4. STORAGE PER BUCKET ───────────────────────────────────
-const BUCKETS = ['quotes', 'parking-images', 'complaint-images', 'announcements', 'scm-documents', 'building-documents'];
+const BUCKETS = ['quotes', 'parking-images', 'complaint-images', 'announcements', 'scm-documents', 'building-documents', 'service-reports'];
 
-async function listAllFiles(bucket, prefix) {
-  let results = [];
+async function listAllFiles(bucket, prefix, depth = 0) {
+  if (depth > 20) throw new Error('Storage folder depth exceeded safety limit');
+  const results = [];
   let offset = 0;
   const limit = 1000;
   while (true) {
-    const { data, error } = await supabase.storage.from(bucket).list(prefix || '', { limit, offset, sortBy: { column: 'name', order: 'asc' } });
-    if (error || !data || !data.length) break;
-    for (const item of data) {
-      const isFile = item.id && item.metadata?.size != null;
-      if (isFile) results.push(item);
-      else {
+    const { data, error } = await supabase.storage.from(bucket).list(prefix || '', {
+      limit, offset, sortBy: { column: 'name', order: 'asc' }
+    });
+    if (error) throw new Error('Could not list ' + bucket + '/' + (prefix || '') + ': ' + error.message);
+    const items = Array.isArray(data) ? data : [];
+    for (const item of items) {
+      const isFile = !!item.id && !!item.metadata &&
+        Object.prototype.hasOwnProperty.call(item.metadata, 'size');
+      if (isFile) {
+        const fullPath = prefix ? prefix + '/' + item.name : item.name;
+        results.push({ ...item, _path: fullPath });
+      } else {
+        if (!item.name) throw new Error('Storage returned an unrecognised folder entry in ' + bucket);
         const subPath = prefix ? prefix + '/' + item.name : item.name;
-        const nested = await listAllFiles(bucket, subPath);
-        results = results.concat(nested);
+        const nested = await listAllFiles(bucket, subPath, depth + 1);
+        results.push(...nested);
       }
     }
-    if (data.length < limit) break;
+    if (items.length < limit) break;
     offset += limit;
   }
   return results;
@@ -1865,6 +1874,7 @@ async function loadStorageBuckets() {
   }
 
   window.__storageSummary = { files: grandFiles, bytes: grandBytes, failed: bucketData.filter(b => b.files === '—').length, at: new Date() };
+  if (typeof checkStorageTile === 'function') checkStorageTile();
   el.innerHTML = `
     ${bucketData.map(b => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px">
@@ -1884,66 +1894,268 @@ async function loadStorageBuckets() {
 document.getElementById('storageRefreshBtn')?.addEventListener('click', loadStorageBuckets);
 
 // ─── 5. ORPHAN FILES ─────────────────────────────────────────
+const QUOTE_FILE_GRACE_MS = 24 * 60 * 60 * 1000;
 let orphanPaths = [];
+
+function normalizeQuoteFilePath(rawPath) {
+  if (typeof rawPath !== 'string') return '';
+  let path = rawPath.trim().replace(/^\/+/, '');
+  if (!path) return '';
+  const storageMarkers = [
+    '/storage/v1/object/sign/quotes/',
+    '/storage/v1/object/public/quotes/',
+    '/storage/v1/object/authenticated/quotes/',
+    '/storage/v1/object/quotes/'
+  ];
+  for (const marker of storageMarkers) {
+    const at = path.indexOf(marker);
+    if (at >= 0) { path = path.slice(at + marker.length); break; }
+  }
+  if (path.startsWith('quotes/')) path = path.slice('quotes/'.length);
+  return path.replace(/^\/+/, '');
+}
+
+function parseQuoteComment(value) {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch (e) { return {}; }
+  }
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function getQuoteFilePaths(commentValue) {
+  const parsed = parseQuoteComment(commentValue);
+  const files = Array.isArray(parsed.files) ? parsed.files : [];
+  const paths = [];
+  files.forEach(file => {
+    const raw = typeof file === 'string' ? file : (file && typeof file.path === 'string' ? file.path : '');
+    const path = normalizeQuoteFilePath(raw);
+    if (path) paths.push(path);
+  });
+  return [...new Set(paths)];
+}
+
+async function loadAllQuoteRowsForCleanup() {
+  const columns = 'id,project_id,project,project_title,vendor,status,work_status,completion_date,archived,comment';
+  const rows = [];
+  const pageSize = 500;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase.from('quotes')
+      .select(columns)
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error('Could not read quote records: ' + error.message);
+    const batch = Array.isArray(data) ? data : [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
+async function loadAllTableRowsForCleanup(table, columns) {
+  const rows = [];
+  const pageSize = 500;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase.from(table)
+      .select(columns)
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error('Could not read ' + table + ': ' + error.message);
+    const batch = Array.isArray(data) ? data : [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
+async function loadRowsByValuesForCleanup(table, column, values, columns) {
+  if (!values.length) return [];
+  const rows = [];
+  const batchSize = 100;
+  const pageSize = 500;
+  for (let start = 0; start < values.length; start += batchSize) {
+    const valuesBatch = values.slice(start, start + batchSize);
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase.from(table)
+        .select(columns)
+        .in(column, valuesBatch)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw new Error('Could not read ' + table + ' references: ' + error.message);
+      const batch = Array.isArray(data) ? data : [];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+  }
+  return rows;
+}
+
+function quoteProjectKey(quote) {
+  return String((quote && quote.project_id) || (quote && quote.id) || '');
+}
+
+function makeQuoteProjectGroups(quotes) {
+  const map = new Map();
+  quotes.forEach(quote => {
+    const key = quoteProjectKey(quote);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(quote);
+  });
+  return [...map.entries()].map(entry => ({ projectId: entry[0], quotes: entry[1] }));
+}
+
+function isJunkQuoteRow(quote) {
+  const status = String(quote.status || '').toLowerCase();
+  // On Hold and archived records are never cleanup candidates.
+  if (status === 'onhold' || status === 'hold' || quote.archived === true) return false;
+  return ['declined', 'expired', 'removed'].includes(status) &&
+    (quote.work_status === null || quote.work_status === undefined || quote.work_status === '') &&
+    !quote.completion_date;
+}
+
+function isClosedProjectQuote(quote) {
+  const status = String(quote.status || '').toLowerCase();
+  const workStatus = String(quote.work_status || '').toLowerCase();
+  const hasCompletionDate = !!quote.completion_date;
+  // On Hold and archived records are retained by every cleanup tool.
+  if (status === 'onhold' || status === 'hold' || quote.archived === true) return false;
+  if (status === 'approved') return workStatus === 'completed' && hasCompletionDate;
+  if (['declined', 'expired', 'removed', 'archived'].includes(status)) {
+    if (workStatus === 'in_progress') return false;
+    if (workStatus === 'completed') return hasCompletionDate;
+    return !workStatus && !hasCompletionDate;
+  }
+  return false;
+}
+
+function quoteDisplayName(group) {
+  const q = (group.quotes || [])[0] || {};
+  return q.project_title || q.project || ('Project ' + group.projectId);
+}
+
+async function analyzeQuoteOrphans() {
+  const [quotes, files] = await Promise.all([
+    loadAllQuoteRowsForCleanup(),
+    listAllFiles('quotes', '')
+  ]);
+  const referencedPaths = new Set();
+  quotes.forEach(q => getQuoteFilePaths(q.comment).forEach(path => referencedPaths.add(path)));
+  const fileByPath = new Map(files.map(file => [file._path || file.name, file]));
+  const missingReferences = [...referencedPaths].filter(path => !fileByPath.has(path));
+  const quoteById = new Map(quotes.map(q => [String(q.id), q]));
+  const closedProjectById = new Map(
+    makeQuoteProjectGroups(quotes).map(group => [
+      group.projectId,
+      group.quotes.length > 0 && group.quotes.every(isClosedProjectQuote)
+    ])
+  );
+  const now = Date.now();
+  const candidates = [];
+  const recentProtected = [];
+  const unknownDateProtected = [];
+  const activeProjectProtected = [];
+  files.forEach(file => {
+    const path = file._path || file.name;
+    if (!path || referencedPaths.has(path)) return;
+    const folderId = path.split('/')[0];
+    const ownerQuote = quoteById.get(folderId) || null;
+    if (ownerQuote && closedProjectById.get(quoteProjectKey(ownerQuote)) !== true) {
+      activeProjectProtected.push(file);
+      return;
+    }
+    const rawDate = file.created_at || file.updated_at;
+    const timestamp = rawDate ? new Date(rawDate).getTime() : NaN;
+    if (!Number.isFinite(timestamp)) {
+      unknownDateProtected.push(file);
+      return;
+    }
+    if (now - timestamp < QUOTE_FILE_GRACE_MS) {
+      recentProtected.push(file);
+      return;
+    }
+    candidates.push({
+      path,
+      size: Number(file.metadata && file.metadata.size) || 0,
+      created_at: rawDate,
+      quote: ownerQuote
+    });
+  });
+  candidates.sort((a, b) => a.path.localeCompare(b.path));
+  return {
+    candidates,
+    recentProtected,
+    unknownDateProtected,
+    activeProjectProtected,
+    missingReferences,
+    totalFiles: files.length,
+    referencedCount: referencedPaths.size
+  };
+}
+
+function renderOrphanPreview(analysis) {
+  const list = document.getElementById('orphanList');
+  list.replaceChildren();
+  analysis.candidates.forEach(file => {
+    const row = document.createElement('div');
+    row.className = 'orphan-file';
+    const path = document.createElement('div');
+    path.className = 'orphan-path';
+    path.textContent = file.path;
+    const q = file.quote || {};
+    const label = q.project_title || q.project || q.vendor || 'No matching quote record';
+    const meta = document.createElement('div');
+    meta.style.cssText = 'font-size:11px;color:#8ba9b8;margin-top:2px;overflow-wrap:anywhere';
+    meta.textContent = formatSize(file.size) + ' · ' + label + (q.status ? ' · ' + q.status : '');
+    row.append(path, meta);
+    list.appendChild(row);
+  });
+}
 
 async function scanOrphans() {
   const btn = document.getElementById('orphanScanBtn');
+  const deleteBtn = document.getElementById('orphanDeleteBtn');
   btn.disabled = true;
   btn.textContent = 'Scanning…';
-  setStatus('orphanStatus', 'Scanning storage...', 'loading');
-  document.getElementById('orphanList').innerHTML = '';
-  document.getElementById('orphanDeleteBtn').style.display = 'none';
+  deleteBtn.style.display = 'none';
+  deleteBtn.disabled = true;
+  setStatus('orphanStatus', 'Checking all Quotes files and database references…', 'loading');
+  document.getElementById('orphanList').replaceChildren();
   document.getElementById('orphanCount').textContent = '—';
   orphanPaths = [];
-
   try {
-    const allFiles = await listAllFiles('quotes', '');
-    const storagePaths = allFiles.map(f => {
-      return f._path || f.name;
-    });
-
-    const { data: quotes } = await supabase.from('quotes').select('id, comment');
-    const dbPaths = new Set();
-    for (const q of quotes || []) {
-      if (!q.comment) continue;
-      let parsed = null;
-      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
-      for (const f of parsed?.files || []) {
-        const p = typeof f === 'string' ? f : f?.path;
-        if (p) dbPaths.add(p);
-      }
-      dbPaths.add(q.id);
-    }
-
-    const { data: storageItems } = await supabase.storage.from('quotes').list('', { limit: 1000 });
-    const folderIds = new Set((storageItems || []).filter(i => !i.metadata).map(i => i.name));
-
-    orphanPaths = [];
-    for (const folderId of folderIds) {
-      if (!dbPaths.has(folderId)) {
-        const files = await listAllFiles('quotes', folderId);
-        for (const f of files) {
-          orphanPaths.push(folderId + '/' + f.name);
-        }
-        if (files.length === 0) orphanPaths.push(folderId + '/');
-      }
-    }
-
-    document.getElementById('orphanCount').textContent = orphanPaths.length;
-
-    if (!orphanPaths.length) {
-      setStatus('orphanStatus', '✓ No orphan files found', 'success');
-      document.getElementById('orphanList').innerHTML = '';
+    const analysis = await analyzeQuoteOrphans();
+    orphanPaths = analysis.candidates.map(file => file.path);
+    document.getElementById('orphanCount').textContent = String(orphanPaths.length);
+    renderOrphanPreview(analysis);
+    if (orphanPaths.length) {
+      let message = orphanPaths.length + ' unreferenced file(s) older than 24 hours found';
+      if (analysis.activeProjectProtected.length) message += ' · ' + analysis.activeProjectProtected.length + ' file(s) in active/on-hold projects protected';
+      if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
+      if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' file(s) with unknown dates protected';
+      if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, 'warning');
+      deleteBtn.style.display = 'inline-flex';
+      deleteBtn.disabled = false;
     } else {
-      setStatus('orphanStatus', `${orphanPaths.length} orphan file(s) found`, 'ready');
-      document.getElementById('orphanList').innerHTML = orphanPaths.map(p => `
-        <div class="orphan-file">
-          <span class="orphan-path">${p}</span>
-        </div>`).join('');
-      document.getElementById('orphanDeleteBtn').style.display = 'inline-flex';
+      let message = 'No eligible orphan files found';
+      if (analysis.activeProjectProtected.length) message += ' · ' + analysis.activeProjectProtected.length + ' active/on-hold project file(s) protected';
+      if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
+      if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' unknown-date file(s) protected';
+      if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, analysis.missingReferences.length ? 'warning' : 'success');
     }
-  } catch(e) {
-    setStatus('orphanStatus', 'Scan failed: ' + e.message, 'error');
+  } catch (e) {
+    orphanPaths = [];
+    document.getElementById('orphanCount').textContent = '—';
+    setStatus('orphanStatus', 'Scan failed — no files can be deleted: ' + e.message, 'error');
+    showToast('Orphan scan failed. Nothing was deleted.', true);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Scan Orphans';
@@ -1952,299 +2164,637 @@ async function scanOrphans() {
 
 async function deleteOrphans() {
   if (!orphanPaths.length) return;
-  if (!confirm(`Delete ${orphanPaths.length} orphan file(s)? This cannot be undone.`)) return;
-  setStatus('orphanStatus', 'Deleting...', 'loading');
+  const expectedPaths = [...orphanPaths].sort();
+  if (!confirm('Delete ' + expectedPaths.length + ' unreferenced Quotes file(s) older than 24 hours in closed projects or unmatched folders? Referenced, active/on-hold, recent and unknown-date files are protected. This cannot be undone.')) return;
+  const btn = document.getElementById('orphanDeleteBtn');
+  btn.disabled = true;
+  setStatus('orphanStatus', 'Rechecking references before deletion…', 'loading');
   try {
-    const { error } = await supabase.storage.from('quotes').remove(orphanPaths.filter(p => !p.endsWith('/')));
-    if (error) throw error;
-    orphanPaths = [];
-    document.getElementById('orphanCount').textContent = '0';
-    document.getElementById('orphanList').innerHTML = '';
-    document.getElementById('orphanDeleteBtn').style.display = 'none';
-    setStatus('orphanStatus', '✓ Orphan files deleted', 'success');
-    showToast('Orphan files deleted ✓');
-    await loadStorageBuckets();
-  } catch(e) {
-    setStatus('orphanStatus', 'Delete failed: ' + e.message, 'error');
+    const fresh = await analyzeQuoteOrphans();
+    const freshPaths = fresh.candidates.map(file => file.path).sort();
+    if (JSON.stringify(expectedPaths) !== JSON.stringify(freshPaths)) {
+      setStatus('orphanStatus', 'The file/reference list changed after scanning. Nothing was deleted. Please scan again.', 'warning');
+      await scanOrphans();
+      return;
+    }
+    for (let i = 0; i < expectedPaths.length; i += 100) {
+      const batch = expectedPaths.slice(i, i + 100);
+      const { data: removed, error } = await supabase.storage.from('quotes').remove(batch);
+      if (error) throw new Error(error.message);
+      if (!Array.isArray(removed) || removed.length !== batch.length) {
+        throw new Error('Storage confirmed removal of ' + (removed || []).length + ' of ' + batch.length + ' requested file(s).');
+      }
+    }
+    const after = await analyzeQuoteOrphans();
+    orphanPaths = after.candidates.map(file => file.path);
+    renderOrphanPreview(after);
+    document.getElementById('orphanCount').textContent = String(orphanPaths.length);
+    if (orphanPaths.length) {
+      let message = 'Partial cleanup: ' + orphanPaths.length + ' eligible old unreferenced file(s) remain. Scan again to review.';
+      if (after.activeProjectProtected.length) message += ' · ' + after.activeProjectProtected.length + ' active/on-hold project file(s) retained';
+      if (after.missingReferences.length) message += ' · Warning: ' + after.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, 'warning');
+      btn.disabled = false;
+    } else {
+      let message = 'Cleanup complete. All eligible orphan file candidates were removed.';
+      if (after.activeProjectProtected.length) message += ' · ' + after.activeProjectProtected.length + ' active/on-hold project file(s) were retained';
+      if (after.recentProtected.length) message += ' · ' + after.recentProtected.length + ' recent file(s) were retained';
+      if (after.unknownDateProtected.length) message += ' · ' + after.unknownDateProtected.length + ' unknown-date file(s) were retained';
+      if (after.missingReferences.length) message += ' · Warning: ' + after.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, after.missingReferences.length ? 'warning' : 'success');
+      btn.style.display = 'none';
+      showToast('Orphan file cleanup complete.');
+      await loadStorageBuckets();
+    }
+  } catch (e) {
+    setStatus('orphanStatus', 'Delete stopped: ' + e.message + '. Scan again to see what remains.', 'error');
+    showToast('Orphan deletion did not complete.', true);
+    try {
+      await scanOrphans();
+      setStatus('orphanStatus', 'Delete stopped: ' + e.message + '. The refreshed scan shows what remains; nothing else was attempted.', 'error');
+    } catch (scanError) {
+      setStatus('orphanStatus', 'Delete stopped and re-scan failed: ' + scanError.message, 'error');
+      console.error(scanError);
+    }
+  } finally {
+    btn.disabled = false;
   }
 }
-
 document.getElementById('orphanScanBtn').addEventListener('click', scanOrphans);
 document.getElementById('orphanDeleteBtn').addEventListener('click', deleteOrphans);
 
-// ─── 7. JUNK CLEANUP ─────────────────────────────────────────
-let junkFilePaths = [];
-let junkQuoteIds = [];
+// ─── 7. JUNK PROJECTS & FILES CLEANUP ───────────────────────
+let junkAnalysis = null;
 
 function setJunkStatus(text, type = 'ready') {
   const box = document.getElementById('statusBox');
+  if (!box) return;
   box.textContent = text;
   box.className = 'status-box ' + type;
 }
 function setDeleteBtn(enabled) {
   const btn = document.getElementById('deleteBtn');
   btn.disabled = !enabled;
+  btn.setAttribute('aria-disabled', String(!enabled));
   btn.style.opacity = enabled ? '1' : '0.45';
   btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
-function renderPreview(quotes) {
+async function analyzeJunkProjects() {
+  const quotes = await loadAllQuoteRowsForCleanup();
+  const groups = makeQuoteProjectGroups(quotes);
+  const junkGroups = groups.filter(group => group.quotes.length && group.quotes.every(isJunkQuoteRow));
+  const partialGroups = groups.filter(group =>
+    group.quotes.some(isJunkQuoteRow) && !group.quotes.every(isJunkQuoteRow)
+  );
+  if (!junkGroups.length) {
+    return {
+      allQuotes: quotes, candidates: [], deletableGroups: [], protectedGroups: [],
+      partialGroups, files: [], votes: [], comments: [], legacyComments: []
+    };
+  }
+
+  const projectIds = junkGroups.map(group => group.projectId);
+  const [votes, comments, legacyComments, storageFiles] = await Promise.all([
+    loadAllTableRowsForCleanup('votes', 'id,project_id,quote_id,selected_quote_id'),
+    loadRowsByValuesForCleanup('project_comments', 'project_id', projectIds, 'id,project_id'),
+    loadRowsByValuesForCleanup('quote_comments', 'project_id', projectIds, 'id,project_id'),
+    listAllFiles('quotes', '')
+  ]);
+
+  const referenceOwners = new Map();
+  quotes.forEach(q => {
+    getQuoteFilePaths(q.comment).forEach(path => {
+      if (!referenceOwners.has(path)) referenceOwners.set(path, new Set());
+      referenceOwners.get(path).add(String(q.id));
+    });
+  });
+  const quoteById = new Map(quotes.map(q => [String(q.id), q]));
+  const fileByPath = new Map(storageFiles.map(file => [file._path || file.name, file]));
+  const candidates = [];
+  const protectedGroups = [];
+
+  junkGroups.forEach(group => {
+    const quoteIds = new Set(group.quotes.map(q => String(q.id)));
+    const pathSet = new Set();
+    storageFiles.forEach(file => {
+      const path = file._path || file.name;
+      if (quoteIds.has(path.split('/')[0])) pathSet.add(path);
+    });
+    group.quotes.forEach(q => getQuoteFilePaths(q.comment).forEach(path => {
+      if (fileByPath.has(path)) pathSet.add(path);
+    }));
+
+    const filePaths = [];
+    const sharedFilePaths = [];
+    pathSet.forEach(path => {
+      const ownerFolderId = path.split('/')[0];
+      const folderQuote = quoteById.get(ownerFolderId);
+      const owners = referenceOwners.get(path) || new Set();
+      const referencedByOtherQuote = [...owners].some(id => !quoteIds.has(id));
+      const storedUnderOtherQuote = !!folderQuote && !quoteIds.has(ownerFolderId);
+      if (referencedByOtherQuote || storedUnderOtherQuote) sharedFilePaths.push(path);
+      else filePaths.push(path);
+    });
+
+    const groupVotes = votes.filter(row =>
+      row.project_id === group.projectId ||
+      quoteIds.has(String(row.quote_id || '')) ||
+      quoteIds.has(String(row.selected_quote_id || ''))
+    );
+    const groupComments = comments.filter(row => row.project_id === group.projectId);
+    const groupLegacyComments = legacyComments.filter(row => row.project_id === group.projectId);
+    const blockReasons = [
+      ...(groupLegacyComments.length ? ['Legacy quote comments exist'] : []),
+      ...(groupVotes.length ? ['Vote history exists; votes are retained'] : []),
+      ...(groupComments.length ? ['Project discussion comments exist; use Comments Cleanup first'] : [])
+    ];
+    const item = {
+      ...group,
+      title: quoteDisplayName(group),
+      filePaths,
+      sharedFilePaths,
+      votes: groupVotes,
+      comments: groupComments,
+      legacyComments: groupLegacyComments,
+      blocked: blockReasons.length > 0,
+      blockReasons
+    };
+    if (item.blocked) protectedGroups.push(item);
+    else candidates.push(item);
+  });
+
+  return {
+    allQuotes: quotes, candidates: junkGroups, deletableGroups: candidates,
+    protectedGroups, partialGroups, storageFiles, votes, comments, legacyComments
+  };
+}
+
+function renderJunkAnalysis(analysis) {
+  const groups = [
+    ...analysis.deletableGroups.map(group => ({ ...group, displayState: 'READY' })),
+    ...analysis.protectedGroups.map(group => ({ ...group, displayState: 'PROTECTED' })),
+    ...analysis.partialGroups.map(group => ({
+      ...group,
+      title: quoteDisplayName(group),
+      filePaths: [],
+      sharedFilePaths: [],
+      votes: [],
+      comments: [],
+      legacyComments: [],
+      blocked: true,
+      displayState: 'MIXED / RETAINED'
+    }))
+  ];
+  const quoteCount = analysis.deletableGroups.reduce((n, g) => n + g.quotes.length, 0);
+  const fileCount = analysis.deletableGroups.reduce((n, g) => n + g.filePaths.length, 0);
+  const voteCount = analysis.deletableGroups.reduce((n, g) => n + g.votes.length, 0);
+  const commentCount = analysis.deletableGroups.reduce((n, g) => n + g.comments.length, 0);
+
+  document.getElementById('junkProjectCount').textContent = String(analysis.deletableGroups.length);
+  document.getElementById('fileCount').textContent = String(quoteCount);
+  document.getElementById('junkFileCount').textContent = String(fileCount);
+  document.getElementById('junkVoteCount').textContent = String(voteCount);
+  document.getElementById('junkCommentCount').textContent = String(commentCount);
+
   const section = document.getElementById('previewSection');
   const list = document.getElementById('previewList');
-  if (!quotes || !quotes.length) {
-    section.style.display = 'block';
-    list.innerHTML = '<div class="preview-empty">No junk quotes found</div>';
-    return;
+  list.replaceChildren();
+  groups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-row';
+    const name = document.createElement('span');
+    name.className = 'preview-item-val';
+    name.textContent = group.title;
+    const status = document.createElement('span');
+    status.textContent = group.displayState;
+    status.className = group.blocked ? 'badge-removed' : 'badge-declined';
+    title.append(name, status);
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    detail.textContent = group.displayState === 'MIXED / RETAINED'
+      ? group.quotes.length + ' quote(s) · not eligible because this project also contains active/non-junk quote rows'
+      : group.quotes.length + ' quote(s) · ' + group.filePaths.length +
+        ' file(s) · ' + group.votes.length + ' vote(s) · ' + group.comments.length + ' project comment(s)' +
+        (group.sharedFilePaths.length ? ' · ' + group.sharedFilePaths.length + ' shared file(s) protected' : '');
+    row.append(title, detail);
+    if (group.blocked) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11px;color:#f2c21a;margin-top:4px';
+      const reasons = [];
+      if (group.legacyComments.length) reasons.push(group.legacyComments.length + ' legacy quote comment(s)');
+      if (group.votes.length) reasons.push(group.votes.length + ' vote record(s)');
+      if (group.comments.length) reasons.push(group.comments.length + ' discussion comment(s) — use Comments Cleanup first');
+      if (group.displayState === 'MIXED / RETAINED') {
+        const activeStates = [...new Set(group.quotes.filter(q => !isJunkQuoteRow(q)).map(q =>
+          String(q.status || 'unknown') + (q.work_status ? ' / ' + q.work_status : '')
+        ))];
+        reasons.push('Contains non-junk quote(s): ' + activeStates.join(', '));
+      }
+      note.textContent = reasons.join(' · ') + '; project retained.';
+      row.appendChild(note);
+    }
+    list.appendChild(row);
+  });
+  section.style.display = groups.length ? 'block' : 'none';
+
+  setDeleteBtn(analysis.deletableGroups.length > 0);
+  if (!groups.length && !analysis.partialGroups.length) {
+    setJunkStatus('No eligible junk projects found. On Hold and archived quotes are excluded. Nothing is marked for deletion.', 'success');
+  } else {
+    let message = analysis.deletableGroups.length + ' project(s) ready · ' + quoteCount +
+      ' quote(s) · ' + fileCount + ' file(s) · ' + voteCount + ' vote(s) · ' + commentCount + ' project comment(s)';
+    if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' project(s) protected by votes/comments';
+    if (analysis.partialGroups.length) message += ' · ' + analysis.partialGroups.length + ' mixed/active project(s) retained';
+    message += ' · On Hold and archived quotes are never Junk and are never deleted';
+    setJunkStatus(message, analysis.deletableGroups.length ? 'warning' : 'ready');
   }
-  const badgeClass = { declined: 'badge-declined', expired: 'badge-expired', removed: 'badge-removed' };
-  list.innerHTML = quotes.map(q => {
-    let parsed = null;
-    try { parsed = q.comment ? (typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment) : null; } catch {}
-    const files = parsed?.files || [];
-    const project = q.project || q.project_title || '—';
-    const vendor = q.vendor || '—';
-    const shortId = q.id ? q.id.slice(0, 8) : '—';
-    const badge = badgeClass[q.status] || 'badge-removed';
-    const filesHtml = files.length
-      ? `<div class="preview-files"><div class="preview-files-label">Files</div>${files.map(f => `<div class="preview-file">${getFilename(typeof f === 'string' ? f : f?.path) || '—'}</div>`).join('')}</div>`
-      : `<div class="preview-files"><div class="preview-files-label" style="color:var(--muted)">No files</div></div>`;
-    return `<div class="preview-item">
-      <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:13px">${shortId}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
-      ${filesHtml}
-    </div>`;
-  }).join('');
-  section.style.display = 'block';
 }
+
+function getJunkSnapshotKey(analysis) {
+  const rows = analysis.deletableGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    filePaths: group.filePaths.slice().sort(),
+    voteIds: group.votes.map(v => String(v.id)).sort(),
+    commentIds: group.comments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId));
+  const protectedRows = analysis.protectedGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    legacyCommentIds: group.legacyComments.map(c => String(c.id)).sort(),
+    voteIds: group.votes.map(v => String(v.id)).sort(),
+    commentIds: group.comments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId));
+  return JSON.stringify({ rows, protectedRows });
+}
+
+async function deleteRowsByIds(table, rows, label) {
+  const ids = [...new Set((rows || []).map(row => String(row.id)).filter(Boolean))];
+  if (!ids.length) return;
+  for (let start = 0; start < ids.length; start += 100) {
+    const batch = ids.slice(start, start + 100);
+    const { data, error } = await supabase.from(table).delete().in('id', batch).select('id');
+    if (error) throw new Error(label + ' deletion failed: ' + error.message);
+    const deletedIds = new Set((data || []).map(row => String(row.id)));
+    if (deletedIds.size !== batch.length) {
+      throw new Error(label + ' deletion incomplete (' + deletedIds.size + '/' + batch.length + ').');
+    }
+  }
+}
+
+function restoreJunkLastCleanup() {
+  try {
+    const saved = localStorage.getItem('bms_system_junk_last_cleanup');
+    if (saved) {
+      const date = new Date(saved);
+      if (Number.isFinite(date.getTime())) {
+        document.getElementById('lastCleanup').textContent =
+          'Last cleanup (this browser): ' + date.toLocaleString('en-AU');
+      }
+    }
+  } catch (e) { /* local storage is optional */ }
+}
+restoreJunkLastCleanup();
 
 document.getElementById('scanBtn').addEventListener('click', async () => {
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = true;
   scanBtn.textContent = 'Scanning…';
-  setJunkStatus('Scanning...', 'loading');
   setDeleteBtn(false);
   document.getElementById('fileCount').textContent = '—';
+  document.getElementById('junkProjectCount').textContent = '—';
+  document.getElementById('junkFileCount').textContent = '—';
+  document.getElementById('junkVoteCount').textContent = '—';
+  document.getElementById('junkCommentCount').textContent = '—';
   document.getElementById('previewSection').style.display = 'none';
-  junkFilePaths = [];
-  junkQuoteIds = [];
+  setJunkStatus('Checking every quote in each project before making a cleanup list…', 'loading');
+  junkAnalysis = null;
   try {
-    const { data: quotes, error } = await supabase.from('quotes').select('id, status, comment, work_status, completion_date, project, project_title, vendor').in('status', ['declined', 'expired', 'removed']).is('work_status', null).is('completion_date', null);
-    if (error) throw error;
-    if (!quotes || !quotes.length) {
-      document.getElementById('fileCount').textContent = '0';
-      setJunkStatus('No junk files found.', 'ready');
-      renderPreview([]);
-      return;
-    }
-    for (const q of quotes) {
-      junkQuoteIds.push(q.id);
-      if (!q.comment) continue;
-      let parsed = null;
-      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
-      for (const f of parsed?.files || []) {
-        if (f && typeof f === 'string') junkFilePaths.push(f);
-        else if (f && f.path) junkFilePaths.push(f.path);
-      }
-    }
-    document.getElementById('fileCount').textContent = junkFilePaths.length;
-    renderPreview(quotes);
-    if (junkQuoteIds.length === 0) {
-      setJunkStatus('No junk records found.', 'ready');
-    } else {
-      setJunkStatus(`${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} (${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}) ready for deletion.`, 'ready');
-      setDeleteBtn(true);
-    }
-  } catch(e) {
-    setJunkStatus('Error occurred', 'error');
-    showToast('Scan failed', true);
+    junkAnalysis = await analyzeJunkProjects();
+    renderJunkAnalysis(junkAnalysis);
+  } catch (e) {
+    junkAnalysis = null;
+    setJunkStatus('Scan failed — deletion disabled: ' + e.message, 'error');
+    showToast('Junk cleanup scan failed. Nothing was deleted.', true);
   } finally {
     scanBtn.disabled = false;
-    scanBtn.textContent = 'Scan Junk Files';
+    scanBtn.textContent = 'Scan';
   }
 });
 
 document.getElementById('deleteBtn').addEventListener('click', async () => {
-  if (!junkQuoteIds.length) return;
-  if (!confirm(`Delete ${junkQuoteIds.length} quote(s) and ${junkFilePaths.length} file(s)?\nThis cannot be undone.`)) return;
+  if (!junkAnalysis || !junkAnalysis.deletableGroups.length) return;
+  const expectedKey = getJunkSnapshotKey(junkAnalysis);
+  const groupCount = junkAnalysis.deletableGroups.length;
+  const quoteCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.quotes.length, 0);
+  const fileCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.filePaths.length, 0);
+  const voteCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.votes.length, 0);
+  const commentCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.comments.length, 0);
+  if (!confirm('Permanently delete ' + groupCount + ' complete junk project(s): ' + quoteCount +
+      ' quote(s) and ' + fileCount + ' attached file(s)? Projects containing active quotes, votes, discussion comments or legacy quote comments are protected. This cannot be undone.')) return;
+
   const deleteBtn = document.getElementById('deleteBtn');
   const scanBtn = document.getElementById('scanBtn');
   deleteBtn.disabled = true;
-  deleteBtn.style.opacity = '0.45';
   scanBtn.disabled = true;
-  setJunkStatus('Deleting...', 'loading');
+  setJunkStatus('Rechecking projects and references before deletion…', 'loading');
+  let deletedProjects = 0;
   try {
-    if (junkFilePaths.length > 0) {
-      const { error } = await supabase.storage.from('quotes').remove(junkFilePaths);
-      if (error) throw error;
+    const fresh = await analyzeJunkProjects();
+    if (getJunkSnapshotKey(fresh) !== expectedKey) {
+      junkAnalysis = fresh;
+      renderJunkAnalysis(fresh);
+      setJunkStatus('The project, vote, comment or file list changed after scanning. Nothing was deleted. Review the refreshed list.', 'warning');
+      return;
     }
-    const { error: dbError } = await supabase.from('quotes').delete().in('id', junkQuoteIds);
-    if (dbError) throw dbError;
-    document.getElementById('lastCleanup').textContent = 'Last cleanup: ' + new Date().toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-    junkFilePaths = [];
-    junkQuoteIds = [];
-    document.getElementById('fileCount').textContent = '0';
-    document.getElementById('previewSection').style.display = 'none';
-    setJunkStatus('Cleanup complete ✓', 'success');
-    setDeleteBtn(false);
-    showToast('Cleanup complete ✓');
+
+    for (const group of fresh.deletableGroups) {
+      const projectName = group.title;
+      setJunkStatus('Deleting ' + projectName + '…', 'loading');
+      await deleteRowsByIds('quotes', group.quotes, 'Quote');
+      for (let i = 0; i < group.filePaths.length; i += 100) {
+        const batch = group.filePaths.slice(i, i + 100);
+        const { data: removed, error } = await supabase.storage.from('quotes').remove(batch);
+        if (error) throw new Error('Quote file cleanup failed for ' + projectName + ': ' + error.message);
+        if (!Array.isArray(removed) || removed.length !== batch.length) {
+          throw new Error('Quote file cleanup incomplete for ' + projectName + ': Storage confirmed ' +
+            (removed || []).length + ' of ' + batch.length + ' requested file(s).');
+        }
+      }
+      deletedProjects++;
+    }
+
+    if (deletedProjects) {
+      try { localStorage.setItem('bms_system_junk_last_cleanup', new Date().toISOString()); } catch (e) {}
+      document.getElementById('lastCleanup').textContent =
+        'Last cleanup (this browser): ' + new Date().toLocaleString('en-AU');
+    }
     await loadStorageBuckets();
-  } catch(e) {
-    setJunkStatus('Error occurred', 'error');
-    showToast('Delete failed', true);
-    setDeleteBtn(true);
+    junkAnalysis = await analyzeJunkProjects();
+    renderJunkAnalysis(junkAnalysis);
+    if (!junkAnalysis.deletableGroups.length) {
+      setJunkStatus('Cleanup complete: ' + deletedProjects + ' project(s) deleted. Run Orphan Files scan to check for any leftover attachments.', 'success');
+    } else {
+      setJunkStatus('Partial cleanup: ' + deletedProjects + ' project(s) deleted; remaining items are still listed for review.', 'warning');
+    }
+    showToast('Junk project cleanup finished.');
+  } catch (e) {
+    setJunkStatus('Cleanup stopped: ' + e.message + '. Some earlier project(s) may already have been removed; scan again before retrying.', 'error');
+    showToast('Cleanup was incomplete. Scan again to verify the remaining records.', true);
+    try {
+      junkAnalysis = await analyzeJunkProjects();
+      renderJunkAnalysis(junkAnalysis);
+      setJunkStatus('Cleanup stopped: ' + e.message + '. Review the refreshed scan before retrying.', 'error');
+    } catch (scanError) {
+      setJunkStatus('Cleanup stopped and re-scan failed: ' + scanError.message, 'error');
+    }
   } finally {
+    deleteBtn.disabled = !junkAnalysis || !junkAnalysis.deletableGroups.length;
     scanBtn.disabled = false;
+    scanBtn.textContent = 'Scan';
   }
 });
 
-// ─── PROJECT COMMENTS CLEANUP ────────────────────────────────
-let pcProjectIds = [];
+// ─── PROJECT COMMENTS CLEANUP ──────────────────────────────────
+let pcAnalysis = null;
 
-document.getElementById('pcScanBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('pcScanBtn');
-  btn.disabled = true; btn.textContent = 'Scanning…';
-  document.getElementById('pcStatusBox').textContent = 'Scanning…';
-  document.getElementById('pcStatusBox').className = 'status-box scanning';
-  pcProjectIds = [];
-
-  const completedStatuses = ['approved', 'declined', 'expired', 'removed', 'archived'];
-  const { data: quotes } = await supabase.from('quotes')
-    .select('id, title, status')
-    .in('status', completedStatuses);
-
-  if (!quotes || !quotes.length) {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
-    document.getElementById('pcStatusBox').className = 'status-box ready';
-    btn.disabled = false; btn.textContent = 'Scan Comments';
-    return;
-  }
-
-  const quoteIds = quotes.map(q => q.id);
-  const { data: comments } = await supabase.from('project_comments')
-    .select('project_id').in('project_id', quoteIds);
-
-  if (!comments || !comments.length) {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
-    document.getElementById('pcStatusBox').className = 'status-box ready';
-    btn.disabled = false; btn.textContent = 'Scan Comments';
-    return;
-  }
-
-  const uniqueIds = [...new Set(comments.map(c => c.project_id))];
-  pcProjectIds = uniqueIds;
-
-  document.getElementById('pcCount').textContent = uniqueIds.length;
-  const list = document.getElementById('pcPreviewList');
-  list.innerHTML = '';
-  uniqueIds.forEach(pid => {
-    const q = quotes.find(q => q.id === pid);
-    const item = document.createElement('div');
-    item.className = 'preview-item';
-    item.textContent = (q?.title || pid) + ' — ' + (q?.status || '');
-    list.appendChild(item);
+async function analyzeProjectComments() {
+  const quotes = await loadAllQuoteRowsForCleanup();
+  const groups = makeQuoteProjectGroups(quotes);
+  const allComments = await loadAllTableRowsForCleanup('project_comments', 'id,project_id,created_at');
+  const groupMap = new Map(groups.map(group => [group.projectId, group]));
+  const commentsByProject = new Map();
+  allComments.forEach(comment => {
+    const key = String(comment.project_id || '');
+    if (!commentsByProject.has(key)) commentsByProject.set(key, []);
+    commentsByProject.get(key).push(comment);
   });
-  document.getElementById('pcPreviewSection').style.display = 'block';
+
+  const eligibleGroups = [];
+  const protectedGroups = [];
+  for (const group of groups) {
+    const comments = commentsByProject.get(group.projectId) || [];
+    if (!comments.length) continue;
+    const closed = group.quotes.length > 0 && group.quotes.every(isClosedProjectQuote);
+    const item = { ...group, title: quoteDisplayName(group), comments };
+    if (closed) eligibleGroups.push(item);
+    else protectedGroups.push(item);
+  }
+  const linkedProjectIds = new Set(groupMap.keys());
+  const unlinkedComments = allComments.filter(comment => !linkedProjectIds.has(String(comment.project_id || '')));
+  return { eligibleGroups, protectedGroups, unlinkedComments, totalComments: allComments.length };
+}
+
+function renderProjectCommentAnalysis(analysis) {
+  const list = document.getElementById('pcPreviewList');
+  list.replaceChildren();
+  analysis.eligibleGroups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-val';
+    title.textContent = group.title;
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    detail.textContent = group.quotes.length + ' quote(s) · ' + group.comments.length + ' comment(s) · closed';
+    row.append(title, detail);
+    list.appendChild(row);
+  });
+  analysis.protectedGroups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-val';
+    title.textContent = group.title + ' — RETAINED';
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    const states = [...new Set(group.quotes.map(q => {
+      return String(q.status || 'unknown') + (q.work_status ? ' / ' + q.work_status : '');
+    }))];
+    detail.textContent = group.comments.length + ' comment(s) protected · ' + states.join(', ');
+    row.append(title, detail);
+    list.appendChild(row);
+  });
+
+  const eligibleComments = analysis.eligibleGroups.reduce((n, group) => n + group.comments.length, 0);
+  const protectedComments = analysis.protectedGroups.reduce((n, group) => n + group.comments.length, 0);
+  document.getElementById('pcCount').textContent = String(analysis.eligibleGroups.length);
+  document.getElementById('pcCommentCount').textContent = String(eligibleComments);
+  const section = document.getElementById('pcPreviewSection');
+  section.style.display = (analysis.eligibleGroups.length || analysis.protectedGroups.length) ? 'block' : 'none';
 
   const deleteBtn = document.getElementById('pcDeleteBtn');
-  deleteBtn.disabled = false;
-  deleteBtn.style.opacity = '1';
-  deleteBtn.style.cursor = 'pointer';
-  document.getElementById('pcStatusBox').textContent = uniqueIds.length + ' project(s) with comments found';
-  document.getElementById('pcStatusBox').className = 'status-box warning';
-  btn.disabled = false; btn.textContent = 'Scan Comments';
-});
+  deleteBtn.disabled = eligibleComments === 0;
+  deleteBtn.setAttribute('aria-disabled', String(eligibleComments === 0));
+  deleteBtn.style.opacity = eligibleComments ? '1' : '0.45';
+  deleteBtn.style.cursor = eligibleComments ? 'pointer' : 'not-allowed';
+
+  let message = analysis.eligibleGroups.length + ' closed project(s) · ' + eligibleComments + ' comment(s) eligible';
+  if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' active/incomplete project(s) · ' + protectedComments + ' comment(s) retained';
+  if (analysis.unlinkedComments.length) message += ' · ' + analysis.unlinkedComments.length + ' unlinked comment(s) retained';
+  setPcStatus(message, eligibleComments ? 'warning' : 'ready');
+}
+
+function setPcStatus(text, type) {
+  const box = document.getElementById('pcStatusBox');
+  box.textContent = text;
+  box.className = 'status-box ' + (type || 'ready');
+}
+
+function getPcSnapshotKey(analysis) {
+  return JSON.stringify(analysis.eligibleGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    commentIds: group.comments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId)));
+}
+
+async function scanProjectComments() {
+  const btn = document.getElementById('pcScanBtn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  const deleteBtn = document.getElementById('pcDeleteBtn');
+  deleteBtn.disabled = true;
+  deleteBtn.setAttribute('aria-disabled', 'true');
+  document.getElementById('pcCount').textContent = '—';
+  document.getElementById('pcCommentCount').textContent = '—';
+  document.getElementById('pcPreviewSection').style.display = 'none';
+  setPcStatus('Checking project status and comment references…', 'scanning');
+  pcAnalysis = null;
+  try {
+    pcAnalysis = await analyzeProjectComments();
+    renderProjectCommentAnalysis(pcAnalysis);
+  } catch (e) {
+    pcAnalysis = null;
+    setPcStatus('Scan failed — deletion disabled: ' + e.message, 'error');
+    showToast('Comments cleanup scan failed. Nothing was deleted.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scan';
+  }
+}
+
+document.getElementById('pcScanBtn').addEventListener('click', scanProjectComments);
 
 document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
-  if (!pcProjectIds.length) return;
-  if (!confirm('Delete all discussion comments from completed projects?')) return;
+  if (!pcAnalysis || !pcAnalysis.eligibleGroups.length) return;
+  const expectedKey = getPcSnapshotKey(pcAnalysis);
+  const projectCount = pcAnalysis.eligibleGroups.length;
+  const commentIds = pcAnalysis.eligibleGroups.flatMap(group => group.comments.map(comment => String(comment.id)));
+  if (!confirm('Delete ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
+      ' closed project(s)? Comments for projects that are active, on hold or not fully closed will be retained. Unlinked comments will also be retained. This cannot be undone.')) return;
   const btn = document.getElementById('pcDeleteBtn');
-  btn.disabled = true; btn.textContent = 'Deleting…';
-  document.getElementById('pcStatusBox').textContent = 'Deleting…';
-  document.getElementById('pcStatusBox').className = 'status-box scanning';
-
-  const { error } = await supabase.from('project_comments').delete().in('project_id', pcProjectIds);
-  if (error) {
-    document.getElementById('pcStatusBox').textContent = 'Delete failed';
-    document.getElementById('pcStatusBox').className = 'status-box error';
-    showToast('Delete failed', true);
-  } else {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'Comments deleted ✓';
-    document.getElementById('pcStatusBox').className = 'status-box ok';
-    pcProjectIds = [];
-    btn.disabled = true; btn.style.opacity = '0.45'; btn.textContent = 'Delete Comments';
-    showToast('Discussion comments cleaned up ✓');
+  const scanBtn = document.getElementById('pcScanBtn');
+  btn.disabled = true;
+  scanBtn.disabled = true;
+  setPcStatus('Rechecking project status and exact comment IDs…', 'scanning');
+  try {
+    const fresh = await analyzeProjectComments();
+    if (getPcSnapshotKey(fresh) !== expectedKey) {
+      pcAnalysis = fresh;
+      renderProjectCommentAnalysis(fresh);
+      setPcStatus('The project or comment list changed after scanning. Nothing was deleted. Review the refreshed list.', 'warning');
+      return;
+    }
+    const commentRows = fresh.eligibleGroups.flatMap(group => group.comments);
+    await deleteRowsByIds('project_comments', commentRows, 'Project comment');
+    pcAnalysis = await analyzeProjectComments();
+    renderProjectCommentAnalysis(pcAnalysis);
+    setPcStatus('Deleted ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
+      ' closed project(s). Active, incomplete and unlinked comments were retained.', 'success');
+    showToast('Closed-project comments cleanup finished.');
+  } catch (e) {
+    setPcStatus('Delete stopped: ' + e.message + '. Scan again to verify remaining comments.', 'error');
+    showToast('Comments cleanup did not complete.', true);
+    try {
+      pcAnalysis = await analyzeProjectComments();
+      renderProjectCommentAnalysis(pcAnalysis);
+      setPcStatus('Delete stopped: ' + e.message + '. Review the refreshed comment list before retrying.', 'error');
+    } catch (scanError) {
+      setPcStatus('Delete stopped and re-scan failed: ' + scanError.message, 'error');
+    }
+  } finally {
+    btn.disabled = !pcAnalysis || !pcAnalysis.eligibleGroups.some(group => group.comments.length);
+    scanBtn.disabled = false;
+    scanBtn.textContent = 'Scan';
   }
 });
-
 
 // ─── QR ANALYTICS ────────────────────────────────────────────
 let qrCurrentDays = 0;
 
 async function loadQRAnalytics(days) {
-  qrCurrentDays = days;
+  qrCurrentDays = Number.isInteger(days) && days >= 0 ? days : 0;
   let since;
-  if (days === 0) {
+  if (qrCurrentDays === 0) {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
     since = midnight.toISOString();
   } else {
-    since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    since = new Date(Date.now() - qrCurrentDays * 24 * 60 * 60 * 1000).toISOString();
   }
 
   try {
-    const { data, error } = await supabase
-      .from('qr_analytics')
-      .select('event_type')
-      .gte('created_at', since);
-
-    if (error) throw error;
-
     const counts = { lift_entry: 0, lift_resident: 0, lift_visitor: 0 };
-    (data || []).forEach(r => {
-      if (counts[r.event_type] !== undefined) counts[r.event_type]++;
-    });
+    const pageSize = 500;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('qr_analytics')
+        .select('id,event_type')
+        .gte('created_at', since)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      rows.forEach(row => {
+        if (Object.prototype.hasOwnProperty.call(counts, row.event_type)) counts[row.event_type]++;
+      });
+      if (rows.length < pageSize) break;
+      offset += rows.length;
+    }
 
-    document.getElementById('qrLiftEntry').textContent = counts.lift_entry;
-    document.getElementById('qrLiftResident').textContent = counts.lift_resident;
-    document.getElementById('qrLiftVisitor').textContent = counts.lift_visitor;
+    document.getElementById('qrLiftEntry').textContent = counts.lift_entry.toLocaleString();
+    document.getElementById('qrLiftResident').textContent = counts.lift_resident.toLocaleString();
+    document.getElementById('qrLiftVisitor').textContent = counts.lift_visitor.toLocaleString();
 
     const decided = counts.lift_resident + counts.lift_visitor;
-    const dropoff = counts.lift_entry - decided;
+    const dropoff = Math.max(0, counts.lift_entry - decided);
     const dropoffPct = counts.lift_entry > 0 ? Math.round((dropoff / counts.lift_entry) * 100) : 0;
     const dropoffEl = document.getElementById('qrLiftDropoff');
-    if (dropoffEl) dropoffEl.textContent = dropoff > 0 ? `${dropoff} (${dropoffPct}%)` : '0';
+    if (dropoffEl) dropoffEl.textContent = dropoff > 0
+      ? dropoff.toLocaleString() + ' (' + dropoffPct + '%)' : '0';
 
     const lastUpdateEl = document.getElementById('qrLastUpdate');
-    if (lastUpdateEl) lastUpdateEl.textContent = `Last updated: ${new Date().toLocaleString()} · ${days === 0 ? 'Today' : 'Last ' + days + ' days'}`;
+    if (lastUpdateEl) {
+      lastUpdateEl.textContent = 'Last updated: ' +
+        new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' }) + ' · ' +
+        (qrCurrentDays === 0 ? 'Today' : 'Last ' + qrCurrentDays + ' days');
+    }
   } catch (e) {
-    document.getElementById('qrLiftEntry').textContent = '—';
-    document.getElementById('qrLiftResident').textContent = '—';
-    document.getElementById('qrLiftVisitor').textContent = '—';
+    console.error('[QR analytics] Could not load the full result:', e);
+    ['qrLiftEntry', 'qrLiftResident', 'qrLiftVisitor', 'qrLiftDropoff'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    const lastUpdateEl = document.getElementById('qrLastUpdate');
+    if (lastUpdateEl) lastUpdateEl.textContent = 'Update failed — please refresh';
   }
 }
 
-document.querySelectorAll('.qr-range-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.qr-range-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadQRAnalytics(parseInt(btn.dataset.days));
+function setQRRangeActive(days) {
+  document.querySelectorAll('.qr-range-btn, .qr-range-btn-mini').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.days) === Number(days));
   });
-});
-
-// QR range buttons (mini, in Daily section)
-document.querySelectorAll('.qr-range-btn-mini').forEach(btn => {
+}
+document.querySelectorAll('.qr-range-btn, .qr-range-btn-mini').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.qr-range-btn-mini').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadQRAnalytics(parseInt(btn.dataset.days));
+    const days = parseInt(btn.dataset.days, 10);
+    setQRRangeActive(days);
+    loadQRAnalytics(days);
   });
 });
 
@@ -2252,55 +2802,71 @@ document.querySelectorAll('.qr-range-btn-mini').forEach(btn => {
 // ─── INIT ─────────────────────────────────────────────────────
 // ─── RECENT ERRORS (Audit Logs) ─────────────────────────────────
 async function loadRecentErrors() {
+  const card = document.getElementById('recentErrorsCard');
+  const icon = document.getElementById('errorIcon');
+  const stat = document.getElementById('errorStat');
+  const list = document.getElementById('errorList');
+  if (!card || !icon || !stat || !list) return;
+
   try {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('audit_logs')
-      .select('action, details, created_at, user_email')
+      .select('action, details, created_at, user_email', { count: 'exact' })
       .gte('created_at', sevenDaysAgo.toISOString())
       .or('action.ilike.%error%,action.ilike.%fail%')
       .order('created_at', { ascending: false })
       .limit(20);
 
-    const card = document.getElementById('recentErrorsCard');
-    const icon = document.getElementById('errorIcon');
-    const stat = document.getElementById('errorStat');
-    const list = document.getElementById('errorList');
+    if (error) throw error;
+    const errors = Array.isArray(data) ? data : [];
+    const total = count ?? errors.length;
+    list.replaceChildren();
 
-    if (error) {
-      icon.textContent = '⚠️';
-      stat.textContent = 'Could not check errors: ' + (error.message || 'Unknown');
+    if (total === 0) {
+      card.classList.remove('has-errors', 'expanded');
+      icon.textContent = '✅';
+      stat.textContent = 'No error/failure audit events in the last 7 days';
+      const detail = document.getElementById('errorDetail');
+      if (detail) detail.style.display = 'none';
       return;
     }
 
-    const errors = data || [];
+    card.classList.add('has-errors');
+    icon.textContent = '🚨';
+    stat.textContent = total + ' error/failure audit event(s) in the last 7 days' +
+      (total > errors.length ? ' · showing latest ' + errors.length : '') + ' · click to view';
 
-    if (errors.length === 0) {
-      card.classList.remove('has-errors');
-      icon.textContent = '✅';
-      stat.textContent = 'No errors in last 7 days · System healthy';
-      list.innerHTML = '';
-    } else {
-      card.classList.add('has-errors');
-      icon.textContent = '🚨';
-      stat.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''} in last 7 days · click to view`;
-      list.innerHTML = errors.map(e => {
-        const date = new Date(e.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
-        const detailStr = e.details ? (typeof e.details === 'object' ? JSON.stringify(e.details).slice(0, 200) : String(e.details).slice(0, 200)) : '';
-        return `
-          <div style="padding:10px 0;border-bottom:1px dashed var(--border)">
-            <div style="font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600">${date}</div>
-            <div style="font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0">${e.action || 'unknown'}</div>
-            <div style="font-size:13px;color:#9FC0BF">${e.user_email || ''}</div>
-            ${detailStr ? `<div style="font-size:13px;color:#9FC0BF;margin-top:3px">${detailStr}</div>` : ''}
-          </div>
-        `;
-      }).join('');
-    }
+    errors.forEach(entry => {
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:10px 0;border-bottom:1px dashed var(--border)';
+      const date = document.createElement('div');
+      date.style.cssText = 'font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:600';
+      date.textContent = entry.created_at
+        ? new Date(entry.created_at).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+        : 'Unknown date';
+      const action = document.createElement('div');
+      action.style.cssText = 'font-size:14px;color:#ff6b6b;font-weight:600;margin:3px 0';
+      action.textContent = entry.action || 'unknown';
+      const email = document.createElement('div');
+      email.style.cssText = 'font-size:13px;color:#9FC0BF';
+      email.textContent = entry.user_email || '';
+      item.append(date, action, email);
+      if (entry.details !== null && entry.details !== undefined) {
+        const detail = document.createElement('div');
+        detail.style.cssText = 'font-size:13px;color:#9FC0BF;margin-top:3px;overflow-wrap:anywhere';
+        const raw = typeof entry.details === 'object' ? JSON.stringify(entry.details) : String(entry.details);
+        detail.textContent = raw.slice(0, 200);
+        item.appendChild(detail);
+      }
+      list.appendChild(item);
+    });
   } catch (e) {
     console.warn('[recentErrors]', e);
+    icon.textContent = '⚠️';
+    stat.textContent = 'Could not check error audit events: ' + (e.message || 'Unknown error');
+    list.replaceChildren();
   }
 }
 
@@ -2611,7 +3177,16 @@ async function refreshDoorExtras() {
       supabase.from('door_commands').select(cols).gte('created_at', since).order('created_at', { ascending: false }).limit(30),
       supabase.from('door_settings').select('door_id, autolock_seconds')
     ]);
-    if (a.error || r.error) return;
+    if (a.error || r.error) {
+      // Do not leave door controls enabled using a stale pending-command snapshot.
+      DOOR_IDS.forEach(id => {
+        DOOR_ACTIVE[id] = { status: 'unknown' };
+        DOOR_EXTRA[id] = 'Could not verify pending door commands — controls disabled';
+        renderDoorNote(id);
+      });
+      updateDoorButtons();
+      return;
+    }
     DOOR_IDS.forEach(id => {
       const act = (a.data || []).find(x => x.door_id === id);
       DOOR_ACTIVE[id] = act || null;
@@ -2631,13 +3206,47 @@ async function refreshDoorExtras() {
       }
       if (!doorBusy[id] && !((SAVE_NOTE_UNTIL[id] || 0) > Date.now())) { DOOR_EXTRA[id] = extra; renderDoorNote(id); }
     });
-    if (!s.error) (s.data || []).forEach(x => {
-      const inp = document.querySelector('[data-door-input="' + x.door_id + '"]');
-      if (inp && !inp.dataset.dirty && document.activeElement !== inp) inp.value = x.autolock_seconds;
-      if (inp) { inp.disabled = false; const sv = document.querySelector('[data-door-save="' + x.door_id + '"]'); if (sv) sv.disabled = false; }   // enabled only after the REAL value is loaded
+    if (s.error) {
+      DOOR_IDS.forEach(id => {
+        const inp = document.querySelector('[data-door-input="' + id + '"]');
+        const save = document.querySelector('[data-door-save="' + id + '"]');
+        if (inp) inp.disabled = true;
+        if (save) save.disabled = true;
+        DOOR_EXTRA[id] = 'Auto-lock settings could not be read — editing disabled';
+        renderDoorNote(id);
+      });
+    } else {
+      const settingsByDoor = new Map((s.data || []).map(x => [x.door_id, x]));
+      DOOR_IDS.forEach(id => {
+        const setting = settingsByDoor.get(id);
+        const inp = document.querySelector('[data-door-input="' + id + '"]');
+        const save = document.querySelector('[data-door-save="' + id + '"]');
+        if (!setting || !Number.isInteger(Number(setting.autolock_seconds))) {
+          if (inp) inp.disabled = true;
+          if (save) save.disabled = true;
+          DOOR_EXTRA[id] = 'Auto-lock setting unavailable — editing disabled';
+          renderDoorNote(id);
+          return;
+        }
+        if (inp && !inp.dataset.dirty && document.activeElement !== inp) {
+          inp.value = setting.autolock_seconds;
+        }
+        if (inp) inp.disabled = false;
+        if (save) save.disabled = false;
+      });
+    }
+    updateDoorButtons();
+  } catch (e) {
+    // Fail closed if the current command/settings snapshot cannot be confirmed.
+    DOOR_IDS.forEach(id => {
+      DOOR_ACTIVE[id] = { status: 'unknown' };
+      const inp = document.querySelector('[data-door-input="' + id + '"]');
+      const save = document.querySelector('[data-door-save="' + id + '"]');
+      if (inp) inp.disabled = true;
+      if (save) save.disabled = true;
     });
     updateDoorButtons();
-  } catch (e) { /* keep last notes */ }
+  }
 }
 async function pollDoorCommand(id, cmdId) {
   const text = { pending: 'Waiting for Door Daemon…', claimed: 'Starting…', executing: 'Executing…' };
@@ -2706,15 +3315,22 @@ async function sendDoorCommand(id, action) {
 async function saveDoorAutolock(id) {
   const inp = document.querySelector('[data-door-input="' + id + '"]');
   if (!inp || inp.disabled) return;
-  const v = parseInt(inp && inp.value, 10);
-  if (!Number.isInteger(v) || v < 60 || v > 300) { DOOR_EXTRA[id] = 'Auto-lock must be 60–300 sec'; renderDoorNote(id); return; }
-  const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
-  if (error) {
-    DOOR_EXTRA[id] = 'Auto-lock NOT saved – please try again';
+  const v = Number(inp.value);
+  if (!Number.isInteger(v) || v < 60 || v > 300) {
+    DOOR_EXTRA[id] = 'Auto-lock must be a whole number from 60–300 sec';
     SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
-  } else {
+    renderDoorNote(id);
+    return;
+  }
+  try {
+    const { error } = await supabase.rpc('set_door_autolock', { p_door_id: id, p_seconds: v });
+    if (error) throw error;
     delete inp.dataset.dirty;
     DOOR_EXTRA[id] = 'Auto-lock saved: ' + v + ' s (applies now, also to a waiting Auto-lock)';
+    SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
+  } catch (e) {
+    console.error('[door autolock] save failed:', e);
+    DOOR_EXTRA[id] = 'Auto-lock NOT saved: ' + (e && e.message ? String(e.message).slice(0, 120) : 'Please try again');
     SAVE_NOTE_UNTIL[id] = Date.now() + 15000;
   }
   renderDoorNote(id);
@@ -2806,14 +3422,18 @@ refreshStatus(); // not awaited: a slow check must never block the rest of the p
 // ─── DATA BACKUP ─────────────────────────────────────────────────
 // 마지막 백업 정보 표시 (localStorage에 저장)
 function showLastBackupInfo() {
-  const lastDate = localStorage.getItem('bms_last_backup_date');
-  if (lastDate) {
-    const info = document.getElementById('backupLastInfo');
-    const dateSpan = document.getElementById('backupLastDate');
-    if (info && dateSpan) {
-      dateSpan.textContent = lastDate;
-      info.style.display = 'block';
+  try {
+    const lastDate = localStorage.getItem('bms_last_backup_date');
+    if (lastDate) {
+      const info = document.getElementById('backupLastInfo');
+      const dateSpan = document.getElementById('backupLastDate');
+      if (info && dateSpan) {
+        dateSpan.textContent = lastDate;
+        info.style.display = 'block';
+      }
     }
+  } catch (e) {
+    console.warn('[backup] Last-download date is unavailable in this browser.');
   }
 }
 showLastBackupInfo();
@@ -2843,108 +3463,129 @@ window.downloadBackup = async function() {
   const progressDetail = document.getElementById('backupProgressDetail');
   const result = document.getElementById('backupResult');
 
-  // 결과 메시지 초기화
   result.style.display = 'none';
   result.textContent = '';
-
   btn.disabled = true;
   btn.style.opacity = '0.6';
   btn.style.cursor = 'not-allowed';
   progress.style.display = 'block';
 
-  // 백업할 테이블 목록 (실제 DB 기준 — backup 테이블은 제외)
+  // Complete list of application data tables. Internal cron queues and old backup snapshots are excluded.
   const tables = [
-    // 사용자 / 입주자
-    'profiles',
-    'occupants',
-    'vehicles',
-    // 공지 / 신고
-    'announcements',
-    'complaints',
-    'complaint_messages',
-    'hvac_requests',
-    'parking_reports',
-    // 견적 / 프로젝트
-    'quotes',
-    'quote_comments',
-    'project_comments',
-    'votes',
-    'contractors',
-    // 빌딩 / 시스템
-    'building_cards',
-    'settings',
-    'sidebar_permissions',
-    // 전광판
-    'signboard_entries',
-    'signboard_fullpage',
-    'signboard_notice',
-    // 분석 / 로그
-    'qr_analytics',
-    'push_subscriptions',
-    'audit_logs'
+    'profiles', 'occupants', 'vehicles',
+    'announcements', 'complaints', 'complaint_messages', 'hvac_requests', 'parking_reports',
+    'quotes', 'quote_comments', 'project_comments', 'votes', 'contractors',
+    'building_cards', 'building_categories', 'building_documents', 'settings',
+    'sidebar_permissions', 'scm_documents', 'scm_meetings',
+    'signboard_entries', 'signboard_fullpage', 'signboard_fullpage2', 'signboard_notice',
+    'qr_analytics', 'push_subscriptions', 'audit_logs',
+    'service_categories', 'service_cell_notes', 'service_reports',
+    'hvac_messages', 'hvac_setpoints', 'hvac_floor_setpoints',
+    'door_commands', 'door_settings', 'door_status', 'daemon_heartbeat'
   ];
 
+  // Each table is paginated in its primary-key order, including composite keys.
+  const orderKeys = {
+    profiles: ['id'], occupants: ['id'], vehicles: ['plate', 'unit'],
+    announcements: ['id'], complaints: ['id'], complaint_messages: ['id'],
+    hvac_requests: ['id'], parking_reports: ['id'], quotes: ['id'],
+    quote_comments: ['id'], project_comments: ['id'], votes: ['id'],
+    contractors: ['id'], building_cards: ['id'], building_categories: ['id'],
+    building_documents: ['id'], settings: ['key'], sidebar_permissions: ['id'],
+    scm_documents: ['id'], scm_meetings: ['id'],
+    signboard_entries: ['id'], signboard_fullpage: ['id'],
+    signboard_fullpage2: ['id'], signboard_notice: ['id'],
+    qr_analytics: ['id'], push_subscriptions: ['user_id'], audit_logs: ['id'],
+    service_categories: ['id'], service_cell_notes: ['id'], service_reports: ['id'],
+    hvac_messages: ['id'], hvac_setpoints: ['id'], hvac_floor_setpoints: ['level'],
+    door_commands: ['id'], door_settings: ['door_id'], door_status: ['door_id'],
+    daemon_heartbeat: ['name']
+  };
+
   try {
-    // JSZip 인스턴스
     const zip = new JSZip();
     const folder = zip.folder('BMS_Backup');
-
+    const pageSize = 500;
     let totalRows = 0;
+    const tableResults = [];
 
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
-      progressText.textContent = `Backing up... ${i + 1}/${tables.length}`;
-      progressDetail.textContent = `Reading: ${tableName}`;
+      const keys = orderKeys[tableName];
+      if (!keys || !keys.length) throw new Error('No stable primary-key order configured for ' + tableName);
 
-      try {
-        const { data, error } = await supabase.from(tableName).select('*');
-        if (error) {
-          console.warn(`[backup] ${tableName} fetch error:`, error);
-          folder.file(`${tableName}_ERROR.txt`, `Error fetching ${tableName}:\n${error.message}`);
-          continue;
+      progressText.textContent = 'Backing up... ' + (i + 1) + '/' + tables.length;
+      progressDetail.textContent = 'Reading: ' + tableName;
+
+      const rows = [];
+      let offset = 0;
+      let expectedCount = null;
+
+      while (expectedCount === null || offset < expectedCount) {
+        let query = supabase.from(tableName).select('*', offset === 0 ? { count: 'exact' } : undefined);
+        keys.forEach(key => { query = query.order(key, { ascending: true }); });
+        const { data, error, count } = await query.range(offset, offset + pageSize - 1);
+        if (error) throw new Error(tableName + ' export failed: ' + error.message);
+
+        const batch = Array.isArray(data) ? data : [];
+        if (offset === 0) {
+          if (!Number.isInteger(count) || count < 0) {
+            throw new Error(tableName + ' export failed: exact row count was not returned.');
+          }
+          expectedCount = count;
+        }
+        if (!batch.length && offset < expectedCount) {
+          throw new Error(tableName + ' export stopped early at row ' + offset + ' of ' + expectedCount + '.');
         }
 
-        if (!data || data.length === 0) {
-          folder.file(`${tableName}.csv`, '(no data)');
-          continue;
-        }
+        rows.push(...batch);
+        offset += batch.length;
+        progressDetail.textContent = 'Reading: ' + tableName + ' · ' +
+          rows.length.toLocaleString() + ' / ' + expectedCount.toLocaleString() + ' rows';
 
-        const csv = tableToCSV(data);
-        folder.file(`${tableName}.csv`, '\ufeff' + csv); // UTF-8 BOM (한글 깨짐 방지)
-        totalRows += data.length;
-      } catch (e) {
-        console.warn(`[backup] ${tableName} exception:`, e);
-        folder.file(`${tableName}_ERROR.txt`, `Exception:\n${e.message}`);
+        if (batch.length < pageSize) break;
       }
+
+      if (rows.length !== expectedCount) {
+        throw new Error(tableName + ' export incomplete: ' + rows.length + ' of ' + expectedCount + ' rows were read.');
+      }
+
+      folder.file(tableName + '.csv', rows.length ? '\ufeff' + tableToCSV(rows) : '(no data)');
+      totalRows += rows.length;
+      tableResults.push({ table: tableName, rows: rows.length });
     }
 
-    // 메타데이터 파일 추가
     const now = new Date();
+    const dateParts = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Sydney', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now);
+    const part = type => (dateParts.find(x => x.type === type) || {}).value || '';
+    const localDate = part('year') + '-' + part('month') + '-' + part('day');
     const dateStr = now.toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
     const meta = [
-      'BMS Data Backup',
-      '======================',
-      `Backup Date: ${dateStr}`,
-      `Total Rows: ${totalRows}`,
-      `Tables: ${tables.length}`,
+      'BMS DATABASE DATA BACKUP',
+      '========================',
+      'Backup Date (Sydney): ' + dateStr,
+      'Total Rows: ' + totalRows,
+      'Tables Exported: ' + tableResults.length + ' / ' + tables.length,
+      '',
+      'TABLE ROW COUNTS:',
+      ...tableResults.map(x => x.table + ': ' + x.rows),
       '',
       'IMPORTANT NOTES:',
-      '- This backup contains DATA only. Passwords are NOT included (Supabase Auth).',
-      '- File uploads (Storage) are NOT included.',
-      '- To restore: contact Supabase support or import via SQL.',
-      '',
-      'Recommended storage: Google Drive or external drive.',
-      'Recommended frequency: Once a month.',
+      '- This ZIP contains database table data only.',
+      '- Storage file contents, Supabase Auth credentials/passwords, schema definitions, RLS policies and cron jobs are NOT included.',
+      '- Internal announcement scheduler queues and legacy backup snapshot tables are excluded.',
+      '- This export reads tables one at a time and is not a single transaction-wide point-in-time snapshot.',
+      '- The ZIP contains personal information and notification subscription data. Store it securely.',
+      '- Restore requires the matching database schema and a controlled CSV import process.'
     ].join('\n');
     folder.file('README.txt', meta);
 
-    // 진행 상태: 압축
     progressText.textContent = 'Compressing...';
-    progressDetail.textContent = 'Creating ZIP file';
-
-    // ZIP 생성 + 다운로드
+    progressDetail.textContent = 'Creating ZIP file from ' + totalRows.toLocaleString() + ' rows';
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    const filename = `BMS_Backup_${now.toISOString().slice(0, 10)}.zip`;
+    const filename = 'BMS_Backup_' + localDate + '.zip';
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2953,32 +3594,29 @@ window.downloadBackup = async function() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-    // 마지막 백업 일시 저장
-    localStorage.setItem('bms_last_backup_date', dateStr);
+    try { localStorage.setItem('bms_last_backup_date', dateStr); } catch (e) { /* browser storage optional */ }
 
-    // 성공 메시지
     progress.style.display = 'none';
     result.style.display = 'block';
     result.style.background = 'rgba(57,255,20,.10)';
     result.style.border = '1px solid rgba(57,255,20,.35)';
     result.style.color = '#39FF14';
-    result.innerHTML = `✓ Backup complete! <strong>${filename}</strong> downloaded with ${totalRows} rows.<br><span style="font-size:13px;color:#9FC0BF">💡 Please move the file to Google Drive or a safe location.</span>`;
+    result.textContent = 'Backup complete: ' + filename + ' · ' +
+      tableResults.length + ' tables · ' + totalRows.toLocaleString() + ' rows. Storage files and Auth credentials are not included.';
 
-    // audit log
     try {
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         user_name: user.user_metadata?.full_name || user.email,
         user_email: user.email,
         action: 'data_backup_downloaded',
-        details: { total_rows: totalRows, tables: tables, filename: filename }
+        details: { total_rows: totalRows, tables: tableResults, filename: filename }
       });
-    } catch (e) { /* audit log 실패해도 사용자 작업은 성공 */ }
+    } catch (e) { /* audit logging must not invalidate a completed download */ }
 
     showLastBackupInfo();
-
   } catch (e) {
     console.error('[backup] error:', e);
     progress.style.display = 'none';
@@ -2986,7 +3624,7 @@ window.downloadBackup = async function() {
     result.style.background = 'rgba(255,49,49,.10)';
     result.style.border = '1px solid rgba(255,49,49,.35)';
     result.style.color = '#ff6b6b';
-    result.textContent = `❌ Backup failed: ${e.message || 'Unknown error'}`;
+    result.textContent = 'Backup failed — no complete ZIP was downloaded: ' + (e.message || 'Unknown error');
   } finally {
     btn.disabled = false;
     btn.style.opacity = '1';
