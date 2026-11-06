@@ -2955,30 +2955,44 @@ window.saveProjectEdit = async function(projectKey, quoteIds) {
   if (!newTitle) { showToast('Project title cannot be empty', true); return; }
 
   try {
-    // Batch update: single upsert instead of N queries
-    const updatedQuotes = quoteIds.map(qid => {
+    // Use UPDATE, not UPSERT: Committee members may update quotes but cannot insert them.
+    // Each quote keeps its own notes and attachments while sharing project-level fields.
+    const updates = await Promise.all(quoteIds.map(async qid => {
       const q = allQuotes.find(x => x.id === qid);
-      if (!q) return null;
-      const parsed    = parseComment(q.comment);
+      if (!q) throw new Error('Quote not found: ' + qid);
+
+      const parsed = parseComment(q.comment);
+      parsed.category = newCat;
       parsed.priority = newPri;
-      return {
-        id:            qid,
-        project:       newTitle,
-        project_title: newTitle,
-        category:      newCat,
-        comment:       JSON.stringify(parsed)
-      };
-    }).filter(Boolean);
-    const { error } = await supabase
-      .from('quotes')
-      .upsert(updatedQuotes, { onConflict: 'id' });
-    if (error) throw error;
+
+      const { data, error } = await supabase
+        .from('quotes')
+        .update({
+          project: newTitle,
+          project_title: newTitle,
+          category: newCat,
+          comment: parsed
+        })
+        .eq('id', qid)
+        .select('id');
+
+      if (error) throw error;
+      if (!data || data.length !== 1) {
+        throw new Error('Quote was not updated: ' + qid);
+      }
+      return data[0].id;
+    }));
+
+    if (updates.length !== quoteIds.length) {
+      throw new Error('Not all project quotations were updated.');
+    }
+
     showToast('Project updated');
     await loadData();
     renderQuotes();
   } catch(e) {
     console.error('saveProjectEdit error:', e);
-    showToast('Failed to update project', true);
+    showToast('Failed to update project. Please check your permissions.', true);
   }
 };
 
