@@ -1686,7 +1686,7 @@ body.admin-neon-page .main:has(.cctv-console) {
       <div class="maint-card">
         <div class="maint-card-header"><span>💬</span><div class="maint-title">Comments Cleanup</div></div>
         <div class="maint-card-body">
-          <div class="files-found" style="margin-bottom:5px">Completed projects: <span id="pcCount">—</span></div>
+          <div class="files-found" style="margin-bottom:5px">Closed projects: <span id="pcCount">—</span></div>
           <div class="files-found" style="margin-bottom:8px">Discussion comments: <span id="pcCommentCount">—</span></div>
           <div class="status-box ready" id="pcStatusBox">Ready</div>
           <div id="pcPreviewSection" style="display:none;margin-top:8px">
@@ -2045,13 +2045,27 @@ async function analyzeQuoteOrphans() {
   quotes.forEach(q => getQuoteFilePaths(q.comment).forEach(path => referencedPaths.add(path)));
   const fileByPath = new Map(files.map(file => [file._path || file.name, file]));
   const missingReferences = [...referencedPaths].filter(path => !fileByPath.has(path));
+  const quoteById = new Map(quotes.map(q => [String(q.id), q]));
+  const closedProjectById = new Map(
+    makeQuoteProjectGroups(quotes).map(group => [
+      group.projectId,
+      group.quotes.length > 0 && group.quotes.every(isClosedProjectQuote)
+    ])
+  );
   const now = Date.now();
   const candidates = [];
   const recentProtected = [];
   const unknownDateProtected = [];
+  const activeProjectProtected = [];
   files.forEach(file => {
     const path = file._path || file.name;
     if (!path || referencedPaths.has(path)) return;
+    const folderId = path.split('/')[0];
+    const ownerQuote = quoteById.get(folderId) || null;
+    if (ownerQuote && closedProjectById.get(quoteProjectKey(ownerQuote)) !== true) {
+      activeProjectProtected.push(file);
+      return;
+    }
     const rawDate = file.created_at || file.updated_at;
     const timestamp = rawDate ? new Date(rawDate).getTime() : NaN;
     if (!Number.isFinite(timestamp)) {
@@ -2062,8 +2076,6 @@ async function analyzeQuoteOrphans() {
       recentProtected.push(file);
       return;
     }
-    const folderId = path.split('/')[0];
-    const ownerQuote = quotes.find(q => String(q.id) === folderId) || null;
     candidates.push({
       path,
       size: Number(file.metadata && file.metadata.size) || 0,
@@ -2076,6 +2088,7 @@ async function analyzeQuoteOrphans() {
     candidates,
     recentProtected,
     unknownDateProtected,
+    activeProjectProtected,
     missingReferences,
     totalFiles: files.length,
     referencedCount: referencedPaths.size
@@ -2119,6 +2132,7 @@ async function scanOrphans() {
     renderOrphanPreview(analysis);
     if (orphanPaths.length) {
       let message = orphanPaths.length + ' unreferenced file(s) older than 24 hours found';
+      if (analysis.activeProjectProtected.length) message += ' · ' + analysis.activeProjectProtected.length + ' file(s) in active/on-hold projects protected';
       if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
       if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' file(s) with unknown dates protected';
       if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
@@ -2127,6 +2141,7 @@ async function scanOrphans() {
       deleteBtn.disabled = false;
     } else {
       let message = 'No eligible orphan files found';
+      if (analysis.activeProjectProtected.length) message += ' · ' + analysis.activeProjectProtected.length + ' active/on-hold project file(s) protected';
       if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
       if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' unknown-date file(s) protected';
       if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
@@ -2146,7 +2161,7 @@ async function scanOrphans() {
 async function deleteOrphans() {
   if (!orphanPaths.length) return;
   const expectedPaths = [...orphanPaths].sort();
-  if (!confirm('Delete ' + expectedPaths.length + ' unreferenced Quotes file(s) older than 24 hours? Referenced and recent files are protected. This cannot be undone.')) return;
+  if (!confirm('Delete ' + expectedPaths.length + ' unreferenced Quotes file(s) older than 24 hours in closed projects or unmatched folders? Referenced, active/on-hold, recent and unknown-date files are protected. This cannot be undone.')) return;
   const btn = document.getElementById('orphanDeleteBtn');
   btn.disabled = true;
   setStatus('orphanStatus', 'Rechecking references before deletion…', 'loading');
@@ -2348,7 +2363,7 @@ function renderJunkAnalysis(analysis) {
   } else {
     let message = analysis.deletableGroups.length + ' project(s) ready · ' + quoteCount +
       ' quote(s) · ' + fileCount + ' file(s) · ' + voteCount + ' vote(s) · ' + commentCount + ' project comment(s)';
-    if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' project(s) protected by legacy comments';
+    if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' project(s) protected by votes/comments';
     if (analysis.partialGroups.length) message += ' · ' + analysis.partialGroups.length + ' mixed/active project(s) retained';
     setJunkStatus(message, analysis.deletableGroups.length ? 'warning' : 'ready');
   }
@@ -2536,7 +2551,7 @@ function renderProjectCommentAnalysis(analysis) {
     title.textContent = group.title;
     const detail = document.createElement('div');
     detail.className = 'preview-item-row';
-    detail.textContent = group.quotes.length + ' quote(s) · ' + group.comments.length + ' comment(s) · completed';
+    detail.textContent = group.quotes.length + ' quote(s) · ' + group.comments.length + ' comment(s) · closed';
     row.append(title, detail);
     list.appendChild(row);
   });
@@ -2569,7 +2584,7 @@ function renderProjectCommentAnalysis(analysis) {
   deleteBtn.style.opacity = eligibleComments ? '1' : '0.45';
   deleteBtn.style.cursor = eligibleComments ? 'pointer' : 'not-allowed';
 
-  let message = analysis.eligibleGroups.length + ' completed project(s) · ' + eligibleComments + ' comment(s) eligible';
+  let message = analysis.eligibleGroups.length + ' closed project(s) · ' + eligibleComments + ' comment(s) eligible';
   if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' active/incomplete project(s) · ' + protectedComments + ' comment(s) retained';
   if (analysis.unlinkedComments.length) message += ' · ' + analysis.unlinkedComments.length + ' unlinked comment(s) retained';
   setPcStatus(message, eligibleComments ? 'warning' : 'ready');
@@ -2622,7 +2637,7 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
   const projectCount = pcAnalysis.eligibleGroups.length;
   const commentIds = pcAnalysis.eligibleGroups.flatMap(group => group.comments.map(comment => String(comment.id)));
   if (!confirm('Delete ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
-      ' completed project(s)? Comments for projects that are active, on hold or not fully completed will be retained. Unlinked comments will also be retained. This cannot be undone.')) return;
+      ' closed project(s)? Comments for projects that are active, on hold or not fully closed will be retained. Unlinked comments will also be retained. This cannot be undone.')) return;
   const btn = document.getElementById('pcDeleteBtn');
   const scanBtn = document.getElementById('pcScanBtn');
   btn.disabled = true;
@@ -2641,7 +2656,7 @@ document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
     pcAnalysis = await analyzeProjectComments();
     renderProjectCommentAnalysis(pcAnalysis);
     setPcStatus('Deleted ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
-      ' completed project(s). Active, incomplete and unlinked comments were retained.', 'success');
+      ' closed project(s). Active, incomplete and unlinked comments were retained.', 'success');
     showToast('Completed-project comments cleanup finished.');
   } catch (e) {
     setPcStatus('Delete stopped: ' + e.message + '. Scan again to verify remaining comments.', 'error');
