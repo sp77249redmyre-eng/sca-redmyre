@@ -2185,218 +2185,463 @@ async function deleteOrphans() {
 document.getElementById('orphanScanBtn').addEventListener('click', scanOrphans);
 document.getElementById('orphanDeleteBtn').addEventListener('click', deleteOrphans);
 
-// ─── 7. JUNK CLEANUP ─────────────────────────────────────────
-let junkFilePaths = [];
-let junkQuoteIds = [];
+// ─── 7. JUNK PROJECTS & FILES CLEANUP ───────────────────────
+let junkAnalysis = null;
 
 function setJunkStatus(text, type = 'ready') {
   const box = document.getElementById('statusBox');
+  if (!box) return;
   box.textContent = text;
   box.className = 'status-box ' + type;
 }
 function setDeleteBtn(enabled) {
   const btn = document.getElementById('deleteBtn');
   btn.disabled = !enabled;
+  btn.setAttribute('aria-disabled', String(!enabled));
   btn.style.opacity = enabled ? '1' : '0.45';
   btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
-function renderPreview(quotes) {
+async function analyzeJunkProjects() {
+  const quotes = await loadAllQuoteRowsForCleanup();
+  const groups = makeQuoteProjectGroups(quotes);
+  const junkGroups = groups.filter(group => group.quotes.length && group.quotes.every(isJunkQuoteRow));
+  const partialGroups = groups.filter(group =>
+    group.quotes.some(isJunkQuoteRow) && !group.quotes.every(isJunkQuoteRow)
+  );
+  if (!junkGroups.length) {
+    return {
+      allQuotes: quotes, candidates: [], deletableGroups: [], protectedGroups: [],
+      partialGroups, files: [], votes: [], comments: [], legacyComments: []
+    };
+  }
+
+  const projectIds = junkGroups.map(group => group.projectId);
+  const [votes, comments, legacyComments, storageFiles] = await Promise.all([
+    loadRowsByValuesForCleanup('votes', 'project_id', projectIds, 'id,project_id'),
+    loadRowsByValuesForCleanup('project_comments', 'project_id', projectIds, 'id,project_id'),
+    loadRowsByValuesForCleanup('quote_comments', 'project_id', projectIds, 'id,project_id'),
+    listAllFiles('quotes', '')
+  ]);
+
+  const referenceOwners = new Map();
+  quotes.forEach(q => {
+    getQuoteFilePaths(q.comment).forEach(path => {
+      if (!referenceOwners.has(path)) referenceOwners.set(path, new Set());
+      referenceOwners.get(path).add(String(q.id));
+    });
+  });
+  const quoteById = new Map(quotes.map(q => [String(q.id), q]));
+  const fileByPath = new Map(storageFiles.map(file => [file._path || file.name, file]));
+  const candidates = [];
+  const protectedGroups = [];
+
+  junkGroups.forEach(group => {
+    const quoteIds = new Set(group.quotes.map(q => String(q.id)));
+    const pathSet = new Set();
+    storageFiles.forEach(file => {
+      const path = file._path || file.name;
+      if (quoteIds.has(path.split('/')[0])) pathSet.add(path);
+    });
+    group.quotes.forEach(q => getQuoteFilePaths(q.comment).forEach(path => {
+      if (fileByPath.has(path)) pathSet.add(path);
+    }));
+
+    const filePaths = [];
+    const sharedFilePaths = [];
+    pathSet.forEach(path => {
+      const ownerFolderId = path.split('/')[0];
+      const folderQuote = quoteById.get(ownerFolderId);
+      const owners = referenceOwners.get(path) || new Set();
+      const referencedByOtherQuote = [...owners].some(id => !quoteIds.has(id));
+      const storedUnderOtherQuote = !!folderQuote && !quoteIds.has(ownerFolderId);
+      if (referencedByOtherQuote || storedUnderOtherQuote) sharedFilePaths.push(path);
+      else filePaths.push(path);
+    });
+
+    const groupVotes = votes.filter(row => row.project_id === group.projectId);
+    const groupComments = comments.filter(row => row.project_id === group.projectId);
+    const groupLegacyComments = legacyComments.filter(row => row.project_id === group.projectId);
+    const item = {
+      ...group,
+      title: quoteDisplayName(group),
+      filePaths,
+      sharedFilePaths,
+      votes: groupVotes,
+      comments: groupComments,
+      legacyComments: groupLegacyComments,
+      blocked: groupLegacyComments.length > 0
+    };
+    if (item.blocked) protectedGroups.push(item);
+    else candidates.push(item);
+  });
+
+  return {
+    allQuotes: quotes, candidates: junkGroups, deletableGroups: candidates,
+    protectedGroups, partialGroups, storageFiles, votes, comments, legacyComments
+  };
+}
+
+function renderJunkAnalysis(analysis) {
+  const groups = [...analysis.deletableGroups, ...analysis.protectedGroups];
+  const quoteCount = analysis.deletableGroups.reduce((n, g) => n + g.quotes.length, 0);
+  const fileCount = analysis.deletableGroups.reduce((n, g) => n + g.filePaths.length, 0);
+  const voteCount = analysis.deletableGroups.reduce((n, g) => n + g.votes.length, 0);
+  const commentCount = analysis.deletableGroups.reduce((n, g) => n + g.comments.length, 0);
+
+  document.getElementById('junkProjectCount').textContent = String(analysis.deletableGroups.length);
+  document.getElementById('fileCount').textContent = String(quoteCount);
+  document.getElementById('junkFileCount').textContent = String(fileCount);
+  document.getElementById('junkVoteCount').textContent = String(voteCount);
+  document.getElementById('junkCommentCount').textContent = String(commentCount);
+
   const section = document.getElementById('previewSection');
   const list = document.getElementById('previewList');
-  if (!quotes || !quotes.length) {
-    section.style.display = 'block';
-    list.innerHTML = '<div class="preview-empty">No junk quotes found</div>';
-    return;
+  list.replaceChildren();
+  groups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-row';
+    const name = document.createElement('span');
+    name.className = 'preview-item-val';
+    name.textContent = group.title;
+    const status = document.createElement('span');
+    status.textContent = group.blocked ? 'PROTECTED' : 'READY';
+    status.className = group.blocked ? 'badge-removed' : 'badge-declined';
+    title.append(name, status);
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    detail.textContent = group.quotes.length + ' quote(s) · ' + group.filePaths.length +
+      ' file(s) · ' + group.votes.length + ' vote(s) · ' + group.comments.length + ' project comment(s)' +
+      (group.sharedFilePaths.length ? ' · ' + group.sharedFilePaths.length + ' shared file(s) protected' : '');
+    row.append(title, detail);
+    if (group.blocked) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11px;color:#f2c21a;margin-top:4px';
+      note.textContent = group.legacyComments.length + ' legacy quote comment(s) exist; project retained.';
+      row.appendChild(note);
+    }
+    list.appendChild(row);
+  });
+  section.style.display = groups.length ? 'block' : 'none';
+
+  setDeleteBtn(analysis.deletableGroups.length > 0);
+  if (!groups.length && !analysis.partialGroups.length) {
+    setJunkStatus('No eligible junk projects found. No quote records or files are marked for deletion.', 'success');
+  } else {
+    let message = analysis.deletableGroups.length + ' project(s) ready · ' + quoteCount +
+      ' quote(s) · ' + fileCount + ' file(s) · ' + voteCount + ' vote(s) · ' + commentCount + ' project comment(s)';
+    if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' project(s) protected by legacy comments';
+    if (analysis.partialGroups.length) message += ' · ' + analysis.partialGroups.length + ' mixed/active project(s) retained';
+    setJunkStatus(message, analysis.deletableGroups.length ? 'warning' : 'ready');
   }
-  const badgeClass = { declined: 'badge-declined', expired: 'badge-expired', removed: 'badge-removed' };
-  list.innerHTML = quotes.map(q => {
-    let parsed = null;
-    try { parsed = q.comment ? (typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment) : null; } catch {}
-    const files = parsed?.files || [];
-    const project = q.project || q.project_title || '—';
-    const vendor = q.vendor || '—';
-    const shortId = q.id ? q.id.slice(0, 8) : '—';
-    const badge = badgeClass[q.status] || 'badge-removed';
-    const filesHtml = files.length
-      ? `<div class="preview-files"><div class="preview-files-label">Files</div>${files.map(f => `<div class="preview-file">${getFilename(typeof f === 'string' ? f : f?.path) || '—'}</div>`).join('')}</div>`
-      : `<div class="preview-files"><div class="preview-files-label" style="color:var(--muted)">No files</div></div>`;
-    return `<div class="preview-item">
-      <div class="preview-item-row"><span class="preview-item-label">Project</span><span class="preview-item-val">${project}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Vendor</span><span class="preview-item-val">${vendor}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Quote ID</span><span class="preview-item-val" style="font-family:monospace;font-size:13px">${shortId}</span></div>
-      <div class="preview-item-row"><span class="preview-item-label">Status</span><span class="${badge}">${q.status}</span></div>
-      ${filesHtml}
-    </div>`;
-  }).join('');
-  section.style.display = 'block';
 }
+
+function getJunkSnapshotKey(analysis) {
+  const rows = analysis.deletableGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    filePaths: group.filePaths.slice().sort(),
+    voteIds: group.votes.map(v => String(v.id)).sort(),
+    commentIds: group.comments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId));
+  const protectedRows = analysis.protectedGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    legacyCommentIds: group.legacyComments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId));
+  return JSON.stringify({ rows, protectedRows });
+}
+
+async function deleteRowsByIds(table, rows, label) {
+  const ids = [...new Set((rows || []).map(row => String(row.id)).filter(Boolean))];
+  if (!ids.length) return;
+  for (let start = 0; start < ids.length; start += 100) {
+    const batch = ids.slice(start, start + 100);
+    const { data, error } = await supabase.from(table).delete().in('id', batch).select('id');
+    if (error) throw new Error(label + ' deletion failed: ' + error.message);
+    const deletedIds = new Set((data || []).map(row => String(row.id)));
+    if (deletedIds.size !== batch.length) {
+      throw new Error(label + ' deletion incomplete (' + deletedIds.size + '/' + batch.length + ').');
+    }
+  }
+}
+
+function restoreJunkLastCleanup() {
+  try {
+    const saved = localStorage.getItem('bms_system_junk_last_cleanup');
+    if (saved) {
+      const date = new Date(saved);
+      if (Number.isFinite(date.getTime())) {
+        document.getElementById('lastCleanup').textContent =
+          'Last cleanup (this browser): ' + date.toLocaleString('en-AU');
+      }
+    }
+  } catch (e) { /* local storage is optional */ }
+}
+restoreJunkLastCleanup();
 
 document.getElementById('scanBtn').addEventListener('click', async () => {
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = true;
   scanBtn.textContent = 'Scanning…';
-  setJunkStatus('Scanning...', 'loading');
   setDeleteBtn(false);
   document.getElementById('fileCount').textContent = '—';
+  document.getElementById('junkProjectCount').textContent = '—';
+  document.getElementById('junkFileCount').textContent = '—';
+  document.getElementById('junkVoteCount').textContent = '—';
+  document.getElementById('junkCommentCount').textContent = '—';
   document.getElementById('previewSection').style.display = 'none';
-  junkFilePaths = [];
-  junkQuoteIds = [];
+  setJunkStatus('Checking every quote in each project before making a cleanup list…', 'loading');
+  junkAnalysis = null;
   try {
-    const { data: quotes, error } = await supabase.from('quotes').select('id, status, comment, work_status, completion_date, project, project_title, vendor').in('status', ['declined', 'expired', 'removed']).is('work_status', null).is('completion_date', null);
-    if (error) throw error;
-    if (!quotes || !quotes.length) {
-      document.getElementById('fileCount').textContent = '0';
-      setJunkStatus('No junk files found.', 'ready');
-      renderPreview([]);
-      return;
-    }
-    for (const q of quotes) {
-      junkQuoteIds.push(q.id);
-      if (!q.comment) continue;
-      let parsed = null;
-      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
-      for (const f of parsed?.files || []) {
-        if (f && typeof f === 'string') junkFilePaths.push(f);
-        else if (f && f.path) junkFilePaths.push(f.path);
-      }
-    }
-    document.getElementById('fileCount').textContent = junkFilePaths.length;
-    renderPreview(quotes);
-    if (junkQuoteIds.length === 0) {
-      setJunkStatus('No junk records found.', 'ready');
-    } else {
-      setJunkStatus(`${junkQuoteIds.length} quote${junkQuoteIds.length > 1 ? 's' : ''} (${junkFilePaths.length} file${junkFilePaths.length !== 1 ? 's' : ''}) ready for deletion.`, 'ready');
-      setDeleteBtn(true);
-    }
-  } catch(e) {
-    setJunkStatus('Error occurred', 'error');
-    showToast('Scan failed', true);
+    junkAnalysis = await analyzeJunkProjects();
+    renderJunkAnalysis(junkAnalysis);
+  } catch (e) {
+    junkAnalysis = null;
+    setJunkStatus('Scan failed — deletion disabled: ' + e.message, 'error');
+    showToast('Junk cleanup scan failed. Nothing was deleted.', true);
   } finally {
     scanBtn.disabled = false;
-    scanBtn.textContent = 'Scan Junk Files';
+    scanBtn.textContent = 'Scan';
   }
 });
 
 document.getElementById('deleteBtn').addEventListener('click', async () => {
-  if (!junkQuoteIds.length) return;
-  if (!confirm(`Delete ${junkQuoteIds.length} quote(s) and ${junkFilePaths.length} file(s)?\nThis cannot be undone.`)) return;
+  if (!junkAnalysis || !junkAnalysis.deletableGroups.length) return;
+  const expectedKey = getJunkSnapshotKey(junkAnalysis);
+  const groupCount = junkAnalysis.deletableGroups.length;
+  const quoteCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.quotes.length, 0);
+  const fileCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.filePaths.length, 0);
+  const voteCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.votes.length, 0);
+  const commentCount = junkAnalysis.deletableGroups.reduce((n, g) => n + g.comments.length, 0);
+  if (!confirm('Permanently delete ' + groupCount + ' complete junk project(s): ' + quoteCount +
+      ' quote(s), ' + fileCount + ' attached file(s), ' + voteCount + ' vote(s), and ' +
+      commentCount + ' project comment(s)? Projects containing active quotes or legacy quote comments are protected. This cannot be undone.')) return;
+
   const deleteBtn = document.getElementById('deleteBtn');
   const scanBtn = document.getElementById('scanBtn');
   deleteBtn.disabled = true;
-  deleteBtn.style.opacity = '0.45';
   scanBtn.disabled = true;
-  setJunkStatus('Deleting...', 'loading');
+  setJunkStatus('Rechecking projects and references before deletion…', 'loading');
+  let deletedProjects = 0;
   try {
-    if (junkFilePaths.length > 0) {
-      const { error } = await supabase.storage.from('quotes').remove(junkFilePaths);
-      if (error) throw error;
+    const fresh = await analyzeJunkProjects();
+    if (getJunkSnapshotKey(fresh) !== expectedKey) {
+      junkAnalysis = fresh;
+      renderJunkAnalysis(fresh);
+      setJunkStatus('The project, vote, comment or file list changed after scanning. Nothing was deleted. Review the refreshed list.', 'warning');
+      return;
     }
-    const { error: dbError } = await supabase.from('quotes').delete().in('id', junkQuoteIds);
-    if (dbError) throw dbError;
-    document.getElementById('lastCleanup').textContent = 'Last cleanup: ' + new Date().toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-    junkFilePaths = [];
-    junkQuoteIds = [];
-    document.getElementById('fileCount').textContent = '0';
-    document.getElementById('previewSection').style.display = 'none';
-    setJunkStatus('Cleanup complete ✓', 'success');
-    setDeleteBtn(false);
-    showToast('Cleanup complete ✓');
+
+    for (const group of fresh.deletableGroups) {
+      const projectName = group.title;
+      setJunkStatus('Deleting ' + projectName + '…', 'loading');
+      await deleteRowsByIds('quotes', group.quotes, 'Quote');
+      await deleteRowsByIds('votes', group.votes, 'Vote');
+      await deleteRowsByIds('project_comments', group.comments, 'Project comment');
+      for (let i = 0; i < group.filePaths.length; i += 100) {
+        const batch = group.filePaths.slice(i, i + 100);
+        const { error } = await supabase.storage.from('quotes').remove(batch);
+        if (error) throw new Error('Quote file cleanup failed for ' + projectName + ': ' + error.message);
+      }
+      deletedProjects++;
+    }
+
+    if (deletedProjects) {
+      try { localStorage.setItem('bms_system_junk_last_cleanup', new Date().toISOString()); } catch (e) {}
+      document.getElementById('lastCleanup').textContent =
+        'Last cleanup (this browser): ' + new Date().toLocaleString('en-AU');
+    }
     await loadStorageBuckets();
-  } catch(e) {
-    setJunkStatus('Error occurred', 'error');
-    showToast('Delete failed', true);
-    setDeleteBtn(true);
+    junkAnalysis = await analyzeJunkProjects();
+    renderJunkAnalysis(junkAnalysis);
+    if (!junkAnalysis.deletableGroups.length) {
+      setJunkStatus('Cleanup complete: ' + deletedProjects + ' project(s) deleted. Run Orphan Files scan to check for any leftover attachments.', 'success');
+    } else {
+      setJunkStatus('Partial cleanup: ' + deletedProjects + ' project(s) deleted; remaining items are still listed for review.', 'warning');
+    }
+    showToast('Junk project cleanup finished.');
+  } catch (e) {
+    setJunkStatus('Cleanup stopped: ' + e.message + '. Some earlier project(s) may already have been removed; scan again before retrying.', 'error');
+    showToast('Cleanup was incomplete. Scan again to verify the remaining records.', true);
+    try {
+      junkAnalysis = await analyzeJunkProjects();
+      renderJunkAnalysis(junkAnalysis);
+    } catch (scanError) {
+      setJunkStatus('Cleanup stopped and re-scan failed: ' + scanError.message, 'error');
+    }
   } finally {
+    deleteBtn.disabled = !junkAnalysis || !junkAnalysis.deletableGroups.length;
     scanBtn.disabled = false;
+    scanBtn.textContent = 'Scan';
   }
 });
 
-// ─── PROJECT COMMENTS CLEANUP ────────────────────────────────
-let pcProjectIds = [];
+// ─── PROJECT COMMENTS CLEANUP ──────────────────────────────────
+let pcAnalysis = null;
 
-document.getElementById('pcScanBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('pcScanBtn');
-  btn.disabled = true; btn.textContent = 'Scanning…';
-  document.getElementById('pcStatusBox').textContent = 'Scanning…';
-  document.getElementById('pcStatusBox').className = 'status-box scanning';
-  pcProjectIds = [];
-
-  const completedStatuses = ['approved', 'declined', 'expired', 'removed', 'archived'];
-  const { data: quotes } = await supabase.from('quotes')
-    .select('id, title, status')
-    .in('status', completedStatuses);
-
-  if (!quotes || !quotes.length) {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
-    document.getElementById('pcStatusBox').className = 'status-box ready';
-    btn.disabled = false; btn.textContent = 'Scan Comments';
-    return;
-  }
-
-  const quoteIds = quotes.map(q => q.id);
-  const { data: comments } = await supabase.from('project_comments')
-    .select('project_id').in('project_id', quoteIds);
-
-  if (!comments || !comments.length) {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'No comments to clean up';
-    document.getElementById('pcStatusBox').className = 'status-box ready';
-    btn.disabled = false; btn.textContent = 'Scan Comments';
-    return;
-  }
-
-  const uniqueIds = [...new Set(comments.map(c => c.project_id))];
-  pcProjectIds = uniqueIds;
-
-  document.getElementById('pcCount').textContent = uniqueIds.length;
-  const list = document.getElementById('pcPreviewList');
-  list.innerHTML = '';
-  uniqueIds.forEach(pid => {
-    const q = quotes.find(q => q.id === pid);
-    const item = document.createElement('div');
-    item.className = 'preview-item';
-    item.textContent = (q?.title || pid) + ' — ' + (q?.status || '');
-    list.appendChild(item);
+async function analyzeProjectComments() {
+  const quotes = await loadAllQuoteRowsForCleanup();
+  const groups = makeQuoteProjectGroups(quotes);
+  const allComments = await loadAllTableRowsForCleanup('project_comments', 'id,project_id,created_at');
+  const groupMap = new Map(groups.map(group => [group.projectId, group]));
+  const commentsByProject = new Map();
+  allComments.forEach(comment => {
+    const key = String(comment.project_id || '');
+    if (!commentsByProject.has(key)) commentsByProject.set(key, []);
+    commentsByProject.get(key).push(comment);
   });
-  document.getElementById('pcPreviewSection').style.display = 'block';
+
+  const eligibleGroups = [];
+  const protectedGroups = [];
+  for (const group of groups) {
+    const comments = commentsByProject.get(group.projectId) || [];
+    if (!comments.length) continue;
+    const closed = group.quotes.length > 0 && group.quotes.every(isClosedProjectQuote);
+    const item = { ...group, title: quoteDisplayName(group), comments };
+    if (closed) eligibleGroups.push(item);
+    else protectedGroups.push(item);
+  }
+  const linkedProjectIds = new Set(groupMap.keys());
+  const unlinkedComments = allComments.filter(comment => !linkedProjectIds.has(String(comment.project_id || '')));
+  return { eligibleGroups, protectedGroups, unlinkedComments, totalComments: allComments.length };
+}
+
+function renderProjectCommentAnalysis(analysis) {
+  const list = document.getElementById('pcPreviewList');
+  list.replaceChildren();
+  analysis.eligibleGroups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-val';
+    title.textContent = group.title;
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    detail.textContent = group.quotes.length + ' quote(s) · ' + group.comments.length + ' comment(s) · completed';
+    row.append(title, detail);
+    list.appendChild(row);
+  });
+  analysis.protectedGroups.forEach(group => {
+    const row = document.createElement('div');
+    row.className = 'preview-item';
+    const title = document.createElement('div');
+    title.className = 'preview-item-val';
+    title.textContent = group.title + ' — RETAINED';
+    const detail = document.createElement('div');
+    detail.className = 'preview-item-row';
+    const states = [...new Set(group.quotes.map(q => {
+      return String(q.status || 'unknown') + (q.work_status ? ' / ' + q.work_status : '');
+    }))];
+    detail.textContent = group.comments.length + ' comment(s) protected · ' + states.join(', ');
+    row.append(title, detail);
+    list.appendChild(row);
+  });
+
+  const eligibleComments = analysis.eligibleGroups.reduce((n, group) => n + group.comments.length, 0);
+  const protectedComments = analysis.protectedGroups.reduce((n, group) => n + group.comments.length, 0);
+  document.getElementById('pcCount').textContent = String(analysis.eligibleGroups.length);
+  document.getElementById('pcCommentCount').textContent = String(eligibleComments);
+  const section = document.getElementById('pcPreviewSection');
+  section.style.display = (analysis.eligibleGroups.length || analysis.protectedGroups.length) ? 'block' : 'none';
 
   const deleteBtn = document.getElementById('pcDeleteBtn');
-  deleteBtn.disabled = false;
-  deleteBtn.style.opacity = '1';
-  deleteBtn.style.cursor = 'pointer';
-  document.getElementById('pcStatusBox').textContent = uniqueIds.length + ' project(s) with comments found';
-  document.getElementById('pcStatusBox').className = 'status-box warning';
-  btn.disabled = false; btn.textContent = 'Scan Comments';
-});
+  deleteBtn.disabled = eligibleComments === 0;
+  deleteBtn.setAttribute('aria-disabled', String(eligibleComments === 0));
+  deleteBtn.style.opacity = eligibleComments ? '1' : '0.45';
+  deleteBtn.style.cursor = eligibleComments ? 'pointer' : 'not-allowed';
+
+  let message = analysis.eligibleGroups.length + ' completed project(s) · ' + eligibleComments + ' comment(s) eligible';
+  if (analysis.protectedGroups.length) message += ' · ' + analysis.protectedGroups.length + ' active/incomplete project(s) · ' + protectedComments + ' comment(s) retained';
+  if (analysis.unlinkedComments.length) message += ' · ' + analysis.unlinkedComments.length + ' unlinked comment(s) retained';
+  setPcStatus(message, eligibleComments ? 'warning' : 'ready');
+}
+
+function setPcStatus(text, type) {
+  const box = document.getElementById('pcStatusBox');
+  box.textContent = text;
+  box.className = 'status-box ' + (type || 'ready');
+}
+
+function getPcSnapshotKey(analysis) {
+  return JSON.stringify(analysis.eligibleGroups.map(group => ({
+    projectId: group.projectId,
+    quoteIds: group.quotes.map(q => String(q.id)).sort(),
+    commentIds: group.comments.map(c => String(c.id)).sort()
+  })).sort((a, b) => a.projectId.localeCompare(b.projectId)));
+}
+
+async function scanProjectComments() {
+  const btn = document.getElementById('pcScanBtn');
+  btn.disabled = true;
+  btn.textContent = 'Scanning…';
+  const deleteBtn = document.getElementById('pcDeleteBtn');
+  deleteBtn.disabled = true;
+  deleteBtn.setAttribute('aria-disabled', 'true');
+  document.getElementById('pcCount').textContent = '—';
+  document.getElementById('pcCommentCount').textContent = '—';
+  document.getElementById('pcPreviewSection').style.display = 'none';
+  setPcStatus('Checking project status and comment references…', 'scanning');
+  pcAnalysis = null;
+  try {
+    pcAnalysis = await analyzeProjectComments();
+    renderProjectCommentAnalysis(pcAnalysis);
+  } catch (e) {
+    pcAnalysis = null;
+    setPcStatus('Scan failed — deletion disabled: ' + e.message, 'error');
+    showToast('Comments cleanup scan failed. Nothing was deleted.', true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scan';
+  }
+}
+
+document.getElementById('pcScanBtn').addEventListener('click', scanProjectComments);
 
 document.getElementById('pcDeleteBtn').addEventListener('click', async () => {
-  if (!pcProjectIds.length) return;
-  if (!confirm('Delete all discussion comments from completed projects?')) return;
+  if (!pcAnalysis || !pcAnalysis.eligibleGroups.length) return;
+  const expectedKey = getPcSnapshotKey(pcAnalysis);
+  const projectCount = pcAnalysis.eligibleGroups.length;
+  const commentIds = pcAnalysis.eligibleGroups.flatMap(group => group.comments.map(comment => String(comment.id)));
+  if (!confirm('Delete ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
+      ' completed project(s)? Comments for projects that are active, on hold or not fully completed will be retained. Unlinked comments will also be retained. This cannot be undone.')) return;
   const btn = document.getElementById('pcDeleteBtn');
-  btn.disabled = true; btn.textContent = 'Deleting…';
-  document.getElementById('pcStatusBox').textContent = 'Deleting…';
-  document.getElementById('pcStatusBox').className = 'status-box scanning';
-
-  const { error } = await supabase.from('project_comments').delete().in('project_id', pcProjectIds);
-  if (error) {
-    document.getElementById('pcStatusBox').textContent = 'Delete failed';
-    document.getElementById('pcStatusBox').className = 'status-box error';
-    showToast('Delete failed', true);
-  } else {
-    document.getElementById('pcCount').textContent = '0';
-    document.getElementById('pcPreviewSection').style.display = 'none';
-    document.getElementById('pcStatusBox').textContent = 'Comments deleted ✓';
-    document.getElementById('pcStatusBox').className = 'status-box ok';
-    pcProjectIds = [];
-    btn.disabled = true; btn.style.opacity = '0.45'; btn.textContent = 'Delete Comments';
-    showToast('Discussion comments cleaned up ✓');
+  const scanBtn = document.getElementById('pcScanBtn');
+  btn.disabled = true;
+  scanBtn.disabled = true;
+  setPcStatus('Rechecking project status and exact comment IDs…', 'scanning');
+  try {
+    const fresh = await analyzeProjectComments();
+    if (getPcSnapshotKey(fresh) !== expectedKey) {
+      pcAnalysis = fresh;
+      renderProjectCommentAnalysis(fresh);
+      setPcStatus('The project or comment list changed after scanning. Nothing was deleted. Review the refreshed list.', 'warning');
+      return;
+    }
+    const commentRows = fresh.eligibleGroups.flatMap(group => group.comments);
+    await deleteRowsByIds('project_comments', commentRows, 'Project comment');
+    pcAnalysis = await analyzeProjectComments();
+    renderProjectCommentAnalysis(pcAnalysis);
+    setPcStatus('Deleted ' + commentIds.length + ' discussion comment(s) from ' + projectCount +
+      ' completed project(s). Active, incomplete and unlinked comments were retained.', 'success');
+    showToast('Completed-project comments cleanup finished.');
+  } catch (e) {
+    setPcStatus('Delete stopped: ' + e.message + '. Scan again to verify remaining comments.', 'error');
+    showToast('Comments cleanup did not complete.', true);
+    try {
+      pcAnalysis = await analyzeProjectComments();
+      renderProjectCommentAnalysis(pcAnalysis);
+    } catch (scanError) {
+      setPcStatus('Delete stopped and re-scan failed: ' + scanError.message, 'error');
+    }
+  } finally {
+    btn.disabled = !pcAnalysis || !pcAnalysis.eligibleGroups.some(group => group.comments.length);
+    scanBtn.disabled = false;
+    scanBtn.textContent = 'Scan';
   }
 });
-
 
 // ─── QR ANALYTICS ────────────────────────────────────────────
 let qrCurrentDays = 0;
