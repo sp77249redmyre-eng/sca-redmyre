@@ -58,21 +58,21 @@
 .visitor-enforcement-meta{margin-top:7px;color:#7f1d1d;font-size:14px;font-weight:600;line-height:1.5}
 .visitor-id-panel{margin-top:14px;padding:18px;border:1px solid #cbd5e1;border-left:4px solid #2563eb;border-radius:11px;background:#f8fafc}
 .visitor-id-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.visitor-id-title{font-size:15px;font-weight:900;letter-spacing:.06em;color:#0f172a}
+.visitor-id-title{font-size:16px;font-weight:900;letter-spacing:.05em;color:#0f172a}
 .visitor-id-state{font-size:12px;font-weight:900;letter-spacing:.04em;padding:6px 10px;border-radius:999px;background:#fef3c7;color:#92400e;white-space:nowrap}
 .visitor-id-state.identified{background:#dbeafe;color:#1d4ed8}
 .visitor-id-state.sent{background:#dcfce7;color:#166534}
 .visitor-id-grid{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(190px,1fr);gap:14px;align-items:end}
-.visitor-id-label{display:block;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
-.visitor-id-select{width:100%;height:46px;padding:0 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:600 15px 'DM Sans',sans-serif}
-.visitor-id-check{display:flex;align-items:flex-start;gap:10px;margin:15px 0;color:#334155;font-size:14px;line-height:1.55}
+.visitor-id-label{display:block;font-size:13px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.visitor-id-select{width:100%;height:48px;padding:0 13px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:600 16px 'DM Sans',sans-serif}
+.visitor-id-check{display:flex;align-items:flex-start;gap:10px;margin:16px 0;color:#334155;font-size:15px;line-height:1.55}
 .visitor-id-actions{display:flex;gap:10px;flex-wrap:wrap}
-.visitor-id-btn{border:0;border-radius:8px;padding:11px 16px;font:700 14px 'DM Sans',sans-serif;cursor:pointer}
+.visitor-id-btn{border:0;border-radius:8px;padding:12px 18px;font:700 15px 'DM Sans',sans-serif;cursor:pointer;min-height:48px}
 .visitor-id-save{background:#1d4ed8;color:#fff}
 .visitor-id-grid>.visitor-id-note{grid-column:1/-1}
 .visitor-id-send{background:#b91c1c;color:#fff}
 .visitor-id-btn:disabled{opacity:.45;cursor:not-allowed}
-.visitor-id-note{margin-top:10px;color:#52637a;font-size:13px;line-height:1.55}
+.visitor-id-note{margin-top:10px;color:#475569;font-size:14px;line-height:1.6}
 @media(max-width:600px){.visitor-id-grid{grid-template-columns:1fr}.visitor-id-head{align-items:flex-start;flex-direction:column}}
 
 .visitor-escalation{display:inline-flex;align-items:center;margin-top:6px;padding:4px 8px;border-radius:6px;background:#e8000d;color:#fff;font-size:10px;font-weight:900;letter-spacing:.25px}
@@ -330,9 +330,19 @@
 
 #reportsList .pk-detail-grid{
   display:grid !important;
-  grid-template-columns:minmax(250px,320px) minmax(0,1fr) !important;
-  gap:26px !important;
+  grid-template-columns:minmax(300px,.9fr) minmax(0,1.1fr) !important;
+  gap:24px !important;
   align-items:start !important;
+}
+
+#reportsList .pk-detail-section-title{
+  margin:0 0 10px;
+  color:#334155;
+  font-size:14px;
+  line-height:1.3;
+  font-weight:900;
+  letter-spacing:.055em;
+  text-transform:uppercase;
 }
 
 #reportsList .pk-detail-photo-wrap{
@@ -419,14 +429,15 @@
 }
 
 #reportsList .pk-detail-meta{
-  font-size:14px !important;
-  color:#64748b !important;
-  margin-bottom:5px !important;
+  font-size:15px !important;
+  line-height:1.5 !important;
+  color:#475569 !important;
+  margin-bottom:7px !important;
 }
 
 #reportsList .pk-detail-date{
-  font-size:12px !important;
-  color:#94a3b8 !important;
+  font-size:13px !important;
+  color:#64748b !important;
   margin-bottom:14px !important;
 }
 
@@ -435,7 +446,8 @@
 }
 
 #reportsList .pk-detail-info .pk-reporter{
-  font-size:14px !important;
+  font-size:15px !important;
+  line-height:1.5 !important;
   margin-bottom:12px !important;
 }
 
@@ -1698,6 +1710,7 @@ async function loadReports() {
         <div class="pk-body" id="body-${r.id}">
           <div class="pk-detail-grid">
             <div class="pk-detail-photo-wrap">
+              <div class="pk-detail-section-title">Vehicle Photos · ${imageFiles.length}/3</div>
               ${imageFiles.length
                 ? `<div class="pk-photo-gallery" id="pk-gallery-${r.id}">
                     <div class="pk-photo-main-wrap">
@@ -1710,18 +1723,18 @@ async function loadReports() {
                         <span>${index+1}</span>
                       </button>`).join('')}
                     </div>` : ''}
-                    <div class="pk-detail-photo-note">${imageFiles.length} photo${imageFiles.length===1?'':'s'} · Select a thumbnail or tap the main photo to enlarge</div>
+                    <div class="pk-detail-photo-note">Select a thumbnail or tap the main photo to enlarge</div>
                   </div>`
-                : `<div class="pk-detail-photo-placeholder pk-photo-gallery-empty"><i class="ti ti-car" style="font-size:42px;color:#64748b"></i></div>`}
+                : `<div class="pk-photo-gallery-empty"><i class="ti ti-car" style="font-size:42px;color:#64748b"></i><span>No vehicle photos</span></div>`}
             </div>
 
             <div class="pk-detail-info">
+              <div class="pk-detail-section-title">Parking Details</div>
               <div class="pk-detail-plate">${r.plate || '—'}</div>
               <div class="pk-detail-vio">${violationLabel}</div>
               <div class="pk-detail-meta"><i class="ti ti-map-pin"></i> ${locationLabel} ${ownershipLabel}</div>
               <div class="pk-detail-date">${dateOnly}</div>
               ${visitorEnforcementHtml}
-              ${visitorIdentificationHtml}
 
               <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 12px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':violationLabel}</span></div>
               <div class="pk-reporter">${role==='admin' ? `Reported by ${r.reporter_name||'Unknown'} · ` : ''}${absTime}</div>
@@ -1730,6 +1743,8 @@ async function loadReports() {
               ${r.admin_reply?`<div class="pk-comment" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8"><strong>Admin reply:</strong> ${r.admin_reply}</div>`:''}
             </div>
           </div>
+
+          ${visitorIdentificationHtml}
 
           <div class="pk-actions">
             ${!isResolved && occurrenceN >= 2 ? `<button data-plate="${r.plate||''}" data-vio="${r.violation||''}" data-loc="${r.location||''}" data-date="${r.created_at||''}" data-photo="${thumbUrl}" data-count="${occurrenceN}" onclick="generateWarningPDF(this.dataset.plate,this.dataset.vio,this.dataset.loc,this.dataset.date,this.dataset.photo,this.dataset.count)" class="warning-notice-btn warning-notice-btn-${Math.min(occurrenceN,4)}"><i class="ti ti-printer"></i> Warning Notice</button>` : ''}
