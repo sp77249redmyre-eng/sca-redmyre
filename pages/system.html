@@ -1894,66 +1894,247 @@ async function loadStorageBuckets() {
 document.getElementById('storageRefreshBtn')?.addEventListener('click', loadStorageBuckets);
 
 // ─── 5. ORPHAN FILES ─────────────────────────────────────────
+const QUOTE_FILE_GRACE_MS = 24 * 60 * 60 * 1000;
 let orphanPaths = [];
+
+function normalizeQuoteFilePath(rawPath) {
+  if (typeof rawPath !== 'string') return '';
+  let path = rawPath.trim().replace(/^\/+/, '');
+  if (!path) return '';
+  const storageMarkers = [
+    '/storage/v1/object/sign/quotes/',
+    '/storage/v1/object/public/quotes/',
+    '/storage/v1/object/authenticated/quotes/',
+    '/storage/v1/object/quotes/'
+  ];
+  for (const marker of storageMarkers) {
+    const at = path.indexOf(marker);
+    if (at >= 0) { path = path.slice(at + marker.length); break; }
+  }
+  if (path.startsWith('quotes/')) path = path.slice('quotes/'.length);
+  return path.replace(/^\/+/, '');
+}
+
+function parseQuoteComment(value) {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch (e) { return {}; }
+  }
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function getQuoteFilePaths(commentValue) {
+  const parsed = parseQuoteComment(commentValue);
+  const files = Array.isArray(parsed.files) ? parsed.files : [];
+  const paths = [];
+  files.forEach(file => {
+    const raw = typeof file === 'string' ? file : (file && typeof file.path === 'string' ? file.path : '');
+    const path = normalizeQuoteFilePath(raw);
+    if (path) paths.push(path);
+  });
+  return [...new Set(paths)];
+}
+
+async function loadAllQuoteRowsForCleanup() {
+  const columns = 'id,project_id,project,project_title,vendor,status,work_status,completion_date,archived,comment';
+  const rows = [];
+  const pageSize = 500;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase.from('quotes')
+      .select(columns)
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error('Could not read quote records: ' + error.message);
+    const batch = Array.isArray(data) ? data : [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
+async function loadAllTableRowsForCleanup(table, columns) {
+  const rows = [];
+  const pageSize = 500;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase.from(table)
+      .select(columns)
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error('Could not read ' + table + ': ' + error.message);
+    const batch = Array.isArray(data) ? data : [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
+async function loadRowsByValuesForCleanup(table, column, values, columns) {
+  if (!values.length) return [];
+  const rows = [];
+  const batchSize = 100;
+  const pageSize = 500;
+  for (let start = 0; start < values.length; start += batchSize) {
+    const valuesBatch = values.slice(start, start + batchSize);
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase.from(table)
+        .select(columns)
+        .in(column, valuesBatch)
+        .range(offset, offset + pageSize - 1);
+      if (error) throw new Error('Could not read ' + table + ' references: ' + error.message);
+      const batch = Array.isArray(data) ? data : [];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+  }
+  return rows;
+}
+
+function quoteProjectKey(quote) {
+  return String((quote && quote.project_id) || (quote && quote.id) || '');
+}
+
+function makeQuoteProjectGroups(quotes) {
+  const map = new Map();
+  quotes.forEach(quote => {
+    const key = quoteProjectKey(quote);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(quote);
+  });
+  return [...map.entries()].map(entry => ({ projectId: entry[0], quotes: entry[1] }));
+}
+
+function isJunkQuoteRow(quote) {
+  const status = String(quote.status || '').toLowerCase();
+  return ['declined', 'expired', 'removed'].includes(status) &&
+    (quote.work_status === null || quote.work_status === undefined || quote.work_status === '') &&
+    !quote.completion_date;
+}
+
+function isClosedProjectQuote(quote) {
+  const status = String(quote.status || '').toLowerCase();
+  const workStatus = String(quote.work_status || '').toLowerCase();
+  const hasCompletionDate = !!quote.completion_date;
+  if (status === 'approved') return workStatus === 'completed' && hasCompletionDate;
+  if (['declined', 'expired', 'removed', 'archived'].includes(status)) {
+    if (workStatus === 'in_progress') return false;
+    if (workStatus === 'completed') return hasCompletionDate;
+    return !workStatus && !hasCompletionDate;
+  }
+  return false;
+}
+
+function quoteDisplayName(group) {
+  const q = (group.quotes || [])[0] || {};
+  return q.project_title || q.project || ('Project ' + group.projectId);
+}
+
+async function analyzeQuoteOrphans() {
+  const [quotes, files] = await Promise.all([
+    loadAllQuoteRowsForCleanup(),
+    listAllFiles('quotes', '')
+  ]);
+  const referencedPaths = new Set();
+  quotes.forEach(q => getQuoteFilePaths(q.comment).forEach(path => referencedPaths.add(path)));
+  const fileByPath = new Map(files.map(file => [file._path || file.name, file]));
+  const missingReferences = [...referencedPaths].filter(path => !fileByPath.has(path));
+  const now = Date.now();
+  const candidates = [];
+  const recentProtected = [];
+  const unknownDateProtected = [];
+  files.forEach(file => {
+    const path = file._path || file.name;
+    if (!path || referencedPaths.has(path)) return;
+    const rawDate = file.created_at || file.updated_at;
+    const timestamp = rawDate ? new Date(rawDate).getTime() : NaN;
+    if (!Number.isFinite(timestamp)) {
+      unknownDateProtected.push(file);
+      return;
+    }
+    if (now - timestamp < QUOTE_FILE_GRACE_MS) {
+      recentProtected.push(file);
+      return;
+    }
+    const folderId = path.split('/')[0];
+    const ownerQuote = quotes.find(q => String(q.id) === folderId) || null;
+    candidates.push({
+      path,
+      size: Number(file.metadata && file.metadata.size) || 0,
+      created_at: rawDate,
+      quote: ownerQuote
+    });
+  });
+  candidates.sort((a, b) => a.path.localeCompare(b.path));
+  return {
+    candidates,
+    recentProtected,
+    unknownDateProtected,
+    missingReferences,
+    totalFiles: files.length,
+    referencedCount: referencedPaths.size
+  };
+}
+
+function renderOrphanPreview(analysis) {
+  const list = document.getElementById('orphanList');
+  list.replaceChildren();
+  analysis.candidates.forEach(file => {
+    const row = document.createElement('div');
+    row.className = 'orphan-file';
+    const path = document.createElement('div');
+    path.className = 'orphan-path';
+    path.textContent = file.path;
+    const q = file.quote || {};
+    const label = q.project_title || q.project || q.vendor || 'No matching quote record';
+    const meta = document.createElement('div');
+    meta.style.cssText = 'font-size:11px;color:#8ba9b8;margin-top:2px;overflow-wrap:anywhere';
+    meta.textContent = formatSize(file.size) + ' · ' + label + (q.status ? ' · ' + q.status : '');
+    row.append(path, meta);
+    list.appendChild(row);
+  });
+}
 
 async function scanOrphans() {
   const btn = document.getElementById('orphanScanBtn');
+  const deleteBtn = document.getElementById('orphanDeleteBtn');
   btn.disabled = true;
   btn.textContent = 'Scanning…';
-  setStatus('orphanStatus', 'Scanning storage...', 'loading');
-  document.getElementById('orphanList').innerHTML = '';
-  document.getElementById('orphanDeleteBtn').style.display = 'none';
+  deleteBtn.style.display = 'none';
+  deleteBtn.disabled = true;
+  setStatus('orphanStatus', 'Checking all Quotes files and database references…', 'loading');
+  document.getElementById('orphanList').replaceChildren();
   document.getElementById('orphanCount').textContent = '—';
   orphanPaths = [];
-
   try {
-    const allFiles = await listAllFiles('quotes', '');
-    const storagePaths = allFiles.map(f => {
-      return f._path || f.name;
-    });
-
-    const { data: quotes } = await supabase.from('quotes').select('id, comment');
-    const dbPaths = new Set();
-    for (const q of quotes || []) {
-      if (!q.comment) continue;
-      let parsed = null;
-      try { parsed = typeof q.comment === 'string' ? JSON.parse(q.comment) : q.comment; } catch { continue; }
-      for (const f of parsed?.files || []) {
-        const p = typeof f === 'string' ? f : f?.path;
-        if (p) dbPaths.add(p);
-      }
-      dbPaths.add(q.id);
-    }
-
-    const { data: storageItems } = await supabase.storage.from('quotes').list('', { limit: 1000 });
-    const folderIds = new Set((storageItems || []).filter(i => !i.metadata).map(i => i.name));
-
-    orphanPaths = [];
-    for (const folderId of folderIds) {
-      if (!dbPaths.has(folderId)) {
-        const files = await listAllFiles('quotes', folderId);
-        for (const f of files) {
-          orphanPaths.push(folderId + '/' + f.name);
-        }
-        if (files.length === 0) orphanPaths.push(folderId + '/');
-      }
-    }
-
-    document.getElementById('orphanCount').textContent = orphanPaths.length;
-
-    if (!orphanPaths.length) {
-      setStatus('orphanStatus', '✓ No orphan files found', 'success');
-      document.getElementById('orphanList').innerHTML = '';
+    const analysis = await analyzeQuoteOrphans();
+    orphanPaths = analysis.candidates.map(file => file.path);
+    document.getElementById('orphanCount').textContent = String(orphanPaths.length);
+    renderOrphanPreview(analysis);
+    if (orphanPaths.length) {
+      let message = orphanPaths.length + ' unreferenced file(s) older than 24 hours found';
+      if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
+      if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' file(s) with unknown dates protected';
+      if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, 'warning');
+      deleteBtn.style.display = 'inline-flex';
+      deleteBtn.disabled = false;
     } else {
-      setStatus('orphanStatus', `${orphanPaths.length} orphan file(s) found`, 'ready');
-      document.getElementById('orphanList').innerHTML = orphanPaths.map(p => `
-        <div class="orphan-file">
-          <span class="orphan-path">${p}</span>
-        </div>`).join('');
-      document.getElementById('orphanDeleteBtn').style.display = 'inline-flex';
+      let message = 'No eligible orphan files found';
+      if (analysis.recentProtected.length) message += ' · ' + analysis.recentProtected.length + ' recent file(s) protected';
+      if (analysis.unknownDateProtected.length) message += ' · ' + analysis.unknownDateProtected.length + ' unknown-date file(s) protected';
+      if (analysis.missingReferences.length) message += ' · Warning: ' + analysis.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, analysis.missingReferences.length ? 'warning' : 'success');
     }
-  } catch(e) {
-    setStatus('orphanStatus', 'Scan failed: ' + e.message, 'error');
+  } catch (e) {
+    orphanPaths = [];
+    document.getElementById('orphanCount').textContent = '—';
+    setStatus('orphanStatus', 'Scan failed — no files can be deleted: ' + e.message, 'error');
+    showToast('Orphan scan failed. Nothing was deleted.', true);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Scan Orphans';
@@ -1962,23 +2143,45 @@ async function scanOrphans() {
 
 async function deleteOrphans() {
   if (!orphanPaths.length) return;
-  if (!confirm(`Delete ${orphanPaths.length} orphan file(s)? This cannot be undone.`)) return;
-  setStatus('orphanStatus', 'Deleting...', 'loading');
+  const expectedPaths = [...orphanPaths].sort();
+  if (!confirm('Delete ' + expectedPaths.length + ' unreferenced Quotes file(s) older than 24 hours? Referenced and recent files are protected. This cannot be undone.')) return;
+  const btn = document.getElementById('orphanDeleteBtn');
+  btn.disabled = true;
+  setStatus('orphanStatus', 'Rechecking references before deletion…', 'loading');
   try {
-    const { error } = await supabase.storage.from('quotes').remove(orphanPaths.filter(p => !p.endsWith('/')));
-    if (error) throw error;
-    orphanPaths = [];
-    document.getElementById('orphanCount').textContent = '0';
-    document.getElementById('orphanList').innerHTML = '';
-    document.getElementById('orphanDeleteBtn').style.display = 'none';
-    setStatus('orphanStatus', '✓ Orphan files deleted', 'success');
-    showToast('Orphan files deleted ✓');
-    await loadStorageBuckets();
-  } catch(e) {
-    setStatus('orphanStatus', 'Delete failed: ' + e.message, 'error');
+    const fresh = await analyzeQuoteOrphans();
+    const freshPaths = fresh.candidates.map(file => file.path).sort();
+    if (JSON.stringify(expectedPaths) !== JSON.stringify(freshPaths)) {
+      setStatus('orphanStatus', 'The file/reference list changed after scanning. Nothing was deleted. Please scan again.', 'warning');
+      await scanOrphans();
+      return;
+    }
+    for (let i = 0; i < expectedPaths.length; i += 100) {
+      const batch = expectedPaths.slice(i, i + 100);
+      const { error } = await supabase.storage.from('quotes').remove(batch);
+      if (error) throw new Error(error.message);
+    }
+    const after = await analyzeQuoteOrphans();
+    orphanPaths = after.candidates.map(file => file.path);
+    renderOrphanPreview(after);
+    document.getElementById('orphanCount').textContent = String(orphanPaths.length);
+    if (orphanPaths.length) {
+      setStatus('orphanStatus', 'Partial cleanup: ' + orphanPaths.length + ' old unreferenced file(s) remain. Scan again to review.', 'warning');
+      btn.disabled = false;
+    } else {
+      setStatus('orphanStatus', 'Cleanup complete. All scanned orphan files were removed.', 'success');
+      btn.style.display = 'none';
+      showToast('Orphan file cleanup complete.');
+      await loadStorageBuckets();
+    }
+  } catch (e) {
+    setStatus('orphanStatus', 'Delete stopped: ' + e.message + '. Scan again to see what remains.', 'error');
+    showToast('Orphan deletion did not complete.', true);
+    try { await scanOrphans(); } catch (scanError) { console.error(scanError); }
+  } finally {
+    btn.disabled = false;
   }
 }
-
 document.getElementById('orphanScanBtn').addEventListener('click', scanOrphans);
 document.getElementById('orphanDeleteBtn').addEventListener('click', deleteOrphans);
 
