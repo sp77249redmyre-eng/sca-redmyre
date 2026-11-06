@@ -361,10 +361,41 @@
 }
 
 #reportsList .pk-detail-photo-note{
-  margin-top:7px !important;
-  font-size:11px !important;
-  color:#94a3b8 !important;
+  margin-top:8px !important;
+  font-size:12px !important;
+  color:#64748b !important;
   text-align:center !important;
+}
+
+#reportsList .pk-photo-gallery{width:100%;min-width:0}
+#reportsList .pk-photo-main-wrap{position:relative;width:100%}
+#reportsList .pk-photo-main-wrap .pk-detail-photo{height:220px !important}
+#reportsList .pk-photo-position{
+  position:absolute;right:10px;bottom:10px;padding:5px 9px;
+  border-radius:7px;background:rgba(15,23,42,.78);color:#fff;
+  font-size:12px;font-weight:800;pointer-events:none
+}
+#reportsList .pk-photo-thumbs{
+  display:flex;gap:9px;margin-top:10px;min-width:0;
+  overflow-x:auto;overflow-y:hidden;padding:2px 2px 7px;
+  scrollbar-width:thin;-webkit-overflow-scrolling:touch
+}
+#reportsList .pk-photo-thumb{
+  position:relative;flex:0 0 92px;width:92px;height:68px;padding:0;
+  border:2px solid transparent;border-radius:9px;overflow:hidden;
+  background:#e2e8f0;cursor:pointer
+}
+#reportsList .pk-photo-thumb.active{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.14)}
+#reportsList .pk-photo-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+#reportsList .pk-photo-thumb span{
+  position:absolute;left:5px;top:5px;min-width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:rgba(15,23,42,.78);color:#fff;
+  font-size:11px;font-weight:800
+}
+#reportsList .pk-photo-gallery-empty{
+  width:100%;height:220px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:12px;background:#e2e8f0
 }
 
 #reportsList .pk-detail-info{
@@ -518,6 +549,28 @@
   #reportsList .pk-detail-photo,
   #reportsList .pk-detail-photo-placeholder{
     height:220px !important;
+  }
+
+  #reportsList .pk-photo-main-wrap .pk-detail-photo{
+    height:230px !important;
+  }
+
+  #reportsList .pk-photo-thumbs{
+    gap:10px;
+    margin-top:10px;
+    padding-bottom:8px;
+    scroll-snap-type:x mandatory;
+  }
+
+  #reportsList .pk-photo-thumb{
+    flex-basis:96px;
+    width:96px;
+    height:72px;
+    scroll-snap-align:start;
+  }
+
+  #reportsList .pk-detail-photo-note{
+    font-size:13px !important;
   }
 
   #reportsList .pk-detail-plate{
@@ -1371,6 +1424,23 @@ let plateSearchTerm = '';
 let visitorSuitesByFloor = {};
 const visitorFloors = ['1','2','3','4','5','6'];
 
+window.selectParkingPhoto = function(reportId, index) {
+  const gallery = document.getElementById('pk-gallery-' + reportId);
+  if (!gallery) return;
+  const buttons = Array.from(gallery.querySelectorAll('.pk-photo-thumb'));
+  const selected = buttons[index];
+  const main = document.getElementById('pk-gallery-main-' + reportId);
+  if (!selected || !main) return;
+  const url = selected.dataset.url || '';
+  if (!url) return;
+  main.src = url;
+  main.dataset.url = url;
+  main.alt = 'Vehicle photo ' + (index + 1);
+  buttons.forEach((button, i) => button.classList.toggle('active', i === index));
+  const position = document.getElementById('pk-gallery-position-' + reportId);
+  if (position) position.textContent = (index + 1) + ' / ' + buttons.length;
+};
+
 window.onPlateSearch = function() {
   if (role !== 'admin') return;
   plateSearchTerm = document.getElementById('plateSearchInput').value.trim();
@@ -1628,10 +1698,21 @@ async function loadReports() {
         <div class="pk-body" id="body-${r.id}">
           <div class="pk-detail-grid">
             <div class="pk-detail-photo-wrap">
-              ${thumbUrl
-                ? `<img src="${thumbUrl}" class="pk-detail-photo" alt="Vehicle photo" onclick="event.stopPropagation();showImage('${thumbUrl}')">`
-                : `<div class="pk-detail-photo-placeholder"><i class="ti ti-car" style="font-size:42px;color:#64748b"></i></div>`}
-              ${imageFiles.length > 1 ? `<div class="pk-detail-photo-note">${imageFiles.length} photos · click the photo to enlarge</div>` : (thumbUrl ? `<div class="pk-detail-photo-note">Click photo to enlarge</div>` : '')}
+              ${imageFiles.length
+                ? `<div class="pk-photo-gallery" id="pk-gallery-${r.id}">
+                    <div class="pk-photo-main-wrap">
+                      <img src="${escapeVisitorText(imageFiles[0])}" data-url="${escapeVisitorText(imageFiles[0])}" id="pk-gallery-main-${r.id}" class="pk-detail-photo" alt="Vehicle photo 1" onclick="event.stopPropagation();showImage(this.dataset.url,'Vehicle photo')">
+                      ${imageFiles.length > 1 ? `<span class="pk-photo-position" id="pk-gallery-position-${r.id}">1 / ${imageFiles.length}</span>` : ''}
+                    </div>
+                    ${imageFiles.length > 1 ? `<div class="pk-photo-thumbs" aria-label="Vehicle photos">
+                      ${imageFiles.map((url,index) => `<button type="button" class="pk-photo-thumb ${index===0?'active':''}" data-url="${escapeVisitorText(url)}" aria-label="Show photo ${index+1}" onclick="event.stopPropagation();selectParkingPhoto('${r.id}',${index})">
+                        <img src="${escapeVisitorText(url)}" alt="Vehicle photo ${index+1}">
+                        <span>${index+1}</span>
+                      </button>`).join('')}
+                    </div>` : ''}
+                    <div class="pk-detail-photo-note">${imageFiles.length} photo${imageFiles.length===1?'':'s'} · Select a thumbnail or tap the main photo to enlarge</div>
+                  </div>`
+                : `<div class="pk-detail-photo-placeholder pk-photo-gallery-empty"><i class="ti ti-car" style="font-size:42px;color:#64748b"></i></div>`}
             </div>
 
             <div class="pk-detail-info">
