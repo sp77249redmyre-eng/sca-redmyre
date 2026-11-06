@@ -2072,6 +2072,28 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
 
       const toggleProject = () => {
         const opened = accordionBody.hidden;
+
+        if (opened) {
+          // Only one project can be open across CURRENT VOTING and ON HOLD.
+          document.querySelectorAll('#currentVotingList .current-voting-project-content').forEach(otherBody => {
+            if (otherBody === accordionBody) return;
+            otherBody.hidden = true;
+            const otherHeader = otherBody.parentElement?.querySelector('.current-voting-project-toggle');
+            if (otherHeader) otherHeader.setAttribute('aria-expanded', 'false');
+          });
+
+          document.querySelectorAll('#onHoldList .onhold-project-details').forEach(otherDetails => {
+            otherDetails.hidden = true;
+            const otherCard = otherDetails.closest('.onhold-project-card');
+            const otherHeader = otherCard?.querySelector('.onhold-list-row');
+            if (otherHeader) {
+              otherHeader.setAttribute('aria-expanded', 'false');
+              const otherChevron = otherHeader.querySelector('.onhold-row-chevron');
+              if (otherChevron) otherChevron.textContent = '⌄';
+            }
+          });
+        }
+
         accordionBody.hidden = !opened;
         header.setAttribute('aria-expanded', String(opened));
       };
@@ -2144,7 +2166,15 @@ function renderOnHoldQuotes(quotes) {
     row.onclick = () => {
       const opened = details.hidden;
 
-      // Keep only one ON HOLD project panel open at a time.
+      // Only one project can be open across CURRENT VOTING and ON HOLD.
+      if (opened) {
+        document.querySelectorAll('#currentVotingList .current-voting-project-content').forEach(otherBody => {
+          otherBody.hidden = true;
+          const otherHeader = otherBody.parentElement?.querySelector('.current-voting-project-toggle');
+          if (otherHeader) otherHeader.setAttribute('aria-expanded', 'false');
+        });
+      }
+
       container.querySelectorAll('.onhold-project-card').forEach(otherCard => {
         const otherDetails = otherCard.querySelector('.onhold-project-details');
         const otherRow = otherCard.querySelector('.onhold-list-row');
