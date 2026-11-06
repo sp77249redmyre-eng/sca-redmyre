@@ -1367,6 +1367,9 @@ document.getElementById('imageModal').addEventListener('click', function(e) {
 });
 
 let plateSearchTerm = '';
+let visitorSuitesByFloor = {};
+const visitorFloors = ['1','2','3','4','5','6'];
+
 window.onPlateSearch = function() {
   if (role !== 'admin') return;
   plateSearchTerm = document.getElementById('plateSearchInput').value.trim();
@@ -1381,8 +1384,37 @@ async function loadReports() {
   if (role !== 'admin') reportQuery = reportQuery.eq('status','active');
   const { data: reportsData } = await reportQuery;
   let reports = reportsData || [];
-  const visitorFloors = ['1','2','3','4','5','6'];
-  const visitorSuiteLetters = ['A','B','C','D','E','F','G','H'];
+  visitorSuitesByFloor = {};
+  const escapeVisitorText = value => String(value ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  if (role === 'admin') {
+    const { data: occupantRows, error: occupantError } = await supabase
+      .from('occupants')
+      .select('unit,suite,business_name,primary_email,business_email,status')
+      .eq('status', 'Active')
+      .order('unit', {ascending:true});
+    if (occupantError) {
+      console.warn('Could not load Occupants for visitor identification:', occupantError);
+    } else {
+      (occupantRows || []).forEach(o => {
+        const unit = String(o.unit || '').trim().toUpperCase();
+        const match = unit.match(/^([1-6])([A-H])$/);
+        if (!match) return;
+        const hasEmail = [o.primary_email, o.business_email].some(value =>
+          String(value || '').split(/[,;]/).some(email => email.trim())
+        );
+        const item = {
+          unit,
+          letter: match[2],
+          businessName: String(o.business_name || '').trim(),
+          hasEmail
+        };
+        if (!visitorSuitesByFloor[match[1]]) visitorSuitesByFloor[match[1]] = [];
+        visitorSuitesByFloor[match[1]].push(item);
+      });
+    }
+  }
   if (plateSearchTerm) {
     reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
   }
@@ -1511,9 +1543,16 @@ async function loadReports() {
           const floorMatch = savedSuite.match(/^([1-6])([A-H])$/);
           const savedFloor = floorMatch ? floorMatch[1] : '';
           const savedLetter = floorMatch ? floorMatch[2] : '';
-          const suiteOptions = savedFloor ? visitorSuiteLetters.map(letter =>
-            '<option value="' + savedFloor + letter + '"' + (savedLetter===letter?' selected':'') + '>Suite ' + letter + '</option>'
-          ).join('') : '';
+          const floorSuites = savedFloor ? (visitorSuitesByFloor[savedFloor] || []) : [];
+          const suiteOptions = floorSuites.map(item => {
+            const label = 'Suite ' + item.letter +
+              (item.businessName ? ' — ' + item.businessName : '') +
+              (item.hasEmail ? '' : ' — NO CONTACT EMAIL');
+            return '<option value="' + escapeVisitorText(item.unit) + '"' +
+              (savedSuite===item.unit?' selected':'') + '>' + escapeVisitorText(label) + '</option>';
+          }).join('');
+          const savedSuiteRecord = floorSuites.find(item => item.unit === savedSuite);
+          const hasSuiteContact = !!savedSuiteRecord?.hasEmail;
           const verified = identified || visitorIdentification.cctv_verified === true;
           return `<section class="visitor-id-panel" id="visitor-id-${r.id}">
             <div class="visitor-id-head">
@@ -1529,8 +1568,8 @@ async function loadReports() {
               </div>
               <div>
                 <label class="visitor-id-label" for="visitor-suite-${r.id}">Host Suite</label>
-                <select class="visitor-id-select" id="visitor-suite-${r.id}" ${emailSent || !savedFloor?'disabled':''}>
-                  <option value="">Select Suite</option>${suiteOptions}
+                <select class="visitor-id-select" id="visitor-suite-${r.id}" ${emailSent || !savedFloor || !floorSuites.length?'disabled':''}>
+                  <option value="">${savedFloor ? (floorSuites.length ? 'Select Suite' : 'No Suites recorded') : 'Select Floor first'}</option>${suiteOptions}
                 </select>
               </div>
               <div class="visitor-id-note">Review the relevant CCTV footage and confirm which Suite the visitor was attending before saving.</div>
@@ -1541,9 +1580,13 @@ async function loadReports() {
             </label>
             <div class="visitor-id-actions">
               <button class="visitor-id-btn visitor-id-save" onclick="saveVisitorIdentification('${r.id}')" ${emailSent?'disabled':''}>Save Identification</button>
-              <button class="visitor-id-btn visitor-id-send" onclick="sendVisitorWarningEmail('${r.id}')" ${identified && !emailSent ? '' : 'disabled'}>Send Visitor Warning Email</button>
+              <button class="visitor-id-btn visitor-id-send" onclick="sendVisitorWarningEmail('${r.id}')" ${identified && hasSuiteContact && !emailSent ? '' : 'disabled'}>Send Visitor Warning Email</button>
             </div>
-            <div class="visitor-id-note">${emailSent ? 'Warning email sent to: '+String(visitorIdentification.email_sent_to || 'Suite contact').replace(/</g,'&lt;') : 'No email is sent when you save this identification. Sending is a separate manual action and will email the actual contact address(es) recorded for the selected Suite.'}</div>
+            <div class="visitor-id-note">${emailSent
+              ? 'Warning email sent to: '+String(visitorIdentification.email_sent_to || 'Suite contact').replace(/</g,'&lt;')
+              : (identified && !hasSuiteContact
+                ? 'No contact email is recorded for Suite '+escapeVisitorText(savedSuite)+'. No warning email can be sent.'
+                : 'No email is sent when you save this identification. Sending is a separate manual action and will email the contact address(es) recorded for the selected Suite.')}</div>
           </section>`;
         })()
       : '';
@@ -1652,13 +1695,20 @@ window.updateVisitorSuiteOptions = function(reportId) {
   if (!suiteEl) return;
   suiteEl.innerHTML = '<option value="">Select Suite</option>';
   suiteEl.disabled = !floor;
-  if (floor) {
-    ['A','B','C','D','E','F','G','H'].forEach(letter => {
-      const option = document.createElement('option');
-      option.value = floor + letter;
-      option.textContent = 'Suite ' + letter;
-      suiteEl.appendChild(option);
-    });
+  const floorSuites = visitorSuitesByFloor[floor] || [];
+  floorSuites.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.unit;
+    option.textContent = 'Suite ' + item.letter +
+      (item.businessName ? ' — ' + item.businessName : '') +
+      (item.hasEmail ? '' : ' — NO CONTACT EMAIL');
+    suiteEl.appendChild(option);
+  });
+  if (floor && !floorSuites.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No active Suites recorded for this floor';
+    suiteEl.appendChild(option);
   }
   const cctvEl = document.getElementById('visitor-cctv-' + reportId);
   if (cctvEl) cctvEl.checked = false;
@@ -1716,6 +1766,11 @@ window.sendVisitorWarningEmail = async function(reportId) {
   if (sendError) {
     console.error(sendError);
     showToast('Email was not confirmed as sent. Check the Edge Function logs.', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Visitor Warning Email'; }
+    return;
+  }
+  if (data?.success !== true) {
+    showToast(data?.reason || 'No recipient email is recorded for this Suite. No email was sent.', true);
     if (btn) { btn.disabled = false; btn.textContent = 'Send Visitor Warning Email'; }
     return;
   }
