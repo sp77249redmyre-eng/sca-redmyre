@@ -56,6 +56,24 @@
 .visitor-enforcement{margin-top:12px;padding:12px 14px;border:1px solid #fecaca;border-left:4px solid #e8000d;border-radius:10px;background:#fff7f7}
 .visitor-enforcement-title{display:flex;align-items:center;gap:7px;color:#b91c1c;font-size:13px;font-weight:800}
 .visitor-enforcement-meta{margin-top:6px;color:#7f1d1d;font-size:12px;font-weight:600;line-height:1.45}
+.visitor-id-panel{margin-top:14px;padding:16px;border:1px solid #cbd5e1;border-left:4px solid #2563eb;border-radius:11px;background:#f8fafc}
+.visitor-id-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.visitor-id-title{font-size:12px;font-weight:900;letter-spacing:.07em;color:#0f172a}
+.visitor-id-state{font-size:10px;font-weight:900;letter-spacing:.04em;padding:5px 8px;border-radius:999px;background:#fef3c7;color:#92400e;white-space:nowrap}
+.visitor-id-state.identified{background:#dbeafe;color:#1d4ed8}
+.visitor-id-state.sent{background:#dcfce7;color:#166534}
+.visitor-id-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.4fr);gap:12px;align-items:end}
+.visitor-id-label{display:block;font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.visitor-id-select{width:100%;height:40px;padding:0 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:600 13px 'DM Sans',sans-serif}
+.visitor-id-check{display:flex;align-items:flex-start;gap:8px;margin:12px 0;color:#334155;font-size:12px;line-height:1.5}
+.visitor-id-actions{display:flex;gap:8px;flex-wrap:wrap}
+.visitor-id-btn{border:0;border-radius:8px;padding:9px 13px;font:700 12px 'DM Sans',sans-serif;cursor:pointer}
+.visitor-id-save{background:#1d4ed8;color:#fff}
+.visitor-id-send{background:#b91c1c;color:#fff}
+.visitor-id-btn:disabled{opacity:.45;cursor:not-allowed}
+.visitor-id-note{margin-top:8px;color:#64748b;font-size:11px;line-height:1.45}
+@media(max-width:600px){.visitor-id-grid{grid-template-columns:1fr}.visitor-id-head{align-items:flex-start;flex-direction:column}}
+
 .visitor-escalation{display:inline-flex;align-items:center;margin-top:6px;padding:4px 8px;border-radius:6px;background:#e8000d;color:#fff;font-size:10px;font-weight:900;letter-spacing:.25px}
 .repeat-offence-label{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;font-weight:900;line-height:1.1;letter-spacing:.02em;border-radius:8px;transition:all .15s ease}
 .repeat-offence-label.resolved{color:#7f1d1d}
@@ -1363,6 +1381,18 @@ async function loadReports() {
   if (role !== 'admin') reportQuery = reportQuery.eq('status','active');
   const { data: reportsData } = await reportQuery;
   let reports = reportsData || [];
+  let visitorSuites = [];
+  if (role === 'admin') {
+    const { data: occupantRows, error: occupantError } = await supabase
+      .from('occupants').select('unit,suite,business_name').order('unit', {ascending:true});
+    if (occupantError) console.warn('Could not load Suite list for visitor identification:', occupantError);
+    const suiteMap = new Map();
+    (occupantRows || []).forEach(o => {
+      const suiteValue = String(o.suite || o.unit || '').trim();
+      if (suiteValue && !suiteMap.has(suiteValue)) suiteMap.set(suiteValue, String(o.business_name || '').trim());
+    });
+    visitorSuites = [...suiteMap.entries()].sort((a,b) => a[0].localeCompare(b[0], undefined, {numeric:true}));
+  }
   if (plateSearchTerm) {
     reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
   }
@@ -1424,6 +1454,7 @@ async function loadReports() {
 
   const cardHtml = (r) => {
     const isResolved = r.status === 'resolved';
+    const visitorIdentification = r.visitor_identification || {};
 
     let timeAgo = '—';
     let absTime = '—';
@@ -1480,6 +1511,44 @@ async function loadReports() {
         </div>`
       : '';
 
+    const visitorIdentificationHtml = (role === 'admin' && isUnknownVisitor)
+      ? (() => {
+          const savedSuite = String(visitorIdentification.suite || '');
+          const emailSent = !!visitorIdentification.email_sent_at || visitorIdentification.status === 'email_sent';
+          const identified = visitorIdentification.status === 'identified' && visitorIdentification.cctv_verified === true && !!savedSuite;
+          const stateText = emailSent ? 'EMAIL SENT' : identified ? 'IDENTIFIED' : 'PENDING REVIEW';
+          const stateClass = emailSent ? 'sent' : identified ? 'identified' : '';
+          const suiteOptions = visitorSuites.map(([value,business]) =>
+            `<option value="${String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" ${savedSuite===value?'selected':''}>Suite ${String(value).replace(/</g,'&lt;')} ${business ? '— '+business.replace(/</g,'&lt;') : ''}</option>`
+          ).join('');
+          const verified = identified || visitorIdentification.cctv_verified === true;
+          return `<section class="visitor-id-panel" id="visitor-id-${r.id}">
+            <div class="visitor-id-head">
+              <div class="visitor-id-title"><i class="ti ti-video"></i> VISITOR IDENTIFICATION</div>
+              <span class="visitor-id-state ${stateClass}">${stateText}</span>
+            </div>
+            <div class="visitor-id-grid">
+              <div>
+                <label class="visitor-id-label" for="visitor-suite-${r.id}">Host Suite</label>
+                <select class="visitor-id-select" id="visitor-suite-${r.id}" ${emailSent?'disabled':''}>
+                  <option value="">Select Suite</option>${suiteOptions}
+                </select>
+              </div>
+              <div class="visitor-id-note">Review the relevant CCTV footage and confirm which Suite the visitor was attending before saving.</div>
+            </div>
+            <label class="visitor-id-check">
+              <input type="checkbox" id="visitor-cctv-${r.id}" ${verified?'checked':''} ${emailSent?'disabled':''}>
+              <span>I have reviewed CCTV and confirmed this visitor was attending the selected Suite.</span>
+            </label>
+            <div class="visitor-id-actions">
+              <button class="visitor-id-btn visitor-id-save" onclick="saveVisitorIdentification('${r.id}')" ${emailSent?'disabled':''}>Save Identification</button>
+              <button class="visitor-id-btn visitor-id-send" onclick="sendVisitorWarningEmail('${r.id}')" ${identified && !emailSent ? '' : 'disabled'}>Send Visitor Warning Email</button>
+            </div>
+            <div class="visitor-id-note">${emailSent ? 'Warning email sent to: '+String(visitorIdentification.email_sent_to || 'Suite contact').replace(/</g,'&lt;') : 'No email is sent when you save this identification. Sending is a separate manual action and will email the actual contact address(es) recorded for the selected Suite.'}</div>
+          </section>`;
+        })()
+      : '';
+
     const imagesHtml = imageFiles.length
       ? `<div class="pk-images">${imageFiles.map(url => `<img src="${url}" class="pk-image" onclick="event.stopPropagation();showImage('${url}')">`).join('')}</div>`
       : '';
@@ -1528,6 +1597,7 @@ async function loadReports() {
               <div class="pk-detail-meta"><i class="ti ti-map-pin"></i> ${locationLabel} ${ownershipLabel}</div>
               <div class="pk-detail-date">${dateOnly}</div>
               ${visitorEnforcementHtml}
+              ${visitorIdentificationHtml}
 
               <div class="pk-violation"><span class="badge ${isResolved?'badge-green':'badge-red'}" style="font-size:13px;padding:5px 12px;${isResolved?'background:#dcfce7;color:#166534;opacity:1;font-weight:700':''}">${isResolved?'✓ Resolved':violationLabel}</span></div>
               <div class="pk-reporter">${role==='admin' ? `Reported by ${r.reporter_name||'Unknown'} · ` : ''}${absTime}</div>
@@ -1575,6 +1645,61 @@ async function loadReports() {
 }
 
 await loadReports();
+
+window.saveVisitorIdentification = async function(reportId) {
+  if (role !== 'admin') { showToast('Admin access required', true); return; }
+  const suiteEl = document.getElementById('visitor-suite-' + reportId);
+  const cctvEl = document.getElementById('visitor-cctv-' + reportId);
+  const suite = suiteEl?.value || '';
+  if (!suite) { showToast('Please select the Host Suite', true); return; }
+  if (!cctvEl?.checked) { showToast('Please confirm CCTV verification', true); return; }
+  const { data: existing, error: readError } = await supabase.from('parking_reports')
+    .select('visitor_identification,status').eq('id', reportId).single();
+  if (readError) { showToast('Could not verify report status', true); return; }
+  if (existing?.visitor_identification?.email_sent_at) { showToast('Warning email has already been sent; identification is locked', true); return; }
+  if (existing?.status === 'resolved') { showToast('Resolved reports cannot be identified', true); return; }
+  const { data: authData } = await supabase.auth.getUser();
+  const payload = {
+    status: 'identified',
+    suite,
+    cctv_verified: true,
+    cctv_verified_at: new Date().toISOString(),
+    verified_by: authData?.user?.id || null
+  };
+  const { error } = await supabase.from('parking_reports')
+    .update({visitor_identification: payload}).eq('id', reportId);
+  if (error) { console.error(error); showToast('Failed to save identification', true); return; }
+  showToast('Visitor identification saved. No email has been sent.');
+  await loadReports();
+};
+
+window.sendVisitorWarningEmail = async function(reportId) {
+  if (role !== 'admin') { showToast('Admin access required', true); return; }
+  const { data: report, error } = await supabase.from('parking_reports')
+    .select('plate,visitor_identification,status').eq('id', reportId).single();
+  if (error || !report) { showToast('Could not load visitor report', true); return; }
+  const vi = report.visitor_identification || {};
+  if (report.status !== 'active' || vi.status !== 'identified' || vi.cctv_verified !== true || !vi.suite) {
+    showToast('Save a CCTV-verified Suite identification first', true); return;
+  }
+  if (vi.email_sent_at) { showToast('Warning email has already been sent', true); return; }
+  const confirmed = confirm('Send the visitor warning email to the actual contact email address(es) recorded for Suite ' + vi.suite + '?\n\nThis is a real email, not a test.');
+  if (!confirmed) return;
+  const btn = document.querySelector('#visitor-id-' + reportId + ' .visitor-id-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  const { data, error: sendError } = await supabase.functions.invoke('email-parking-notice', {
+    body: {type:'visitor_host_warning', report_id:reportId}
+  });
+  if (sendError) {
+    console.error(sendError);
+    showToast('Email was not confirmed as sent. Check the Edge Function logs.', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Visitor Warning Email'; }
+    return;
+  }
+  showToast('Visitor warning email sent.');
+  await loadReports();
+};
+
 </script>
 </body>
 </html>
