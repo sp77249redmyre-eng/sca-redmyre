@@ -62,7 +62,7 @@
 .visitor-id-state{font-size:10px;font-weight:900;letter-spacing:.04em;padding:5px 8px;border-radius:999px;background:#fef3c7;color:#92400e;white-space:nowrap}
 .visitor-id-state.identified{background:#dbeafe;color:#1d4ed8}
 .visitor-id-state.sent{background:#dcfce7;color:#166534}
-.visitor-id-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(220px,1.4fr);gap:12px;align-items:end}
+.visitor-id-grid{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(160px,1fr) minmax(220px,1.4fr);gap:12px;align-items:end}
 .visitor-id-label{display:block;font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .visitor-id-select{width:100%;height:40px;padding:0 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:600 13px 'DM Sans',sans-serif}
 .visitor-id-check{display:flex;align-items:flex-start;gap:8px;margin:12px 0;color:#334155;font-size:12px;line-height:1.5}
@@ -1381,18 +1381,8 @@ async function loadReports() {
   if (role !== 'admin') reportQuery = reportQuery.eq('status','active');
   const { data: reportsData } = await reportQuery;
   let reports = reportsData || [];
-  let visitorSuites = [];
-  if (role === 'admin') {
-    const { data: occupantRows, error: occupantError } = await supabase
-      .from('occupants').select('unit,suite,business_name').order('unit', {ascending:true});
-    if (occupantError) console.warn('Could not load Suite list for visitor identification:', occupantError);
-    const suiteMap = new Map();
-    (occupantRows || []).forEach(o => {
-      const suiteValue = String(o.suite || o.unit || '').trim();
-      if (suiteValue && !suiteMap.has(suiteValue)) suiteMap.set(suiteValue, String(o.business_name || '').trim());
-    });
-    visitorSuites = [...suiteMap.entries()].sort((a,b) => a[0].localeCompare(b[0], undefined, {numeric:true}));
-  }
+  const visitorFloors = ['1','2','3','4','5','6'];
+  const visitorSuiteLetters = ['A','B','C','D','E','F','G','H'];
   if (plateSearchTerm) {
     reports = reports.filter(r => (r.plate||'').replace(/\s/g,'').toUpperCase().includes(plateSearchTerm));
   }
@@ -1518,9 +1508,12 @@ async function loadReports() {
           const identified = visitorIdentification.status === 'identified' && visitorIdentification.cctv_verified === true && !!savedSuite;
           const stateText = emailSent ? 'EMAIL SENT' : identified ? 'IDENTIFIED' : 'PENDING REVIEW';
           const stateClass = emailSent ? 'sent' : identified ? 'identified' : '';
-          const suiteOptions = visitorSuites.map(([value,business]) =>
-            `<option value="${String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" ${savedSuite===value?'selected':''}>Suite ${String(value).replace(/</g,'&lt;')} ${business ? '— '+business.replace(/</g,'&lt;') : ''}</option>`
-          ).join('');
+          const floorMatch = savedSuite.match(/^([1-6])([A-H])$/);
+          const savedFloor = floorMatch ? floorMatch[1] : '';
+          const savedLetter = floorMatch ? floorMatch[2] : '';
+          const suiteOptions = savedFloor ? visitorSuiteLetters.map(letter =>
+            '<option value="' + savedFloor + letter + '"' + (savedLetter===letter?' selected':'') + '>Suite ' + letter + '</option>'
+          ).join('') : '';
           const verified = identified || visitorIdentification.cctv_verified === true;
           return `<section class="visitor-id-panel" id="visitor-id-${r.id}">
             <div class="visitor-id-head">
@@ -1529,8 +1522,14 @@ async function loadReports() {
             </div>
             <div class="visitor-id-grid">
               <div>
+                <label class="visitor-id-label" for="visitor-floor-${r.id}">Floor</label>
+                <select class="visitor-id-select" id="visitor-floor-${r.id}" onchange="updateVisitorSuiteOptions('${r.id}')" ${emailSent?'disabled':''}>
+                  <option value="">Select Floor</option>${visitorFloors.map(floor => '<option value="' + floor + '"' + (savedFloor===floor?' selected':'') + '>Floor ' + floor + '</option>').join('')}
+                </select>
+              </div>
+              <div>
                 <label class="visitor-id-label" for="visitor-suite-${r.id}">Host Suite</label>
-                <select class="visitor-id-select" id="visitor-suite-${r.id}" ${emailSent?'disabled':''}>
+                <select class="visitor-id-select" id="visitor-suite-${r.id}" ${emailSent || !savedFloor?'disabled':''}>
                   <option value="">Select Suite</option>${suiteOptions}
                 </select>
               </div>
@@ -1646,12 +1645,35 @@ async function loadReports() {
 
 await loadReports();
 
+window.updateVisitorSuiteOptions = function(reportId) {
+  const floorEl = document.getElementById('visitor-floor-' + reportId);
+  const suiteEl = document.getElementById('visitor-suite-' + reportId);
+  const floor = floorEl?.value || '';
+  if (!suiteEl) return;
+  suiteEl.innerHTML = '<option value="">Select Suite</option>';
+  suiteEl.disabled = !floor;
+  if (floor) {
+    ['A','B','C','D','E','F','G','H'].forEach(letter => {
+      const option = document.createElement('option');
+      option.value = floor + letter;
+      option.textContent = 'Suite ' + letter;
+      suiteEl.appendChild(option);
+    });
+  }
+  const cctvEl = document.getElementById('visitor-cctv-' + reportId);
+  if (cctvEl) cctvEl.checked = false;
+  const sendBtn = document.querySelector('#visitor-id-' + reportId + ' .visitor-id-send');
+  if (sendBtn) sendBtn.disabled = true;
+};
+
 window.saveVisitorIdentification = async function(reportId) {
   if (role !== 'admin') { showToast('Admin access required', true); return; }
+  const floorEl = document.getElementById('visitor-floor-' + reportId);
   const suiteEl = document.getElementById('visitor-suite-' + reportId);
   const cctvEl = document.getElementById('visitor-cctv-' + reportId);
+  const floor = floorEl?.value || '';
   const suite = suiteEl?.value || '';
-  if (!suite) { showToast('Please select the Host Suite', true); return; }
+  if (!floor || !suite || !suite.startsWith(floor)) { showToast('Please select a Floor and Host Suite', true); return; }
   if (!cctvEl?.checked) { showToast('Please confirm CCTV verification', true); return; }
   const { data: existing, error: readError } = await supabase.from('parking_reports')
     .select('visitor_identification,status').eq('id', reportId).single();
@@ -1661,6 +1683,7 @@ window.saveVisitorIdentification = async function(reportId) {
   const { data: authData } = await supabase.auth.getUser();
   const payload = {
     status: 'identified',
+    floor,
     suite,
     cctv_verified: true,
     cctv_verified_at: new Date().toISOString(),
