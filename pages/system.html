@@ -1670,7 +1670,7 @@ body.admin-neon-page .main:has(.cctv-console) {
         <div class="maint-card-header"><span>🧹</span><div class="maint-title">Junk Quotes &amp; Files</div></div>
         <div class="maint-card-body">
           <div class="files-found" style="margin-bottom:5px">Eligible projects: <span id="junkProjectCount">—</span> · Quotes: <span id="fileCount">—</span></div>
-          <div class="files-found" style="margin-bottom:8px">Files: <span id="junkFileCount">—</span> · Votes: <span id="junkVoteCount">—</span> · Comments: <span id="junkCommentCount">—</span></div>
+          <div class="files-found" style="margin-bottom:8px">Eligible files: <span id="junkFileCount">—</span> · Eligible votes: <span id="junkVoteCount">—</span> · Eligible comments: <span id="junkCommentCount">—</span></div>
           <div class="status-box ready" id="statusBox">Ready</div>
           <div id="previewSection" style="display:none;margin-top:8px">
             <div class="preview-list" id="previewList" style="max-height:120px;overflow-y:auto"></div>
@@ -2186,10 +2186,18 @@ async function deleteOrphans() {
     renderOrphanPreview(after);
     document.getElementById('orphanCount').textContent = String(orphanPaths.length);
     if (orphanPaths.length) {
-      setStatus('orphanStatus', 'Partial cleanup: ' + orphanPaths.length + ' old unreferenced file(s) remain. Scan again to review.', 'warning');
+      let message = 'Partial cleanup: ' + orphanPaths.length + ' eligible old unreferenced file(s) remain. Scan again to review.';
+      if (after.activeProjectProtected.length) message += ' · ' + after.activeProjectProtected.length + ' active/on-hold project file(s) retained';
+      if (after.missingReferences.length) message += ' · Warning: ' + after.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, 'warning');
       btn.disabled = false;
     } else {
-      setStatus('orphanStatus', 'Cleanup complete. All scanned orphan files were removed.', 'success');
+      let message = 'Cleanup complete. All eligible orphan file candidates were removed.';
+      if (after.activeProjectProtected.length) message += ' · ' + after.activeProjectProtected.length + ' active/on-hold project file(s) were retained';
+      if (after.recentProtected.length) message += ' · ' + after.recentProtected.length + ' recent file(s) were retained';
+      if (after.unknownDateProtected.length) message += ' · ' + after.unknownDateProtected.length + ' unknown-date file(s) were retained';
+      if (after.missingReferences.length) message += ' · Warning: ' + after.missingReferences.length + ' database reference(s) are missing in Storage';
+      setStatus('orphanStatus', message, after.missingReferences.length ? 'warning' : 'success');
       btn.style.display = 'none';
       showToast('Orphan file cleanup complete.');
       await loadStorageBuckets();
