@@ -1,0 +1,1271 @@
+
+/* ════════════════════════════════════════════════════════════
+   SYSTEM CONSOLE — dark admin theme
+   Every rule below is scoped to .system-console (or to the
+   content area of THIS page only). Sidebar / topbar / layout.js
+   / style.css are not modified.
+   ════════════════════════════════════════════════════════════ */
+.content:has(> .system-console) {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,245,255,.07), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0,245,255,.035) 0, rgba(0,245,255,.035) 1px, transparent 1px, transparent 3px),
+    #030507;
+  min-height: calc(100vh - 60px);
+}
+
+.system-console {
+  --sc-bg: #030507;
+  --sc-panel: #080D10;
+  --sc-panel-2: #0D1418;
+  --sc-line: #18343A;
+  --sc-line-2: #1f4a52;
+  --sc-text: #D7F7F5;
+  --sc-text-2: #B8D2D1;
+  --sc-muted: #9FC0BF;
+  --sc-blue: #00F5FF;
+  --sc-blue-soft: rgba(0,245,255,.10);
+  --sc-green: #39FF14;
+  --sc-green-soft: rgba(57,255,20,.10);
+  --sc-amber: #FFB000;
+  --sc-amber-soft: rgba(255,176,0,.10);
+  --sc-red: #FF3131;
+  --sc-red-soft: rgba(255,49,49,.10);
+  --sc-magenta: #FF2BD6;
+  --sc-magenta-soft: rgba(255,43,214,.10);
+  --sc-font-head: 'Orbitron', 'Segoe UI', sans-serif;
+  --sc-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sc-font-mono: 'JetBrains Mono', Consolas, 'SFMono-Regular', monospace;
+
+  /* remap the site's tokens so JS-generated markup that uses var(--text) etc. is readable on dark */
+  --bg: var(--sc-panel-2);
+  --surface: var(--sc-panel);
+  --border: var(--sc-line-2);
+  --border-light: var(--sc-line);
+  --text: var(--sc-text);
+  --text-2: var(--sc-text-2);
+  --muted: var(--sc-muted);
+  --blue-50: var(--sc-blue-soft);
+  --blue-400: #00F5FF;
+  --blue-600: #00F5FF;
+  --blue-700: #00F5FF;
+  --blue-800: #2563eb;
+  --blue-900: #1d4ed8;
+
+  color: var(--sc-text);
+  font-family: var(--sc-font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 0 40px;
+}
+.system-console *, .system-console *::before, .system-console *::after { box-sizing: border-box; }
+
+/* ── Header ── */
+.system-console .sc-header {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 6px 2px 18px; border-bottom: 1px solid var(--sc-line); margin-bottom: 18px;
+}
+.system-console .sc-title { font-size: 26px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+.system-console .sc-sub { margin-top: 4px; font-size: 14px; color: var(--sc-muted); letter-spacing: .12em; text-transform: uppercase; }
+.system-console .sc-tag {
+  font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--sc-blue); border: 1px solid rgba(0,245,255,.45); background: var(--sc-blue-soft);
+  padding: 5px 10px; border-radius: 6px;
+}
+
+/* ── Status strip ── */
+.system-console .sc-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+.system-console .sc-tile {
+  background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 10px; padding: 12px 14px; min-width: 0;
+}
+.system-console .sc-tile-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-tile-val { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 16px; font-weight: 600; color: var(--sc-text-2); }
+.system-console .sc-tile-sub { margin-top: 3px; font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-dot { width: 8px; height: 8px; border-radius: 50%; background: #4b5563; flex-shrink: 0; }
+.system-console .sc-dot.ok { background: var(--sc-green); box-shadow: 0 0 0 3px var(--sc-green-soft); }
+.system-console .sc-dot.warn { background: var(--sc-amber); box-shadow: 0 0 0 3px var(--sc-amber-soft); }
+.system-console .sc-dot.err { background: var(--sc-red); box-shadow: 0 0 0 3px var(--sc-red-soft); }
+
+/* ── Section label ── */
+.system-console .sc-section {
+  display: flex; align-items: center; gap: 10px; margin: 26px 2px 10px;
+  font-size: 13px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--sc-muted);
+}
+.system-console .sc-section::after { content: ''; flex: 1; height: 1px; background: var(--sc-line); }
+.system-console .sc-section:first-of-type { margin-top: 0; }
+
+/* ── Panel ── */
+.system-console .sc-panel { background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 12px; overflow: hidden; }
+.system-console .sc-panel-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 13px 18px; border-bottom: 1px solid var(--sc-line); background: var(--sc-panel-2);
+}
+.system-console .sc-panel-title { font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-text); }
+.system-console .sc-panel-desc { font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-panel-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.system-console .sc-panel-body { padding: 16px 18px; }
+.system-console .sc-panel.hero { border-color: var(--sc-line-2); box-shadow: 0 0 0 1px rgba(0,245,255,.10), 0 10px 30px rgba(0,0,0,.35); }
+.system-console .sc-panel.hero .sc-panel-head { border-bottom-color: var(--sc-line-2); }
+
+.system-console .sc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.system-console .sc-grid-ops { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; }
+.system-console .sc-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* ── Buttons ── */
+.system-console .sc-btn,
+.system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--sc-line-2);
+  background: var(--sc-panel-2); color: var(--sc-text); font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s; text-decoration: none; white-space: nowrap;
+}
+.system-console .sc-btn:hover:not(:disabled),
+.system-console .btn-secondary:hover:not(:disabled) { background: #0f2228; border-color: #2a6b73; }
+.system-console .sc-btn-blue, .system-console .btn-primary {
+  background: var(--sc-blue-soft); border-color: rgba(0,245,255,.55); color: #00F5FF;
+}
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { background: rgba(0,245,255,.24); border-color: var(--sc-blue); color: #8afaff; }
+.system-console .sc-btn-green { background: var(--sc-green-soft); border-color: rgba(57,255,20,.5); color: #39FF14; }
+.system-console .sc-btn-green:hover:not(:disabled) { background: rgba(57,255,20,.24); border-color: var(--sc-green); }
+.system-console .sc-btn-amber { background: var(--sc-amber-soft); border-color: rgba(255,176,0,.55); color: #FFB000; }
+.system-console .sc-btn-amber:hover:not(:disabled) { background: rgba(255,176,0,.24); border-color: var(--sc-amber); }
+.system-console .sc-btn-red, .system-console .btn-danger { background: var(--sc-red-soft); border-color: rgba(255,49,49,.5); color: #ff6b6b; }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { background: rgba(255,49,49,.24); border-color: var(--sc-red); }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled {
+  opacity: .42; cursor: not-allowed;
+}
+.system-console .sc-btn-block { width: 100%; }
+
+/* ── Integriti Access Control (hero) ── */
+.system-console .sc-notice {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 14px;
+  background: var(--sc-amber-soft); border: 1px solid rgba(255,176,0,.35); border-radius: 8px;
+  color: #FFB000; font-size: 14px;
+}
+/* Same notice strip turns red when Integriti / the Door Daemon cannot be read (text set in checkDoors). */
+.system-console .sc-notice.sc-notice-alert {
+  background: rgba(255,59,85,.12); border-color: rgba(255,59,85,.8); color: #ff5c6f;
+  box-shadow: 0 0 14px rgba(255,59,85,.3); font-weight: 700;
+}
+.system-console .sc-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.system-console .sc-meta-item { background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; padding: 10px 12px; }
+.system-console .sc-meta-label { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-meta-val { margin-top: 4px; font-size: 15px; font-weight: 600; color: var(--sc-text); font-family: var(--sc-font-mono); }
+.system-console .sc-meta-val.dim { color: var(--sc-text-2); font-family: inherit; }
+/* Integration status: glow only the status text, based on the existing check result. */
+.system-console .sc-meta-val.int-status-ok {
+  color: #39FF72 !important;
+  text-shadow: 0 0 5px rgba(57,255,114,.65), 0 0 12px rgba(57,255,114,.35);
+}
+.system-console .sc-meta-val.int-status-error {
+  color: #FF3B55 !important;
+  text-shadow: 0 0 5px rgba(255,59,85,.7), 0 0 12px rgba(255,59,85,.4);
+}
+
+
+.system-console .sc-door {
+  display: grid; grid-template-columns: 1.3fr .9fr 1.1fr 1.5fr; gap: 14px; align-items: center;
+  padding: 14px 16px; margin-bottom: 8px;
+  background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-left: 3px solid #18343A; border-radius: 10px;
+}
+.system-console .sc-door:last-child { margin-bottom: 0; }
+.system-console .sc-door-id { font-family: var(--sc-font-mono); font-size: 13px; font-weight: 700; color: var(--sc-blue); letter-spacing: .08em; }
+.system-console .sc-door-name { font-size: 16px; font-weight: 600; color: var(--sc-text); margin-top: 2px; }
+.system-console .sc-door-note { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .sc-badge {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 99px;
+  font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(107,114,128,.16); border: 1px solid rgba(107,114,128,.4); color: #9ca3af;
+}
+.system-console .sc-door-actions { display: flex; gap: 8px; }
+.system-console .sc-door-actions .sc-btn { flex: 1; }
+.system-console .sc-auto { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.system-console .sc-auto-label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-input {
+  width: 74px; padding: 7px 8px; border-radius: 7px; border: 1px solid var(--sc-line-2);
+  background: #04080a; color: var(--sc-text); font-family: var(--sc-font-mono); font-size: 14px; text-align: center;
+}
+.system-console .sc-input:disabled { opacity: .5; cursor: not-allowed; }
+.system-console .sc-unit { font-size: 13px; color: var(--sc-muted); }
+.system-console .sc-hint { margin-top: 12px; font-size: 13px; color: var(--sc-muted); }
+
+/* ── Health / snapshot ── */
+.system-console .sc-health { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.system-console .sc-snapshot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.system-console .sc-stat { background: var(--sc-panel); border: 1px solid var(--sc-line); border-radius: 10px; padding: 14px 16px; }
+.system-console .sc-stat-num { font-size: 28px; font-weight: 700; color: var(--sc-text-2); font-family: var(--sc-font-mono); }
+.system-console .sc-stat-label { margin-top: 4px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc-muted); }
+.system-console .sc-empty { padding: 26px 12px; text-align: center; font-size: 14px; color: var(--sc-muted); }
+
+/* ── Alert (Recent errors) ── */
+.system-console .alert-card {
+  background: var(--sc-panel); border: 1px solid var(--sc-line); border-left: 3px solid var(--sc-green);
+  border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: border-color .15s;
+}
+.system-console .alert-card.has-errors { border-left-color: var(--sc-red); }
+.system-console .alert-card:hover { border-color: var(--sc-line-2); }
+.system-console .alert-row { display: flex; align-items: center; gap: 12px; }
+.system-console .alert-icon { font-size: 22px; }
+.system-console .alert-text { flex: 1; min-width: 0; }
+.system-console .alert-title { font-size: 14px; font-weight: 600; color: var(--sc-text); }
+.system-console .alert-stat { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .alert-arrow { color: var(--sc-muted); font-size: 14px; transition: transform .2s; }
+.system-console .alert-card.expanded .alert-arrow { transform: rotate(90deg); }
+.system-console .alert-detail { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--sc-line-2); }
+
+/* ── AC / CCTV ── */
+.system-console .sc-copy-row { display: flex; gap: 8px; margin: 10px 0 12px; }
+.system-console .sc-copy-btn {
+  flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--sc-line-2); background: var(--sc-panel-2);
+  color: var(--sc-text); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.system-console .sc-copy-btn:hover { background: #0f2228; border-color: #2a6b73; }
+.system-console .sc-host { font-family: var(--sc-font-mono); font-size: 14px; color: var(--sc-text-2); }
+
+/* ── Database / Storage (rendered by existing JS) ── */
+.system-console .db-table { width: 100%; border-collapse: collapse; }
+.system-console .db-table th {
+  font-size: 12px; font-weight: 700; color: var(--sc-muted); text-transform: uppercase; letter-spacing: .1em;
+  padding: 0 0 8px; text-align: left; border-bottom: 1px solid var(--sc-line);
+}
+.system-console .db-table td { padding: 9px 0; font-size: 14px; border-bottom: 1px solid var(--sc-line); vertical-align: middle; color: var(--sc-text-2); }
+.system-console .db-table tbody tr:last-child td { border-bottom: none; }
+.system-console .db-table .tbl-name { color: var(--sc-text); font-weight: 500; }
+.system-console .db-table .tbl-count { font-weight: 700; color: #00F5FF; text-align: right; font-family: var(--sc-font-mono); }
+.system-console .db-bar-wrap { height: 5px; background: var(--sc-line); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.system-console .db-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #007f86, #00F5FF); transition: width .6s ease; }
+
+/* ── Daily ops ── */
+.system-console .sc-meta-line { font-size: 13px; color: var(--sc-muted); padding: 7px 10px; background: var(--sc-amber-soft); border: 1px solid rgba(255,176,0,.3); border-radius: 6px; margin-bottom: 10px; }
+.system-console .daily-progress { padding: 8px 10px; background: var(--sc-blue-soft); border: 1px solid rgba(0,245,255,.35); border-radius: 6px; font-size: 13px; color: #00F5FF; font-weight: 600; margin-bottom: 10px; }
+.system-console .daily-progress-detail { font-size: 12px; color: #00F5FF; font-weight: 400; margin-top: 2px; }
+.system-console .daily-result { padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 10px; }
+.system-console .qr-range-mini { display: flex; gap: 4px; }
+.system-console .qr-range-btn-mini {
+  padding: 4px 9px; border: 1px solid var(--sc-line-2); background: var(--sc-panel-2); border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--sc-text-2);
+}
+.system-console .qr-range-btn-mini.active { background: var(--sc-blue-soft); color: #00F5FF; border-color: var(--sc-blue); }
+.system-console .qr-mini-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--sc-line); font-size: 14px; }
+.system-console .qr-mini-row:last-child { border-bottom: none; }
+.system-console .qr-mini-row.qr-mini-sub { padding-left: 20px; }
+.system-console .qr-mini-label { color: var(--sc-muted); }
+.system-console .qr-mini-num { font-size: 20px; font-weight: 700; color: #00F5FF; font-family: var(--sc-font-mono); }
+.system-console .qr-mini-num-sm { font-size: 14px; font-weight: 600; color: var(--sc-text); font-family: var(--sc-font-mono); }
+
+/* ── Maintenance ── */
+.system-console .maint-card { background: var(--sc-panel); border: 1px solid var(--sc-line); border-left: 3px solid var(--sc-amber); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; min-height: 220px; }
+.system-console .maint-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.system-console .maint-card-body { flex: 1; }
+.system-console .maint-title { font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sc-text); }
+.system-console .maint-btn { margin-top: 10px; width: 100%; }
+.system-console .maint-btn-row { display: flex; gap: 8px; }
+.system-console .maint-btn-row .maint-btn { flex: 1; }
+.system-console .files-found { font-size: 14px; color: var(--sc-muted); }
+.system-console .files-found span { font-weight: 700; color: var(--sc-text); }
+.system-console .status-box {
+  padding: 8px 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px;
+  font-size: 13px; color: var(--sc-muted); min-height: 34px; display: flex; align-items: center;
+}
+.system-console .status-box.ready { color: var(--sc-text-2); }
+.system-console .status-box.loading, .system-console .status-box.scanning { color: #00F5FF; }
+.system-console .status-box.success, .system-console .status-box.ok { color: #39FF14; }
+.system-console .status-box.warning { color: #FFB000; }
+.system-console .status-box.error { color: #ff6b6b; }
+.system-console .preview-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.system-console .preview-item { background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; padding: 10px 12px; color: var(--sc-text-2); font-size: 13px; }
+.system-console .preview-item-row { display: flex; gap: 6px; font-size: 13px; line-height: 1.6; }
+.system-console .preview-item-label { color: var(--sc-muted); min-width: 60px; font-weight: 500; }
+.system-console .preview-item-val { color: var(--sc-text); font-weight: 500; }
+.system-console .preview-files { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sc-line); }
+.system-console .preview-files-label { font-size: 12px; font-weight: 700; color: var(--sc-muted); margin-bottom: 4px; letter-spacing: .08em; text-transform: uppercase; }
+.system-console .preview-file { font-size: 13px; color: var(--sc-text-2); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.system-console .preview-file::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--sc-muted); flex-shrink: 0; }
+.system-console .preview-empty { font-size: 14px; color: var(--sc-muted); padding: 14px 0; text-align: center; }
+.system-console .badge-declined { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-red-soft); color: #ff6b6b; }
+.system-console .badge-expired { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-amber-soft); color: #FFB000; }
+.system-console .badge-removed { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--sc-line); color: var(--sc-text-2); }
+.system-console .orphan-file { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); border-radius: 8px; font-size: 13px; gap: 10px; }
+.system-console .orphan-path { color: var(--sc-text-2); font-family: var(--sc-font-mono); word-break: break-all; flex: 1; }
+.system-console .cleanup-footer { font-size: 12px; color: var(--sc-muted); margin-top: 8px; }
+
+
+/* ── Quick launch (above the fold) ── */
+.system-console .sc-quick { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 12px; margin-bottom: 18px; }
+.system-console .sc-q { background: var(--sc-panel); border: 1px solid var(--sc-line-2); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.system-console .sc-q-top { display: flex; align-items: center; gap: 12px; }
+.system-console .sc-q-ico { font-size: 28px; line-height: 1; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--sc-panel-2); border: 1px solid var(--sc-line); flex-shrink: 0; }
+.system-console .sc-q-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: .02em; }
+.system-console .sc-q-sub { font-size: 13px; color: var(--sc-muted); margin-top: 2px; }
+.system-console .sc-q-actions { display: flex; gap: 8px; margin-top: auto; }
+.system-console .sc-q-actions .sc-btn { flex: 1; }
+.system-console .sc-btn-lg { padding: 11px 14px; font-size: 14px; }
+.system-console .sc-q-cctv { border-color: rgba(0,245,255,.45); }
+.system-console .sc-q-hvac { border-color: rgba(57,255,20,.35); }
+@media (max-width: 1100px) { .system-console .sc-quick { grid-template-columns: 1fr 1fr; } .system-console .sc-q-hvac { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .system-console .sc-quick { grid-template-columns: 1fr; } }
+
+
+/* ── Terminal skin: fonts, glow (key elements only), cursor ── */
+.system-console .sc-title, .system-console .sc-panel-title, .system-console .sc-q-title, .system-console .sc-section,
+.system-console .maint-title, .system-console .sc-tag, .system-console .sc-door-id {
+  font-family: var(--sc-font-head);
+}
+.system-console .sc-title { color: #00F5FF; text-shadow: 0 0 10px rgba(0,245,255,.55); font-size: 28px; letter-spacing: .16em; }
+.system-console .sc-sub, .system-console .sc-tile-label, .system-console .sc-meta-label, .system-console .sc-stat-label,
+.system-console .sc-auto-label, .system-console .sc-q-sub, .system-console .sc-hint, .system-console .sc-meta-val,
+.system-console .sc-badge, .system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary,
+.system-console .sc-copy-btn, .system-console .qr-range-btn-mini, .system-console .sc-input, .system-console .sc-unit,
+.system-console .sc-stat-num, .system-console .sc-tile-val, .system-console .db-table .tbl-count, .system-console .qr-mini-num, .system-console .qr-mini-num-sm {
+  font-family: var(--sc-font-mono);
+}
+.system-console .sc-tag { color: var(--sc-magenta); border-color: rgba(255,43,214,.5); background: var(--sc-magenta-soft); text-shadow: 0 0 8px rgba(255,43,214,.5); }
+.system-console .sc-panel-title, .system-console .sc-q-title { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.4); }
+.system-console .sc-section { color: #00F5FF; opacity: .85; }
+.system-console .sc-section::before { content: '>'; color: #39FF14; font-family: var(--sc-font-mono); }
+.system-console .sc-panel-head { border-bottom: 1px solid rgba(0,245,255,.35); }
+.system-console .sc-panel.hero { box-shadow: none; border-color: var(--sc-line-2); }
+.system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary {
+  text-transform: uppercase; letter-spacing: .08em; font-size: 13px; border-radius: 6px;
+}
+.system-console .sc-btn-blue:not(:disabled), .system-console .btn-primary:not(:disabled) { box-shadow: 0 0 10px rgba(0,245,255,.22); }
+.system-console .sc-btn-green:not(:disabled) { box-shadow: 0 0 10px rgba(57,255,20,.18); }
+.system-console .sc-btn-amber:not(:disabled) { box-shadow: 0 0 10px rgba(255,176,0,.18); }
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { box-shadow: 0 0 16px rgba(0,245,255,.4); }
+.system-console .sc-panel, .system-console .sc-tile, .system-console .sc-stat, .system-console .sc-q, .system-console .maint-card, .system-console .sc-door { border-radius: 8px; }
+.system-console .sc-q-ico { font-family: var(--sc-font-mono); font-size: 28px; color: #00F5FF; text-shadow: 0 0 10px rgba(0,245,255,.6); }
+.system-console .sc-q-cctv .sc-q-ico { color: #39FF14; text-shadow: 0 0 10px rgba(57,255,20,.6); }
+.system-console .sc-q-hvac .sc-q-ico { color: #FF2BD6; text-shadow: 0 0 10px rgba(255,43,214,.6); }
+.system-console .sc-q-int { border-color: rgba(0,245,255,.45); }
+.system-console .sc-q-cctv { border-color: rgba(57,255,20,.4); }
+.system-console .sc-q-hvac { border-color: rgba(255,43,214,.4); }
+.system-console .sc-stat-num, .system-console .qr-mini-num, .system-console .db-table .tbl-count { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.4); }
+.system-console .sc-dot.ok { box-shadow: 0 0 8px #39FF14; }
+.system-console .sc-badge .sc-dot { background: var(--sc-amber); }
+.system-console .sc-badge { background: var(--sc-amber-soft); border-color: rgba(255,176,0,.4); color: #FFB000; }
+.system-console .sc-door-id { color: #00F5FF; text-shadow: 0 0 8px rgba(0,245,255,.45); }
+/* door status badge states (green = Locked, red = Unlocked, grey = Unknown, amber = Checking) */
+.system-console .sc-badge.locked { background: rgba(57,255,20,.14); border-color: rgba(57,255,20,.6); color: #7dff5c; text-shadow: 0 0 8px rgba(57,255,20,.5); }
+.system-console .sc-badge.locked .sc-dot { background: #39FF14; box-shadow: 0 0 8px #39FF14; }
+.system-console .sc-badge.unlocked { background: rgba(255,59,59,.16); border-color: rgba(255,59,59,.7); color: #ff7a7a; text-shadow: 0 0 8px rgba(255,59,59,.5); }
+.system-console .sc-badge.unlocked .sc-dot { background: #FF3B3B; box-shadow: 0 0 8px #FF3B3B; }
+.system-console .sc-badge.unknown { background: rgba(159,192,191,.12); border-color: rgba(159,192,191,.5); color: #B8D2D1; text-shadow: none; }
+.system-console .sc-badge.unknown .sc-dot { background: #9FC0BF; box-shadow: none; }
+.system-console .sc-notice { color: #FFB000; }
+.system-console .sc-meta-val { color: #D7F7F5; }
+.system-console .sc-meta-val:not(.dim) { color: #00F5FF; }
+.system-console .alert-card { border-left-color: #39FF14; }
+.system-console .alert-card.has-errors { border-left-color: #FF3131; }
+
+
+/* ── Large-type pass (readable for 50+ eyes) ── */
+.system-console { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.system-console .sc-title { font-size: 28px; }
+.system-console .sc-sub { font-size: 14px; }
+.system-console .sc-section { font-size: 17px; letter-spacing: .14em; margin: 30px 2px 12px; }
+.system-console .sc-panel-title { font-size: 17px; }
+.system-console .sc-panel-desc { font-size: 14px; }
+.system-console .sc-panel-head { padding: 15px 20px; }
+.system-console .sc-panel-body { padding: 18px 20px; }
+.system-console .sc-q { padding: 18px 20px; gap: 16px; }
+.system-console .sc-q-title { font-size: 20px; }
+.system-console .sc-q-sub { font-size: 14px; }
+.system-console .sc-q-ico { width: 52px; height: 52px; font-size: 28px; }
+.system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary { font-size: 14px; padding: 10px 16px; }
+.system-console .sc-btn-lg { font-size: 15px; padding: 14px 16px; }
+.system-console .sc-door { padding: 18px 20px; gap: 18px; }
+.system-console .sc-door-name { font-size: 19px; }
+.system-console .sc-door-id { font-size: 14px; }
+.system-console .sc-door-note { font-size: 14px; }
+.system-console .sc-door-actions .sc-btn { font-size: 15px; padding: 14px 16px; }
+.system-console .sc-badge { font-size: 14px; padding: 7px 14px; }
+.system-console .sc-input { width: 92px; font-size: 16px; padding: 10px 8px; }
+.system-console .sc-meta-val { font-size: 17px; }
+.system-console .sc-meta-label, .system-console .sc-tile-label, .system-console .sc-stat-label, .system-console .sc-auto-label { font-size: 13px; }
+.system-console .sc-tile-val { font-size: 18px; }
+.system-console .sc-tile-sub { font-size: 14px; }
+.system-console .sc-stat-num { font-size: 28px; }
+.system-console .sc-notice { font-size: 14.5px; }
+.system-console .sc-hint { font-size: 14px; }
+.system-console .alert-title { font-size: 16px; }
+.system-console .alert-stat { font-size: 14px; }
+.system-console .qr-mini-num { font-size: 22px; }
+.system-console .qr-mini-num-sm { font-size: 16px; }
+.system-console .qr-mini-row { font-size: 15px; padding: 11px 4px; }
+.system-console .db-table td { font-size: 15px; padding: 11px 0; }
+.system-console .db-table th { font-size: 13px; }
+.system-console .status-box { font-size: 14px; min-height: 40px; }
+.system-console .maint-title { font-size: 16px; }
+.system-console .files-found { font-size: 14px; }
+.system-console .maint-card { padding: 18px 20px; }
+.system-console .sc-strip { margin-top: 20px; }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled { opacity: .55; }
+
+/* ── Vivid buttons (brighter fill + full-colour border, readable even when disabled) ── */
+.system-console .sc-btn, .system-console .btn-secondary { background: #10262c; border: 1px solid #3a8f99; color: #D7F7F5; font-weight: 700; }
+.system-console .sc-btn:hover:not(:disabled), .system-console .btn-secondary:hover:not(:disabled) { background: #15343c; border-color: #00F5FF; color: #fff; }
+.system-console .sc-btn-blue, .system-console .btn-primary { background: rgba(0,245,255,.16); border-color: #00F5FF; color: #00F5FF; font-weight: 700; }
+.system-console .sc-btn-blue:hover:not(:disabled), .system-console .btn-primary:hover:not(:disabled) { background: rgba(0,245,255,.28); color: #fff; }
+.system-console .sc-btn-green { background: rgba(57,255,20,.2); border-color: #39FF14; color: #39FF14; font-weight: 700; }
+.system-console .sc-btn-green:hover:not(:disabled) { background: rgba(57,255,20,.28); color: #fff; }
+.system-console .sc-btn-amber { background: rgba(255,176,0,.22); border-color: #FFB000; color: #FFB000; font-weight: 700; }
+.system-console .sc-btn-amber:hover:not(:disabled) { background: rgba(255,176,0,.3); color: #fff; }
+.system-console .sc-btn-red, .system-console .btn-danger { background: rgba(255,49,49,.15); border-color: #FF3131; color: #ff6b6b; font-weight: 700; }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { background: rgba(255,49,49,.28); color: #fff; }
+.system-console .sc-btn:disabled, .system-console .btn-primary:disabled, .system-console .btn-danger:disabled, .system-console .btn-secondary:disabled {
+  opacity: 1 !important; cursor: not-allowed; box-shadow: none !important; text-shadow: none;
+  background: #0C171A; border-color: rgba(138,166,166,.38); color: rgba(169,196,195,.62);
+}
+.system-console .sc-btn-amber:disabled { border-color: rgba(255,176,0,.40); color: rgba(255,176,0,.60); }
+.system-console .sc-btn-green:disabled { border-color: rgba(57,255,20,.40); color: rgba(57,255,20,.60); }
+.system-console .sc-btn-blue:disabled, .system-console .btn-primary:disabled { border-color: rgba(0,245,255,.40); color: rgba(0,245,255,.60); }
+.system-console .sc-btn-red:disabled, .system-console .btn-danger:disabled { border-color: rgba(255,49,49,.40); color: rgba(255,107,107,.62); }
+.system-console .sc-copy-btn { background: #10262c; border: 1px solid #3a8f99; color: #D7F7F5; font-weight: 700; }
+.system-console .sc-copy-btn:hover { background: #15343c; border-color: #00F5FF; }
+.system-console .qr-range-btn-mini { background: #10262c; border-color: #3a8f99; color: #D7F7F5; }
+.system-console .qr-range-btn-mini.active { background: rgba(0,245,255,.2); border-color: #00F5FF; color: #00F5FF; }
+
+/* ── Neon boost (green / red / cyan glow, brighter text) ── */
+.system-console .sc-btn-green:not(:disabled) { background: rgba(57,255,20,.24); border-color: #39FF14; color: #7dff5c; text-shadow: 0 0 8px rgba(57,255,20,.7); box-shadow: 0 0 14px rgba(57,255,20,.45), inset 0 0 10px rgba(57,255,20,.12); }
+.system-console .sc-btn-red:not(:disabled), .system-console .btn-danger:not(:disabled) { background: rgba(255,49,49,.24); border-color: #FF3B3B; color: #ff7a7a; text-shadow: 0 0 8px rgba(255,59,59,.7); box-shadow: 0 0 14px rgba(255,59,59,.45), inset 0 0 10px rgba(255,59,59,.12); }
+.system-console .sc-btn-blue:not(:disabled), .system-console .btn-primary:not(:disabled) { background: rgba(0,245,255,.2); color: #5ffaff; text-shadow: 0 0 8px rgba(0,245,255,.65); box-shadow: 0 0 14px rgba(0,245,255,.4), inset 0 0 10px rgba(0,245,255,.1); }
+.system-console .sc-btn-green:hover:not(:disabled) { box-shadow: 0 0 20px rgba(57,255,20,.7), inset 0 0 12px rgba(57,255,20,.2); }
+.system-console .sc-btn-red:hover:not(:disabled), .system-console .btn-danger:hover:not(:disabled) { box-shadow: 0 0 20px rgba(255,59,59,.7), inset 0 0 12px rgba(255,59,59,.2); }
+.system-console .sc-btn-green:disabled { background: rgba(57,255,20,.09); border-color: rgba(57,255,20,.65); color: rgba(120,255,92,.92); }
+.system-console .sc-btn-red:disabled, .system-console .btn-danger:disabled { background: rgba(255,59,59,.09); border-color: rgba(255,59,59,.65); color: rgba(255,122,122,.92); }
+.system-console .sc-btn-amber:disabled { background: rgba(255,176,0,.08); border-color: rgba(255,176,0,.6); color: rgba(255,200,80,.9); }
+.system-console .sc-btn-blue:disabled, .system-console .btn-primary:disabled { background: rgba(0,245,255,.08); border-color: rgba(0,245,255,.6); color: rgba(95,250,255,.9); }
+
+/* ── Live status (Step 2A) ── */
+.system-console .sc-tile-val.ok { color: #39FF14; text-shadow: 0 0 8px rgba(57,255,20,.45); }
+.system-console .sc-tile-val.warn { color: #FFB000; }
+.system-console .sc-tile-val.err { color: #ff6b6b; }
+.system-console .sc-stat-num.na { color: var(--sc-muted); text-shadow: none; }
+.system-console .sc-act-row { display: grid; grid-template-columns: 150px minmax(0,1.1fr) minmax(0,1.6fr); gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--sc-line); font-size: 14.5px; align-items: baseline; }
+.system-console .sc-act-row:last-child { border-bottom: none; }
+.system-console .sc-act-time { font-family: var(--sc-font-mono); color: #00F5FF; font-size: 14px; }
+.system-console .sc-act-user { color: var(--sc-text-2); overflow-wrap: anywhere; }
+.system-console .sc-act-action { font-family: var(--sc-font-mono); color: var(--sc-text); overflow-wrap: anywhere; }
+@media (max-width: 700px) { .system-console .sc-act-row { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 1100px) { .system-console .sc-door { grid-template-columns: 1fr 1fr; } }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .system-console .sc-door { grid-template-columns: 1fr 1fr; }
+  .system-console .sc-auto { justify-content: flex-start; }
+  .system-console .sc-strip { grid-template-columns: repeat(3, 1fr); }
+  .system-console .sc-snapshot { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .system-console .sc-grid-2, .system-console .sc-grid-ops, .system-console .sc-grid-3 { grid-template-columns: 1fr; }
+  .system-console .sc-health { grid-template-columns: 1fr 1fr; }
+}
+.system-console { max-width: 100%; overflow-x: hidden; }
+.system-console img, .system-console table { max-width: 100%; }
+.system-console .sc-tile-val, .system-console .sc-tile-sub, .system-console .sc-stat-label { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .system-console .sc-btn, .system-console .btn-primary, .system-console .btn-danger, .system-console .btn-secondary,
+  .system-console .sc-copy-btn, .system-console .sc-input, .system-console .qr-range-btn-mini { min-height: 44px; min-width: 44px; }
+  .system-console .sc-door-actions, .system-console .sc-q-actions, .system-console .sc-copy-row { gap: 10px; flex-wrap: wrap; }
+  .system-console .sc-snapshot { grid-template-columns: 1fr 1fr; }
+  .system-console .sc-title { font-size: 20px; }
+  .system-console .sc-strip { grid-template-columns: 1fr 1fr; }
+  .system-console .sc-meta { grid-template-columns: 1fr; }
+  .system-console .sc-door { grid-template-columns: 1fr; }
+  .system-console .sc-health { grid-template-columns: 1fr; }
+}
+
+/* Open-door alarm: keep the card styling fixed and animate only a lightweight overlay opacity. */
+@keyframes scDoorGlow {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+.system-console .sc-door.is-open {
+  position: relative;
+  background: rgba(255,23,68,.20);
+  border-color: #FF1744;
+}
+.system-console .sc-door.is-open::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(255,23,68,.14);
+  box-shadow: 0 0 24px 4px rgba(255,23,68,.8), inset 0 0 30px rgba(255,23,68,.38);
+  opacity: 0;
+  will-change: opacity;
+  animation: scDoorGlow 1.4s ease-in-out infinite;
+}
+.system-console .sc-door.is-open .sc-door-note { color: #FFD6DD; }
+/* Normal door state: subtle green glow across the entire card. */
+.system-console .sc-door.is-normal {
+  position: relative;
+  border-color: rgba(57,255,20,.72);
+  box-shadow: 0 0 16px 2px rgba(57,255,20,.16), inset 0 0 18px rgba(57,255,20,.045);
+}
+.system-console .sc-door.is-normal::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid rgba(57,255,20,.24);
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 22px 2px rgba(57,255,20,.22), inset 0 0 24px rgba(57,255,20,.07);
+}
+@media (prefers-reduced-motion: reduce) {
+  .system-console .sc-door.is-open::after { animation: none; opacity: .7; }
+}
+
+/* Open-hours Lock warning dialog (replaces the small browser confirm) */
+.dw-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.78); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dw-box { width: 100%; max-width: 560px; box-sizing: border-box; background: #1a0508; border: 4px solid #FF1744; border-radius: 14px; padding: 26px 24px 22px; text-align: center; box-shadow: 0 0 40px 6px rgba(255,23,68,.65); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+.dw-icon { font-size: 52px; line-height: 1; margin-bottom: 6px; }
+.dw-title { font-size: 30px; font-weight: 900; letter-spacing: .04em; color: #FF1744; text-shadow: 0 0 14px rgba(255,23,68,.8); text-transform: uppercase; }
+.dw-door { font-size: 24px; font-weight: 800; color: #ffffff; margin: 14px 0 6px; }
+.dw-text { font-size: 20px; font-weight: 700; color: #ffd6dd; line-height: 1.4; margin: 6px 0 0; }
+.dw-text strong { color: #FF1744; font-weight: 900; }
+.dw-actions { display: flex; gap: 12px; margin-top: 24px; }
+.dw-btn { flex: 1; min-height: 56px; font-size: 20px; font-weight: 800; border-radius: 10px; cursor: pointer; border: 3px solid transparent; padding: 10px 12px; }
+.dw-cancel { background: #0d6efd; color: #fff; border-color: #6ea8fe; }
+.dw-lock { background: transparent; color: #FF1744; border-color: #FF1744; }
+.dw-btn:focus-visible { outline: 4px solid #fff; outline-offset: 2px; }
+@media (max-width: 480px) { .dw-title { font-size: 24px; } .dw-door { font-size: 20px; } .dw-text { font-size: 17px; } .dw-actions { flex-direction: column-reverse; } }
+
+/* =========================================================
+   INTEGRITI DOOR CARDS — DESIGN ONLY
+   Approval structure preserved. Only D1/D2/D3/D5 presentation
+   and the Open Hours display inside the existing panel are changed.
+   ========================================================= */
+.system-console {
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  container-type: inline-size;
+  container-name: system-console;
+}
+
+/* Four cards at full content width; container queries use the actual
+   portal content width, not the browser viewport width. */
+.system-console .ac-doors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.system-console .ac-door-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  min-height: 272px;
+  padding: 14px 18px 16px;
+  background: linear-gradient(180deg, rgba(2,14,20,.94), rgba(1,9,14,.94));
+  border: 1px solid #007b9e;
+  border-radius: 11px;
+  box-sizing: border-box;
+}
+
+.system-console .ac-door-card > .sc-door-head,
+.system-console .ac-door-card > .sc-door-main,
+.system-console .ac-door-card > .sc-door-actions,
+.system-console .ac-door-card > .sc-auto {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.system-console .ac-door-card .sc-door-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.system-console .ac-door-card .sc-door-id {
+  font-family: var(--sc-font-head);
+  font-size: 28px;
+  color: #d7f7ff;
+  text-shadow: 0 0 8px rgba(0,245,255,.5);
+  flex: 0 0 auto;
+}
+
+.system-console .ac-door-card .sc-badge {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  font-family: var(--sc-font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+.system-console .ac-door-card .sc-badge .sc-dot {
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+}
+
+/* Keep door-card status colors consistent with the global status badges:
+   green = Locked, red = Unlocked, grey = Unknown. */
+.system-console .ac-door-card .sc-badge.locked {
+  color: #7dff5c;
+  padding: 5px 10px;
+  border: 1px solid rgba(57,255,20,.75);
+  border-radius: 7px;
+  background: rgba(57,255,20,.12);
+  box-shadow: 0 0 14px rgba(57,255,20,.38), inset 0 0 8px rgba(57,255,20,.10);
+  text-shadow: 0 0 8px rgba(57,255,20,.65);
+}
+.system-console .ac-door-card .sc-badge.locked .sc-dot {
+  background: #39FF14;
+  box-shadow: 0 0 9px #39FF14;
+}
+.system-console .ac-door-card .sc-badge.unlocked {
+  color: #ff7a7a;
+  text-shadow: 0 0 8px rgba(255,59,59,.5);
+}
+.system-console .ac-door-card .sc-badge.unlocked .sc-dot {
+  background: #FF3B3B;
+  box-shadow: 0 0 9px #FF3B3B;
+}
+.system-console .ac-door-card .sc-badge.unknown {
+  color: #b8d2d1;
+}
+
+.system-console .ac-door-card > .sc-door-main {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  min-height: 108px;
+  flex: 1 1 auto;
+}
+
+.system-console .ac-door-icon {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d8fbff;
+  filter: drop-shadow(0 0 5px rgba(0,220,255,.7)) drop-shadow(0 0 11px rgba(0,160,220,.28));
+}
+.system-console .ac-door-icon svg {
+  width: 96px;
+  height: 96px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.system-console .ac-door-card .sc-door-main > div:last-child {
+  min-width: 0;
+}
+.system-console .ac-door-card .sc-door-name {
+  font-size: 18px;
+  line-height: 1.25;
+  color: #c7f3fb;
+  font-weight: 600;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.system-console .ac-door-card .sc-door-note {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #7faeb6;
+  min-height: 16px;
+}
+
+.system-console .ac-door-card > .sc-door-actions {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+.system-console .ac-door-card .sc-door-actions .sc-btn {
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 8px;
+  border-radius: 7px;
+  font-family: var(--sc-font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.system-console .ac-door-card .sc-btn-green:not(:disabled) {
+  background: rgba(0,145,220,.12);
+  border-color: #00a8ed;
+  color: #8eeaff;
+  box-shadow: 0 0 8px rgba(0,168,237,.16);
+  text-shadow: 0 0 7px rgba(0,220,255,.25);
+}
+.system-console .ac-door-card .sc-btn-red:not(:disabled) {
+  background: rgba(255,36,58,.11);
+  border-color: #ff3048;
+  color: #ff9ca6;
+  box-shadow: 0 0 8px rgba(255,48,72,.16);
+  text-shadow: 0 0 7px rgba(255,48,72,.25);
+}
+.system-console .ac-door-card .sc-btn-green:disabled,
+.system-console .ac-door-card .sc-btn-red:disabled {
+  opacity: 1 !important;
+  background: rgba(4,17,22,.85);
+  color: #50747c;
+  border-color: #254b55;
+  box-shadow: none;
+}
+
+.system-console .ac-door-card > .sc-auto {
+  display: grid;
+  grid-template-columns: auto 74px auto minmax(70px,94px);
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #154252;
+}
+.system-console .ac-door-card > .sc-auto > * { min-width: 0; }
+.system-console .ac-door-card .sc-auto-label {
+  font-family: var(--sc-font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: #c6eaf0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.system-console .ac-door-card .sc-input {
+  width: 74px;
+  height: 44px;
+  padding: 5px;
+  border-radius: 7px;
+  border: 1px solid #007b9e;
+  background: #020b10;
+  color: #bfefff;
+  font-family: var(--sc-font-mono);
+  font-size: 18px;
+}
+.system-console .ac-door-card .sc-unit {
+  font-size: 14px;
+  color: #b8dce2;
+}
+.system-console .ac-door-card .sc-auto .sc-btn {
+  width: 100%;
+  height: 44px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-family: var(--sc-font-body);
+  font-size: 15px;
+  text-transform: none;
+  letter-spacing: 0;
+  background: rgba(0,184,238,.09);
+  border-color: #00b9ef;
+  color: #63e4ff;
+}
+.system-console .ac-door-card .sc-auto .sc-btn:disabled {
+  opacity: 1 !important;
+  color: #50747c;
+  border-color: #254b55;
+  background: #061116;
+}
+
+.system-console .ac-hint {
+  margin: 16px 0 6px;
+  padding: 0 2px;
+  font-size: 16px;
+  color: #b9e9ef;
+}
+
+/* Open Hours display remains inside the approved Integriti panel. */
+.system-console .ac-open-panel {
+  margin-top: 20px;
+  border: 2px solid #00d8f5;
+  border-radius: 12px;
+  background: rgba(1,12,18,.82);
+  box-shadow: 0 0 16px rgba(0,220,255,.08);
+  padding: 13px 18px 18px;
+  overflow: hidden;
+}
+.system-console .ac-open-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--sc-font-head);
+  font-size: 21px;
+  font-weight: 700;
+  color: #00dfff;
+  text-shadow: 0 0 7px rgba(0,245,255,.45);
+}
+.system-console .ac-open-title .chevron {
+  font-family: Arial, sans-serif;
+  font-size: 27px;
+  line-height: 1;
+}
+.system-console .ac-open-desc {
+  margin-top: 7px;
+  font-size: 15px;
+  color: #b6e8ef;
+}
+.system-console .ac-hours-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.system-console .ac-hours-table {
+  width: 100%;
+  min-width: 980px;
+  margin-top: 15px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid #006987;
+}
+.system-console .ac-hours-table th,
+.system-console .ac-hours-table td {
+  border: 1px solid #075675;
+  height: 54px;
+  padding: 6px 7px;
+  text-align: center;
+  font-size: 17px;
+  color: #c7eff5;
+  background: rgba(0,10,16,.62);
+  white-space: nowrap;
+}
+.system-console .ac-hours-table th {
+  height: 56px;
+  font-family: var(--sc-font-body);
+  font-weight: 600;
+  color: #00ddff;
+  font-size: 17px;
+}
+.system-console .ac-hours-table th:first-child,
+.system-console .ac-hours-table td:first-child {
+  width: 16%;
+  text-align: left;
+  padding-left: 14px;
+}
+.system-console .ac-hours-table th:last-child,
+.system-console .ac-hours-table td:last-child {
+  width: 13%;
+}
+.system-console .ac-hours-table .door-code {
+  font-family: var(--sc-font-head);
+  color: #d8fbff;
+  font-size: 17px;
+  margin-right: 12px;
+}
+.system-console .ac-hours-table .door-label {
+  color: #aee4ec;
+  font-size: 16px;
+}
+.system-console .ac-hours-table .today {
+  background: rgba(0,122,166,.30);
+}
+.system-console .ac-hours-table .today-head {
+  background: rgba(0,122,166,.42);
+  font-weight: 700;
+}
+.system-console .ac-hours-table .today-tag {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--sc-font-body);
+  font-size: 11px;
+  color: #00dcff;
+  line-height: 1;
+}
+.system-console .ac-hours-table .ac-current {
+  white-space: nowrap;
+  font-size: 16px;
+}
+.system-console .ac-status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.system-console .ac-status-dot.open { background:#39ff8a; box-shadow:0 0 9px #39ff8a; }
+.system-console .ac-status-dot.closed { background:#ff4e58; box-shadow:0 0 9px #ff4e58; }
+.system-console .ac-current.open { color:#39ff8a; font-weight:700; }
+.system-console .ac-current.closed { color:#ff4e58; font-weight:700; }
+.system-console .ac-always-lock {
+  text-align: center !important;
+  color: #ff4e58 !important;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.system-console .ac-footnote {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:18px 6px 0;
+  color:#b6e8ef;
+  font-size:14px;
+}
+.system-console .ac-footnote .ac-info {
+  width:28px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #8deefa;
+  border-radius:50%;
+  font-weight:700;
+  color:#bdf7ff;
+  flex:0 0 auto;
+}
+
+/* Actual portal content width controls the card count. */
+@container system-console (max-width: 1199px) {
+  .system-console .ac-doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .system-console .ac-door-card {
+    min-height: 300px;
+  }
+}
+@container system-console (max-width: 600px) {
+  .system-console .ac-doors {
+    grid-template-columns: 1fr;
+  }
+  .system-console .ac-door-card {
+    min-height: 280px;
+  }
+  .system-console .ac-open-panel {
+    overflow: hidden;
+  }
+  .system-console .ac-hours-table {
+    min-width: 980px;
+  }
+}
+
+/* Mobile auto-lock row: keep the label on one line even at the narrow portal card width. */
+@container system-console (max-width: 600px) {
+  .system-console .ac-door-card > .sc-auto {
+    grid-template-columns: auto 64px auto minmax(62px, 1fr);
+    gap: 5px;
+  }
+  .system-console .ac-door-card .sc-auto-label {
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  .system-console .ac-door-card .sc-input {
+    width: 64px;
+  }
+  .system-console .ac-door-card .sc-auto .sc-btn {
+    min-width: 62px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+
+
+/* CCTV display cards (live view). */
+.system-console .bms-cctv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0 14px;
+}
+.system-console .bms-cctv-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #00b9d8;
+  border-radius: 9px;
+  background: #020b10;
+  box-shadow: 0 0 9px rgba(0,220,255,.12);
+}
+.system-console .bms-cctv-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 10px;
+  color: #d7f7f5;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid #154252;
+}
+.system-console .bms-cctv-lock {
+  color: #00f5ff;
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+.system-console .bms-cctv-state {
+  margin-left: auto;
+  color: #9fc0bf;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.system-console .bms-cctv-state::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #ffb000;
+  vertical-align: middle;
+}
+.system-console .bms-cctv-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  min-height: 100px;
+  padding: 12px;
+  color: #7faeb6;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(0,245,255,.07), transparent 70%), #010609;
+  font-family: var(--sc-font-mono);
+  font-size: 12px;
+}
+.system-console .bms-cctv-screen-inner { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.system-console .bms-cctv-camera-icon { font-size: 25px; color: #00cde8; line-height: 1; }
+.system-console .bms-cctv-caption { padding: 5px 9px; color: #b8d2d1; font-size: 11px; border-top: 1px solid #102c34; }
+
+/* CCTV live: video fills the screen box; overlay text hidden once LIVE. */
+.system-console .bms-cctv-screen { position: relative; padding: 0; overflow: hidden; }
+.system-console .bms-cctv-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #010609; display: none; cursor: zoom-in; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-video { display: block; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-screen-inner { display: none; }
+.system-console .bms-cctv-screen-inner { padding: 12px; }
+.system-console .bms-cctv-card[data-state="live"] .bms-cctv-state::before { background: #19e08a; box-shadow: 0 0 6px #19e08a; }
+.system-console .bms-cctv-card[data-state="connecting"] .bms-cctv-state::before { background: #ffb000; }
+.system-console .bms-cctv-card[data-state="offline"] .bms-cctv-state::before { background: #ff4d4d; }
+.system-console .bms-cctv-card[data-state="offline"] { border-color: #6b2a2a; box-shadow: none; }
+@media (max-width: 1100px) { .system-console .bms-cctv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .system-console .bms-cctv-grid { grid-template-columns: 1fr; } }
+
+
+
+
+/* ADMIN PAGE DEFAULT — sidebar / content divider */
+.main {
+  border-left: 2px solid #00F5FF;
+  box-sizing: border-box;
+}
+/* Layout B: door card + its CCTV card side by side, same box size. */
+.system-console .ac-doors > .bms-cctv-card { display: flex; flex-direction: column; min-height: 272px; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-head { min-height: 30px; padding: 5px 10px; font-size: 13px; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-screen { flex: 1 1 auto; aspect-ratio: auto; min-height: 0; }
+.system-console .ac-doors > .bms-cctv-card .bms-cctv-caption { padding: 4px 9px; }
+@container system-console (max-width: 1199px) { .system-console .ac-doors > .bms-cctv-card { min-height: 300px; } }
+@container system-console (max-width: 600px) { .system-console .ac-doors > .bms-cctv-card { min-height: 280px; } }
+
+/* CH27: the right-hand shutter is the focus, so crop the left side instead. */
+.system-console .bms-cctv-card[data-cctv-src="ch27"] .bms-cctv-video { object-position: right center; }
+
+/* Full-screen only: show the complete original CCTV frame without cropping. */
+.system-console .bms-cctv-card .bms-cctv-video:fullscreen,
+.system-console .bms-cctv-card .bms-cctv-video:-webkit-full-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: fill !important;
+  object-position: center center !important;
+  background: #000 !important;
+}
+
+/* Camera selector inside a CCTV card (D1: CH5/CH1, D2: CH2/CH4). */
+.system-console .bms-cctv-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.system-console .bms-cctv-tabs { display: inline-flex; gap: 4px; margin-left: auto; flex: 0 0 auto; }
+.system-console .bms-cctv-tabs + .bms-cctv-state { margin-left: 6px; }
+.system-console .bms-cctv-tab { padding: 2px 8px; font-size: 11px; font-weight: 700; line-height: 1.5; color: #9fc0bf; background: #04141b; border: 1px solid #154252; border-radius: 5px; cursor: pointer; }
+.system-console .bms-cctv-tab:hover { color: #d7f7f5; border-color: #00b9d8; }
+.system-console .bms-cctv-tab.is-active { color: #021016; background: #00dcf0; border-color: #00dcf0; }
+
+
+
+
+/* ADMIN PAGE FRAME — background image supplied by Redmyre House.
+   Scoped to admin-only pages; body class is visual only. */
+html:has(body.admin-neon-page) { background:#04152f !important; }
+body.admin-neon-page {
+  background:#04152f !important;
+  color:#a9e8ff !important;
+}
+body.admin-neon-page .main {
+  background:transparent !important;
+  border-left:1px solid rgba(0,183,255,.78) !important;
+  box-shadow:-3px 0 16px rgba(0,145,255,.17) !important;
+}
+body.admin-neon-page .content {
+  color:#9ee4ff !important;
+  background:
+    radial-gradient(ellipse 72% 36% at 50% 0%,rgba(0,155,255,.20),transparent 72%),
+    linear-gradient(120deg,rgba(1,17,45,.78),rgba(2,24,58,.72)),
+    url('/img/bms-background.png') center center / cover fixed no-repeat !important;
+}
+body.admin-neon-page .page-header-title,
+body.admin-neon-page .section-title,
+body.admin-neon-page .page-title {
+  color:#45caff !important;
+  text-shadow:0 0 5px rgba(0,183,255,.70),0 0 15px rgba(0,119,255,.40) !important;
+}
+body.admin-neon-page .page-header-sub {
+  color:#a7e9ff !important;
+  text-shadow:0 0 5px rgba(0,153,255,.34) !important;
+}
+body.admin-neon-page input,
+body.admin-neon-page select,
+body.admin-neon-page textarea {
+  color:#d9f7ff;
+  caret-color:#00c8ff;
+}
+body.admin-neon-page input::placeholder,
+body.admin-neon-page textarea::placeholder {
+  color:#77bada !important;
+  opacity:1 !important;
+}
+body.admin-neon-page input:focus,
+body.admin-neon-page select:focus,
+body.admin-neon-page textarea:focus {
+  border-color:#20baff !important;
+  box-shadow:0 0 0 2px rgba(0,183,255,.18),0 0 13px rgba(0,145,255,.30) !important;
+  outline:none !important;
+}
+body.admin-neon-page .btn-primary,
+body.admin-neon-page button.primary,
+body.admin-neon-page .primary-btn {
+  box-shadow:0 0 9px rgba(0,153,255,.35),0 0 20px rgba(0,102,255,.18) !important;
+}
+@media(prefers-reduced-transparency:reduce) {
+  body.admin-neon-page .content {
+    background-color:#061a3a !important;
+    background-image:none !important;
+  }
+}
+
+
+
+body.admin-neon-page .content:has(> .system-console) {
+  background:transparent !important;
+  padding:18px 22px !important;
+}
+body.admin-neon-page .system-console {
+  --sc-bg:rgba(2,18,47,.76);
+  --sc-panel:rgba(2,22,55,.74);
+  --sc-panel-2:rgba(4,35,78,.76);
+  --sc-line:rgba(25,148,255,.50);
+  --sc-line-2:rgba(0,184,255,.78);
+  --sc-text:#c8f2ff;
+  --sc-text-2:#99e2ff;
+  --sc-muted:#80c9ed;
+  --sc-blue:#33c6ff;
+  --sc-blue-soft:rgba(0,153,255,.18);
+  color:#b4ecff !important;
+  background:transparent !important;
+}
+body.admin-neon-page .system-console .sc-title,
+body.admin-neon-page .system-console .sc-panel-title,
+body.admin-neon-page .system-console .sc-section,
+body.admin-neon-page .system-console .sc-q-title {
+  color:#37caff !important;
+  text-shadow:0 0 6px rgba(0,183,255,.64),0 0 15px rgba(0,119,255,.32) !important;
+}
+body.admin-neon-page .system-console .sc-sub,
+body.admin-neon-page .system-console .sc-panel-desc,
+body.admin-neon-page .system-console .sc-tile-label,
+body.admin-neon-page .system-console .sc-tile-sub,
+body.admin-neon-page .system-console .sc-meta-label,
+body.admin-neon-page .system-console .sc-hint {
+  color:#8edbff !important;
+  text-shadow:0 0 4px rgba(0,153,255,.26) !important;
+}
+body.admin-neon-page .system-console .sc-panel,
+body.admin-neon-page .system-console .sc-tile,
+body.admin-neon-page .system-console .sc-door,
+body.admin-neon-page .system-console .sc-stat,
+body.admin-neon-page .system-console .sc-snapshot,
+body.admin-neon-page .system-console .sc-health,
+body.admin-neon-page .system-console .sc-q,
+body.admin-neon-page .system-console .status-box,
+body.admin-neon-page .system-console .alert-stat {
+  background:rgba(2,22,55,.70) !important;
+  border-color:rgba(22,151,255,.60) !important;
+  box-shadow:0 0 8px rgba(0,145,255,.17),inset 0 0 14px rgba(0,120,255,.08) !important;
+  backdrop-filter:blur(17px) saturate(150%) !important;
+  -webkit-backdrop-filter:blur(17px) saturate(150%) !important;
+}
+body.admin-neon-page .system-console .sc-panel-head {
+  background:rgba(4,36,80,.72) !important;
+  border-bottom-color:rgba(0,183,255,.55) !important;
+}
+body.admin-neon-page .system-console .sc-meta-val,
+body.admin-neon-page .system-console .sc-tile-val,
+body.admin-neon-page .system-console .sc-door-name,
+body.admin-neon-page .system-console .sc-stat-num,
+body.admin-neon-page .system-console .sc-act-user,
+body.admin-neon-page .system-console .db-table td {
+  color:#bceeff !important;
+  text-shadow:0 0 4px rgba(0,153,255,.24) !important;
+}
+body.admin-neon-page .system-console .sc-btn-blue,
+body.admin-neon-page .system-console .btn-primary {
+  color:#e9fbff !important;
+  background:linear-gradient(135deg,rgba(0,164,255,.38),rgba(0,77,190,.48)) !important;
+  border-color:#39caff !important;
+  box-shadow:0 0 9px rgba(0,174,255,.40),0 0 18px rgba(0,106,255,.18) !important;
+  text-shadow:0 0 5px rgba(0,183,255,.54) !important;
+}
+body.admin-neon-page .system-console .sc-btn:hover:not(:disabled),
+body.admin-neon-page .system-console .btn-secondary:hover:not(:disabled) {
+  color:#fff !important;
+  border-color:#7fe6ff !important;
+  box-shadow:0 0 12px rgba(0,183,255,.38) !important;
+}
+body.admin-neon-page .system-console .sc-input {
+  color:#d8f6ff !important;
+  background:rgba(1,16,42,.82) !important;
+  border-color:rgba(0,166,255,.70) !important;
+}
+body.admin-neon-page .system-console .db-table,
+body.admin-neon-page .system-console .db-table th {
+  background:rgba(1,20,52,.72) !important;
+  color:#72d8ff !important;
+  border-color:rgba(0,159,255,.48) !important;
+}
+body.admin-neon-page .system-console .sc-notice {
+  backdrop-filter:blur(12px) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+}
+body.admin-neon-page .system-console .sc-panel.hero {
+  border-color:rgba(0,197,255,.86) !important;
+  box-shadow:0 0 0 1px rgba(0,174,255,.18),0 0 18px rgba(0,145,255,.24) !important;
+}
+@media(prefers-reduced-transparency:reduce) {
+  body.admin-neon-page .system-console .sc-panel,
+  body.admin-neon-page .system-console .sc-tile,
+  body.admin-neon-page .system-console .sc-door,
+  body.admin-neon-page .system-console .sc-stat,
+  body.admin-neon-page .system-console .sc-snapshot {
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+    background:#061a3a !important;
+  }
+}
+
+
+
+/* Remove the vertical divider between the sidebar and main content.
+   Keep the sidebar's own rounded glass outline intact. */
+body.admin-neon-page .main,
+body.admin-neon-page .main:has(.cctv-console) {
+  border-left: 0 !important;
+  box-shadow: none !important;
+}
