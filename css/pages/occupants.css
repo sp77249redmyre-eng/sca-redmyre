@@ -1,0 +1,1796 @@
+.content { padding: 24px; max-width: 100%; }
+/* Override: section-hdr — title with button next to it (not space-between) */
+.section-hdr { justify-content: flex-start !important; gap: 12px; }
+.search-table-wrap { overflow-x: auto; }
+/* Column toggle */
+.col-toggle-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; align-items:center; }
+.col-toggle-label { font-size:11px; font-weight:700; color:var(--muted); margin-right:2px; }
+.col-toggle-btn { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:600; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.col-toggle-btn.on { background:#39FF14; color:#fff; border-color:#39FF14; }
+.col-toggle-btn.on::before { content:'✓ '; }
+
+/* Suite Tabs */
+.suite-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+}
+.suite-tab {
+  padding: 8px 18px;
+  border-radius: 8px 8px 0 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -2px;
+}
+.suite-tab:hover { background: var(--surface); }
+.suite-tab.active {
+  background: var(--surface);
+  color: #39FF14;
+  border-color: #39FF14;
+  border-bottom: 2px solid var(--surface);
+  z-index: 1;
+}
+
+/* Occupant List */
+.occ-list { display: flex; flex-direction: column; gap: 10px; }
+.occ-item.highlight-flash {
+  animation: highlightPulse 2s ease;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+@keyframes highlightPulse {
+  0% { background: #dcfce7; box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.3); }
+  100% { background: var(--surface); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
+}
+.occ-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s;
+  max-width: 800px;
+  overflow: hidden;
+}
+.occ-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.occ-header:hover { background: #f8fafc; }
+.occ-item.expanded { border-color: #16a34a; box-shadow: 0 4px 14px rgba(22,163,74,0.08); }
+.occ-item.expanded .occ-header { background: #f0fdf4; }
+.occ-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.occ-item.occ-restricted { opacity: 0.55; cursor: default; }
+.occ-item.occ-restricted:hover { box-shadow: none; }
+.occ-item.occ-restricted .occ-header { cursor: default; }
+.occ-item.occ-restricted .occ-header:hover { background: var(--surface); }
+.occ-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.occ-item.expanded .occ-chevron { transform: rotate(180deg); color: #16a34a; }
+
+/* Accordion Body */
+.occ-body {
+  display: none;
+  padding: 0 20px 20px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+.occ-item.expanded .occ-body { display: block; animation: slideDown 0.25s ease-out; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.occ-body-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
+  padding-top: 18px;
+}
+.occ-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.occ-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.occ-field-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.occ-field-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+.occ-field-value a { color: #39FF14; text-decoration: none; }
+.occ-field-value a:hover { text-decoration: underline; }
+.occ-field-value.full { grid-column: 1 / -1; }
+.occ-badge-committee {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+}
+/* Type Badge (OWNER / TENANT) - 헤더 우측 */
+.occ-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.occ-type-badge.owner { background: #dcfce7; color: #166534; }
+.occ-type-badge.tenant { background: #dcfce7; color: #166534; }
+.occ-type-badge.empty { background: #f1f5f9; color: #94a3b8; }
+
+/* Info Bar (펼침 카드 상단 안내바) */
+.occ-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 16px 0 14px 0;
+}
+.occ-info-bar.privileged { background: #fef9c3; color: #854d0e; border-left: 3px solid #eab308; }
+.occ-info-bar.self-owner { background: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
+.occ-info-bar.privacy { background: #fee2e2; color: #991b1b; border-left: 3px solid #ef4444; }
+.occ-info-bar.owner-unit { background: #dcfce7; color: #166534; border-left: 3px solid #16a34a; }
+
+/* List-style fields (1-column) */
+.occ-body-list {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+.occ-list-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  align-items: baseline;
+}
+.occ-list-row + .occ-list-row { border-top: 1px solid #f1f5f9; }
+.occ-list-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.occ-list-label .lbl-star { color: #eab308; font-size: 12px; }
+.occ-list-label .lbl-icon { width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0; }
+.occ-list-label .lbl-icon i { font-size:12px; }
+.occ-list-value {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.5;
+}
+.occ-list-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+.occ-list-value a { color: #39FF14; text-decoration: none; }
+.occ-list-value a:hover { text-decoration: underline; }
+.occ-list-divider {
+  border-top: 1px dashed #cbd5e1;
+  margin: 4px 0;
+}
+
+/* Vehicles Section */
+.occ-vehicles-section {
+  padding: 14px 0 4px 0;
+  margin-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+.occ-vehicles-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.occ-body-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  margin-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+.occ-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.occ-edit-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.25); }
+/* Edit via My Profile — 파란색 버튼 (Admin Edit Details와 차별화) */
+.occ-edit-btn.occ-edit-btn-profile {
+  background: linear-gradient(135deg, #14532d, #a855f7);
+}
+.occ-edit-btn.occ-edit-btn-profile:hover {
+  background: linear-gradient(135deg, #166534, #15803d);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.occ-unit {
+  font-size: 15px;
+  font-weight: 700;
+  color: #39FF14;
+  min-width: 50px;
+}
+.occ-info { flex: 1; }
+.occ-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.occ-contact {
+  font-size: 12px;
+  color: var(--muted);
+}
+.occ-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.occ-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.occ-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Committee Badge */
+.committee-star {
+  font-size: 16px;
+  margin-left: 6px;
+}
+
+/* Modal Specific */
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px 16px;
+  margin: 20px 0;
+}
+.modal-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+}
+.modal-info-value {
+  font-size: 13px;
+  color: var(--text);
+}
+.vehicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vehicle-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+/* Modal Label Override */
+.modal-label {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+/* Plate Tag Input UI */
+#plateList {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.plate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plate-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  background: #fff;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.plate-input:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+.plate-input.invalid {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+.plate-remove-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #ef4444;
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.plate-remove-btn:hover {
+  background: #ef4444;
+  color: #fff;
+}
+.plate-remove-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Admin Search Section */
+.admin-search-section {
+  margin-top: 32px;
+  display: none;
+}
+.admin-search-section.visible { display: block; }
+/* Filter chips */
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.filter-chip { padding: 5px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.filter-chip:hover { border-color: #39FF14; color: #39FF14; }
+.filter-chip.active { background: #39FF14; color: #fff; border-color: #39FF14; }
+.filter-chip-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-right: 2px; }
+.admin-search-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.admin-search-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.admin-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+}
+.admin-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+.admin-search-input:focus {
+  border-color: #39FF14;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+}
+.admin-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  display: none;
+  padding: 0;
+  line-height: 1;
+}
+.admin-search-count {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Search Table */
+.search-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.search-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.search-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+}
+.search-table th {
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.search-table td {
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.search-table tbody tr:last-child td { border-bottom: none; }
+.search-table tbody tr:hover { background: var(--bg); }
+
+/* Inline edit cell */
+.edit-cell {
+  cursor: text;
+  border-radius: 6px;
+  padding: 4px 6px;
+  min-width: 80px;
+  transition: background 0.12s;
+}
+.edit-cell:hover { background: var(--border-light); }
+.edit-cell.editing {
+  background: var(--surface);
+  outline: 2px solid #39FF14;
+  outline-offset: -1px;
+}
+.edit-cell input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  padding: 0;
+}
+.edit-cell.empty { color: var(--muted); font-style: italic; }
+
+/* Vehicle badges */
+.plate-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.plate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  background: #071a10;
+  color: #39FF14;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+.plate-badge::before { content: none; }
+.plate-badge-remove {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s, transform 0.1s;
+}
+.plate-badge-remove:hover { background: #b91c1c; transform: scale(1.15); }
+.plate-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 2px dashed #39FF14;
+  border-radius: 8px;
+  background: none;
+  color: #39FF14;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.12s;
+}
+.plate-add-btn:hover { background: #071a10; }
+.plate-add-input {
+  width: 90px;
+  padding: 5px 8px;
+  border: 1.5px solid #39FF14;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+}
+.unit-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #39FF14;
+  background: #071a10;
+  padding: 3px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.search-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .content { padding: 16px !important; overflow-x: hidden; }
+  .occ-list { max-width: 100%; width: 100%; }
+  .occ-item { max-width: 100%; width: 100%; box-sizing: border-box; }
+  .occ-header { box-sizing: border-box; max-width: 100%; }
+  .occ-name { word-break: break-word; overflow-wrap: break-word; }
+  
+  /* Quick Search (Admin only) - 모바일 대응 */
+  .admin-search-section { max-width: 100%; overflow-x: hidden; }
+  .admin-search-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .admin-search-bar { max-width: 100% !important; width: 100%; }
+  .admin-search-count { text-align: right; }
+  .filter-chips { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .filter-chip { flex-shrink: 0; }
+  .search-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .search-table { min-width: 600px; }
+  .suite-tabs { 
+    gap: 6px; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    scroll-snap-type: x mandatory;
+  }
+  .suite-tabs::-webkit-scrollbar { display: none; }
+  .suite-tab { 
+    padding: 8px 0; 
+    font-size: 13px; 
+    flex: 0 0 calc((100% - 12px) / 3);
+    white-space: nowrap;
+    text-align: center;
+    scroll-snap-align: start;
+  }
+  .occ-item { padding: 0; }
+  .occ-header { flex-wrap: wrap; padding: 14px 16px; gap: 10px; }
+  .occ-header .occ-info { flex: 1 1 calc(100% - 120px); min-width: 0; }
+  .occ-header .occ-info .occ-name { word-break: break-word; }
+  .occ-header .occ-meta { order: 3; flex: 0 0 auto; }
+  .occ-chevron { order: 4; flex: 0 0 auto; }
+  .occ-body { padding: 0 16px 16px 16px; }
+  .occ-list-row { grid-template-columns: 130px 1fr; gap: 8px; padding: 7px 0; }
+  .occ-list-label { font-size: 11px; }
+  .occ-list-value { font-size: 12.5px; }
+  .occ-info-bar { font-size: 11.5px; padding: 9px 12px; }
+  .occ-body-grid { grid-template-columns: 1fr; gap: 12px; }
+  .occ-unit { min-width: auto; }
+  .occ-meta { flex-wrap: wrap; max-width: 100%; }
+  .occ-meta-item { word-break: break-all; max-width: 100%; }
+  .occ-actions { width: 100%; justify-content: flex-end; }
+  .modal-info-grid { grid-template-columns: 1fr; gap: 8px; }
+  .modal-info-label { text-align: left; }
+
+  /* ⚡ 유닛 카드 가로 폭 넘침 차단 (자동 축소 방지) ⚡ */
+  .occ-meta { flex-wrap: wrap !important; min-width: 0 !important; max-width: 100% !important; }
+  .occ-meta-item { min-width: 0 !important; max-width: 100% !important; overflow: hidden; text-overflow: ellipsis; }
+  .occ-header { min-width: 0; max-width: 100%; box-sizing: border-box; }
+}
+
+/* ⚡ Galaxy S10 (360px) 전용 추가 컴팩트 ⚡ */
+@media (max-width: 380px) {
+  .content { padding: 12px !important; }
+  .occ-header { padding: 12px 12px !important; gap: 8px !important; }
+  .occ-unit { font-size: 14px !important; min-width: 38px !important; }
+  .occ-name { font-size: 13px !important; }
+  .occ-contact { font-size: 11px !important; }
+  .occ-meta { font-size: 11px !important; gap: 6px !important; }
+  .occ-meta-item { font-size: 11px !important; }
+  .occ-chevron { font-size: 11px !important; }
+  .occ-body { padding: 0 12px 14px 12px !important; }
+  .occ-list-row { grid-template-columns: 110px 1fr !important; gap: 6px !important; }
+  .occ-list-label { font-size: 10px !important; }
+  .occ-list-value { font-size: 12px !important; }
+  .suite-tab { font-size: 12px !important; }
+  /* 이메일/사업체명 아주 길어도 강제 줄바꿈 */
+  .occ-meta-item, .occ-list-value, .occ-name, .occ-contact { word-break: break-all !important; }
+}
+
+/* =========================================================
+   OCCUPANTS V3 — APPROVED MOCKUP LAYOUT
+   Visual layer + rendering only. Existing data/storage paths preserved.
+   Sidebar/topbar remain owned by layout.js/style.css.
+   ========================================================= */
+.content:has(.occupants-console-v2){
+  background:#030507 !important;
+  padding:0 !important;
+  max-width:none !important;
+  width:100% !important;
+  min-height:calc(100vh - 60px);
+}
+.occupants-console-v2{
+  --ux-bg:#030507;
+  --ux-surface:#071f2c;
+  --ux-surface2:#092838;
+  --ux-line:#11465b;
+  --ux-line2:#0b3547;
+  --ux-cyan:#19e8f1;
+  --ux-cyan2:#0bcbd6;
+  --ux-text:#f2fbff;
+  --ux-muted:#8ba9b8;
+  --ux-green:#21e56b;
+  --ux-blue:#c084fc;
+  --ux-purple:#c084fc;
+  --ux-yellow:#fbbf24;
+  --ux-red:#fb7185;
+  width:100%; min-height:calc(100vh - 60px); box-sizing:border-box;
+  padding:22px 20px 32px;
+  color:var(--ux-text);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%,rgba(0,245,255,.07),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(0,245,255,.035) 0,rgba(0,245,255,.035) 1px,transparent 1px,transparent 3px),
+    #030507;
+}
+.occupants-console-v2 *{box-sizing:border-box}
+.occupants-console-v2 button,.occupants-console-v2 input,.occupants-console-v2 select{font:inherit}
+
+.occ-v2-head{display:grid;grid-template-columns:minmax(320px,1fr) minmax(420px,1.35fr) auto;gap:12px;align-items:end;padding:2px 0 12px;border-bottom:1px solid var(--ux-line)}
+.occ-v2-title-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.occ-v2-title{font-family:Orbitron,Inter,sans-serif;font-size:30px;line-height:1;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--ux-cyan);text-shadow:0 0 10px rgba(25,232,241,.45)}
+.occ-v2-total{font:700 16px "JetBrains Mono",monospace;color:#c6fbff;letter-spacing:.05em}
+.occ-v2-sub{margin-top:7px;font:600 12px "JetBrains Mono",monospace;color:var(--ux-muted);letter-spacing:.10em;text-transform:uppercase}
+.occ-v2-search{position:relative;min-width:0}
+.occ-v2-search input{width:100%;height:48px;padding:0 46px 0 42px;border:1px solid var(--ux-line);border-radius:8px;background:#061b27;color:#fff;outline:none;font-size:14px}
+.occ-v2-search input::placeholder{color:#7592a0}
+.occ-v2-search input:focus{border-color:var(--ux-cyan);box-shadow:0 0 0 3px rgba(25,232,241,.08)}
+.occ-v2-search .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ux-cyan);font-size:18px}
+.occ-v2-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:none;border:0;background:transparent;color:#87a3ad;cursor:pointer;font-size:16px}
+.occ-v2-actions{display:flex;gap:8px;align-items:center}
+.occ-v2-btn{height:48px;padding:0 16px;border:1px solid var(--ux-line);border-radius:8px;background:#072334;color:#dff5fa;font:700 13px "DM Sans",sans-serif;cursor:pointer;white-space:nowrap}
+.occ-v2-btn:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-btn.bulk{background:linear-gradient(135deg,var(--ux-cyan),#16d9e2);border-color:var(--ux-cyan);color:#02151c;box-shadow:0 7px 18px rgba(25,232,241,.12)}
+.occ-v2-btn.bulk:hover{color:#02151c}
+
+.occ-v2-floor-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:14px 0 8px;border-bottom:1px solid var(--ux-line2)}
+.occ-v2-floor-tab{height:42px;padding:0 15px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#c9dce5;cursor:pointer;font:700 13px "JetBrains Mono",monospace;letter-spacing:.03em}
+.occ-v2-floor-tab:hover{border-color:var(--ux-cyan);color:#fff;background:#092a3b}
+.occ-v2-floor-tab.active{background:linear-gradient(135deg,var(--ux-cyan),#19dbe5);border-color:var(--ux-cyan);color:#02151c;box-shadow:0 0 18px rgba(25,232,241,.15)}
+.occ-v2-floor-tab .count{margin-left:6px;font-weight:600;opacity:.92}
+
+.occ-v2-role-row{display:flex;gap:8px;flex-wrap:nowrap;align-items:center;padding:10px 0 12px;min-width:0;white-space:nowrap}
+.occ-v2-role-tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.occ-v2-role-tools select,.occ-v2-role-tools .occ-v2-no-vehicle{height:42px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#dff2f7;padding:0 13px;font-size:14px;outline:none}
+.occ-v2-role-tools select{min-width:150px}
+.occ-v2-role-tools .occ-v2-no-vehicle{cursor:pointer;font-weight:700}
+.occ-v2-role-tools .occ-v2-no-vehicle.active{border-color:#e11d48;background:#3a1220;color:#ff9ca4}
+.occ-v2-role-label{margin-right:2px;color:#7595a2;font:700 13px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.05em}
+.occ-v2-role-chip{min-height:44px;padding:0 16px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#cfe1e8;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font:700 14px "DM Sans",sans-serif}
+.occ-v2-role-chip:hover{border-color:var(--ux-cyan);color:#fff}
+.occ-v2-role-chip.active{box-shadow:0 0 12px rgba(25,232,241,.08)}
+.occ-v2-role-dot{width:9px;height:9px;border-radius:50%;display:inline-block;box-shadow:0 0 7px currentColor}
+.occ-v2-role-chip.owner.active{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-role-chip.tenant.active{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-role-chip.committee.active{color:var(--ux-blue);border-color:#a855f7;background:#241a31}
+.occ-v2-role-chip.staff.active{color:#ff7b8b;border-color:#e11d48;background:#3a1220}
+.occ-v2-role-chip .occ-v2-role-dot.owner{color:var(--ux-yellow);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.tenant,.occ-v2-role-chip .occ-v2-role-dot.staff{color:var(--ux-red);background:currentColor}
+.occ-v2-role-chip .occ-v2-role-dot.committee{color:var(--ux-blue);background:currentColor}
+
+.occ-v2-filter-strip{display:none}
+.occ-v2-filter-strip select,.occ-v2-no-vehicle{height:42px;border:1px solid var(--ux-line);border-radius:7px;background:#061d2a;color:#dff2f7;padding:0 12px;font-size:13px;outline:none}
+.occ-v2-filter-strip select{min-width:150px}
+.occ-v2-no-vehicle{cursor:pointer;font-weight:700}
+.occ-v2-no-vehicle.active{border-color:#e11d48;background:#3a1220;color:#ff9ca4}
+
+.occ-v2-result-line{padding:1px 0 9px;color:#7695a0;font:600 11px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.03em}
+.occ-v2-main{display:grid;grid-template-columns:minmax(430px,455px) minmax(0,1fr);gap:10px;align-items:stretch}
+.occ-v2-panel{min-width:0;border:1px solid var(--ux-line);border-radius:9px;background:linear-gradient(180deg,#061d2a,#051923);overflow:hidden}
+.occ-v2-left{min-height:680px;display:flex;flex-direction:column}
+.occ-v2-list-head{display:grid;grid-template-columns:68px minmax(0,1fr) 66px 70px 18px;gap:7px;padding:11px 12px;border-bottom:1px solid var(--ux-line);background:#041722;color:#7493a1;font:700 11px "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase}
+.occ-v2-list-scroll{overflow:auto;min-height:0;max-height:calc(100vh - 312px)}
+.occ-v2-unit-row{width:100%;display:grid;grid-template-columns:68px minmax(0,1fr) 66px 70px 18px;gap:7px;align-items:center;padding:12px;border:0;border-bottom:1px solid #0a3040;background:transparent;color:var(--ux-text);text-align:left;cursor:pointer}
+.occ-v2-unit-row:hover{background:#092938}
+.occ-v2-unit-row.selected{background:#0a3142;box-shadow:inset 3px 0 var(--ux-cyan)}
+.occ-v2-unit-row.highlight-flash{animation:occV2Flash 2.8s ease}
+@keyframes occV2Flash{0%{background:rgba(33,229,107,.24)}100%{background:transparent}}
+.occ-v2-unit-box{display:flex;flex-direction:column;gap:5px;min-width:0}
+.occ-v2-unit-code{font:700 17px "JetBrains Mono",monospace;color:#e7fbff;letter-spacing:.04em}
+.occ-v2-badge{width:max-content;padding:5px 10px;border-radius:6px;border:1px solid;font:800 13px "JetBrains Mono",monospace;letter-spacing:.06em;line-height:1}
+.occ-v2-badge.owner{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-badge.tenant{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-badge.committee{color:var(--ux-blue);border-color:#a855f7;background:#241a31}
+.occ-v2-biz{min-width:0}
+.occ-v2-biz-primary{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.occ-v2-biz-secondary{margin-top:3px;font-size:12px;color:#80a2b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.occ-v2-stat{display:flex;justify-content:center;align-items:center;gap:5px;color:#b2d9e1;font:700 12px "JetBrains Mono",monospace}
+.occ-v2-stat i{color:#21e56b;font-size:15px}.occ-v2-stat.vehicle i{color:var(--ux-green)}
+.occ-v2-chevron{text-align:right;color:#4d7380;font-size:14px}
+.occ-v2-no-results{min-height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:30px;text-align:center;color:#7e9aa5}
+.occ-v2-clear-btn{height:42px;padding:0 16px;border:1px solid var(--ux-cyan);border-radius:7px;background:rgba(25,232,241,.12);color:var(--ux-cyan);font:700 13px "DM Sans",sans-serif;cursor:pointer}
+
+.occ-v2-detail{min-height:680px;display:flex;flex-direction:column}
+.occ-v2-detail-scroll{overflow:auto;max-height:calc(100vh - 268px)}
+.occ-v2-detail-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ux-line);background:#051b27;position:sticky;top:0;z-index:4}
+.occ-v2-detail-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.occ-v2-detail-unit{font:700 31px "JetBrains Mono",monospace;color:#effcff;letter-spacing:.03em}
+.occ-v2-type-badge{padding:6px 10px;border-radius:7px;border:1px solid;font:800 12px "JetBrains Mono",monospace;letter-spacing:.05em}
+.occ-v2-type-badge.owner{color:var(--ux-yellow);border-color:#d97706;background:#3a2a08}
+.occ-v2-type-badge.tenant{color:var(--ux-red);border-color:#e11d48;background:#3a1220}
+.occ-v2-level{font:600 14px "JetBrains Mono",monospace;color:#9db6c0}
+.occ-v2-detail-actions{display:flex;gap:7px;flex-shrink:0}
+.occ-v2-mini{height:40px;padding:0 13px;border:1px solid var(--ux-line);border-radius:7px;background:#072334;color:#d9edf4;font:700 12px "DM Sans",sans-serif;cursor:pointer}
+.occ-v2-mini:hover{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-mini.primary{background:linear-gradient(135deg,var(--ux-cyan),#18dbe5);border-color:var(--ux-cyan);color:#02151c}
+
+.occ-v2-section{margin:10px;border:1px solid var(--ux-line);border-radius:8px;background:#06141d;overflow:hidden}
+.occ-v2-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--ux-line)}
+.occ-v2-section-title{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;color:#fff}
+.occ-v2-section-icon{width:29px;height:29px;border-radius:6px;display:grid;place-items:center;background:#092838;color:var(--ux-cyan);font-size:15px}
+.occ-v2-section-count{font:700 12px "JetBrains Mono",monospace;color:#8eaab4}
+.occ-v2-section-body{padding:12px}
+.occ-v2-unit-business{border-color:#1a6170}
+.occ-v2-unit-grid{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 100px;gap:10px;align-items:end}
+.occ-v2-label{display:block;margin-bottom:5px;color:#6f919e;font:700 10px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.occ-v2-value{min-height:43px;display:flex;align-items:center;padding:8px 11px;border:1px solid #175066;border-radius:7px;background:#04131c;color:#fff;font-size:15px;font-weight:700;word-break:break-word}
+.occ-v2-value.mono{justify-content:center;font:700 14px "JetBrains Mono",monospace}
+.occ-v2-unit-contact{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px dashed #174657}
+.occ-v2-contact-label{color:#6f919e;font:700 10px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.occ-v2-contact-value{color:#21e56b;font:700 15px "JetBrains Mono",monospace}.occ-v2-contact-value a{color:#21e56b!important;text-decoration:none}.occ-v2-contact-value a:hover{text-decoration:underline}
+.occ-v2-contact-note{color:#6e8d9a;font-size:11px}
+.occ-v2-existing{margin-top:8px;color:#bdd6df;font-size:13px}.occ-v2-existing strong{color:#fff}
+
+.occ-v2-people-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.occ-v2-role-section.owner{border-color:rgba(251,191,36,.55);background:linear-gradient(180deg,rgba(251,191,36,.055),#06141d 30%)}
+.occ-v2-role-section.tenant{border-color:rgba(251,113,133,.55);background:linear-gradient(180deg,rgba(251,113,133,.055),#06141d 30%)}
+.occ-v2-role-section.staff{border-color:rgba(251,113,133,.55);background:linear-gradient(180deg,rgba(251,113,133,.045),#06141d 30%)}
+.occ-v2-role-section.committee{border-color:rgba(192,132,252,.58);background:linear-gradient(180deg,rgba(192,132,252,.055),#06141d 30%)}
+.occ-v2-role-section.owner .occ-v2-section-title{color:var(--ux-yellow)}
+.occ-v2-role-section.tenant .occ-v2-section-title,.occ-v2-role-section.staff .occ-v2-section-title{color:var(--ux-red)}
+.occ-v2-role-section.committee .occ-v2-section-title{color:var(--ux-blue)}
+.occ-v2-person-card{border:1px solid #114357;border-radius:7px;background:#06131b;padding:10px 11px}
+.occ-v2-person-card+.occ-v2-person-card{margin-top:8px}
+.occ-v2-person-top{display:flex;align-items:flex-start;gap:9px}
+.occ-v2-index{width:27px;height:27px;display:grid;place-items:center;flex:0 0 27px;border:1px solid #2a5a69;border-radius:6px;color:#d5eef4;font:700 12px "JetBrains Mono",monospace}
+.occ-v2-person-main{min-width:0;flex:1}.occ-v2-person-name{font-size:15px;font-weight:700;color:#fff;word-break:break-word}
+.occ-v2-person-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.occ-v2-person-line{display:flex;gap:7px;align-items:flex-start;margin-top:7px;color:#c9e2e8;font-size:13px;line-height:1.45;word-break:break-word}.occ-v2-person-line i{margin-top:2px;color:var(--ux-cyan);font-size:14px}
+.occ-v2-person-line a{color:var(--ux-green)!important;text-decoration:none}.occ-v2-person-line a:hover{text-decoration:underline}
+.occ-v2-person-empty{border:1px dashed #1f4e5c;border-radius:7px;background:#05131b;padding:14px;text-align:center;color:#6f8b96;font:600 12px "JetBrains Mono",monospace}
+.occ-v2-primary-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #d97706;border-radius:5px;background:#3a2a08;color:#fbbf24;font:800 9px "JetBrains Mono",monospace}
+
+.occ-v2-vehicles{border-color:rgba(33,229,107,.52);background:linear-gradient(180deg,rgba(33,229,107,.035),#06141d 30%)}
+.occ-v2-vehicle-table-wrap{overflow:auto}
+.occ-v2-vehicle-table{width:100%;border-collapse:collapse;min-width:460px}
+.occ-v2-vehicle-table th{padding:9px 10px;background:#041722;color:#7796a2;border-bottom:1px solid var(--ux-line);font:700 11px "JetBrains Mono",monospace;text-transform:uppercase;text-align:left;letter-spacing:.06em}
+.occ-v2-vehicle-table td{padding:10px;border-bottom:1px solid #0a3040;color:#e8f7fa;font-size:14px}
+.occ-v2-vehicle-table tr:last-child td{border-bottom:0}
+.occ-v2-vehicle-index{width:42px;color:#6f919d!important;font:700 12px "JetBrains Mono",monospace!important}
+.occ-v2-plate{display:inline-flex;align-items:center;min-height:34px;padding:5px 10px;border:1px solid #1b623f;border-radius:6px;background:#061a10;color:#21e56b;font:800 14px "JetBrains Mono",monospace;letter-spacing:.08em}
+.occ-v2-vehicle-note{margin-top:9px;color:#6e8d7d;font:600 11px "JetBrains Mono",monospace}
+
+.occ-v2-bottom{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(0,1.3fr);gap:10px}
+.occ-v2-committee{border-color:rgba(192,132,252,.58)}.occ-v2-committee .occ-v2-section-title{color:var(--ux-blue)}
+.occ-v2-committee-row{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #0d3544;align-items:center}.occ-v2-committee-row:last-child{border-bottom:0}
+.occ-v2-committee-label{color:#6f919e;font:700 11px "JetBrains Mono",monospace;text-transform:uppercase}.occ-v2-committee-value{color:#fff;font-size:14px;font-weight:700}
+.occ-v2-primary-yes{color:var(--ux-green)}.occ-v2-primary-no{color:#849da8}
+.occ-v2-same-email{border-color:rgba(251,191,36,.55);background:linear-gradient(180deg,rgba(251,191,36,.04),#06141d 35%)}.occ-v2-same-email .occ-v2-section-title{color:var(--ux-yellow)}
+.occ-v2-email-group+.occ-v2-email-group{margin-top:10px;padding-top:10px;border-top:1px dashed #4b3f1d}
+.occ-v2-email-pill{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:6px 9px;border:1px solid #1d5966;border-radius:6px;background:#071821;color:#69f8ff;font:700 12px "JetBrains Mono",monospace;word-break:break-all}
+.occ-v2-unit-links{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.occ-v2-unit-link{height:32px;padding:0 10px;border:1px solid var(--ux-line);border-radius:6px;background:#072334;color:#dceef3;font:700 12px "JetBrains Mono",monospace;cursor:pointer}.occ-v2-unit-link.current{border-color:var(--ux-cyan);color:var(--ux-cyan)}
+.occ-v2-email-note{margin-top:8px;color:#8fa7af;font-size:11px;line-height:1.45}
+
+.occ-v2-restricted{min-height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:40px;text-align:center}.occ-v2-lock{width:46px;height:46px;display:grid;place-items:center;border:1px solid #7b3139;border-radius:8px;background:#2a1217;color:#ff7b86;font-size:20px}.occ-v2-restricted strong{font-size:18px;color:#ffd9dc}.occ-v2-restricted span{max-width:450px;color:#8ea2a9;font-size:13px;line-height:1.5}
+
+@media(max-width:1100px){
+  .occ-v2-head{grid-template-columns:1fr;align-items:stretch}.occ-v2-actions{justify-content:flex-start}.occ-v2-search{order:3}.occ-v2-main{grid-template-columns:minmax(320px,370px) minmax(0,1fr)}
+  .occ-v2-role-row{flex-wrap:wrap}.occ-v2-role-tools{margin-left:auto}
+}
+@media(max-width:850px){
+  .occupants-console-v2{padding:16px 12px 28px}.occ-v2-main{grid-template-columns:1fr}.occ-v2-left{min-height:400px}.occ-v2-list-scroll{max-height:420px}.occ-v2-detail-scroll{max-height:none}.occ-v2-people-grid,.occ-v2-bottom{grid-template-columns:1fr}.occ-v2-unit-grid{grid-template-columns:1fr 1fr 1fr}.occ-v2-business-main{grid-column:1/-1}.occ-v2-filter-strip{justify-content:flex-start}
+}
+@media(max-width:600px){
+  .occ-v2-title{font-size:25px}.occ-v2-total{font-size:14px}.occ-v2-actions{display:grid;grid-template-columns:1fr 1fr}.occ-v2-btn{width:100%;height:46px}.occ-v2-search input{height:46px}.occ-v2-role-chip{min-height:42px;font-size:13px;padding:0 13px}.occ-v2-floor-tab{height:42px;padding:0 13px}.occ-v2-detail-top{align-items:flex-start;flex-direction:column}.occ-v2-detail-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.occ-v2-mini{width:100%}.occ-v2-unit-grid{grid-template-columns:1fr 1fr}.occ-v2-unit-grid > :first-child{grid-column:1/-1}.occ-v2-value{font-size:14px}.occ-v2-list-head,.occ-v2-unit-row{grid-template-columns:56px minmax(0,1fr) 48px 54px 16px}.occ-v2-biz-primary{font-size:13px}.occ-v2-biz-secondary{font-size:11px}.occ-v2-section-title{font-size:16px}.occ-v2-person-name{font-size:14px}
+}
+@media(max-width:420px){
+  .occ-v2-actions{grid-template-columns:1fr}.occ-v2-floor-tabs{overflow-x:auto;flex-wrap:nowrap}.occ-v2-floor-tab{flex:0 0 auto}.occ-v2-role-row{overflow-x:auto;flex-wrap:nowrap;padding-bottom:13px}.occ-v2-role-tools{margin-left:auto}.occ-v2-role-chip{flex:0 0 auto}.occ-v2-unit-grid{grid-template-columns:1fr}.occ-v2-unit-grid > :first-child{grid-column:auto}.occ-v2-bottom{gap:8px}.occ-v2-section{margin:8px}.occ-v2-detail-unit{font-size:27px}
+}
+
+/* Final readability pass: no important v2 text below 12px */
+.occ-v2-result-line{font-size:12px !important}
+.occ-v2-list-head{font-size:12px !important}
+.occ-v2-badge{font-size:12px !important; padding:4px 8px !important}
+.occ-v2-label{font-size:12px !important}
+.occ-v2-contact-label{font-size:12px !important}
+.occ-v2-contact-note{font-size:12px !important}
+.occ-v2-primary-pill{font-size:12px !important; padding:4px 8px !important}
+.occ-v2-vehicle-table th{font-size:12px !important}
+.occ-v2-vehicle-note{font-size:12px !important}
+.occ-v2-committee-label{font-size:12px !important}
+.occ-v2-email-note{font-size:12px !important}
+.occ-v2-email-pill{font-size:13px !important}
+@media (max-width:600px){
+  .occ-v2-biz-secondary{font-size:12px !important}
+}
+
+/* Final approved Occupants visual rules — scoped to this page only. */
+.occupants-console-v2 .occ-v2-main{grid-template-columns:minmax(430px,455px) minmax(0,1fr)!important}
+.occupants-console-v2 .occ-v2-role-row{flex-wrap:nowrap!important;white-space:nowrap!important}
+.occupants-console-v2 .occ-v2-role-chip{min-height:44px!important;padding:0 16px!important;font-size:14px!important}
+.occupants-console-v2 .occ-v2-badge{font-size:13px!important;min-height:25px!important;padding:5px 10px!important;display:inline-flex;align-items:center}
+.occupants-console-v2 .occ-v2-label,.occupants-console-v2 .occ-v2-contact-label,.occupants-console-v2 .occ-v2-result-line,.occupants-console-v2 .occ-v2-list-head{font-size:13px!important}
+.occupants-console-v2 .occ-v2-contact-note,.occupants-console-v2 .occ-v2-vehicle-note,.occupants-console-v2 .occ-v2-email-note{font-size:12px!important}
+.occupants-console-v2 .occ-v2-person-line a{color:var(--ux-green)!important;text-decoration:none}
+.occupants-console-v2 .occ-v2-person-line a:hover{text-decoration:underline}
+@media(max-width:1100px){
+  .occupants-console-v2 .occ-v2-role-row{flex-wrap:wrap!important;white-space:normal!important}
+}
+@media(max-width:850px){
+  .occupants-console-v2 .occ-v2-main{grid-template-columns:1fr!important}
+}
+
+.occ-v2-detail-title .occ-v2-type-badge.committee{
+  color:#c084fc !important;
+  border-color:#a855f7 !important;
+  background:#241a31 !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+  padding:6px 10px !important;
+  line-height:1.2 !important;
+}
+
+@media (min-width:1101px){
+  .occ-v2-main{grid-template-columns:minmax(520px,520px) minmax(0,1fr)}
+  .occ-v2-list-head,.occ-v2-unit-row{grid-template-columns:96px minmax(0,1fr) 66px 70px 18px}
+}
+
+/* Give the unit list and detail console substantially more vertical room on desktop. */
+.occ-v2-main{min-height:780px;align-items:stretch;}
+.occ-v2-left{min-height:780px;}
+.occ-v2-list-scroll{max-height:none;height:100%;flex:1 1 auto;}
+.occ-v2-detail{min-height:780px;height:780px;}
+.occ-v2-detail-scroll{max-height:none;height:100%;flex:1 1 auto;}
+
+@media(max-width:850px){
+  .occ-v2-main{min-height:0;}
+  .occ-v2-left{min-height:400px;}
+  .occ-v2-detail{height:auto;min-height:680px;}
+  .occ-v2-list-scroll{height:auto;max-height:420px;}
+  .occ-v2-detail-scroll{height:auto;max-height:none;}
+}
+
+/* System Console visual match — scoped to Occupants only. */
+.occupants-console-v2{
+  --ux-bg:#030507;
+  --ux-surface:#080D10;
+  --ux-surface2:#0D1418;
+  --ux-line:#18343A;
+  --ux-line2:#1f4a52;
+  --ux-cyan:#00F5FF;
+  --ux-cyan2:#00F5FF;
+  --ux-text:#D7F7F5;
+  --ux-muted:#9FC0BF;
+  --ux-green:#39FF14;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%,rgba(0,245,255,.07),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(0,245,255,.035) 0,rgba(0,245,255,.035) 1px,transparent 1px,transparent 3px),
+    #030507 !important;
+  color:#D7F7F5 !important;
+}
+
+/* Base console surfaces: black/deep-black like System. */
+.occupants-console-v2 .occ-v2-search input,
+.occupants-console-v2 .occ-v2-btn,
+.occupants-console-v2 .occ-v2-floor-tab,
+.occupants-console-v2 .occ-v2-role-chip,
+.occupants-console-v2 .occ-v2-role-tools select,
+.occupants-console-v2 .occ-v2-role-tools .occ-v2-no-vehicle,
+.occupants-console-v2 .occ-v2-filter-strip select,
+.occupants-console-v2 .occ-v2-no-vehicle,
+.occupants-console-v2 .occ-v2-mini,
+.occupants-console-v2 .occ-v2-unit-link{
+  background:#0D1418 !important;
+  border-color:#1f4a52 !important;
+  color:#D7F7F5 !important;
+}
+
+.occupants-console-v2 .occ-v2-search input{
+  background:#04080A !important;
+}
+.occupants-console-v2 .occ-v2-search input::placeholder{color:#9FC0BF !important}
+
+.occupants-console-v2 .occ-v2-btn:hover,
+.occupants-console-v2 .occ-v2-floor-tab:hover,
+.occupants-console-v2 .occ-v2-role-chip:hover,
+.occupants-console-v2 .occ-v2-mini:hover{
+  background:#0f2228 !important;
+  border-color:#2a6b73 !important;
+}
+
+/* Active floor keeps the established cyan treatment, but without the soft blue wash. */
+.occupants-console-v2 .occ-v2-floor-tab.active{
+  background:rgba(0,245,255,.10) !important;
+  color:#00F5FF !important;
+  border-color:#00F5FF !important;
+  box-shadow:0 0 18px rgba(0,245,255,.16) !important;
+}
+
+/* Main list/detail containers and section cards. */
+.occupants-console-v2 .occ-v2-panel,
+.occupants-console-v2 .occ-v2-section{
+  background:#080D10 !important;
+  border-color:#18343A !important;
+}
+.occupants-console-v2 .occ-v2-list-head,
+.occupants-console-v2 .occ-v2-detail-top,
+.occupants-console-v2 .occ-v2-vehicle-table th,
+.occupants-console-v2 .occ-v2-section-head{
+  background:#0D1418 !important;
+  border-color:#18343A !important;
+}
+
+.occupants-console-v2 .occ-v2-unit-row{
+  background:transparent !important;
+  border-bottom-color:#18343A !important;
+}
+.occupants-console-v2 .occ-v2-unit-row:hover{background:#0f2228 !important}
+.occupants-console-v2 .occ-v2-unit-row.selected{
+  background:#10252b !important;
+  box-shadow:inset 3px 0 #00F5FF !important;
+}
+
+/* Detail section bodies/cards stay dark and crisp. */
+.occupants-console-v2 .occ-v2-value,
+.occupants-console-v2 .occ-v2-person-card,
+.occupants-console-v2 .occ-v2-person-empty,
+.occupants-console-v2 .occ-v2-email-pill{
+  background:#0D1418 !important;
+  border-color:#18343A !important;
+}
+.occupants-console-v2 .occ-v2-value{background:#04080A !important}
+.occupants-console-v2 .occ-v2-person-empty{background:#080D10 !important}
+
+.occupants-console-v2 .occ-v2-unit-code,
+.occupants-console-v2 .occ-v2-unit-detail,
+.occupants-console-v2 .occ-v2-biz-primary,
+.occupants-console-v2 .occ-v2-person-name,
+.occupants-console-v2 .occ-v2-section-title,
+.occupants-console-v2 .occ-v2-committee-value{
+  color:#D7F7F5 !important;
+}
+.occupants-console-v2 .occ-v2-biz-secondary,
+.occupants-console-v2 .occ-v2-level,
+.occupants-console-v2 .occ-v2-contact-note,
+.occupants-console-v2 .occ-v2-existing,
+.occupants-console-v2 .occ-v2-result-line,
+.occupants-console-v2 .occ-v2-section-count,
+.occupants-console-v2 .occ-v2-committee-label,
+.occupants-console-v2 .occ-v2-email-note,
+.occupants-console-v2 .occ-v2-list-head,
+.occupants-console-v2 .occ-v2-label,
+.occupants-console-v2 .occ-v2-contact-label{
+  color:#9FC0BF !important;
+}
+
+.occupants-console-v2 .occ-v2-stat{color:#B8D2D1 !important}
+.occupants-console-v2 .occ-v2-stat i{color:#00F5FF !important}
+.occupants-console-v2 .occ-v2-stat.vehicle i{color:#39FF14 !important}
+.occupants-console-v2 .occ-v2-chevron{color:#6f8f98 !important}
+
+/* Cyan links and primary controls retain strong System-console contrast. */
+.occupants-console-v2 .occ-v2-person-line a{color:#39FF14 !important}
+.occupants-console-v2 .occ-v2-btn.bulk,
+.occupants-console-v2 .occ-v2-mini.primary{
+  background:rgba(0,245,255,.10) !important;
+  border-color:rgba(0,245,255,.55) !important;
+  color:#00F5FF !important;
+  box-shadow:0 0 10px rgba(0,245,255,.18) !important;
+}
+.occupants-console-v2 .occ-v2-btn.bulk:hover,
+.occupants-console-v2 .occ-v2-mini.primary:hover{
+  background:rgba(0,245,255,.24) !important;
+  border-color:#00F5FF !important;
+  color:#8afaff !important;
+}
+
+/* Preserve the existing role palette while removing the overall blue haze. */
+.occupants-console-v2 .occ-v2-badge.committee,
+.occupants-console-v2 .occ-v2-type-badge.committee,
+.occupants-console-v2 .occ-v2-role-chip.committee.active{
+  color:#c084fc !important;
+  border-color:#a855f7 !important;
+  background:#241a31 !important;
+}
+.occupants-console-v2 .occ-v2-badge.owner,
+.occupants-console-v2 .occ-v2-type-badge.owner,
+.occupants-console-v2 .occ-v2-role-chip.owner.active{
+  color:#fbbf24 !important;
+  border-color:#d97706 !important;
+  background:#3a2a08 !important;
+}
+.occupants-console-v2 .occ-v2-badge.tenant,
+.occupants-console-v2 .occ-v2-type-badge.tenant,
+.occupants-console-v2 .occ-v2-role-chip.tenant.active,
+.occupants-console-v2 .occ-v2-role-chip.staff.active{
+  color:#fb7185 !important;
+  border-color:#e11d48 !important;
+  background:#3a1220 !important;
+}
+
+/* Section role tints become extremely subtle, like System panels. */
+.occupants-console-v2 .occ-v2-role-section.owner,
+.occupants-console-v2 .occ-v2-role-section.tenant,
+.occupants-console-v2 .occ-v2-role-section.staff,
+.occupants-console-v2 .occ-v2-role-section.committee,
+.occupants-console-v2 .occ-v2-same-email,
+.occupants-console-v2 .occ-v2-vehicles{
+  background:#080D10 !important;
+}
+.occupants-console-v2 .occ-v2-role-section.owner{border-color:rgba(255,176,0,.45) !important}
+.occupants-console-v2 .occ-v2-role-section.tenant,
+.occupants-console-v2 .occ-v2-role-section.staff{border-color:rgba(255,49,49,.45) !important}
+.occupants-console-v2 .occ-v2-role-section.committee{border-color:rgba(192,132,252,.50) !important}
+.occupants-console-v2 .occ-v2-vehicles{border-color:rgba(57,255,20,.42) !important}
+.occupants-console-v2 .occ-v2-same-email{border-color:rgba(255,176,0,.42) !important}
+
+.occupants-console-v2 .occ-v2-section-icon{background:#0D1418 !important;border-color:#18343A !important}
+.occupants-console-v2 .occ-v2-section-body{background:transparent !important}
+
+/* Reduce visual haze from text/shadows. */
+.occupants-console-v2 .occ-v2-title{text-shadow:0 0 8px rgba(0,245,255,.38) !important}
+.occupants-console-v2 .occ-v2-total{color:#D7F7F5 !important}
+
+/* Detail uses the page scroll; only the Detail header stays visible. */
+.occ-v2-panel.occ-v2-detail{
+  height:auto !important;
+  min-height:780px !important;
+  overflow:visible !important;
+}
+.occ-v2-detail-scroll{
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+  flex:0 0 auto !important;
+}
+.occ-v2-detail-top{
+  position:sticky !important;
+  top:0 !important;
+  z-index:20 !important;
+}
+
+/* ================================================================
+   OCCUPANTS DETAIL — COMPACT / AT-A-GLANCE PASS
+   Reference: original compact Occupants detail layout.
+   UI only. No data / RPC / permission / save logic changes.
+   ================================================================ */
+.occ-v2-detail{min-height:0!important}
+.occ-v2-detail-scroll{overflow:visible!important;max-height:none!important}
+
+/* Fixed detail header stays compact while the page continues to scroll. */
+.occ-v2-detail-top{
+  padding:8px 12px!important;
+  min-height:54px!important;
+  background:#080D10!important;
+  border-bottom:1px solid #18343A!important;
+}
+.occ-v2-detail-unit{font-size:26px!important}
+.occ-v2-type-badge{padding:5px 9px!important;font-size:12px!important}
+.occ-v2-level{font-size:13px!important}
+.occ-v2-detail-actions{gap:6px!important}
+.occ-v2-mini{height:36px!important;padding:0 11px!important;font-size:12px!important}
+
+/* Sections: tighter margins / headers / body padding. */
+.occ-v2-section{margin:6px!important;border-radius:7px!important}
+.occ-v2-section-head{padding:7px 10px!important;min-height:40px!important}
+.occ-v2-section-title{font-size:15px!important;gap:7px!important}
+.occ-v2-section-icon{width:24px!important;height:24px!important;font-size:13px!important}
+.occ-v2-section-count{font-size:11px!important}
+.occ-v2-section-body{padding:8px!important}
+
+/* Unit & Business: compact single-row field blocks. */
+.occ-v2-unit-grid{grid-template-columns:minmax(0,1fr) 74px 82px 82px!important;gap:7px!important}
+.occ-v2-label{margin-bottom:4px!important;font-size:9px!important}
+.occ-v2-value{min-height:36px!important;padding:6px 9px!important;font-size:14px!important;border-radius:6px!important}
+.occ-v2-value.mono{font-size:13px!important}
+.occ-v2-unit-contact{gap:11px!important;margin-top:7px!important;padding-top:7px!important}
+.occ-v2-contact-value{font-size:13px!important}
+.occ-v2-contact-note{font-size:10px!important}
+.occ-v2-existing{margin-top:6px!important;font-size:12px!important}
+
+/* People: Owner on the left, Tenant/Staff on the right when populated. */
+.occ-v2-people-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important;align-items:start!important}
+.occ-v2-role-section.tenant:has(.occ-v2-person-empty),
+.occ-v2-role-section.staff:has(.occ-v2-person-empty){display:none!important}
+.occ-v2-role-section.owner{grid-column:1!important}
+.occ-v2-role-section.tenant,.occ-v2-role-section.staff{grid-column:2!important}
+/* Always show Tenant/Staff box, even when empty, so people can be added. (overrides the hide rule above) */
+.occ-v2-role-section.tenant:has(.occ-v2-person-empty),
+.occ-v2-role-section.staff:has(.occ-v2-person-empty){display:block!important}
+
+.occ-v2-person-card{padding:7px 8px!important;border-radius:6px!important}
+.occ-v2-person-card+.occ-v2-person-card{margin-top:5px!important}
+.occ-v2-person-top{gap:7px!important}
+.occ-v2-index{width:25px!important;height:25px!important;flex-basis:25px!important;font-size:11px!important;border-radius:5px!important}
+.occ-v2-person-name{font-size:14px!important}
+.occ-v2-person-badges{gap:4px!important;margin-top:3px!important}
+.occ-v2-person-line{gap:6px!important;margin-top:4px!important;font-size:12px!important;line-height:1.35!important}
+.occ-v2-person-line i{font-size:13px!important}
+.occ-v2-primary-pill{padding:2px 6px!important;font-size:9px!important}
+.occ-v2-person-empty{padding:9px!important;font-size:11px!important}
+
+/* Vehicles: tighter table so it reads like a compact registry. */
+.occ-v2-vehicle-table th{padding:7px 9px!important;font-size:10px!important}
+.occ-v2-vehicle-table td{padding:7px 9px!important;font-size:13px!important}
+.occ-v2-plate{min-height:30px!important;padding:4px 8px!important;font-size:13px!important}
+.occ-v2-vehicle-note{margin-top:6px!important;font-size:10px!important}
+
+/* Bottom cards: keep Committee + Same Email side by side and compact. */
+.occ-v2-bottom{gap:7px!important}
+.occ-v2-committee-row{grid-template-columns:95px 1fr!important;gap:8px!important;padding:6px 0!important}
+.occ-v2-committee-label{font-size:10px!important}
+.occ-v2-committee-value{font-size:13px!important}
+.occ-v2-email-group+.occ-v2-email-group{margin-top:7px!important;padding-top:7px!important}
+.occ-v2-email-pill{min-height:30px!important;padding:5px 8px!important;font-size:11px!important}
+.occ-v2-unit-links{gap:5px!important;margin-top:6px!important}
+.occ-v2-unit-link{height:28px!important;padding:0 9px!important;font-size:11px!important}
+.occ-v2-email-note{margin-top:6px!important;font-size:10px!important}
+
+@media(max-width:850px){
+  .occ-v2-unit-grid{grid-template-columns:1fr 1fr 1fr!important}
+  .occ-v2-business-main{grid-column:1/-1}
+  .occ-v2-people-grid,.occ-v2-bottom{grid-template-columns:1fr!important}
+  .occ-v2-role-section.owner,.occ-v2-role-section.tenant,.occ-v2-role-section.staff{grid-column:1!important}
+}
+
+/* Source-faithful role rendering: one people grid, no duplicated empty cards. */
+.occ-v2-people-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;align-items:start!important}
+.occ-v2-people-grid-1{grid-template-columns:1fr!important}
+.occ-v2-role-section{min-width:0!important}
+.occ-v2-role-section .occ-v2-section-body{padding:10px!important}
+.occ-v2-person-card{padding:8px 10px!important;margin:0 0 7px!important;background:#071015!important;border-color:#18343A!important}
+.occ-v2-person-card:last-child{margin-bottom:0!important}
+.occ-v2-person-name{font-size:14px!important;color:#D7F7F5!important}
+.occ-v2-person-line{font-size:12px!important;margin-top:4px!important}
+.occ-v2-person-line a{color:var(--ux-green)!important}
+.occ-v2-badge.staff{color:#fb7185!important;border-color:#e11d48!important;background:#3a1220!important}
+.occ-v2-committee-member{margin-top:8px;padding-top:8px;border-top:1px solid #18343A;color:#D7F7F5;font-size:13px;display:flex;gap:7px;align-items:center}
+@media(max-width:1100px){.occ-v2-people-grid{grid-template-columns:1fr!important}}
+
+.occ-v2-role-section.owner-private .occ-v2-person-empty{padding:10px!important;font-size:12px!important;line-height:1.45!important}
+
+/* Readability pass: enlarge information text while preserving the existing visual hierarchy. */
+.occupants-console-v2 .occ-v2-biz-primary{font-size:16px!important}
+.occupants-console-v2 .occ-v2-biz-secondary{font-size:13px!important}
+.occupants-console-v2 .occ-v2-person-name{font-size:16px!important}
+.occupants-console-v2 .occ-v2-person-line{font-size:14px!important;line-height:1.45!important}
+.occupants-console-v2 .occ-v2-contact-value{font-size:16px!important}
+.occupants-console-v2 .occ-v2-existing{font-size:13px!important}
+.occupants-console-v2 .occ-v2-value{font-size:15px!important;min-height:39px!important}
+.occupants-console-v2 .occ-v2-value.mono{font-size:14px!important}
+.occupants-console-v2 .occ-v2-vehicle-table td{font-size:14px!important}
+.occupants-console-v2 .occ-v2-plate{font-size:14px!important;min-height:32px!important}
+.occupants-console-v2 .occ-v2-committee-value{font-size:14px!important}
+.occupants-console-v2 .occ-v2-email-pill{font-size:13px!important;min-height:34px!important;padding:6px 9px!important}
+.occupants-console-v2 .occ-v2-unit-link{font-size:12px!important;height:30px!important}
+.occupants-console-v2 .occ-v2-email-note{font-size:11px!important}
+.occupants-console-v2 .occ-v2-label,.occupants-console-v2 .occ-v2-contact-label{font-size:10px!important}
+.occupants-console-v2 .occ-v2-section-title{font-size:16px!important}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-biz-primary{font-size:15px!important}
+  .occupants-console-v2 .occ-v2-person-name{font-size:15px!important}
+  .occupants-console-v2 .occ-v2-person-line{font-size:13px!important}
+  .occupants-console-v2 .occ-v2-contact-value{font-size:15px!important}
+  .occupants-console-v2 .occ-v2-value{font-size:14px!important}
+  .occupants-console-v2 .occ-v2-section-title{font-size:15px!important}
+}
+
+/* Prev/Next/Edit buttons sit right after the Level text; bigger Level; bigger pencil/trash boxes. */
+.occupants-console-v2 .occ-v2-detail-title .occ-v2-detail-actions{margin-left:10px;flex-shrink:1;flex-wrap:wrap}
+.occupants-console-v2 .occ-v2-detail-top .occ-v2-level{font-size:18px!important}
+.occupants-console-v2 .occ-v2-vehicle-actions{gap:8px}
+.occupants-console-v2 .occ-v2-vehicle-actions button{width:36px!important;height:36px!important;font-size:18px!important}
+
+/* Same-email unit buttons: same size as the email pill above; selected unit is highlighted. */
+.occupants-console-v2 .occ-v2-unit-links{gap:8px!important;margin-top:10px!important}
+.occupants-console-v2 .occ-v2-unit-link{font-size:15px!important;height:36px!important;min-width:52px!important;padding:6px 14px!important;border-radius:6px!important}
+.occupants-console-v2 .occ-v2-unit-link.current{background:#0e7c86!important;border-color:#69f8ff!important;color:#fff!important;box-shadow:0 0 0 1px #69f8ff}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-unit-link{font-size:14px!important}
+}
+
+/* Committee / same-email cards: enlarge the two key pieces of information. */
+.occupants-console-v2 .occ-v2-committee-member{font-size:17px!important;line-height:1.4!important}
+.occupants-console-v2 .occ-v2-email-pill{font-size:15px!important;min-height:36px!important;padding:6px 10px!important}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-committee-member{font-size:16px!important}
+  .occupants-console-v2 .occ-v2-email-pill{font-size:14px!important}
+}
+
+/* Main Unit & Business card: enlarge the primary unit information as one visual group. */
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-section-title{font-size:18px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-section-count{font-size:13px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-label{font-size:12px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-value{font-size:17px!important;min-height:43px!important;padding:8px 11px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-value.mono{font-size:16px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-label{font-size:12px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-value{font-size:18px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-note{font-size:13px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-existing{font-size:15px!important}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-existing .occ-v2-label{font-size:12px!important}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-section-title{font-size:17px!important}
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-label{font-size:11px!important}
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-value{font-size:16px!important}
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-value.mono{font-size:15px!important}
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-value{font-size:17px!important}
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-existing{font-size:14px!important}
+}
+
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid{
+  grid-template-columns:minmax(0,1fr) 92px 92px 92px!important;
+  gap:8px!important;
+  align-items:stretch!important;
+}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid > div:not(.occ-v2-business-main){
+  text-align:center!important;
+}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid .occ-v2-label{
+  display:block!important;
+  text-align:center!important;
+}
+.occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid .occ-v2-value{
+  width:100%!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+@media(max-width:900px){
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid{
+    grid-template-columns:minmax(0,1fr) 86px 86px 86px!important;
+  }
+}
+@media(max-width:600px){
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid{
+    grid-template-columns:1fr 1fr 1fr!important;
+  }
+  .occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid > .occ-v2-business-main{
+    grid-column:1/-1!important;
+  }
+}
+
+/* Name + role badge on one line; edit button stays at the right edge. */
+.occupants-console-v2 .occ-v2-person-name-row{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:nowrap}
+.occupants-console-v2 .occ-v2-person-name-row .occ-v2-person-name{flex:0 1 auto;min-width:0}
+.occupants-console-v2 .occ-v2-person-name-row .occ-v2-person-badges{margin-top:0!important;flex:0 0 auto}
+.occupants-console-v2 .occ-v2-person-name-row .occ-v2-person-action{margin-left:auto;flex:0 0 auto}
+
+.occ-v2-section-head-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.occ-v2-person-name-row{display:flex;align-items:center;gap:8px;min-width:0}
+.occ-v2-person-name-row .occ-v2-person-name{flex:1;min-width:0}
+.occ-v2-person-action,.occ-v2-vehicle-actions button{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border:1px solid #245260;border-radius:6px;background:#08171e;color:#8de9ee;cursor:pointer;transition:.15s}
+.occ-v2-person-action:hover,.occ-v2-vehicle-actions button:hover{border-color:#21e56b;color:#21e56b;background:#0a2024}
+.occ-v2-add-person{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px;border:1px solid #245260;border-radius:6px;background:#071a20;color:#9eeef1;font:700 11px "JetBrains Mono",monospace;cursor:pointer;white-space:nowrap}
+.occ-v2-add-person:hover{border-color:#21e56b;color:#21e56b;background:#0a2024}
+.occ-v2-add-vehicle{color:#8ff3ad;border-color:#276244}
+.occ-v2-vehicle-actions{display:flex;justify-content:center;gap:5px}
+.occ-v2-vehicle-actions button{width:26px;height:26px}
+.occ-v2-quick-modal{max-width:520px!important}
+.occ-v2-quick-kicker{font:800 10px "JetBrains Mono",monospace;letter-spacing:.12em;color:#21e56b;margin-bottom:5px}
+.occ-v2-quick-sub{font-size:13px;color:#8ba7b1;margin:-7px 0 16px;line-height:1.45}
+.occ-v2-quick-note{padding:10px 12px;border:1px solid #23414a;border-radius:7px;background:#071218;color:#7e9aa4;font-size:11px;line-height:1.5;margin-top:4px}
+.occ-v2-section-head-actions .occ-v2-section-count{margin:0}
+@media(max-width:600px){.occ-v2-add-person{font-size:10px;padding:0 7px}.occ-v2-person-action{width:25px;height:25px}.occ-v2-section-head-actions{gap:5px}.occ-v2-add-person span{display:none}.occ-v2-add-person{width:28px;padding:0;justify-content:center}}
+
+html body .occupants-console-v2 .occ-v2-list-head{font-size:14px!important;letter-spacing:.02em!important}
+/* Larger small text: labels, notes, table headers, empty states. (html body prefix = wins over earlier !important rules) */
+html body .occupants-console-v2 .occ-v2-label,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-label,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid .occ-v2-label,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-existing .occ-v2-label,
+html body .occupants-console-v2 .occ-v2-contact-label,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-label{font-size:14px!important}
+html body .occupants-console-v2 .occ-v2-contact-note,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-note{font-size:15px!important}
+html body .occupants-console-v2 .occ-v2-existing,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-existing{font-size:17px!important}
+html body .occupants-console-v2 .occ-v2-section-count,
+html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-section-count{font-size:15px!important}
+html body .occupants-console-v2 .occ-v2-person-empty{font-size:15px!important;padding:16px!important}
+html body .occupants-console-v2 .occ-v2-vehicle-table th{font-size:14px!important}
+html body .occupants-console-v2 .occ-v2-vehicle-note{font-size:14px!important}
+html body .occupants-console-v2 .occ-v2-committee-label{font-size:14px!important}
+html body .occupants-console-v2 .occ-v2-committee-value{font-size:16px!important}
+html body .occupants-console-v2 .occ-v2-email-note{font-size:14px!important}
+@media(max-width:600px){
+  html body .occupants-console-v2 .occ-v2-label,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-label,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-unit-grid .occ-v2-label,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-existing .occ-v2-label,
+  html body .occupants-console-v2 .occ-v2-contact-label,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-label,
+  html body .occupants-console-v2 .occ-v2-vehicle-table th,
+  html body .occupants-console-v2 .occ-v2-vehicle-note,
+  html body .occupants-console-v2 .occ-v2-committee-label,
+  html body .occupants-console-v2 .occ-v2-email-note{font-size:13px!important}
+  html body .occupants-console-v2 .occ-v2-contact-note,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-contact-note,
+  html body .occupants-console-v2 .occ-v2-person-empty{font-size:14px!important}
+  html body .occupants-console-v2 .occ-v2-existing,
+  html body .occupants-console-v2 .occ-v2-unit-business .occ-v2-existing{font-size:15px!important}
+  html body .occupants-console-v2 .occ-v2-section-count{font-size:13px!important}
+}
+
+/* Vehicles: 4 per box, up to 3 boxes side by side; a new box appears automatically after every 4 vehicles. */
+.occ-v2-vbox-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.occ-v2-vbox{border:1px solid #1f4a52;border-radius:8px;background:#08171e;overflow:hidden}
+.occ-v2-vrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #0a3040}
+.occ-v2-vrow:last-child{border-bottom:0}
+.occ-v2-vrow .occ-v2-vehicle-index{width:22px;color:#7796a2;font-size:14px;flex:0 0 auto}
+.occ-v2-vemail{flex:1 1 auto;min-width:0;color:#9ffaff;font:500 15px/1.3 Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;letter-spacing:0;text-shadow:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-wrap:anywhere}
+.occ-v2-vrow .occ-v2-vehicle-actions{flex:0 0 auto}
+@media(max-width:900px){.occ-v2-vbox-grid{grid-template-columns:1fr}}
+
+#plateList .plate-row{display:flex;align-items:center;gap:8px;flex:1 1 100%;min-width:0}
+#plateList .plate-row .plate-email-select{flex:1 1 auto;min-width:0;height:36px;font-size:14px}
+
+#editModal .modal-box.occ-edit-box{max-width:780px!important;width:calc(100% - 24px)!important;padding:0!important;background:#080D10!important;border:1px solid #18343A!important;border-radius:12px!important;color:#D7F7F5!important;display:flex;flex-direction:column;max-height:92vh;overflow:hidden}
+.occ-e-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #18343A;background:#0D1418}
+.occ-e-kick{font:800 14px "JetBrains Mono",monospace;letter-spacing:.12em;color:#39FF14}
+.occ-e-title{font-size:28px;font-weight:700;margin-top:3px;color:#D7F7F5}
+.occ-e-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1 1 auto;min-height:0}
+.occ-e-body>*{flex:0 0 auto}
+#editModal .occ-e-head,#editModal .occ-e-foot{flex:0 0 auto}
+#editModal .occ-edit-box *,#editModal .occ-edit-box *::before,#editModal .occ-edit-box *::after{box-sizing:border-box}
+.occ-e-g2>*,.occ-e-g3>*{min-width:0}
+.occ-e-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #18343A;background:#0D1418}
+.occ-e-sec{border:1px solid #18343A;border-radius:8px;background:#080D10;overflow:hidden}
+.occ-e-sh{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #18343A;background:#0D1418}
+.occ-e-st{font-size:21px;font-weight:700}
+.occ-e-cnt{font:700 14px "JetBrains Mono",monospace;color:#9FC0BF}
+.occ-e-sb{padding:14px;display:grid;gap:12px}
+.occ-e-sec.owner{border-color:rgba(255,176,0,.45);background:#080D10}.occ-e-sec.owner .occ-e-st{color:#D7F7F5}
+.occ-e-sec.tenant,.occ-e-sec.staff{border-color:rgba(255,49,49,.45);background:#080D10}.occ-e-sec.tenant .occ-e-st,.occ-e-sec.staff .occ-e-st{color:#D7F7F5}
+.occ-e-sec.veh{border-color:rgba(57,255,20,.42)}.occ-e-sec.veh .occ-e-st{color:#D7F7F5}
+.occ-e-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.occ-e-g3{display:grid;grid-template-columns:1.2fr 1.4fr 1fr;gap:10px}
+.occ-e-l{display:block;margin-bottom:6px;color:#9FC0BF;font:700 14px "JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.occ-e-in{width:100%;height:50px;padding:0 14px;border:1px solid #1f4a52;border-radius:6px;background:#04080A;color:#D7F7F5;font-size:18px;font-family:inherit}
+.occ-e-in:disabled{opacity:1;color:#9FC0BF;background:#04080A}
+.occ-e-in.occ-e-sm{height:42px;width:170px}
+.occ-e-in.occ-e-empty{border-color:#fbbf24}
+.occ-e-in:focus,.occ-e-person input:focus{outline:none;border-color:#00F5FF}
+.occ-e-seg{display:flex;gap:8px}
+.occ-e-seg button{flex:1;padding:10px;border:1px solid #1f4a52;border-radius:6px;background:#0D1418;color:#9FC0BF;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+.occ-e-seg button.on{border-color:#fbbf24;color:#fbbf24;background:rgba(251,191,36,.08)}
+.occ-e-seg button.on-tenant{border-color:#fb7185;color:#fb7185;background:rgba(251,113,133,.08)}
+.occ-e-chk{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #1f4a52;border-radius:6px;background:#0D1418}
+.occ-e-chk label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:18px;color:#D7F7F5}
+.occ-e-chk input[type=checkbox]{width:20px;height:20px;accent-color:#c084fc}
+.occ-e-cards{display:grid;gap:10px}
+.occ-e-person{border:1px solid #1f4a52;border-radius:8px;background:#0D1418;padding:12px;display:grid;gap:10px}
+.occ-e-ptop{display:flex;align-items:center;gap:8px}
+.occ-e-pnum{width:32px;height:32px;border:1px solid #1f4a52;border-radius:6px;display:flex;align-items:center;justify-content:center;font:700 16px "JetBrains Mono",monospace;color:#00F5FF}
+.occ-e-plabel{font:700 15px "JetBrains Mono",monospace;color:#9FC0BF;letter-spacing:.08em}
+.occ-e-prm{margin-left:auto}
+.occ-e-ibtn{width:42px;height:42px;border:1px solid #1f4a52;border-radius:6px;background:#0D1418;color:#00F5FF;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:21px}
+.occ-e-ibtn:hover{border-color:#39FF14;color:#39FF14}
+.occ-e-add{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 18px;border:1px solid #1d5966;border-radius:6px;background:#071821;color:#00F5FF;font-weight:700;font-size:17px;cursor:pointer;font-family:inherit}
+.occ-e-add:hover{border-color:#00F5FF}
+.occ-e-note,.occ-e-hint{color:#9FC0BF;font-size:16px;line-height:1.5}
+.occ-e-hint{margin-top:5px}
+.occ-e-bizfield{display:block}
+#eOwnerBizSlot:empty,#eTenantBizSlot:empty{display:none}
+#editModal #plateList{display:grid;gap:8px;min-height:44px}
+#editModal #plateList .plate-add-input{height:36px}
+#editModal #plateList .plate-row{display:flex;align-items:center;gap:10px}
+#editModal #plateList .plate-email-select{background:#0D1418;color:#D7F7F5;border:1px solid #1f4a52;border-radius:6px;padding:0 10px;height:38px;font-size:17px}
+@media(max-width:620px){.occ-e-g2,.occ-e-g3{grid-template-columns:1fr}.occ-e-seg{flex-direction:column}}
+#editModal .modal-box.occ-edit-box{max-width:1120px!important;opacity:1!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#editModal .occ-edit-box .occ-e-head,#editModal .occ-edit-box .occ-e-body,#editModal .occ-edit-box .occ-e-foot,#editModal .occ-edit-box .occ-e-sec{opacity:1;filter:none}
+#editModal .occ-edit-box{-webkit-font-smoothing:antialiased}
+#editModal #plateList{grid-template-columns:1fr 1fr;gap:10px 16px}
+#editModal #plateList .plate-add-btn,#editModal #plateList .plate-add-input{grid-column:1/-1}
+#editModal #plateList .plate-row{min-width:0}
+#editModal #plateList .plate-badge{flex:0 0 auto;font-size:20px;font-weight:700;padding:6px 10px;min-width:150px;display:inline-flex;align-items:center;justify-content:space-between;gap:8px}
+#editModal #plateList .plate-badge-remove{font-size:15px}
+#editModal #plateList .plate-email-select{flex:1 1 auto;min-width:0;height:50px;font-size:18px}
+#editModal #plateList .plate-add-btn{height:50px;font-size:18px}
+#editModal #plateList .plate-add-input{height:50px;font-size:20px}
+@media(max-width:760px){#editModal #plateList{grid-template-columns:1fr}}
+#editModal .occ-edit-box input,#editModal .occ-edit-box select{font-size:18px}
+#editModal .occ-edit-box .occ-e-person input{height:50px;font-size:18px}
+#editModal .occ-edit-box #saveBtn,#editModal .occ-edit-box .occ-e-foot button{font-size:17px;padding:12px 22px}
+#editModal .occ-edit-box .occ-e-seg button{font-size:17px}
+
+/* Same dark console style as Edit Unit — Person / Vehicle / View / Bulk Invite */
+#personEditModal .modal-box,#vehicleEditModal .modal-box,#viewModal .modal-box,#bulkInviteModal .modal-box{background:#080D10!important;border:1px solid #18343A!important;border-radius:12px!important;color:#D7F7F5!important;padding:22px 24px!important;box-sizing:border-box;opacity:1!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;-webkit-font-smoothing:antialiased}
+#personEditModal .modal-box,#vehicleEditModal .modal-box{max-width:620px!important;width:calc(100% - 24px)!important}
+#viewModal .modal-box{max-width:640px!important;width:calc(100% - 24px)!important}
+#bulkInviteModal .modal-box{max-width:760px!important;width:calc(100% - 24px)!important}
+#personEditModal *,#vehicleEditModal *,#viewModal *,#bulkInviteModal *{box-sizing:border-box}
+#personEditModal .modal-title,#vehicleEditModal .modal-title,#viewModal .modal-title,#bulkInviteModal .modal-title{font-size:28px!important;font-weight:700!important;color:#D7F7F5!important;margin:2px 0 12px!important}
+#personEditModal .occ-v2-quick-kicker,#vehicleEditModal .occ-v2-quick-kicker{font:800 14px "JetBrains Mono",monospace!important;letter-spacing:.12em;color:#39FF14!important;margin-bottom:4px}
+#personEditModal .occ-v2-quick-sub,#vehicleEditModal .occ-v2-quick-sub{font-size:16px!important;color:#9FC0BF!important;margin:-4px 0 18px!important;line-height:1.5}
+#personEditModal .modal-field,#vehicleEditModal .modal-field{margin-bottom:14px}
+#personEditModal .modal-label,#vehicleEditModal .modal-label{display:block;margin-bottom:6px;color:#9FC0BF!important;font:700 14px "JetBrains Mono",monospace!important;text-transform:uppercase;letter-spacing:.08em}
+#personEditModal .modal-input,#vehicleEditModal .modal-input,#personEditModal .modal-select,#vehicleEditModal .modal-select{width:100%;height:50px;padding:0 14px;border:1px solid #1f4a52!important;border-radius:6px!important;background:#04080A!important;color:#D7F7F5!important;font-size:18px!important;font-family:inherit}
+#personEditModal .modal-input:focus,#vehicleEditModal .modal-input:focus,#personEditModal .modal-select:focus,#vehicleEditModal .modal-select:focus{outline:none;border-color:#00F5FF!important}
+#personEditModal .occ-v2-quick-note,#vehicleEditModal .occ-v2-quick-note{background:#0D1418!important;border:1px solid #18343A!important;color:#9FC0BF!important;font-size:15px!important;border-radius:8px}
+#personEditModal .modal-footer,#vehicleEditModal .modal-footer,#viewModal .modal-footer,#bulkInviteModal .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #18343A}
+#personEditModal .modal-footer button,#vehicleEditModal .modal-footer button,#viewModal .modal-footer button,#bulkInviteModal .modal-footer button{font-size:17px!important;padding:12px 22px!important;border-radius:8px;cursor:pointer;font-weight:700;font-family:inherit}
+#personEditModal .occ-v2-quick-note:empty{display:none!important}
+#viewModal .modal-info-grid{gap:12px}
+#viewModal .modal-info-label{color:#9FC0BF!important;font:700 14px "JetBrains Mono",monospace!important;text-transform:uppercase;letter-spacing:.06em}
+#viewModal .modal-info-value{color:#D7F7F5!important;font-size:18px!important}
+#bulkInviteModal p,#bulkInviteModal #bulkInviteSummary{color:#9FC0BF!important;font-size:16px!important}
+#bulkInviteModal #bulkInviteList{background:#04080A;border:1px solid #18343A!important;color:#D7F7F5;font-size:16px}
+#bulkInviteModal #bulkInviteList *{color:inherit}
+
+/* ADMIN PAGE FRAME — background image supplied by Redmyre House.
+   Scoped to admin-only pages; body class is visual only. */
+html:has(body.admin-neon-page) { background:#04152f !important; }
+body.admin-neon-page {
+  background:#04152f !important;
+  color:#a9e8ff !important;
+}
+body.admin-neon-page .main {
+  background:transparent !important;
+  border-left:1px solid rgba(0,183,255,.78) !important;
+  box-shadow:-3px 0 16px rgba(0,145,255,.17) !important;
+}
+body.admin-neon-page .content {
+  color:#9ee4ff !important;
+  background:
+    radial-gradient(ellipse 72% 36% at 50% 0%,rgba(0,155,255,.20),transparent 72%),
+    linear-gradient(120deg,rgba(1,17,45,.78),rgba(2,24,58,.72)),
+    url('/img/bms-background.png') center center / cover fixed no-repeat !important;
+}
+body.admin-neon-page .page-header-title,
+body.admin-neon-page .section-title,
+body.admin-neon-page .page-title {
+  color:#45caff !important;
+  text-shadow:0 0 5px rgba(0,183,255,.70),0 0 15px rgba(0,119,255,.40) !important;
+}
+body.admin-neon-page .page-header-sub {
+  color:#a7e9ff !important;
+  text-shadow:0 0 5px rgba(0,153,255,.34) !important;
+}
+body.admin-neon-page input,
+body.admin-neon-page select,
+body.admin-neon-page textarea {
+  color:#d9f7ff;
+  caret-color:#00c8ff;
+}
+body.admin-neon-page input::placeholder,
+body.admin-neon-page textarea::placeholder {
+  color:#77bada !important;
+  opacity:1 !important;
+}
+body.admin-neon-page input:focus,
+body.admin-neon-page select:focus,
+body.admin-neon-page textarea:focus {
+  border-color:#20baff !important;
+  box-shadow:0 0 0 2px rgba(0,183,255,.18),0 0 13px rgba(0,145,255,.30) !important;
+  outline:none !important;
+}
+body.admin-neon-page .btn-primary,
+body.admin-neon-page button.primary,
+body.admin-neon-page .primary-btn {
+  box-shadow:0 0 9px rgba(0,153,255,.35),0 0 20px rgba(0,102,255,.18) !important;
+}
+@media(prefers-reduced-transparency:reduce) {
+  body.admin-neon-page .content {
+    background-color:#061a3a !important;
+    background-image:none !important;
+  }
+}
+
+body.admin-neon-page .content:has(.occupants-console-v2) {
+  background:transparent !important;
+  padding:0 !important;
+}
+body.admin-neon-page .occupants-console-v2 {
+  --ux-bg:transparent;
+  --ux-surface:rgba(2,22,55,.72);
+  --ux-surface2:rgba(4,35,78,.76);
+  --ux-line:rgba(24,153,255,.58);
+  --ux-line2:rgba(0,190,255,.78);
+  --ux-cyan:#37c9ff;
+  --ux-cyan2:#078fff;
+  --ux-text:#d4f4ff;
+  --ux-muted:#91d1f1;
+  background:transparent !important;
+  color:#b5edff !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-title,
+body.admin-neon-page .occupants-console-v2 .occ-v2-section-title,
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-code,
+body.admin-neon-page .occupants-console-v2 .occ-v2-detail-title,
+body.admin-neon-page .occupants-console-v2 .occ-v2-detail-unit,
+body.admin-neon-page .occupants-console-v2 .occ-v2-person-name,
+body.admin-neon-page .occupants-console-v2 .occ-v2-value,
+body.admin-neon-page .occupants-console-v2 .occ-v2-contact-value,
+body.admin-neon-page .occupants-console-v2 .occ-v2-committee-value {
+  color:#9beaff !important;
+  text-shadow:0 0 4px rgba(0,165,255,.36),0 0 10px rgba(0,119,255,.18) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-sub,
+body.admin-neon-page .occupants-console-v2 .occ-v2-total,
+body.admin-neon-page .occupants-console-v2 .occ-v2-label,
+body.admin-neon-page .occupants-console-v2 .occ-v2-contact-label,
+body.admin-neon-page .occupants-console-v2 .occ-v2-result-line,
+body.admin-neon-page .occupants-console-v2 .occ-v2-biz-secondary,
+body.admin-neon-page .occupants-console-v2 .occ-v2-person-line,
+body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-note,
+body.admin-neon-page .occupants-console-v2 .occ-v2-email-note {
+  color:#83ccec !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-panel,
+body.admin-neon-page .occupants-console-v2 .occ-v2-left,
+body.admin-neon-page .occupants-console-v2 .occ-v2-detail,
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-business,
+body.admin-neon-page .occupants-console-v2 .occ-v2-section,
+body.admin-neon-page .occupants-console-v2 .occ-v2-person-card,
+body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-table-wrap,
+body.admin-neon-page .occupants-console-v2 .occ-v2-committee,
+body.admin-neon-page .occupants-console-v2 .occ-v2-same-email {
+  background:rgba(2,22,55,.66) !important;
+  border:1px solid rgba(22,148,255,.56) !important;
+  border-radius:10px !important;
+  box-shadow:0 0 8px rgba(0,145,255,.16),inset 0 0 14px rgba(0,115,255,.07) !important;
+  backdrop-filter:blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter:blur(16px) saturate(150%) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-row {
+  color:#b9efff !important;
+  background:rgba(3,29,69,.56) !important;
+  border-bottom:1px solid rgba(0,145,255,.27) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-row:hover,
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-row.selected {
+  background:rgba(0,117,219,.28) !important;
+  box-shadow:inset 3px 0 #2cc7ff,0 0 10px rgba(0,153,255,.18) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-list-head {
+  color:#47caff !important;
+  background:rgba(0,31,76,.88) !important;
+  border-color:rgba(0,174,255,.52) !important;
+  text-shadow:0 0 5px rgba(0,153,255,.42) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-search input,
+body.admin-neon-page .occupants-console-v2 select {
+  color:#d8f7ff !important;
+  background:rgba(1,18,47,.82) !important;
+  border-color:rgba(0,174,255,.65) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-btn,
+body.admin-neon-page .occupants-console-v2 .occ-v2-floor-tab,
+body.admin-neon-page .occupants-console-v2 .occ-v2-role-chip,
+body.admin-neon-page .occupants-console-v2 .occ-v2-mini {
+  border-color:rgba(0,183,255,.58) !important;
+  box-shadow:0 0 6px rgba(0,145,255,.13) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-floor-tab.active,
+body.admin-neon-page .occupants-console-v2 .occ-v2-btn.primary,
+body.admin-neon-page .occupants-console-v2 .occ-v2-mini.primary {
+  color:#fff !important;
+  background:linear-gradient(135deg,#087fe4,#0756b7) !important;
+  border-color:#38caff !important;
+  box-shadow:0 0 10px rgba(0,174,255,.48),0 0 20px rgba(0,112,255,.23) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-links,
+body.admin-neon-page .occupants-console-v2 .occ-v2-unit-link {
+  color:#9feaff !important;
+  border-color:rgba(0,160,255,.46) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-table th {
+  color:#50cfff !important;
+  background:rgba(0,30,75,.82) !important;
+}
+body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-table td {
+  color:#bdefff !important;
+  border-color:rgba(0,142,255,.27) !important;
+}
+@media(prefers-reduced-transparency:reduce) {
+  body.admin-neon-page .occupants-console-v2 .occ-v2-panel,
+  body.admin-neon-page .occupants-console-v2 .occ-v2-detail,
+  body.admin-neon-page .occupants-console-v2 .occ-v2-unit-business,
+  body.admin-neon-page .occupants-console-v2 .occ-v2-section,
+  body.admin-neon-page .occupants-console-v2 .occ-v2-person-card {
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+    background:#061a3a !important;
+  }
+}
+
+/* Remove the vertical divider between the sidebar and main content.
+   Keep the sidebar's own rounded glass outline intact. */
+body.admin-neon-page .main,
+body.admin-neon-page .main:has(.cctv-console) {
+  border-left: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Occupant Details typography — match User Management exactly.
+   Font families loaded above: Orbitron / Inter / JetBrains Mono. */
+
+/* Main page title: same Orbitron sizing, weight, tracking and glow as Users. */
+html body.admin-neon-page .occupants-console-v2 .occ-v2-title {
+  font-family:"Orbitron","Segoe UI",sans-serif !important;
+  font-size:28px !important;
+  font-weight:700 !important;
+  line-height:1.15 !important;
+  letter-spacing:.16em !important;
+  text-transform:uppercase !important;
+  color:#00F5FF !important;
+  text-shadow:0 0 10px rgba(0,245,255,.55) !important;
+}
+
+/* Main subtitle and counts use the same technical mono font as Users. */
+html body.admin-neon-page .occupants-console-v2 .occ-v2-sub,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-total,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-result-line,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-list-head,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-label,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-contact-label,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-level,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-section-count,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-index,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-primary-pill,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-table th,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-index,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-vehicle-note,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-committee-label,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-email-pill,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-email-note,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-unit-code,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-stat,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-chevron {
+  font-family:"JetBrains Mono",Consolas,"SFMono-Regular",monospace !important;
+}
+
+/* Panel headings follow the same futuristic heading font used for Floor / Chart titles. */
+html body.admin-neon-page .occupants-console-v2 .occ-v2-section-title,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-detail-unit {
+  font-family:"Orbitron","Segoe UI",sans-serif !important;
+  font-weight:700 !important;
+  letter-spacing:.045em !important;
+}
+
+/* Data names and explanatory content stay clean and readable like Users' person names. */
+html body.admin-neon-page .occupants-console-v2,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-biz-primary,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-person-name,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-person-line,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-value,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-contact-value,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-existing,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-committee-value {
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif !important;
+}
+
+/* Tabs, buttons and controls use the same mono control typography as Users. */
+html body.admin-neon-page .occupants-console-v2 .occ-v2-btn,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-floor-tab,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-role-chip,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-mini,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-no-vehicle,
+html body.admin-neon-page .occupants-console-v2 input,
+html body.admin-neon-page .occupants-console-v2 select {
+  font-family:"JetBrains Mono",Consolas,"SFMono-Regular",monospace !important;
+}
+
+/* Match the electric-cyan title tone used by User Management without changing
+   meaningful Owner / Tenant / Committee / Vehicle status colours. */
+html body.admin-neon-page .occupants-console-v2 {
+  --ux-cyan:#00F5FF;
+  --ux-cyan2:#00DDF5;
+}
+html body.admin-neon-page .occupants-console-v2 .occ-v2-title,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-section-icon,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-search .search-icon {
+  color:#00F5FF !important;
+}
+html body.admin-neon-page .occupants-console-v2 .occ-v2-title,
+html body.admin-neon-page .occupants-console-v2 .occ-v2-section-title {
+  text-shadow:0 0 8px rgba(0,245,255,.42) !important;
+}
+
+@media(max-width:600px) {
+  html body.admin-neon-page .occupants-console-v2 .occ-v2-title {
+    font-size:25px !important;
+    letter-spacing:.12em !important;
+  }
+}
