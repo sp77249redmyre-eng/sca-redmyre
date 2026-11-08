@@ -495,7 +495,12 @@ window.printImageModal = function() {
   } else {
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head></head><body><img src="${_imageModalUrl}"></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4;margin:10mm}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
+img{max-width:190mm;max-height:277mm;object-fit:contain;display:block}
+</style></head><body><img src="${_imageModalUrl}"></body></html>`);
     w.document.close();
     w.onload = () => { w.focus(); w.print(); };
   }
@@ -647,7 +652,30 @@ window.printWarning = function() {
   if (!w) return;
 
   w.document.write(`<!DOCTYPE html><html><head><title>Parking Warning Notice</title>
-  </head><body>
+  <style>
+@page{size:A4 portrait;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:210mm;height:297mm;margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{padding:4mm 4.5mm}
+.notice{width:201mm;height:289mm;border:0.8mm solid #111;border-radius:4mm;overflow:hidden;background:#fff;display:grid;grid-template-rows:22mm 21mm 105mm minmax(0,1fr) 27mm 19mm auto}
+.header{background:${repeatN >= 4 ? '#444' : '#e00000'};color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.2mm;font-weight:900;line-height:1.05;padding:0 5mm}
+.subtitle{display:flex;align-items:center;justify-content:center;text-align:center;padding:2mm 5mm;font-size:${repeatN >= 3 ? '6.0mm' : '6.8mm'};font-weight:900;color:#222;line-height:1.1}
+.photo-wrap{height:105mm;margin:0 8mm;border:0.6mm solid #111;border-radius:2mm;overflow:hidden;background:#e5e7eb}
+.photo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.info{min-height:0;padding:6mm 8mm 4mm;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cctv{font-size:6.3mm;font-weight:900;color:#d60000;line-height:1.15}
+.message{margin-top:5mm;font-size:5.0mm;font-weight:700;color:#222;line-height:1.38}
+.details{height:27mm;margin:0 8mm;border:0.55mm solid #333;border-radius:2.5mm;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.detail{padding:3mm 6mm;display:flex;flex-direction:column;justify-content:center}
+.detail+ .detail{border-left:0.3mm solid #ddd}
+.label{font-size:3.2mm;color:#777;letter-spacing:.25mm}
+.value{margin-top:2mm;font-size:6.2mm;font-weight:900;color:#111;line-height:1}
+.level{height:19mm;margin:0 8mm;background:#ffe000;border:0.55mm solid #111;display:flex;align-items:center;justify-content:center;text-align:center;padding:2mm 4mm;font-size:${repeatN >= 4 ? '4.5mm' : '5.2mm'};font-weight:900;line-height:1.1}
+.footer{min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2mm 4mm}
+.footer-main{font-size:6.2mm;font-weight:900;color:#d60000;letter-spacing:.2mm;line-height:1.1}
+.footer-sub{margin-top:2.5mm;font-size:3.1mm;color:#777;letter-spacing:.1mm;line-height:1.1}
+.footer.ncat{background:#444;color:#fff;font-size:4.6mm;font-weight:900;line-height:1.25;padding:2mm 4mm}
+  </style></head><body>
   <div class="notice">
     <div class="header">${safe(title)}</div>
     <div class="subtitle">${safe(subtitle)}</div>
