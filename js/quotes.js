@@ -68,6 +68,9 @@ import { getSupabase } from '/js/auth.js';
 
 let allQuotes   = [];
 let allVotes    = [];
+let votesByProject = new Map();
+let userVotesByProject = new Map();
+let realtimeRefreshTimer = null;
 let supabase    = null;
 let user        = null;
 let role        = 'observer';
@@ -140,6 +143,15 @@ function calculateResult({ approvals, declines, holds, hasTie = false, totalVote
   else console.error(`[calculateResult] ✖ ${failed} test(s) FAILED – check voting logic`);
 })();
 
+function scheduleRealtimeRefresh() {
+  clearTimeout(realtimeRefreshTimer);
+  realtimeRefreshTimer = setTimeout(async () => {
+    realtimeRefreshTimer = null;
+    await loadData();
+    renderQuotes();
+  }, 180);
+}
+
 async function init() {
   const layoutResult = await initLayout();
   if (!layoutResult) return;
@@ -159,7 +171,11 @@ async function init() {
       });
     } catch (e) {}
   };
-  const { data: profiles } = await supabase.from('profiles').select('email, full_name, role');
+  const [profilesResult] = await Promise.all([
+    supabase.from('profiles').select('email, full_name, role'),
+    loadData()
+  ]);
+  const profiles = profilesResult.data;
   committeeMembers = [];
   (profiles || []).forEach(p => {
     allProfiles[p.email] = p.full_name || p.email.split('@')[0];
@@ -181,13 +197,12 @@ async function init() {
       btn.classList.add('is-visible');
     }
   }
-  await loadData();
   renderQuotes();
 
   supabase.channel('quotes-realtime')
-    .on('postgres_changes', {event: '*', schema: 'public', table: 'quotes'}, async () => { await loadData(); renderQuotes(); })
-    .on('postgres_changes', {event: '*', schema: 'public', table: 'votes'}, async () => { await loadData(); renderQuotes(); })
-    .on('postgres_changes', {event: '*', schema: 'public', table: 'project_comments'}, async () => { await loadData(); renderQuotes(); })
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'quotes'}, scheduleRealtimeRefresh)
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'votes'}, scheduleRealtimeRefresh)
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'project_comments'}, scheduleRealtimeRefresh)
     .subscribe();
 }
 
@@ -199,6 +214,17 @@ async function loadData() {
     ]);
     allQuotes = qRes.data || [];
     allVotes  = vRes.data || [];
+    votesByProject = new Map();
+    userVotesByProject = new Map();
+    allVotes.forEach(v => {
+      const projectId = v.project_id;
+      if (!projectId) return;
+      if (!votesByProject.has(projectId)) votesByProject.set(projectId, []);
+      votesByProject.get(projectId).push(v);
+      if (user?.email && v.user_email === user.email && !userVotesByProject.has(projectId)) {
+        userVotesByProject.set(projectId, v);
+      }
+    });
   } catch(e) {
     console.error('loadData failed:', e);
     showToast('Failed to load data', true);
@@ -215,12 +241,12 @@ function escHtml(str) {
 // One row per (project_id, user_email)
 function getUserVoteRow(projectId) {
   if (!projectId || !user?.email) return null;
-  return allVotes.find(v => v.project_id === projectId && v.user_email === user.email) || null;
+  return userVotesByProject.get(projectId) || null;
 }
 
 function getProjectVotes(projectId) {
   if (!projectId) return [];
-  return allVotes.filter(v => v.project_id === projectId);
+  return (votesByProject.get(projectId) || []).slice();
 }
 
 function countQuoteProjects(quotes) {
@@ -673,7 +699,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
       votingSection.appendChild(adminRow);
 
       const pjId = group[0]?.project_id || projectKey;
-      const pjVotes = allVotes.filter(v => v.project_id === pjId);
+      const pjVotes = getProjectVotes(pjId);
       const votedSet = new Set(pjVotes.filter(v => v.vote).map(v => v.user_email));
       const pendingMs = committeeMembers.filter(m => m.email && !votedSet.has(m.email));
 
@@ -1556,7 +1582,7 @@ async function doUpsert(projectId, fields, triggerBtn, btnOrigText, onSuccess) {
       const current = getUserVoteRow(projectId);
       // Result-lock guard: recalculate from latest allVotes before allowing vote
       const guardGroup   = allQuotes.filter(q => (q.project_id || q.id) === projectId && (q.status === 'voting' || q.status === 'pending'));
-      const guardVoted   = allVotes.filter(v => v.project_id === projectId && v.vote && v.vote !== '');
+      const guardVoted   = getProjectVotes(projectId).filter(v => v.vote && v.vote !== '');
       const guardSingle  = guardGroup.length === 1;
       const gVMap        = {};
       guardGroup.forEach(q => { gVMap[q.id] = 0; });
@@ -1816,7 +1842,7 @@ window.confirmSelection = async function(quoteId, group, triggerBtn, calcResult)
   try {
     // Recalculate result at confirm time — final authority, overrides UI-passed value
     const projectId    = group[0]?.project_id || group[0]?.id;
-    const pVotes       = allVotes.filter(v => v.project_id === projectId);
+    const pVotes       = getProjectVotes(projectId);
     const pVoted       = pVotes.filter(v => v.vote && v.vote !== '');
     const pIsSingle    = group.length === 1;
     const vMap         = {};

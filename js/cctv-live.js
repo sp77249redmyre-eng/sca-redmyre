@@ -5,6 +5,7 @@
 (function initCctvViewer(){
   var HOST = 'redmyre-pc.tail8f8836.ts.net';
   var CODEC_LIST = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
+  var codecCache = null;
   var SLOW = { ch19: 1, ch24: 1, ch25: 1, ch26: 1, ch27: 1, ch28: 1 };       // high resolution cameras: slow to start
   var STAGGER_MS = 700;                                      // gap between camera connections
 
@@ -92,7 +93,9 @@
 
   function codecs(){
     if (!window.MediaSource) return '';
-    return CODEC_LIST.filter(function(c){ return MediaSource.isTypeSupported('video/mp4; codecs="' + c + '"'); }).join();
+    if (codecCache !== null) return codecCache;
+    codecCache = CODEC_LIST.filter(function(c){ return MediaSource.isTypeSupported('video/mp4; codecs="' + c + '"'); }).join();
+    return codecCache;
   }
   function getToken(){
     return new Promise(function(resolve){
@@ -120,7 +123,11 @@
   };
   Player.prototype.start = function(){ if (!this.stopped) return; this.stopped = false; this.open(); };
   Player.prototype.stop = function(){
-    this.stopped = true; this.cleanup(); clearTimeout(this.timer);
+    if (this.stopped) return;
+    this.stopped = true;
+    this.cleanup();
+    clearTimeout(this.timer);
+    this.timer = null;
     this.setState('connecting', 'Waiting…');
   };
   Player.prototype.cleanup = function(){
