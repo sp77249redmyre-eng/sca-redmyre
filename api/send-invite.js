@@ -28,6 +28,33 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  // Server-side admin verification. The Users page restriction alone is not sufficient.
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const supabaseUser = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const { data: { user: currentUser }, error: authError } = await supabaseUser.auth.getUser();
+  if (authError || !currentUser) {
+    return res.status(401).json({ error: 'Invalid authentication' });
+  }
+
+  const { data: currentProfile, error: profileError } = await supabaseUser
+    .from('profiles')
+    .select('role')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  if (profileError || currentProfile?.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
