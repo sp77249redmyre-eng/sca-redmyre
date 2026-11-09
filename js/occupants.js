@@ -8,6 +8,12 @@ const { supabase, user, role, name, profile } = ctx;
 const myUnit = profile?.unit || null;
 const myEmail = user?.email || null;
 
+// User invitations are an administrator-only action.
+const bulkInviteButton = document.querySelector('.occ-v2-btn.bulk');
+if (bulkInviteButton && role !== 'admin') {
+  bulkInviteButton.style.display = 'none';
+}
+
 if (!['admin','committee','observer','owner','tenant'].includes(role)) {
   window.location.href = '/pages/announcement.html';
 }
