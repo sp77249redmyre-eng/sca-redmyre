@@ -323,14 +323,15 @@ CSS와 JavaScript를 페이지별로 분리한 목적은 단순한 파일 정리
 
 ---
 
-### 3-26. Guide (Legacy)
+### 3-26. Guide (Legacy) — retired
 
-| 항목 | 경로 |
-|------|------|
-| HTML | `guide.html` (루트) ⚠️ |
-| CSS | `css/pages/guide-legacy.css` |
-| JavaScript | `js/guide-legacy.js`, `js/guide-legacy-language.js` |
-| 확인 상태 | ✅ CSS·JS 존재 확인 / ⚠️ HTML 위치가 루트. `guide.html`과의 연결 관계 확인 필요 |
+`guide.html`와 해당 페이지 전용 `guide-legacy.css`, `guide-legacy.js`, `guide-legacy-language.js`는 2026-11-09 사용 및 내부 참조 여부를 확인한 뒤 제거했습니다.
+
+현재 역할별 가이드는 다음 페이지를 사용합니다:
+- `pages/guide-resident.html`
+- `pages/guide-owner.html`
+- `pages/guide-tenant.html`
+- `pages/guide-committee.html`
 
 ---
 
@@ -482,7 +483,7 @@ JavaScript가 필요하지 않은 페이지(출력 전용 등)는 빈 JS 파일�
 
 | 항목 | 내용 |
 |------|------|
-| `guide.html` (루트) | `guide-legacy`와의 연결 관계 확인 필요 |
+| Legacy Guide | 2026-11-09: `guide.html` 및 전용 CSS/JS 제거 완료. 역할별 가이드 페이지 유지 |
 | `lift.html` (루트) | 다른 페이지들과 달리 `pages/` 하위가 아닌 루트에 위치 |
 | `parking_sticker_print.html` (루트) | 루트 위치. 의도된 구조인지 확인 필요 |
 | 인라인 `style=""` 잔존 여부 | 각 페이지 HTML에 개별 style 속성이 얼마나 남아 있는지 미확인 |

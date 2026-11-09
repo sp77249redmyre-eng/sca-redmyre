@@ -242,7 +242,7 @@ function renderDirectoryPreview() {
 
         <!-- 푸터 -->
         <div style="background:#0f172a;padding:14px 28px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:3px solid #c9a961;flex-shrink:0;">
-          <img src="/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
+          <img src="/img/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
           <div style="text-align:left;">
             <div style="font-size:11px;font-weight:600;letter-spacing:3px;color:#c9a961;text-transform:uppercase;">SCA Facility Management</div>
             <div style="font-size:10px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px;">Redmyre House · 9–13 Redmyre Road, Strathfield</div>
@@ -298,7 +298,7 @@ function buildAllFloorsHTML() {
     ${cells}
   </div>
   <div style="background:#0f172a;padding:14px 28px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:3px solid #c9a961;flex-shrink:0;box-sizing:border-box;">
-    <img src="/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
+    <img src="/img/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
     <div style="text-align:left;">
       <div style="font-size:11px;font-weight:600;letter-spacing:3px;color:#c9a961;text-transform:uppercase;">SCA Facility Management</div>
       <div style="font-size:10px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px;">Redmyre House · 9–13 Redmyre Road, Strathfield</div>

@@ -41,7 +41,7 @@ async function renderManagerCard() {
   if (available) {
     card.className='person-card blue';
     av.className='person-av av-blue';
-    av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
+    av.innerHTML='<img src="https://sca-redmyre.vercel.app/img/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-green';
     statusEl.innerHTML='<div class="status-dot dot-green"></div> Available now';
     phoneEl.innerHTML='<div>'+(mgrAfterRow?.phone||'1300 785 007')+'</div><div>'+(mgrRow?.phone||'0478 705 406')+'</div>';
@@ -52,7 +52,7 @@ async function renderManagerCard() {
   } else {
     card.className='person-card orange';
     av.className='person-av av-orange';
-    av.innerHTML='<img src="https://sca-redmyre.vercel.app/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
+    av.innerHTML='<img src="https://sca-redmyre.vercel.app/img/sca-logo.png" alt="SCA" style="width:100%;height:100%;object-fit:contain;">';
     statusEl.className='status-badge sb-orange';
     statusEl.innerHTML='<div class="status-dot dot-orange"></div> Building manager unavailable';
     phoneEl.textContent=mgrAfterRow?.phone||'1300 785 007';
