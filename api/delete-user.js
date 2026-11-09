@@ -28,24 +28,40 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing user_id' });
   }
 
-  // 🔒 자기 자신 삭제 방지 — Authorization 토큰으로 현재 유저 확인
+  // Server-side admin verification. Reject missing or invalid sessions.
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    try {
-      const token = authHeader.substring(7);
-      const supabaseUser = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_ANON_KEY,
-        { global: { headers: { Authorization: `Bearer ${token}` } } }
-      );
-      const { data: { user: currentUser } } = await supabaseUser.auth.getUser();
-      if (currentUser && currentUser.id === user_id) {
-        return res.status(400).json({ error: 'Cannot delete your own account' });
-      }
-    } catch (authErr) {
-      console.warn('[delete-user] Auth check failed:', authErr);
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const supabaseUser = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  try {
+    const { data: { user: currentUser }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !currentUser) {
       return res.status(401).json({ error: 'Invalid authentication' });
     }
+
+    const { data: currentProfile, error: profileError } = await supabaseUser
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (profileError || currentProfile?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    if (currentUser.id === user_id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+  } catch (authErr) {
+    console.warn('[delete-user] Auth check failed:', authErr);
+    return res.status(401).json({ error: 'Invalid authentication' });
   }
 
   const supabaseAdmin = createClient(
