@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HVAC / Temperature – Redmyre House</title>
 <link rel="manifest" href="/manifest.webmanifest?v=5">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32-v4.png?v=5">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16-v4.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32-v4.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16-v4.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon-v4.png?v=5">
 <meta name="theme-color" content="#1e3a8a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Redmyre BMS">
@@ -2689,7 +2689,7 @@ function reqRowHtml(r, forceOpen) {
     <div class="my-req-row${isOpen ? ' my-req-open' : ''}">
       <div class="my-req-summary" data-id="${r.id}" style="${forceOpen ? '' : 'cursor:pointer;'}">
         <div class="hvac-summary-date">${dateText}<br><span>${timeText}</span></div>
-        <div class="hvac-summary-request">${r.status === 'completed' ? (r.type === 'hot' ? '<span class="summary-request-image summary-request-down"><img src="/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>' : '<span class="summary-request-image summary-request-up"><img src="/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>') : icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
+        <div class="hvac-summary-request">${r.status === 'completed' ? (r.type === 'hot' ? '<span class="summary-request-image summary-request-down"><img src="/img/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>' : '<span class="summary-request-image summary-request-up"><img src="/img/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>') : icon}<span>${r.type === 'hot' ? 'Too Hot' : 'Too Cold'}</span></div>
         <div class="hvac-summary-temp">${tempText}</div>
         <div class="hvac-summary-status"><span class="badge ${r.status === 'pending' ? 'badge-yellow' : r.status === 'completed' ? 'badge-green' : r.status === 'approved' || r.status === 'processing' ? 'badge-blue' : 'badge-red'}">${statusLabel(r.status)}</span></div>
       </div>
@@ -3363,8 +3363,8 @@ async function loadAdminData() {
     cList.innerHTML = filtered.map(r => {
       const isOpen = expandedRequestIds.has(String(r.id));
       const icon = r.type === 'hot'
-        ? '<span class="summary-request-image summary-request-down"><img src="/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>'
-        : '<span class="summary-request-image summary-request-up"><img src="/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>';
+        ? '<span class="summary-request-image summary-request-down"><img src="/img/Temperature_Down_180x121.png" alt="Temperature will be lowered by 0.5°C"></span>'
+        : '<span class="summary-request-image summary-request-up"><img src="/img/Temperature_Up_180x121.png" alt="Temperature will be raised by 0.5°C"></span>';
       const date = new Date(r.created_at);
       const dateText = date.toLocaleDateString('en-AU', {day:'2-digit', month:'short', year:'numeric'});
       const timeText = date.toLocaleTimeString('en-AU', {hour:'numeric', minute:'2-digit'});
@@ -3452,7 +3452,7 @@ async function loadObserverData() {
     if (!filtered.length) { cList.innerHTML = '<div class="empty-state">No completed requests yet</div>'; return; }
     cList.innerHTML = filtered.map(r => `
       <div class="my-req-row">
-        <div class="summary-request-image observer-request-image"><img src="${r.type === 'hot' ? '/Temperature_Down_180x121.png' : '/Temperature_Up_180x121.png'}" alt="${r.type === 'hot' ? 'Temperature will be lowered by 0.5°C' : 'Temperature will be raised by 0.5°C'}"></div>
+        <div class="summary-request-image observer-request-image"><img src="${r.type === 'hot' ? '/img/Temperature_Down_180x121.png' : '/img/Temperature_Up_180x121.png'}" alt="${r.type === 'hot' ? 'Temperature will be lowered by 0.5°C' : 'Temperature will be raised by 0.5°C'}"></div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${r.type === 'hot' ? 'Temperature lowered by 0.5°C' : 'Temperature raised by 0.5°C'} — ${r.level}, ${r.tenancy}</div>
           <div style="font-size:11px;color:var(--muted)">${escapeAttr(r.user_name || 'Unknown')} · ${new Date(r.created_at).toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})}</div>
