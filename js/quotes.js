@@ -77,15 +77,11 @@ let role        = 'observer';
 let allProfiles = {};
 let committeeMembers = [];
 
-const COMMITTEE_ORDER = [
-  { name: 'Jimmy',    role: 'Chairman'          },
-  { name: 'Michael',  role: 'Treasurer'         },
-  { name: 'Michelle', role: 'Secretary'         },
-  { name: 'Sudesh',   role: 'Committee Member'  },
-  { name: 'Niranjan', role: 'Committee Member'  },
-  { name: 'Sarah',    role: 'Committee Member'  },
-  { name: 'Laura',    role: 'Committee Member'  },
-  { name: 'Eva',      role: 'Committee Member'  }
+// Legacy titles are retained for the current office holders until Position is managed in Users.
+const LEGACY_COMMITTEE_POSITIONS = [
+  { name: 'Jimmy',   role: 'Chairman', order: 0 },
+  { name: 'Michael', role: 'Treasurer', order: 1 },
+  { name: 'Michelle',role: 'Secretary', order: 2 }
 ];
 let expandedVendors = {};
 let pendingFiles    = [];
@@ -143,6 +139,57 @@ function calculateResult({ approvals, declines, holds, hasTie = false, totalVote
   else console.error(`[calculateResult] ✖ ${failed} test(s) FAILED – check voting logic`);
 })();
 
+function updateProfileDirectory(profiles) {
+  allProfiles = {};
+  const availableProfiles = (profiles || []).filter(p => p && p.email);
+
+  availableProfiles.forEach(p => {
+    const email = String(p.email).trim();
+    allProfiles[email] = (p.full_name || email.split('@')[0]).trim();
+  });
+
+  committeeMembers = availableProfiles
+    .filter(p => String(p.role || '').trim().toLowerCase() === 'committee')
+    .map(p => {
+      const email = String(p.email).trim();
+      const name = String(p.full_name || email.split('@')[0]).trim();
+      const position = LEGACY_COMMITTEE_POSITIONS.find(item =>
+        name.toLowerCase().startsWith(item.name.toLowerCase())
+      );
+      return {
+        email,
+        name,
+        committeeRole: position?.role || 'Committee Member',
+        sortOrder: position?.order ?? 3
+      };
+    })
+    .sort((a, b) =>
+      a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    )
+    .map(({ sortOrder, ...member }) => member);
+}
+
+async function reloadCommitteeProfiles() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('email, full_name, role');
+  if (error) {
+    console.error('Failed to refresh Committee roster:', error);
+    return;
+  }
+  updateProfileDirectory(data || []);
+  renderQuotes();
+}
+
+let committeeRefreshTimer = null;
+function scheduleCommitteeRefresh() {
+  clearTimeout(committeeRefreshTimer);
+  committeeRefreshTimer = setTimeout(() => {
+    committeeRefreshTimer = null;
+    reloadCommitteeProfiles();
+  }, 180);
+}
+
 function scheduleRealtimeRefresh() {
   clearTimeout(realtimeRefreshTimer);
   realtimeRefreshTimer = setTimeout(async () => {
@@ -175,20 +222,12 @@ async function init() {
     supabase.from('profiles').select('email, full_name, role'),
     loadData()
   ]);
-  const profiles = profilesResult.data;
-  committeeMembers = [];
-  (profiles || []).forEach(p => {
-    allProfiles[p.email] = p.full_name || p.email.split('@')[0];
-  });
-  // COMMITTEE_ORDER 기준으로 고정 순서 + role 매핑
-  COMMITTEE_ORDER.forEach(member => {
-    const profile = (profiles || []).find(p => (p.full_name || '').trim().toLowerCase().startsWith(member.name.toLowerCase()));
-    committeeMembers.push({
-      email: profile ? profile.email : '',
-      name: member.name,
-      committeeRole: member.role
-    });
-  });
+  if (profilesResult.error) {
+    console.error('Failed to load profiles for Committee roster:', profilesResult.error);
+    showToast('Failed to load Committee members', true);
+  } else {
+    updateProfileDirectory(profilesResult.data || []);
+  }
   if (role === 'admin') {
     const btn = document.getElementById('createProjectBtn');
     if (btn) {
@@ -203,6 +242,7 @@ async function init() {
     .on('postgres_changes', {event: '*', schema: 'public', table: 'quotes'}, scheduleRealtimeRefresh)
     .on('postgres_changes', {event: '*', schema: 'public', table: 'votes'}, scheduleRealtimeRefresh)
     .on('postgres_changes', {event: '*', schema: 'public', table: 'project_comments'}, scheduleRealtimeRefresh)
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'profiles'}, scheduleCommitteeRefresh)
     .subscribe();
 }
 
@@ -827,9 +867,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
     voteGrid.className = 'voting-grid';
 
     const isFinalized = group.some(q => ['approved','declined','onhold','force_approved'].includes(q.status));
-    const membersToShow = committeeMembers.length > 0
-      ? committeeMembers
-      : COMMITTEE_ORDER.map(m => ({ email: '', name: m.name, committeeRole: m.role }));
+    const membersToShow = committeeMembers;
 
     // My vote status banner + inline action buttons (committee only)
     if (role === 'committee' && isVoting && !isLocked) {
