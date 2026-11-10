@@ -309,8 +309,8 @@ window.selectUser=function(uid, options={}){
 const p=allProfiles.find(x=>x.id===uid);
 if(!p)return;
 selectedUserId=uid;
-document.querySelectorAll('.user-item.selected').forEach(x=>x.classList.remove('selected'));
-const row=document.querySelector(`.user-item[data-user-id="${CSS.escape(uid)}"]`);
+document.querySelectorAll('.user-card.selected').forEach(x=>x.classList.remove('selected'));
+const row=document.querySelector(`.user-card[data-user-id="${CSS.escape(uid)}"]`);
 if(row)row.classList.add('selected');
 const role=p.role? p.role.charAt(0).toUpperCase()+p.role.slice(1):'—';
 const ini=(p.full_name||p.email||'U').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
