@@ -436,18 +436,33 @@ filterAndRenderUsers();
 
 window.changeRole = async (uid, newRole) => {
 try {
-await supabase.from('profiles').update({role:newRole}).eq('id',uid);
-const { data: changedUser } = await supabase.from('profiles').select('full_name, email').eq('id', uid).single();
+const { data: changedUser, error } = await supabase
+  .from('profiles')
+  .update({ role: newRole })
+  .eq('id', uid)
+  .select('id, full_name, email, role')
+  .maybeSingle();
+
+if (error) throw error;
+if (!changedUser || changedUser.role !== newRole) {
+  throw new Error('Role was not updated. Check your admin permissions and try again.');
+}
+
 await writeAuditLog({
 user_id: user.id,
 user_name: user.user_metadata?.full_name || user.email,
 user_email: user.email,
 action: 'role_changed',
-details: { target_user: changedUser?.full_name || changedUser?.email, new_role: newRole }
+details: { target_user: changedUser.full_name || changedUser.email, new_role: changedUser.role }
 });
 showToast(`Role updated to ${newRole} ✓`);
 await loadUsers();
-} catch(e) { showToast('Failed to update role', true); }
+return changedUser;
+} catch(e) {
+console.error('[changeRole] failed:', e);
+showToast(e.message || 'Failed to update role', true);
+throw e;
+}
 };
 
 window.inlineEditName = (uid, el) => {
