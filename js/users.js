@@ -223,6 +223,13 @@ const ini=p=>(p.full_name||p.email||'U').split(' ').map(x=>x[0]).join('').slice(
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const safeAttr=s=>String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 
+window.toggleFloorGroup=function(head){
+const group=head.parentElement;
+const wasOpen=group.classList.contains('open');
+document.querySelectorAll('#userList .floor-group.open').forEach(item=>item.classList.remove('open'));
+if(!wasOpen)group.classList.add('open');
+};
+
 function filterAndRenderUsers() {
 const q=(document.getElementById('userSearch').value||'').trim().toLowerCase();
 const roleFilter=document.getElementById('userRoleFilter').value;
@@ -280,14 +287,14 @@ if(fixedUsers.length){
 const pc=roleCounts(fixedUsers);
 const total=Math.max(1,fixedUsers.length);
 const adminPct=(pc.admin||0)/total*100,committeePct=(pc.committee||0)/total*100,observerPct=(pc.observer||0)/total*100;
-html+=`<section class="floor-group priority-group open"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">Priority Users</span><span class="floor-count">${fixedUsers.length} users</span><div class="priority-meter" aria-label="Priority user role distribution"><i class="meter-admin" style="width:${adminPct}%"></i><i class="meter-committee" style="width:${committeePct}%"></i><i class="meter-observer" style="width:${observerPct}%"></i></div><div class="floor-pills">${rolePill('admin',pc.admin)}${rolePill('committee',pc.committee)}${rolePill('observer',pc.observer)}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${fixedUsers.map(renderUserCard).join('')}</div></div></section>`;
+html+=`<section class="floor-group priority-group open"><div class="floor-head" onclick="toggleFloorGroup(this)"><span class="floor-arrow">›</span><span class="floor-name">Priority Users</span><span class="floor-count">${fixedUsers.length} users</span><div class="priority-meter" aria-label="Priority user role distribution"><i class="meter-admin" style="width:${adminPct}%"></i><i class="meter-committee" style="width:${committeePct}%"></i><i class="meter-observer" style="width:${observerPct}%"></i></div><div class="floor-pills">${rolePill('admin',pc.admin)}${rolePill('committee',pc.committee)}${rolePill('observer',pc.observer)}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${fixedUsers.map(renderUserCard).join('')}</div></div></section>`;
 }
 for(const floor of floorOrder){
 const users=groups[floor]||[];
 if(!users.length)continue;
 const counts=roleCounts(users);
-const isInitialOpen=floor==='Level 1';
-html+=`<section class="floor-group ${isInitialOpen?'open':''}"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">${floor}</span><span class="floor-count">${users.length} user${users.length===1?'':'s'}</span><div class="floor-pills">${rolePill('owner',counts.owner)}${rolePill('tenant',counts.tenant)}${rolePill('other',(counts.admin||0)+(counts.committee||0)+(counts.observer||0))}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${users.map(renderUserCard).join('')}</div></div></section>`;
+const isInitialOpen=false;
+html+=`<section class="floor-group ${isInitialOpen?'open':''}"><div class="floor-head" onclick="toggleFloorGroup(this)"><span class="floor-arrow">›</span><span class="floor-name">${floor}</span><span class="floor-count">${users.length} user${users.length===1?'':'s'}</span><div class="floor-pills">${rolePill('owner',counts.owner)}${rolePill('tenant',counts.tenant)}${rolePill('other',(counts.admin||0)+(counts.committee||0)+(counts.observer||0))}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${users.map(renderUserCard).join('')}</div></div></section>`;
 }
 
 document.getElementById('userList').innerHTML=html;
