@@ -235,14 +235,18 @@ let filtered=sortProfilesForDisplay(allProfiles.filter(p=>
 
 countLabel.textContent=`${filtered.length} / ${allProfiles.length} users`;
 
-const renderUserRow=p=>{
-const id=esc(p.id),name=esc(p.full_name||p.email?.split('@')[0]||'—'),email=esc(p.email||'—'),unit=esc(p.unit||'—');
+const renderUserCard=p=>{
+const id=esc(p.id),name=esc(p.full_name||p.email?.split('@')[0]||'—'),unit=esc(p.unit||'—');
 const status=getUserStatus(p);
-const statusColor=status.active?'#43e67f':'#ffb52e';
+const roleKey=p.role||'tenant';
 const latestActivity=getLatestUserActivity(p);
 const lastLogin=Number.isFinite(latestActivity)?new Date(latestActivity).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'Never';
-const roleKey=p.role||'tenant';
-return `<div class="user-item" data-user-id="${id}" onclick="selectUser('${safeAttr(p.id)}')"><div class="unit-cell">${unit}</div><div class="person"><div class="avatar av-${roleKey}" style="color:${ROLE_COLORS[roleKey].text};background:${ROLE_COLORS[roleKey].background};border-color:${ROLE_COLORS[roleKey].border}">${esc(ini(p))}</div><div style="min-width:0"><div class="person-name">${name}</div><div class="person-email">${email}</div></div></div><div><span class="role-badge ${roleClass(p.role)}" style="${roleStyle(p.role)}">${roleLabel(p.role)}</span></div><div class="status"><span class="dot" style="background:${statusColor}"></span>${status.label}</div><div class="last-login">${lastLogin}</div><div class="row-actions"><button class="row-action" onclick="event.stopPropagation();selectUser('${safeAttr(p.id)}')">View</button><button class="row-action" onclick="event.stopPropagation();openEditProfile('${safeAttr(p.id)}','${safeAttr(p.full_name||'')}','${safeAttr(p.email||'')}','${safeAttr(p.unit||'')}')">Edit</button></div></div>`;
+return `<button type="button" class="user-card" data-user-id="${id}" onclick="selectUser('${safeAttr(p.id)}')" aria-label="View ${name}">
+<span class="user-card-status ${status.active?'is-active':''}" title="${status.label}"></span>
+<span class="user-card-avatar av-${roleKey}" style="color:${ROLE_COLORS[roleKey].text};background:${ROLE_COLORS[roleKey].background};border-color:${ROLE_COLORS[roleKey].border}">${esc(ini(p))}</span>
+<span class="user-card-copy"><span class="user-card-name">${name}</span><span class="user-card-unit">Unit ${unit}</span><span class="role-badge ${roleClass(p.role)}" style="${roleStyle(p.role)}">${roleLabel(p.role)}</span></span>
+<span class="user-card-login">${lastLogin}</span>
+</button>`;
 };
 
 if(!filtered.length){
@@ -264,22 +268,26 @@ remainingPool.splice(idx,1);
 }
 }
 const remaining=remainingPool;
-
-const floorKey=p=>{const u=(p.unit||'').toUpperCase(); if(/^UNIT 1$/.test(u)||u==='G') return 'Ground Floor'; const m=u.match(/^(\d+)/); return m?`Level ${parseInt(m[1])}`:'External';};
+const floorKey=p=>{const u=(p.unit||'').toUpperCase(); if(/^UNIT 1$/.test(u)||u==='G') return 'Ground Floor'; const m=u.match(/^(\\d+)/); return m?`Level ${parseInt(m[1])}`:'External';};
 const floorOrder=['Ground Floor','Level 1','Level 2','Level 3','Level 4','Level 5','Level 6','External'];
 const groups={};
 remaining.forEach(p=>(groups[floorKey(p)]??=[]).push(p));
+const roleCounts=users=>users.reduce((a,p)=>{a[p.role||'other']=(a[p.role||'other']||0)+1;return a;},{});
+const rolePill=(role,count)=>`<span class="floor-pill ${role}">${role==='other'?'Other':role.charAt(0).toUpperCase()+role.slice(1)} ${count||0}</span>`;
 
 let html='';
 if(fixedUsers.length){
-html+=`<div class="floor-group priority-group"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">Priority Users</span><span class="floor-count">${fixedUsers.length} users</span><div class="floor-pills"><span class="floor-pill other">Fixed Order</span></div><span style="color:#7e9ba8">⌄</span></div><div class="floor-body"><div class="user-table-head"><span>Unit</span><span>Name / Email</span><span>Role</span><span>Status</span><span>Last Login</span><span>Actions</span></div>${fixedUsers.map(renderUserRow).join('')}</div></div>`;
+const pc=roleCounts(fixedUsers);
+const total=Math.max(1,fixedUsers.length);
+const adminPct=(pc.admin||0)/total*100,committeePct=(pc.committee||0)/total*100,observerPct=(pc.observer||0)/total*100;
+html+=`<section class="floor-group priority-group open"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">Priority Users</span><span class="floor-count">${fixedUsers.length} users</span><div class="priority-meter" aria-label="Priority user role distribution"><i class="meter-admin" style="width:${adminPct}%"></i><i class="meter-committee" style="width:${committeePct}%"></i><i class="meter-observer" style="width:${observerPct}%"></i></div><div class="floor-pills">${rolePill('admin',pc.admin)}${rolePill('committee',pc.committee)}${rolePill('observer',pc.observer)}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${fixedUsers.map(renderUserCard).join('')}</div></div></section>`;
 }
 for(const floor of floorOrder){
 const users=groups[floor]||[];
 if(!users.length)continue;
-const counts={owner:0,tenant:0,observer:0,committee:0,admin:0};
-users.forEach(p=>counts[p.role]=(counts[p.role]||0)+1);
-html+=`<div class="floor-group"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">${floor}</span><span class="floor-count">${users.length} user${users.length===1?'':'s'}</span><div class="floor-pills"><span class="floor-pill owner">Owner ${counts.owner||0}</span><span class="floor-pill tenant">Tenant ${counts.tenant||0}</span><span class="floor-pill other">Other ${(counts.committee||0)+(counts.observer||0)+(counts.admin||0)}</span></div><span style="color:#7e9ba8">⌄</span></div><div class="floor-body"><div class="user-table-head"><span>Unit</span><span>Name / Email</span><span>Role</span><span>Status</span><span>Last Login</span><span>Actions</span></div>${users.map(renderUserRow).join('')}</div></div>`;
+const counts=roleCounts(users);
+const isInitialOpen=floor==='Level 1';
+html+=`<section class="floor-group ${isInitialOpen?'open':''}"><div class="floor-head" onclick="this.parentElement.classList.toggle('open')"><span class="floor-arrow">›</span><span class="floor-name">${floor}</span><span class="floor-count">${users.length} user${users.length===1?'':'s'}</span><div class="floor-pills">${rolePill('owner',counts.owner)}${rolePill('tenant',counts.tenant)}${rolePill('other',(counts.admin||0)+(counts.committee||0)+(counts.observer||0))}</div><span class="floor-toggle-mark">⌄</span></div><div class="floor-body"><div class="user-card-grid">${users.map(renderUserCard).join('')}</div></div></section>`;
 }
 
 document.getElementById('userList').innerHTML=html;
