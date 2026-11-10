@@ -573,8 +573,27 @@ document.getElementById('epmEmail').value = decodedEmail;
 document.getElementById('epmPhone').value = currentPhone;
 
 const roleSelect = document.getElementById('epmRole');
+const positionField = document.getElementById('epmCommitteePositionField');
+const positionSelect = document.getElementById('epmCommitteePosition');
 roleSelect.disabled = currentRole === 'admin';
 if (currentRole !== 'admin') roleSelect.value = currentRole;
+
+// Preserve existing office-holder titles until each profile is explicitly saved.
+const legacyPosition = currentRole === 'committee'
+  ? (decodedName.toLowerCase().startsWith('jimmy') ? 'Chairman'
+    : decodedName.toLowerCase().startsWith('michael') ? 'Treasurer'
+    : decodedName.toLowerCase().startsWith('michelle') ? 'Secretary'
+    : 'Committee Member')
+  : '';
+positionSelect.value = p.committee_position || legacyPosition;
+const syncCommitteePositionField = () => {
+  const visible = !roleSelect.disabled && roleSelect.value === 'committee';
+  positionField.style.display = visible ? '' : 'none';
+  positionSelect.required = visible;
+  if (!visible) positionSelect.value = '';
+};
+roleSelect.onchange = syncCommitteePositionField;
+syncCommitteePositionField();
 
 // Unit 드롭다운 채우기
 const unitSelect = document.getElementById('epmUnit');
@@ -608,8 +627,9 @@ const uid = document.getElementById('epmUserId').value;
 const originalEmail = (document.getElementById('epmOriginalEmail').value || '').toLowerCase();
 const newName = document.getElementById('epmName').value.trim();
 const newUnit = document.getElementById('epmUnit').value || null;
-const newRole = document.getElementById('epmRole').value;
+const selectedRole = document.getElementById('epmRole').value;
 const newPhone = document.getElementById('epmPhone').value.trim();
+const selectedPosition = document.getElementById('epmCommitteePosition').value;
 const newEmail = document.getElementById('epmEmail').value.trim().toLowerCase();
 const btn = document.getElementById('epmSaveBtn');
 const msg = document.getElementById('epmMsg');
@@ -626,7 +646,16 @@ try {
 // 현재 사용자 role 조회 (Unit 동기화 결정에 필요)
 const { data: oldProfile } = await supabase.from('profiles').select('role').eq('id', uid).maybeSingle();
 const userRole = (oldProfile?.role || '').toLowerCase();
+const newRole = userRole === 'admin' ? 'admin' : selectedRole;
 const roleChanged = userRole !== 'admin' && newRole && newRole !== userRole;
+const committeePosition = newRole === 'committee' ? selectedPosition : null;
+if (newRole === 'committee' && !committeePosition) {
+  msg.className = 'epm-msg error';
+  msg.textContent = 'Please select a Committee Position.';
+  btn.disabled = false;
+  btn.textContent = 'Save changes';
+  return;
+}
 
 // admin-edit-profile API 호출 (Auth + profiles + occupants 통합 동기화)
 const { data: { session: s } } = await supabase.auth.refreshSession();
@@ -641,7 +670,8 @@ new_name: newName,
 new_unit: newUnit,
 new_email: newEmail,
 new_phone: newPhone || null,
-role: userRole
+role: userRole,
+committee_position: committeePosition
 })
 });
 const result = await res.json();
@@ -669,6 +699,7 @@ const parts = [];
 if (c.name_changed) parts.push('Name');
 if (c.unit_changed) parts.push('Unit');
 if (c.email_changed) parts.push('Email');
+if (c.committee_position_changed) parts.push('Committee Position');
 let successMsg = parts.length > 0 ? `✓ ${parts.join(', ')} updated` : '✓ Saved (no changes)';
 const syncBits = [];
 if (o.email_replaced) syncBits.push(`${o.email_replaced} email refs`);
