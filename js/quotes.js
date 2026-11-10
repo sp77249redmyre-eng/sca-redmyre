@@ -153,14 +153,21 @@ function updateProfileDirectory(profiles) {
     .map(p => {
       const email = String(p.email).trim();
       const name = String(p.full_name || email.split('@')[0]).trim();
-      const position = LEGACY_COMMITTEE_POSITIONS.find(item =>
+      const legacyPosition = LEGACY_COMMITTEE_POSITIONS.find(item =>
         name.toLowerCase().startsWith(item.name.toLowerCase())
       );
+      const committeeRole = p.committee_position || legacyPosition?.role || 'Committee Member';
+      const positionOrder = {
+        Chairman: 0,
+        Treasurer: 1,
+        Secretary: 2,
+        'Committee Member': 3
+      };
       return {
         email,
         name,
-        committeeRole: position?.role || 'Committee Member',
-        sortOrder: position?.order ?? 3
+        committeeRole,
+        sortOrder: positionOrder[committeeRole] ?? 3
       };
     })
     .sort((a, b) =>
@@ -172,7 +179,7 @@ function updateProfileDirectory(profiles) {
 async function reloadCommitteeProfiles() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('email, full_name, role');
+    .select('email, full_name, role, committee_position');
   if (error) {
     console.error('Failed to refresh Committee roster:', error);
     return;
@@ -219,7 +226,7 @@ async function init() {
     } catch (e) {}
   };
   const [profilesResult] = await Promise.all([
-    supabase.from('profiles').select('email, full_name, role'),
+    supabase.from('profiles').select('email, full_name, role, committee_position'),
     loadData()
   ]);
   if (profilesResult.error) {
