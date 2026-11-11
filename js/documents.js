@@ -36,6 +36,7 @@ if (isAdmin) {
 await Promise.all([loadSCM(), loadCategories()]);
 renderYearSel();
 renderMonthGrid();
+document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
 
 // ─── SCM ────────────────────────────────────────────────
 async function loadSCM() {
@@ -54,20 +55,32 @@ function renderYearSel() {
 }
 
 function renderMonthGrid() {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const grid = document.getElementById('monthGrid');
-  grid.innerHTML = months.map((m, i) => {
-    const meeting = scmMeetings.find(x => {
-      const d = new Date(x.meeting_date);
-      return d.getFullYear() === selectedYear && d.getMonth() === i;
-    });
-    const has = !!meeting;
-    return `<div class="mcell ${has ? 'has' : 'empty'}" ${has ? `onclick="openScmModal('${meeting.id}')"` : ''}>
-      <div class="mcell-name">${m}</div>
-      <div class="mcell-n">${has ? '●' : '—'}</div>
-      ${has && isAdmin ? `<button class="mcell-edit" onclick="event.stopPropagation();openEditMeeting('${meeting.id}')"><i class="ti ti-pencil"></i></button>` : ''}
-    </div>`;
-  }).join('');
+  const list = document.getElementById('monthGrid');
+  const search = (document.getElementById('scmSearch')?.value || '').trim().toLowerCase();
+  const meetings = scmMeetings
+    .filter(m => new Date(m.meeting_date).getFullYear() === selectedYear)
+    .filter(m => !search || (m.title || '').toLowerCase().includes(search) || m.meeting_date.includes(search))
+    .sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
+
+  if (!meetings.length) {
+    list.innerHTML = '<div class="meeting-empty">No meetings found for this year.</div>';
+    return;
+  }
+
+  list.innerHTML = `
+    <div class="meeting-list-head"><span>Date</span><span>Meeting</span><span>Type</span><span></span></div>
+    ${meetings.map(m => {
+      const date = new Date(m.meeting_date);
+      const dateText = date.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
+      const dayText = date.toLocaleDateString('en-AU', { weekday:'short' });
+      const isEgm = /\begm\b|extraordinary/i.test(m.title || '');
+      return `<div class="meeting-row" role="button" tabindex="0" onclick="openScmModal('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScmModal('${m.id}')}">
+        <div class="meeting-date"><strong>${dateText}</strong><small>${dayText}</small></div>
+        <div class="meeting-subject">${escapeHtml(m.title || 'SCM Meeting')}</div>
+        <span class="meeting-type ${isEgm ? 'egm' : 'scm'}">${isEgm ? 'EGM' : 'SCM'}</span>
+        <i class="ti ti-chevron-right meeting-chevron"></i>
+      </div>`;
+    }).join('')}`;
 }
 
 window.openScmModal = async function(meetingId) {
@@ -486,6 +499,10 @@ function fileIcon(name) {
   if (['xls','xlsx'].includes(ext)) return 'ti ti-file-type-xls';
   if (['jpg','jpeg','png'].includes(ext)) return 'ti ti-photo';
   return 'ti ti-file';
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
 function escAttr(str) {
