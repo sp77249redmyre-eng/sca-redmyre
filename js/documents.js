@@ -59,10 +59,7 @@ document.getElementById('inlineDownload')?.addEventListener('click', downloadInl
 document.getElementById('inlineFullscreen')?.addEventListener('click', toggleInlineFullscreen);
 document.getElementById('inlineZoomOut')?.addEventListener('click', () => changeInlineZoom(-0.1));
 document.getElementById('inlineZoomIn')?.addEventListener('click', () => changeInlineZoom(0.1));
-if (scmMeetings.length) {
-  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
-  window.selectMeeting(firstMeeting.id);
-}
+
 
 
 // ─── SCM ────────────────────────────────────────────────
@@ -140,6 +137,11 @@ window.previewScmDocument=async function(id){
   document.getElementById('inlineOpenTab').disabled=false; document.getElementById('inlineDownload').disabled=false;
 };
 
+if (scmMeetings.length) {
+  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
+  window.selectMeeting(firstMeeting.id);
+}
+
 function clearInlinePreview(message){
   inlineViewerUrl=''; inlineViewerName='';
   document.getElementById('inlineViewerTitle').textContent='SCM Meeting Document';
@@ -161,27 +163,6 @@ function toggleInlineFullscreen(){
   const panel=document.querySelector('.document-preview-panel');
   if(!document.fullscreenElement)panel?.requestFullscreen?.();else document.exitFullscreen?.();
 }
-function setupDocumentTabs(){
-  const tabs=document.querySelectorAll('.documents-tab');
-  tabs.forEach(tab=>tab.addEventListener('click',()=>{
-    tabs.forEach(t=>t.classList.toggle('active',t===tab));
-    const scm=tab.dataset.docTab==='scm';
-    document.getElementById('scmWorkspace').hidden=!scm;
-    document.getElementById('buildingWorkspace').hidden=scm;
-    const titles={building:'Building Documents',contracts:'Contracts & Insurance',compliance:'Compliance & Reports',strata:'By-Laws & Strata',other:'Other Building Documents'};
-    if(!scm)document.getElementById('categoryWorkspaceTitle').textContent=titles[tab.dataset.docTab]||'Building Documents';
-  }));
-}
-
-setupDocumentTabs();
-document.getElementById('inlineOpenTab')?.addEventListener('click',openInlineDocumentInNewTab);
-document.getElementById('inlineDownload')?.addEventListener('click',downloadInlineDocument);
-document.getElementById('inlineFullscreen')?.addEventListener('click',toggleInlineFullscreen);
-if (scmMeetings.length) {
-  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
-  window.selectMeeting(firstMeeting.id);
-}
-
 window.openScmModal = async function(meetingId) {
   activeScmId = meetingId;
   const meeting = scmMeetings.find(m => m.id === meetingId);
