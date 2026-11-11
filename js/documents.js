@@ -435,6 +435,15 @@ window.closeViewer = function() {
   document.getElementById('viewerContent').innerHTML = '';
 };
 
+window.openViewerInNewTab = function() {
+  if (!_viewerCurrentUrl) return;
+  const name = document.getElementById('viewerFileName').textContent || '';
+  const isPdf = name.toLowerCase().endsWith('.pdf');
+  const url = isPdf ? `${_viewerCurrentUrl}#zoom=100` : _viewerCurrentUrl;
+  const tab = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!tab) showToast('Please allow pop-ups to open the document in a new tab', true);
+};
+
 window.printViewer = function() {
   if (!_viewerCurrentUrl) return;
   const w = window.open(_viewerCurrentUrl, '_blank');
