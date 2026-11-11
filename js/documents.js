@@ -13,7 +13,17 @@ let scmDocuments = [];
 let selectedMeetingId = null;
 let inlineViewerUrl = '';
 let inlineViewerName = '';
+let inlinePdfDoc = null;
+let inlinePdfScale = 1;
+let inlineRenderToken = 0;
 let buildingCats = [];
+let serviceReports = [];
+let serviceCategoryMap = new Map();
+let activeDocTab = 'scm';
+let pdfJsPromise = null;
+let modalPdfDoc = null;
+let modalPdfScale = 1;
+let modalRenderToken = 0;
 let selectedYear = new Date().getFullYear();
 let activeScmId = null;
 let activeCatId = null;
@@ -37,11 +47,22 @@ if (isAdmin) {
   document.getElementById('btnNewCat').style.display = 'flex';
 }
 
-await Promise.all([loadSCM(), loadCategories()]);
+await Promise.all([loadSCM(), loadCategories(), loadServiceReports()]);
 await loadAllScmDocuments();
 renderYearSel();
 renderMonthGrid();
+renderCategories();
 document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
+setupDocumentTabs();
+document.getElementById('inlineOpenTab')?.addEventListener('click', openInlineDocumentInNewTab);
+document.getElementById('inlineDownload')?.addEventListener('click', downloadInlineDocument);
+document.getElementById('inlineFullscreen')?.addEventListener('click', toggleInlineFullscreen);
+document.getElementById('inlineZoomOut')?.addEventListener('click', () => changeInlineZoom(-0.1));
+document.getElementById('inlineZoomIn')?.addEventListener('click', () => changeInlineZoom(0.1));
+if (scmMeetings.length) {
+  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
+  window.selectMeeting(firstMeeting.id);
+}
 
 
 // ─── SCM ────────────────────────────────────────────────
@@ -273,31 +294,131 @@ async function loadCategories() {
   renderCategories();
 }
 
+function categoryMatchesTab(category, tab) {
+  const name = (category.name || '').toLowerCase();
+  const contracts = /contract|insurance|agreement/.test(name);
+  const compliance = /compliance|audit|afss|fire|safety|lift|elevator|cooling|electrical|backflow|inspection|certificate/.test(name);
+  const strata = /strata|by.?laws|plan/.test(name);
+  if (tab === 'building') return true;
+  if (tab === 'contracts') return contracts;
+  if (tab === 'compliance') return compliance;
+  if (tab === 'strata') return strata;
+  if (tab === 'other') return !contracts && !compliance && !strata;
+  return false;
+}
+
 function renderCategories() {
   const list = document.getElementById('catList');
-  if (buildingCats.length === 0) {
-    list.innerHTML = '<div class="cat-empty">No categories yet.</div>';
+  const filtered = buildingCats.filter(c => categoryMatchesTab(c, activeDocTab));
+  if (!filtered.length) {
+    list.innerHTML = '<div class="category-empty"><i class="ti ti-folder-open"></i><strong>No categories in this section yet.</strong><span>You can add a category here when you have files to store.</span></div>';
     return;
   }
-  list.innerHTML = buildingCats.map(c => `
-    <div class="cat-card" onclick="openCatModal('${c.id}')">
-      <div class="cat-icon ${c.color}"><i class="ti ${c.icon}"></i></div>
+  list.innerHTML = filtered.map(c => `
+    <div class="cat-card" role="button" tabindex="0" onclick="openCatModal('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCatModal('${c.id}')}">
+      <div class="cat-icon ${escapeHtml(c.color || 'blue')}"><i class="ti ${escapeHtml(c.icon || 'ti-folder')}"></i></div>
       <div class="cat-info">
-        <div class="cat-name">${c.name}</div>
+        <div class="cat-name">${escapeHtml(c.name)}</div>
         <div class="cat-count" id="count-${c.id}">Loading...</div>
       </div>
       ${isAdmin ? `<button class="cat-edit-btn" onclick="event.stopPropagation();openEditCat('${c.id}')"><i class="ti ti-pencil"></i>Edit</button>` : ''}
       <i class="ti ti-chevron-right cat-arrow"></i>
     </div>`).join('');
-  loadCatCounts();
+  loadCatCounts(filtered);
 }
 
-async function loadCatCounts() {
-  for (const c of buildingCats) {
+async function loadCatCounts(categories = buildingCats) {
+  for (const c of categories) {
     const { count } = await supabase.from('building_documents').select('*', { count: 'exact', head: true }).eq('category_id', c.id);
     const el = document.getElementById(`count-${c.id}`);
     if (el) el.textContent = `${count || 0} document${count !== 1 ? 's' : ''}`;
   }
+}
+
+async function loadServiceReports() {
+  const [reportsResult, categoriesResult] = await Promise.all([
+    supabase.from('service_reports')
+      .select('id, category_id, report_date, title, summary, has_issues, issue_description, service_type, lift_unit, attachments')
+      .order('report_date', { ascending: false })
+      .limit(100),
+    supabase.from('service_categories').select('id, name, group_label')
+  ]);
+  if (categoriesResult.data) {
+    serviceCategoryMap = new Map(categoriesResult.data.map(c => [c.id, c]));
+  }
+  if (reportsResult.error) {
+    console.error('Service reports load error:', reportsResult.error);
+    serviceReports = [];
+    return;
+  }
+  serviceReports = (reportsResult.data || []).map(r => ({
+    ...r,
+    category: serviceCategoryMap.get(r.category_id)?.name || 'Service'
+  }));
+}
+
+function renderServiceReports() {
+  const section = document.getElementById('serviceReportSection');
+  const list = document.getElementById('serviceReportList');
+  const show = activeDocTab === 'compliance';
+  section.hidden = !show;
+  section.style.display = show ? 'block' : 'none';
+  if (!show) return;
+  if (!serviceReports.length) {
+    list.innerHTML = '<div class="category-empty"><strong>No service reports found.</strong></div>';
+    return;
+  }
+  list.innerHTML = serviceReports.slice(0, 30).map(r => {
+    const date = r.report_date ? new Date(r.report_date).toLocaleDateString('en-AU', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const attachments = Array.isArray(r.attachments) ? r.attachments.length : 0;
+    const issue = r.has_issues ? '<span class="service-issue-tag">Issue recorded</span>' : '';
+    const summary = String(r.summary || '').replace(/<[^>]*>/g, ' ').slice(0, 110);
+    return `<div class="service-report-row">
+      <div class="service-report-date">${date}</div>
+      <div class="service-report-main"><strong>${escapeHtml(r.title || 'Service Report')}</strong><span>${escapeHtml(r.category)}${summary ? ' · ' + escapeHtml(summary) : ''}</span></div>
+      <div class="service-report-meta">${issue}<span><i class="ti ti-paperclip"></i> ${attachments}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function setDocumentTab(tabName) {
+  activeDocTab = tabName;
+  const isScm = tabName === 'scm';
+  const scmWorkspace = document.getElementById('scmWorkspace');
+  const buildingWorkspace = document.getElementById('buildingWorkspace');
+
+  document.querySelectorAll('.documents-tab').forEach(tab => {
+    const active = tab.dataset.docTab === tabName;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+
+  scmWorkspace.hidden = !isScm;
+  scmWorkspace.style.display = isScm ? 'grid' : 'none';
+  buildingWorkspace.hidden = isScm;
+  buildingWorkspace.style.display = isScm ? 'none' : 'block';
+
+  const titles = {
+    building: ['Building Documents', 'All building reference files and records.'],
+    contracts: ['Contracts & Insurance', 'Service agreements, contractor contracts and insurance records.'],
+    compliance: ['Compliance & Reports', 'Compliance certificates, audit documents and related service history.'],
+    strata: ['By-Laws & Strata', 'Strata plans, by-laws and strata records.'],
+    other: ['Other Documents', 'Other building and meeting reference files.']
+  };
+  if (!isScm) {
+    const content = titles[tabName] || titles.building;
+    document.getElementById('categoryWorkspaceTitle').textContent = content[0];
+    document.getElementById('categoryWorkspaceSub').textContent = content[1];
+    renderCategories();
+    renderServiceReports();
+  }
+}
+
+function setupDocumentTabs() {
+  document.querySelectorAll('.documents-tab').forEach(tab => {
+    tab.addEventListener('click', () => setDocumentTab(tab.dataset.docTab));
+  });
+  setDocumentTab('scm');
 }
 
 window.openCatModal = async function(catId) {
@@ -495,50 +616,224 @@ document.getElementById('btnUpload').onclick = async () => {
   showToast(success > 0 ? `${success} file${success !== 1 ? 's' : ''} uploaded` : 'Upload failed', success === 0);
 };
 
-// ─── FILE VIEWER ─────────────────────────────────────────
+// ─── PDF / DOCUMENT VIEWERS ───────────────────────────────
 let _viewerCurrentUrl = '';
-window.previewFile = async function(bucket, path, name) {
-  document.getElementById('viewerFileName').textContent = name || '';
-  document.getElementById('viewerContent').innerHTML = '<div style="color:#9CA3AF;font-size:13px;text-align:center;padding:40px">Loading...</div>';
-  document.getElementById('fileViewerModal').style.display = 'flex';
-    document.getElementById('fileViewerModal').focus();
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+let _viewerCurrentName = '';
+
+async function getPdfJs() {
+  if (!pdfJsPromise) {
+    pdfJsPromise = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs').then(lib => {
+      lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+      return lib;
+    });
+  }
+  return pdfJsPromise;
+}
+
+async function loadPdfDocument(url) {
+  const pdfjs = await getPdfJs();
+  return pdfjs.getDocument({ url, withCredentials: false }).promise;
+}
+
+async function renderPdfPages(pdfDoc, container, scale, token) {
+  container.innerHTML = '';
+  container.classList.add('pdfjs-pages');
+  for (let pageNo = 1; pageNo <= pdfDoc.numPages; pageNo++) {
+    if (token !== container.dataset.renderToken) return;
+    const page = await pdfDoc.getPage(pageNo);
+    const viewport = page.getViewport({ scale });
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pdfjs-page';
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d', { alpha: false });
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(viewport.width * ratio);
+    canvas.height = Math.floor(viewport.height * ratio);
+    canvas.style.width = viewport.width + 'px';
+    canvas.style.height = viewport.height + 'px';
+    wrapper.appendChild(canvas);
+    container.appendChild(wrapper);
+    await page.render({
+      canvasContext: context,
+      viewport,
+      transform: ratio === 1 ? null : [ratio, 0, 0, ratio, 0, 0]
+    }).promise;
+  }
+}
+
+function openStandaloneDocument(url, name) {
+  if (!url) return;
+  const viewerUrl = '/pages/document-viewer.html?src=' + encodeURIComponent(url) + '&name=' + encodeURIComponent(name || 'Document');
+  const tab = window.open(viewerUrl, '_blank');
+  if (!tab) showToast('Please allow pop-ups to open the document in a new tab', true);
+}
+
+window.previewScmDocument = async function(id) {
+  const file = scmDocuments.find(f => f.id === id);
+  if (!file) return;
+  selectedMeetingId = file.meeting_id;
+  renderMonthGrid();
+  const meeting = scmMeetings.find(m => m.id === file.meeting_id);
+  document.getElementById('inlineViewerTitle').textContent = file.file_name;
+  document.getElementById('inlinePageLabel').textContent = meeting?.title || 'SCM Document';
+  document.getElementById('inlineViewerContent').innerHTML = '<div class="preview-loading">Loading document...</div>';
+  document.getElementById('inlineOpenTab').disabled = true;
+  document.getElementById('inlineDownload').disabled = true;
+
+  const { data, error } = await supabase.storage.from('scm-documents').createSignedUrl(file.file_path, 3600);
   if (error || !data) {
-    document.getElementById('viewerContent').innerHTML = '<div style="color:#EF4444;font-size:13px;text-align:center;padding:40px">Preview failed.</div>';
+    clearInlinePreview('Preview could not be loaded.');
     return;
   }
-  const url = data.signedUrl;
-  _viewerCurrentUrl = url;
-  const ext = name.split('.').pop().toLowerCase();
-  let html = '';
+  inlineViewerUrl = data.signedUrl;
+  inlineViewerName = file.file_name;
+  const ext = file.file_name.split('.').pop().toLowerCase();
   if (ext === 'pdf') {
-    html = `<iframe src="${url}" style="width:100%;flex:1;border:none;min-height:0"></iframe>`;
+    try {
+      inlinePdfDoc = await loadPdfDocument(inlineViewerUrl);
+      inlinePdfScale = 1;
+      document.getElementById('inlineZoomValue').textContent = '100%';
+      document.getElementById('inlinePageLabel').textContent = `${meeting?.title || 'SCM Document'} · ${inlinePdfDoc.numPages} pages`;
+      const container = document.getElementById('inlineViewerContent');
+      const token = String(++inlineRenderToken);
+      container.dataset.renderToken = token;
+      await renderPdfPages(inlinePdfDoc, container, inlinePdfScale, token);
+    } catch (err) {
+      console.error('PDF preview error:', err);
+      clearInlinePreview('PDF preview could not be loaded. Use Open in New Tab to view the original file.');
+    }
   } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
-    html = `<div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:0"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="${name}"></div>`;
+    inlinePdfDoc = null;
+    document.getElementById('inlineViewerContent').innerHTML = `<div class="inline-image-wrap"><img src="${inlineViewerUrl}" alt="${escapeHtml(file.file_name)}"></div>`;
   } else {
-    html = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="font-size:52px">📎</div><a href="${url}" download="${name}" style="padding:12px 28px;background:#3b82f6;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">⬇ Download ${name}</a></div>`;
+    inlinePdfDoc = null;
+    document.getElementById('inlineViewerContent').innerHTML = `<div class="preview-empty"><a href="${inlineViewerUrl}" target="_blank" rel="noopener">Open ${escapeHtml(file.file_name)}</a></div>`;
   }
-  document.getElementById('viewerContent').innerHTML = html;
+  document.getElementById('inlineOpenTab').disabled = false;
+  document.getElementById('inlineDownload').disabled = false;
+};
+
+function clearInlinePreview(message) {
+  inlinePdfDoc = null;
+  inlineViewerUrl = '';
+  inlineViewerName = '';
+  document.getElementById('inlineViewerTitle').textContent = 'SCM Meeting Document';
+  document.getElementById('inlinePageLabel').textContent = 'Document Preview';
+  document.getElementById('inlineZoomValue').textContent = '100%';
+  document.getElementById('inlineViewerContent').classList.remove('pdfjs-pages');
+  document.getElementById('inlineViewerContent').innerHTML = `<div class="preview-empty"><i class="ti ti-file-search"></i><span>${message}</span></div>`;
+  document.getElementById('inlineOpenTab').disabled = true;
+  document.getElementById('inlineDownload').disabled = true;
+}
+
+function changeInlineZoom(delta) {
+  if (!inlinePdfDoc) return;
+  inlinePdfScale = Math.max(0.6, Math.min(2.0, +(inlinePdfScale + delta).toFixed(1)));
+  document.getElementById('inlineZoomValue').textContent = Math.round(inlinePdfScale * 100) + '%';
+  const container = document.getElementById('inlineViewerContent');
+  const token = String(++inlineRenderToken);
+  container.dataset.renderToken = token;
+  renderPdfPages(inlinePdfDoc, container, inlinePdfScale, token).catch(err => console.error('PDF zoom error:', err));
+}
+
+function openInlineDocumentInNewTab() {
+  openStandaloneDocument(inlineViewerUrl, inlineViewerName);
+}
+
+async function downloadInlineDocument() {
+  if (!inlineViewerUrl || !inlineViewerName) return;
+  await downloadUrl(inlineViewerUrl, inlineViewerName);
+}
+
+async function downloadUrl(url, name) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Download request failed');
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = name || 'document';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+  } catch (err) {
+    console.error('Download error:', err);
+    showToast('Download failed', true);
+  }
+}
+
+function toggleInlineFullscreen() {
+  const panel = document.querySelector('.document-preview-panel');
+  if (!document.fullscreenElement) panel?.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+
+window.previewFile = async function(bucket, path, name) {
+  document.getElementById('viewerFileName').textContent = name || '';
+  document.getElementById('viewerContent').innerHTML = '<div class="viewer-loading">Loading document...</div>';
+  document.getElementById('fileViewerModal').style.display = 'flex';
+  document.getElementById('fileViewerModal').focus();
+  _viewerCurrentName = name || 'Document';
+  modalPdfDoc = null;
+  modalPdfScale = 1;
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+  if (error || !data) {
+    document.getElementById('viewerContent').innerHTML = '<div class="viewer-loading error">Preview failed.</div>';
+    return;
+  }
+  _viewerCurrentUrl = data.signedUrl;
+  const ext = _viewerCurrentName.split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    try {
+      modalPdfDoc = await loadPdfDocument(_viewerCurrentUrl);
+      document.getElementById('viewerContent').innerHTML = `
+        <div class="modal-pdf-toolbar">
+          <span id="modalPageInfo">${modalPdfDoc.numPages} pages</span>
+          <div><button type="button" onclick="changeModalZoom(-0.1)">−</button><span id="modalZoomValue">100%</span><button type="button" onclick="changeModalZoom(0.1)">+</button></div>
+        </div>
+        <div class="pdfjs-pages modal-pdf-pages" id="modalPdfPages"></div>`;
+      const container = document.getElementById('modalPdfPages');
+      const token = String(++modalRenderToken);
+      container.dataset.renderToken = token;
+      await renderPdfPages(modalPdfDoc, container, modalPdfScale, token);
+    } catch (err) {
+      console.error('Modal PDF error:', err);
+      document.getElementById('viewerContent').innerHTML = '<div class="viewer-loading error">PDF could not be previewed. Use Open in New Tab.</div>';
+    }
+  } else if (['png','jpg','jpeg','gif','webp'].includes(ext)) {
+    document.getElementById('viewerContent').innerHTML = `<div class="modal-image-wrap"><img src="${_viewerCurrentUrl}" alt="${escapeHtml(_viewerCurrentName)}"></div>`;
+  } else {
+    document.getElementById('viewerContent').innerHTML = `<div class="viewer-loading"><a href="${_viewerCurrentUrl}" target="_blank" rel="noopener">Open or download ${escapeHtml(_viewerCurrentName)}</a></div>`;
+  }
+};
+
+window.changeModalZoom = function(delta) {
+  if (!modalPdfDoc) return;
+  modalPdfScale = Math.max(0.6, Math.min(2.0, +(modalPdfScale + delta).toFixed(1)));
+  const value = document.getElementById('modalZoomValue');
+  if (value) value.textContent = Math.round(modalPdfScale * 100) + '%';
+  const container = document.getElementById('modalPdfPages');
+  if (!container) return;
+  const token = String(++modalRenderToken);
+  container.dataset.renderToken = token;
+  renderPdfPages(modalPdfDoc, container, modalPdfScale, token).catch(err => console.error('PDF zoom error:', err));
 };
 
 window.closeViewer = function() {
+  modalPdfDoc = null;
   document.getElementById('fileViewerModal').style.display = 'none';
   document.getElementById('viewerContent').innerHTML = '';
 };
 
 window.openViewerInNewTab = function() {
-  if (!_viewerCurrentUrl) return;
-  const name = document.getElementById('viewerFileName').textContent || '';
-  const isPdf = name.toLowerCase().endsWith('.pdf');
-  const url = isPdf ? `${_viewerCurrentUrl}#zoom=100` : _viewerCurrentUrl;
-  const tab = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!tab) showToast('Please allow pop-ups to open the document in a new tab', true);
+  openStandaloneDocument(_viewerCurrentUrl, _viewerCurrentName);
 };
 
 window.printViewer = function() {
   if (!_viewerCurrentUrl) return;
-  const w = window.open(_viewerCurrentUrl, '_blank');
-  if (w) w.onload = () => { w.focus(); w.print(); };
+  openStandaloneDocument(_viewerCurrentUrl, _viewerCurrentName);
 };
 
 document.addEventListener('keydown', function(e) {
@@ -566,7 +861,7 @@ window.downloadFile = async function(bucket, path, name) {
   const url = URL.createObjectURL(data);
   const a = document.createElement('a');
   a.href = url; a.download = name; a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
 };
 
 // ─── UTILS ───────────────────────────────────────────────
