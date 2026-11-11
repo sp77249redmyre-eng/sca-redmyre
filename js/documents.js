@@ -102,10 +102,12 @@ function renderMonthGrid() {
       const egm=/\begm\b|extraordinary/i.test(m.title||'');
       const docs=scmDocuments.filter(f=>f.meeting_id===m.id);
       const buttons=docs.map(f=>`<button class="meeting-doc-button" type="button" onclick="event.stopPropagation();previewScmDocument('${f.id}')"><i class="ti ti-file-type-pdf"></i>${/agenda/i.test(f.file_name)?'Agenda':/minute/i.test(f.file_name)?'Minutes':'View'}</button>`).join('');
+      const manageButton = isAdmin ? `<button class="meeting-manage-button" type="button" title="Manage meeting files" onclick="event.stopPropagation();openScmModal('${m.id}')"><i class="ti ti-dots"></i></button>` : '';
+      const docsMarkup = buttons || '<span class="meeting-no-docs">No files</span>';
       return `<div class="meeting-table-row ${selectedMeetingId===m.id?'selected':''}" onclick="selectMeeting('${m.id}')">
         <span class="meeting-select-dot"></span><span class="meeting-date-cell"><strong>${dateText}</strong><small>${dayText}</small></span>
         <span><b class="meeting-type ${egm?'egm':'scm'}">${egm?'EGM':'SCM'}</b></span>
-        <span class="meeting-subject-cell">${escapeHtml(m.title||'SCM Meeting')}</span><span class="meeting-docs-cell">${buttons||'<span class="meeting-no-docs">—</span>'}</span>
+        <span class="meeting-subject-cell">${escapeHtml(m.title||'SCM Meeting')}</span><span class="meeting-docs-cell">${docsMarkup}${manageButton}</span>
       </div>`;
     }).join('')}`;
 }
@@ -189,8 +191,10 @@ document.getElementById('btnDeleteMeeting').onclick = async () => {
   await supabase.from('scm_meetings').delete().eq('id', activeScmId);
   closeModal('scmModal');
   await loadSCM();
+  await loadAllScmDocuments();
   renderYearSel();
   renderMonthGrid();
+  clearInlinePreview('Select a meeting to preview its documents.');
   showToast('Meeting deleted');
 };
 
@@ -220,6 +224,7 @@ document.getElementById('btnSaveMeeting').onclick = async () => {
   if (error) { showToast('Error saving meeting', true); return; }
   closeModal('newMeetingModal');
   await loadSCM();
+  await loadAllScmDocuments();
   renderYearSel();
   renderMonthGrid();
   showToast(mode === 'edit' ? 'Meeting updated' : 'Meeting created');
@@ -545,6 +550,8 @@ document.getElementById('btnUpload').onclick = async () => {
 
   if (uploadTarget.type === 'scm') {
     await loadScmFiles(uploadTarget.id);
+    await loadAllScmDocuments();
+    renderMonthGrid();
     openModal('scmModal');
   } else {
     await loadCatFiles(uploadTarget.id);
@@ -790,6 +797,8 @@ window.deleteFile = async function(table, id, bucket, path, parentId, type) {
   await supabase.from(table).delete().eq('id', id);
   if (type === 'scm') {
     await loadScmFiles(parentId);
+    await loadAllScmDocuments();
+    renderMonthGrid();
   } else {
     await loadCatFiles(parentId);
     await loadCategories();
