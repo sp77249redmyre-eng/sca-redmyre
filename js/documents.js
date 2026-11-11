@@ -37,7 +37,7 @@ await Promise.all([loadSCM(), loadCategories()]);\nawait loadAllScmDocuments();
 renderYearSel();
 renderMonthGrid();
 document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
-if (scmMeetings.length) window.selectMeeting(scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear)?.id || scmMeetings[0].id);
+
 
 // ─── SCM ────────────────────────────────────────────────
 async function loadSCM() {
@@ -94,6 +94,8 @@ window.selectMeeting=async function(id){
   const file=docs.find(f=>/agenda/i.test(f.file_name))||docs.find(f=>/minute/i.test(f.file_name))||docs[0];
   await window.previewScmDocument(file.id);
 };
+
+if (scmMeetings.length) window.selectMeeting(scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear)?.id || scmMeetings[0].id);
 
 window.previewScmDocument=async function(id){
   const file=scmDocuments.find(f=>f.id===id); if(!file)return;
