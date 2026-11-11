@@ -37,6 +37,7 @@ await Promise.all([loadSCM(), loadCategories()]);\nawait loadAllScmDocuments();
 renderYearSel();
 renderMonthGrid();
 document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
+if (scmMeetings.length) window.selectMeeting(scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear)?.id || scmMeetings[0].id);
 
 // ─── SCM ────────────────────────────────────────────────
 async function loadSCM() {
