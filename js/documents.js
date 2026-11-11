@@ -321,7 +321,7 @@ function renderServiceReports() {
     return `<div class="service-report-row">
       <div class="service-report-date">${date}</div>
       <div class="service-report-main"><strong>${escapeHtml(r.title || 'Service Report')}</strong><span>${escapeHtml(r.category)}${summary ? ' · ' + escapeHtml(summary) : ''}</span></div>
-      <div class="service-report-meta">${issue}<span><i class="ti ti-paperclip"></i> ${attachments}</span></div>
+      <div class="service-report-meta">${issue}<span><i class="ti ti-paperclip"></i> ${attachments}</span><a href="/pages/service-reports.html">Open</a></div>
     </div>`;
   }).join('');
 }
