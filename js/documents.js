@@ -8,7 +8,7 @@ const isAdmin = role === 'admin';
 const ICON_LIST = ['ti-writing','ti-shield-check','ti-home','ti-folder','ti-file-text','ti-certificate','ti-gavel','ti-building-bank','ti-tool','ti-car','ti-phone','ti-mail','ti-users','ti-cash','ti-chart-bar','ti-lock','ti-key','ti-clipboard-list'];
 const COLOR_LIST = ['blue','green','amber','red','purple','teal'];
 
-let scmMeetings = [];
+let scmMeetings = [];\nlet scmDocuments = [];\nlet selectedMeetingId = null;\nlet inlineViewerUrl = '';\nlet inlineViewerName = '';
 let buildingCats = [];
 let selectedYear = new Date().getFullYear();
 let activeScmId = null;
@@ -33,7 +33,7 @@ if (isAdmin) {
   document.getElementById('btnNewCat').style.display = 'flex';
 }
 
-await Promise.all([loadSCM(), loadCategories()]);
+await Promise.all([loadSCM(), loadCategories()]);\nawait loadAllScmDocuments();
 renderYearSel();
 renderMonthGrid();
 document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
@@ -54,33 +54,94 @@ function renderYearSel() {
   sel.onchange = () => { selectedYear = parseInt(sel.value); renderMonthGrid(); };
 }
 
+async function loadAllScmDocuments() {
+  const ids = scmMeetings.map(m => m.id);
+  if (!ids.length) { scmDocuments = []; return; }
+  const { data, error } = await supabase.from('scm_documents').select('*').in('meeting_id', ids).order('created_at');
+  if (error) { console.error('SCM document list error:', error); scmDocuments = []; return; }
+  scmDocuments = data || [];
+}
+
 function renderMonthGrid() {
   const list = document.getElementById('monthGrid');
   const search = (document.getElementById('scmSearch')?.value || '').trim().toLowerCase();
-  const meetings = scmMeetings
-    .filter(m => new Date(m.meeting_date).getFullYear() === selectedYear)
+  const meetings = scmMeetings.filter(m => new Date(m.meeting_date).getFullYear() === selectedYear)
     .filter(m => !search || (m.title || '').toLowerCase().includes(search) || m.meeting_date.includes(search))
-    .sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
-
-  if (!meetings.length) {
-    list.innerHTML = '<div class="meeting-empty">No meetings found for this year.</div>';
-    return;
-  }
-
-  list.innerHTML = `
-    <div class="meeting-list-head"><span>Date</span><span>Meeting</span><span>Type</span><span></span></div>
-    ${meetings.map(m => {
-      const date = new Date(m.meeting_date);
-      const dateText = date.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
-      const dayText = date.toLocaleDateString('en-AU', { weekday:'short' });
-      const isEgm = /\begm\b|extraordinary/i.test(m.title || '');
-      return `<div class="meeting-row" role="button" tabindex="0" onclick="openScmModal('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScmModal('${m.id}')}">
-        <div class="meeting-date"><strong>${dateText}</strong><small>${dayText}</small></div>
-        <div class="meeting-subject">${escapeHtml(m.title || 'SCM Meeting')}</div>
-        <span class="meeting-type ${isEgm ? 'egm' : 'scm'}">${isEgm ? 'EGM' : 'SCM'}</span>
-        <i class="ti ti-chevron-right meeting-chevron"></i>
+    .sort((a,b) => new Date(b.meeting_date)-new Date(a.meeting_date));
+  if (!meetings.length) { list.innerHTML='<div class="meeting-empty">No meetings found for this year.</div>'; return; }
+  list.innerHTML=`<div class="meeting-table">
+    <div class="meeting-table-head"><span></span><span>Date</span><span>Type</span><span>Subject</span><span>Docs</span></div>
+    ${meetings.map(m=>{
+      const d=new Date(m.meeting_date);
+      const dateText=d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
+      const dayText=d.toLocaleDateString('en-AU',{weekday:'short'});
+      const egm=/\\begm\\b|extraordinary/i.test(m.title||'');
+      const docs=scmDocuments.filter(f=>f.meeting_id===m.id);
+      const buttons=docs.map(f=>`<button class="meeting-doc-button" type="button" onclick="event.stopPropagation();previewScmDocument('${f.id}')"><i class="ti ti-file-type-pdf"></i>${/agenda/i.test(f.file_name)?'Agenda':/minute/i.test(f.file_name)?'Minutes':'View'}</button>`).join('');
+      return `<div class="meeting-table-row ${selectedMeetingId===m.id?'selected':''}" onclick="selectMeeting('${m.id}')">
+        <span class="meeting-select-dot"></span><span class="meeting-date-cell"><strong>${dateText}</strong><small>${dayText}</small></span>
+        <span><b class="meeting-type ${egm?'egm':'scm'}">${egm?'EGM':'SCM'}</b></span>
+        <span class="meeting-subject-cell">${escapeHtml(m.title||'SCM Meeting')}</span><span class="meeting-docs-cell">${buttons||'<span class="meeting-no-docs">—</span>'}</span>
       </div>`;
     }).join('')}`;
+}
+
+window.selectMeeting=async function(id){
+  selectedMeetingId=id; renderMonthGrid();
+  const docs=scmDocuments.filter(f=>f.meeting_id===id);
+  if(!docs.length){clearInlinePreview('No documents uploaded for this meeting.');return;}
+  const file=docs.find(f=>/agenda/i.test(f.file_name))||docs.find(f=>/minute/i.test(f.file_name))||docs[0];
+  await window.previewScmDocument(file.id);
+};
+
+window.previewScmDocument=async function(id){
+  const file=scmDocuments.find(f=>f.id===id); if(!file)return;
+  selectedMeetingId=file.meeting_id; renderMonthGrid();
+  const meeting=scmMeetings.find(m=>m.id===file.meeting_id);
+  document.getElementById('inlineViewerTitle').textContent=file.file_name;
+  document.getElementById('inlinePageLabel').textContent=meeting?.title||'SCM Document';
+  document.getElementById('inlineViewerContent').innerHTML='<div class="preview-loading">Loading document...</div>';
+  const {data,error}=await supabase.storage.from('scm-documents').createSignedUrl(file.file_path,3600);
+  if(error||!data){clearInlinePreview('Preview could not be loaded.');return;}
+  inlineViewerUrl=data.signedUrl; inlineViewerName=file.file_name;
+  const ext=file.file_name.split('.').pop().toLowerCase();
+  if(ext==='pdf') document.getElementById('inlineViewerContent').innerHTML=`<iframe class="inline-pdf-frame" title="${escapeHtml(file.file_name)}" src="${data.signedUrl}#zoom=100"></iframe>`;
+  else if(['png','jpg','jpeg','gif','webp'].includes(ext)) document.getElementById('inlineViewerContent').innerHTML=`<div class="inline-image-wrap"><img src="${data.signedUrl}" alt="${escapeHtml(file.file_name)}"></div>`;
+  else document.getElementById('inlineViewerContent').innerHTML=`<div class="preview-empty"><a href="${data.signedUrl}" target="_blank" rel="noopener">Open ${escapeHtml(file.file_name)}</a></div>`;
+  document.getElementById('inlineOpenTab').disabled=false; document.getElementById('inlineDownload').disabled=false;
+};
+
+function clearInlinePreview(message){
+  inlineViewerUrl=''; inlineViewerName='';
+  document.getElementById('inlineViewerTitle').textContent='SCM Meeting Document';
+  document.getElementById('inlinePageLabel').textContent='Document Preview';
+  document.getElementById('inlineViewerContent').innerHTML=`<div class="preview-empty"><i class="ti ti-file-search"></i><span>${message}</span></div>`;
+  document.getElementById('inlineOpenTab').disabled=true; document.getElementById('inlineDownload').disabled=true;
+}
+function openInlineDocumentInNewTab(){
+  if(!inlineViewerUrl)return;
+  const url=inlineViewerName.toLowerCase().endsWith('.pdf')?`${inlineViewerUrl}#zoom=100`:inlineViewerUrl;
+  const tab=window.open(url,'_blank'); if(!tab)showToast('Please allow pop-ups to open the document in a new tab',true);
+}
+async function downloadInlineDocument(){
+  if(!inlineViewerName)return;
+  const file=scmDocuments.find(f=>f.meeting_id===selectedMeetingId&&f.file_name===inlineViewerName);
+  if(file)await downloadFile('scm-documents',file.file_path,file.file_name);
+}
+function toggleInlineFullscreen(){
+  const panel=document.querySelector('.document-preview-panel');
+  if(!document.fullscreenElement)panel?.requestFullscreen?.();else document.exitFullscreen?.();
+}
+function setupDocumentTabs(){
+  const tabs=document.querySelectorAll('.documents-tab');
+  tabs.forEach(tab=>tab.addEventListener('click',()=>{
+    tabs.forEach(t=>t.classList.toggle('active',t===tab));
+    const scm=tab.dataset.docTab==='scm';
+    document.getElementById('scmWorkspace').hidden=!scm;
+    document.getElementById('buildingWorkspace').hidden=scm;
+    const titles={building:'Building Documents',contracts:'Contracts & Insurance',compliance:'Compliance & Reports',strata:'By-Laws & Strata',other:'Other Building Documents'};
+    if(!scm)document.getElementById('categoryWorkspaceTitle').textContent=titles[tab.dataset.docTab]||'Building Documents';
+  }));
 }
 
 window.openScmModal = async function(meetingId) {
