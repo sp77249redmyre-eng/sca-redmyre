@@ -99,14 +99,16 @@ function renderMonthGrid() {
       const d=new Date(m.meeting_date);
       const dateText=d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
       const dayText=d.toLocaleDateString('en-AU',{weekday:'short'});
-      const egm=/\begm\b|extraordinary/i.test(m.title||'');
+      const isEgm=/\begm\b|extraordinary/i.test(m.title||'');
+      const isAgm=/\bagm\b/i.test(m.title||'');
+      const meetingType=isEgm?'EGM':isAgm?'AGM':'SCM';
       const docs=scmDocuments.filter(f=>f.meeting_id===m.id);
       const buttons=docs.map(f=>`<button class="meeting-doc-button" type="button" onclick="event.stopPropagation();previewScmDocument('${f.id}')"><i class="ti ti-file-type-pdf"></i>${/agenda/i.test(f.file_name)?'Agenda':/minute/i.test(f.file_name)?'Minutes':'View'}</button>`).join('');
       const manageButton = isAdmin ? `<button class="meeting-manage-button" type="button" title="Manage meeting files" onclick="event.stopPropagation();openScmModal('${m.id}')"><i class="ti ti-dots"></i></button>` : '';
       const docsMarkup = buttons || '<span class="meeting-no-docs">No files</span>';
       return `<div class="meeting-table-row ${selectedMeetingId===m.id?'selected':''}" onclick="selectMeeting('${m.id}')">
         <span class="meeting-select-dot"></span><span class="meeting-date-cell"><strong>${dateText}</strong><small>${dayText}</small></span>
-        <span><b class="meeting-type ${egm?'egm':'scm'}">${egm?'EGM':'SCM'}</b></span>
+        <span><b class="meeting-type ${isEgm?'egm':isAgm?'agm':'scm'}">${meetingType}</b></span>
         <span class="meeting-subject-cell">${escapeHtml(m.title||'SCM Meeting')}</span><span class="meeting-docs-cell">${docsMarkup}${manageButton}</span>
       </div>`;
     }).join('')}`;
