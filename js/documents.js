@@ -8,7 +8,11 @@ const isAdmin = role === 'admin';
 const ICON_LIST = ['ti-writing','ti-shield-check','ti-home','ti-folder','ti-file-text','ti-certificate','ti-gavel','ti-building-bank','ti-tool','ti-car','ti-phone','ti-mail','ti-users','ti-cash','ti-chart-bar','ti-lock','ti-key','ti-clipboard-list'];
 const COLOR_LIST = ['blue','green','amber','red','purple','teal'];
 
-let scmMeetings = [];\nlet scmDocuments = [];\nlet selectedMeetingId = null;\nlet inlineViewerUrl = '';\nlet inlineViewerName = '';
+let scmMeetings = [];
+let scmDocuments = [];
+let selectedMeetingId = null;
+let inlineViewerUrl = '';
+let inlineViewerName = '';
 let buildingCats = [];
 let selectedYear = new Date().getFullYear();
 let activeScmId = null;
@@ -33,7 +37,8 @@ if (isAdmin) {
   document.getElementById('btnNewCat').style.display = 'flex';
 }
 
-await Promise.all([loadSCM(), loadCategories()]);\nawait loadAllScmDocuments();
+await Promise.all([loadSCM(), loadCategories()]);
+await loadAllScmDocuments();
 renderYearSel();
 renderMonthGrid();
 document.getElementById('scmSearch')?.addEventListener('input', renderMonthGrid);
@@ -76,7 +81,7 @@ function renderMonthGrid() {
       const d=new Date(m.meeting_date);
       const dateText=d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
       const dayText=d.toLocaleDateString('en-AU',{weekday:'short'});
-      const egm=/\\begm\\b|extraordinary/i.test(m.title||'');
+      const egm=/\begm\b|extraordinary/i.test(m.title||'');
       const docs=scmDocuments.filter(f=>f.meeting_id===m.id);
       const buttons=docs.map(f=>`<button class="meeting-doc-button" type="button" onclick="event.stopPropagation();previewScmDocument('${f.id}')"><i class="ti ti-file-type-pdf"></i>${/agenda/i.test(f.file_name)?'Agenda':/minute/i.test(f.file_name)?'Minutes':'View'}</button>`).join('');
       return `<div class="meeting-table-row ${selectedMeetingId===m.id?'selected':''}" onclick="selectMeeting('${m.id}')">
@@ -95,7 +100,7 @@ window.selectMeeting=async function(id){
   await window.previewScmDocument(file.id);
 };
 
-if (scmMeetings.length) window.selectMeeting(scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear)?.id || scmMeetings[0].id);
+
 
 window.previewScmDocument=async function(id){
   const file=scmDocuments.find(f=>f.id===id); if(!file)return;
@@ -145,6 +150,15 @@ function setupDocumentTabs(){
     const titles={building:'Building Documents',contracts:'Contracts & Insurance',compliance:'Compliance & Reports',strata:'By-Laws & Strata',other:'Other Building Documents'};
     if(!scm)document.getElementById('categoryWorkspaceTitle').textContent=titles[tab.dataset.docTab]||'Building Documents';
   }));
+}
+
+setupDocumentTabs();
+document.getElementById('inlineOpenTab')?.addEventListener('click',openInlineDocumentInNewTab);
+document.getElementById('inlineDownload')?.addEventListener('click',downloadInlineDocument);
+document.getElementById('inlineFullscreen')?.addEventListener('click',toggleInlineFullscreen);
+if (scmMeetings.length) {
+  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
+  window.selectMeeting(firstMeeting.id);
 }
 
 window.openScmModal = async function(meetingId) {
