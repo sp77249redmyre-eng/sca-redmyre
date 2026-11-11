@@ -120,49 +120,6 @@ window.selectMeeting=async function(id){
 
 
 
-window.previewScmDocument=async function(id){
-  const file=scmDocuments.find(f=>f.id===id); if(!file)return;
-  selectedMeetingId=file.meeting_id; renderMonthGrid();
-  const meeting=scmMeetings.find(m=>m.id===file.meeting_id);
-  document.getElementById('inlineViewerTitle').textContent=file.file_name;
-  document.getElementById('inlinePageLabel').textContent=meeting?.title||'SCM Document';
-  document.getElementById('inlineViewerContent').innerHTML='<div class="preview-loading">Loading document...</div>';
-  const {data,error}=await supabase.storage.from('scm-documents').createSignedUrl(file.file_path,3600);
-  if(error||!data){clearInlinePreview('Preview could not be loaded.');return;}
-  inlineViewerUrl=data.signedUrl; inlineViewerName=file.file_name;
-  const ext=file.file_name.split('.').pop().toLowerCase();
-  if(ext==='pdf') document.getElementById('inlineViewerContent').innerHTML=`<iframe class="inline-pdf-frame" title="${escapeHtml(file.file_name)}" src="${data.signedUrl}#zoom=100"></iframe>`;
-  else if(['png','jpg','jpeg','gif','webp'].includes(ext)) document.getElementById('inlineViewerContent').innerHTML=`<div class="inline-image-wrap"><img src="${data.signedUrl}" alt="${escapeHtml(file.file_name)}"></div>`;
-  else document.getElementById('inlineViewerContent').innerHTML=`<div class="preview-empty"><a href="${data.signedUrl}" target="_blank" rel="noopener">Open ${escapeHtml(file.file_name)}</a></div>`;
-  document.getElementById('inlineOpenTab').disabled=false; document.getElementById('inlineDownload').disabled=false;
-};
-
-if (scmMeetings.length) {
-  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
-  window.selectMeeting(firstMeeting.id);
-}
-
-function clearInlinePreview(message){
-  inlineViewerUrl=''; inlineViewerName='';
-  document.getElementById('inlineViewerTitle').textContent='SCM Meeting Document';
-  document.getElementById('inlinePageLabel').textContent='Document Preview';
-  document.getElementById('inlineViewerContent').innerHTML=`<div class="preview-empty"><i class="ti ti-file-search"></i><span>${message}</span></div>`;
-  document.getElementById('inlineOpenTab').disabled=true; document.getElementById('inlineDownload').disabled=true;
-}
-function openInlineDocumentInNewTab(){
-  if(!inlineViewerUrl)return;
-  const url=inlineViewerName.toLowerCase().endsWith('.pdf')?`${inlineViewerUrl}#zoom=100`:inlineViewerUrl;
-  const tab=window.open(url,'_blank'); if(!tab)showToast('Please allow pop-ups to open the document in a new tab',true);
-}
-async function downloadInlineDocument(){
-  if(!inlineViewerName)return;
-  const file=scmDocuments.find(f=>f.meeting_id===selectedMeetingId&&f.file_name===inlineViewerName);
-  if(file)await downloadFile('scm-documents',file.file_path,file.file_name);
-}
-function toggleInlineFullscreen(){
-  const panel=document.querySelector('.document-preview-panel');
-  if(!document.fullscreenElement)panel?.requestFullscreen?.();else document.exitFullscreen?.();
-}
 window.openScmModal = async function(meetingId) {
   activeScmId = meetingId;
   const meeting = scmMeetings.find(m => m.id === meetingId);
@@ -693,6 +650,11 @@ window.previewScmDocument = async function(id) {
   document.getElementById('inlineOpenTab').disabled = false;
   document.getElementById('inlineDownload').disabled = false;
 };
+
+if (scmMeetings.length) {
+  const firstMeeting = scmMeetings.find(m => new Date(m.meeting_date).getFullYear() === selectedYear) || scmMeetings[0];
+  window.selectMeeting(firstMeeting.id);
+}
 
 function clearInlinePreview(message) {
   inlinePdfDoc = null;
