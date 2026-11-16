@@ -145,26 +145,16 @@ if (permissionsDisplayEl) {
 // Load users
 let allProfiles = [];
 
-// Fixed order for first 14 users (matched by email or unit)
-const FIXED_ORDER = [
-{ match: p => p.email === 'sp77249.redmyre@gmail.com' }, // 1. Jacob
-{ match: p => p.email === 'sca.yun82@gmail.com' }, // 2. David
-{ match: p => p.email === 'ikf.jacob@gmail.com' }, // 3. Test 1 (Jacob's test)
-{ match: p => p.email === 'sca.jacob77@gmail.com' }, // 4. Test 2 (Jacob's test)
-{ match: p => p.unit === '6H' }, // 5. Jimmy
-{ match: p => ['5G','5H'].includes(p.unit) }, // 6. Michael
-{ match: p => ['2C','2E','3G','3H'].includes(p.unit) }, // 7. Michelle
-{ match: p => ['4G','5B','5D'].includes(p.unit) }, // 8. Sudesh
-{ match: p => ['6B','6C'].includes(p.unit) }, // 9. Niranjan
-{ match: p => ['1A','1B','1C'].includes(p.unit) }, // 10. Sarah
-{ match: p => ['2D','4A'].includes(p.unit) }, // 11. Laura
-{ match: p => p.unit === '4D' }, // 12. Eva
-{ match: p => (p.email||'').toLowerCase() === 'halil@exclusivere.com.au' }, // 13. Halil
-{ match: p => p.email === 'ogmin15@gmail.com' }, // 14. min
-];
-
-// Test emails (always shown as Admin pastel red)
+// Priority users are determined by their current role, not by unit number.
+// Keep Jacob's test accounts in Priority Users as explicit exceptions.
 const TEST_EMAILS = new Set(['ikf.jacob@gmail.com', 'sca.jacob77@gmail.com']);
+const PRIORITY_ROLES = new Set(['admin', 'committee', 'observer']);
+
+function isPriorityUser(p) {
+  const email = (p.email || '').trim().toLowerCase();
+  const currentRole = (p.role || '').trim().toLowerCase();
+  return PRIORITY_ROLES.has(currentRole) || TEST_EMAILS.has(email);
+}
 
 const AUDIT_EXCLUDED_EMAILS = new Set([
 'sp77249.redmyre@gmail.com',
@@ -177,30 +167,35 @@ await supabase.from('audit_logs').insert(payload);
 }
 
 function sortProfilesForDisplay(profiles) {
-const fixed = [];
-const rest = [...profiles];
+  const priority = profiles.filter(isPriorityUser);
+  const remaining = profiles.filter(p => !isPriorityUser(p));
 
-for (const rule of FIXED_ORDER) {
-const idx = rest.findIndex(p => rule.match(p));
-if (idx !== -1) {
-fixed.push(rest[idx]);
-rest.splice(idx, 1);
+  const priorityRank = p => {
+    const currentRole = (p.role || '').toLowerCase();
+    if (currentRole === 'admin') return 1;
+    if (currentRole === 'committee') return 2;
+    if (currentRole === 'observer') return 3;
+    return 4; // Explicit test-account exception
+  };
+
+  priority.sort((a, b) => {
+    const rankDiff = priorityRank(a) - priorityRank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return (a.full_name || a.email || '').localeCompare(b.full_name || b.email || '');
+  });
+
+  // Non-priority users remain sorted by unit (floor then letter, e.g. 1A < 1B < 2A).
+  remaining.sort((a, b) => {
+    const unitA = (a.unit || 'ZZZ').toUpperCase();
+    const unitB = (b.unit || 'ZZZ').toUpperCase();
+    const floorA = parseInt(unitA) || 0;
+    const floorB = parseInt(unitB) || 0;
+    if (floorA !== floorB) return floorA - floorB;
+    return unitA.localeCompare(unitB);
+  });
+
+  return [...priority, ...remaining];
 }
-}
-
-// Remaining users: sorted by unit (floor-then-letter, e.g. 1A < 1B < 2A)
-rest.sort((a, b) => {
-const unitA = (a.unit || 'ZZZ').toUpperCase();
-const unitB = (b.unit || 'ZZZ').toUpperCase();
-const floorA = parseInt(unitA) || 0;
-const floorB = parseInt(unitB) || 0;
-if (floorA !== floorB) return floorA - floorB;
-return unitA.localeCompare(unitB);
-});
-
-return [...fixed, ...rest];
-}
-
 const ACTIVE_WINDOW_DAYS = 30;
 let lastActivityMap = {};
 function getLatestUserActivity(p){
@@ -263,18 +258,9 @@ if(!filtered.length){
  return;
 }
 
-// FIXED_ORDER is authoritative. Re-run the same matching algorithm on the filtered set
-// so matched users remain first even when a search/role filter hides some fixed users.
-const fixedUsers=[];
-const remainingPool=[...filtered];
-for(const rule of FIXED_ORDER){
-const idx=remainingPool.findIndex(p=>rule.match(p));
-if(idx!==-1){
-fixedUsers.push(remainingPool[idx]);
-remainingPool.splice(idx,1);
-}
-}
-const remaining=remainingPool;
+// Current roles determine Priority Users; only the listed test accounts are exceptions.
+const fixedUsers = filtered.filter(isPriorityUser);
+const remaining = filtered.filter(p => !isPriorityUser(p));
 const floorKey=p=>{const u=(p.unit||'').toUpperCase(); if(/^UNIT 1$/.test(u)||u==='G') return 'Ground Floor'; const m=u.match(/^(\d+)/); return m?`Level ${parseInt(m[1])}`:'External';};
 const floorOrder=['Ground Floor','Level 1','Level 2','Level 3','Level 4','Level 5','Level 6','External'];
 const groups={};
