@@ -913,7 +913,7 @@ function renderPendingQuotes(quotes, containerId = 'pendingList', emptyMessage =
         changeBtn.textContent = 'Change Vote';
         changeBtn.onclick = async () => {
           changeBtn.disabled = true;
-          await doUpsert(projectKey, { vote: '', selected_quote_id: null }, changeBtn, 'Change Vote');
+          await doUpsert(projectKey, { vote: null, selected_quote_id: null }, changeBtn, 'Change Vote');
           changeBtn.disabled = false;
         };
         inlineActions.appendChild(changeBtn);
