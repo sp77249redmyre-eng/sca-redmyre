@@ -2021,8 +2021,8 @@ function updateDynamicRange(current) {
   if (!Number.isFinite(c)) return;
   dynamicCurrentSetpoint = c;
   const dynLim = tempLimits || {};
-  const dynLo = Math.max(18, dynLim.min != null && !isNaN(dynLim.min) ? dynLim.min : 18);
-  const dynHi = Math.min(25, dynLim.max != null && !isNaN(dynLim.max) ? dynLim.max : 25);
+  const dynLo = dynLim.min != null && Number.isFinite(Number(dynLim.min)) ? Number(dynLim.min) : 18;
+  const dynHi = dynLim.max != null && Number.isFinite(Number(dynLim.max)) ? Number(dynLim.max) : 25;
   // If the suite is already outside Admin's Min/Max (e.g. 25°C with Max 24°C), keep the current
   // temperature selectable so the slider can still step back toward the limit in 0.5°C steps.
   const effLo = Math.min(dynLo, c);
@@ -2183,11 +2183,11 @@ dynamicRequestBtn.addEventListener('click', async () => {
   }
   const current = Number(data.current_setpoint);
   const subLim = await ensureTempLimits();
-  const subLo = Math.max(18, subLim && subLim.min != null && !isNaN(subLim.min) ? subLim.min : 18);
-  const subHi = Math.min(25, subLim && subLim.max != null && !isNaN(subLim.max) ? subLim.max : 25);
+  const subLo = subLim && subLim.min != null && Number.isFinite(Number(subLim.min)) ? Number(subLim.min) : 18;
+  const subHi = subLim && subLim.max != null && Number.isFinite(Number(subLim.max)) ? Number(subLim.max) : 25;
   const min = Math.max(Math.min(subLo, current), Number((current-2).toFixed(1)));
   const max = Math.min(Math.max(subHi, current), Number((current+2).toFixed(1)));
-  if (target < min || target > max || target < 18 || target > 25 || Math.round(target*2)!==target*2) {
+  if (target < min || target > max || Math.round(target*2)!==target*2) {
     dynamicStatus.textContent = 'Target is outside the allowed range. Please select again.';
     updateDynamicRange(current);
     return;
@@ -2881,10 +2881,9 @@ async function ensureAdjustingSetpoint(r) {
       let target = r.temp_after != null
         ? parseFloat(r.temp_after)
         : (r.type === 'hot' ? current - 0.5 : current + 0.5);
-      target = Math.max(18, Math.min(25, target));
+      if (limits.min != null) target = Math.max(target, limits.min);
+      if (limits.max != null) target = Math.min(target, limits.max);
       target = Math.max(current - 2, Math.min(current + 2, target));
-      if (limits.min != null && r.temp_after == null) target = Math.max(target, limits.min);
-      if (limits.max != null && r.temp_after == null) target = Math.min(target, limits.max);
       adjustingSetpointCache[key] = { current, target, reqId: r.id };
     }
   } catch (e) {}
@@ -3478,6 +3477,8 @@ document.getElementById('saveLimitsBtn').addEventListener('click', async () => {
     const r2 = await supabase.from('settings').upsert({key: 'temp_max', value: String(max)}, {onConflict: 'key'});
     if (r1.error || r2.error) throw new Error('save failed');
     tempLimits = null;
+    await ensureTempLimits();
+    if (dynamicCurrentSetpoint != null) updateDynamicRange(dynamicCurrentSetpoint);
     showToast(`Limits saved: ${min}°C – ${max}°C ✓`);
   } catch(e) { showToast('Failed to save limits', true); }
 });
