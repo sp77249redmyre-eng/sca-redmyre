@@ -95,11 +95,14 @@ function resultCard(entry) {
   const name = visibleName(entry.business_name);
   const floor = floors.find(item => item[0] === entry.floor);
   const floorLabel = floor ? floor[1] : '';
+  const unit = String(entry.unit_display || '');
+  const unitClass = unit.length > 3 ? 'unit-block unit-block-long' : 'unit-block';
   const nameClass = name.color ? 'result-name vacated' : 'result-name';
 
+  // Keep longer labels such as "Unit 1" on one line in the unit badge.
   // Directory result rows show only the unit and primary business name.
   return '<article class="result-card">' +
-    '<span class="unit-block"><b>' + escapeHtml(entry.unit_display || '') + '</b>' +
+    '<span class="' + unitClass + '"><b>' + escapeHtml(unit) + '</b>' +
     '<small>' + escapeHtml(floorLabel) + '</small></span>' +
     '<span class="result-copy"><span class="' + nameClass + '">' +
     escapeHtml(name.text) + '</span></span></article>';
