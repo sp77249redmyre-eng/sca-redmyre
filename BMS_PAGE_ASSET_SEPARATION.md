@@ -2,7 +2,7 @@
 
 **문서 목적:** Redmyre House BMS 포털의 코드 구조와 유지보수 기준을 정의하는 공식 문서  
 **기준 브랜치:** `main` (sp77249redmyre-eng/sca-redmyre)  
-**최종 확인:** 2026-11-09 GitHub API 직접 조회 기준  
+**최종 확인:** 2026-11-20 GitHub API 직접 조회 기준  
 **작성:** Claude (클전무), ChatGPT (챗이사) 협업 지시 기반
 
 ---
@@ -261,21 +261,12 @@ CSS와 JavaScript를 페이지별로 분리한 목적은 단순한 파일 정리
 
 | 항목 | 경로 |
 |------|------|
-| HTML | `welcome.html` (루트) |
+| HTML | `welcome.html` (루트, 공개 방문자 진입 경로) |
 | CSS | `css/pages/visitors.css` |
 | JavaScript | `js/visitors.js`, `js/visitor-language.js`, `js/visitor-parking-notice.js` |
+| 진입 경로 | QR 및 Lift Visitor 버튼 모두 `/welcome.html` 사용 |
 | 확인 상태 | ✅ GitHub main 파일 존재 확인 |
 
----
-
-### 3-21b. Welcome (웰컴 페이지)
-
-| 항목 | 경로 |
-|------|------|
-| HTML | `pages/welcome.html` |
-| CSS | `css/pages/welcome.css` |
-| JavaScript | `js/page-welcome.js`, `js/page-welcome-language.js`, `js/page-welcome-notice.js` |
-| 확인 상태 | ✅ GitHub main 파일 존재 확인 |
 
 ---
 
