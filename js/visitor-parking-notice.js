@@ -1,28 +1,21 @@
-
 (function(){
-  var key = 'parkingPopupSeen_v2';
-  var seen = sessionStorage.getItem(key);
-  if(!seen){
-    document.getElementById('parkingPopup').style.display = 'flex';
+  function showMapSlide(){
+    var slide=document.getElementById('mapSlide');
+    if(!slide)return;
+    slide.classList.add('open');
+    slide.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
   }
+  function closeMapSlide(){
+    var slide=document.getElementById('mapSlide');
+    if(!slide)return;
+    slide.classList.remove('open');
+    slide.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+  }
+  window.showMapSlide=showMapSlide;
+  window.closeMapSlide=closeMapSlide;
+  document.addEventListener('keydown',function(event){if(event.key==='Escape')closeMapSlide();});
+  var overlay=document.getElementById('mapSlide');
+  if(overlay)overlay.addEventListener('click',function(event){if(event.target===overlay)closeMapSlide();});
 })();
-
-function showMapSlide(){
-  var popup = document.getElementById('parkingPopup');
-  popup.style.opacity='0';
-  popup.style.transition='opacity 0.2s';
-  setTimeout(function(){
-    popup.style.display='none';
-    var slide = document.getElementById('mapSlide');
-    slide.style.display='flex';
-    slide.style.animation='slideUp 0.35s ease';
-  },200);
-}
-
-function closeMapSlide(){
-  sessionStorage.setItem('parkingPopupSeen_v2','1');
-  var slide = document.getElementById('mapSlide');
-  slide.style.opacity='0';
-  slide.style.transition='opacity 0.25s';
-  setTimeout(function(){slide.style.display='none';},260);
-}

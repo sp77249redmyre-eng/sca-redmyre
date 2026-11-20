@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = 'https://wunsexdnqathluplkkvo.supabase.co';
@@ -8,43 +7,60 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
-// ===== QR Analytics (전광판 QR 직접 진입만 카운트) =====
+// QR analytics: direct signboard QR visits are counted once per session.
+// Lift visitor-button visits are excluded because they are tracked separately.
 (async () => {
   try {
-    // 리프트 Visitor 버튼 경유는 제외 (이미 lift_visitor로 카운트됨)
     if (sessionStorage.getItem('qr_from_lift')) {
       sessionStorage.removeItem('qr_from_lift');
       return;
     }
-    // 세션 내 1회만
     if (sessionStorage.getItem('qr_signboard_entry_tracked')) return;
     sessionStorage.setItem('qr_signboard_entry_tracked', '1');
     await supabase.from('qr_analytics').insert({ event_type: 'signboard_entry' });
   } catch (e) {}
 })();
 
-const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','LEVEL 4':'L4','LEVEL 5':'L5','LEVEL 6':'L6'};
-const FLOOR_ORDER = ['GROUND','LEVEL 1','LEVEL 2','LEVEL 3','LEVEL 4','LEVEL 5','LEVEL 6'];
+const FLOOR_SHORT = {
+  'GROUND':'G',
+  'LEVEL 1':'L1',
+  'LEVEL 2':'L2',
+  'LEVEL 3':'L3',
+  'LEVEL 4':'L4',
+  'LEVEL 5':'L5',
+  'LEVEL 6':'L6'
+};
 
 let allEntries = [];
 let activeFloor = 'GROUND';
 let searchTerm = '';
 
+const results = document.getElementById('results');
+const searchInput = document.getElementById('searchInput');
+const floorButtons = Array.from(document.querySelectorAll('.floor-btn'));
+
 async function loadEntries() {
   try {
-    const { data, error } = await supabase.from('signboard_entries').select('*').order('page').order('sort_order');
+    const { data, error } = await supabase
+      .from('signboard_entries')
+      .select('*')
+      .order('page')
+      .order('sort_order');
+
     if (error) throw error;
     allEntries = data || [];
     render();
   } catch (e) {
-    document.getElementById('results').innerHTML = '<div class="no-results">Unable to load directory. Please try again.</div>';
+    results.innerHTML = '<div class="no-results">Unable to load the directory.<br>Please check your connection and try again.</div>';
+  } finally {
+    results.setAttribute('aria-busy', 'false');
   }
 }
 
 function render() {
   let filtered = allEntries;
 
-  if (searchTerm) {
+  if (searchTerm.trim()) {
     const q = searchTerm.toLowerCase().trim();
     filtered = filtered.filter(e => {
       const hay = [
@@ -60,89 +76,82 @@ function render() {
     filtered = filtered.filter(e => e.floor === activeFloor);
   }
 
-  const results = document.getElementById('results');
-
   if (!filtered.length) {
-    if (searchTerm || activeFloor !== 'ALL') {
-      results.innerHTML = '<div class="no-results">No results found.<br><br>Try searching by:<br>· Unit number<br>· Business name<br>· Or a different floor</div>';
+    if (searchTerm.trim() || activeFloor !== 'ALL') {
+      results.innerHTML = '<div class="no-results">No results found.<br><br>Try a unit number, business name or another floor.</div>';
     } else {
       results.innerHTML = '';
     }
     return;
   }
 
-  const countLabel = searchTerm
-    ? `${filtered.length} match${filtered.length>1?'es':''} found`
-    : activeFloor !== 'ALL'
-      ? `${FLOOR_SHORT[activeFloor]} — ${filtered.length} listing${filtered.length>1?'s':''}`
-      : `${filtered.length} listing${filtered.length>1?'s':''}`;
+  const countLabel = searchTerm.trim()
+    ? `${filtered.length} match${filtered.length > 1 ? 'es' : ''} found`
+    : `${activeFloor === 'ALL' ? 'ALL FLOORS' : FLOOR_SHORT[activeFloor]} · ${filtered.length} listing${filtered.length > 1 ? 's' : ''}`;
 
-  let html = `<div class="results-count">${countLabel}</div>`;
+  let html = `<div class="results-count">${escapeHtml(countLabel)}</div>`;
 
   filtered.forEach(e => {
     const short = FLOOR_SHORT[e.floor] || '?';
-    const sub = e.sub_info ? e.sub_info.split('||')[0] : '';
     const unit = e.unit_display || '';
-    const alt = e.display_name_alt ? `<div class="result-alt">${escapeHtml(e.display_name_alt)}</div>` : '';
-    const subHtml = sub ? `<div class="result-sub">${escapeHtml(sub)}</div>` : '';
-
     html += `
-      <div class="result-card">
+      <article class="result-card">
         <div class="result-badge">
-          <div class="result-badge-unit">${escapeHtml(unit)}</div>
-          <div class="result-badge-floor">${short}</div>
+          <span class="result-badge-unit">${escapeHtml(unit)}</span>
+          <span class="result-badge-floor">${short}</span>
         </div>
-        <div class="result-info">
-          <div class="result-name">${escapeHtml(e.business_name || '')}</div>
-          ${alt}
-          ${subHtml}
-        </div>
-      </div>
+        <div class="result-info"><div class="result-name">${escapeHtml(e.business_name || '')}</div></div>
+      </article>
     `;
   });
 
   results.innerHTML = html;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
 }
 
-document.querySelectorAll('.floor-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    activeFloor = btn.dataset.floor;
-    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+floorButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    activeFloor = button.dataset.floor;
+    floorButtons.forEach(item => {
+      const active = item === button;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', String(active));
+    });
     render();
   });
 });
 
-const searchInput = document.getElementById('searchInput');
 let searchDebounce = null;
 let lastLoggedTerm = '';
 
-searchInput.addEventListener('input', e => {
-  searchTerm = e.target.value;
-  if (searchTerm.trim()) {
-    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
-  } else {
-    document.querySelectorAll('.floor-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.floor === activeFloor);
-    });
-  }
+searchInput.addEventListener('input', event => {
+  searchTerm = event.target.value;
+
+  floorButtons.forEach(button => {
+    const active = !searchTerm.trim() && button.dataset.floor === activeFloor;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
   render();
 
   clearTimeout(searchDebounce);
   const term = searchTerm.trim().toLowerCase();
+
   if (term.length >= 2 && term !== lastLoggedTerm) {
     searchDebounce = setTimeout(async () => {
       lastLoggedTerm = term;
       const hasResults = allEntries.some(e => {
-        const hay = [e.business_name||'',e.display_name_alt||'',e.unit_display||'',e.sub_info||'',e.floor||''].join(' ').toLowerCase();
+        const hay = [e.business_name || '',e.display_name_alt || '',e.unit_display || '',e.sub_info || '',e.floor || ''].join(' ').toLowerCase();
         return hay.includes(term);
       });
       const eventType = hasResults ? 'search_query' : 'search_no_result';
-      try { await supabase.from('qr_analytics').insert({ event_type: eventType, detail: term }); } catch(e) {}
+      try { await supabase.from('qr_analytics').insert({ event_type: eventType, detail: term }); } catch (e) {}
     }, 1000);
   }
 });
