@@ -113,12 +113,31 @@
       <div class="parking-gold" style="margin-top:0"><span class="parking-gold-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M9 16V8h3.5a2.5 2.5 0 0 1 0 5H9"/></svg></span><div><strong>Strathfield Plaza</strong><span>Rooftop Carpark — Next Door</span><span class="free-tag">3 HOURS FREE</span></div></div>
       <div class="map-disabled">Only <strong>2 Disabled Parking</strong> spaces available on-site</div>
       <div class="map-card"><div class="map-label">FOLLOW THE ROAD TO STRATHFIELD PLAZA</div>
-        <svg viewBox="0 -20 480 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Original Redmyre House and Strathfield Plaza parking map with the route highlighted along Redmyre Road to the rooftop carpark entry">
+        <svg viewBox="0 -20 480 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Redmyre House and Strathfield Plaza parking map with an animated marker travelling the route along Redmyre Road to the rooftop carpark entry">
           <defs>
-            <filter id="routeGlow" x="-25%" y="-25%" width="150%" height="150%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
+            <filter id="routeGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.2" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
+            <style>
+              .route-flow{ stroke-dasharray:10 8; animation:routeFlow 1.1s linear infinite; }
+              @keyframes routeFlow{ to{ stroke-dashoffset:-36; } }
+              .route-puck{
+                offset-path: path("M 165 65 L 165 95 L 282 95 L 282 69");
+                animation: routeTravel 2.4s cubic-bezier(.45,.05,.55,.95) infinite;
+              }
+              @keyframes routeTravel{
+                0%   { offset-distance:0%;   opacity:1; }
+                92%  { offset-distance:100%; opacity:1; }
+                96%  { offset-distance:100%; opacity:0; }
+                97%  { offset-distance:0%;   opacity:0; }
+                100% { offset-distance:0%;   opacity:1; }
+              }
+              @media (prefers-reduced-motion: reduce){
+                .route-flow{ animation:none; }
+                .route-puck{ animation:none; offset-distance:100%; }
+              }
+            </style>
           </defs>
           <rect x="30" y="10" width="150" height="55" rx="6" fill="#0f2456"/>
           <text x="105" y="32" text-anchor="middle" fill="#fbbf24" font-family="'DM Sans',sans-serif" font-size="12" font-weight="800" letter-spacing="1">YOU ARE HERE</text>
@@ -138,18 +157,21 @@
           <line x1="407" y1="40" x2="409" y2="18" stroke="#64748b" stroke-width="2" stroke-dasharray="6,5"/>
 
           <!-- Route follows the original street: out from Redmyre House, along Redmyre Road, then into the Plaza carpark entrance. -->
-          <path d="M 165 65 L 165 95 L 282 95 L 282 80" stroke="#12283e" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>
-          <path d="M 165 65 L 165 95 L 282 95 L 282 80" stroke="#e7ff00" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#routeGlow)"/>
-          <path d="M 271 83 L 282 69 L 293 83" stroke="#12283e" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M 271 83 L 282 69 L 293 83" stroke="#e7ff00" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#routeGlow)"/>
-          <circle cx="165" cy="65" r="5.5" fill="#e7ff00" stroke="#12283e" stroke-width="2.5"/>
+          <path d="M 165 65 L 165 95 L 282 95 L 282 80" stroke="#0f2456" stroke-width="13" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+          <path class="route-flow" d="M 165 65 L 165 95 L 282 95 L 282 80" stroke="#fbbf24" stroke-width="6.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 271 83 L 282 69 L 293 83" stroke="#0f2456" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="route-flow" d="M 271 83 L 282 69 L 293 83" stroke="#fbbf24" stroke-width="6.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="165" cy="65" r="5" fill="#fbbf24" stroke="#0f2456" stroke-width="2.5"/>
 
-          <text x="282" y="128" text-anchor="middle" fill="#e7ff00" font-family="'DM Sans',sans-serif" font-size="13" font-weight="800">↑ ENTRY TO CARPARK</text>
+          <!-- animated marker travelling Redmyre House -> carpark entry, then resets -->
+          <circle class="route-puck" r="7" fill="#fff" stroke="#0f2456" stroke-width="2.5" filter="url(#routeGlow)"/>
+
+          <text x="282" y="128" text-anchor="middle" fill="#b8860b" font-family="'DM Sans',sans-serif" font-size="13" font-weight="800">↑ ENTRY TO CARPARK</text>
           <text x="140" y="120" text-anchor="middle" fill="#dce5ef" font-family="'DM Sans',sans-serif" font-size="14" font-weight="800" letter-spacing="1">REDMYRE ROAD</text>
           <text x="440" y="47" text-anchor="start" fill="#dce5ef" font-family="'DM Sans',sans-serif" font-size="10" font-weight="800" letter-spacing="0.5">The</text>
           <text x="440" y="60" text-anchor="start" fill="#dce5ef" font-family="'DM Sans',sans-serif" font-size="10" font-weight="800" letter-spacing="0.5">Boulevarde</text>
         </svg>
-        <p class="map-route-caption">The yellow line shows the way from Redmyre House to the Strathfield Plaza rooftop carpark.</p>
+        <p class="map-route-caption">The gold marker shows the way from Redmyre House to the Strathfield Plaza rooftop carpark.</p>
       </div>
       <button class="find-unit" id="findMyUnit" type="button">Find My Unit →</button>
     </div>
