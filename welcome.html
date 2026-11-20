@@ -3,154 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Redmyre House — Directory</title>
+<meta name="theme-color" content="#10264b">
+<meta name="description" content="Visitor directory and parking information for Redmyre House, Strathfield.">
+<title>Redmyre House — Visitor Directory</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32-v4.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16-v4.png">
-<meta name="theme-color" content="#1e3a8a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/pages/visitors.css">
 </head>
 <body>
+<div class="page-shell">
+  <header class="site-header">
+    <a class="brand" href="/welcome.html" aria-label="Redmyre House visitor directory">
+      <span class="brand-logo"><img src="/img/redmyre-house-logo-admin.png" alt="Redmyre House"></span>
+      <span class="brand-copy"><strong>REDMYRE HOUSE</strong><small>VISITOR INFORMATION</small></span>
+    </a>
+    <div id="langSelector" class="language-selector">
+      <button id="langBtn" class="language-button" type="button" onclick="toggleLangMenu()" aria-label="Choose language">
+        <span aria-hidden="true">◎</span><span id="langBtnLabel">EN</span><span class="language-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div id="langMenu" class="language-menu"></div>
+    </div>
+  </header>
 
-<!-- Custom Language Selector -->
-<div id="langSelector" style="position:fixed;top:12px;right:12px;z-index:9999">
-  <button id="langBtn" onclick="toggleLangMenu()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.15);padding:8px 12px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:6px">
-    <span style="font-size:14px">🌐</span>
-    <span id="langBtnLabel">EN</span>
-    <span style="font-size:10px;color:#64748b">▼</span>
-  </button>
-  <div id="langMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);min-width:180px;max-height:320px;overflow-y:auto;font-family:system-ui,sans-serif"></div>
+  <section class="photo-hero" aria-label="Redmyre House building">
+    <div class="hero-content">
+      <span class="hero-eyebrow">9–13 REDMYRE ROAD · STRATHFIELD</span>
+      <h1>Visitor Directory</h1>
+      <p>Find a business or unit at Redmyre House.</p>
+    </div>
+  </section>
+
+  <main class="page-content">
+    <section class="parking-card" aria-labelledby="parkingTitle">
+      <div class="parking-main">
+        <span class="parking-alert-icon" aria-hidden="true">!</span>
+        <div class="parking-copy">
+          <h2 id="parkingTitle">No visitor parking is available on-site.</h2>
+          <p>Unauthorised vehicles may have a warning sticker applied to the windscreen.</p>
+        </div>
+      </div>
+      <div class="parking-options">
+        <div class="parking-option">
+          <span class="free-parking-badge">3 HOURS FREE</span>
+          <div><strong>Strathfield Plaza Rooftop</strong><small>Visitor parking · next door</small></div>
+        </div>
+        <button class="map-button" type="button" onclick="showMapSlide()">View parking map <span aria-hidden="true">→</span></button>
+      </div>
+      <p class="disabled-note"><span aria-hidden="true">♿</span> Only 2 Disabled Parking spaces are available on-site.</p>
+    </section>
+
+    <section class="directory-section" aria-labelledby="directoryTitle">
+      <div class="section-heading">
+        <span class="section-eyebrow">REDMYRE HOUSE</span>
+        <h2 id="directoryTitle">Find a business</h2>
+        <p>Search by unit number or business name.</p>
+      </div>
+      <label class="search-box" for="searchInput">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.2"></circle><path d="m16.2 16.2 4.3 4.3"></path></svg>
+        <input id="searchInput" type="search" placeholder="Unit or business name…" autocomplete="off" aria-label="Search by unit number or business name">
+        <span class="search-key" aria-hidden="true">SEARCH</span>
+      </label>
+      <div class="floor-heading"><span>Browse by floor</span><span class="floor-heading-note">Select a level</span></div>
+      <div class="floor-grid" role="group" aria-label="Filter directory by floor">
+        <button class="floor-btn active" type="button" data-floor="GROUND" aria-pressed="true">Ground</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 1" aria-pressed="false">Level 1</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 2" aria-pressed="false">Level 2</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 3" aria-pressed="false">Level 3</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 4" aria-pressed="false">Level 4</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 5" aria-pressed="false">Level 5</button>
+        <button class="floor-btn" type="button" data-floor="LEVEL 6" aria-pressed="false">Level 6</button>
+        <button class="floor-btn floor-all" type="button" data-floor="ALL" aria-pressed="false">All floors</button>
+      </div>
+      <div class="results" id="results" aria-live="polite" aria-busy="true">
+        <div class="loading-state"><span class="loading-dot"></span>Loading directory…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <img src="/img/sca-logo.png?v=7" alt="SCA Facility Management" class="sca-logo">
+    <div><span>BUILDING MANAGEMENT</span><strong>SCA FACILITY MANAGEMENT</strong></div>
+  </footer>
 </div>
 
-<!-- Google Translate hidden container -->
-<div id="google_translate_element" style="position:fixed;top:-1000px;left:-1000px;opacity:0;pointer-events:none"></div>
+<div id="google_translate_element" class="google-translate-hidden"></div>
 
-
-
-<script src="/js/visitor-language.js"></script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-<div class="wrap">
-
-  <div class="hero">
-    <div class="hero-kicker">REDMYRE HOUSE</div>
-    <div class="hero-title">Directory</div>
-    <div class="hero-sub">9–13 Redmyre Road, Strathfield</div>
-  </div>
-
-  <div class="search-wrap">
-    <div class="search-label">Search</div>
-    <div class="search-box">
-      <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-      <input id="searchInput" class="search-input" type="search" placeholder="Unit or name..." autocomplete="off">
+<div id="mapSlide" class="map-overlay" aria-hidden="true">
+  <section class="map-dialog" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <header class="map-header">
+      <div><span class="map-eyebrow">VISITOR PARKING</span><h2 id="mapTitle">Where to park</h2></div>
+      <button type="button" class="map-close" onclick="closeMapSlide()" aria-label="Close parking map">×</button>
+    </header>
+    <div class="map-location">
+      <div class="map-location-icon" aria-hidden="true">P</div>
+      <div><strong>Strathfield Plaza</strong><span>Rooftop Carpark · next door</span></div>
+      <b>3 HOURS FREE</b>
     </div>
-    <div class="search-hint">e.g. Unit 3B or business name</div>
-  </div>
-
-  <div class="floor-section">
-    <div class="search-label" style="padding:0 4px;margin-bottom:10px">Browse by Floor</div>
-    <div class="floor-grid">
-      <button class="floor-btn active" data-floor="GROUND">G</button>
-      <button class="floor-btn" data-floor="LEVEL 1">L1</button>
-      <button class="floor-btn" data-floor="LEVEL 2">L2</button>
-      <button class="floor-btn" data-floor="LEVEL 3">L3</button>
-      <button class="floor-btn" data-floor="LEVEL 4">L4</button>
-      <button class="floor-btn" data-floor="LEVEL 5">L5</button>
-      <button class="floor-btn" data-floor="LEVEL 6">L6</button>
-      <button class="floor-btn" data-floor="ALL">All</button>
-    </div>
-  </div>
-
-  <div class="results" id="results">
-    <div class="no-results">Loading…</div>
-  </div>
-
-
-  <div class="footer">
-    <div class="footer-logo">
-      <img src="/img/sca-logo.png?v=7" alt="SCA">
-    </div>
-    <div class="footer-text">
-      <div class="footer-managed">Managed by</div>
-      <div class="footer-company">SCA FACILITY MANAGEMENT</div>
-    </div>
-  </div>
-
-</div>
-
-<script type="module" src="/js/visitors.js"></script>
-
-<!-- PARKING WARNING POPUP -->
-<div id="parkingPopup" style="
-  display:none;position:fixed;inset:0;z-index:99999;
-  background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);
-  align-items:center;justify-content:center;padding:20px;
-">
-  <div style="
-    background:#fff;border-radius:16px;max-width:440px;width:100%;
-    box-shadow:0 20px 60px rgba(0,0,0,0.4);overflow:hidden;
-    animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  ">
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#b91c1c,#7f1d1d);padding:22px 24px;text-align:center">
-      <div style="margin-bottom:6px"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0 -4 0"/><path d="M15 17a2 2 0 1 0 4 0 2 2 0 1 0 -4 0"/><path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/></svg></div>
-      <div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:-0.3px">Visitor Parking Information</div>
-      <div style="color:#fca5a5;font-size:13px;font-weight:600;margin-top:4px;text-transform:uppercase;letter-spacing:1px">To All Visitors</div>
-    </div>
-    <!-- Body -->
-    <div style="padding:24px 24px 20px">
-      <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:18px 20px;margin-bottom:16px;font-size:14.5px;color:#374151;line-height:1.8">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><circle cx="12" cy="12" r="9"/><line x1="5.7" y1="5.7" x2="18.3" y2="18.3"/></svg><strong>No visitor parking</strong> is available on-site.<br><br>
-        Any vehicle found parked without authorisation will have a <strong style="color:#b91c1c">warning sticker applied</strong> to the windscreen.
-      </div>
-      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#166534">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9.5 16v-8h3.2a2.4 2.4 0 0 1 0 5h-3.2"/></svg>Free 3-hour parking at <strong>Strathfield Plaza Rooftop</strong> — next door.
-      </div>
-      <button onclick="showMapSlide()" style="
-        width:100%;background:linear-gradient(135deg,#b91c1c,#991b1b);
-        color:#fff;border:none;border-radius:10px;
-        padding:14px;font-size:15px;font-weight:700;
-        cursor:pointer;letter-spacing:0.2px;
-        font-family:'DM Sans',system-ui,sans-serif;
-      ">I Understand — Continue →</button>
-    </div>
-  </div>
-</div>
-
-<!-- MAP SLIDE -->
-<div id="mapSlide" style="
-  display:none;position:fixed;inset:0;z-index:99998;
-  background:#0f172a;
-  flex-direction:column;align-items:center;justify-content:center;
-  padding:24px 20px;
-">
-  <div style="max-width:440px;width:100%">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:13px;font-weight:700;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Visitor Parking</div>
-      <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px">Where to Park?</div>
-      <div style="font-size:13.5px;color:#94a3b8">No visitor parking on-site. Please use:</div>
-    </div>
-
-    <!-- Plaza Card -->
-    <div style="background:#fbbf24;border-radius:14px;padding:18px 20px;margin-bottom:14px;display:flex;align-items:center;gap:16px">
-      <div style="flex-shrink:0;line-height:0"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0f2456" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9.5 16.5v-9h3.6a2.7 2.7 0 0 1 0 5.6h-3.6"/></svg></div>
-      <div>
-        <div style="font-size:18px;font-weight:800;color:#0f2456">Strathfield Plaza</div>
-        <div style="font-size:13px;font-weight:700;color:#0f2456;opacity:0.8">Rooftop Carpark — Next Door</div>
-        <div style="display:inline-block;background:#0f2456;color:#fbbf24;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;margin-top:6px">3 HOURS FREE</div>
-      </div>
-    </div>
-
-    <!-- Disabled -->
-    <div style="background:#1e293b;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-      <span style="flex-shrink:0;line-height:0;display:inline-flex"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7v8h4l4 5"/><path d="M11 11h5"/><path d="M7 11.5a5 5 0 1 0 6 7.5"/><circle cx="11" cy="5" r="1"/></svg></span>
-      <div style="font-size:13.5px;color:#e2e8f0">Only <strong style="color:#fbbf24">2 Disabled Parking</strong> spaces available on-site</div>
-    </div>
-
-    <!-- SVG Map -->
-    <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px">
-      <div style="font-size:11px;font-weight:800;color:#94a3b8;letter-spacing:1.5px;text-align:center;margin-bottom:12px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="10" r="3"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/></svg>HOW TO GET THERE</div>
+    <div class="map-disabled">♿ <span>Only 2 Disabled Parking spaces are available on-site.</span></div>
+    <div class="map-svg-panel">
+      <div class="map-svg-label">HOW TO GET THERE</div>
       <svg viewBox="0 -20 480 180" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">
         <rect x="30" y="10" width="150" height="55" rx="6" fill="#0f2456"/>
         <text x="105" y="32" text-anchor="middle" fill="#fbbf24" font-family="'DM Sans',sans-serif" font-size="9" font-weight="800" letter-spacing="1">YOU ARE HERE</text>
@@ -175,19 +129,14 @@
         <text x="440" y="60" text-anchor="start" fill="#94a3b8" font-family="'DM Sans',sans-serif" font-size="8" font-weight="700" letter-spacing="0.5">Boulevarde</text>
       </svg>
     </div>
-
-    <button onclick="closeMapSlide()" style="
-      width:100%;background:#2563eb;
-      color:#fff;border:none;border-radius:10px;
-      padding:14px;font-size:15px;font-weight:700;
-      cursor:pointer;font-family:'DM Sans',system-ui,sans-serif;
-    ">Find My Unit →</button>
-  </div>
+    <p class="map-reminder">There is no general visitor parking at Redmyre House.</p>
+    <button type="button" class="map-done-button" onclick="closeMapSlide()">Close map</button>
+  </section>
 </div>
 
-
-
+<script src="/js/visitor-language.js"></script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script type="module" src="/js/visitors.js"></script>
 <script src="/js/visitor-parking-notice.js"></script>
-
 </body>
 </html>
