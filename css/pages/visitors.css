@@ -292,8 +292,17 @@ button,input{font:inherit}button{cursor:pointer;touch-action:manipulation;-webki
 
 /* Compact mobile home: keep the complete visitor landing page in one viewport */
 @media (max-width:600px) and (max-height:820px) {
-  html,body{height:100%;min-height:0;overflow:hidden}
-  .app{height:100svh;min-height:0;max-height:100svh;overflow:hidden}
+  /* Keep only the landing screen within one viewport.
+     Directory and information screens must use normal page scrolling. */
+  html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  .app{height:auto;min-height:100svh;max-height:none;overflow:visible}
+  .screen.active:not(#homeScreen){
+    height:auto;
+    min-height:100svh;
+    max-height:none;
+    flex:1 0 auto;
+    overflow:visible;
+  }
   #homeScreen.screen.active{
     height:100svh;
     min-height:0;
