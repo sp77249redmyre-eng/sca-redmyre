@@ -1067,6 +1067,15 @@ async function loadReports() {
 
 await loadReports();
 
+const requestedReportId = new URLSearchParams(window.location.search).get('report_id') || '';
+if (/^[0-9a-f-]{36}$/i.test(requestedReportId)) {
+  const targetReport = document.getElementById('pk-' + requestedReportId);
+  if (targetReport) {
+    window.togglePk(requestedReportId);
+    targetReport.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 window.updateVisitorSuiteOptions = function(reportId) {
   const floorEl = document.getElementById('visitor-floor-' + reportId);
   const suiteEl = document.getElementById('visitor-suite-' + reportId);
