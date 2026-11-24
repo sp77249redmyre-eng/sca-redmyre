@@ -3,7 +3,12 @@ import { getSupabase } from '/js/auth.js';
 const supabase = await getSupabase();
 
 const { data:{ session } } = await supabase.auth.getSession();
-if (session) window.location.href = '/pages/announcements.html';
+const requestedNext = new URLSearchParams(window.location.search).get('next') || '';
+const safeNext = requestedNext.startsWith('/pages/parking.html?report_id=') &&
+  /^[0-9a-f-]{36}$/i.test(requestedNext.split('report_id=')[1] || '')
+  ? requestedNext
+  : '/pages/announcements.html';
+if (session) window.location.href = safeNext;
 
 async function trackQR(eventType) {
   try { await supabase.from('qr_analytics').insert({ event_type: eventType }); } catch(e) {}
@@ -98,7 +103,7 @@ async function handleLogin() {
         await navigator.credentials.store(cred);
       }
     } catch(e) {}
-    window.location.href = '/pages/announcements.html';
+    window.location.href = safeNext;
   } catch(err) {
     errorMsg.textContent = err.message || 'Sign in failed. Please try again.';
     errorMsg.classList.add('show'); signInBtn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'Sign In →';
