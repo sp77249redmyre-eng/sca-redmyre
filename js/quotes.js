@@ -1245,6 +1245,22 @@ function renderOnHoldQuotes(quotes) {
   });
 
   const projects = Object.values(projectMap);
+
+  // Priority always takes precedence; within each priority, older holds appear first.
+  const getProjectPriorityRank = group => {
+    const priority = String(parseComment(group[0]?.comment)?.priority || 'Normal').trim().toLowerCase();
+    return priority === 'urgent' ? 0 : priority === 'high' ? 1 : 2;
+  };
+  const getProjectHoldTime = group => {
+    const rawDate = group[0]?.status_changed_at || group[0]?.created_at;
+    const timestamp = rawDate ? Date.parse(rawDate) : NaN;
+    return Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER;
+  };
+  projects.sort((a, b) =>
+    getProjectPriorityRank(a) - getProjectPriorityRank(b) ||
+    getProjectHoldTime(a) - getProjectHoldTime(b)
+  );
+
   const table = document.createElement('div');
   table.className = 'onhold-table';
 
@@ -1254,7 +1270,11 @@ function renderOnHoldQuotes(quotes) {
     const projectName = first.project || first.project_title || 'Project';
     const parsedFirst = parseComment(first.comment);
     const category = first.category || parsedFirst.category || 'General';
-    const priority = parsedFirst.priority || 'Normal';
+    const priorityValue = String(parsedFirst.priority || 'Normal').trim().toLowerCase();
+    const priorityClass = ['urgent', 'high', 'normal'].includes(priorityValue) ? priorityValue : 'normal';
+    const priorityLabel = priorityClass.toUpperCase();
+    const prioritySymbol = priorityClass === 'urgent' ? '!' : priorityClass === 'high' ? '↑↑' : '○';
+    const priority = priorityClass.charAt(0).toUpperCase() + priorityClass.slice(1);
 
     const row = document.createElement('button');
     row.type = 'button';
@@ -1266,7 +1286,7 @@ function renderOnHoldQuotes(quotes) {
       '<span class="onhold-project-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.75h9l5 5v11.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1.5Z"/><path d="M14 3.75v5h5M8 13h8M8 16.5h8"/></svg></span>' +
       '<span class="onhold-project-heading"><span class="onhold-project-name">' + escHtml(projectName) + '</span>' +
       '<span class="onhold-meta"><span>' + escHtml(category) + '</span><span class="onhold-meta-dot">·</span><span>' + group.length + ' contractor quotation' + (group.length === 1 ? '' : 's') + '</span></span></span></span>' +
-      '<span class="onhold-row-right"><span class="onhold-project-fact"><span>PRIORITY</span><strong>' + escHtml(priority) + '</strong></span>' +
+      '<span class="onhold-row-right"><span class="onhold-project-fact onhold-priority-fact onhold-priority-fact-' + priorityClass + '"><span>PRIORITY</span><strong><span class="onhold-priority-badge onhold-priority-' + priorityClass + '"><span class="onhold-priority-symbol" aria-hidden="true">' + prioritySymbol + '</span>' + priorityLabel + '</span></strong></span>' +
       '<span class="onhold-project-fact"><span>ON HOLD SINCE</span><strong>' + escHtml(holdDate) + '</strong></span>' +
       '<span class="onhold-status-pill">ON HOLD</span><span class="onhold-row-chevron">⌄</span></span>';
 
