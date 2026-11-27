@@ -446,7 +446,8 @@ function initSignboardRichEditors() {
   [
     ['fBiz','fBizEditor','Business name'],
     ['fAlt','fAltEditor','Alternative name'],
-    ['fSub','fSubEditor','Additional information']
+    ['fSub','fSubEditor','Additional information'],
+    ['fShort','fShortEditor','Short name for ALL FLOORS']
   ].forEach(([fieldId,editorId,placeholder]) => {
     const textarea=document.getElementById(fieldId);
     const host=document.getElementById(editorId);
@@ -467,7 +468,7 @@ function initSignboardRichEditors() {
 }
 
 function syncSignboardRichEditors() {
-  ['fBiz','fAlt','fSub'].forEach(fieldId=>{
+  ['fBiz','fAlt','fSub','fShort'].forEach(fieldId=>{
     const textarea=document.getElementById(fieldId);
     const editor=signboardEditors[fieldId];
     if(!textarea||!editor) return;
