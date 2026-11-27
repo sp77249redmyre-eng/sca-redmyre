@@ -144,6 +144,9 @@ function renderDirectoryPreview() {
   let totalAltLines = 0;
   let totalSubLines = 0;
   let totalUnits = 0;
+  const estimateLines = (value, charsPerLine) => String(value || '').split(/\n|\|\|/)
+    .filter(line => line.trim())
+    .reduce((sum, line) => sum + Math.max(1, Math.ceil(stripInlineColor(line).length / charsPerLine)), 0);
 
   floors.forEach(floor => {
     unitGroups[floor] = [];
@@ -156,9 +159,9 @@ function renderDirectoryPreview() {
         unitGroups[floor].push(group);
       }
       map.get(unit).items.push(e);
-      totalBusinessLines += Math.max(1, (e.business_name||'').split(/\n/).length);
-      totalAltLines += e.display_name_alt ? e.display_name_alt.split(/\n/).filter(Boolean).length : 0;
-      totalSubLines += e.sub_info ? e.sub_info.split(/\n|\|\|/).filter(Boolean).length : 0;
+      totalBusinessLines += Math.max(1, estimateLines(e.business_name, 26));
+      totalAltLines += estimateLines(e.display_name_alt, 36);
+      totalSubLines += estimateLines(e.sub_info, 36);
     });
     totalUnits += unitGroups[floor].length;
   });
@@ -170,7 +173,7 @@ function renderDirectoryPreview() {
     totalSubLines * 28 +
     totalUnits * 18 +
     floors.length * 82 + 70;
-  const density = Math.max(0.62, Math.min(1, 900 / Math.max(900, estimatedHeight)));
+  const density = Math.max(0.48, Math.min(1, 900 / Math.max(900, estimatedHeight)));
   const px = value => Math.max(1, Math.round(value * density));
 
   function renderSub(sub) {
@@ -208,9 +211,9 @@ function renderDirectoryPreview() {
 
       const lineWeight = group.items.reduce((sum, entry) => {
         return sum +
-          Math.max(1,(entry.business_name||'').split(/\n/).filter(Boolean).length) +
-          (entry.display_name_alt ? entry.display_name_alt.split(/\n/).filter(Boolean).length : 0) +
-          (entry.sub_info ? entry.sub_info.split(/\n|\|\|/).filter(Boolean).length : 0);
+          Math.max(1,estimateLines(entry.business_name, 26)) +
+          estimateLines(entry.display_name_alt, 36) +
+          estimateLines(entry.sub_info, 36);
       }, 0);
 
       const bottomLine = gi === groups.length - 1 && fi === floors.length - 1 ? 'none' : '1.5px solid #c9b77e';
