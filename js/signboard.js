@@ -148,11 +148,17 @@ function renderDirectoryPreview() {
     return floorDiff || (a.sort_order||0) - (b.sort_order||0);
   });
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
+  entries.forEach(e => {
+    if (!grouped[e.floor]) grouped[e.floor] = [];
+    grouped[e.floor].push(e);
+  });
   const floors = FLOOR_ORDER.filter(f => grouped[f]);
 
   const unitGroups = {};
-  let totalBusinessLines = 0, totalAltLines = 0, totalSubLines = 0, totalUnits = 0;
+  const floorWeights = {};
+  const floorDensity = {};
+  const px = value => Math.max(1,Math.round(value));
+
   const estimateLines = (value, charsPerLine) => {
     const lines = stripInlineColor(value).split(/\n|\|\|/).filter(line => line.trim());
     return lines.reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
@@ -161,67 +167,83 @@ function renderDirectoryPreview() {
   floors.forEach(floor => {
     unitGroups[floor] = [];
     const map = new Map();
-    grouped[floor].forEach(e => {
-      const unit = e.unit_display || '';
+    let floorWeight = 0;
+    let itemCount = 0;
+    let extraLines = 0;
+
+    grouped[floor].forEach(entry => {
+      const unit = entry.unit_display || '';
       if (!map.has(unit)) {
-        const group = { unit, items: [] };
+        const group = { unit, items: [], weight: 0 };
         map.set(unit,group);
         unitGroups[floor].push(group);
       }
-      map.get(unit).items.push(e);
-      const businessLines = Math.max(1,estimateLines(e.business_name,28));
-      const altLines = estimateLines(e.display_name_alt,38);
-      const subLines = estimateLines(e.sub_info,40);
-      totalBusinessLines += businessLines;
-      totalAltLines += altLines;
-      totalSubLines += subLines;
+      const group = map.get(unit);
+      group.items.push(entry);
+
+      const businessLines = Math.max(1,estimateLines(entry.business_name,30));
+      const altLines = estimateLines(entry.display_name_alt,38);
+      const subLines = estimateLines(entry.sub_info,44);
+      const entryWeight = 1 + (businessLines-1)*0.55 + altLines*0.72 + subLines*0.72;
+
+      group.weight += entryWeight;
+      floorWeight += entryWeight;
+      itemCount++;
+      extraLines += businessLines-1 + altLines + subLines;
     });
-    totalUnits += unitGroups[floor].length;
+
+    // Give floors with fewer tenants larger type, while allowing long descriptions to use more room.
+    const effectiveCount = itemCount + extraLines*0.28;
+    floorDensity[floor] = Math.max(0.78,Math.min(1.12,Math.sqrt(7/Math.max(1,effectiveCount))));
+    floorWeights[floor] = Math.max(2.5,floorWeight+2.2);
   });
 
-  const estimatedHeight = totalBusinessLines*30 + totalAltLines*23 + totalSubLines*22 + totalUnits*14 + floors.length*76 + 64;
-  const density = Math.max(0.55,Math.min(1,900/Math.max(900,estimatedHeight)));
-  const px = value => Math.max(1,Math.round(value*density));
-
-  function renderSub(sub) {
+  function renderSub(sub,scale) {
     if (!sub) return '';
     const parts = String(sub).includes('||') ? String(sub).split('||') : [sub];
-    return parts.map(part => `<div class="directory-rich directory-sub" style="font-size:${px(18)}px;font-weight:500;color:#465366;margin-top:${px(3)}px;line-height:1.3;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`).join('');
+    return parts.map(part =>
+      `<div class="directory-rich directory-sub" style="font-size:${px(17*scale)}px;font-weight:500;color:#465366;margin-top:${px(2*scale)}px;line-height:1.28;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`
+    ).join('');
   }
 
   let sections = '';
   floors.forEach((floor,fi) => {
+    const scale = floorDensity[floor];
     const groups = unitGroups[floor];
+
     const floorRows = groups.map((group,gi) => {
-      let content = '';
-      group.items.forEach((entry,idx) => {
-        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(25)}px;font-weight:800;color:#142238;line-height:1.25;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
+      const itemRows = group.items.map(entry => {
+        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(25*scale)}px;font-weight:800;color:#142238;line-height:1.2;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
         const altHtml = entry.display_name_alt
-          ? `<div class="directory-rich directory-alt" style="font-size:${px(19)}px;font-weight:650;color:#26374d;line-height:1.25;margin-top:${px(3)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
+          ? `<div class="directory-rich directory-alt" style="font-size:${px(19*scale)}px;font-weight:650;color:#26374d;line-height:1.22;margin-top:${px(2*scale)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
           : '';
-        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(24)}px;font-weight:800;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
-        content += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%;">
-          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info)}</div>${suiteHtml}
+        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(23*scale)}px;font-weight:850;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
+        return `<div style="flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:${px(4*scale)}px 0;box-sizing:border-box;">
+          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info,scale)}</div>
+          ${suiteHtml}
         </div>`;
-        if (idx<group.items.length-1) content += `<div style="border-top:1px solid #e8edf2;margin:${px(7)}px 0;"></div>`;
-      });
+      }).join('');
+
       const bottomLine = gi===groups.length-1 ? 'none' : '1px solid #e5ebf1';
-      return `<div style="flex:0 0 auto;display:flex;flex-direction:column;justify-content:flex-start;padding:${px(10)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${content}</div>`;
+      return `<div style="flex:${group.weight} 1 0;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;padding:${px(4*scale)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${itemRows}</div>`;
     }).join('');
 
-    const heading = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:${px(17)}px;flex-shrink:0;">
-      <div style="font-size:${px(38)}px;font-weight:900;color:#101a30;letter-spacing:1.1px;line-height:1.08;white-space:nowrap;">${floor}</div>
+    const heading = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:${px(13*scale)}px;flex:0 0 auto;">
+      <div style="font-size:${px(37*scale)}px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.08;white-space:nowrap;">${floor}</div>
       <div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>
     </div>`;
-    sections += `<section style="flex:0 0 auto;display:flex;flex-direction:column;overflow:visible;">${heading}<div style="display:flex;flex-direction:column;">${floorRows}</div></section>`;
-    if (fi<floors.length-1) sections += `<div style="height:2px;background:#c9b77e;flex:0 0 2px;margin:${px(17)}px 0;"></div>`;
+
+    sections += `<section style="flex:${floorWeights[floor]} 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+    if (fi<floors.length-1) {
+      sections += `<div style="height:2px;background:#c9b77e;flex:0 0 2px;margin:0 0;"></div>`;
+    }
   });
 
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:36px 34px 34px;box-sizing:border-box;">
-        <div style="display:flex;flex-direction:column;align-items:stretch;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
+      <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">
+        <div style="height:100%;min-height:0;display:flex;flex-direction:column;justify-content:stretch;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
@@ -237,34 +259,48 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 6', floors:['LEVEL 6'] }
   ];
 
+  const estimateLines = (value,charsPerLine) => {
+    const text = stripInlineColor(value);
+    return text.split(/\n|\|\|/).filter(Boolean)
+      .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
+
   const cells = groups.map(group => {
-    const entries = allEntries.filter(e => group.floors.includes(e.floor))
+    const entries = allEntries
+      .filter(e => group.floors.includes(e.floor))
       .sort((a,b) => {
         const floorDiff=FLOOR_ORDER.indexOf(a.floor)-FLOOR_ORDER.indexOf(b.floor);
         return floorDiff || (a.sort_order||0)-(b.sort_order||0);
       })
       .map(e => {
         const source=(e.short_name||'').trim() ? e.short_name : firstRichLineHTML(e.business_name);
-        return {name:stripInlineColor(source).trim(),html:renderRichText(source),suite:e.unit_display||''};
+        const name=stripInlineColor(source).trim();
+        return {
+          name,
+          html:renderRichText(source),
+          suite:e.unit_display||'',
+          weight:1+Math.max(0,estimateLines(source,24)-1)*0.5
+        };
       });
 
-    const lineEstimate=entries.reduce((sum,entry)=>sum+Math.max(1,Math.ceil(entry.name.length/22)),0);
-    let fontSize=17;
-    while(fontSize>11 && lineEstimate*fontSize*1.25+entries.length*4>250) fontSize-=0.5;
+    const extraLines = entries.reduce((sum,e)=>sum+Math.max(0,Math.ceil(e.name.length/24)-1),0);
+    const effectiveCount = entries.length + extraLines*0.35;
+    const scale = Math.max(0.76,Math.min(1.12,Math.sqrt(8/Math.max(1,effectiveCount))));
+    const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
 
-    const rows=entries.map(entry=>`<div class="all-floor-row" style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:3px;line-height:1.25;">
-      <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;">${entry.html}</span>
-      <span class="all-floor-suite" style="font-weight:900;flex-shrink:0;white-space:nowrap;">${escapeHtml(entry.suite)}</span>
+    const rows = entries.map(entry => `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:2px 0;border-bottom:1px solid #edf1f5;line-height:1.22;box-sizing:border-box;">
+      <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${Math.max(11,Math.round(15*scale))}px;font-weight:700;">${entry.html}</span>
+      <span class="all-floor-suite" style="font-size:${Math.max(11,Math.round(15*scale))}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#111a2e;">${escapeHtml(entry.suite)}</span>
     </div>`).join('');
 
-    return `<section style="min-width:0;overflow:hidden;padding:0 4px;">
-      <div style="font-size:19px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:6px 0;margin-bottom:7px;letter-spacing:.4px;">${group.title}</div>
-      <div style="font-size:${fontSize}px;line-height:1.3;color:#111a2e;font-weight:650;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
+    return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 5px;display:flex;flex-direction:column;">
+      <div style="font-size:${Math.round(18*scale)}px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:5px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:stretch;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
     </section>`;
   }).join('');
 
-  return `<div style="width:540px;height:994px;background:#f8fafc;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;">
-    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:20px 18px;">${cells}</div>
+  return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px 30px 28px;display:flex;flex-direction:column;">
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:14px 18px;">${cells}</div>
   </div>`;
 }
 
