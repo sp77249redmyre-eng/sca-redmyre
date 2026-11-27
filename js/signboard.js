@@ -27,48 +27,58 @@ const FLOOR_SHORT = {'GROUND':'G','LEVEL 1':'L1','LEVEL 2':'L2','LEVEL 3':'L3','
 const FLOOR_LABEL = {'GROUND':'GROUND','LEVEL 1':'LEVEL 1','LEVEL 2':'LEVEL 2','LEVEL 3':'LEVEL 3','LEVEL 4':'LEVEL 4','LEVEL 5':'LEVEL 5','LEVEL 6':'LEVEL 6'};
 
 const TOTAL_DIRECTORY_PAGES = 6;
-const FULLPAGE_PAGE_A = 7;
-const FULLPAGE_PAGE_B = 8;
-const ALL_FLOORS_PAGE = 9;
+const ALL_FLOORS_PAGE = 7;
+const CUSTOM_CARD_PAGE = 8;
+const CARD_WIDTH = 540;
+const CARD_HEIGHT = 994;
+const EXPORT_WIDTH = 960;
+const EXPORT_HEIGHT = 1766;
 
 const TAB_LABELS = {
-  1:'Page 1 · G+L1', 2:'Page 2 · L2', 3:'Page 3 · L3',
-  4:'Page 4 · L4',   5:'Page 5 · L5', 6:'Page 6 · L6',
-  7:'Page 7 · Fullpage A', 8:'Page 8 · Fullpage B',
-  9:'Page 9 · All Floors'
+  1:'GROUND + L1',
+  2:'LEVEL 2',
+  3:'LEVEL 3',
+  4:'LEVEL 4',
+  5:'LEVEL 5',
+  6:'LEVEL 6',
+  7:'ALL FLOORS',
+  8:'CUSTOM CARD'
 };
 
 let allEntries = [];
 let activeTab = 1;
-let fullpageBodyA = '', savedFullpageBodyA = '';
-let fullpageBodyB = '', savedFullpageBodyB = '';
+let customCardBody = '', savedCustomCardBody = '';
+const signboardEditors = {};
 
 async function loadEntries() {
   const { data } = await supabase.from('signboard_entries').select('*').order('page').order('floor').order('sort_order');
   allEntries = data || [];
-  const { data: fdA } = await supabase.from('signboard_fullpage').select('content').eq('id',1).maybeSingle();
-  if (fdA) { fullpageBodyA = fdA.content||''; savedFullpageBodyA = fullpageBodyA; }
-  const { data: fdB } = await supabase.from('signboard_fullpage2').select('content').eq('id',1).maybeSingle();
-  if (fdB) { fullpageBodyB = fdB.content||''; savedFullpageBodyB = fullpageBodyB; }
+
+  // Reuse the existing Fullpage A record as the Custom Card store. No database change is needed.
+  const { data: customData } = await supabase.from('signboard_fullpage').select('content').eq('id',1).maybeSingle();
+  customCardBody = customData?.content || '';
+  savedCustomCardBody = customCardBody;
+
   render();
 }
 
 function render() {
   renderTabs();
   requestAnimationFrame(() => { fitPreview(); scrollActiveTab(); });
+
   if (activeTab >= 1 && activeTab <= TOTAL_DIRECTORY_PAGES) {
     renderEntryList();
     renderDirectoryPreview();
-  } else if (activeTab === FULLPAGE_PAGE_A) {
-    renderFullpageEditor('A'); renderFullpagePreview('A');
-  } else if (activeTab === FULLPAGE_PAGE_B) {
-    renderFullpageEditor('B'); renderFullpagePreview('B');
   } else if (activeTab === ALL_FLOORS_PAGE) {
-    renderAllFloorsInfo(); renderAllFloorsPreview();
+    renderAllFloorsInfo();
+    renderAllFloorsPreview();
+  } else if (activeTab === CUSTOM_CARD_PAGE) {
+    renderCustomCardEditor();
+    renderCustomCardPreview();
   }
 }
 
-// Scale the 540x960 preview to the card width on narrow screens (phones/tablets). Artwork and JPEG size stay 540x960.
+// Scale the 540x994 preview to the available width. Export dimensions remain fixed.
 function fitPreview() {
   const w = document.querySelector('.sb-preview-wrap');
   const root = document.documentElement;
@@ -90,7 +100,7 @@ window.addEventListener('resize', fitPreview);
 
 function renderTabs() {
   let html = '';
-  for (let i=1; i<=9; i++) {
+  for (let i=1; i<=8; i++) {
     html += `<button class="sb-tab ${activeTab===i?'active':''}" onclick="setTab(${i})">${TAB_LABELS[i]}</button>`;
   }
   document.getElementById('tabBar').innerHTML = html;
@@ -99,18 +109,33 @@ function renderTabs() {
 function renderEntryList() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+
   let html = '<div class="sb-card">';
   FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
     grouped[floor].forEach(e => {
-      const badge = FLOOR_BADGE[floor]||'fb-g';
-      const short = FLOOR_SHORT[floor]||'?';
-      const alt = e.display_name_alt ? `<span class="sb-entry-alt">${stripInlineColor(e.display_name_alt)}</span>` : '';
-      const sub = e.sub_info ? stripInlineColor(e.sub_info.split('||')[0]) : '';
-      const meta = [e.unit_display, sub].filter(Boolean).join(' · ');
-      const hasColor = /\{\{#[0-9a-fA-F]{6}\|/.test(e.business_name||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.display_name_alt||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.sub_info||'');
-      const colorDot = hasColor ? `<span title="일부 텍스트에 색 지정됨" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:conic-gradient(from 0deg,red,orange,yellow,green,blue,violet,red);border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
-      html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${colorDot}${stripInlineColor(e.business_name)}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
+      const badge = FLOOR_BADGE[floor] || 'fb-g';
+      const short = FLOOR_SHORT[floor] || '?';
+      const alt = e.display_name_alt
+        ? `<div class="sb-entry-alt">${renderRichText(e.display_name_alt)}</div>`
+        : '';
+      const subText = e.sub_info ? stripInlineColor(e.sub_info).split(/\n|\|\|/)[0].trim() : '';
+      const sub = subText ? `<div class="sb-entry-meta">${escapeHtml(subText)}</div>` : '';
+      const business = renderRichText(e.business_name);
+
+      html += `<div class="sb-entry">
+        <div class="sb-floor-badge ${badge}">${short}</div>
+        <div class="sb-entry-info">
+          <div class="sb-entry-biz">${business}</div>
+          ${alt}
+          ${sub}
+        </div>
+        <div class="sb-entry-unit">${escapeHtml(e.unit_display || '')}</div>
+        <div class="sb-entry-actions">
+          <button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button>
+          <button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button>
+        </div>
+      </div>`;
     });
   });
   html += '</div>';
@@ -118,141 +143,114 @@ function renderEntryList() {
 }
 
 function renderDirectoryPreview() {
-  const entries = allEntries.filter(e => e.page === activeTab)
-    .sort((a,b) => {
-      if (a.floor < b.floor) return -1;
-      if (a.floor > b.floor) return 1;
-      return a.sort_order - b.sort_order;
-    });
-  const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
-
-  const floors = FLOOR_ORDER.filter(f => grouped[f]);
-  const floorLabel = floors.length === 1 ? floors[0] : floors.map(f => FLOOR_LABEL[f]).join(' & ');
-
-  // 전체 유닛 수 계산 (자동 축소용)
-  let totalUnits = 0;
-  floors.forEach(f => {
-    const units = {};
-    grouped[f].forEach(e => { units[e.unit_display]=1; });
-    totalUnits += Object.keys(units).length;
+  const entries = allEntries.filter(e => e.page === activeTab).sort((a,b) => {
+    const floorDiff = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
+    return floorDiff || (a.sort_order||0) - (b.sort_order||0);
   });
-  const bizSize = 22;
-  const subSize = 14;
+  const grouped = {};
+  entries.forEach(e => {
+    if (!grouped[e.floor]) grouped[e.floor] = [];
+    grouped[e.floor].push(e);
+  });
+  const floors = FLOOR_ORDER.filter(f => grouped[f]);
 
-  function renderSub(sub) {
+  const floorData = {};
+  const estimateLines = (value, charsPerLine) => {
+    const text = stripInlineColor(value);
+    return text.split(/\n|\|\|/).filter(line => line.trim())
+      .reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
+  const px = value => Math.max(1,Math.round(value));
+
+  floors.forEach(floor => {
+    const unitMap = new Map();
+    let entryCount = 0;
+    let detailLines = 0;
+    let floorWeight = 1.65;
+
+    grouped[floor].forEach(entry => {
+      const unit = entry.unit_display || '';
+      if (!unitMap.has(unit)) unitMap.set(unit,{unit,items:[],weight:0});
+
+      const businessLines = Math.max(1,estimateLines(entry.business_name,22));
+      const altLines = estimateLines(entry.display_name_alt,31);
+      const subLines = estimateLines(entry.sub_info,36);
+      const itemWeight = Math.max(1,businessLines*1.08 + altLines*0.78 + subLines*0.72);
+
+      const item = {entry,businessLines,altLines,subLines,weight:itemWeight};
+      const group = unitMap.get(unit);
+      group.items.push(item);
+      group.weight += itemWeight;
+      floorWeight += itemWeight;
+      entryCount++;
+      detailLines += altLines + subLines + businessLines - 1;
+    });
+
+    // Bigger type on quiet floors; only reduce size when the floor has more tenants or text.
+    const scale = Math.max(0.96,Math.min(1.40,
+      1.48 - Math.max(0,entryCount-1)*0.032 - detailLines*0.012
+    ));
+
+    floorData[floor] = {
+      groups:Array.from(unitMap.values()),
+      weight:floorWeight,
+      scale
+    };
+  });
+
+  function renderSub(sub,scale) {
     if (!sub) return '';
-    return sub.split(/\n|\|\|/).map(l=>l.trim()).filter(Boolean)
-      .map(l=>`<div style="font-size:${subSize+3}px;font-weight:500;color:#334155;margin-top:2px;line-height:1.5;font-style:italic;">${parseInlineColor(l)}</div>`).join('');
+    const parts = String(sub).includes('||') ? String(sub).split('||') : [sub];
+    return parts.map(part =>
+      `<div class="directory-rich directory-sub" style="font-size:${px(18*scale)}px;font-weight:500;color:#465366;margin-top:${px(2*scale)}px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`
+    ).join('');
   }
 
-  let rows = '';
-  floors.forEach((floor, fi) => {
-    if (floors.length > 1) {
-      const mt = fi > 0 ? 'margin-top:12px;' : '';
-      rows += `<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-shrink:0;${mt}">
-        <div style="font-size:28px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floor}</div>
-        <div style="flex:1;height:2px;background:#c9a961;"></div>
-      </div>`;
+  let sections = '';
+  floors.forEach((floor,fi) => {
+    const data = floorData[floor];
+    const scale = data.scale;
+
+    const floorRows = data.groups.map((group,gi) => {
+      const itemRows = group.items.map((item,idx) => {
+        const entry = item.entry;
+        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(30*scale)}px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
+        const altHtml = entry.display_name_alt
+          ? `<div class="directory-rich directory-alt" style="font-size:${px(21*scale)}px;font-weight:650;color:#26374d;line-height:1.22;margin-top:${px(2*scale)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
+          : '';
+        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(25*scale)}px;font-weight:850;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
+        const divider = idx<group.items.length-1 ? '1px solid #e6edf3' : 'none';
+
+        return `<div style="flex:${item.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:${px(4*scale)}px 0;border-bottom:${divider};box-sizing:border-box;">
+          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info,scale)}</div>
+          ${suiteHtml}
+        </div>`;
+      }).join('');
+
+      const groupDivider = gi<data.groups.length-1 ? '1px solid #e2eaf1' : 'none';
+      return `<div style="flex:${group.weight} 1 0;min-height:0;display:flex;flex-direction:column;border-bottom:${groupDivider};box-sizing:border-box;">${itemRows}</div>`;
+    }).join('');
+
+    const heading = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;flex:0 0 auto;">
+      <div style="font-size:40px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.05;white-space:nowrap;">${floor}</div>
+      <div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>
+    </div>`;
+
+    sections += `<section style="flex:${data.weight} 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+
+    if (fi<floors.length-1) {
+      sections += `<div style="height:12px;flex:0 0 12px;display:flex;align-items:center;"><div style="height:1.5px;background:#c9b77e;width:100%;"></div></div>`;
     }
-
-    // 같은 unit_display 묶기
-    const unitMap = {};
-    const unitOrder = [];
-    grouped[floor].forEach(e => {
-      if (!unitMap[e.unit_display]) { unitMap[e.unit_display]=[]; unitOrder.push(e.unit_display); }
-      unitMap[e.unit_display].push(e);
-    });
-
-    unitOrder.forEach((unit, ui) => {
-      const items = unitMap[unit];
-      const isLast = ui === unitOrder.length-1 && fi === floors.length-1;
-      const borderBottom = isLast ? 'none' : '1.5px solid #c9a961';
-
-      let bizHtml = '';
-      items.forEach((e, idx) => {
-        const isLastItem = idx === items.length-1;
-        const SMALL_BIZ = {
-          'The Nation Unification Advisory Council': 16,
-          'OSHS Global Education and Migration': 18,
-          'Hansung Accounting & Taxation Services': 17,
-          'Calculus Accounting & Taxation Services': 17.5,
-        };
-        const bizNamePlain = stripInlineColor(e.business_name);
-        const thisBizSize = (unit === '3A') ? 26 : (SMALL_BIZ[bizNamePlain] || bizSize);
-        const bizLines = e.business_name.split(/\n/);
-        const hasBreak = bizLines.length > 1;
-        const altHtml = e.display_name_alt ? e.display_name_alt.split(/\n/).map(l=>`<div style="font-size:${subSize+3}px;font-weight:700;color:#0f172a;margin-top:1px;">${parseInlineColor(l.trim())}</div>`).join('') : '';
-
-        if (idx === 0) {
-          bizHtml += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-            <div style="flex:1;${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
-              ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${parseInlineColor(l)}</div>`).join('')}
-              ${altHtml}
-            </div>
-            <div style="font-size:${bizSize-4}px;font-weight:900;color:#0f172a;flex-shrink:0;padding-top:2px;">${unit}</div>
-          </div>`;
-        } else {
-          bizHtml += `<div style="${hasBreak?'':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">
-            ${bizLines.map(l=>`<div style="font-size:${thisBizSize}px;font-weight:900;color:#0f172a;line-height:1.25;">${parseInlineColor(l)}</div>`).join('')}
-            ${altHtml}
-          </div>`;
-        }
-        bizHtml += renderSub(e.sub_info);
-        if (!isLastItem) {
-          bizHtml += `<div style="border-top:1.5px solid #f0ece0;margin:6px 0;"></div>`;
-        }
-      });
-
-      const flexVal = items.reduce((acc, e) => {
-        let lines = e.business_name.split(/\n/).length;
-        if (e.sub_info) lines += e.sub_info.split(/\n|\|\|/).filter(Boolean).length;
-        if (e.display_name_alt) lines += e.display_name_alt.split(/\n/).filter(Boolean).length;
-        return acc + lines;
-      }, 0);
-
-      rows += `<div style="flex:${Math.max(flexVal,1)};display:flex;flex-direction:column;justify-content:center;padding:8px 0;border-bottom:${borderBottom};min-height:0;">
-        ${bizHtml}
-      </div>`;
-    });
   });
 
-  // 단일층: 상단 큰 헤더. 다중층(Page1): rows 안에 층별 헤더만
-  const topHeader = floors.length === 1 ? `
-    <div style="padding:20px 32px 12px;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="font-size:28px;font-weight:900;color:#0f172a;letter-spacing:1px;white-space:nowrap;">${floorLabel}</div>
-        <div style="flex:1;height:2px;background:#c9a961;"></div>
-      </div>
-    </div>` : '';
-
-  const entryPad = floors.length > 1 ? '20px 32px 0' : '0 32px 0';
-
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">Preview · 540 × 960</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame" id="pvFrame" style="background:#ffffff;overflow:hidden;">
-
-        ${topHeader}
-
-        <!-- 엔트리 -->
-        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:${entryPad};">
-          ${rows}
-        </div>
-
-        <!-- 푸터 -->
-        <div style="background:#0f172a;padding:14px 28px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:3px solid #c9a961;flex-shrink:0;">
-          <img src="/img/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
-          <div style="text-align:left;">
-            <div style="font-size:11px;font-weight:600;letter-spacing:3px;color:#c9a961;text-transform:uppercase;">SCA Facility Management</div>
-            <div style="font-size:10px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px;">Redmyre House · 9–13 Redmyre Road, Strathfield</div>
-          </div>
-        </div>
-
+      <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">
+        <div style="height:100%;min-height:0;display:flex;flex-direction:column;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
-    </div>
-  `;
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
+    </div>`;
 }
 
 function buildAllFloorsHTML() {
@@ -262,101 +260,110 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 3', floors:['LEVEL 3'] },
     { title:'LEVEL 4', floors:['LEVEL 4'] },
     { title:'LEVEL 5', floors:['LEVEL 5'] },
-    { title:'LEVEL 6', floors:['LEVEL 6'] },
+    { title:'LEVEL 6', floors:['LEVEL 6'] }
   ];
-  const CELL_CONTENT_H = 212; // 박스 하나당 리스트 영역 확보 높이(px, 타이틀 제외)
-  const NAME_AREA_W = 190;    // suite 칸 제외한 업체명 영역 대략 폭(px)
-  const cells = groups.map(g => {
+
+  const estimateLines = (value,charsPerLine) => {
+    const text = stripInlineColor(value);
+    return text.split(/\n|\|\|/).filter(Boolean)
+      .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
+  const px = value => Math.max(1,Math.round(value));
+
+  const cells = groups.map(group => {
     const entries = allEntries
-      .filter(e => g.floors.includes(e.floor))
+      .filter(e => group.floors.includes(e.floor))
       .sort((a,b) => {
-        const fi = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
-        if (fi !== 0) return fi;
-        return (a.sort_order||0) - (b.sort_order||0);
+        const floorDiff=FLOOR_ORDER.indexOf(a.floor)-FLOOR_ORDER.indexOf(b.floor);
+        return floorDiff || (a.sort_order||0)-(b.sort_order||0);
       })
-      .map(e => ({
-        name: (e.short_name || (e.business_name||'').split('\n')[0]).trim(),
-        suite: e.unit_display || ''
-      }));
+      .map(e => {
+        // Decode entities from older Short Name values before passing text through the safe renderer.
+        const rawShort = decodeStoredEntities(e.short_name || '').trim();
+        const source = rawShort ? rawShort : firstRichLineHTML(e.business_name);
+        const name = stripInlineColor(source).trim();
+        const wrappedLines = Math.max(1,estimateLines(name,16));
+        return {
+          name,
+          html:renderRichText(source),
+          suite:e.unit_display||'',
+          weight:1 + (wrappedLines-1)*0.55,
+          wrappedLines
+        };
+      });
 
-    // 폰트 16→11까지 0.5 단위로 내려가며, 줄바꿈 포함 실제 줄 수가 칸 안에 들어가는 첫 크기를 채택
-    let fontSize = 11;
-    for (let fs = 18; fs >= 11; fs -= 0.5) {
-      const charsPerLine = Math.max(8, Math.floor(NAME_AREA_W / (fs * 0.56)));
-      const totalLines = entries.reduce((sum, en) => sum + Math.max(1, Math.ceil(en.name.length / charsPerLine)), 0);
-      if (totalLines * fs * 1.35 + entries.length * 3 <= CELL_CONTENT_H) { fontSize = fs; break; }
-    }
+    const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
+    // Dense ALL FLOORS summary: keep the type as large as possible while using a compact line rhythm.
+    const cellFont = Math.max(15,Math.min(22,Math.floor(275/Math.max(1,totalLines*1.05))));
+    const titleFont = Math.min(21,Math.max(18,cellFont+1));
+    const rowFont = cellFont;
+    const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
 
-    const rows = entries.map(en => {
-      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px"><span style="flex:1;min-width:0">${en.name}</span><span style="font-weight:900;flex-shrink:0;white-space:nowrap">${en.suite}</span></div>`;
+    const rows = entries.map((entry,idx) => {
+      const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
+      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0;border-bottom:${divider};line-height:1.05;box-sizing:border-box;">
+        <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${rowFont}px;font-weight:750;color:#142238;">${entry.html}</span>
+        <span class="all-floor-suite" style="font-size:${rowFont}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</span>
+      </div>`;
     }).join('');
-    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:19px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:5px 0;margin-bottom:5px;letter-spacing:0.5px">${g.title}</div><div style="font-size:${fontSize}px;line-height:1.35;color:#0f172a;font-weight:600">${rows}</div></div>`;
+
+    return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 5px;display:flex;flex-direction:column;">
+      <div style="font-size:${titleFont}px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:4px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
+    </section>`;
   }).join('');
 
-  return `<div style="width:540px;height:960px;background:#ffffff;position:relative;overflow:hidden;font-family:'DM Sans','Segoe UI',sans-serif;color:#0f172a;box-sizing:border-box;display:flex;flex-direction:column;">
-  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:12px 18px;padding:22px 22px 16px 22px;min-height:0;">
-    ${cells}
-  </div>
-  <div style="background:#0f172a;padding:14px 28px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:3px solid #c9a961;flex-shrink:0;box-sizing:border-box;">
-    <img src="/img/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
-    <div style="text-align:left;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:3px;color:#c9a961;text-transform:uppercase;">SCA Facility Management</div>
-      <div style="font-size:10px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px;">Redmyre House · 9–13 Redmyre Road, Strathfield</div>
-    </div>
-  </div>
-</div>`;
+  return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:29px 30px 27px;display:flex;flex-direction:column;">
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">${cells}</div>
+  </div>`;
 }
 
 function renderAllFloorsInfo() {
   document.getElementById('leftPanel').innerHTML = `
     <div class="sb-card" style="padding:20px">
-      <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:10px">Page 9 · All Floors Overview</div>
-      <div style="font-size:13px;color:#555;line-height:1.6">
-        이 페이지는 수동 입력이 아니라 <b>Page 1~6에 등록된 업체 데이터</b>에서 자동으로 만들어집니다.<br><br>
-        업체명이나 suite를 바꾸고 싶으면 <b>Page 1~6</b>에서 해당 항목을 수정하세요. 여기 Page 9는 그 내용을 그대로 반영해서 보여주기만 합니다. 별도 저장 필요 없습니다.
+      <div style="font-size:16px;font-weight:700;margin-bottom:10px">ALL FLOORS · Directory Summary</div>
+      <div style="font-size:13px;line-height:1.7">
+        This card is generated automatically from the entries in GROUND + L1 and LEVEL 2–6.<br><br>
+        To change a business name or suite, edit the relevant floor tab. This overview updates automatically and does not need a separate save.
       </div>
     </div>`;
 }
 
 function renderAllFloorsPreview() {
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">Preview · 540 × 960 (Page 9 · All Floors)</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766 · ALL FLOORS</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame fullpage" id="pvFrame">${buildAllFloorsHTML()}</div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
+      <div class="pv-frame directory-card" id="pvFrame" style="border-radius:22px;overflow:hidden;">${buildAllFloorsHTML()}</div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
 }
 
-function renderFullpageEditor(which) {
-  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
-  const saved = which==='A' ? savedFullpageBodyA : savedFullpageBodyB;
-  const unsaved = body !== saved;
-  const label = which==='A' ? 'Fullpage A' : 'Fullpage B';
+function renderCustomCardEditor() {
+  const unsaved = customCardBody !== savedCustomCardBody;
   document.getElementById('leftPanel').innerHTML = `
     <div class="sb-notice-editor">
       <div class="sb-notice-header">
-        <div class="sb-notice-label">${label} HTML</div>
-        <div class="sb-notice-status ${unsaved?'unsaved':''}" id="fullpageStatus">${unsaved?'● Unsaved':'✓ Saved'}</div>
+        <div class="sb-notice-label">CUSTOM CARD · HTML EDITOR</div>
+        <div class="sb-notice-status ${unsaved?'unsaved':''}" id="customCardStatus">${unsaved?'● Unsaved':'✓ Saved'}</div>
       </div>
-      <textarea class="sb-notice-body" id="fullpageBody" oninput="updateFullpagePreview('${which}')" placeholder="Enter full HTML...">${escapeHtml(body)}</textarea>
-      <div class="sb-notice-hint">Full 540×960 canvas. No auto-logo/footer.</div>
+      <textarea class="sb-notice-body" id="customCardBody" oninput="updateCustomCardPreview()" placeholder="Write the HTML for an additional lobby video card...">${escapeHtml(customCardBody)}</textarea>
+      <div class="sb-notice-hint">Canvas: 540 × 994 px. Export: transparent PNG, 960 × 1766 px. No company logo or footer is added automatically.</div>
       <div class="sb-notice-actions">
-        <button class="sb-btn-clear" onclick="clearFullpage('${which}')">Clear</button>
-        <button class="sb-btn-save" id="saveFullpageBtn" onclick="saveFullpage('${which}')">💾 Save Fullpage</button>
+        <button class="sb-btn-clear" onclick="clearCustomCard()">Clear</button>
+        <button class="sb-btn-save" id="saveCustomCardBtn" onclick="saveCustomCard()">Save Custom Card</button>
       </div>
     </div>`;
 }
 
-function renderFullpagePreview(which) {
-  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
-  const label = which==='A' ? 'Fullpage A' : 'Fullpage B';
+function renderCustomCardPreview() {
+  const body = customCardBody || '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font:600 20px DM Sans,Arial,sans-serif;">CUSTOM CARD PREVIEW</div>';
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">Preview · 540 × 960 (${label})</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766 · CUSTOM CARD</div>
     <div class="sb-preview-wrap">
-      <div class="pv-frame fullpage" id="pvFrame">
-        <div id="fullpagePreviewBody" style="width:100%;height:100%;overflow:hidden">${body||'<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>'}</div>
+      <div class="pv-frame directory-card" id="pvFrame" style="border-radius:22px;overflow:hidden;background:#f8fafc;">
+        <div id="customCardPreviewBody" style="width:100%;height:100%;overflow:hidden;">${body}</div>
       </div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadJPEG()">Download JPEG (540×960)</button></div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
 }
 
@@ -366,130 +373,166 @@ function escapeHtml(str) {
 }
 
 function hasUnsaved() {
-  if (activeTab===FULLPAGE_PAGE_A) return fullpageBodyA!==savedFullpageBodyA;
-  if (activeTab===FULLPAGE_PAGE_B) return fullpageBodyB!==savedFullpageBodyB;
-  return false;
+  return activeTab === CUSTOM_CARD_PAGE && customCardBody !== savedCustomCardBody;
 }
 
 window.setTab = (t) => {
+  if (!Number.isInteger(t) || t < 1 || t > 8) return;
   if (hasUnsaved()) {
-    if (!confirm('You have unsaved changes. Leave anyway?')) return;
-    if (activeTab===FULLPAGE_PAGE_A) fullpageBodyA=savedFullpageBodyA;
-    if (activeTab===FULLPAGE_PAGE_B) fullpageBodyB=savedFullpageBodyB;
+    if (!confirm('You have unsaved Custom Card changes. Leave anyway?')) return;
+    customCardBody = savedCustomCardBody;
   }
-  activeTab = t; render();
+  activeTab = t;
+  render();
 };
 
-window.updateFullpagePreview = (which) => {
-  const val = document.getElementById('fullpageBody').value;
-  if (which==='A') fullpageBodyA=val; else fullpageBodyB=val;
-  const el = document.getElementById('fullpagePreviewBody');
-  if (el) el.innerHTML = val||'<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>';
-  updateFullpageStatus(which);
+window.updateCustomCardPreview = () => {
+  const input = document.getElementById('customCardBody');
+  if (!input) return;
+  customCardBody = input.value;
+  const preview = document.getElementById('customCardPreviewBody');
+  if (preview) {
+    preview.innerHTML = customCardBody || '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font:600 20px DM Sans,Arial,sans-serif;">CUSTOM CARD PREVIEW</div>';
+  }
+  const status = document.getElementById('customCardStatus');
+  if (status) {
+    const unsaved = customCardBody !== savedCustomCardBody;
+    status.className = 'sb-notice-status' + (unsaved ? ' unsaved' : '');
+    status.textContent = unsaved ? '● Unsaved' : '✓ Saved';
+  }
 };
 
-function updateFullpageStatus(which) {
-  const el = document.getElementById('fullpageStatus');
-  if (!el) return;
-  const body = which==='A' ? fullpageBodyA : fullpageBodyB;
-  const saved = which==='A' ? savedFullpageBodyA : savedFullpageBodyB;
-  const unsaved = body!==saved;
-  el.className = 'sb-notice-status'+(unsaved?' unsaved':'');
-  el.textContent = unsaved?'● Unsaved':'✓ Saved';
-}
-
-window.saveFullpage = async (which) => {
-  const btn = document.getElementById('saveFullpageBtn');
-  btn.disabled=true; btn.textContent='Saving...';
+window.saveCustomCard = async () => {
+  const btn = document.getElementById('saveCustomCardBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
-    const table = which==='A' ? 'signboard_fullpage' : 'signboard_fullpage2';
-    const content = which==='A' ? fullpageBodyA : fullpageBodyB;
-    const { error } = await supabase.from(table).upsert({ id:1, content, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('signboard_fullpage').upsert({
+      id:1,
+      content: customCardBody,
+      updated_at: new Date().toISOString()
+    });
     if (error) throw error;
-    if (which==='A') savedFullpageBodyA=fullpageBodyA; else savedFullpageBodyB=fullpageBodyB;
-    updateFullpageStatus(which);
-    showToast('Fullpage saved');
-  } catch(e) { showToast('Error: '+e.message, true); }
-  finally { btn.disabled=false; btn.textContent='💾 Save Fullpage'; }
-};
-
-window.clearFullpage = (which) => {
-  if (!confirm('Clear all fullpage content?')) return;
-  if (which==='A') fullpageBodyA=''; else fullpageBodyB='';
-  document.getElementById('fullpageBody').value='';
-  const el = document.getElementById('fullpagePreviewBody');
-  if (el) el.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ccc;font-style:italic;">Fullpage preview will appear here...</div>';
-  updateFullpageStatus(which);
-};
-
-// 드래그로 선택한 글자를 기억해뒀다가, 색상 박스에서 색을 고르는 즉시 그 글자에 색을 입힌다.
-let _lastTextSelection = null; // { taId, start, end }
-
-['fBiz','fAlt','fSub'].forEach(taId => {
-  const ta = document.getElementById(taId);
-  if (!ta) return;
-  const remember = () => {
-    if (ta.selectionStart !== ta.selectionEnd) {
-      _lastTextSelection = { taId, start: ta.selectionStart, end: ta.selectionEnd };
+    savedCustomCardBody = customCardBody;
+    const status = document.getElementById('customCardStatus');
+    if (status) {
+      status.className = 'sb-notice-status';
+      status.textContent = '✓ Saved';
     }
-  };
-  ta.addEventListener('mouseup', remember);
-  ta.addEventListener('keyup', remember);
-  ta.addEventListener('select', remember);
-  ta.addEventListener('touchend', remember);
-  ta.addEventListener('pointerup', remember);
-});
-document.addEventListener('selectionchange', () => {
-  const ta = document.activeElement;
-  if (ta && ['fBiz','fAlt','fSub'].includes(ta.id) && ta.selectionStart !== ta.selectionEnd) {
-    _lastTextSelection = { taId: ta.id, start: ta.selectionStart, end: ta.selectionEnd };
+    showToast('Custom Card saved');
+  } catch (error) {
+    showToast('Error: ' + error.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Custom Card'; }
   }
-});
-
-function applyColorToSelection(color) {
-  if (!_lastTextSelection) { showToast('먼저 글자를 마우스로 드래그해서 선택한 다음 색을 고르세요', true); return; }
-  const { taId, start, end } = _lastTextSelection;
-  const ta = document.getElementById(taId);
-  if (!ta) return;
-  const before = ta.value.slice(0, start);
-  const sel = ta.value.slice(start, end);
-  const after = ta.value.slice(end);
-  // 이미 색칠된 구간을 다시 선택했으면 태그 벗기고 새로 씌움
-  const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-  ta.value = before + '{{' + color + '|' + stripped + '}}' + after;
-  // 새로 칠해진 글자 그대로 다시 선택 상태로 둬서, 색을 더 눌러보며 바꿔볼 수 있게 함
-  const newEnd = start + ('{{' + color + '|' + stripped + '}}').length;
-  ta.focus();
-  ta.setSelectionRange(start, newEnd);
-  _lastTextSelection = { taId, start, end: newEnd };
-}
-
-document.getElementById('colorSwatches').addEventListener('click', (ev) => {
-  const sw = ev.target.closest('.sb-swatch');
-  if (!sw) return;
-  applyColorToSelection(sw.dataset.color);
-});
-
-document.getElementById('fCustomColor').addEventListener('input', (ev) => {
-  applyColorToSelection(ev.target.value);
-});
-
-window.clearInlineColor = (taId) => {
-  const ta = document.getElementById(taId);
-  ta.value = ta.value.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-  _lastTextSelection = null;
-  ta.focus();
 };
 
-// {{#rrggbb|텍스트}} 태그를 <span style="color:#rrggbb">텍스트</span>로 변환
-function parseInlineColor(text) {
-  if (!text) return '';
-  return text.replace(/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g, (m, color, inner) => `<span style="color:${color}">${inner}</span>`);
+window.clearCustomCard = () => {
+  if (!confirm('Clear the Custom Card HTML?')) return;
+  customCardBody = '';
+  const input = document.getElementById('customCardBody');
+  if (input) input.value = '';
+  window.updateCustomCardPreview();
+};
+
+function legacyTextToEditorHTML(value) {
+  const raw=String(value||'');
+  if (/<(?:p|div|br|span|strong|em|b|i)\b/i.test(raw)) return raw;
+  const pattern=/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g;
+  let output='',cursor=0,match;
+  while((match=pattern.exec(raw))!==null) {
+    output+=escapeHtml(raw.slice(cursor,match.index)).replace(/\n/g,'<br>');
+    output+=`<span style="color:${match[1]}">${escapeHtml(match[2])}</span>`;
+    cursor=match.index+match[0].length;
+  }
+  output+=escapeHtml(raw.slice(cursor)).replace(/\n/g,'<br>');
+  return output;
 }
-// 관리자 리스트 등 plain text 표시용 — 태그 벗기기만
-function stripInlineColor(text) {
-  if (!text) return '';
-  return text.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+
+function safeColourValue(value) {
+  const colour=String(value||'').trim();
+  return /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|1|0?\.\d+)\s*\))$/i.test(colour) ? colour : '';
+}
+
+function renderRichText(value) {
+  if (!value) return '';
+  const doc=new DOMParser().parseFromString(legacyTextToEditorHTML(value),'text/html');
+  function clean(node) {
+    if(node.nodeType===Node.TEXT_NODE) return escapeHtml(node.nodeValue||'');
+    if(node.nodeType!==Node.ELEMENT_NODE) return '';
+    const tag=node.tagName.toLowerCase();
+    const inner=Array.from(node.childNodes).map(clean).join('');
+    if(tag==='br') return '<br>';
+    if(tag==='p') return `<p>${inner||'<br>'}</p>`;
+    if(tag==='strong'||tag==='b') return `<strong>${inner}</strong>`;
+    if(tag==='em'||tag==='i') return `<em>${inner}</em>`;
+    if(tag==='span') {
+      const colour=safeColourValue(node.style.color);
+      return colour ? `<span style="color:${colour}">${inner}</span>` : inner;
+    }
+    return inner;
+  }
+  return Array.from(doc.body.childNodes).map(clean).join('');
+}
+
+function stripInlineColor(value) {
+  if(!value) return '';
+  const doc=new DOMParser().parseFromString(legacyTextToEditorHTML(value),'text/html');
+  function plain(node) {
+    if(node.nodeType===Node.TEXT_NODE) return node.nodeValue||'';
+    if(node.nodeType!==Node.ELEMENT_NODE) return '';
+    const tag=node.tagName.toLowerCase();
+    if(tag==='br') return '\n';
+    const content=Array.from(node.childNodes).map(plain).join('');
+    return tag==='p'||tag==='div' ? content+'\n' : content;
+  }
+  return Array.from(doc.body.childNodes).map(plain).join('').replace(/\n{3,}/g,'\n').trim();
+}
+
+function decodeStoredEntities(value) {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = String(value || '');
+  return textarea.value;
+}
+
+function firstRichLineHTML(value) {
+  const html=renderRichText(value);
+  const paragraph=html.match(/<p>([\s\S]*?)<\/p>/i);
+  return paragraph ? paragraph[1] : (html.split(/<br\s*\/?\s*>/i)[0]||html);
+}
+
+function initSignboardRichEditors() {
+  if(!window.Quill) { showToast('Text editor failed to load. Please refresh the page.',true); return; }
+  [
+    ['fBiz','fBizEditor','Business name'],
+    ['fAlt','fAltEditor','Alternative name'],
+    ['fSub','fSubEditor','Additional information'],
+    ['fShort','fShortEditor','Short name for ALL FLOORS']
+  ].forEach(([fieldId,editorId,placeholder]) => {
+    const textarea=document.getElementById(fieldId);
+    const host=document.getElementById(editorId);
+    if(!textarea||!host) return;
+    if(!signboardEditors[fieldId]) {
+      const editor=new Quill(host,{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder});
+      const colourPicker = editor.getModule('toolbar')?.container?.querySelector('.ql-color-picker .ql-picker-label');
+      if (colourPicker) {
+        colourPicker.setAttribute('title','Text colour');
+        colourPicker.setAttribute('aria-label','Text colour');
+      }
+      editor.on('text-change',()=>{ textarea.value=editor.root.innerHTML; });
+      signboardEditors[fieldId]=editor;
+    }
+    signboardEditors[fieldId].root.innerHTML=legacyTextToEditorHTML(textarea.value)||'<p><br></p>';
+    textarea.value=signboardEditors[fieldId].root.innerHTML;
+  });
+}
+
+function syncSignboardRichEditors() {
+  ['fBiz','fAlt','fSub','fShort'].forEach(fieldId=>{
+    const textarea=document.getElementById(fieldId);
+    const editor=signboardEditors[fieldId];
+    if(!textarea||!editor) return;
+    textarea.value=editor.getText().trim() ? editor.root.innerHTML : '';
+  });
 }
 
 window.openAddModal = () => {
@@ -506,6 +549,7 @@ window.openAddModal = () => {
   document.getElementById('fShort').value='';
   document.getElementById('fSort').value='1';
   document.getElementById('entryModal').classList.add('open');
+  initSignboardRichEditors();
 };
 
 window.openEditModal = (id) => {
@@ -523,11 +567,13 @@ window.openEditModal = (id) => {
   document.getElementById('fShort').value=e.short_name||'';
   document.getElementById('fSort').value=e.sort_order;
   document.getElementById('entryModal').classList.add('open');
+  initSignboardRichEditors();
 };
 
 window.closeEntryModal = () => { document.getElementById('entryModal').classList.remove('open'); };
 
 window.saveEntry = async () => {
+  syncSignboardRichEditors();
   const id = document.getElementById('editId').value;
   const obj = {
     page: parseInt(document.getElementById('fPage').value),
@@ -558,71 +604,106 @@ window.deleteEntry = async (id) => {
   await loadEntries();
 };
 
-window.downloadJPEG = async () => {
+window.downloadPNG = async () => {
   const live = document.getElementById('pvFrame');
   if (!live) return;
-  let frame = live, holder = null;
+
+  let frame = live;
+  let holder = null;
   if (live.getBoundingClientRect().width < 530) {
-    // preview is scaled down on this screen: capture a full-size copy so the JPEG stays 540×960
     holder = document.createElement('div');
-    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:540px;height:960px;overflow:hidden;pointer-events:none;';
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + CARD_WIDTH + 'px;height:' + CARD_HEIGHT + 'px;overflow:hidden;pointer-events:none;';
     frame = live.cloneNode(true);
     frame.removeAttribute('id');
+    frame.style.transform = 'none';
+    frame.style.margin = '0';
     holder.appendChild(frame);
     document.body.appendChild(holder);
   }
-  showToast('Generating JPEG (540×960)...');
+
+  showToast('Generating video PNG (960×1766)...');
   try {
     const images = frame.querySelectorAll('img');
-    await Promise.all(Array.from(images).map(async (img) => {
+    await Promise.all(Array.from(images).map(async img => {
       try {
         const src = img.getAttribute('src');
-        if (!src||src.startsWith('data:')||src.startsWith('blob:')) return;
-        const res = await fetch(src,{cache:'force-cache'});
-        const blob = await res.blob();
-        const dataUrl = await new Promise((resolve) => {
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+        const response = await fetch(src, { cache:'force-cache' });
+        if (!response.ok) throw new Error('Image request failed');
+        const blob = await response.blob();
+        const dataUrl = await new Promise(resolve => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result);
           reader.readAsDataURL(blob);
         });
         img.src = dataUrl;
-        await new Promise((resolve) => {
-          if (img.complete&&img.naturalHeight!==0) return resolve();
-          img.onload=resolve; img.onerror=resolve;
-          setTimeout(resolve,3000);
+        await new Promise(resolve => {
+          if (img.complete && img.naturalHeight !== 0) return resolve();
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 3000);
         });
-      } catch(err) { console.warn('Image preload failed:',err); }
+      } catch (error) {
+        console.warn('Custom card image preload failed:', error);
+      }
     }));
-    await new Promise(r=>setTimeout(r,500));
-    const canvas = await html2canvas(frame,{
-      width:540, height:960, scale:2,
-      useCORS:true, allowTaint:true,
-      backgroundColor:'#ffffff', imageTimeout:15000, logging:false
+
+    await new Promise(resolve => setTimeout(resolve, 250));
+    const canvas = await html2canvas(frame, {
+      width:CARD_WIDTH,
+      height:CARD_HEIGHT,
+      scale:2,
+      useCORS:true,
+      allowTaint:false,
+      backgroundColor:null,
+      imageTimeout:15000,
+      logging:false
     });
+
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width=540; finalCanvas.height=960;
-    const ctx2d = finalCanvas.getContext('2d');
-    ctx2d.imageSmoothingEnabled=true; ctx2d.imageSmoothingQuality='high';
-    ctx2d.drawImage(canvas,0,0,540,960);
+    finalCanvas.width = EXPORT_WIDTH;
+    finalCanvas.height = EXPORT_HEIGHT;
+    const context = finalCanvas.getContext('2d');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+    const names = {
+      1:'GROUND-L1',
+      2:'LEVEL-2',
+      3:'LEVEL-3',
+      4:'LEVEL-4',
+      5:'LEVEL-5',
+      6:'LEVEL-6',
+      7:'ALL-FLOORS',
+      8:'CUSTOM-CARD'
+    };
     const link = document.createElement('a');
-    link.download=`Signboard_Page${activeTab}.jpg`;
-    link.href=finalCanvas.toDataURL('image/jpeg',0.95);
+    link.download = 'Redmyre_Signboard_' + (names[activeTab] || 'CARD') + '.png';
+    link.href = finalCanvas.toDataURL('image/png');
     link.click();
-    showToast('JPEG downloaded! (540×960)');
-  } catch(e) { showToast('Download failed: '+e.message,true); }
-  finally { if (holder) holder.remove(); }
+    showToast('PNG downloaded · 960×1766');
+  } catch (error) {
+    showToast('PNG export failed: ' + error.message, true);
+  } finally {
+    if (holder) holder.remove();
+  }
 };
 
-window.downloadAllJPEG = async () => {
-  showToast('Generating all JPEGs...');
-  const pages = [1,2,3,4,5,6,FULLPAGE_PAGE_A,FULLPAGE_PAGE_B,ALL_FLOORS_PAGE];
-  for (const p of pages) {
-    activeTab=p; render();
-    await new Promise(r=>setTimeout(r,600));
-    await window.downloadJPEG();
-    await new Promise(r=>setTimeout(r,400));
+window.downloadAllPNG = async () => {
+  if (hasUnsaved() && !confirm('Custom Card has unsaved changes. Download the current version anyway?')) return;
+  showToast('Generating all 8 video cards...');
+  const previousTab = activeTab;
+  for (let page = 1; page <= 8; page++) {
+    activeTab = page;
+    render();
+    await new Promise(resolve => setTimeout(resolve, 450));
+    await window.downloadPNG();
+    await new Promise(resolve => setTimeout(resolve, 250));
   }
-  showToast('All JPEGs downloaded!');
+  activeTab = previousTab;
+  render();
+  showToast('All 8 PNG cards downloaded');
 };
 
 function showToast(msg, isError=false) {
