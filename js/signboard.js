@@ -293,10 +293,9 @@ function buildAllFloorsHTML() {
       });
 
     const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
-    // Fit the ALL FLOORS typography to the actual wrapped-line demand in each cell.
-    // Each wrapped line receives its own share of the available row height to prevent clipping.
-    const cellFont = Math.max(14,Math.min(20,Math.floor(260/Math.max(1,totalLines*1.12))));
-    const titleFont = Math.min(20,Math.max(17,cellFont+1));
+    // Fit each floor to the available card height; lower the size only when the text requires it.
+    const cellFont = Math.max(12,Math.min(22,Math.floor(255/Math.max(1,totalLines*1.12))));
+    const titleFont = Math.min(21,Math.max(18,cellFont+1));
     const rowFont = cellFont;
     const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
 
@@ -438,14 +437,16 @@ window.clearCustomCard = () => {
 function legacyTextToEditorHTML(value) {
   const raw=String(value||'');
   if (/<(?:p|div|br|span|strong|em|b|i)\b/i.test(raw)) return raw;
+  // Decode legacy entity text before escaping it, so &amp; and &#39; display normally.
+  const decoded=decodeStoredEntities(raw);
   const pattern=/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g;
   let output='',cursor=0,match;
-  while((match=pattern.exec(raw))!==null) {
-    output+=escapeHtml(raw.slice(cursor,match.index)).replace(/\n/g,'<br>');
+  while((match=pattern.exec(decoded))!==null) {
+    output+=escapeHtml(decoded.slice(cursor,match.index)).replace(/\n/g,'<br>');
     output+=`<span style="color:${match[1]}">${escapeHtml(match[2])}</span>`;
     cursor=match.index+match[0].length;
   }
-  output+=escapeHtml(raw.slice(cursor)).replace(/\n/g,'<br>');
+  output+=escapeHtml(decoded.slice(cursor)).replace(/\n/g,'<br>');
   return output;
 }
 
@@ -491,8 +492,14 @@ function stripInlineColor(value) {
 
 function decodeStoredEntities(value) {
   const textarea = document.createElement('textarea');
-  textarea.innerHTML = String(value || '');
-  return textarea.value;
+  let decoded=String(value || '');
+  for(let i=0;i<3;i++) {
+    textarea.innerHTML=decoded;
+    const next=textarea.value;
+    if(next===decoded) break;
+    decoded=next;
+  }
+  return decoded;
 }
 
 function firstRichLineHTML(value) {
