@@ -154,88 +154,92 @@ function renderDirectoryPreview() {
   });
   const floors = FLOOR_ORDER.filter(f => grouped[f]);
 
-  const unitGroups = {};
-  const floorWeights = {};
-  const floorDensity = {};
+  const floorData = {};
+  const estimateLines = (value, charsPerLine) => {
+    const text = stripInlineColor(value);
+    return text.split(/\n|\|\|/).filter(line => line.trim())
+      .reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
   const px = value => Math.max(1,Math.round(value));
 
-  const estimateLines = (value, charsPerLine) => {
-    const lines = stripInlineColor(value).split(/\n|\|\|/).filter(line => line.trim());
-    return lines.reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
-  };
-
   floors.forEach(floor => {
-    unitGroups[floor] = [];
-    const map = new Map();
-    let floorWeight = 0;
-    let itemCount = 0;
-    let extraLines = 0;
+    const unitMap = new Map();
+    let entryCount = 0;
+    let detailLines = 0;
+    let floorWeight = 1.65;
 
     grouped[floor].forEach(entry => {
       const unit = entry.unit_display || '';
-      if (!map.has(unit)) {
-        const group = { unit, items: [], weight: 0 };
-        map.set(unit,group);
-        unitGroups[floor].push(group);
-      }
-      const group = map.get(unit);
-      group.items.push(entry);
+      if (!unitMap.has(unit)) unitMap.set(unit,{unit,items:[],weight:0});
 
-      const businessLines = Math.max(1,estimateLines(entry.business_name,30));
-      const altLines = estimateLines(entry.display_name_alt,38);
-      const subLines = estimateLines(entry.sub_info,44);
-      const entryWeight = 1 + (businessLines-1)*0.55 + altLines*0.72 + subLines*0.72;
+      const businessLines = Math.max(1,estimateLines(entry.business_name,22));
+      const altLines = estimateLines(entry.display_name_alt,31);
+      const subLines = estimateLines(entry.sub_info,36);
+      const itemWeight = Math.max(1,businessLines*1.08 + altLines*0.78 + subLines*0.72);
 
-      group.weight += entryWeight;
-      floorWeight += entryWeight;
-      itemCount++;
-      extraLines += businessLines-1 + altLines + subLines;
+      const item = {entry,businessLines,altLines,subLines,weight:itemWeight};
+      const group = unitMap.get(unit);
+      group.items.push(item);
+      group.weight += itemWeight;
+      floorWeight += itemWeight;
+      entryCount++;
+      detailLines += altLines + subLines + businessLines - 1;
     });
 
-    // Give floors with fewer tenants larger type, while allowing long descriptions to use more room.
-    const effectiveCount = itemCount + extraLines*0.28;
-    floorDensity[floor] = Math.max(0.78,Math.min(1.12,Math.sqrt(7/Math.max(1,effectiveCount))));
-    floorWeights[floor] = Math.max(2.5,floorWeight+2.2);
+    // Bigger type on quiet floors; only reduce size when the floor has more tenants or text.
+    const scale = Math.max(0.96,Math.min(1.40,
+      1.48 - Math.max(0,entryCount-1)*0.032 - detailLines*0.012
+    ));
+
+    floorData[floor] = {
+      groups:Array.from(unitMap.values()),
+      weight:floorWeight,
+      scale
+    };
   });
 
   function renderSub(sub,scale) {
     if (!sub) return '';
     const parts = String(sub).includes('||') ? String(sub).split('||') : [sub];
     return parts.map(part =>
-      `<div class="directory-rich directory-sub" style="font-size:${px(17*scale)}px;font-weight:500;color:#465366;margin-top:${px(2*scale)}px;line-height:1.28;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`
+      `<div class="directory-rich directory-sub" style="font-size:${px(18*scale)}px;font-weight:500;color:#465366;margin-top:${px(2*scale)}px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`
     ).join('');
   }
 
   let sections = '';
   floors.forEach((floor,fi) => {
-    const scale = floorDensity[floor];
-    const groups = unitGroups[floor];
+    const data = floorData[floor];
+    const scale = data.scale;
 
-    const floorRows = groups.map((group,gi) => {
-      const itemRows = group.items.map(entry => {
-        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(25*scale)}px;font-weight:800;color:#142238;line-height:1.2;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
+    const floorRows = data.groups.map((group,gi) => {
+      const itemRows = group.items.map((item,idx) => {
+        const entry = item.entry;
+        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(30*scale)}px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
         const altHtml = entry.display_name_alt
-          ? `<div class="directory-rich directory-alt" style="font-size:${px(19*scale)}px;font-weight:650;color:#26374d;line-height:1.22;margin-top:${px(2*scale)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
+          ? `<div class="directory-rich directory-alt" style="font-size:${px(21*scale)}px;font-weight:650;color:#26374d;line-height:1.22;margin-top:${px(2*scale)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
           : '';
-        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(23*scale)}px;font-weight:850;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
-        return `<div style="flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:${px(4*scale)}px 0;box-sizing:border-box;">
+        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(25*scale)}px;font-weight:850;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
+        const divider = idx<group.items.length-1 ? '1px solid #e6edf3' : 'none';
+
+        return `<div style="flex:${item.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:${px(4*scale)}px 0;border-bottom:${divider};box-sizing:border-box;">
           <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info,scale)}</div>
           ${suiteHtml}
         </div>`;
       }).join('');
 
-      const bottomLine = gi===groups.length-1 ? 'none' : '1px solid #e5ebf1';
-      return `<div style="flex:${group.weight} 1 0;min-height:0;display:flex;flex-direction:column;justify-content:space-evenly;padding:${px(4*scale)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${itemRows}</div>`;
+      const groupDivider = gi<data.groups.length-1 ? '1px solid #e2eaf1' : 'none';
+      return `<div style="flex:${group.weight} 1 0;min-height:0;display:flex;flex-direction:column;border-bottom:${groupDivider};box-sizing:border-box;">${itemRows}</div>`;
     }).join('');
 
-    const heading = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:${px(13*scale)}px;flex:0 0 auto;">
-      <div style="font-size:${px(37*scale)}px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.08;white-space:nowrap;">${floor}</div>
+    const heading = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;flex:0 0 auto;">
+      <div style="font-size:40px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.05;white-space:nowrap;">${floor}</div>
       <div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>
     </div>`;
 
-    sections += `<section style="flex:${floorWeights[floor]} 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+    sections += `<section style="flex:${data.weight} 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+
     if (fi<floors.length-1) {
-      sections += `<div style="height:2px;background:#c9b77e;flex:0 0 2px;margin:0 0;"></div>`;
+      sections += `<div style="height:12px;flex:0 0 12px;display:flex;align-items:center;"><div style="height:1.5px;background:#c9b77e;width:100%;"></div></div>`;
     }
   });
 
@@ -243,7 +247,7 @@ function renderDirectoryPreview() {
     <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">
-        <div style="height:100%;min-height:0;display:flex;flex-direction:column;justify-content:stretch;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
+        <div style="height:100%;min-height:0;display:flex;flex-direction:column;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
@@ -264,6 +268,7 @@ function buildAllFloorsHTML() {
     return text.split(/\n|\|\|/).filter(Boolean)
       .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
   };
+  const px = value => Math.max(1,Math.round(value));
 
   const cells = groups.map(group => {
     const entries = allEntries
@@ -273,34 +278,42 @@ function buildAllFloorsHTML() {
         return floorDiff || (a.sort_order||0)-(b.sort_order||0);
       })
       .map(e => {
-        const source=(e.short_name||'').trim() ? e.short_name : firstRichLineHTML(e.business_name);
-        const name=stripInlineColor(source).trim();
+        // Decode entities from older Short Name values before passing text through the safe renderer.
+        const rawShort = decodeStoredEntities(e.short_name || '').trim();
+        const source = rawShort ? rawShort : firstRichLineHTML(e.business_name);
+        const name = stripInlineColor(source).trim();
+        const wrappedLines = Math.max(1,estimateLines(name,16));
         return {
           name,
           html:renderRichText(source),
           suite:e.unit_display||'',
-          weight:1+Math.max(0,estimateLines(source,24)-1)*0.5
+          weight:1 + (wrappedLines-1)*0.55,
+          wrappedLines
         };
       });
 
-    const extraLines = entries.reduce((sum,e)=>sum+Math.max(0,Math.ceil(e.name.length/24)-1),0);
-    const effectiveCount = entries.length + extraLines*0.35;
-    const scale = Math.max(0.76,Math.min(1.12,Math.sqrt(8/Math.max(1,effectiveCount))));
+    const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
+    const cellFont = Math.max(15,Math.min(21,Math.floor(270/Math.max(1,totalLines*1.18))));
+    const titleFont = Math.min(20,Math.max(17,cellFont+1));
+    const rowFont = cellFont;
     const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
 
-    const rows = entries.map(entry => `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:2px 0;border-bottom:1px solid #edf1f5;line-height:1.22;box-sizing:border-box;">
-      <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${Math.max(11,Math.round(15*scale))}px;font-weight:700;">${entry.html}</span>
-      <span class="all-floor-suite" style="font-size:${Math.max(11,Math.round(15*scale))}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#111a2e;">${escapeHtml(entry.suite)}</span>
-    </div>`).join('');
+    const rows = entries.map((entry,idx) => {
+      const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
+      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:1px 0;border-bottom:${divider};line-height:1.16;box-sizing:border-box;">
+        <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${rowFont}px;font-weight:750;color:#142238;">${entry.html}</span>
+        <span class="all-floor-suite" style="font-size:${rowFont}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</span>
+      </div>`;
+    }).join('');
 
     return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 5px;display:flex;flex-direction:column;">
-      <div style="font-size:${Math.round(18*scale)}px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:5px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
-      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:stretch;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
+      <div style="font-size:${titleFont}px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:4px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
     </section>`;
   }).join('');
 
-  return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px 30px 28px;display:flex;flex-direction:column;">
-    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:14px 18px;">${cells}</div>
+  return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:29px 30px 27px;display:flex;flex-direction:column;">
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">${cells}</div>
   </div>`;
 }
 
@@ -472,6 +485,12 @@ function stripInlineColor(value) {
     return tag==='p'||tag==='div' ? content+'\n' : content;
   }
   return Array.from(doc.body.childNodes).map(plain).join('').replace(/\n{3,}/g,'\n').trim();
+}
+
+function decodeStoredEntities(value) {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = String(value || '');
+  return textarea.value;
 }
 
 function firstRichLineHTML(value) {
