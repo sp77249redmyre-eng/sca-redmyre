@@ -171,7 +171,7 @@ function renderDirectoryPreview() {
     totalUnits * 18 +
     floors.length * 82 + 70;
   const density = Math.max(0.62, Math.min(1, 900 / Math.max(900, estimatedHeight)));
-  const px = value => Math.max(10, Math.round(value * density));
+  const px = value => Math.max(1, Math.round(value * density));
 
   function renderSub(sub) {
     if (!sub) return '';
@@ -262,7 +262,7 @@ function buildAllFloorsHTML() {
         return floorDiff || (a.sort_order||0) - (b.sort_order||0);
       })
       .map(e => ({
-        name: (e.short_name || (e.business_name||'').split('\n')[0]).trim(),
+        name: stripInlineColor(e.short_name || (e.business_name||'').split('\n')[0]).trim(),
         suite: e.unit_display || ''
       }));
 
@@ -551,7 +551,7 @@ window.downloadPNG = async () => {
   let holder = null;
   if (live.getBoundingClientRect().width < 530) {
     holder = document.createElement('div');
-    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:540px;height:991px;overflow:hidden;pointer-events:none;';
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:' + CARD_WIDTH + 'px;height:' + CARD_HEIGHT + 'px;overflow:hidden;pointer-events:none;';
     frame = live.cloneNode(true);
     frame.removeAttribute('id');
     frame.style.transform = 'none';
@@ -589,8 +589,8 @@ window.downloadPNG = async () => {
 
     await new Promise(resolve => setTimeout(resolve, 250));
     const canvas = await html2canvas(frame, {
-      width:540,
-      height:991,
+      width:CARD_WIDTH,
+      height:CARD_HEIGHT,
       scale:2,
       useCORS:true,
       allowTaint:false,
@@ -600,8 +600,8 @@ window.downloadPNG = async () => {
     });
 
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = 827;
-    finalCanvas.height = 1517;
+    finalCanvas.width = EXPORT_WIDTH;
+    finalCanvas.height = EXPORT_HEIGHT;
     const context = finalCanvas.getContext('2d');
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
