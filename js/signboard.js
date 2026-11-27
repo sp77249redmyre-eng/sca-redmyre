@@ -30,9 +30,9 @@ const TOTAL_DIRECTORY_PAGES = 6;
 const ALL_FLOORS_PAGE = 7;
 const CUSTOM_CARD_PAGE = 8;
 const CARD_WIDTH = 540;
-const CARD_HEIGHT = 991;
-const EXPORT_WIDTH = 827;
-const EXPORT_HEIGHT = 1517;
+const CARD_HEIGHT = 994;
+const EXPORT_WIDTH = 960;
+const EXPORT_HEIGHT = 1766;
 
 const TAB_LABELS = {
   1:'GROUND + L1',
@@ -77,7 +77,7 @@ function render() {
   }
 }
 
-// Scale the 540x991 preview to the available width. Export dimensions remain fixed.
+// Scale the 540x994 preview to the available width. Export dimensions remain fixed.
 function fitPreview() {
   const w = document.querySelector('.sb-preview-wrap');
   const root = document.documentElement;
@@ -234,12 +234,12 @@ function renderDirectoryPreview() {
   });
 
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 991 · EXPORT 827 × 1517</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame directory-card" id="pvFrame" style="background:#f8fafc;border-radius:22px;overflow:hidden;padding:34px 30px 30px;box-sizing:border-box;">
         <div style="height:100%;display:flex;flex-direction:column;min-height:0;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (827×1517)</button></div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>
   `;
 }
@@ -284,7 +284,7 @@ function buildAllFloorsHTML() {
     </section>`;
   }).join('');
 
-  return `<div style="width:540px;height:991px;background:#f8fafc;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;">
+  return `<div style="width:540px;height:994px;background:#f8fafc;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;">
     <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:20px 18px;">
       ${cells}
     </div>
@@ -304,10 +304,10 @@ function renderAllFloorsInfo() {
 
 function renderAllFloorsPreview() {
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 991 · EXPORT 827 × 1517 · ALL FLOORS</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766 · ALL FLOORS</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame directory-card" id="pvFrame" style="border-radius:22px;overflow:hidden;">${buildAllFloorsHTML()}</div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (827×1517)</button></div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
 }
 
@@ -320,7 +320,7 @@ function renderCustomCardEditor() {
         <div class="sb-notice-status ${unsaved?'unsaved':''}" id="customCardStatus">${unsaved?'● Unsaved':'✓ Saved'}</div>
       </div>
       <textarea class="sb-notice-body" id="customCardBody" oninput="updateCustomCardPreview()" placeholder="Write the HTML for an additional lobby video card...">${escapeHtml(customCardBody)}</textarea>
-      <div class="sb-notice-hint">Canvas: 540 × 991 px. Export: transparent PNG, 827 × 1517 px. No company logo or footer is added automatically.</div>
+      <div class="sb-notice-hint">Canvas: 540 × 994 px. Export: transparent PNG, 960 × 1766 px. No company logo or footer is added automatically.</div>
       <div class="sb-notice-actions">
         <button class="sb-btn-clear" onclick="clearCustomCard()">Clear</button>
         <button class="sb-btn-save" id="saveCustomCardBtn" onclick="saveCustomCard()">Save Custom Card</button>
@@ -331,12 +331,12 @@ function renderCustomCardEditor() {
 function renderCustomCardPreview() {
   const body = customCardBody || '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font:600 20px DM Sans,Arial,sans-serif;">CUSTOM CARD PREVIEW</div>';
   document.getElementById('rightPanel').innerHTML = `
-    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 991 · EXPORT 827 × 1517 · CUSTOM CARD</div>
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766 · CUSTOM CARD</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame directory-card" id="pvFrame" style="border-radius:22px;overflow:hidden;background:#f8fafc;">
         <div id="customCardPreviewBody" style="width:100%;height:100%;overflow:hidden;">${body}</div>
       </div>
-      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (827×1517)</button></div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
 }
 
@@ -560,7 +560,7 @@ window.downloadPNG = async () => {
     document.body.appendChild(holder);
   }
 
-  showToast('Generating video PNG (827×1517)...');
+  showToast('Generating video PNG (960×1766)...');
   try {
     const images = frame.querySelectorAll('img');
     await Promise.all(Array.from(images).map(async img => {
@@ -621,7 +621,7 @@ window.downloadPNG = async () => {
     link.download = 'Redmyre_Signboard_' + (names[activeTab] || 'CARD') + '.png';
     link.href = finalCanvas.toDataURL('image/png');
     link.click();
-    showToast('PNG downloaded · 827×1517');
+    showToast('PNG downloaded · 960×1766');
   } catch (error) {
     showToast('PNG export failed: ' + error.message, true);
   } finally {
