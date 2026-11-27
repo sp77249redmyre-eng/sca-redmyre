@@ -287,21 +287,22 @@ function buildAllFloorsHTML() {
           name,
           html:renderRichText(source),
           suite:e.unit_display||'',
-          weight:1 + (wrappedLines-1)*0.55,
+          weight:wrappedLines,
           wrappedLines
         };
       });
 
     const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
-    // Dense ALL FLOORS summary: keep the type as large as possible while using a compact line rhythm.
-    const cellFont = Math.max(15,Math.min(22,Math.floor(275/Math.max(1,totalLines*1.05))));
-    const titleFont = Math.min(21,Math.max(18,cellFont+1));
+    // Fit the ALL FLOORS typography to the actual wrapped-line demand in each cell.
+    // Each wrapped line receives its own share of the available row height to prevent clipping.
+    const cellFont = Math.max(14,Math.min(20,Math.floor(260/Math.max(1,totalLines*1.12))));
+    const titleFont = Math.min(20,Math.max(17,cellFont+1));
     const rowFont = cellFont;
     const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
 
     const rows = entries.map((entry,idx) => {
       const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
-      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0;border-bottom:${divider};line-height:1.05;box-sizing:border-box;">
+      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0;border-bottom:${divider};line-height:1.12;box-sizing:border-box;">
         <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${rowFont}px;font-weight:750;color:#142238;">${entry.html}</span>
         <span class="all-floor-suite" style="font-size:${rowFont}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</span>
       </div>`;
