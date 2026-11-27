@@ -263,12 +263,16 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 6', floors:['LEVEL 6'] }
   ];
 
+  // Estimate actual visual line demand at the available name-column width.
   const estimateLines = (value,charsPerLine) => {
     const text = stripInlineColor(value);
-    return text.split(/\n|\|\|/).filter(Boolean)
-      .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+    return text.split(/\n|\|\|/).filter(line => line.trim())
+      .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.trim().length/charsPerLine)),0);
   };
   const px = value => Math.max(1,Math.round(value));
+  const asBlockHTML = value => String(value||'')
+    .replace(/<p>/gi,'<div class="all-floor-paragraph">')
+    .replace(/<\/p>/gi,'</div>');
 
   const cells = groups.map(group => {
     const entries = allEntries
@@ -278,14 +282,13 @@ function buildAllFloorsHTML() {
         return floorDiff || (a.sort_order||0)-(b.sort_order||0);
       })
       .map(e => {
-        // Decode entities from older Short Name values before passing text through the safe renderer.
         const rawShort = decodeStoredEntities(e.short_name || '').trim();
         const source = rawShort ? rawShort : firstRichLineHTML(e.business_name);
         const name = stripInlineColor(source).trim();
-        const wrappedLines = Math.max(1,estimateLines(name,16));
+        // At the exported card width, the name column is approximately 185px.
+        const wrappedLines = Math.max(1,estimateLines(name,20));
         return {
-          name,
-          html:renderRichText(source),
+          html:asBlockHTML(renderRichText(source)),
           suite:e.unit_display||'',
           weight:wrappedLines,
           wrappedLines
@@ -293,27 +296,32 @@ function buildAllFloorsHTML() {
       });
 
     const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
-    // Fit each floor to the available card height; lower the size only when the text requires it.
-    const cellFont = Math.max(12,Math.min(22,Math.floor(255/Math.max(1,totalLines*1.12))));
-    const titleFont = Math.min(21,Math.max(18,cellFont+1));
-    const rowFont = cellFont;
-    const totalWeight = entries.reduce((sum,e)=>sum+e.weight,0);
+    const rowCount = Math.max(1,entries.length);
+    // Share the available cell height according to real text demand, not equal row heights.
+    const cellFont = Math.max(15,Math.min(21,
+      Math.floor(255/Math.max(1,totalLines*1.16 + rowCount*0.30))
+    ));
+    const titleFont = 20;
 
     const rows = entries.map((entry,idx) => {
       const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
-      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:5px;padding:0;border-bottom:${divider};line-height:1.12;box-sizing:border-box;">
-        <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;font-size:${rowFont}px;font-weight:750;color:#142238;">${entry.html}</span>
-        <span class="all-floor-suite" style="font-size:${rowFont}px;font-weight:900;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</span>
+      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:${divider};box-sizing:border-box;line-height:1.12;">
+        <div class="all-floor-name" style="display:block;flex:1;min-width:0;overflow-wrap:break-word;word-break:normal;font-size:${cellFont}px;font-weight:750;line-height:1.12;color:#142238;">${entry.html}</div>
+        <div class="all-floor-suite" style="font-size:${cellFont}px;font-weight:900;line-height:1.1;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</div>
       </div>`;
     }).join('');
 
     return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 5px;display:flex;flex-direction:column;">
-      <div style="font-size:${titleFont}px;font-weight:900;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:4px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
+      <div style="font-size:${titleFont}px;font-weight:900;line-height:1.15;color:#111a2e;text-align:center;border-top:2px solid #c9b77e;border-bottom:2px solid #c9b77e;padding:5px 0;margin-bottom:4px;letter-spacing:.3px;flex:0 0 auto;">${group.title}</div>
       <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
     </section>`;
   }).join('');
 
   return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:29px 30px 27px;display:flex;flex-direction:column;">
+    <style>
+      .all-floor-name .all-floor-paragraph{margin:0!important;padding:0!important;}
+      .all-floor-name p{margin:0!important;padding:0!important;}
+    </style>
     <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">${cells}</div>
   </div>`;
 }
