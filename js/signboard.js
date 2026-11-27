@@ -48,6 +48,7 @@ const TAB_LABELS = {
 let allEntries = [];
 let activeTab = 1;
 let customCardBody = '', savedCustomCardBody = '';
+const signboardEditors = {};
 
 async function loadEntries() {
   const { data } = await supabase.from('signboard_entries').select('*').order('page').order('floor').order('sort_order');
@@ -115,10 +116,13 @@ function renderEntryList() {
       const badge = FLOOR_BADGE[floor]||'fb-g';
       const short = FLOOR_SHORT[floor]||'?';
       const alt = e.display_name_alt ? `<span class="sb-entry-alt">${stripInlineColor(e.display_name_alt)}</span>` : '';
-      const sub = e.sub_info ? stripInlineColor(e.sub_info.split('||')[0]) : '';
+      const sub = e.sub_info ? stripInlineColor(e.sub_info).split('||')[0] : '';
       const meta = [e.unit_display, sub].filter(Boolean).join(' · ');
-      const hasColor = /\{\{#[0-9a-fA-F]{6}\|/.test(e.business_name||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.display_name_alt||'') || /\{\{#[0-9a-fA-F]{6}\|/.test(e.sub_info||'');
-      const colorDot = hasColor ? `<span title="일부 텍스트에 색 지정됨" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:conic-gradient(from 0deg,red,orange,yellow,green,blue,violet,red);border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
+      const hasColor = /style=["'][^"']*color\s*:/.test(e.business_name||'') ||
+        /style=["'][^"']*color\s*:/.test(e.display_name_alt||'') ||
+        /style=["'][^"']*color\s*:/.test(e.sub_info||'') ||
+        /\{\{#[0-9a-fA-F]{6}\|/.test(e.business_name||'');
+      const colorDot = hasColor ? `<span title="Text colour applied" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#dc2626;border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
       html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${colorDot}${stripInlineColor(e.business_name)}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
     });
   });
@@ -131,22 +135,16 @@ function renderDirectoryPreview() {
     const floorDiff = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
     return floorDiff || (a.sort_order||0) - (b.sort_order||0);
   });
-
   const grouped = {};
-  entries.forEach(e => {
-    if (!grouped[e.floor]) grouped[e.floor] = [];
-    grouped[e.floor].push(e);
-  });
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
   const floors = FLOOR_ORDER.filter(f => grouped[f]);
 
   const unitGroups = {};
-  let totalBusinessLines = 0;
-  let totalAltLines = 0;
-  let totalSubLines = 0;
-  let totalUnits = 0;
-  const estimateLines = (value, charsPerLine) => String(value || '').split(/\n|\|\|/)
-    .filter(line => line.trim())
-    .reduce((sum, line) => sum + Math.max(1, Math.ceil(stripInlineColor(line).length / charsPerLine)), 0);
+  let totalBusinessLines = 0, totalAltLines = 0, totalSubLines = 0, totalUnits = 0;
+  const estimateLines = (value, charsPerLine) => {
+    const lines = stripInlineColor(value).split(/\n|\|\|/).filter(line => line.trim());
+    return lines.reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
 
   floors.forEach(floor => {
     unitGroups[floor] = [];
@@ -155,85 +153,58 @@ function renderDirectoryPreview() {
       const unit = e.unit_display || '';
       if (!map.has(unit)) {
         const group = { unit, items: [] };
-        map.set(unit, group);
+        map.set(unit,group);
         unitGroups[floor].push(group);
       }
       map.get(unit).items.push(e);
-      totalBusinessLines += Math.max(1, estimateLines(e.business_name, 26));
-      totalAltLines += estimateLines(e.display_name_alt, 36);
-      totalSubLines += estimateLines(e.sub_info, 36);
+      totalBusinessLines += Math.max(1,estimateLines(e.business_name,26));
+      totalAltLines += estimateLines(e.display_name_alt,36);
+      totalSubLines += estimateLines(e.sub_info,36);
     });
     totalUnits += unitGroups[floor].length;
   });
 
-  // Estimate content demand and reduce all text/spacing together as entries increase.
-  const estimatedHeight =
-    totalBusinessLines * 35 +
-    totalAltLines * 27 +
-    totalSubLines * 28 +
-    totalUnits * 18 +
-    floors.length * 82 + 70;
-  const density = Math.max(0.48, Math.min(1, 900 / Math.max(900, estimatedHeight)));
-  const px = value => Math.max(1, Math.round(value * density));
+  const estimatedHeight = totalBusinessLines*35 + totalAltLines*27 + totalSubLines*28 + totalUnits*18 + floors.length*82 + 70;
+  const density = Math.max(0.48,Math.min(1,900/Math.max(900,estimatedHeight)));
+  const px = value => Math.max(1,Math.round(value*density));
 
   function renderSub(sub) {
     if (!sub) return '';
-    return sub.split(/\n|\|\|/).map(line => line.trim()).filter(Boolean)
-      .map(line => `<div style="font-size:${px(22)}px;font-weight:500;color:#343b49;margin-top:${px(2)}px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">${parseInlineColor(line)}</div>`)
-      .join('');
+    const parts = String(sub).includes('||') ? String(sub).split('||') : [sub];
+    return parts.map(part => `<div class="directory-rich directory-sub" style="font-size:${px(22)}px;font-weight:500;color:#343b49;margin-top:${px(2)}px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`).join('');
   }
 
   let sections = '';
-  floors.forEach((floor, fi) => {
+  floors.forEach((floor,fi) => {
     const groups = unitGroups[floor];
-    const floorRows = groups.map((group, gi) => {
+    const floorRows = groups.map((group,gi) => {
       let content = '';
-      group.items.forEach((entry, idx) => {
-        const businessLines = (entry.business_name||'').split('\n').filter(Boolean);
-        const altLines = (entry.display_name_alt||'').split('\n').filter(Boolean);
-        const businessHtml = businessLines.map(line =>
-          `<div style="font-size:${px(29)}px;font-weight:900;color:#111a2e;line-height:1.17;overflow-wrap:anywhere;">${parseInlineColor(line)}</div>`
-        ).join('');
-        const altHtml = altLines.map(line =>
-          `<div style="font-size:${px(22)}px;font-weight:700;color:#111a2e;line-height:1.2;margin-top:${px(2)}px;overflow-wrap:anywhere;">${parseInlineColor(line.trim())}</div>`
-        ).join('');
-        const suiteHtml = idx === 0
-          ? `<div style="font-size:${px(27)}px;font-weight:900;color:#111a2e;white-space:nowrap;flex-shrink:0;padding-left:8px;">${escapeHtml(group.unit)}</div>`
+      group.items.forEach((entry,idx) => {
+        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(29)}px;font-weight:900;color:#111a2e;line-height:1.17;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
+        const altHtml = entry.display_name_alt
+          ? `<div class="directory-rich directory-alt" style="font-size:${px(22)}px;font-weight:700;color:#111a2e;line-height:1.2;margin-top:${px(2)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
+          : '';
+        const suiteHtml = idx===0
+          ? `<div class="sb-video-suite" style="font-size:${px(27)}px;font-weight:900;color:#111a2e;white-space:nowrap;flex-shrink:0;padding-left:8px;">${escapeHtml(group.unit)}</div>`
           : '';
         content += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%;">
-          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info)}</div>
-          ${suiteHtml}
+          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info)}</div>${suiteHtml}
         </div>`;
-        if (idx < group.items.length - 1) {
-          content += `<div style="border-top:1px solid #e6e8ed;margin:${px(7)}px 0;"></div>`;
-        }
+        if (idx<group.items.length-1) content += `<div style="border-top:1px solid #e6e8ed;margin:${px(7)}px 0;"></div>`;
       });
-
-      const lineWeight = group.items.reduce((sum, entry) => {
-        return sum +
-          Math.max(1,estimateLines(entry.business_name, 26)) +
-          estimateLines(entry.display_name_alt, 36) +
-          estimateLines(entry.sub_info, 36);
-      }, 0);
-
-      const bottomLine = gi === groups.length - 1 && fi === floors.length - 1 ? 'none' : '1.5px solid #c9b77e';
-      return `<div style="flex:${Math.max(1,lineWeight)};min-height:0;display:flex;flex-direction:column;justify-content:center;padding:${px(9)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">
-        ${content}
-      </div>`;
+      const lineWeight = group.items.reduce((sum,entry) => sum+
+        Math.max(1,estimateLines(entry.business_name,26))+
+        estimateLines(entry.display_name_alt,36)+estimateLines(entry.sub_info,36),0);
+      const bottomLine = gi===groups.length-1 && fi===floors.length-1 ? 'none' : '1.5px solid #c9b77e';
+      return `<div style="flex:${Math.max(1,lineWeight)};min-height:0;display:flex;flex-direction:column;justify-content:center;padding:${px(9)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${content}</div>`;
     }).join('');
 
     const heading = `<div style="display:flex;align-items:center;gap:14px;margin-bottom:${px(17)}px;flex-shrink:0;">
       <div style="font-size:${px(43)}px;font-weight:900;color:#101a30;letter-spacing:1.2px;line-height:1.05;white-space:nowrap;">${floor}</div>
       <div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>
     </div>`;
-
-    sections += `<section style="flex:${Math.max(1,groups.length)};min-height:0;display:flex;flex-direction:column;overflow:hidden;">
-      ${heading}
-      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div>
-    </section>`;
-    if (fi < floors.length - 1) {
-      sections += `<div style="height:1.5px;background:#c9b77e;flex-shrink:0;margin:${px(10)}px 0;"></div>`;
-    }
+    sections += `<section style="flex:${Math.max(1,groups.length)};min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+    if (fi<floors.length-1) sections += `<div style="height:1.5px;background:#c9b77e;flex-shrink:0;margin:${px(10)}px 0;"></div>`;
   });
 
   document.getElementById('rightPanel').innerHTML = `
@@ -243,8 +214,7 @@ function renderDirectoryPreview() {
         <div style="height:100%;display:flex;flex-direction:column;min-height:0;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
-    </div>
-  `;
+    </div>`;
 }
 
 function buildAllFloorsHTML() {
@@ -258,27 +228,23 @@ function buildAllFloorsHTML() {
   ];
 
   const cells = groups.map(group => {
-    const entries = allEntries
-      .filter(e => group.floors.includes(e.floor))
+    const entries = allEntries.filter(e => group.floors.includes(e.floor))
       .sort((a,b) => {
-        const floorDiff = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
-        return floorDiff || (a.sort_order||0) - (b.sort_order||0);
+        const floorDiff=FLOOR_ORDER.indexOf(a.floor)-FLOOR_ORDER.indexOf(b.floor);
+        return floorDiff || (a.sort_order||0)-(b.sort_order||0);
       })
-      .map(e => ({
-        name: stripInlineColor(e.short_name || (e.business_name||'').split('\n')[0]).trim(),
-        suite: e.unit_display || ''
-      }));
+      .map(e => {
+        const source=(e.short_name||'').trim() ? e.short_name : firstRichLineHTML(e.business_name);
+        return {name:stripInlineColor(source).trim(),html:renderRichText(source),suite:e.unit_display||''};
+      });
 
-    const estimatedLines = entries.reduce((sum, entry) => {
-      const charsPerLine = 21;
-      return sum + Math.max(1,Math.ceil(entry.name.length/charsPerLine));
-    },0);
-    let fontSize = 18;
-    while (fontSize > 10 && estimatedLines * fontSize * 1.28 + entries.length * 4 > 255) fontSize -= 0.5;
+    const lineEstimate=entries.reduce((sum,entry)=>sum+Math.max(1,Math.ceil(entry.name.length/22)),0);
+    let fontSize=17;
+    while(fontSize>11 && lineEstimate*fontSize*1.25+entries.length*4>250) fontSize-=0.5;
 
-    const rows = entries.map(entry => `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:3px;line-height:1.25;">
-      <span style="flex:1;min-width:0;overflow-wrap:anywhere;">${escapeHtml(entry.name)}</span>
-      <span style="font-weight:900;flex-shrink:0;white-space:nowrap;">${escapeHtml(entry.suite)}</span>
+    const rows=entries.map(entry=>`<div class="all-floor-row" style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:3px;line-height:1.25;">
+      <span class="all-floor-name" style="flex:1;min-width:0;overflow-wrap:anywhere;">${entry.html}</span>
+      <span class="all-floor-suite" style="font-weight:900;flex-shrink:0;white-space:nowrap;">${escapeHtml(entry.suite)}</span>
     </div>`).join('');
 
     return `<section style="min-width:0;overflow:hidden;padding:0 4px;">
@@ -288,9 +254,7 @@ function buildAllFloorsHTML() {
   }).join('');
 
   return `<div style="width:540px;height:994px;background:#f8fafc;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:30px;display:flex;flex-direction:column;">
-    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:20px 18px;">
-      ${cells}
-    </div>
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:20px 18px;">${cells}</div>
   </div>`;
 }
 
@@ -410,74 +374,93 @@ window.clearCustomCard = () => {
   window.updateCustomCardPreview();
 };
 
-// 드래그로 선택한 글자를 기억해뒀다가, 색상 박스에서 색을 고르는 즉시 그 글자에 색을 입힌다.
-let _lastTextSelection = null; // { taId, start, end }
-
-['fBiz','fAlt','fSub'].forEach(taId => {
-  const ta = document.getElementById(taId);
-  if (!ta) return;
-  const remember = () => {
-    if (ta.selectionStart !== ta.selectionEnd) {
-      _lastTextSelection = { taId, start: ta.selectionStart, end: ta.selectionEnd };
-    }
-  };
-  ta.addEventListener('mouseup', remember);
-  ta.addEventListener('keyup', remember);
-  ta.addEventListener('select', remember);
-  ta.addEventListener('touchend', remember);
-  ta.addEventListener('pointerup', remember);
-});
-document.addEventListener('selectionchange', () => {
-  const ta = document.activeElement;
-  if (ta && ['fBiz','fAlt','fSub'].includes(ta.id) && ta.selectionStart !== ta.selectionEnd) {
-    _lastTextSelection = { taId: ta.id, start: ta.selectionStart, end: ta.selectionEnd };
+function legacyTextToEditorHTML(value) {
+  const raw=String(value||'');
+  if (/<(?:p|div|br|span|strong|em|b|i)\b/i.test(raw)) return raw;
+  const pattern=/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g;
+  let output='',cursor=0,match;
+  while((match=pattern.exec(raw))!==null) {
+    output+=escapeHtml(raw.slice(cursor,match.index)).replace(/\n/g,'<br>');
+    output+=`<span style="color:${match[1]}">${escapeHtml(match[2])}</span>`;
+    cursor=match.index+match[0].length;
   }
-});
-
-function applyColorToSelection(color) {
-  if (!_lastTextSelection) { showToast('먼저 글자를 마우스로 드래그해서 선택한 다음 색을 고르세요', true); return; }
-  const { taId, start, end } = _lastTextSelection;
-  const ta = document.getElementById(taId);
-  if (!ta) return;
-  const before = ta.value.slice(0, start);
-  const sel = ta.value.slice(start, end);
-  const after = ta.value.slice(end);
-  // 이미 색칠된 구간을 다시 선택했으면 태그 벗기고 새로 씌움
-  const stripped = sel.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-  ta.value = before + '{{' + color + '|' + stripped + '}}' + after;
-  // 새로 칠해진 글자 그대로 다시 선택 상태로 둬서, 색을 더 눌러보며 바꿔볼 수 있게 함
-  const newEnd = start + ('{{' + color + '|' + stripped + '}}').length;
-  ta.focus();
-  ta.setSelectionRange(start, newEnd);
-  _lastTextSelection = { taId, start, end: newEnd };
+  output+=escapeHtml(raw.slice(cursor)).replace(/\n/g,'<br>');
+  return output;
 }
 
-document.getElementById('colorSwatches').addEventListener('click', (ev) => {
-  const sw = ev.target.closest('.sb-swatch');
-  if (!sw) return;
-  applyColorToSelection(sw.dataset.color);
-});
-
-document.getElementById('fCustomColor').addEventListener('input', (ev) => {
-  applyColorToSelection(ev.target.value);
-});
-
-window.clearInlineColor = (taId) => {
-  const ta = document.getElementById(taId);
-  ta.value = ta.value.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
-  _lastTextSelection = null;
-  ta.focus();
-};
-
-// {{#rrggbb|텍스트}} 태그를 <span style="color:#rrggbb">텍스트</span>로 변환
-function parseInlineColor(text) {
-  if (!text) return '';
-  return text.replace(/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g, (m, color, inner) => `<span style="color:${color}">${inner}</span>`);
+function safeColourValue(value) {
+  const colour=String(value||'').trim();
+  return /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|1|0?\.\d+)\s*\))$/i.test(colour) ? colour : '';
 }
-// 관리자 리스트 등 plain text 표시용 — 태그 벗기기만
-function stripInlineColor(text) {
-  if (!text) return '';
-  return text.replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1');
+
+function renderRichText(value) {
+  if (!value) return '';
+  const doc=new DOMParser().parseFromString(legacyTextToEditorHTML(value),'text/html');
+  function clean(node) {
+    if(node.nodeType===Node.TEXT_NODE) return escapeHtml(node.nodeValue||'');
+    if(node.nodeType!==Node.ELEMENT_NODE) return '';
+    const tag=node.tagName.toLowerCase();
+    const inner=Array.from(node.childNodes).map(clean).join('');
+    if(tag==='br') return '<br>';
+    if(tag==='p') return `<p>${inner||'<br>'}</p>`;
+    if(tag==='strong'||tag==='b') return `<strong>${inner}</strong>`;
+    if(tag==='em'||tag==='i') return `<em>${inner}</em>`;
+    if(tag==='span') {
+      const colour=safeColourValue(node.style.color);
+      return colour ? `<span style="color:${colour}">${inner}</span>` : inner;
+    }
+    return inner;
+  }
+  return Array.from(doc.body.childNodes).map(clean).join('');
+}
+
+function stripInlineColor(value) {
+  if(!value) return '';
+  const doc=new DOMParser().parseFromString(legacyTextToEditorHTML(value),'text/html');
+  function plain(node) {
+    if(node.nodeType===Node.TEXT_NODE) return node.nodeValue||'';
+    if(node.nodeType!==Node.ELEMENT_NODE) return '';
+    const tag=node.tagName.toLowerCase();
+    if(tag==='br') return '\n';
+    const content=Array.from(node.childNodes).map(plain).join('');
+    return tag==='p'||tag==='div' ? content+'\n' : content;
+  }
+  return Array.from(doc.body.childNodes).map(plain).join('').replace(/\n{3,}/g,'\n').trim();
+}
+
+function firstRichLineHTML(value) {
+  const html=renderRichText(value);
+  const paragraph=html.match(/<p>([\s\S]*?)<\/p>/i);
+  return paragraph ? paragraph[1] : (html.split(/<br\s*\/?\s*>/i)[0]||html);
+}
+
+function initSignboardRichEditors() {
+  if(!window.Quill) { showToast('Text editor failed to load. Please refresh the page.',true); return; }
+  [
+    ['fBiz','fBizEditor','Business name'],
+    ['fAlt','fAltEditor','Alternative name'],
+    ['fSub','fSubEditor','Additional information']
+  ].forEach(([fieldId,editorId,placeholder]) => {
+    const textarea=document.getElementById(fieldId);
+    const host=document.getElementById(editorId);
+    if(!textarea||!host) return;
+    if(!signboardEditors[fieldId]) {
+      const editor=new Quill(host,{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder});
+      editor.on('text-change',()=>{ textarea.value=editor.root.innerHTML; });
+      signboardEditors[fieldId]=editor;
+    }
+    signboardEditors[fieldId].root.innerHTML=legacyTextToEditorHTML(textarea.value)||'<p><br></p>';
+    textarea.value=signboardEditors[fieldId].root.innerHTML;
+  });
+}
+
+function syncSignboardRichEditors() {
+  ['fBiz','fAlt','fSub'].forEach(fieldId=>{
+    const textarea=document.getElementById(fieldId);
+    const editor=signboardEditors[fieldId];
+    if(!textarea||!editor) return;
+    textarea.value=editor.getText().trim() ? editor.root.innerHTML : '';
+  });
 }
 
 window.openAddModal = () => {
@@ -494,6 +477,7 @@ window.openAddModal = () => {
   document.getElementById('fShort').value='';
   document.getElementById('fSort').value='1';
   document.getElementById('entryModal').classList.add('open');
+  initSignboardRichEditors();
 };
 
 window.openEditModal = (id) => {
@@ -511,11 +495,13 @@ window.openEditModal = (id) => {
   document.getElementById('fShort').value=e.short_name||'';
   document.getElementById('fSort').value=e.sort_order;
   document.getElementById('entryModal').classList.add('open');
+  initSignboardRichEditors();
 };
 
 window.closeEntryModal = () => { document.getElementById('entryModal').classList.remove('open'); };
 
 window.saveEntry = async () => {
+  syncSignboardRichEditors();
   const id = document.getElementById('editId').value;
   const obj = {
     page: parseInt(document.getElementById('fPage').value),
