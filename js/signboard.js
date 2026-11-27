@@ -446,6 +446,11 @@ function initSignboardRichEditors() {
     if(!textarea||!host) return;
     if(!signboardEditors[fieldId]) {
       const editor=new Quill(host,{theme:'snow',modules:{toolbar:[['bold','italic',{color:[]}]]},placeholder});
+      const colourPicker = editor.getModule('toolbar')?.container?.querySelector('.ql-color-picker .ql-picker-label');
+      if (colourPicker) {
+        colourPicker.setAttribute('title','Text colour');
+        colourPicker.setAttribute('aria-label','Text colour');
+      }
       editor.on('text-change',()=>{ textarea.value=editor.root.innerHTML; });
       signboardEditors[fieldId]=editor;
     }
