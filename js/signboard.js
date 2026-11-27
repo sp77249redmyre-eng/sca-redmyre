@@ -152,7 +152,6 @@ function renderDirectoryPreview() {
   const floors = FLOOR_ORDER.filter(f => grouped[f]);
 
   const unitGroups = {};
-  const floorWeights = {};
   let totalBusinessLines = 0, totalAltLines = 0, totalSubLines = 0, totalUnits = 0;
   const estimateLines = (value, charsPerLine) => {
     const lines = stripInlineColor(value).split(/\n|\|\|/).filter(line => line.trim());
@@ -161,7 +160,6 @@ function renderDirectoryPreview() {
 
   floors.forEach(floor => {
     unitGroups[floor] = [];
-    let floorWeight = 0;
     const map = new Map();
     grouped[floor].forEach(e => {
       const unit = e.unit_display || '';
@@ -177,10 +175,8 @@ function renderDirectoryPreview() {
       totalBusinessLines += businessLines;
       totalAltLines += altLines;
       totalSubLines += subLines;
-      floorWeight += businessLines + altLines*0.82 + subLines*0.82 + 0.55;
     });
     totalUnits += unitGroups[floor].length;
-    floorWeights[floor] = Math.max(1,floorWeight+1.7);
   });
 
   const estimatedHeight = totalBusinessLines*30 + totalAltLines*23 + totalSubLines*22 + totalUnits*14 + floors.length*76 + 64;
@@ -209,26 +205,23 @@ function renderDirectoryPreview() {
         </div>`;
         if (idx<group.items.length-1) content += `<div style="border-top:1px solid #e8edf2;margin:${px(7)}px 0;"></div>`;
       });
-      const lineWeight = group.items.reduce((sum,entry) => sum+
-        Math.max(1,estimateLines(entry.business_name,26))+
-        estimateLines(entry.display_name_alt,36)+estimateLines(entry.sub_info,36),0);
       const bottomLine = gi===groups.length-1 ? 'none' : '1px solid #e5ebf1';
-      return `<div style="flex:${Math.max(1,lineWeight)};min-height:0;display:flex;flex-direction:column;justify-content:center;padding:${px(11)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${content}</div>`;
+      return `<div style="flex:0 0 auto;display:flex;flex-direction:column;justify-content:flex-start;padding:${px(10)}px 0;border-bottom:${bottomLine};box-sizing:border-box;">${content}</div>`;
     }).join('');
 
-    const heading = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:${px(22)}px;flex-shrink:0;">
+    const heading = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:${px(17)}px;flex-shrink:0;">
       <div style="font-size:${px(38)}px;font-weight:900;color:#101a30;letter-spacing:1.1px;line-height:1.08;white-space:nowrap;">${floor}</div>
       <div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>
     </div>`;
-    sections += `<section style="flex:${Math.max(1,floorWeights[floor])};min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
-    if (fi<floors.length-1) sections += `<div style="height:2px;background:#c9b77e;flex-shrink:0;margin:${px(13)}px 0;"></div>`;
+    sections += `<section style="flex:0 0 auto;display:flex;flex-direction:column;overflow:visible;">${heading}<div style="display:flex;flex-direction:column;">${floorRows}</div></section>`;
+    if (fi<floors.length-1) sections += `<div style="height:2px;background:#c9b77e;flex:0 0 2px;margin:${px(17)}px 0;"></div>`;
   });
 
   document.getElementById('rightPanel').innerHTML = `
     <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
     <div class="sb-preview-wrap">
       <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:36px 34px 34px;box-sizing:border-box;">
-        <div style="height:100%;display:flex;flex-direction:column;min-height:0;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
+        <div style="display:flex;flex-direction:column;align-items:stretch;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
       </div>
       <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
     </div>`;
