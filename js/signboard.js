@@ -109,21 +109,33 @@ function renderTabs() {
 function renderEntryList() {
   const entries = allEntries.filter(e => e.page === activeTab);
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor]=[]; grouped[e.floor].push(e); });
+  entries.forEach(e => { if (!grouped[e.floor]) grouped[e.floor] = []; grouped[e.floor].push(e); });
+
   let html = '<div class="sb-card">';
   FLOOR_ORDER.filter(f => grouped[f]).forEach(floor => {
     grouped[floor].forEach(e => {
-      const badge = FLOOR_BADGE[floor]||'fb-g';
-      const short = FLOOR_SHORT[floor]||'?';
-      const alt = e.display_name_alt ? `<span class="sb-entry-alt">${stripInlineColor(e.display_name_alt)}</span>` : '';
-      const sub = e.sub_info ? stripInlineColor(e.sub_info).split('||')[0] : '';
-      const meta = [e.unit_display, sub].filter(Boolean).join(' · ');
-      const hasColor = /style=["'][^"']*color\s*:/.test(e.business_name||'') ||
-        /style=["'][^"']*color\s*:/.test(e.display_name_alt||'') ||
-        /style=["'][^"']*color\s*:/.test(e.sub_info||'') ||
-        /\{\{#[0-9a-fA-F]{6}\|/.test(e.business_name||'');
-      const colorDot = hasColor ? `<span title="Text colour applied" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#dc2626;border:1px solid rgba(0,0,0,.15);margin-right:6px;vertical-align:middle;"></span>` : '';
-      html += `<div class="sb-entry"><div class="sb-floor-badge ${badge}">${short}</div><div class="sb-entry-info"><div class="sb-entry-biz">${colorDot}${stripInlineColor(e.business_name)}${alt}</div><div class="sb-entry-meta">${meta}</div></div><div class="sb-entry-actions"><button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button><button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button></div></div>`;
+      const badge = FLOOR_BADGE[floor] || 'fb-g';
+      const short = FLOOR_SHORT[floor] || '?';
+      const alt = e.display_name_alt
+        ? `<div class="sb-entry-alt">${renderRichText(e.display_name_alt)}</div>`
+        : '';
+      const subText = e.sub_info ? stripInlineColor(e.sub_info).split(/\n|\|\|/)[0].trim() : '';
+      const sub = subText ? `<div class="sb-entry-meta">${escapeHtml(subText)}</div>` : '';
+      const business = renderRichText(e.business_name);
+
+      html += `<div class="sb-entry">
+        <div class="sb-floor-badge ${badge}">${short}</div>
+        <div class="sb-entry-info">
+          <div class="sb-entry-biz">${business}</div>
+          ${alt}
+          ${sub}
+        </div>
+        <div class="sb-entry-unit">${escapeHtml(e.unit_display || '')}</div>
+        <div class="sb-entry-actions">
+          <button class="sb-btn-e" onclick="openEditModal('${e.id}')">Edit</button>
+          <button class="sb-btn-e del" onclick="deleteEntry('${e.id}')">Del</button>
+        </div>
+      </div>`;
     });
   });
   html += '</div>';
@@ -191,9 +203,7 @@ function renderDirectoryPreview() {
         const altHtml = entry.display_name_alt
           ? `<div class="directory-rich directory-alt" style="font-size:${px(19)}px;font-weight:650;color:#26374d;line-height:1.25;margin-top:${px(3)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
           : '';
-        const suiteHtml = idx===0
-          ? `<div class="sb-video-suite" style="font-size:${px(24)}px;font-weight:800;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(group.unit)}</div>`
-          : '';
+        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(24)}px;font-weight:800;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
         content += `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;width:100%;">
           <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info)}</div>${suiteHtml}
         </div>`;
