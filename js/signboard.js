@@ -154,7 +154,7 @@ function renderDirectoryPreview() {
   const measure = document.createElement('canvas').getContext('2d');
 
   function countWrappedLines(value,fontSize,maxWidth,fontWeight=700) {
-    const paragraphs = stripInlineColor(value||'').split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean);
+    const paragraphs = stripInlineColor(value||'').split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean);
     if (!paragraphs.length) return 0;
     measure.font = fontWeight+' '+fontSize+'px "DM Sans",Arial,sans-serif';
     let total = 0;
@@ -176,7 +176,7 @@ function renderDirectoryPreview() {
     const businessSize=30*scale, altSize=21*scale, subSize=18*scale, nameWidth=372;
     const businessLines=countWrappedLines(entry.business_name,businessSize,nameWidth,800);
     const altLines=entry.display_name_alt ? countWrappedLines(entry.display_name_alt,altSize,nameWidth,650) : 0;
-    const subParts=String(entry.sub_info||'').split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean);
+    const subParts=String(entry.sub_info||'').split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean);
     const subLines=subParts.reduce((sum,part)=>sum+countWrappedLines(part,subSize,nameWidth,500),0);
     const textHeight=businessLines*businessSize*1.18+
       (altLines ? altLines*altSize*1.22+3 : 0)+
@@ -221,7 +221,7 @@ function renderDirectoryPreview() {
 
   function renderSub(sub,scale) {
     if(!sub) return '';
-    return String(sub).split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean).map(part=>
+    return String(sub).split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean).map(part=>
       '<div class="directory-rich directory-sub" style="font-size:'+px(18*scale)+'px;font-weight:500;color:#465366;margin-top:2px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">'+renderRichText(part)+'</div>'
     ).join('');
   }
@@ -237,16 +237,16 @@ function renderDirectoryPreview() {
 
     const rows=data.entries.map((item,index)=>{
       const entry=item.entry;
-      const business='<div class="directory-rich directory-business" style="font-size:'+px(30*scale)+'px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:anywhere;">'+renderRichText(entry.business_name)+'</div>';
+      const business='<div class="directory-rich directory-business" style="font-size:'+px(30*scale)+'px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:break-word;word-break:normal;">'+renderRichText(entry.business_name)+'</div>';
       const alt=entry.display_name_alt
-        ? '<div class="directory-rich directory-alt" style="font-size:'+px(21*scale)+'px;font-weight:650;color:#26374d;line-height:1.22;margin-top:2px;overflow-wrap:anywhere;">'+renderRichText(entry.display_name_alt)+'</div>' : '';
+        ? '<div class="directory-rich directory-alt" style="font-size:'+px(21*scale)+'px;font-weight:650;color:#26374d;line-height:1.22;margin-top:2px;overflow-wrap:break-word;word-break:normal;">'+renderRichText(entry.display_name_alt)+'</div>' : '';
       const sub=renderSub(entry.sub_info,scale);
       const isGroundEntry=isGround && index===0;
       const border=isGroundEntry ? '2px solid #c9b77e' : (index<data.entries.length-1 ? '1px solid #e2eaf1' : 'none');
       const padding=isGroundEntry ? '8px 0 12px' : '7px 0';
-      return '<div class="directory-entry-row" style="display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:'+padding+';border-bottom:'+border+';box-sizing:border-box;">'+
-        '<div style="flex:1;min-width:0;">'+business+alt+sub+'</div>'+
-        '<div class="sb-video-suite" style="font-size:'+px(25*scale)+'px;font-weight:850;color:#142238;white-space:nowrap;flex:0 0 auto;padding-left:8px;align-self:center;">'+escapeHtml(entry.unit_display||'')+'</div>'+
+      return '<div class="directory-entry-row" style="display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;column-gap:10px;width:100%;min-width:0;padding:'+padding+';border-bottom:'+border+';box-sizing:border-box;">'+
+        '<div class="directory-entry-text" style="display:block;width:100%;min-width:0;max-width:100%;white-space:normal;word-break:normal;overflow-wrap:break-word;">'+business+alt+sub+'</div>'+
+        '<div class="sb-video-suite" style="font-size:'+px(25*scale)+'px;font-weight:850;color:#142238;white-space:nowrap;justify-self:end;padding-left:8px;">'+escapeHtml(entry.unit_display||'')+'</div>'+
       '</div>';
     }).join('');
 
@@ -457,18 +457,20 @@ window.clearCustomCard = () => {
 };
 
 function legacyTextToEditorHTML(value) {
-  const raw=String(value||'');
+  let raw=String(value||'');
+  if (!/<(?:p|div|br|span|strong|em|b|i)\b/i.test(raw)) {
+    raw=decodeStoredEntities(raw);
+  }
   if (/<(?:p|div|br|span|strong|em|b|i)\b/i.test(raw)) return raw;
-  // Decode legacy entity text before escaping it, so &amp; and &#39; display normally.
-  const decoded=decodeStoredEntities(raw);
+
   const pattern=/\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g;
   let output='',cursor=0,match;
-  while((match=pattern.exec(decoded))!==null) {
-    output+=escapeHtml(decoded.slice(cursor,match.index)).replace(/\n/g,'<br>');
-    output+=`<span style="color:${match[1]}">${escapeHtml(match[2])}</span>`;
-    cursor=match.index+match[0].length;
+  while((match=pattern.exec(raw))!==null) {
+    output+=escapeHtml(raw.slice(cursor,match.index)).replace(/\n/g,'<br>');
+    output+='<span style="color:'+match[1]+'">'+escapeHtml(match[2])+'</span>';
+    cursor=pattern.lastIndex;
   }
-  output+=escapeHtml(decoded.slice(cursor)).replace(/\n/g,'<br>');
+  output+=escapeHtml(raw.slice(cursor)).replace(/\n/g,'<br>');
   return output;
 }
 
