@@ -221,7 +221,13 @@ function renderDirectoryPreview() {
 
   function renderSub(sub,scale) {
     if(!sub) return '';
-    return String(sub).split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean).map(part=>
+    // Ignore empty Quill paragraphs such as <p><br></p>; they create false blank space.
+    const cleaned=String(sub)
+      .replace(/<p\b[^>]*>\s*(?:<br\s*\/?\s*>|&nbsp;|&#160;|\u00a0|\s)*\s*<\/p>/gi,'')
+      .replace(/^(?:\s|<br\s*\/?\s*>)+|(?:\s|<br\s*\/?\s*>)+$/gi,'')
+      .trim();
+    if(!cleaned) return '';
+    return cleaned.split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean).map(part=>
       '<div class="directory-rich directory-sub" style="font-size:'+px(18*scale)+'px;font-weight:500;color:#465366;margin-top:2px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">'+renderRichText(part)+'</div>'
     ).join('');
   }
@@ -263,7 +269,7 @@ function renderDirectoryPreview() {
     }).join('');
 
     const flex=combined ? (isGround ? '0 0 auto' : '1 1 0') : '1 1 0';
-    const top=combined && floor==='LEVEL 1' ? 'margin-top:12px;' : '';
+    const top=combined && floor==='LEVEL 1' ? 'margin-top:24px;' : '';
     const list=isGround
       ? 'display:flex;flex-direction:column;flex:0 0 auto;'
       : 'display:flex;flex-direction:column;flex:1 1 0;min-height:0;justify-content:space-between;gap:6px;';
