@@ -238,8 +238,16 @@ function renderDirectoryPreview() {
     const rows=data.entries.map((item,index)=>{
       const entry=item.entry;
       const businessPlain=stripInlineColor(entry.business_name).replace(/\s+/g,' ').trim();
-      const keepBusinessOnOneLine=/^Redmyre Medical Centre$/i.test(businessPlain);
-      const businessSize=keepBusinessOnOneLine ? Math.min(30,px(30*scale)) : px(30*scale);
+      const keepBusinessOnOneLine=/^(Redmyre Medical Centre|Sydney Endodontic Centre|Specialist at Redmyre)$/i.test(businessPlain);
+      let businessSize=px(30*scale);
+      if (keepBusinessOnOneLine) {
+        businessSize=30;
+        measure.font='800 '+businessSize+'px "DM Sans",Arial,sans-serif';
+        while (businessSize>24 && measure.measureText(businessPlain).width>420) {
+          businessSize--;
+          measure.font='800 '+businessSize+'px "DM Sans",Arial,sans-serif';
+        }
+      }
       const businessClass=keepBusinessOnOneLine ? 'directory-business-single-line' : '';
       const business='<div class="directory-rich directory-business '+businessClass+'" style="font-size:'+businessSize+'px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:'+(keepBusinessOnOneLine?'normal':'break-word')+';word-break:'+(keepBusinessOnOneLine?'keep-all':'normal')+';white-space:'+(keepBusinessOnOneLine?'nowrap':'normal')+';">'+renderRichText(entry.business_name)+'</div>';
       const alt=entry.display_name_alt
