@@ -74,16 +74,16 @@ function plainText(raw) {
   const decoded = decoder.value;
 
   const stripped = decoded
-    .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, ' ')
-    .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, ' ')
-    .replace(/<br\\s*\\/?\\s*>/gi, ' ')
-    .replace(/<\\/(?:p|div|li|h[1-6]|blockquote|tr)>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?\s*>/gi, ' ')
+    .replace(/<\/(?:p|div|li|h[1-6]|blockquote|tr)>/gi, ' ')
     .replace(/<[^>]*>/g, ' ');
 
   decoder.innerHTML = stripped;
   return decoder.value
-    .replace(/\\u00a0/g, ' ')
-    .replace(/\\s+/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -94,7 +94,6 @@ function visibleName(raw) {
     color: text.toUpperCase() === 'VACATED' ? '#b4232d' : null
   };
 }
-
 function filteredRows() {
   const query = searchTerm.trim().toLowerCase();
 
