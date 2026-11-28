@@ -231,7 +231,7 @@ function renderDirectoryPreview() {
   floors.forEach(floor => {
     const data=floorData[floor], scale=data.scale, isGround=floor==='GROUND';
     const heading='<div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;flex:0 0 auto;">'+
-      '<div style="font-size:40px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.05;white-space:nowrap;">'+floor+'</div>'+
+      '<div style="font-size:40px;font-weight:900;color:#126078;letter-spacing:1px;line-height:1.05;white-space:nowrap;">'+floor+'</div>'+
       (isGround ? '' : '<div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>')+
     '</div>';
 
