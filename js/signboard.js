@@ -264,47 +264,119 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 5', floors:['LEVEL 5'] },
     { title:'LEVEL 6', floors:['LEVEL 6'] },
   ];
-  const CELL_CONTENT_H = 212; // 박스 하나당 리스트 영역 확보 높이(px, 타이틀 제외)
-  const NAME_AREA_W = 190;    // suite 칸 제외한 업체명 영역 대략 폭(px)
-  const cells = groups.map(g => {
-    const entries = allEntries
-      .filter(e => g.floors.includes(e.floor))
-      .sort((a,b) => {
-        const fi = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
-        if (fi !== 0) return fi;
-        return (a.sort_order||0) - (b.sort_order||0);
-      })
-      .map(e => ({
-        name: (e.short_name || (e.business_name||'').split('\n')[0]).trim(),
-        suite: e.unit_display || ''
-      }));
 
-    // 폰트 16→11까지 0.5 단위로 내려가며, 줄바꿈 포함 실제 줄 수가 칸 안에 들어가는 첫 크기를 채택
-    let fontSize = 11;
-    for (let fs = 18; fs >= 11; fs -= 0.5) {
-      const charsPerLine = Math.max(8, Math.floor(NAME_AREA_W / (fs * 0.56)));
-      const totalLines = entries.reduce((sum, en) => sum + Math.max(1, Math.ceil(en.name.length / charsPerLine)), 0);
-      if (totalLines * fs * 1.35 + entries.length * 3 <= CELL_CONTENT_H) { fontSize = fs; break; }
+  const decodeDirectoryText = (value) => String(value ?? '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+
+  const renderDirectoryName = (value) => {
+    const raw = decodeDirectoryText(value);
+    const token = /\{\{(#[0-9a-fA-F]{6})\|([\s\S]*?)\}\}/g;
+    let html = '';
+    let last = 0;
+    let match;
+    while ((match = token.exec(raw)) !== null) {
+      html += escapeHtml(raw.slice(last, match.index));
+      html += '<span style="color:' + match[1] + '">' + escapeHtml(match[2]) + '</span>';
+      last = match.index + match[0].length;
+    }
+    return html + escapeHtml(raw.slice(last));
+  };
+
+  const measureContext = document.createElement('canvas').getContext('2d');
+  const estimateLines = (text, fontSize, maxWidth) => {
+    const plain = decodeDirectoryText(text).replace(/\{\{#[0-9a-fA-F]{6}\|([\s\S]*?)\}\}/g, '$1').trim();
+    if (!plain) return 1;
+    measureContext.font = '800 ' + fontSize + 'px "DM Sans", Arial, sans-serif';
+    let lines = 1;
+    let line = '';
+    plain.split(/\s+/).forEach(word => {
+      const candidate = line ? line + ' ' + word : word;
+      if (line && measureContext.measureText(candidate).width > maxWidth) {
+        lines++;
+        line = word;
+      } else {
+        line = candidate;
+      }
+      const lineWidth = measureContext.measureText(line).width;
+      if (lineWidth > maxWidth) {
+        const extra = Math.ceil(lineWidth / maxWidth) - 1;
+        lines += Math.max(0, extra);
+        line = '';
+      }
+    });
+    return Math.max(1, lines);
+  };
+
+  const cells = groups.map(group => {
+    const entries = allEntries
+      .filter(entry => group.floors.includes(entry.floor))
+      .sort((a, b) => {
+        const floorDiff = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
+        return floorDiff || (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0);
+      })
+      .map(entry => {
+        const sourceName = entry.short_name || (entry.business_name || '').split('\n')[0] || '';
+        return { name: sourceName.trim(), suite: String(entry.unit_display || '').trim() };
+      });
+
+    const nameWidth = 184;
+    const bodyHeight = 218;
+    let fontSize = 14;
+    for (let size = 21; size >= 14; size -= 0.5) {
+      const requiredHeight = entries.reduce((total, entry) => {
+        const lines = estimateLines(entry.name, size, nameWidth);
+        return total + (lines * size * 1.16) + 7;
+      }, 0);
+      if (requiredHeight <= bodyHeight) {
+        fontSize = size;
+        break;
+      }
     }
 
-    const rows = entries.map(en => {
-      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:3px"><span style="flex:1;min-width:0">${en.name}</span><span style="font-weight:900;flex-shrink:0;white-space:nowrap">${en.suite}</span></div>`;
+    const rows = entries.map((entry, index) => {
+      const lastClass = index === entries.length - 1 ? ' af-row-last' : '';
+      return '<div class="af-row' + lastClass + '" style="font-size:' + fontSize + 'px;line-height:1.16">' +
+        '<span class="af-name">' + renderDirectoryName(entry.name) + '</span>' +
+        '<span class="af-unit">' + escapeHtml(entry.suite) + '</span>' +
+      '</div>';
     }).join('');
-    return `<div style="padding:0 4px;overflow:hidden"><div style="font-size:19px;font-weight:900;color:#0f172a;text-align:center;border-top:2px solid #c9a961;border-bottom:2px solid #c9a961;padding:5px 0;margin-bottom:5px;letter-spacing:0.5px">${g.title}</div><div style="font-size:${fontSize}px;line-height:1.35;color:#0f172a;font-weight:600">${rows}</div></div>`;
+
+    return '<section class="af-cell">' +
+      '<h2 class="af-heading">' + escapeHtml(group.title) + '</h2>' +
+      '<div class="af-list">' + rows + '</div>' +
+    '</section>';
   }).join('');
 
-  return `<div style="width:540px;height:960px;background:#ffffff;position:relative;overflow:hidden;font-family:'DM Sans','Segoe UI',sans-serif;color:#0f172a;box-sizing:border-box;display:flex;flex-direction:column;">
-  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:12px 18px;padding:22px 22px 16px 22px;min-height:0;">
-    ${cells}
-  </div>
-  <div style="background:#0f172a;padding:14px 28px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:3px solid #c9a961;flex-shrink:0;box-sizing:border-box;">
-    <img src="/img/sca-logo.png?v=5" style="height:36px;display:block;flex-shrink:0;">
-    <div style="text-align:left;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:3px;color:#c9a961;text-transform:uppercase;">SCA Facility Management</div>
-      <div style="font-size:10px;color:#94a3b8;letter-spacing:0.5px;margin-top:2px;">Redmyre House · 9–13 Redmyre Road, Strathfield</div>
-    </div>
-  </div>
-</div>`;
+  return '<div class="af-page">' +
+    '<div class="af-grid">' + cells + '</div>' +
+    '<footer class="af-footer">' +
+      '<img src="/img/sca-logo.png?v=5" alt="SCA Facility Management">' +
+      '<div class="af-footer-copy">' +
+        '<div class="af-footer-brand">SCA Facility Management</div>' +
+        '<div class="af-footer-address">Redmyre House · 9–13 Redmyre Road, Strathfield</div>' +
+      '</div>' +
+    '</footer>' +
+  '</div>' +
+  '<style>' +
+    '.af-page{width:540px;height:960px;background:#fff;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;font-family:"DM Sans","Segoe UI",Arial,sans-serif;color:#142238}' +
+    '.af-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));column-gap:18px;row-gap:12px;padding:24px 22px 18px;box-sizing:border-box}' +
+    '.af-cell{min-width:0;min-height:0;display:flex;flex-direction:column;padding:0 3px;box-sizing:border-box}' +
+    '.af-heading{flex:0 0 auto;margin:0 0 6px;padding:6px 0 7px;border-top:2px solid #c9bd8c;border-bottom:2px solid #c9bd8c;text-align:center;font-size:19px;line-height:1.15;font-weight:800;letter-spacing:.25px;color:#17243a}' +
+    '.af-list{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}' +
+    '.af-row{display:flex;align-items:center;gap:6px;min-width:0;padding:3px 0 4px;border-bottom:1px solid #e5e9ef;box-sizing:border-box;font-weight:750;color:#17243a}' +
+    '.af-row-last{border-bottom:0}' +
+    '.af-name{display:block;flex:1 1 auto;min-width:0;overflow-wrap:break-word;word-break:normal}' +
+    '.af-unit{display:block;flex:0 0 auto;min-width:30px;text-align:right;white-space:nowrap;font-size:1em;font-weight:900;color:#17243a}' +
+    '.af-footer{height:66px;flex:0 0 66px;display:flex;align-items:center;justify-content:center;gap:14px;padding:8px 22px;box-sizing:border-box;background:#142238;border-top:3px solid #c9bd8c}' +
+    '.af-footer img{display:block;height:34px;width:auto;max-width:100px;object-fit:contain;flex:0 0 auto}' +
+    '.af-footer-copy{text-align:left;min-width:0}' +
+    '.af-footer-brand{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d6c88f}' +
+    '.af-footer-address{margin-top:3px;font-size:9px;letter-spacing:.2px;color:#d1d9e4}' +
+  '</style>';
 }
 
 function renderAllFloorsInfo() {
