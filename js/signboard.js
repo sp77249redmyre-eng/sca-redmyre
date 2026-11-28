@@ -288,18 +288,60 @@ function buildAllFloorsHTML() {
     { title:'LEVEL 6', floors:['LEVEL 6'] }
   ];
 
-  // Estimate actual visual line demand at the available name-column width.
-  const estimateLines = (value,charsPerLine) => {
-    const text = stripInlineColor(value);
-    return text.split(/\n|\|\|/).filter(line => line.trim())
-      .reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.trim().length/charsPerLine)),0);
-  };
-  const px = value => Math.max(1,Math.round(value));
   const asBlockHTML = value => String(value||'')
     .replace(/<p>/gi,'<div class="all-floor-paragraph">')
     .replace(/<\/p>/gi,'</div>');
 
-  const cells = groups.map(group => {
+  const measureCanvas = document.createElement('canvas');
+  const measure = measureCanvas.getContext('2d');
+  if (!measure) throw new Error('ALL FLOORS text measurement is unavailable.');
+
+  const countWrappedLines = (value,maxWidth,fontSize,weight=800) => {
+    const paragraphs = stripInlineColor(value).split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean);
+    if (!paragraphs.length) return 1;
+    measure.font = weight+' '+fontSize+'px "DM Sans","Segoe UI",sans-serif';
+    let lineCount = 0;
+
+    paragraphs.forEach(paragraph => {
+      const words = paragraph.split(/\s+/).filter(Boolean);
+      let line = '';
+      words.forEach(word => {
+        const candidate = line ? line+' '+word : word;
+        if (measure.measureText(candidate).width <= maxWidth) {
+          line = candidate;
+          return;
+        }
+        if (line) {
+          lineCount++;
+          line = '';
+        }
+        if (measure.measureText(word).width <= maxWidth) {
+          line = word;
+          return;
+        }
+        let chunk = '';
+        Array.from(word).forEach(char => {
+          const next = chunk+char;
+          if (chunk && measure.measureText(next).width > maxWidth) {
+            lineCount++;
+            chunk = char;
+          } else {
+            chunk = next;
+          }
+        });
+        line = chunk;
+      });
+      if (line) lineCount++;
+    });
+    return Math.max(1,lineCount);
+  };
+
+  const suiteWidth = (suite,fontSize) => {
+    measure.font = '900 '+fontSize+'px "DM Sans","Segoe UI",sans-serif';
+    return measure.measureText(String(suite||'')).width;
+  };
+
+  const groupsHTML = groups.map(group => {
     const entries = allEntries
       .filter(e => group.floors.includes(e.floor))
       .sort((a,b) => {
@@ -309,47 +351,75 @@ function buildAllFloorsHTML() {
       .map(e => {
         const rawShort = decodeStoredEntities(e.short_name || '').trim();
         const source = rawShort ? rawShort : firstRichLineHTML(e.business_name);
-        const name = stripInlineColor(source).trim();
-        // ALL FLOORS uses a wider two-column content area than the individual cards.
-        // Estimate with the larger name column so the font can grow without unexpected wrapping.
-        const wrappedLines = Math.max(1,estimateLines(name,22));
         return {
+          plain:stripInlineColor(source).trim(),
           html:asBlockHTML(renderRichText(source)),
-          suite:e.unit_display||'',
-          weight:wrappedLines,
-          wrappedLines
+          suite:e.unit_display||''
         };
       });
 
-    const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
-    const rowCount = Math.max(1,entries.length);
-    // Share the available cell height according to real text demand, not equal row heights.
-    const cellFont = Math.max(17,Math.min(22,
-      Math.floor(270/Math.max(1,totalLines*1.10 + rowCount*0.22))
-    ));
+    // Match the generous content width of the older ALL FLOORS card.
+    const columnWidth = 243;
+    const nameWidth = (suite,fontSize) =>
+      Math.max(90,columnWidth-suiteWidth(suite,fontSize)-14);
 
-    const rows = entries.map((entry,idx) => {
-      const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
-      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0;border-bottom:${divider};box-sizing:border-box;line-height:1.10;">
-        <div class="all-floor-name" style="display:block;flex:1;min-width:0;overflow-wrap:break-word;word-break:normal;font-size:${cellFont}px;font-weight:800;line-height:1.10;color:#142238;">${entry.html}</div>
-        <div class="all-floor-suite" style="font-size:${cellFont}px;font-weight:900;line-height:1.10;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</div>
-      </div>`;
+    // Each of the three grid cells has approximately 310px of height.
+    // The heading takes about 42px; keep 264px for naturally-sized entry rows.
+    const entryAreaHeight = 264;
+    let cellFont = 20;
+    let rowHeights = [];
+
+    for (let candidate=20; candidate>=13; candidate--) {
+      const heights = entries.map((entry,index) => {
+        // Measure slightly narrower than the actual column to avoid font-metric clipping.
+        const safeWidth = Math.max(82,nameWidth(entry.suite,candidate)-7);
+        const lines = countWrappedLines(entry.plain,safeWidth,candidate,800);
+        const contentHeight = Math.ceil(lines*candidate*1.18 + 5);
+        return contentHeight + (index<entries.length-1 ? 1 : 0);
+      });
+      const total = heights.reduce((sum,height)=>sum+height,0);
+      if (total<=entryAreaHeight) {
+        cellFont=candidate;
+        rowHeights=heights;
+        break;
+      }
+    }
+
+    // Never shrink text rows to fit. If a floor is unusually dense, lower the font
+    // only to a readable 12px and let the fit check flag it for review.
+    if (!rowHeights.length) {
+      cellFont=12;
+      rowHeights=entries.map((entry,index) => {
+        const safeWidth=Math.max(82,nameWidth(entry.suite,cellFont)-7);
+        const lines=countWrappedLines(entry.plain,safeWidth,cellFont,800);
+        return Math.ceil(lines*cellFont*1.18+5)+(index<entries.length-1?1:0);
+      });
+    }
+
+    const totalRowsHeight = rowHeights.reduce((sum,height)=>sum+height,0);
+    const rowGap = entries.length>1
+      ? Math.max(0,(entryAreaHeight-totalRowsHeight)/(entries.length-1))
+      : 0;
+
+    const rows = entries.map((entry,index) => {
+      const divider = index<entries.length-1 ? '1px solid #e9eef3' : 'none';
+      const height = rowHeights[index];
+      return '<div class="all-floor-row" style="height:'+height+'px;flex:0 0 '+height+'px;display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;column-gap:8px;padding:2px 0;border-bottom:'+divider+';box-sizing:border-box;line-height:1.18;margin-bottom:'+(index<entries.length-1?rowGap:0)+'px;">'
+        +'<div class="all-floor-name" style="display:block;min-width:0;max-width:100%;overflow-wrap:break-word;word-break:normal;font-size:'+cellFont+'px;font-weight:800;line-height:1.18;color:#142238;">'+entry.html+'</div>'
+        +'<div class="all-floor-suite" style="font-size:'+cellFont+'px;font-weight:900;line-height:1.12;white-space:nowrap;color:#142238;">'+escapeHtml(entry.suite)+'</div>'
+        +'</div>';
     }).join('');
 
-    return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 2px;display:flex;flex-direction:column;">
-      <div class="all-floor-heading" style="font-size:22px;font-weight:900;line-height:1.12;color:#ffffff;text-align:center;background:linear-gradient(135deg,#142238 0%,#263c5a 100%);border-top:3px solid #c9b77e;border-bottom:2px solid #c9b77e;border-left:4px solid #c9b77e;border-radius:4px;padding:5px 3px;margin-bottom:5px;letter-spacing:.45px;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:0 2px 6px rgba(20,34,56,.16);flex:0 0 auto;">${group.title}</div>
-      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
-    </section>`;
+    return '<section style="min-width:0;min-height:0;overflow:hidden;padding:0 1px;display:flex;flex-direction:column;">'
+      +'<div class="all-floor-heading" style="font-size:22px;font-weight:900;line-height:1.12;color:#ffffff;text-align:center;background:linear-gradient(135deg,#142238 0%,#263c5a 100%);border-top:3px solid #c9b77e;border-bottom:2px solid #c9b77e;border-left:4px solid #c9b77e;border-radius:4px;padding:5px 3px;margin-bottom:5px;letter-spacing:.45px;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:0 2px 6px rgba(20,34,56,.16);flex:0 0 auto;">'+group.title+'</div>'
+      +'<div class="all-floor-entries" style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden;">'+(rows||'<span style="color:#94a3b8;">No entries</span>')+'</div>'
+      +'</section>';
   }).join('');
 
-  return `<div class="all-floors-card" style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:22px 24px 20px;display:flex;flex-direction:column;">
-    <style>
-      .all-floor-name .all-floor-paragraph{display:block;margin:0!important;padding:0!important;}
-      .all-floor-name p{display:block;margin:0!important;padding:0!important;}
-      .all-floor-heading{font-family:'DM Sans','Segoe UI',sans-serif;}
-    </style>
-    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 20px;">${cells}</div>
-  </div>`;
+  return '<div class="all-floors-card" style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:\'DM Sans\',\'Segoe UI\',sans-serif;color:#111a2e;box-sizing:border-box;padding:18px 18px 18px;display:flex;flex-direction:column;">'
+    +'<style>.all-floor-name .all-floor-paragraph{display:block;margin:0!important;padding:0!important;}.all-floor-name .all-floor-paragraph + .all-floor-paragraph{margin-top:1px!important;}.all-floor-name p{display:block;margin:0!important;padding:0!important;}.all-floor-heading{font-family:\'DM Sans\',\'Segoe UI\',sans-serif;}</style>'
+    +'<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">'+groupsHTML+'</div>'
+    +'</div>';
 }
 
 function renderAllFloorsInfo() {
