@@ -173,7 +173,7 @@ function renderDirectoryPreview() {
   }
 
   function measureEntry(entry,scale) {
-    const businessSize=30*scale, altSize=21*scale, subSize=18*scale, nameWidth=372;
+    const businessSize=30*scale, altSize=21*scale, subSize=18*scale, nameWidth=440;
     const businessLines=countWrappedLines(entry.business_name,businessSize,nameWidth,800);
     const altLines=entry.display_name_alt ? countWrappedLines(entry.display_name_alt,altSize,nameWidth,650) : 0;
     const subParts=String(entry.sub_info||'').split(/\n|\|\|/).map(x=>x.trim()).filter(Boolean);
@@ -190,8 +190,8 @@ function renderDirectoryPreview() {
     const entryCount=floorEntries.length;
     let detailLines=0;
     floorEntries.forEach(entry => {
-      detailLines += entry.display_name_alt ? countWrappedLines(entry.display_name_alt,21,372,650) : 0;
-      detailLines += entry.sub_info ? countWrappedLines(entry.sub_info,18,372,500) : 0;
+      detailLines += entry.display_name_alt ? countWrappedLines(entry.display_name_alt,21,440,650) : 0;
+      detailLines += entry.sub_info ? countWrappedLines(entry.sub_info,18,440,500) : 0;
     });
     const scale=Math.max(0.92,Math.min(1.22,
       1.20-Math.max(0,entryCount-5)*0.026-Math.max(0,detailLines-2)*0.006
@@ -201,7 +201,7 @@ function renderDirectoryPreview() {
       requiredHeight:52+measured.reduce((sum,item)=>sum+item.requiredHeight,0)};
   });
 
-  const availableHeight=994-34-32-8;
+  const availableHeight=994-8-8-8;
   if(floors.length>1 && floorData['LEVEL 1']) {
     const required=()=>floors.reduce((sum,floor)=>sum+floorData[floor].requiredHeight,0)+10;
     while(required()>availableHeight && floorData['LEVEL 1'].scale>0.88) {
@@ -273,7 +273,7 @@ function renderDirectoryPreview() {
 
   document.getElementById('rightPanel').innerHTML=
     '<div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>'+
-    '<div class="sb-preview-wrap"><div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">'+
+    '<div class="sb-preview-wrap"><div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:8px 8px 8px;box-sizing:border-box;">'+
       '<div style="height:100%;min-height:0;display:flex;flex-direction:column;">'+sections+'</div></div>'+
       '<div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div></div>';
 }
@@ -359,13 +359,13 @@ function buildAllFloorsHTML() {
       });
 
     // Match the generous content width of the older ALL FLOORS card.
-    const columnWidth = 243;
+    const columnWidth = 256;
     const nameWidth = (suite,fontSize) =>
       Math.max(90,columnWidth-suiteWidth(suite,fontSize)-14);
 
     // Each of the three grid cells has approximately 310px of height.
     // The heading takes about 42px; keep 264px for naturally-sized entry rows.
-    const entryAreaHeight = 264;
+    const entryAreaHeight = 276;
     let cellFont = 20;
     let rowHeights = [];
 
@@ -416,9 +416,9 @@ function buildAllFloorsHTML() {
       +'</section>';
   }).join('');
 
-  return '<div class="all-floors-card" style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:\'DM Sans\',\'Segoe UI\',sans-serif;color:#111a2e;box-sizing:border-box;padding:18px 18px 18px;display:flex;flex-direction:column;">'
+  return '<div class="all-floors-card" style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:\'DM Sans\',\'Segoe UI\',sans-serif;color:#111a2e;box-sizing:border-box;padding:6px 6px 6px;display:flex;flex-direction:column;">'
     +'<style>.all-floor-name .all-floor-paragraph{display:block;margin:0!important;padding:0!important;}.all-floor-name .all-floor-paragraph + .all-floor-paragraph{margin-top:1px!important;}.all-floor-name p{display:block;margin:0!important;padding:0!important;}.all-floor-heading{font-family:\'DM Sans\',\'Segoe UI\',sans-serif;}</style>'
-    +'<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">'+groupsHTML+'</div>'
+    +'<div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px 12px;">'+groupsHTML+'</div>'
     +'</div>';
 }
 
