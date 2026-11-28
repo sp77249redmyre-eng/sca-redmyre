@@ -354,11 +354,11 @@ function buildAllFloorsHTML() {
 
 function renderAllFloorsInfo() {
   document.getElementById('leftPanel').innerHTML = `
-    <div class="sb-card" style="padding:20px">
-      <div style="font-size:16px;font-weight:700;margin-bottom:10px">ALL FLOORS · Directory Summary</div>
-      <div style="font-size:13px;line-height:1.7">
-        This card is generated automatically from the entries in GROUND + L1 and LEVEL 2–6.<br><br>
-        To change a business name or suite, edit the relevant floor tab. This overview updates automatically and does not need a separate save.
+    <div class="sb-card sb-all-floors-info">
+      <div class="sb-all-floors-info-title">ALL FLOORS · DIRECTORY OVERVIEW</div>
+      <div class="sb-all-floors-info-copy">
+        <p>This overview is generated automatically from the entries in GROUND + LEVEL 1 and LEVEL 2–6.</p>
+        <p>To update a business name or suite number, edit the relevant floor tab. This overview refreshes automatically. No separate save is required.</p>
       </div>
     </div>`;
 }
