@@ -160,7 +160,7 @@ function renderDirectoryPreview() {
     let total = 0;
     paragraphs.forEach(paragraph => {
       let line = '';
-      paragraph.split(/\\s+/).forEach(word => {
+      paragraph.split(/\s+/).forEach(word => {
         const test = line ? line+' '+word : word;
         if (line && measure.measureText(test).width > maxWidth) { total++; line=word; }
         else line=test;
@@ -193,8 +193,8 @@ function renderDirectoryPreview() {
       detailLines += entry.display_name_alt ? countWrappedLines(entry.display_name_alt,21,372,650) : 0;
       detailLines += entry.sub_info ? countWrappedLines(entry.sub_info,18,372,500) : 0;
     });
-    const scale=Math.max(0.90,Math.min(1.10,
-      1.10-Math.max(0,entryCount-5)*0.026-Math.max(0,detailLines-2)*0.006
+    const scale=Math.max(0.92,Math.min(1.22,
+      1.20-Math.max(0,entryCount-5)*0.026-Math.max(0,detailLines-2)*0.006
     ));
     const measured=floorEntries.map(entry=>measureEntry(entry,scale));
     floorData[floor]={entries:measured,scale,headerHeight:52,
@@ -239,7 +239,7 @@ function renderDirectoryPreview() {
       const entry=item.entry;
       const businessPlain=stripInlineColor(entry.business_name).replace(/\s+/g,' ').trim();
       const keepBusinessOnOneLine=/^Redmyre Medical Centre$/i.test(businessPlain);
-      const businessSize=keepBusinessOnOneLine ? Math.min(26,px(30*scale)) : px(30*scale);
+      const businessSize=keepBusinessOnOneLine ? Math.min(30,px(30*scale)) : px(30*scale);
       const businessClass=keepBusinessOnOneLine ? 'directory-business-single-line' : '';
       const business='<div class="directory-rich directory-business '+businessClass+'" style="font-size:'+businessSize+'px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:'+(keepBusinessOnOneLine?'normal':'break-word')+';word-break:'+(keepBusinessOnOneLine?'keep-all':'normal')+';white-space:'+(keepBusinessOnOneLine?'nowrap':'normal')+';">'+renderRichText(entry.business_name)+'</div>';
       const alt=entry.display_name_alt
