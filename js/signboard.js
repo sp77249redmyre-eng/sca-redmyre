@@ -246,7 +246,7 @@ function renderDirectoryPreview() {
         ? '<div class="directory-rich directory-alt" style="font-size:'+px(21*scale)+'px;font-weight:650;color:#26374d;line-height:1.22;margin-top:2px;overflow-wrap:break-word;word-break:normal;">'+renderRichText(entry.display_name_alt)+'</div>' : '';
       const sub=renderSub(entry.sub_info,scale);
       const isGroundEntry=isGround && index===0;
-      const border=isGroundEntry ? '2px solid #c9b77e' : (index<data.entries.length-1 ? '1px solid #e2eaf1' : 'none');
+      const border=index<data.entries.length-1 ? '1px solid #e2eaf1' : 'none';
       const padding=isGroundEntry ? '8px 0 12px' : '7px 0';
       return '<div class="directory-entry-row" style="display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;column-gap:10px;width:100%;min-width:0;padding:'+padding+';border-bottom:'+border+';box-sizing:border-box;">'+
         '<div class="directory-entry-text" style="display:block;width:100%;min-width:0;max-width:100%;white-space:normal;word-break:normal;overflow-wrap:break-word;">'+business+alt+sub+'</div>'+
