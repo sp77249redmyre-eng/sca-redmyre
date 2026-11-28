@@ -145,125 +145,112 @@ function renderEntryList() {
 function renderDirectoryPreview() {
   const entries = allEntries.filter(e => e.page === activeTab).sort((a,b) => {
     const floorDiff = FLOOR_ORDER.indexOf(a.floor) - FLOOR_ORDER.indexOf(b.floor);
-    return floorDiff || (Number(a.sort_order)||0) - (Number(b.sort_order)||0);
+    return floorDiff || (a.sort_order||0) - (b.sort_order||0);
   });
   const grouped = {};
-  entries.forEach(entry => { if (!grouped[entry.floor]) grouped[entry.floor] = []; grouped[entry.floor].push(entry); });
-  const floors = FLOOR_ORDER.filter(floor => grouped[floor]);
+  entries.forEach(e => {
+    if (!grouped[e.floor]) grouped[e.floor] = [];
+    grouped[e.floor].push(e);
+  });
+  const floors = FLOOR_ORDER.filter(f => grouped[f]);
+
+  const floorData = {};
+  const estimateLines = (value, charsPerLine) => {
+    const text = stripInlineColor(value);
+    return text.split(/\n|\|\|/).filter(line => line.trim())
+      .reduce((sum,line) => sum + Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  };
   const px = value => Math.max(1,Math.round(value));
-  const measure = document.createElement('canvas').getContext('2d');
 
-  function countWrappedLines(value,fontSize,maxWidth,fontWeight=700) {
-    const paragraphs = stripInlineColor(value||'').split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean);
-    if (!paragraphs.length) return 0;
-    measure.font = fontWeight+' '+fontSize+'px "DM Sans",Arial,sans-serif';
-    let total = 0;
-    paragraphs.forEach(paragraph => {
-      let line = '';
-      paragraph.split(/\\s+/).forEach(word => {
-        const test = line ? line+' '+word : word;
-        if (line && measure.measureText(test).width > maxWidth) { total++; line=word; }
-        else line=test;
-        const width = measure.measureText(line).width;
-        if (width > maxWidth) { total += Math.max(0,Math.ceil(width/maxWidth)-1); line=''; }
-      });
-      if (line) total++;
-    });
-    return Math.max(1,total);
-  }
-
-  function measureEntry(entry,scale) {
-    const businessSize=30*scale, altSize=21*scale, subSize=18*scale, nameWidth=372;
-    const businessLines=countWrappedLines(entry.business_name,businessSize,nameWidth,800);
-    const altLines=entry.display_name_alt ? countWrappedLines(entry.display_name_alt,altSize,nameWidth,650) : 0;
-    const subParts=String(entry.sub_info||'').split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean);
-    const subLines=subParts.reduce((sum,part)=>sum+countWrappedLines(part,subSize,nameWidth,500),0);
-    const textHeight=businessLines*businessSize*1.18+
-      (altLines ? altLines*altSize*1.22+3 : 0)+
-      (subLines ? subLines*subSize*1.25+subParts.length*2 : 0);
-    return {entry,requiredHeight:textHeight+16};
-  }
-
-  const floorData={};
   floors.forEach(floor => {
-    const floorEntries=grouped[floor];
-    const entryCount=floorEntries.length;
-    let detailLines=0;
-    floorEntries.forEach(entry => {
-      detailLines += entry.display_name_alt ? countWrappedLines(entry.display_name_alt,21,372,650) : 0;
-      detailLines += entry.sub_info ? countWrappedLines(entry.sub_info,18,372,500) : 0;
+    const unitMap = new Map();
+    let entryCount = 0;
+    let detailLines = 0;
+    let floorWeight = 1.65;
+
+    grouped[floor].forEach(entry => {
+      const unit = entry.unit_display || '';
+      if (!unitMap.has(unit)) unitMap.set(unit,{unit,items:[],weight:0});
+
+      const businessLines = Math.max(1,estimateLines(entry.business_name,22));
+      const altLines = estimateLines(entry.display_name_alt,31);
+      const subLines = estimateLines(entry.sub_info,36);
+      const itemWeight = Math.max(1,businessLines*1.15 + altLines*0.90 + subLines*0.82);
+
+      const item = {entry,businessLines,altLines,subLines,weight:itemWeight};
+      const group = unitMap.get(unit);
+      group.items.push(item);
+      group.weight += itemWeight;
+      floorWeight += itemWeight;
+      entryCount++;
+      detailLines += altLines + subLines + businessLines - 1;
     });
-    const scale=Math.max(0.90,Math.min(1.10,
-      1.10-Math.max(0,entryCount-5)*0.026-Math.max(0,detailLines-2)*0.006
+
+    // Bigger type on quiet floors; only reduce size when the floor has more tenants or text.
+    const scale = Math.max(0.92,Math.min(1.12,
+      1.18 - Math.max(0,entryCount-5)*0.035 - detailLines*0.008
     ));
-    const measured=floorEntries.map(entry=>measureEntry(entry,scale));
-    floorData[floor]={entries:measured,scale,headerHeight:52,
-      requiredHeight:52+measured.reduce((sum,item)=>sum+item.requiredHeight,0)};
+
+    floorData[floor] = {
+      groups:Array.from(unitMap.values()),
+      weight:floorWeight,
+      scale
+    };
   });
 
-  const availableHeight=994-34-32-8;
-  if(floors.length>1 && floorData['LEVEL 1']) {
-    const required=()=>floors.reduce((sum,floor)=>sum+floorData[floor].requiredHeight,0)+10;
-    while(required()>availableHeight && floorData['LEVEL 1'].scale>0.88) {
-      const data=floorData['LEVEL 1'];
-      data.scale=Math.max(0.88,data.scale-0.02);
-      data.entries=grouped['LEVEL 1'].map(entry=>measureEntry(entry,data.scale));
-      data.requiredHeight=data.headerHeight+data.entries.reduce((sum,item)=>sum+item.requiredHeight,0);
-    }
-  } else if(floors.length===1) {
-    const data=floorData[floors[0]];
-    while(data.requiredHeight>availableHeight && data.scale>0.88) {
-      data.scale=Math.max(0.88,data.scale-0.02);
-      data.entries=grouped[floors[0]].map(entry=>measureEntry(entry,data.scale));
-      data.requiredHeight=data.headerHeight+data.entries.reduce((sum,item)=>sum+item.requiredHeight,0);
-    }
-  }
-
   function renderSub(sub,scale) {
-    if(!sub) return '';
-    return String(sub).split(/\\n|\\|\\|/).map(x=>x.trim()).filter(Boolean).map(part=>
-      '<div class="directory-rich directory-sub" style="font-size:'+px(18*scale)+'px;font-weight:500;color:#465366;margin-top:2px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">'+renderRichText(part)+'</div>'
+    if (!sub) return '';
+    const parts = String(sub).includes('||') ? String(sub).split('||') : [sub];
+    return parts.map(part =>
+      `<div class="directory-rich directory-sub" style="font-size:${px(18*scale)}px;font-weight:500;color:#465366;margin-top:${px(2*scale)}px;line-height:1.25;font-style:italic;overflow-wrap:anywhere;">${renderRichText(part)}</div>`
     ).join('');
   }
 
-  const combined=floors.includes('GROUND') && floors.includes('LEVEL 1');
-  let sections='';
-  floors.forEach(floor => {
-    const data=floorData[floor], scale=data.scale, isGround=floor==='GROUND';
-    const heading='<div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;flex:0 0 auto;">'+
-      '<div style="font-size:40px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.05;white-space:nowrap;">'+floor+'</div>'+
-      (isGround ? '' : '<div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>')+
-    '</div>';
+  let sections = '';
+  floors.forEach((floor,fi) => {
+    const data = floorData[floor];
+    const scale = data.scale;
 
-    const rows=data.entries.map((item,index)=>{
-      const entry=item.entry;
-      const business='<div class="directory-rich directory-business" style="font-size:'+px(30*scale)+'px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:anywhere;">'+renderRichText(entry.business_name)+'</div>';
-      const alt=entry.display_name_alt
-        ? '<div class="directory-rich directory-alt" style="font-size:'+px(21*scale)+'px;font-weight:650;color:#26374d;line-height:1.22;margin-top:2px;overflow-wrap:anywhere;">'+renderRichText(entry.display_name_alt)+'</div>' : '';
-      const sub=renderSub(entry.sub_info,scale);
-      const isGroundEntry=isGround && index===0;
-      const border=isGroundEntry ? '2px solid #c9b77e' : (index<data.entries.length-1 ? '1px solid #e2eaf1' : 'none');
-      const padding=isGroundEntry ? '8px 0 12px' : '7px 0';
-      return '<div class="directory-entry-row" style="display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:'+padding+';border-bottom:'+border+';box-sizing:border-box;">'+
-        '<div style="flex:1;min-width:0;">'+business+alt+sub+'</div>'+
-        '<div class="sb-video-suite" style="font-size:'+px(25*scale)+'px;font-weight:850;color:#142238;white-space:nowrap;flex:0 0 auto;padding-left:8px;align-self:center;">'+escapeHtml(entry.unit_display||'')+'</div>'+
-      '</div>';
+    const floorRows = data.groups.map((group,gi) => {
+      const itemRows = group.items.map((item,idx) => {
+        const entry = item.entry;
+        const businessHtml = `<div class="directory-rich directory-business" style="font-size:${px(30*scale)}px;font-weight:800;color:#142238;line-height:1.18;overflow-wrap:anywhere;">${renderRichText(entry.business_name)}</div>`;
+        const altHtml = entry.display_name_alt
+          ? `<div class="directory-rich directory-alt" style="font-size:${px(21*scale)}px;font-weight:650;color:#26374d;line-height:1.22;margin-top:${px(2*scale)}px;overflow-wrap:anywhere;">${renderRichText(entry.display_name_alt)}</div>`
+          : '';
+        const suiteHtml = `<div class="sb-video-suite" style="font-size:${px(25*scale)}px;font-weight:850;color:#142238;white-space:nowrap;flex-shrink:0;padding-left:12px;">${escapeHtml(entry.unit_display || group.unit)}</div>`;
+        const divider = idx<group.items.length-1 ? '1px solid #e6edf3' : (floor==='GROUND' && gi===0 ? '2px solid #c9b77e' : 'none');
+
+        return `<div style="flex:0 0 auto;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:${px(5*scale)}px 0;border-bottom:${divider};box-sizing:border-box;">
+          <div style="flex:1;min-width:0;">${businessHtml}${altHtml}${renderSub(entry.sub_info,scale)}</div>
+          ${suiteHtml}
+        </div>`;
+      }).join('');
+
+      const groupDivider = gi<data.groups.length-1 ? '1px solid #e2eaf1' : 'none';
+      return `<div style="flex:${group.weight} 1 0;min-height:0;display:flex;flex-direction:column;justify-content:space-between;padding:3px 0;border-bottom:${groupDivider};box-sizing:border-box;">${itemRows}</div>`;
     }).join('');
 
-    const flex=combined ? (isGround ? '0 0 auto' : '1 1 0') : '1 1 0';
-    const top=combined && floor==='LEVEL 1' ? 'margin-top:12px;' : '';
-    const list=isGround
-      ? 'display:flex;flex-direction:column;flex:0 0 auto;'
-      : 'display:flex;flex-direction:column;flex:1 1 0;min-height:0;justify-content:space-between;gap:6px;';
-    sections+='<section class="directory-floor-section" style="flex:'+flex+';min-height:0;display:flex;flex-direction:column;overflow:visible;'+top+'">'+
-      heading+'<div class="directory-floor-list" style="'+list+'">'+rows+'</div></section>';
+    const heading = `<div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;flex:0 0 auto;">
+      <div style="font-size:40px;font-weight:900;color:#101a30;letter-spacing:1px;line-height:1.05;white-space:nowrap;">${floor}</div>
+      ${floor==='GROUND' ? '' : '<div style="height:2px;background:#c9b77e;flex:1;margin-top:4px;"></div>'}
+    </div>`;
+
+    sections += `<section style="flex:${data.weight} 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;">${heading}<div style="flex:1;min-height:0;display:flex;flex-direction:column;">${floorRows}</div></section>`;
+
+    if (fi<floors.length-1) {
+      sections += `<div style="height:12px;flex:0 0 12px;display:flex;align-items:center;"><div style="height:1.5px;background:#c9b77e;width:100%;"></div></div>`;
+    }
   });
 
-  document.getElementById('rightPanel').innerHTML=
-    '<div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>'+
-    '<div class="sb-preview-wrap"><div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">'+
-      '<div style="height:100%;min-height:0;display:flex;flex-direction:column;">'+sections+'</div></div>'+
-      '<div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div></div>';
+  document.getElementById('rightPanel').innerHTML = `
+    <div class="sb-right-label">VIDEO CARD PREVIEW · 540 × 994 · EXPORT 960 × 1766</div>
+    <div class="sb-preview-wrap">
+      <div class="pv-frame directory-card" id="pvFrame" style="background:#fff;border-radius:22px;overflow:hidden;padding:34px 34px 32px;box-sizing:border-box;">
+        <div style="height:100%;min-height:0;display:flex;flex-direction:column;">${sections || '<div style="margin:auto;color:#64748b;font-size:22px;">No directory entries for this card.</div>'}</div>
+      </div>
+      <div class="sb-jpeg-row"><button class="sb-btn-jpeg" onclick="downloadPNG()">Download PNG (960×1766)</button></div>
+    </div>`;
 }
 
 function buildAllFloorsHTML() {
