@@ -310,8 +310,9 @@ function buildAllFloorsHTML() {
         const rawShort = decodeStoredEntities(e.short_name || '').trim();
         const source = rawShort ? rawShort : firstRichLineHTML(e.business_name);
         const name = stripInlineColor(source).trim();
-        // At the exported card width, the name column is approximately 185px.
-        const wrappedLines = Math.max(1,estimateLines(name,20));
+        // ALL FLOORS uses a wider two-column content area than the individual cards.
+        // Estimate with the larger name column so the font can grow without unexpected wrapping.
+        const wrappedLines = Math.max(1,estimateLines(name,22));
         return {
           html:asBlockHTML(renderRichText(source)),
           suite:e.unit_display||'',
@@ -323,32 +324,31 @@ function buildAllFloorsHTML() {
     const totalLines = entries.reduce((sum,entry)=>sum+entry.wrappedLines,0);
     const rowCount = Math.max(1,entries.length);
     // Share the available cell height according to real text demand, not equal row heights.
-    const cellFont = Math.max(15,Math.min(21,
-      Math.floor(255/Math.max(1,totalLines*1.16 + rowCount*0.30))
+    const cellFont = Math.max(17,Math.min(22,
+      Math.floor(270/Math.max(1,totalLines*1.10 + rowCount*0.22))
     ));
-    const titleFont = 20;
 
     const rows = entries.map((entry,idx) => {
       const divider = idx<entries.length-1 ? '1px solid #e9eef3' : 'none';
-      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:${divider};box-sizing:border-box;line-height:1.12;">
-        <div class="all-floor-name" style="display:block;flex:1;min-width:0;overflow-wrap:break-word;word-break:normal;font-size:${cellFont}px;font-weight:750;line-height:1.12;color:#142238;">${entry.html}</div>
-        <div class="all-floor-suite" style="font-size:${cellFont}px;font-weight:900;line-height:1.1;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</div>
+      return `<div class="all-floor-row" style="flex:${entry.weight} 1 0;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0;border-bottom:${divider};box-sizing:border-box;line-height:1.10;">
+        <div class="all-floor-name" style="display:block;flex:1;min-width:0;overflow-wrap:break-word;word-break:normal;font-size:${cellFont}px;font-weight:800;line-height:1.10;color:#142238;">${entry.html}</div>
+        <div class="all-floor-suite" style="font-size:${cellFont}px;font-weight:900;line-height:1.10;flex-shrink:0;white-space:nowrap;color:#142238;">${escapeHtml(entry.suite)}</div>
       </div>`;
     }).join('');
 
-    return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 5px;display:flex;flex-direction:column;">
-      <div class="all-floor-heading" style="font-size:20px;font-weight:900;line-height:1.15;color:#ffffff;text-align:center;background:linear-gradient(135deg,#142238 0%,#263c5a 100%);border-top:3px solid #c9b77e;border-bottom:2px solid #c9b77e;border-left:4px solid #c9b77e;border-radius:4px;padding:6px 3px;margin-bottom:6px;letter-spacing:.45px;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:0 2px 6px rgba(20,34,56,.16);flex:0 0 auto;">${group.title}</div>
+    return `<section style="min-width:0;min-height:0;overflow:hidden;padding:0 2px;display:flex;flex-direction:column;">
+      <div class="all-floor-heading" style="font-size:22px;font-weight:900;line-height:1.12;color:#ffffff;text-align:center;background:linear-gradient(135deg,#142238 0%,#263c5a 100%);border-top:3px solid #c9b77e;border-bottom:2px solid #c9b77e;border-left:4px solid #c9b77e;border-radius:4px;padding:5px 3px;margin-bottom:5px;letter-spacing:.45px;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:0 2px 6px rgba(20,34,56,.16);flex:0 0 auto;">${group.title}</div>
       <div style="flex:1;min-height:0;display:flex;flex-direction:column;">${rows || '<span style="color:#94a3b8;">No entries</span>'}</div>
     </section>`;
   }).join('');
 
-  return `<div style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:29px 30px 27px;display:flex;flex-direction:column;">
+  return `<div class="all-floors-card" style="width:540px;height:994px;background:#fff;border-radius:22px;overflow:hidden;position:relative;font-family:'DM Sans','Segoe UI',sans-serif;color:#111a2e;box-sizing:border-box;padding:22px 24px 20px;display:flex;flex-direction:column;">
     <style>
       .all-floor-name .all-floor-paragraph{display:block;margin:0!important;padding:0!important;}
       .all-floor-name p{display:block;margin:0!important;padding:0!important;}
       .all-floor-heading{font-family:'DM Sans','Segoe UI',sans-serif;}
     </style>
-    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 18px;">${cells}</div>
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:12px 20px;">${cells}</div>
   </div>`;
 }
 
