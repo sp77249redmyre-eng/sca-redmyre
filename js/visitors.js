@@ -64,14 +64,36 @@ function escapeHtml(value) {
   }[character]));
 }
 
-function visibleName(raw) {
-  const text = String(raw == null ? '' : raw);
-  return {
-    text,
-    color: text.trim().toUpperCase() === 'VACATED' ? '#b4232d' : null
-  };
+function plainText(raw) {
+  const source = String(raw == null ? '' : raw);
+  if (!source) return '';
+
+  // Decode HTML entities, then remove rich-text markup without displaying tags.
+  const decoder = document.createElement('textarea');
+  decoder.innerHTML = source;
+  const decoded = decoder.value;
+
+  const stripped = decoded
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?\s*>/gi, ' ')
+    .replace(/<\/(?:p|div|li|h[1-6]|blockquote|tr)>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ');
+
+  decoder.innerHTML = stripped;
+  return decoder.value
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
+function visibleName(raw) {
+  const text = plainText(raw);
+  return {
+    text,
+    color: text.toUpperCase() === 'VACATED' ? '#b4232d' : null
+  };
+}
 function filteredRows() {
   const query = searchTerm.trim().toLowerCase();
 
